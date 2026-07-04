@@ -543,11 +543,18 @@ def _is_storage_quota_403(err: Exception) -> bool:
 
 
 def _is_transient_upload_error(err: Exception) -> bool:
-    """True for retryable transient HF/HTTP upload errors (5xx gateway timeouts,
-    429, connection drops) — NOT the persistent storage-quota-403."""
+    """True for retryable transient HF/HTTP upload errors (408/429/5xx by
+    status code, connection drops / timeouts by message) — NOT the persistent
+    storage-quota-403. When the exception carries a real integer HTTP status
+    code, the decision is made ENTIRELY by code: 408 (request timeout), 429,
+    and any 5xx are transient; every other code (all remaining 4xx) is
+    non-transient, with NO substring fallback — 4xx messages can embed digit
+    triplets ('issue504_raw/...', byte counts) that would read as
+    false-transient (#989). The substring scan applies only to response-less
+    errors (ConnectionError, timeouts)."""
     code = getattr(getattr(err, "response", None), "status_code", None)
-    if code in (429, 500, 502, 503, 504):
-        return True
+    if isinstance(code, int):
+        return code in (408, 429) or 500 <= code < 600
     msg = str(err).lower()
     return any(
         s in msg
