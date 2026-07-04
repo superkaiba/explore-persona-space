@@ -68,6 +68,13 @@ CHAT_STORE_PREFIX = "issue825_userbase_map/analysis_tensors"
 CHAT_STORE_STEM = "instruct_chat_s"
 
 PDNC_REPO_URL = "https://github.com/Priya22/project-dialogism-novel-corpus.git"
+# Hard pins for the two EXTERNAL corpus inputs (r2 fix: production runs must not
+# float on the PDNC default branch / the HF dataset repo HEAD). Resolved once on
+# 2026-07-03: PDNC master HEAD (git ls-remote) + Salesforce/wikitext main
+# revision (HfApi().repo_info, last modified 2024-01-04). Both are recorded in
+# pairs_meta.json by issue931_build_pairs.py.
+PDNC_SHA = "6fda0a78bda5e9da0854f7befb5dab268abefb7e"
+WIKITEXT_REVISION = "b08601e04326c79dfdd32d625aee71d232d685c3"
 
 JUDGE_MODEL = "claude-sonnet-4-5-20250929"
 

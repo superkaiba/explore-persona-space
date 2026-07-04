@@ -52,6 +52,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import issue825_fit_cells as fit825  # noqa: E402
 import issue931_common as common  # noqa: E402
+
+# r1 Minor fix: import the CKA / principal-angle helpers from their canonical
+# source instead of re-copying them (reuse hierarchy; argparse there is inside
+# main(), so the import is side-effect-free beyond an idempotent load_dotenv).
+from issue779_stage2_cka_subspace import _subspace_overlap, linear_cka  # noqa: E402
 from issue931_fit_cells import (  # noqa: E402
     assemble_cell,
     frozen_layers,
@@ -386,28 +391,6 @@ def _within_ceiling_at_n(
 # ---------------------------------------------------------------------------
 
 
-def _subspace_overlap(U1: torch.Tensor, U2: torch.Tensor, ks) -> dict:
-    """Mean squared cosine of principal angles: ||U1k^T U2k||_F^2 / k
-    (issue779_stage2_cka_subspace convention)."""
-    out = {}
-    r1, r2 = U1.shape[1], U2.shape[1]
-    for k in ks:
-        k1, k2 = min(k, r1), min(k, r2)
-        M = U1[:, :k1].T @ U2[:, :k2]
-        out[int(k)] = float((M**2).sum() / min(k1, k2))
-    return out
-
-
-def linear_cka(X: torch.Tensor, Y: torch.Tensor) -> float:
-    """Centered linear CKA between (N, D) prediction sets (issue779 stage 2)."""
-    Xc = X - X.mean(0, keepdim=True)
-    Yc = Y - Y.mean(0, keepdim=True)
-    hsic = float(((Xc.T @ Yc) ** 2).sum())
-    nx = float(((Xc.T @ Xc) ** 2).sum()) ** 0.5
-    ny = float(((Yc.T @ Yc) ** 2).sum()) ** 0.5
-    return float("nan") if nx * ny < 1e-12 else hsic / (nx * ny)
-
-
 def random_subspace_null(D: int, ks, n_draws: int = 20, seed: int = 0) -> dict:
     """Overlap of two INDEPENDENT random k-subspaces in R^D (empirical null)."""
     g = torch.Generator().manual_seed(seed)
@@ -551,11 +534,13 @@ def main() -> int:  # noqa: C901 -- linear P4 driver (transfers -> contract chec
         if r["x_recipe"] == "lastpos" and (
             r["source_cell"] == "chat_ref" or r["denominator_cell"] == "chat_ref"
         ):
+            # Plan section 6.5 three-cell set for chat-involving lastpos rows
+            # (r1 Minor: armC_sep was unreachable slack here — no chat-involving
+            # direction can read against the separator ceiling).
             assert r["denominator_cell"] in (
                 "armA_within_lastpos",
                 "armB_within_lastpos",
                 "chat_ref",
-                "armC_sep",
             ), r
         if r["power_matched"]:
             assert abs(r["n_train"] - r["denominator_n_train"]) <= max(50, 0.05 * r["n_train"]), (

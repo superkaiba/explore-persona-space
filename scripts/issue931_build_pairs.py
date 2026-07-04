@@ -54,7 +54,13 @@ NON_CHARACTER_SPEAKER_RE = re.compile(r"(?i)^\s*(unknow|narrator|crowd|group|voi
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--pdnc-dir", type=Path, default=Path("data/issue_931/pdnc"))
-    ap.add_argument("--pdnc-sha", type=str, default=None, help="pin the PDNC checkout to this SHA")
+    ap.add_argument(
+        "--pdnc-sha",
+        type=str,
+        default=common.PDNC_SHA,
+        help="pin the PDNC checkout to this SHA (default: the committed PDNC_SHA pin — "
+        "EVERY path, including the dispatcher's, checks out the pin unconditionally)",
+    )
     ap.add_argument("--data-dir", type=Path, default=Path("data/issue_931"))
     ap.add_argument("--out-dir", type=Path, default=Path("eval_results/issue_931"))
     ap.add_argument("--max-novels", type=int, default=0, help="0 = all novels")
@@ -89,9 +95,21 @@ def stage_pdnc(pdnc_dir: Path, sha: str | None, *, skip_clone: bool) -> str:
             timeout=1200,
         )
     if sha:
-        subprocess.run(
-            ["git", "-C", str(pdnc_dir), "checkout", "--quiet", sha], check=True, timeout=300
-        )
+        try:
+            subprocess.run(
+                ["git", "-C", str(pdnc_dir), "checkout", "--quiet", sha], check=True, timeout=300
+            )
+        except subprocess.CalledProcessError:
+            # A pre-existing checkout may predate a pin bump — fetch, then retry
+            # (fail loud if the SHA is genuinely absent upstream).
+            subprocess.run(
+                ["git", "-C", str(pdnc_dir), "fetch", "--quiet", "origin"],
+                check=True,
+                timeout=1200,
+            )
+            subprocess.run(
+                ["git", "-C", str(pdnc_dir), "checkout", "--quiet", sha], check=True, timeout=300
+            )
     head = subprocess.run(
         ["git", "-C", str(pdnc_dir), "rev-parse", "HEAD"],
         check=True,
@@ -187,6 +205,7 @@ def load_novel(novel_dir: Path) -> dict:
         characters[main] = sorted(aliases)
 
     quotes = []
+    n_span_unparsed = 0
     for _, row in qdf.iterrows():
         speaker = str(row[speaker_col]).strip()
         spans = _parse_listish(row[span_col])
@@ -198,10 +217,21 @@ def load_novel(novel_dir: Path) -> dict:
             if isinstance(sp, (list, tuple)) and len(sp) == 2:
                 pair_spans.append((int(sp[0]), int(sp[1])))
         if not pair_spans:
+            # Counted, never silent (r1 Minor): systematic drift is caught by the
+            # span-interpretation assert + mismatch gate; this reports the residue.
+            n_span_unparsed += 1
             continue
         quotes.append({"speaker": speaker, "spans": pair_spans, "quote_text": str(row[qtext_col])})
     assert quotes, f"{novel_dir.name}: zero parseable quotations"
-    return {"novel_id": novel_dir.name, "text": text, "quotes": quotes, "characters": characters}
+    if n_span_unparsed:
+        print(f"[i931-p0] {novel_dir.name}: {n_span_unparsed} quote rows with unparseable spans")
+    return {
+        "novel_id": novel_dir.name,
+        "text": text,
+        "quotes": quotes,
+        "characters": characters,
+        "n_quotes_span_unparsed": n_span_unparsed,
+    }
 
 
 def _normalize_ws(s: str) -> str:
@@ -414,7 +444,13 @@ def iter_wikitext_articles(max_articles: int):
     """Yield (title, text) articles assembled from the streamed train split."""
     from datasets import load_dataset
 
-    ds = load_dataset("Salesforce/wikitext", "wikitext-103-raw-v1", split="train", streaming=True)
+    ds = load_dataset(
+        "Salesforce/wikitext",
+        "wikitext-103-raw-v1",
+        split="train",
+        streaming=True,
+        revision=common.WIKITEXT_REVISION,  # r2 fix: pin the HF dataset revision
+    )
     title, buf = None, []
     n = 0
     for row in ds:
@@ -569,6 +605,7 @@ def main() -> int:
             "n_pairs": len(res["pairs"]),
             "n_windows": len(res["windows"]),
             "n_tokens": res["n_tokens"],
+            "n_quotes_span_unparsed": novel.get("n_quotes_span_unparsed", 0),
             **res["counters"],
         }
         per_novel.append(row)
@@ -640,6 +677,8 @@ def main() -> int:
     meta = {
         "metadata": common.metadata(SCRIPT, common.BUILD_SEED, len(all_pairs)),
         "pdnc_sha": pdnc_sha,
+        "pdnc_sha_pin": common.PDNC_SHA,
+        "wikitext_revision": common.WIKITEXT_REVISION,
         "tokenizer": common.MODEL_ID,
         "window_tokens": args.window_tokens,
         "arma": {"n_pairs": len(all_pairs), "n_windows": len(all_windows)},

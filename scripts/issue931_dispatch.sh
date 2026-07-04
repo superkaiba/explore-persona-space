@@ -139,9 +139,14 @@ if [ "$MODE" = "canary" ] || { [ "$MODE" = "production" ] && [ "$NO_CANARY" != "
   echo "[phase=canary] 3-novel/20-story real-path canary"
   CANARY_ROOT="data/issue_931_canary"
   rm -rf "$CANARY_ROOT" "eval_results/issue_${ISSUE}/canary"
+  # r1 Minors: canary stories UPLOAD (persist-by-default; disambiguated stage
+  # subdir) and the n=20 canary audit is RECORDED, not binding (binomial noise
+  # would spuriously exit-4 ~8-25% at true precision 0.93-0.95; the binding
+  # gate is production's n=200 audit).
   run_pipeline canary "$CANARY_ROOT" "eval_results/issue_${ISSUE}/canary" \
-    "$CANARY_ROOT/figs" 3 20 20 3 "--skip-upload" "--batch-size 4" "--smoke" \
-    "--stage-chat-store" "--audit-n 20" "$CHAT_DIR"
+    "$CANARY_ROOT/figs" 3 20 20 3 "--upload-stage generation_canary" \
+    "--batch-size 4" "--smoke" \
+    "--stage-chat-store" "--audit-n 20 --audit-non-binding" "$CHAT_DIR"
   echo "[i931] canary complete"
   if [ "$MODE" = "canary" ]; then exit 0; fi
 fi
@@ -153,7 +158,9 @@ run_pipeline prod "data/issue_${ISSUE}" "eval_results/issue_${ISSUE}" \
 
 echo "[phase=p5_upload] uploads (text/JSON unconditional; tensors batched)"
 uv run python - "$ISSUE" <<'PY'
+import hashlib
 import json
+import shutil
 import sys
 from pathlib import Path
 
@@ -164,9 +171,59 @@ prefix = "issue931_story_map"
 repo = "superkaiba1/explore-persona-space-data"
 data = Path(f"data/issue_{issue}")
 
-# pairs_meta + gates + eval JSONs (text path, one folder commit each).
+
+def stage_pairs_with_shards(src: Path, stage: Path, limit=9_500_000, shard_bytes=9_000_000):
+    """Copy the pairs dir to a staging dir, line-splitting >9.5 MB .jsonl files.
+
+    Upload-policy fix (r1 Minor): the Hub force-routes any >10 MB blob to LFS
+    (quota-gated endpoint) regardless of extension; windows_armA.jsonl is
+    ~20-40 MB of token ids. Shards are <9 MB + a manifest (ordered parts,
+    line counts, sha256s). Local consumers read the ORIGINAL file unchanged.
+    """
+    if stage.exists():
+        shutil.rmtree(stage)
+    stage.mkdir(parents=True)
+    for f in sorted(src.iterdir()):
+        if not f.is_file():
+            continue
+        if f.suffix != ".jsonl" or f.stat().st_size <= limit:
+            shutil.copy2(f, stage / f.name)
+            continue
+        parts, idx, cur, cur_bytes = [], 0, [], 0
+
+        def _flush():
+            nonlocal idx, cur, cur_bytes
+            if not cur:
+                return
+            name = f"{f.stem}.shard{idx:02d}.jsonl"
+            blob = "".join(cur)
+            (stage / name).write_text(blob)
+            parts.append(
+                {"name": name, "n_lines": len(cur),
+                 "sha256": hashlib.sha256(blob.encode()).hexdigest()}
+            )
+            idx, cur, cur_bytes = idx + 1, [], 0
+
+        with open(f) as fh:
+            for line in fh:
+                b = len(line.encode())
+                if cur and cur_bytes + b > shard_bytes:
+                    _flush()
+                cur.append(line)
+                cur_bytes += b
+        _flush()
+        (stage / f"{f.stem}.manifest.json").write_text(
+            json.dumps({"source": f.name, "n_parts": len(parts), "parts": parts}, indent=2)
+        )
+        print(f"[i931-p5] sharded {f.name} -> {len(parts)} parts (<9 MB each)")
+
+
+# pairs_meta + gates + eval JSONs (text path, one folder commit each);
+# oversize .jsonl line-split into <9 MB shards so nothing force-routes to LFS.
+pairs_stage = data / "pairs_upload_stage"
+stage_pairs_with_shards(data / "pairs", pairs_stage)
 hub._upload(
-    data / "pairs",
+    pairs_stage,
     repo_id=repo,
     repo_type="dataset",
     path_in_repo=f"{prefix}/raw_completions/pairs_meta",

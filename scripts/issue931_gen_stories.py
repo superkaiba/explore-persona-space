@@ -51,6 +51,14 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--max-tokens", type=int, default=1024)
     ap.add_argument("--stub-gen", action="store_true", help="CPU smoke: deterministic stub text")
     ap.add_argument("--skip-upload", action="store_true")
+    ap.add_argument(
+        "--upload-stage",
+        type=str,
+        default="generation",
+        help="raw_completions/<stage>/ subdir for the story upload (the canary "
+        "passes generation_canary so its stories persist without colliding "
+        "with production's identically-named file)",
+    )
     ap.add_argument("--gpu-memory-utilization", type=float, default=0.85)
     return ap.parse_args()
 
@@ -199,7 +207,7 @@ def main() -> int:
             out_path,
             repo_id=common.HF_DATA_REPO,
             repo_type="dataset",
-            path_in_repo=f"{common.HF_PREFIX}/raw_completions/generation/{out_path.name}",
+            path_in_repo=f"{common.HF_PREFIX}/raw_completions/{args.upload_stage}/{out_path.name}",
             upload_as_file=True,
         )
         assert url, "story upload returned no URL"

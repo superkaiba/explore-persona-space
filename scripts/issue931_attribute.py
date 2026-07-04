@@ -72,6 +72,13 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--mock-judge", action="store_true", help="offline audit stub (smoke only)")
     ap.add_argument("--skip-audit", action="store_true")
     ap.add_argument(
+        "--audit-non-binding",
+        action="store_true",
+        help="record the audit but never exit 4 on a gate miss (canary only: at n=20 "
+        "and true precision 0.93-0.95 the binomial spurious-fail rate is ~8-25%%; "
+        "the binding gate is the production n=200 audit)",
+    )
+    ap.add_argument(
         "--reattribute-batch",
         action="store_true",
         help="contingency: full Sonnet re-attribution via the Batch API, re-gate at 0.95",
@@ -339,6 +346,14 @@ def run_audit(
     n_valid = len(results)
     n_correct = sum(1 for v in results.values() if v["correct"])
     precision = n_correct / n_valid if n_valid else float("nan")
+    # r1 Minor fix: an audit with mostly-malformed judge returns (worst case
+    # n_valid=0 -> precision NaN) would otherwise BYPASS the exit-4 gate and the
+    # re-gate assert (np.isnan short-circuits). Fail loud instead.
+    if n_valid < 0.5 * len(sample):
+        raise RuntimeError(
+            f"audit degenerate: {n_valid}/{len(sample)} valid judge returns (<50%) — "
+            "precision is unmeasurable; refusing to continue past the audit gate"
+        )
     return {
         "n_sampled": len(sample),
         "n_valid": n_valid,
@@ -387,22 +402,31 @@ def main() -> int:
             and audit["precision"] < args.audit_gate
             and not args.reattribute_batch
         ):
-            common.write_json(
-                args.out_dir / "attribution_audit.json",
-                {
-                    "metadata": common.metadata(SCRIPT, common.BUILD_SEED, len(pairs)),
-                    "counters": counters,
-                    "audit": audit,
-                    "gate": args.audit_gate,
-                    "pass": False,
-                },
-            )
-            print(
-                f"[i931-attr] AUDIT FAIL {audit['precision']:.3f} < {args.audit_gate} — "
-                "re-run with --reattribute-batch (registered fallback)",
-                file=sys.stderr,
-            )
-            return 4
+            if args.audit_non_binding:
+                print(
+                    f"[i931-attr] WARNING: audit {audit['precision']:.3f} < "
+                    f"{args.audit_gate} but --audit-non-binding (canary) — recorded, "
+                    "not gating",
+                    file=sys.stderr,
+                )
+            else:
+                common.write_json(
+                    args.out_dir / "attribution_audit.json",
+                    {
+                        "metadata": common.metadata(SCRIPT, common.BUILD_SEED, len(pairs)),
+                        "counters": counters,
+                        "audit": audit,
+                        "gate": args.audit_gate,
+                        "binding": True,
+                        "pass": False,
+                    },
+                )
+                print(
+                    f"[i931-attr] AUDIT FAIL {audit['precision']:.3f} < {args.audit_gate} — "
+                    "re-run with --reattribute-batch (registered fallback)",
+                    file=sys.stderr,
+                )
+                return 4
 
     if args.reattribute_batch:
         # Contingency (plan 4.2): full Sonnet re-attribution via the Batch API
@@ -465,6 +489,7 @@ def main() -> int:
             "counters": counters,
             "audit": audit,
             "gate": args.audit_gate,
+            "binding": not args.audit_non_binding,
             "pass": bool(audit.get("skipped") or args.mock_judge)
             or (
                 not np.isnan(audit.get("precision", float("nan")))

@@ -20,8 +20,10 @@ Also:
     issue825_fit_cells.run_power_curve (out: power_curve_chat.json)
   - group-level bootstrap CIs (batched per-group-reduction GEMM, zero refits)
   - dR2_char (correct - within-story swap) with paired novel-level bootstrap
-  - P3b MLP secondary (batched fit_batched_split_mlp, MSE loss, call-site
-    target PCA-64) + G1b parity vs fit_h.mlp_fit_predict on chat_ref @ L19
+  - P3b MLP secondary (batched fit_batched_split_mlp, MSE loss, parent-parity
+    full-fold-train X standardization + patience-20, call-site target PCA-64
+    via a device-routed torch SVD) + G1b parity vs fit_h.mlp_fit_predict on
+    chat_ref @ L19
 
 CLI:
   uv run python scripts/issue931_fit_cells.py [--cells all|id,id,...]
@@ -545,6 +547,33 @@ def g1_gate(r2_obs: np.ndarray, out_dir: Path, *, smoke: bool, seed: int, n: int
 # ---------------------------------------------------------------------------
 
 
+def _pca_basis_device(Y: np.ndarray, k: int, device: str) -> tuple[np.ndarray, np.ndarray]:
+    """robust_pca_basis semantics (mean + top-k right singular vectors), device-routed.
+
+    The r1 Critical fix (vectorize-many-cell-fits: dense-factorization battery):
+    the parent's numpy gesdd SVD at production shape (~3200x3584 f32) measures
+    ~30 s/call on 8 CPU threads, and P3b's ~360 member calls made it a 1.2-2.5 h
+    serial CPU battery with the GPU idle. torch.linalg.svd on the fit device is
+    ~1-2 s/call on A100 — subspace-identical up to sign, and the R^2 read is
+    span-invariant through ``pred @ comps + mu``. Near-singular fallback mirrors
+    robust_pca_basis (gesdd -> gesvd on cuda; the numpy/torch fallback on cpu).
+    """
+    from explore_persona_space.analysis.vectorized_mlp_skill import robust_pca_basis
+
+    t = torch.from_numpy(np.ascontiguousarray(Y.astype(np.float32))).to(device)
+    tc = t - t.mean(dim=0)
+    try:
+        _, _, Vh = torch.linalg.svd(tc, full_matrices=False)
+    except torch.linalg.LinAlgError:
+        if t.is_cuda:
+            _, _, Vh = torch.linalg.svd(tc, full_matrices=False, driver="gesvd")
+        else:
+            mu_np, comps, _fb = robust_pca_basis(Y.astype(np.float32), k)
+            return mu_np, comps
+    kk = min(k, Vh.shape[0])
+    return t.mean(dim=0).cpu().numpy(), Vh[:kk].contiguous().cpu().numpy()
+
+
 def _mlp_fold_r2(
     X: np.ndarray,
     Y: np.ndarray,
@@ -560,17 +589,24 @@ def _mlp_fold_r2(
 ) -> dict:
     """Batched 5-fold group-CV MLP R^2 per layer, obs + group-blocked null draws.
 
-    Reproduces fit_h.mlp_fit_predict's recipe at the call site — train-side
-    standardization (inside the batched fitter), TARGET-side PCA-64 (basis on
-    train), rng(42) 10%-val early stopping, AdamW lr 1e-3 <=300 epochs, MSE —
-    with (layer x draw) members batched per fold through
-    vectorized_mlp_skill.fit_batched_split_mlp (loss="mse").
+    Reproduces fit_h.mlp_fit_predict's recipe EXACTLY at the call site (the r1
+    G1b recipe-mismatch fix): X standardized on the FULL fold-train stats
+    (ddof=0, parent line ``xsd = Xtr.std(0) + 1e-6``) BEFORE the rng(42) 10%
+    val split and applied to train/val/eval (``standardize_inputs=False`` in
+    the batched fitter), TARGET-side PCA-``pca_k`` basis on the full fold-train
+    target (skipped when the target dim <= pca_k, matching the parent;
+    device-routed torch SVD — the r1 serial-CPU-battery fix), patience-20
+    early stopping with the parent's 1e-6 improvement threshold
+    (``patience=20``), AdamW lr 1e-3 <=300 epochs, MSE. (Layer x draw) members
+    batch per fold through vectorized_mlp_skill.fit_batched_split_mlp; the
+    remaining parent delta is the init draw (per-member key-seeded vs the
+    parent's global manual_seed(42)) — covered by the G1b 0.02 tolerance and
+    pinned by tests/test_issue931_mlp_parity.py.
     """
     from explore_persona_space.analysis.vectorized_mlp_skill import (
         SplitMLPGroup,
         fit_batched_split_mlp,
     )
-    from explore_persona_space.experiments.issue_779.fit_h import robust_pca_basis
 
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -594,32 +630,52 @@ def _mlp_fold_r2(
         for li in layers:
             for d, perm in enumerate(perms):
                 Yp = Y[perm]
-                Xtr, Ytr_raw = X[tr, li, :], Yp[tr, li, :]
-                Xte, Yte_raw = X[te, li, :], Yp[te, li, :]
-                # Parent recipe: PCA-64 target basis on train; rng(42) val split.
-                y_mu, comps, _fb = robust_pca_basis(Ytr_raw.astype(np.float32), 64)
-                Yt = (Ytr_raw - y_mu) @ comps.T
+                Xtr = X[tr, li, :].astype(np.float32)
+                Ytr_raw = Yp[tr, li, :].astype(np.float32)
+                Xte = X[te, li, :].astype(np.float32)
+                Yte_raw = Yp[te, li, :]
+                # Parent parity: standardize X on FULL fold-train stats (ddof=0)
+                # BEFORE the val split; apply the same stats to train/val/eval.
+                xmu = Xtr.mean(0)
+                xsd = Xtr.std(0) + 1e-6
+                Xn = (Xtr - xmu) / xsd
+                Xen = (Xte - xmu) / xsd
+                # Parent parity: PCA basis on the FULL fold-train target; the
+                # parent skips PCA entirely when the target dim <= pca_k.
+                if Ytr_raw.shape[1] <= pca_k:
+                    y_mu = Ytr_raw.mean(0)
+                    comps = None
+                    Yt = Ytr_raw - y_mu
+                else:
+                    y_mu, comps = _pca_basis_device(Ytr_raw, pca_k, device)
+                    Yt = ((Ytr_raw - y_mu) @ comps.T).astype(np.float32)
                 vr = np.random.default_rng(42)
-                pm = vr.permutation(len(Xtr))
-                n_val = max(1, round(0.1 * len(Xtr)))
+                pm = vr.permutation(len(Xn))
+                n_val = max(1, round(0.1 * len(Xn)))
                 vi, ti = pm[:n_val], pm[n_val:]
                 member_groups.append(
                     SplitMLPGroup(
                         key=("i931mlp", int(li), int(d), int(k)),
-                        X_train=Xtr[ti].astype(np.float32),
+                        X_train=Xn[ti],
                         Y_train=Yt[ti].astype(np.float32),
-                        X_eval=Xte.astype(np.float32),
-                        X_val=Xtr[vi].astype(np.float32),
+                        X_eval=Xen,
+                        X_val=Xn[vi],
                         Y_val=Yt[vi].astype(np.float32),
                     )
                 )
                 member_meta.append((li, d, y_mu, comps, Yte_raw))
         res = fit_batched_split_mlp(
-            member_groups, seed=42, max_epochs=max_epochs, device=device, loss="mse"
+            member_groups,
+            seed=42,
+            max_epochs=max_epochs,
+            device=device,
+            loss="mse",
+            standardize_inputs=False,
+            patience=20,
         )
         for (li, d, y_mu, comps, Yte_raw), grp in zip(member_meta, member_groups, strict=True):
             pred_pca = res.preds_by_key[grp.key]
-            pred = pred_pca @ comps + y_mu
+            pred = (pred_pca @ comps + y_mu) if comps is not None else (pred_pca + y_mu)
             true = Yte_raw.astype(np.float64)
             mu = true.mean(0)
             ss[(li, d)][0] += float(((true - pred) ** 2).sum())
@@ -714,6 +770,39 @@ def run_g1b_parity(chat_xy: dict, args) -> None:
         raise SystemExit(6)
 
 
+def run_chat_gates(results: dict, args) -> None:
+    """chat_ref block: G1 gate + matched-n power curve + optional G1b parity.
+
+    Factored out of main (r1 Major: C901 complexity 16 > 15 in ``main``).
+    """
+    chat_xy = results["chat_ref"]["xy"]
+    n_chat = chat_xy["X"].shape[0]
+    g1_gate(
+        np.asarray(results["chat_ref"]["payload"]["r2_per_layer_obs"]),
+        args.out_dir,
+        smoke=args.smoke,
+        seed=args.seed,
+        n=n_chat,
+    )
+    # Matched-n power curve: ns = {1000, 2000, n_A, n_B} (dedup, <= n_chat).
+    ns = {1000, 2000}
+    for arm in ("armA", "armB"):
+        if f"{arm}_within" in results:
+            ns.add(int(results[f"{arm}_within"]["xy"]["X"].shape[0]))
+    ns = sorted(v for v in ns if v <= n_chat) or [n_chat]
+    fit825.run_power_curve(
+        {"X": chat_xy["X"], "Y": chat_xy["Y"], "conv_ids": chat_xy["group_ids"]},
+        args.out_dir,
+        n_folds=args.folds,
+        seed=args.seed,
+        ns=ns,
+        out_name="power_curve_chat.json",
+    )
+    if args.g1b:
+        print("[phase=p3b_mlp] G1b MLP parity")
+        run_g1b_parity(chat_xy, args)
+
+
 # ---------------------------------------------------------------------------
 # main
 # ---------------------------------------------------------------------------
@@ -763,32 +852,7 @@ def main() -> int:
             delta_char(arm, results[f"{arm}_within"], results[f"{arm}_swap"], args)
 
     if "chat_ref" in results:
-        chat_xy = results["chat_ref"]["xy"]
-        n_chat = chat_xy["X"].shape[0]
-        g1_gate(
-            np.asarray(results["chat_ref"]["payload"]["r2_per_layer_obs"]),
-            args.out_dir,
-            smoke=args.smoke,
-            seed=args.seed,
-            n=n_chat,
-        )
-        # Matched-n power curve: ns = {1000, 2000, n_A, n_B} (dedup, <= n_chat).
-        ns = {1000, 2000}
-        for arm in ("armA", "armB"):
-            if f"{arm}_within" in results:
-                ns.add(int(results[f"{arm}_within"]["xy"]["X"].shape[0]))
-        ns = sorted(v for v in ns if v <= n_chat) or [n_chat]
-        fit825.run_power_curve(
-            {"X": chat_xy["X"], "Y": chat_xy["Y"], "conv_ids": chat_xy["group_ids"]},
-            args.out_dir,
-            n_folds=args.folds,
-            seed=args.seed,
-            ns=ns,
-            out_name="power_curve_chat.json",
-        )
-        if args.g1b:
-            print("[phase=p3b_mlp] G1b MLP parity")
-            run_g1b_parity(chat_xy, args)
+        run_chat_gates(results, args)
     if args.mlp:
         print("[phase=p3b_mlp] MLP secondary")
         run_mlp_secondary(results, args)
