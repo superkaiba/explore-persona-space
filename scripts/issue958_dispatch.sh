@@ -58,7 +58,10 @@ ROLLOUT_ARGS=()
 CAPTURE_ARGS=()
 FIT_ARGS=()
 if [ "$SMOKE" = "1" ]; then
-  CORPUS_ARGS=(--n-main 200 --n-long 24 --stream-limit 120000)
+  # pod smoke = the plan's 200-conversation end-to-end run; the VM structural
+  # smoke may shrink further via EPM958_SMOKE_N_MAIN/N_LONG (same code path)
+  CORPUS_ARGS=(--n-main "${EPM958_SMOKE_N_MAIN:-200}" --n-long "${EPM958_SMOKE_N_LONG:-24}" \
+    --stream-limit 120000)
   export EPM958_HF_PREFIX="${EPM958_HF_PREFIX:-issue958_multiturn/smoke}"
 fi
 if [ "${EPM958_MOCK_ROLLOUTS:-0}" = "1" ]; then ROLLOUT_ARGS+=(--mock-generate); fi
@@ -89,27 +92,37 @@ msg = os.environ["EPM958_UPLOAD_MSG"]
 files = sorted(p for p in local.rglob("*") if p.is_file())
 assert files, f"nothing to upload under {local}"
 # in-run one-item serialization+upload timing gate (plan §7 storage-overrun
-# kill): project the FULL upload from the first file before the bulk commit.
+# kill): time the LARGEST file (a production store shard ~0.5 GB) — a tiny
+# file's wall is per-commit-overhead-dominated (#813) and would false-kill,
+# so the kill arms only when the probe is big enough to measure throughput.
 from huggingface_hub import HfApi
 
 api = HfApi()
-first = files[0]
+probe = max(files, key=lambda p: p.stat().st_size)
 t0 = time.time()
 api.upload_file(
-    path_or_fileobj=str(first),
-    path_in_repo=f"{C.HF_OUT_PREFIX}/{suffix}/{first.relative_to(local)}",
+    path_or_fileobj=str(probe),
+    path_in_repo=f"{C.HF_OUT_PREFIX}/{suffix}/{probe.relative_to(local)}",
     repo_id=C.HF_DATA_REPO,
     repo_type="dataset",
     commit_message=f"{msg} (timing probe)",
 )
-per_byte = (time.time() - t0) / max(first.stat().st_size, 1)
+probe_wall = time.time() - t0
+probe_bytes = probe.stat().st_size
 total = sum(p.stat().st_size for p in files)
-projected_h = per_byte * total / 3600
-if projected_h > 4 * 0.5:
-    raise RuntimeError(
-        f"STORAGE-OVERRUN KILL (plan §7): projected upload {projected_h:.1f}h > 4x0.5h "
-        f"budget ({total / 1e9:.1f} GB at {per_byte * 1e9:.1f} s/GB). Artifacts kept local."
+if probe_bytes >= 20 * (1 << 20):  # throughput measurable, not overhead-dominated
+    projected_h = (probe_wall / probe_bytes) * total / 3600
+    print(
+        f"[upload-gate] probe {probe_bytes / 1e6:.0f} MB in {probe_wall:.1f}s -> "
+        f"projected {projected_h:.2f}h for {total / 1e9:.1f} GB"
     )
+    if projected_h > 4 * 0.5:
+        raise RuntimeError(
+            f"STORAGE-OVERRUN KILL (plan §7): projected upload {projected_h:.1f}h > "
+            f"4x0.5h budget ({total / 1e9:.1f} GB). Artifacts kept local pod-side."
+        )
+else:
+    print(f"[upload-gate] probe {probe_bytes / 1e3:.0f} KB (overhead-dominated) — gate N/A")
 ev = C.upload_dir_bulk(
     local, f"{C.HF_OUT_PREFIX}/{suffix}", commit_message=msg
 )

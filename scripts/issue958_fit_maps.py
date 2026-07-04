@@ -58,8 +58,15 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(me
 logger = logging.getLogger("issue958_fit_maps")
 
 ROW_CHUNK = 8
-PERSIST_ROWS = [0] + [C.block_to_row(b) for b in C.READOUT_BLOCKS]  # emb + 6 read-out rows
+# frozen read-out rows (Source #922); resolved against the realized store R at
+# main() start so the stub-dims VM smoke exercises the identical code path
 READOUT_ROWS = [C.block_to_row(b) for b in C.READOUT_BLOCKS]
+PERSIST_ROWS = [0, *READOUT_ROWS]  # emb + 6 read-out rows
+
+
+def _clamp_rows(rows: list[int], n_rows: int) -> list[int]:
+    """Clamp frozen row indices into the realized store (stub-dims smoke)."""
+    return rows if max(rows) < n_rows else sorted({min(r, n_rows - 1) for r in rows})
 
 
 # ── batched dual-GCV ridge core (NEW #958 code; equivalence-gated) ────────────
@@ -132,13 +139,18 @@ def predict_from_fit(
     return (ymu + K_cross @ fit["alpha"].to(dev)).cpu()
 
 
-def _fit_rows_serial_reference(X, Y, *, lambdas, rows: list[int]) -> dict:
+def _fit_rows_serial_reference(X, Y, *, lambdas, rows: list[int], at_lam: dict | None) -> dict:
     """SERIAL per-row reference (plain loop, per-row eigh) for the ≤1e-6 gate.
 
     Contained reference only (never dispatched for production; the
-    vectorize-first Supersede contract's containment criterion).
+    vectorize-first Supersede contract's containment criterion). ``at_lam``
+    (row → λ) pins the prediction λ to a COMMON value with the batched path —
+    GCV argmin is ill-posed under fp reduction-order jitter wherever the
+    curve is flat (near-interpolation small-λ region), so equivalence is
+    asserted on the GCV CURVE values + the common-λ predictions, never on
+    argmin identity.
     """
-    out = {"best_lam": {}, "pred_fn": {}}
+    out = {"gcv_curve": {}, "pred_fn": {}}
     for r in rows:
         Xd = X[r].to(torch.float64)
         Yd = Y[r].to(torch.float64)
@@ -152,23 +164,22 @@ def _fit_rows_serial_reference(X, Y, *, lambdas, rows: list[int]) -> dict:
         s = torch.clamp(s, min=0.0)
         G = Q.t() @ Yc
         u = (G * G).sum(-1)
-        best_lam, best_gcv = None, float("inf")
+        curve = []
         for lam in lambdas:
             f = 1.0 / (s + lam)
             df = 1.0 + float((s * f).sum())
             sse = float((((lam * f) ** 2) * u).sum())
             den = 1.0 - df / n
-            gcv = float("inf") if den <= 0 else (sse / n) / (den * den)
-            if gcv < best_gcv:
-                best_gcv, best_lam = gcv, lam
-        f = 1.0 / (s + best_lam)
+            curve.append(float("inf") if den <= 0 else (sse / n) / (den * den))
+        lam_use = at_lam[r] if at_lam is not None else lambdas[int(np.argmin(curve))]
+        f = 1.0 / (s + lam_use)
         alpha = Q @ (f.unsqueeze(-1) * G)
 
         def _pred(X_t, mu=mu, sd=sd, ymu=ymu, Xn=Xn, alpha=alpha):
             Xtn = (X_t.to(torch.float64) - mu) / sd
             return ymu + (Xtn @ Xn.t()) @ alpha
 
-        out["best_lam"][r] = best_lam
+        out["gcv_curve"][r] = curve
         out["pred_fn"][r] = _pred
     return out
 
@@ -177,25 +188,39 @@ def equivalence_gate_fits(X, Y, X_t, *, lambdas, device: str, tol: float = 1e-6)
     """Registered gate: batched stacked-eigh path vs the serial per-row reference.
 
     Calls the EXACT production ``fit_rows_batched``/``predict_from_fit`` (the
-    live dispatched path — no sibling helper). Asserts identical selected λ
-    per row and max|Δpred| ≤ tol (fp64 both sides).
+    live dispatched path — no sibling helper). Asserts (a) the GCV curves
+    agree to ≤1e-8 relative at every finite λ (both-inf entries count as
+    equal — the identical-math check), and (b) max|Δpred| ≤ tol (default the
+    registered 1e-6) with the serial reference evaluated at the SAME λ the
+    batched path selected (argmin identity is NOT asserted: the curve is
+    provably flat/degenerate in the small-λ near-interpolation region and a
+    reduction-order fp jitter flips near-ties without changing the map).
     """
     rows = list(range(min(2, X.shape[0])))
     fit = fit_rows_batched(X[rows], Y[rows], lambdas=lambdas, device=device)
     pred_b = predict_from_fit(fit, X_t[rows], device=device)
-    ref = _fit_rows_serial_reference(X, Y, lambdas=lambdas, rows=rows)
-    max_abs = 0.0
+    at_lam = {r: float(fit["best_lam"][i]) for i, r in enumerate(rows)}
+    ref = _fit_rows_serial_reference(X, Y, lambdas=lambdas, rows=rows, at_lam=at_lam)
+    max_abs, max_gcv_rel = 0.0, 0.0
     for i, r in enumerate(rows):
-        assert float(fit["best_lam"][i]) == float(ref["best_lam"][r]), (
-            "λ selection drift",
-            float(fit["best_lam"][i]),
-            ref["best_lam"][r],
-        )
+        gb = fit["gcv_curve"][i].numpy()
+        gs = np.asarray(ref["gcv_curve"][r])
+        both_inf = np.isinf(gb) & np.isinf(gs)
+        assert bool(np.all(np.isinf(gb) == np.isinf(gs))), "GCV inf-mask mismatch"
+        fin = ~both_inf
+        if fin.any():
+            rel = np.max(np.abs(gb[fin] - gs[fin]) / (np.abs(gs[fin]) + 1e-300))
+            max_gcv_rel = max(max_gcv_rel, float(rel))
         d = (pred_b[i] - ref["pred_fn"][r](X_t[r])).abs().max().item()
         max_abs = max(max_abs, float(d))
+    assert max_gcv_rel <= 1e-8, f"GCV curve drift: rel {max_gcv_rel:.3e} > 1e-8"
     assert max_abs <= tol, f"batched-vs-serial ridge parity FAILED: {max_abs:.3e} > {tol}"
-    logger.info("[gate] batched-vs-serial dual-GCV ridge PASS (max|Δpred|=%.2e)", max_abs)
-    return {"max_abs_delta": max_abs, "tol": tol, "rows": rows}
+    logger.info(
+        "[gate] batched-vs-serial dual-GCV ridge PASS (max|Δpred|=%.2e, gcv_rel=%.2e)",
+        max_abs,
+        max_gcv_rel,
+    )
+    return {"max_abs_delta": max_abs, "max_gcv_rel": max_gcv_rel, "tol": tol, "rows": rows}
 
 
 # ── columnar fit cache (one pass over store shards) ───────────────────────────
@@ -451,7 +476,7 @@ def _shuffle_draws(stats: dict, n_draws: int, seed: int) -> torch.Tensor:
 
 def _readout_mean(skill: torch.Tensor) -> float:
     """Pre-registered headline aggregation: mean over the frozen 6 read-out rows."""
-    return float(skill[READOUT_ROWS].mean())
+    return float(skill[_clamp_rows(READOUT_ROWS, int(skill.shape[0]))].mean())
 
 
 def _load_rb(rb_dir: Path | None, stub_dims: tuple[int, int] | None) -> dict[str, np.ndarray]:
@@ -631,7 +656,7 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
             )
             lam_all[rows] = fit["best_lam"]
             for ri, r in enumerate(rows):
-                if r in PERSIST_ROWS:
+                if r in _clamp_rows(PERSIST_ROWS, R):
                     Wr = fit["Xn"][ri].transpose(0, 1) @ fit["alpha"][ri]  # (H, H)
                     w_out[r] = {
                         "w": Wr.to(torch.float16),
@@ -683,7 +708,7 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
             # support-overlap diagnostics from the turn-1 A fit (plan §6)
             if fid == "ctx_k1_A":
                 for ri, r in enumerate(rows):
-                    if r not in READOUT_ROWS:
+                    if r not in _clamp_rows(READOUT_ROWS, R):
                         continue
                     s, Q = fit["eig_s"][ri], fit["eig_Q"][ri]
                     order = torch.argsort(s, descending=True)
@@ -786,7 +811,7 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
         norm = Xk.norm(dim=-1).mean(0)  # (R,)
         if k == 1:
             m1 = (mu, sd, norm)
-        rows = READOUT_ROWS
+        rows = _clamp_rows(READOUT_ROWS, R)
         cos = torch.nn.functional.cosine_similarity(mu[rows], m1[0][rows], dim=-1)
         moment_shift[f"k{k}"] = {
             "mu_cos_vs_k1_readout_mean": float(cos.mean()),
@@ -895,7 +920,9 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
             "irreducible_query_var_mean": float(
                 np.mean([q for q, kp in zip(qvar, keep, strict=True) if kp])
             ),
-            "map_error_readout_mean": float(st["sse_unit"][READOUT_ROWS].mean().item()),
+            "map_error_readout_mean": float(
+                st["sse_unit"][_clamp_rows(READOUT_ROWS, R)].mean().item()
+            ),
         }
     C.write_json_atomic(
         args.out / "prefix_marginal.json",
