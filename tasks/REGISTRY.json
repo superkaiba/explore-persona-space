@@ -6848,8 +6848,8 @@
     "999": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/999",
-      "status": "running",
+      "path": "tasks/reviewing/999",
+      "status": "reviewing",
       "title": "daily-fix: fix session_progress_report write_self_report crash"
     }
   }
