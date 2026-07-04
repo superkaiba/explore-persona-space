@@ -1652,6 +1652,26 @@ _FOLLOWUP_STAGE_DISPATCH_PREFIX = "stage-dispatch stage=followup-"
 # close is safe (the label stays queued), a wrong close is not.
 _ROUND_COMPLETION_WORD = re.compile(r"PASS|re-park|awaiting_promotion|clean-result")
 
+# Queue-context veto for the class-3 read (#961): a clause naming the label
+# as queued / unrun / scoped / armed / dispatched is a QUEUE mention, never
+# completion evidence (park/handoff notes routinely announce round X complete
+# while enumerating the queued next label Y on the same line — #825
+# 2026-07-04T04:21:23Z, #595 2026-06-14T06:20:31Z, #763 2026-07-02T10:47:16Z).
+# Case-INSENSITIVE by design: a veto only ever narrows.
+_QUEUE_CONTEXT_WORD = re.compile(
+    r"unrun|queue|dispatch|scoped|deferred|pending|armed", re.IGNORECASE
+)
+
+# In-clause completion-vocabulary supplement for the class-3 read (#961): the
+# dominant true-positive park-note shape is "(label) complete; ... PASS" —
+# the token's clause says complete/COMPLETE while the _ROUND_COMPLETION_WORD
+# sits in a later clause (#505/#542/#545/#559/#613/#654 park notes). Applies
+# ONLY inside a line that already passed the line-level
+# _ROUND_COMPLETION_WORD gate, so new evidence stays a strict subset of the
+# pre-#961 match. Case-sensitive (mirrors _ROUND_COMPLETION_WORD's deliberate
+# case-sensitivity); the lookbehind rejects "incomplete"/"INcomplete".
+_CLAUSE_COMPLETION_WORD = re.compile(r"(?<![iI][nN])(?:complete|COMPLETE)")
+
 
 def parse_followup_note_field(note: str, field: str) -> str | None:
     """Extract ``<field>``'s value from a followup-scope / run-marker note.
@@ -1910,7 +1930,18 @@ def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
     3. an ``epm:status-changed`` / ``epm:step-completed`` / ``epm:progress``
        note with the exact parenthesized round token ``(<label>)`` AND a
        round-completion word (:data:`_ROUND_COMPLETION_WORD`) on the same
-       line.
+       line, where additionally (#961) the token's own ``;``/``.``-delimited
+       clause carries a completion word (the line-level list, or the
+       case-sensitive ``complete``/``COMPLETE`` supplement
+       :data:`_CLAUSE_COMPLETION_WORD`) and NO queue-context word
+       (:data:`_QUEUE_CONTEXT_WORD`). Park/handoff notes routinely announce
+       round X complete while enumerating the queued next label Y on the
+       same line (#825 2026-07-04, #595 2026-06-14) — binding the
+       completion signal to the label's clause and vetoing queued/unrun/
+       scoped/armed/dispatch mentions keeps such notes from closing a
+       queued round. The #961 narrowing keeps class-3 evidence a strict
+       subset of the pre-#961 line-level match (a missed close is safe,
+       a wrong close is not).
 
     Returns the one-line evidence string of the FIRST matching class (class
     order 1 → 2 → 3; multiple classes agreeing on the SAME exact label are
@@ -1945,12 +1976,35 @@ def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
         if kind not in ("epm:status-changed", "epm:step-completed", "epm:progress"):
             continue
         for line in (ev.get("note") or "").splitlines():
-            if token in line and _ROUND_COMPLETION_WORD.search(line):
+            if _class3_line_is_close_evidence(line, token):
                 return (
                     f"{kind} at {ev.get('ts', '?')} carries the round token "
-                    f"({label}) plus a round-completion word"
+                    f"({label}) plus a round-completion word in the same clause"
                 )
     return None
+
+
+def _class3_line_is_close_evidence(line: str, token: str) -> bool:
+    """The #961 two-gate class-3 line check for :func:`followup_retro_close_evidence`.
+
+    Gate 1 is the pre-#961 line-level check, retained verbatim so the #961
+    narrowing can never ADD evidence (new ⊆ old); gate 2 binds the completion
+    signal to the token's own ``;``/``.``-delimited clause and vetoes
+    queue-context mentions. Returns True iff the line is class-3 evidence.
+    """
+    # Gate 1 — the pre-#961 line-level check, retained verbatim.
+    if token not in line or not _ROUND_COMPLETION_WORD.search(line):
+        return False
+    # Gate 2 (#961) — bind the completion signal to the label's own
+    # ;/.-delimited clause and veto queue-context mentions.
+    for clause in re.split(r"[;.]", line):
+        if token not in clause:
+            continue
+        if _QUEUE_CONTEXT_WORD.search(clause):
+            continue  # label named as queued/armed/dispatched — not evidence
+        if _ROUND_COMPLETION_WORD.search(clause) or _CLAUSE_COMPLETION_WORD.search(clause):
+            return True
+    return False
 
 
 def _format_failure_lesson_entry(new_lesson_ref: dict[str, str]) -> str:
