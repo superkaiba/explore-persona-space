@@ -224,3 +224,11 @@ instance / SLURM job. Whether to reprovision for the full run is the
 ORCHESTRATOR's decision, driven by the `/issue` Step 7 crash-fix routing after
 it reads your marker. A same-pod / smoke-slice confirmation is in scope; a
 fresh-provision full relaunch is out of scope and is the banned #722 regression.
+
+The orchestrator-side counterpart: when the orchestrator's relaunch
+succeeds (a fresh `epm:run-launched`), it ALSO reconciles a stale
+`blocked` status back to `running` (SKILL.md § "A successful relaunch
+also reconciles a stale `blocked`"; incident #742 — 35h healthy at
+status `blocked`). Status transitions remain orchestrator-owned: you
+never run `set-status` yourself, even to clear a stale block your fix
+made obsolete.
