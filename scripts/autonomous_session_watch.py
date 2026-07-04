@@ -46,13 +46,17 @@ program-orchestrator recovery), all before the GC pass:
    ``epm-issue-<N>``) against their task's STATUS. Two conservative actions:
 
    - **AUTO-STOP** (reversible, never terminate) a RUNNING pod whose task is
-     already DONE (``completed`` / ``awaiting_promotion`` / ``archived`` /
-     ``cancelled``). The experiment is provably finished, so a still-RUNNING
-     pod is an escaped pod (Step-8 terminate failed, or it was never run
+     already DONE (``completed`` / ``awaiting_promotion`` / ``archived``) or
+     user-paused (``on_hold`` — the #919 pause affordance stops the pod
+     BEFORE parking, so ``on_hold`` + RUNNING means the teardown leg failed
+     inside the pause window; #980). The experiment is provably finished (or
+     deliberately paused), so a still-RUNNING pod is an escaped pod (Step-8
+     terminate failed, the pause teardown failed, or it was never run
      through Step 8). Stopping it is unambiguously correct.
    - **ALERT** (loud log + one-time dashboard-visible marker, NO stop) a
      RUNNING pod whose task is in a pod-active status (``approved`` /
-     ``running`` / ``uploading`` / ``verifying``) but has shown no real marker
+     ``running`` / ``verifying`` / ``followups_running``) but has shown no
+     real marker
      progress for > ``ALERT_STALE_HOURS``. This is the likely-abandoned
      mid-run case. We do NOT stop it: a false alert is a cheap nudge; a false
      stop would kill a healthy run.
@@ -616,7 +620,24 @@ def decide(
 # the runtime enum on 2026-06-10 — it now lives in POD_ACTIVE below). The
 # disjoint+subset invariant is pinned by
 # `test_status_classes_subset_of_authoritative_enum`.
+# `on_hold` is handled by AUTO_STOP_PAUSED below (pod-safety layer only, #980).
 AUTO_STOP_DONE = {"completed", "awaiting_promotion", "archived"}
+
+# Statuses where a RUNNING pod is an escaped pod for the POD-SAFETY pass ONLY
+# (#980). `on_hold` = a user pause: the #919 pause affordance stops the pod
+# BEFORE parking (teardown first, park last), so on_hold + RUNNING means the
+# teardown leg crashed/failed inside the pause window — silent billing.
+# DELIBERATELY NOT folded into AUTO_STOP_DONE: SESSION_RECONCILE_DONE (below)
+# aliases that set, and the session-reconcile pass must NOT reap a paused
+# task's session (the user may be live-parked in it — same conservatism as
+# `blocked`). Subset-of-enum invariant pinned alongside AUTO_STOP_DONE by
+# test_status_classes_subset_of_authoritative_enum.
+AUTO_STOP_PAUSED = {"on_hold"}
+
+# The pod-safety auto-stop trigger set: DONE statuses plus the paused status.
+# NOTE: a NEW set object (union) — never mutate AUTO_STOP_DONE in place, or
+# the SESSION_RECONCILE_DONE alias would silently widen with it.
+POD_SAFETY_AUTO_STOP = AUTO_STOP_DONE | AUTO_STOP_PAUSED
 
 # Task statuses during which a pod is legitimately in use mid-experiment.
 # A RUNNING pod here is NOT auto-stopped (status alone can't tell a healthy
@@ -1552,7 +1573,10 @@ def decide_pod_safety(
     ----------
     status_class
         ``"auto-stop-done"`` — task in :data:`AUTO_STOP_DONE` (provably
-        finished); ``"pod-active-stale"`` — task in :data:`POD_ACTIVE` AND no
+        finished), or ``on_hold`` (:data:`AUTO_STOP_PAUSED`, the #919
+        pause-window escaped pod — the pause affordance stops pods BEFORE
+        parking, so on_hold + RUNNING means the teardown leg failed; #980);
+        ``"pod-active-stale"`` — task in :data:`POD_ACTIVE` AND no
         real marker progress for > :data:`ALERT_STALE_HOURS`;
         ``"pod-active-fresh"`` — task in :data:`POD_ACTIVE` with recent
         progress; ``"other"`` — anything else (e.g. ``blocked``, an unknown
@@ -1593,7 +1617,8 @@ def decide_pod_safety(
         watcher stopped a healthy follow-up pod 3 times before the user
         manually added the ``keep-running`` tag.
 
-    Cases:
+    Cases (``"auto-stop-done"`` = task in :data:`POD_SAFETY_AUTO_STOP` —
+    DONE, or user-paused ``on_hold``):
 
     - ``status_class == "auto-stop-done"`` AND ``keep_running`` ->
       ``("keep-running-skip", 0)``. The stop is SKIPPED and the miss counter
@@ -3638,7 +3663,9 @@ def _status_class(status: str | None, latest_progress_ts: float | None, now: flo
     """Classify a RUNNING managed pod's task status for :func:`decide_pod_safety`.
 
     Returns ``"auto-stop-done"`` / ``"pod-active-stale"`` / ``"pod-active-fresh"``
-    / ``"other"``. ``status`` of ``None`` (task unreadable) is ``"other"`` —
+    / ``"other"``. ``"auto-stop-done"`` covers :data:`POD_SAFETY_AUTO_STOP` —
+    the DONE statuses plus user-paused ``on_hold`` (the #919 pause-window
+    escaped pod, #980). ``status`` of ``None`` (task unreadable) is ``"other"`` —
     never auto-stopped. A pod-active task is ``stale`` when its newest real
     progress marker is older than :data:`ALERT_STALE_HOURS`, OR when there is no
     real progress marker at all (``latest_progress_ts is None``) — a pod-active
@@ -3646,7 +3673,7 @@ def _status_class(status: str | None, latest_progress_ts: float | None, now: flo
     """
     if status is None:
         return "other"
-    if status in AUTO_STOP_DONE:
+    if status in POD_SAFETY_AUTO_STOP:
         return "auto-stop-done"
     if status in POD_ACTIVE:
         if latest_progress_ts is None:
@@ -3939,8 +3966,9 @@ def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
     its latest done-transition marker (``epm:promoted`` /
     ``epm:status-changed``).
 
-    Predicate for the pod-safety auto-stop exemption: a DONE-status task
-    with a fresh follow-up signal carries an in-flight, user-approved
+    Predicate for the pod-safety auto-stop exemption: a task at a
+    pod-safety auto-stop status (DONE or ``on_hold``, #980) with a fresh
+    follow-up signal carries an in-flight, user-approved
     inline follow-up (CLAUDE.md "Routing experiment intent → Follow-up") so
     the pod is legitimately in use. ``epm:followup-scope`` covers the
     USER-CHAT inline case where the scope is posted before the run launches
@@ -3959,8 +3987,10 @@ def _task_followup_active(issue: int, events: list[dict] | None = None) -> bool:
 
     A missing follow-up signal returns False (no exemption).
     A missing done-transition is impossible in practice — the caller
-    already verified the task's current status is DONE, so at least one
-    ``epm:status-changed`` must have fired to put it there. If the read
+    already verified the task's current status is in the pod-safety
+    auto-stop set (DONE or ``on_hold``; every entry into it — including a
+    ``set-status <N> on_hold`` pause — posts ``epm:status-changed``), so at
+    least one ``epm:status-changed`` must have fired to put it there. If the read
     nonetheless returns no done-transition (defensive), we conservatively
     return False (no exemption) rather than skip the auto-stop on a
     potentially-stale read.
@@ -5700,14 +5730,17 @@ def _maybe_handle_runpod_wedge(
     """#692 wedge arm dispatch: detect the RAW #664 RunPod no-port wedge from the
     live ``info`` and route it.
 
-    Returns ``True`` iff this arm fully HANDLED the pod (a NON-DONE-status wedged
-    pod, processed by :func:`_process_wedged_pod`), so the caller
+    Returns ``True`` iff this arm fully HANDLED the pod (a wedged pod whose
+    status is NOT in :data:`POD_SAFETY_AUTO_STOP`, processed by
+    :func:`_process_wedged_pod`), so the caller
     (:func:`_process_pod`) should return without running the status-class
     branches. Returns ``False`` in every other case — a non-wedged pod (where it
-    also clears any stale wedge clock, MF1/MF4) OR a wedged DONE-status pod (MF6:
-    it falls through to the status-class DONE auto-stop, the canonical
+    also clears any stale wedge clock, MF1/MF4) OR a wedged DONE-or-paused-status
+    pod (MF6: it falls through to the status-class auto-stop, the canonical
     escaped-pod handler — routing it through the wedge arm's ALERT-default +
-    inputs-gate would only WEAKEN that existing auto-stop).
+    inputs-gate would only WEAKEN that existing auto-stop; for user-paused
+    ``on_hold`` (#980) the wedge arm's confirmed-safe path would additionally
+    terminate + RELAUNCH a workload the user deliberately paused).
 
     Detect the raw condition via the SAME
     ``backend_poll._pod_is_runpod_runtime_wedged`` the poller calls (composition
@@ -5715,10 +5748,11 @@ def _maybe_handle_runpod_wedge(
     from backend_poll import _pod_is_runpod_runtime_wedged  # sibling import
 
     if _pod_is_runpod_runtime_wedged(info):
-        if status not in AUTO_STOP_DONE:
+        if status not in POD_SAFETY_AUTO_STOP:
             _process_wedged_pod(issue, info, now, dry_run, threshold)
             return True
-        # MF6: DONE-status wedged pod -> fall through to the status-class DONE arm.
+        # MF6: DONE-or-paused-status wedged pod -> fall through to the
+        # status-class auto-stop arm (#980: never terminate+relaunch a pause).
         return False
     # MF1/MF4: not currently wedged -> clear any stale wedge clock so a one-tick
     # blip never accumulates, and the next true onset re-stamps.
@@ -6182,7 +6216,9 @@ def _process_pod(
     """Reconcile one RUNNING managed pod against its task status.
 
     Reads the task's status + latest real-progress timestamp, classifies it,
-    and applies :func:`decide_pod_safety`: AUTO-STOP a done task's escaped pod
+    and applies :func:`decide_pod_safety`: AUTO-STOP a done-or-paused task's
+    escaped pod (:data:`POD_SAFETY_AUTO_STOP` — DONE, plus user-paused
+    ``on_hold``, #980)
     (after the 2-miss guard, unless the task carries the ``keep-running`` tag
     OR the task's events.jsonl shows a `epm:run-launched` newer than the
     latest done-transition — i.e. a live inline follow-up — then the stop is
@@ -6193,13 +6229,16 @@ def _process_pod(
 
     #692 wedge-arm ordering (MF6): the #664 RunPod no-port wedge arm runs
     BEFORE the status-class branches, EXCEPT that a wedged pod whose task is at
-    a DONE status (:data:`AUTO_STOP_DONE` — completed / awaiting_promotion /
-    archived, the established escaped-pod auto-stop case) FALLS THROUGH to the
-    status-class DONE arm, which already auto-stops it. A DONE-task pod has no
-    live work to strand, so the canonical escaped-pod auto-stop wins; routing it
+    a pod-safety auto-stop status (:data:`POD_SAFETY_AUTO_STOP` — completed /
+    awaiting_promotion / archived, the established escaped-pod auto-stop case,
+    plus user-paused ``on_hold``, #980) FALLS THROUGH to the
+    status-class auto-stop arm, which already auto-stops it. A DONE-task pod has
+    no live work to strand (and a paused task's workload must NOT be relaunched
+    by the wedge arm's terminate+failover), so the canonical escaped-pod
+    auto-stop wins; routing it
     through the wedge arm's ALERT-default + inputs-gate would only WEAKEN the
     existing auto-stop into a conditional one. The wedge arm therefore handles
-    only NON-DONE-status wedged pods (the live-work statuses where the watcher
+    only wedged pods OUTSIDE that set (the live-work statuses where the watcher
     must be conservative). A non-wedged pod reaches the status-class branches
     unchanged, exactly as before #692."""
     status = _task_status(issue)
@@ -6390,7 +6429,8 @@ def _apply_pod_safety_action(
                 issue,
                 f"{_AUTOSTOP_NOTE_SENTINEL} auto-stopped by autonomous_session_watch "
                 f"pod-safety pass — RUNNING pod for a task whose status is "
-                f"'{status}' (already DONE), so the pod is an escaped / "
+                f"'{status}' (DONE or user-paused — no live run should hold a pod "
+                f"at this status), so the pod is an escaped / "
                 f"Step-8-terminate-failed pod (pod_id={pod_id}); reversible pause, "
                 f"volume preserved (pod.py resume). Confirmed for >= {threshold} checks.",
                 dry_run,
@@ -12157,9 +12197,10 @@ def gc_pass(dry_run: bool, now: float | None = None) -> None:
 # sessions validated the exact predicate below):
 #
 #   * acts ONLY on tasks in :data:`SESSION_RECONCILE_DONE`
-#     (awaiting_promotion / completed / archived — the pod-safety auto-stop
-#     set; ``followups_running`` and ``blocked`` are excluded because the
-#     session may be legitimately live there);
+#     (awaiting_promotion / completed / archived — the pod-safety DONE set
+#     AUTO_STOP_DONE, NOT the wider POD_SAFETY_AUTO_STOP (#980);
+#     ``followups_running``, ``blocked``, and ``on_hold`` are excluded
+#     because the session may be legitimately live there);
 #   * requires > :func:`_session_idle_s` (default 2h) of inactivity on EVERY
 #     available activity signal (newest non-watcher marker of ANY kind + the
 #     per-issue self-report file);
@@ -12179,7 +12220,8 @@ def gc_pass(dry_run: bool, now: float | None = None) -> None:
 #     decision function.
 
 # Parked/terminal statuses whose live sessions the pass reconciles. Shares
-# the pod-safety auto-stop set (NOT the GC's narrower terminal set):
+# the pod-safety DONE set AUTO_STOP_DONE (NOT the GC's narrower terminal set,
+# and NOT the wider pod-safety trigger set POD_SAFETY_AUTO_STOP):
 # `awaiting_promotion` was added 2026-06-10 on the user request "Can we stop
 # the happy sessions once they reach awaiting promotion?" — the promotion
 # park is a human gate with no session-side work left, and idle sessions
@@ -12187,6 +12229,9 @@ def gc_pass(dry_run: bool, now: float | None = None) -> None:
 # is deliberately NOT here: that status means a same-issue follow-up round
 # is executing and the session is its driver. `blocked` is NOT here either
 # (under investigation; the user may be live-parked in the session).
+# `on_hold` is deliberately NOT here — the pod-safety pass stops a paused
+# task's escaped pod via AUTO_STOP_PAUSED (#980), but its session is kept
+# (the user may be live-parked; same conservatism as `blocked`).
 SESSION_RECONCILE_DONE = AUTO_STOP_DONE
 
 # Default inactivity grace window before a parked/terminal task's live
@@ -15411,7 +15456,9 @@ def pod_safety_pass(dry_run: bool, threshold: int, now: float | None = None) -> 
     """Reconcile RUNNING managed pods against their task STATUS.
 
     - AUTO-STOP (reversible, never terminate) a RUNNING pod whose task is DONE
-      (:data:`AUTO_STOP_DONE`), after the 2-miss guard — an escaped pod.
+      or user-paused (:data:`POD_SAFETY_AUTO_STOP` — #980: ``on_hold`` + RUNNING
+      means the #919 pause teardown leg failed), after the 2-miss guard — an
+      escaped pod.
     - ALERT (loud log + one-time marker, no stop) a RUNNING pod-active pod with
       no real progress for > :data:`ALERT_STALE_HOURS` — a likely-abandoned
       mid-run session.
