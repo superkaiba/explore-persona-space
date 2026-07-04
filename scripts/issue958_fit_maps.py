@@ -604,7 +604,12 @@ def build_fit_regime(
     the capture-recorded dropped-uid set (a changed dropout set changes the
     paired design), and a CONTENT digest of the consumed store shards (a
     same-drop-set recapture with different activation values invalidates
-    resume; an HF restage of identical bytes does not).
+    resume; an HF restage of identical bytes does not). r4 makes the store
+    identity EXACT — canonical sha over the sidecar's write-time per-shard
+    full-file sha256 (any byte change, same-size included, invalidates) —
+    and covers ALL FOUR consumed sets incl. graft (`_prefix_marginal` reads
+    graft shard content), closing `fit-resume-store-content-digest-incomplete`
+    + `fit-resume-store-digest-omits-graft-set`.
     """
     return {
         "corpus_fingerprint": corpus_fp,
@@ -711,7 +716,8 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
     trait_rows = {t: C.block_to_row(min(C.PRIMARY_LSTAR[t], R - 2)) for t in C.TRAITS}
 
     # ── fit-resume manifest (r2: the ~3h loop restarts from completed cells;
-    # r3: dropout-set + store-content identity in the regime key) ──
+    # r3: dropout-set + store-content identity in the regime key; r4: exact
+    # sidecar-recorded store identity over all four consumed sets) ──
     fit_regime = build_fit_regime(
         corpus_fp=corpus_fp,
         R=R,
@@ -724,7 +730,10 @@ def main() -> int:  # noqa: C901 — the fit/eval-cell sequence IS the plan §4.
             for s in ("main", "long")
         },
         dropped_by_set=_load_capture_dropped(args.store),
-        store_content_sha=C.store_content_digest(args.store, ["main", "long", "onpol"]),
+        # ALL consumed sets — graft included: `_prefix_marginal` reads graft
+        # shard content (load_store_positions below), so a graft-only
+        # recapture must invalidate its manifest-resumable cell (r4).
+        store_content_sha=C.store_content_digest(args.store, ["main", "long", "onpol", "graft"]),
     )
     args.maps.mkdir(parents=True, exist_ok=True)
     manifest_path = args.maps / "fit_manifest.json"

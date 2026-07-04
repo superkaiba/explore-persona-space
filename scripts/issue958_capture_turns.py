@@ -407,16 +407,19 @@ def main() -> int:
                 len(units_blob),
                 time.time() - t0,
             )
-        # sidecar index: uid → shard lookup without loading tensor blobs
-        C.write_json_atomic(
-            C.store_index_path(args.out, unit_set),
-            {
-                "unit_set": unit_set,
-                "corpus_fingerprint": corpus_fp,
-                "n_rows": n_rows,
-                "hidden": hidden,
-                "shards": shard_uid_index,
-            },
+        # sidecar index: uid → shard lookup without loading tensor blobs; also
+        # records the EXACT per-shard sha256 at write time (r4 — the fit
+        # regime's store_content_sha reads these, so any recapture refreshes
+        # the content identity and invalidates fit resume exactly). One
+        # O(set bytes) sequential read per capture run — trivial next to the
+        # GPU forward passes.
+        C.write_store_sidecar(
+            args.out,
+            unit_set,
+            corpus_fingerprint=corpus_fp,
+            n_rows=n_rows,
+            hidden=hidden,
+            shards=shard_uid_index,
         )
         summary_sets[unit_set] = {"n_units": len(units), "n_dropped": len(dropped_here)}
 
