@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 957,
+  "highest_id": 958,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6338,6 +6338,13 @@
       "path": "tasks/planning/957",
       "status": "planning",
       "title": "workflow-fix: OOM-protect detached VM-side compute phases (choom -600 + pivot rule)"
+    },
+    "958": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/958",
+      "status": "proposed",
+      "title": "How does the context\u2192answer mapping change as the context gets longer (multi-turn)"
     },
     "96": {
       "has_clean_result": true,
