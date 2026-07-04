@@ -2027,3 +2027,28 @@ def test_wedge_relaunch_workload_start_failure_stamps_and_repoints_sidecar(
     assert out2["reason"] == "runpod_workload_start_failed"
     assert "sidecar write ALSO failed" in out2["log_tail_excerpt"]
     assert stamps2 == [(775, wedged)]
+
+
+def test_runspec_from_gcp_handle_preserves_footprint_extra():
+    """#1010: the GCP-handle reconstructor forwards the footprint fields
+    (boot_disk_gb / min_ram_gb) into the rebuilt spec.extra so the RunPod
+    CPU-fallback feasibility gate + container-disk threading cover the ASYNC
+    failover paths (#659 crash / #783 queue timeout) — pre-#1010 only
+    repo_branch survived, so the gate failed OPEN there (the #958 shape).
+    A legacy handle WITHOUT the keys reconstructs byte-identically."""
+    from scripts import backend_poll as bp
+
+    handle = _gcp_handle({**_GCP_EXTRA_659, "boot_disk_gb": 80, "min_ram_gb": 32})
+    spec = bp._runspec_from_gcp_handle(handle, 659)
+    assert spec.extra.get("boot_disk_gb") == 80
+    assert spec.extra.get("min_ram_gb") == 32
+
+    # Legacy handle (no footprint keys, no repo_branch): pre-#1010 shape == {}.
+    legacy_spec = bp._runspec_from_gcp_handle(_gcp_handle(), 659)
+    assert legacy_spec.extra == {}
+
+    # Legacy handle with only repo_branch: pre-#1010 shape preserved verbatim.
+    branch_spec = bp._runspec_from_gcp_handle(
+        _gcp_handle({**_GCP_EXTRA_659, "repo_branch": "issue-909"}), 659
+    )
+    assert branch_spec.extra == {"repo_branch": "issue-909"}

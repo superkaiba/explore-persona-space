@@ -10509,6 +10509,24 @@ def test_capacity_retry_DOES_redrive_no_compute_available():
     assert reason == "no_compute_available"
 
 
+def test_cpu_fallback_infeasible_block_is_not_transient_capacity():
+    """#1010: a `cpu_fallback_infeasible_for_plan` block (the RunPod
+    CPU-fallback footprint-feasibility refusal, incident #958) is NOT a
+    transient-capacity block — the RunPod instance can never grow to fit the
+    plan, so the watcher's capacity-retry pass must never hot-retry it. The
+    #677 mirror: GREEN purely because the reason is NOT in
+    TRANSIENT_CAPACITY_REASONS (a future careless widening turns it RED)."""
+    import autonomous_session_watch as asw
+
+    note = "failure_class: infra\nreason: cpu_fallback_infeasible_for_plan"
+    ev = _fail_ev("2026-07-04T00:00:00Z", note)
+    retriable, reason, _block_ts = asw._is_transient_capacity_block([ev])
+    assert retriable is False
+    assert reason == "cpu_fallback_infeasible_for_plan"
+    # Downstream: always "skip", even out of backoff with the day-cap unspent.
+    assert decide_capacity_retry("blocked", retriable, _CR_NOW - 99999, None, 0, _CR_NOW) == "skip"
+
+
 # ── I/O-wrapper scoping: only transient-infra blocks re-driven, halts untouched ──
 
 

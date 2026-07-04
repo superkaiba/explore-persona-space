@@ -762,3 +762,71 @@ def test_pre_provision_guard_keeps_handle_none(monkeypatch):
             _spec(workload_cmd="", hydra_args=("seed=1",), extra={"execute_workload": True})
         )
     assert ei.value.handle is None
+
+
+# ---------------------------------------------------------------------------
+# #1010 — CPU-fallback container-disk threading into the provision argv
+# ---------------------------------------------------------------------------
+
+
+def _recording_provision(monkeypatch) -> list[list[str]]:
+    """Selectively no-op the ``pod_lifecycle.py provision`` subprocess AND
+    record its argv (the recording variant of ``_noop_provision`` — that
+    fixture records nothing)."""
+    _real_run = RP.subprocess.run
+    argvs: list[list[str]] = []
+
+    def _selective_run(cmd, *a, **k):
+        if isinstance(cmd, (list, tuple)) and any("pod_lifecycle.py" in str(c) for c in cmd):
+            argvs.append([str(c) for c in cmd])
+            return None
+        return _real_run(cmd, *a, **k)
+
+    monkeypatch.setattr(RP.subprocess, "run", _selective_run, raising=False)
+    return argvs
+
+
+def _flag_value(argv: list[str], flag: str) -> str | None:
+    """The value following ``flag`` in ``argv``, or None when absent."""
+    return argv[argv.index(flag) + 1] if flag in argv else None
+
+
+def _cpu_spec(intent: str, extra: dict | None = None) -> RunSpec:
+    """A provision-only RunSpec with an explicit intent (the shared _spec
+    helper pins intent="lora-7b", which collides with an override)."""
+    return RunSpec(issue=1010, intent=intent, backend="runpod", extra=extra or {})
+
+
+def test_launch_threads_container_disk_for_cpu_intent(monkeypatch):
+    """#1010: a mapped CPU intent with a stated boot_disk_gb threads
+    --container-disk-gb <value> into the provision argv."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("cpu-mid", {"boot_disk_gb": 80}))
+    assert len(argvs) == 1
+    assert _flag_value(argvs[0], "--container-disk-gb") == "80"
+
+
+def test_launch_floors_container_disk_at_default(monkeypatch):
+    """#1010: threading can never REDUCE below today's 50 GB default —
+    a small stated requirement floors at max(50, boot_disk_gb)."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("cpu-mid", {"boot_disk_gb": 30}))
+    assert _flag_value(argvs[0], "--container-disk-gb") == "50"
+
+
+def test_launch_omits_container_disk_without_requirement(monkeypatch):
+    """#1010 control: no stated requirement -> the provision argv is
+    byte-identical to pre-#1010 (no --container-disk-gb flag at all)."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("cpu-mid"))
+    assert "--container-disk-gb" not in argvs[0]
+
+
+def test_launch_does_not_thread_container_disk_for_gpu_intent(monkeypatch):
+    """#1010: GPU intents NEVER thread the container disk — on GPU pods the
+    big-data mount is the 200 GB /workspace VOLUME, not the container
+    overlay, so boot_disk_gb does not map (threading it would silently
+    inflate GPU container disks fleet-wide)."""
+    argvs = _recording_provision(monkeypatch)
+    RP.RunPodBackend().launch(_cpu_spec("lora-7b", {"boot_disk_gb": 500}))
+    assert "--container-disk-gb" not in argvs[0]

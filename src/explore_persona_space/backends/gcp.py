@@ -4420,6 +4420,20 @@ class GcpBackend(ComputeBackend):
                 # serialize_handle's dict(handle.extra); every existing reader
                 # uses .get(...), so no consumer breaks.
                 "gpu_count": machine_for_intent(spec).gpu_count,
+                # #1010: footprint fields for the RunPod CPU-fallback
+                # feasibility gate + container-disk threading — forwarded by
+                # backend_poll._runspec_from_gcp_handle on the async failover
+                # paths (#659 crash / #783 queue-timeout). Keys OMITTED when
+                # absent/falsy — never a None value — so legacy handle shapes
+                # stay byte-identical.
+                **{
+                    k: v
+                    for k, v in {
+                        "boot_disk_gb": spec.extra.get("boot_disk_gb"),
+                        "min_ram_gb": spec.extra.get("min_ram_gb"),
+                    }.items()
+                    if v
+                },
             },
         )
         handle = self._with_artifacts_declaration(

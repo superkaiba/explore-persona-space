@@ -263,7 +263,7 @@ RunPod pods — used ONLY on the explicit `backend: runpod` lane (see Compute ba
 | `cpu-mid` | `e2-standard-8` (8 vCPU / 32 GB) | `cpu3c-8-16` (16 GB) | 8-vCPU CPU work between `cpu-small`'s fan-out and `cpu-bigmem`'s >50 GB analyses |
 | `cpu-bigmem` | `n2-highmem-16` (16 vCPU / 128 GB) | — (none) | >50 GB-footprint analyses; **no RunPod lane** — keeps the #677 `cpu_exhausted_no_runpod_lane` typed terminal |
 
-(The `cpu-mid` GCP/RunPod RAM differs — 32 GB vs 16 GB — by design: the RunPod lane is a capacity backstop, and a >16 GB CPU job should target `cpu-bigmem` anyway.)
+(The `cpu-mid` GCP/RunPod RAM differs — 32 GB vs 16 GB — by design: the RunPod lane is a capacity backstop, and a >16 GB CPU job should target `cpu-bigmem` anyway; a plan that STATES a larger footprint (`--boot-disk-gb` / `--min-ram-gb`) gets the disk threaded into `containerDiskInGb` and an unsatisfiable disk/RAM requirement refuses the fallback typed (`cpu_fallback_infeasible_for_plan`, #1010) instead of provisioning an undersized pod. ADOPTION: plan §9 / launch composers pass `--boot-disk-gb` whenever a CPU stage sizes disk > 50 GB and `--min-ram-gb` whenever it sizes RAM > 16 GB — the flags are what arm the gate; a flag-less launch keeps today's behavior with the experimenter pre-launch gate as the sole defense.)
 
 Override with `--gpu-type` / `--gpu-count`. `pod.py provision --list-intents` for the table.
 

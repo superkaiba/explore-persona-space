@@ -836,9 +836,19 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # --workload-cmd, so this key never rides a hydra launch.
         extra["execute_workload"] = True
     if getattr(args, "boot_disk_gb", None):
-        # GCP-only knob (backends/gcp.py:815 reads spec.extra["boot_disk_gb"]);
-        # inert on SLURM / RunPod lanes.
+        # GCP boot disk (backends/gcp.py reads spec.extra["boot_disk_gb"]);
+        # ALSO read by the RunPod CPU fallback as of #1010 — container-disk
+        # threading in RunPodBackend.launch + the feasibility gate in
+        # router._runpod_terminal_rung. Inert on SLURM lanes.
         extra["boot_disk_gb"] = int(args.boot_disk_gb)
+    if getattr(args, "min_ram_gb", None):
+        # RunPod-CPU-fallback knob (#1010): read by the feasibility gate in
+        # router._runpod_terminal_rung — RunPod CPU instances have FIXED RAM,
+        # so an unsatisfiable requirement refuses the fallback typed
+        # (reason: cpu_fallback_infeasible_for_plan) instead of provisioning
+        # an undersized pod. GCP machine selection is unchanged (by intent);
+        # inert on SLURM lanes.
+        extra["min_ram_gb"] = int(args.min_ram_gb)
     if getattr(args, "max_run_duration", None):
         # GCP-only knob: the instance-create renderer reads
         # spec.extra["max_run_duration"], falling back to the 7d
@@ -1785,11 +1795,29 @@ def _build_argparser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help=(
-            "GCP boot-disk size override in GB (GCP lane only; threads to "
-            "spec.extra['boot_disk_gb'], honored at backends/gcp.py:815). "
-            "Default 300 GB is too tight for full-FT checkpoint grids "
-            "(issue 606 needed 500: 13 consolidated ZeRO-3 ckpts ~= 195 GB "
-            "+ model + cache). Inert on non-GCP lanes."
+            "Boot/data disk size the plan's stage requires, in GB. GCP lane: "
+            "boot-disk size override (threads to spec.extra['boot_disk_gb'], "
+            "honored by backends/gcp.py; default 300 GB is too tight for "
+            "full-FT checkpoint grids — issue 606 needed 500: 13 consolidated "
+            "ZeRO-3 ckpts ~= 195 GB + model + cache). RunPod CPU fallback "
+            "(#1010): threaded into the pod's containerDiskInGb "
+            "(max(50, value)) and checked by the feasibility gate — an "
+            "unsatisfiable disk requirement refuses the fallback typed "
+            "(cpu_fallback_infeasible_for_plan) instead of provisioning an "
+            "undersized pod. Inert on SLURM lanes."
+        ),
+    )
+    launch.add_argument(
+        "--min-ram-gb",
+        type=int,
+        default=None,
+        help=(
+            "Minimum RAM (GB) the plan's CPU stage requires. Read by the "
+            "RunPod CPU fallback feasibility gate (#1010) — RunPod CPU "
+            "instances have FIXED RAM, so an unsatisfiable requirement "
+            "refuses the fallback with reason cpu_fallback_infeasible_for_plan "
+            "instead of provisioning an undersized pod. GCP machine selection "
+            "is unchanged (by intent). Inert on SLURM lanes."
         ),
     )
     launch.add_argument(
