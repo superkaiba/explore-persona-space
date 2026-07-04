@@ -6069,7 +6069,12 @@ def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> Che
     # importing the module (verifier may run from a non-main worktree
     # where the branch-guard refuses to resolve).
     events: list[dict] = []
-    for line in concerns_path.read_text().splitlines():
+    # split("\n"), NOT splitlines(): raw U+2028/U+2029/NEL inside
+    # ensure_ascii=False concern evidence/notes are Unicode line boundaries
+    # that would shred a VALID row into fragments the per-line skip silently
+    # drops — a raised BLOCKER then vanishes and check 14 falsely PASSes
+    # (gotchas.md; #825 → #950).
+    for line in concerns_path.read_text().split("\n"):
         if not line.strip():
             continue
         try:

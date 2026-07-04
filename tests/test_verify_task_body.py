@@ -3333,6 +3333,37 @@ def test_concerns_audit_only_latest_event_per_id_counts(tmp_path):
     assert result.passed
 
 
+def test_concerns_audit_sees_row_with_raw_unicode_line_separator(tmp_path):
+    """A raised BLOCKER whose evidence carries a raw U+2028 (the
+    ``ensure_ascii=False`` writer leaves Unicode line separators
+    unescaped) is still parsed by the check-14 reader. Pre-#950 the
+    ``splitlines()`` reader shredded the row into fragments the per-line
+    skip silently dropped — 0 events read, and the binding-concerns
+    audit falsely PASSed on a body that never acknowledged the BLOCKER
+    (#825 → #950 round 2)."""
+    cp = tmp_path / "concerns.jsonl"
+    cp.write_text(
+        json.dumps(
+            {
+                "event": "raised",
+                "concern_id": "u2028-blocker-must-be-seen",
+                "severity": "BLOCKER",
+                "summary": "row must survive the reader",
+                # \u2028 = LINE SEPARATOR, raw in the written file under
+                # ensure_ascii=False -- the exact #825 shred trigger.
+                "evidence": "first paragraph\u2028second paragraph",
+            },
+            ensure_ascii=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    result = verify_task_body.check_concerns_audit(GOOD_BODY, concerns_path=cp)
+    assert not result.passed
+    assert "u2028-blocker-must-be-seen" in result.detail
+    assert "(BLOCKER)" in result.detail
+
+
 # ─── Check 16: Reproducibility lr matches plan (task #489 regression) ───────
 
 # Minimal v2-sentinelled body carrying a Reproducibility section with one

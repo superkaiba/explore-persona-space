@@ -3,11 +3,12 @@
 The check FAILs a ``.splitlines()`` call reading JSONL content:
 ``json.dumps(..., ensure_ascii=False)`` leaves raw U+2028/U+2029/NEL inside
 JSON strings and ``str.splitlines()`` splits on ALL Unicode line boundaries,
-shredding valid records (incident #825 run-1d; six live workflow readers
-fixed with #950).
+shredding valid records (incident #825 run-1d; eight live workflow-surface
+reader sites across seven files fixed with #950).
 
 Covers, per plan §4c: (i) each of the four signals a/b/c/d firing —
-the (d) fixtures are the exact §4b-prime sibling-reader shapes; (ii) benign
+the (d) fixtures are the exact §4b-prime sibling-reader shapes plus the
+round-2 ``concerns_path`` (verify_task_body.py check-14) shape; (ii) benign
 non-fires (``__doc__.splitlines()``, a non-events name); (iii) the
 ``# JSONL_SPLITLINES_EXEMPT`` waiver in BOTH placements (same line,
 preceding non-blank line); (iv) allowlist suppression; (v) the live tree
@@ -133,7 +134,25 @@ def test_signal_d_events_path_shapes_fire(tmp_path, monkeypatch) -> None:
     )
     errors = _run_on(monkeypatch, tmp_path)
     assert len(errors) == 2, errors
-    assert all("events/comments-path" in e for e in errors), errors
+    assert all("events/comments/concerns-path" in e for e in errors), errors
+
+
+def test_signal_d_concerns_path_shape_fires(tmp_path, monkeypatch) -> None:
+    # The exact verify_task_body.py check-14 shape fixed in #950 round 2:
+    # receiver `concerns_path` carries no "jsonl" token anywhere signals
+    # (a)-(c) look, so only the extended (d) base-name set catches a
+    # reintroduction. Filename deliberately avoids "concerns" so the label
+    # assertion cannot be satisfied by the path in the error string.
+    _plant(
+        tmp_path,
+        "scripts/offender_d2.py",
+        "from pathlib import Path\n"
+        "def audit(concerns_path: Path):\n"
+        "    return [ln for ln in concerns_path.read_text().splitlines() if ln.strip()]\n",
+    )
+    errors = _run_on(monkeypatch, tmp_path)
+    assert len(errors) == 1, errors
+    assert "events/comments/concerns-path" in errors[0], errors
 
 
 # --------------------------------------------------------------------------
