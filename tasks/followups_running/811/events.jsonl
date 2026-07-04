@@ -385,3 +385,4 @@
 {"ts": "2026-07-04T21:53:08Z", "kind": "epm:progress", "version": 133, "by": "unknown", "note": "tick heartbeat: fit battery at 17h49m (~980% CPU), healthy."}
 {"ts": "2026-07-04T22:23:43Z", "kind": "epm:progress", "version": 134, "by": "unknown", "note": "tick heartbeat: fit battery at 18h20m (~980% CPU), healthy."}
 {"ts": "2026-07-04T22:54:23Z", "kind": "epm:progress", "version": 135, "by": "unknown", "note": "tick heartbeat: fit battery at 18h50m (~980% CPU), healthy."}
+{"ts": "2026-07-04T23:25:04Z", "kind": "epm:progress", "version": 136, "by": "unknown", "note": "tick heartbeat: fit battery at 19h21m (~975% CPU), healthy; py-spy stage check this tick."}
