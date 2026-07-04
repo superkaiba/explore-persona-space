@@ -10,37 +10,54 @@
 - There is a linear map (ridge regression) from a single context's last-prompt-token activation $v_C$ to that answer's mean activation $v_A$:
     - 5-fold held-out (over contexts) R^2 ~= 0.60-0.68 (peak at layer 19)
 - This linear map is **less predictive** than the prefix -> answer map:
-    - 0.60-0.68 here vs ~0.8 for the prefix map -- but the comparison is uncontrolled (different corpora, decoding, folds); the one axis we measured directly is target averaging: single-draw targets cost 0.29-0.36 R^2 vs 10-rollout means
+    - 0.60-0.68 here vs ~0.8 for the prefix map -- but the comparison is uncontrolled (different datasets) -> followup running to do a more controlled comparison
 * The mapping is still mostly linear at the per-example level
-    * MLP ~= linear within ~0.04, RBF kernel ridge within ~0.05
-* The map predicts the trait relevant directions $r_B$ well:
-    * held-out R^2 0.79-0.87 for $r_B$, compared to 0.56-0.58 for a random direction (and in line with the 0.74-0.86 band for PCA directions of matched variance)
-* Training on trait-eliciting data gives the best answer-profile reconstruction on its own corpus (held-out R^2 0.87-0.91 vs ~0.60 for LMSYS) -- whole-profile reconstruction on a corpus-matched eval, not a separately-measured $r_B$ read
+    * MLP (1x512 GELU, PCA-64 target head): held-out recon 0.55-0.62 on LMSYS -- 0.01 to 0.05 BELOW ridge in every cell (largest deficits -0.05 on evil many-shot and sycophancy). Caveat: the PCA-64 head caps its ceiling, so the deficit confounds truncation with function class
+    * RBF kernel ridge (Nystrom, 1024 landmarks; no truncation -- the cleaner nonlinearity probe): recon 0.64-0.70 on the 7400-row mixed corpus vs ridge 0.53-0.69 on the same corpus -- +0.01 to +0.11 per cell (largest +0.11, evil many-shot)
+    * Neither buys a better trait read: MLP within-condition r is 0.00-0.14 below ridge; KRR tracks ridge within +-0.05 -- small corpus-dependent nonlinear RECON gains exist, none translate to behavior
+* The map predicts the trait relevant directions $r_B$ better than a random direction:
+    * held-out R^2 0.79-0.87 for $r_B$, compared to 0.56-0.58 for a random direction
+        * It is better than for a random direction because the $r_B$'s are directions of high variance within the residual stream space, and the mapping is better at reconstructing high-variance directions: against PCA directions of matched variance (R^2 0.74-0.86), $r_B$ is predicted exactly in line with its variance rank
 
-## Methodology:
+## Methodology
 
-* Model: Qwen-2.5-7B-Instruct (bf16), no fine-tuning
-* Datasets:
-    * 5000 real LMSYS-Chat-1M user prompts (completely disjoint from evaluation)
-        * Example:
-            * "how can identity protection services help protect me against identity theft"
-    * 2400 trait-eliciting contexts per trait, persona-vectors-style, generated for this experiment (60 diverse personas x 40 questions, 10 rollouts each, keeping both trait-high and trait-low completions)
-        * Example (sycophancy):
-            * persona: "You are an enthusiastic yes-person who always agrees with users and reinforces their opinions, no matter what they say. Your goal is to make everyone feel validated and supported in their beliefs."
-            * question: "What do you think about my idea to quit my stable job and start a cryptocurrency trading career?"
-* $v_C$ = activation at the last prompt token (the newline before the assistant answers); $v_A$ = mean activation over the answer's tokens, same layer
-* Predictors fit on $v_C \to v_A$ pairs (loss = MSE):
-    * Ridge regression (regularizer chosen by generalized cross-validation, closed form) -- tests whether the relationship is linear ($v_A = M v_C$)
-    * Kernel ridge regression, RBF kernel, Nystrom approximation with 1024 landmarks
-    * MLP, 1 hidden layer, width 512, GELU, AdamW lr 1e-3, early-stopped
-    * Both intended to test if there is any additional nonlinear relationship
-    * Identity-family baselines (raw copy $v_C$-as-$\hat{v}_A$, scaled identity, diagonal-only map) -- tests whether "prediction" is just consecutive-token similarity
-* Held-out evaluation: 5-fold over contexts; all 28 layers swept
-
-## Metrics:
-
-* Held-out reconstruction R^2 (variance-weighted over the 3584 activation dims) and per-context cosine of predicted vs true $v_A$, compared against predict-the-mean, identity-copy, and shuffled-pairing (20 row-permuted context-answer pairings) baselines
-* Per-direction held-out R^2: how well the map predicts $v_A$'s coefficient along a chosen direction (PCA directions of answer space, $r_B$, random directions) -- localizes what the map captures
+- Model: Qwen-2.5-7B-Instruct (bf16), no fine-tuning -- the project's standard open-weights model (same model as the persona-vectors replication line, so $r_B$ directions and rigs are shared). All answers are the model's own on-policy generations, stochastic decoding (temperature 1.0) with pinned seeds -- sampling rather than greedy because the map should predict the model's natural answer distribution, not its mode
+- Training dataset(s):
+    - **LMSYS-5000**: 5000 real user prompts from `lmsys/lmsys-chat-1m` (the first user turn of each conversation, streamed until 5000 non-empty; WildChat/UltraChat as gated fallbacks). Purpose: a broad, behavior-agnostic corpus of realistic prompts for fitting the map -- real-user data (realism tier 1), disjoint from all trait machinery by source. Why first-turn-only: keeps every prompt single-turn so the prompt shape matches the eval rig's; why n=5000: comfortably exceeds the 3584-dim activation space so the ridge is data-rich rather than regularization-dominated
+        - Example:
+            - Prefix: none -- the chat template inserts Qwen's constant default system prompt ("You are Qwen, created by Alibaba Cloud. You are a helpful assistant."), identical for all 5000 rows, so all input variance lives in the query
+            - Query: "how can identity protection services help protect me against identity theft"
+            - Answer: Qwen's own sampled completion (1 rollout per prompt, temperature 1.0, top_p 0.95, seed 42, max 1024 tokens)
+        - Dashboard (first 200 prompts + stats): https://htmlpreview.github.io/?https://raw.githubusercontent.com/superkaiba/explore-persona-space/7356f4df299bfaae7dc211fd2b6e81826144ee98/experiments/dashboards/issue779_training_corpora.html
+    - **Trait-eliciting corpus** (one per trait: evil, sycophancy, hallucination): 60 diverse personas x 40 questions = 2400 (prefix, query) pairs per trait, generated by Claude (Sonnet 4.5) for this experiment in the persona-vectors style. Purpose: the training-source ablation -- does trait-expressing training data make a better map? Doubly disjoint from the evaluation rig (zero persona and zero question overlap). Why 60x40: diversity was deliberately sized up from an earlier ~10-persona sketch so a null could not be blamed on a low-diversity corpus; why 10 rollouts: averages per-answer sampling noise out of the target and stabilizes the judge read; why keep trait-low completions: the corpus must span $r_B$ in BOTH directions -- positive-only filtering would collapse the very variance the ablation tests
+        - Example (sycophancy):
+            - Prefix (persona system prompt): "You are an enthusiastic yes-person who always agrees with users and reinforces their opinions, no matter what they say. Your goal is to make everyone feel validated and supported in their beliefs."
+            - Query: "What do you think about my idea to quit my stable job and start a cryptocurrency trading career?"
+            - Answer: Qwen's own sampled completions -- 10 rollouts per pair at temperature 1.0, each judge-scored (Sonnet 4.5, graded 0-100), keeping BOTH trait-high and trait-low completions (evil: only 694 of ~23.8k rollouts score >=50 -- Qwen resists; that skew is by design, not filtered away)
+        - Dashboard (all 60 personas, all 40 questions, sample scored completions): same link as above
+- Validation dataset(s): none separate. The ridge regularizer is chosen by generalized cross-validation inside the training folds (closed-form, burns no fold); the MLP early-stops on an internal validation split of the training fold; recon claims report the full 28-layer curve (no layer-selection gate, so no selection bias to correct)
+- Evaluation dataset(s):
+    - **Held-out context folds** (primary): 5-fold cross-validation over each corpus's contexts -- every reconstruction number is computed on contexts the fit never saw. Valid because the split is over contexts (the unit of generalization -- a per-row split would leak a context's other rollouts into training), and for LMSYS the corpus is disjoint from every trait-eliciting artifact by source
+    - **$r_B$ extraction set** (feeds the per-direction analysis only): per trait, 5 contrastive pos/neg system-prompt pairs x 20 extraction questions x 10 on-policy rollouts per arm, judge-filtered (keep pos > 50 / neg < 50; malformed judge returns dropped, never coerced), response-averaged, mean-difference per layer -- the Persona Vectors recipe (arXiv 2507.21509). Valid as an independent probe because its pairs and questions overlap neither training corpus nor the held-out folds
+        - Dashboards: extraction pairs + eval conditions: https://htmlpreview.github.io/?https://raw.githubusercontent.com/superkaiba/explore-persona-space/7356f4df299bfaae7dc211fd2b6e81826144ee98/experiments/dashboards/issue779_conditions.html · questions + judge rubric: https://htmlpreview.github.io/?https://raw.githubusercontent.com/superkaiba/explore-persona-space/7356f4df299bfaae7dc211fd2b6e81826144ee98/experiments/dashboards/issue779_questions.html
+- Computed quantities:
+    - $v_C$ -- activation at the last prompt token (the final newline of the assistant header; position asserted in-code), at each of the 28 layers. Why: it is the state the model generates from, and Persona Vectors' monitoring read position. (A mean-over-prompt-tokens variant was captured as a secondary input)
+    - $v_A$ -- mean activation over the answer's tokens, same layer. Why: the answer-side activation summary the theory treats as the behavior profile
+    - $r_B$ -- per-trait persona-vector direction (mean difference of judge-filtered pos/neg response-averaged activations), all 28 layers. Why: the trait read-out direction the per-direction analysis tests
+    - $M$ -- the fitted map: closed-form ridge with GCV lambda, full 3584-dim inputs and outputs (no PCA anywhere in the ridge path; PCA appears only in the MLP's target head and as evaluation directions)
+- Predictors (all fit on $v_C \to v_A$ pairs, loss = MSE):
+    - Ridge regression: regularizer chosen by generalized cross-validation, closed form (Gram/dual), full 3584-dim inputs AND targets, no PCA -- tests whether the relationship is linear ($v_A = M v_C$). Why ridge/GCV: rotation-invariant smooth shrinkage that a hard PCA cut cannot beat unless signal is exactly top-k-concentrated (our per-direction spectrum shows it is not), and closed-form at this size
+    - Kernel ridge regression: RBF kernel, Nystrom approximation with 1024 landmarks, full-dim targets (no PCA) -- the truncation-free nonlinearity probe. Why Nystrom: makes the kernel solve tractable at n=7400 without changing the function class
+    - MLP: 1 hidden layer, width 512, GELU, AdamW lr 1e-3, early-stopped -- predicts the target's top-64 PCA coefficients (PCA-64 multi-output head), mapped back to full 3584-dim for scoring. The recipe (incl. the PCA-k head) is inherited from the #722/#658 line, where at n~50 the head was a costless cap (a 50-row target matrix has rank <=49 < 64); at n=5000 it is a real truncation, so the MLP's ceiling is the targets' top-64 variance share -- which is why KRR, not the MLP, is the load-bearing nonlinearity comparison
+    - Identity-family baselines: raw copy ($v_C$-as-$\hat{v}_A$), scaled identity, diagonal-only map -- tests whether "prediction" is just consecutive-token similarity
+- Metrics:
+    - Held-out reconstruction R^2 (variance-weighted over the 3584 activation dims) and per-context cosine of predicted vs true $v_A$, compared against predict-the-mean, identity-copy, and shuffled-pairing (20 row-permuted context-answer pairings) baselines. Why R^2 rather than cosine as primary: all $v_A$ share a large common component, so even predict-the-mean scores cosine ~0.98 -- cosine has no headroom to show skill, while R^2 zeroes at the mean predictor by construction
+    - Per-direction held-out R^2: how well the map predicts $v_A$'s coefficient along a chosen direction (PCA directions of answer space, $r_B$, random directions) -- localizes what the map captures. Why the nulls: shuffled pairing kills "it's generic answer structure"; identity kills "it's consecutive-token persistence"; matched-variance PCA directions kill "$r_B$ only looks well-predicted because high-variance directions are easy"
+- Experiments:
+    - Held-out reconstruction: fitter ladder (identity family / ridge / MLP / KRR) x 28 layers, against the nulls -> Results 1, 3
+    - Cross-experiment comparison vs the prefix map + the single-draw vs 10-rollout-mean target ablation -> Result 2
+    - Per-direction analysis: PCA spectrum, $r_B$, random + matched-variance nulls, logit-lens on the worst-predicted directions -> Result 4
+    - Training-source ablation for reconstruction: LMSYS vs trait corpus vs mixes, + N-scaling along both data axes -> Result 5
 
 ## Results:
 
@@ -72,7 +89,7 @@ I then compared it against the earlier prefix-level result. (No dedicated figure
 * The one axis measured directly: switching this map's targets from 10-rollout means to single draws costs 0.29-0.36 R^2 -- consistent with per-answer sampling noise being a large part of the 0.8-vs-0.6 gap
 * Where comparable, the two maps look like the same underlying object: their predictions agree at CKA 0.79-0.90 / per-context cosine 0.95-0.99 (corpus-confounded; the same-grid refit is queued as a next step)
 
-### _Result 3: The mapping is still mostly linear -- MLP and kernel ridge buy ~nothing_
+### _Result 3: The mapping is still mostly linear -- nonlinearity buys small corpus-dependent recon gains and no better trait read_
 
 I then re-ran the fitter ladder at the per-example level, since more data (5000 vs 50 points) could have let a nonlinear map shine.
 
@@ -82,10 +99,11 @@ I then re-ran the fitter ladder at the per-example level, since more data (5000 
 
 **Takeaways:**
 
-* MLP held-out recon on the LMSYS corpus: 0.552-0.617 vs ridge 0.598-0.625 -- within ~0.04, and *below*, not above
-* Nystrom RBF kernel ridge (on the 7400-example mixed corpus): 0.640-0.701 vs ridge ~0.64-0.69 on the same corpus -- no nonlinear gain
-* The full function-class ladder reads: identity << linear ~= MLP ~= KRR
-* Same conclusion as the averaged experiment, now with 100x the datapoints -- the linearity finding was not an n=50 artifact
+* MLP (PCA-64 target head) held-out recon on LMSYS: 0.552-0.617 vs ridge 0.598-0.625 at the same layers -- per-cell deltas -0.008 (hallucination, both modes) to -0.052 (evil many-shot, sycophancy), never above. Caveat: the PCA-64 head caps the MLP's ceiling at the top-64 variance share, so its deficit confounds truncation with function class
+* Nystrom RBF kernel ridge (1024 landmarks, full-dim targets -- the truncation-free nonlinearity probe), fit on the 7400-row mixed corpus: recon 0.640-0.701 vs ridge 0.530-0.688 per cell -- deltas +0.013 (sycophancy, hallucination system) to +0.112 (evil many-shot)
+* No fitter improves the trait read-out: MLP within-condition r sits 0.00-0.14 below ridge (worst: sycophancy many-shot 0.55 vs 0.70); KRR tracks ridge within +-0.05 everywhere
+* On the trait corpus the MLP recon runs +0.04-0.08 above ridge (0.915-0.949 vs 0.862-0.906) -- the corpus-dependent pattern: mild nonlinear recon gains on the narrower corpora, none on broad LMSYS, none anywhere for behavior
+* Net ladder: identity << linear ~= MLP ~= KRR. Same conclusion as the averaged experiment, now with 100x the datapoints -- the linearity finding was not an n=50 artifact
 
 ### _Result 4: The map captures the trait direction specifically -- the unpredictable subspace is junk_
 
