@@ -6292,8 +6292,8 @@
     "951": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/951",
-      "status": "reviewing",
+      "path": "tasks/completed/951",
+      "status": "completed",
       "title": "workflow-fix: zombie-GPU stalled override needs a material-CPU-delta veto"
     },
     "952": {
