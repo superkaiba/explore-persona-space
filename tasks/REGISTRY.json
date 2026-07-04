@@ -6827,8 +6827,8 @@
     "999": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/999",
-      "status": "proposed",
+      "path": "tasks/planning/999",
+      "status": "planning",
       "title": "daily-fix: fix session_progress_report write_self_report crash"
     }
   }
