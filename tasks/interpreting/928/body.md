@@ -7,7 +7,7 @@ tags:
 - thinking-model
 - cot-decomposition
 created_at: '2026-07-03T11:47:21Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 810
 origin_prompt: 'We''ve found a mapping from context to mean answer. This is on a non
   thinking model. For a thinking model we could either have: - Mapping from context
