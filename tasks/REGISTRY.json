@@ -6673,8 +6673,8 @@
     "987": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/987",
-      "status": "reviewing",
+      "path": "tasks/completed/987",
+      "status": "completed",
       "title": "workflow-fix: dispatch lane infra from main on issue branches"
     },
     "988": {
@@ -6687,8 +6687,8 @@
     "989": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/989",
-      "status": "reviewing",
+      "path": "tasks/completed/989",
+      "status": "completed",
       "title": "daily-fix: 4xx short-circuit in hub _is_transient_upload_error"
     },
     "99": {

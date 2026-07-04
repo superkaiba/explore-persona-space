@@ -501,6 +501,68 @@ class TestRetryUpload:
         assert _is_transient_upload_error(_storage_403()) is False
         assert _is_transient_upload_error(ValueError("bad args")) is False
 
+    def test_4xx_digit_triplet_in_message_not_retried(self):
+        """A 404 whose MESSAGE embeds a digit triplet ('issue504_raw') must NOT
+        retry: a real 4xx status code decides non-transient BEFORE the fuzzy
+        substring scan can false-match on message digits (#989)."""
+        err = _http_err(404, "404 Client Error: Not Found for url: .../issue504_raw/final/x.json")
+        assert _is_transient_upload_error(err) is False
+        thunk = Mock(side_effect=err)
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep,
+            pytest.raises(HfHubHTTPError),
+        ):
+            _retry_upload(thunk, what="t")
+        assert thunk.call_count == 1
+        mock_sleep.assert_not_called()
+
+    def test_413_byte_count_digits_not_retried(self):
+        """A 413 whose message embeds '500' inside a byte count must NOT retry
+        (the byte-count digit trap, #989)."""
+        err = _http_err(413, "413 Payload Too Large: 15000000000 bytes exceeds limit")
+        assert _is_transient_upload_error(err) is False
+        thunk = Mock(side_effect=err)
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep"),
+            pytest.raises(HfHubHTTPError),
+        ):
+            _retry_upload(thunk, what="t")
+        assert thunk.call_count == 1
+
+    def test_5xx_transient_by_code_full_range(self):
+        """Any 5xx is transient BY CODE — pinned at the inclusive lower endpoint
+        (500, i.e. ``500 <= code`` not ``500 < code``) and at representative
+        codes outside the old (500, 502, 503, 504) tuple (507, 520)."""
+        assert _is_transient_upload_error(_http_err(500)) is True
+        assert _is_transient_upload_error(_http_err(507)) is True
+        assert _is_transient_upload_error(_http_err(520)) is True
+        thunk = Mock(side_effect=[_http_err(520), "ok"])
+        with patch("explore_persona_space.orchestrate.hub.time.sleep"):
+            assert _retry_upload(thunk, what="t") == "ok"
+        assert thunk.call_count == 2
+
+    def test_408_request_timeout_transient_by_code(self):
+        """Coded 408 Request Timeout stays transient BY CODE (RFC 9110 §15.5.9
+        invites the client to repeat) — previously retried only via the
+        'timeout' substring accident; the #989 tightening must preserve it."""
+        assert _is_transient_upload_error(_http_err(408, "408 Request Timeout")) is True
+        thunk = Mock(side_effect=[_http_err(408, "408 Request Timeout"), "ok"])
+        with patch("explore_persona_space.orchestrate.hub.time.sleep"):
+            assert _retry_upload(thunk, what="t") == "ok"
+        assert thunk.call_count == 2
+
+    def test_code_wins_over_substring_and_isinstance_guard(self):
+        """(a) a real 4xx code OVERRIDES a transient-looking substring
+        ('connection'); (b) a response-less TimeoutError keeps the substring
+        path; (c) a non-int status_code (the STRING '500') never enters the
+        code branch (isinstance guard) and falls to the substring scan."""
+        assert _is_transient_upload_error(_http_err(400, "connection header malformed")) is False
+        assert _is_transient_upload_error(TimeoutError("Read timed out")) is True
+        r = Mock()
+        r.status_code = "500"
+        str_code_err = HfHubHTTPError("opaque failure", response=r)
+        assert _is_transient_upload_error(str_code_err) is False
+
     def test_upload_folder_branch_uses_retry(self):
         """Integration: a 504 on the FIRST _upload folder commit then success ->
         _upload returns the non-empty URL and upload_folder is called twice
