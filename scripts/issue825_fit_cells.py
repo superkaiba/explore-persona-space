@@ -108,11 +108,16 @@ def _prep_fold(X_train: np.ndarray, X_eval: np.ndarray) -> dict:
     return {"w": w, "V": V, "KevV": KevV, "ntr": int(Xtr.shape[0])}
 
 
-def _ridge_predict_cached(cache: dict, Y_train: np.ndarray) -> np.ndarray:
+def _ridge_predict_cached(
+    cache: dict, Y_train: np.ndarray, *, return_lam: bool = False
+) -> np.ndarray | tuple[np.ndarray, float]:
     """Fit + predict for one Y using a fold cache from _prep_fold.
 
     Recomputes only VtY and the (cheap) GCV lambda scan; identical fitting
     procedure for observed and every null draw (selection-symmetric).
+    ``return_lam=True`` additionally returns the GCV-selected lambda
+    (#931 `matched-n-denominator-dip` registered source-module change; the
+    default returns the prediction alone, byte-preserving).
     """
     Ytr = torch.as_tensor(np.asarray(Y_train), dtype=torch.float64).to(cache["w"].device)
     ymu = Ytr.mean(0)
@@ -134,7 +139,10 @@ def _ridge_predict_cached(cache: dict, Y_train: np.ndarray) -> np.ndarray:
             best_lam = float(lam)
     filt = 1.0 / (w + best_lam)
     pred = (KevV * filt) @ VtY + ymu
-    return pred.cpu().numpy()
+    pred_np = pred.cpu().numpy()
+    if return_lam:
+        return pred_np, best_lam
+    return pred_np
 
 
 def _pooled_r2(pred: np.ndarray, true: np.ndarray) -> float:
@@ -187,6 +195,7 @@ def heldout_r2_sweep(
     seed: int,
     null_draws: int,
     collect_cosines: bool = True,
+    collect_lambdas: bool = False,
 ) -> dict:
     """Held-out pooled R^2 per layer for observed Y and every shuffle-null draw.
 
@@ -196,6 +205,12 @@ def heldout_r2_sweep(
       r2_null: (null_draws, L) the FULL per-draw x per-layer matrix
       cosines: {layer: (N,) per-example cosine} at FROZEN_LAYERS
       preds_frozen: {layer: (N, D) held-out predictions} at FROZEN_LAYERS
+      gcv_lambda: (L, n_folds) OBSERVED-fit GCV-selected lambda per
+        (layer, fold) when ``collect_lambdas=True`` (NaN for skipped folds);
+        None otherwise. #931 `matched-n-denominator-dip` registered
+        source-module change — the default (False) preserves the committed
+        behavior byte-for-byte (same class as the `ns=` parametrization on
+        run_power_curve).
     Null draws permute Y ROW-ORDER (whole example rows, seeded) and go through
     the IDENTICAL cached (w, V, Kev) fitting path as the observed fit.
     """
@@ -222,6 +237,7 @@ def heldout_r2_sweep(
     ss_tot_obs = np.zeros(n_layers)
     ss_res_null = np.zeros((null_draws, n_layers))
     ss_tot_null = np.zeros((null_draws, n_layers))
+    lam_obs = np.full((n_layers, n_folds), np.nan) if collect_lambdas else None
     fitted = np.zeros(n, dtype=bool)
     cosines = {int(li): np.zeros(n) for li in FROZEN_LAYERS if li < n_layers}
     preds_frozen = {
@@ -239,7 +255,11 @@ def heldout_r2_sweep(
             if te.sum() == 0 or tr.sum() < 3:
                 continue
             cache = _prep_fold(X[tr], X[te])
-            pred = _ridge_predict_cached(cache, Y[tr])
+            if collect_lambdas:
+                pred, best_lam = _ridge_predict_cached(cache, Y[tr], return_lam=True)
+                lam_obs[li, k] = best_lam
+            else:
+                pred = _ridge_predict_cached(cache, Y[tr])
             fitted[te] = True
             true = Y[te].astype(np.float64)
             mu = true.mean(0)
@@ -264,6 +284,7 @@ def heldout_r2_sweep(
         "r2_null": r2_null,
         "cosines": cosines,
         "preds_frozen": preds_frozen,
+        "gcv_lambda": lam_obs,
         "folds": folds,
         # Rows that actually received held-out predictions (skipped folds at
         # tiny n leave zeros in preds_frozen; consumers subset by this mask).
