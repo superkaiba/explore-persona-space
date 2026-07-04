@@ -108,3 +108,4 @@
 {"ts": "2026-07-04T13:57:11Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "1c capture done"}
 {"ts": "2026-07-04T13:57:20Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "1d bank capture done"}
 {"ts": "2026-07-04T13:57:44Z", "kind": "epm:progress", "version": 9, "by": "poll_pipeline", "note": "[gpu-idle-advisory] all 1 GPUs <= 5% util for 31 min while the run is healthy (phase=workload, gpu_util=1). Likely a CPU-only phase holding a GPU pod — consider moving the phase off-pod to the VM or stopping the pod after a checkpoint (CLAUDE.md: CPU-only phases don't hold GPU pods). Advisory only: the stall verdict is unchanged and nothing was stopped.", "phase": "workload", "pod": "eps-issue-952", "gpu_idle_advisory": true}
+{"ts": "2026-07-04T14:07:36Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "1a bank gen done"}
