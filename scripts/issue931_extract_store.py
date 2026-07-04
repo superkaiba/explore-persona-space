@@ -118,8 +118,13 @@ def load_model(tiny_model_dir: str | None):
 
 
 def _read_jsonl(path: Path) -> list[dict]:
+    """Parse a JSONL file (newline-split; asserts the path exists).
+
+    split("\\n"), not splitlines(): JSON string content may carry U+2028/NEL-class
+    separators that splitlines() shreds mid-row (gotchas.md JSONL rule).
+    """
     assert path.exists(), f"missing input: {path}"
-    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+    return [json.loads(line) for line in path.read_text().split("\n") if line.strip()]
 
 
 def load_items(regime: str, data_dir: Path) -> list[dict]:
