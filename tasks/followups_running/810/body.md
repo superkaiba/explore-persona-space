@@ -343,17 +343,21 @@ The 25% equivalence read fails for both singles with own-best corroboration (nex
 
 ### Mechanism grades with skill for the two singles, but own-best layers split them: the turn-end newline recovers in place while the header start token restores at shifted layers
 
-Both figures show the median cross-context-centered cosine between full and truncated states per row (committed layers) versus dose, then each row's own-best-layer skill (solid, data-selected, descriptive — no null bands at interior doses by registration) against its committed-layer trace (dashed).
+The figures show the median cross-context-centered cosine between full and truncated states per row (committed layers) versus dose, the 50 per-context cosines behind those medians (two singles and the turn-end token), then each row's own-best-layer skill (solid, data-selected, descriptive — no null bands at interior doses by registration) against its committed-layer trace (dashed).
 
 ![Median centered cosine per dose](https://raw.githubusercontent.com/superkaiba/explore-persona-space/81734e80902043e7f56a58951cda8bcf40ea81d2/figures/issue_810/boundary-truncation-dose-response/btdr_mechanism_by_k.png)
 
 > **Figure.** *States converge to the full-answer geometry monotonically in dose.* Median centered cosine (full vs truncated) at committed layers, n = 50; the 0% point is round 4's. Every row rises with dose; the two answer-adjacent tokens stay lowest (0.76 and 0.70 at 75%); the header 'user' token reaches 0.96.
 
+![Per-context mechanism cosines](https://raw.githubusercontent.com/superkaiba/explore-persona-space/7c9936292a8450fa504b13aa227e2ed8e6f40034/figures/issue_810/boundary-truncation-dose-response/btdr_mechanism_percontext.png)
+
+> **Figure.** *The 50 per-context cosines behind each mechanism median.* One strip per row × dose at the row's committed layer; black tick = median, most-moved context labeled. Medians rise with dose for all three rows; the turn-end token's is lowest at every dose (0.64–0.70). Dashed line: the 0.8 echo-consistency anchor.
+
 ![Own-best versus committed-layer skill trace](https://raw.githubusercontent.com/superkaiba/explore-persona-space/81734e80902043e7f56a58951cda8bcf40ea81d2/figures/issue_810/boundary-truncation-dose-response/btdr_ownbest_trace.png)
 
 > **Figure.** *The empty-turn own-best spikes collapse at the smallest nonzero dose.* Own-best-layer skill per dose (solid) vs the committed-layer trace (dashed). The round-4 spikes (0.81 and 0.73 at 0%) drop to 0.68–0.69 at 25%, and own-best layers return to mid-stack (8–16) at every nonzero dose.
 
-Convergence and skill recovery grade together for both primary singles (turn-end newline 0.65 → 0.71 → 0.76; header start 0.73 → 0.85 → 0.90) — no dissociation; the turn-end token counters: cosine rises 0.644 → 0.678 → 0.698 while deficit grows +0.036 → +0.052 → +0.057 (every CI crossing zero), unresolved. Own-best traces split them: the turn-end newline recovers in place (layer 15 throughout, 0.684 → 0.702 → 0.717 toward full 0.735); the header start token restores at shifted layers from 50% (0.736/0.734 at layer 11, above full 0.731 and empty 0.732) — layer shift, not net content loss. At 25% its own-best (0.689) sits below its empty own-best — a partial cut disrupts more than a clean empty turn. Interior-dose absolutes are descriptive only ([per-dose fits](https://github.com/superkaiba/explore-persona-space/blob/81734e80902043e7f56a58951cda8bcf40ea81d2/eval_results/issue_810/boundary-truncation-dose-response/reconstruction_skill_btdr_k50.json); [absolute-skill trace](https://raw.githubusercontent.com/superkaiba/explore-persona-space/81734e80902043e7f56a58951cda8bcf40ea81d2/figures/issue_810/boundary-truncation-dose-response/btdr_dose_trace.png)).
+Convergence and skill recovery grade together for both primary singles (turn-end newline 0.65→0.71→0.76; header start 0.73→0.85→0.90) — no dissociation; the turn-end token counters: cosine rises 0.644→0.678→0.698 while deficit grows +0.036→+0.052→+0.057 (every CI crossing zero), unresolved. Own-best traces split them: the turn-end newline recovers in place (layer 15 throughout, 0.684→0.702→0.717 toward full 0.735); the header start token restores at shifted layers from 50% (0.736/0.734 at layer 11, above full 0.731 and empty 0.732) — layer shift, not net content loss. At 25% its own-best (0.689) sits below its empty own-best — a partial cut disrupts more than a clean empty turn. Interior-dose absolutes are descriptive only ([per-dose fits](https://github.com/superkaiba/explore-persona-space/blob/81734e80902043e7f56a58951cda8bcf40ea81d2/eval_results/issue_810/boundary-truncation-dose-response/reconstruction_skill_btdr_k50.json); [absolute-skill trace](https://raw.githubusercontent.com/superkaiba/explore-persona-space/81734e80902043e7f56a58951cda8bcf40ea81d2/figures/issue_810/boundary-truncation-dose-response/btdr_dose_trace.png)).
 
 ---
 
@@ -394,6 +398,7 @@ Round 5 (`boundary-truncation-dose-response`, proposer-initiated cheap-band same
 > Truncation dose-response on the boundary reads: answer truncated at k ∈ {0, 25, 50, 75, 100}% — Ablation (dose-response)
 
 Lineage: [#722](https://eps.superkaiba.com/tasks/722) — parent (the mean-summary base context→answer map this generalizes). Created 2026-07-01; round 1 run 2026-07-01 → 2026-07-02, plus one zero-GPU free-analysis diagnostics pass folded 2026-07-02 (refusal length-partialling, direction-recipe split, max-pool length check) and two user-chat inline free analyses (leave-one-family-out re-fit; boundary-variance check); round 2 (`ultrachat-genre-summary-sweep`, same-issue follow-up) run 2026-07-03; round 3 (`user-header-newline-summary`, same-issue follow-up) run 2026-07-03; round 4 (`header-echo-ablation-capture`, same-issue follow-up, proposer-initiated under the cheap-band rule) run 2026-07-03; round 5 (`boundary-truncation-dose-response`, same-issue follow-up, proposer-initiated under the cheap-band rule, the last of its 2 cheap-band slots) run 2026-07-04.
+
 
 
 
