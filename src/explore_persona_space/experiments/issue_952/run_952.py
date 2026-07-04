@@ -111,6 +111,27 @@ assert set(EQUIV_GATE_LAYERS) <= set(LAYER_GRID), (
     f"EPM_I952_LAYER_GRID {LAYER_GRID} must keep the capture-equivalence layers "
     f"{EQUIV_GATE_LAYERS} (the pre-registered descope drops only {{2, 23}})"
 )
+
+# ── cross-layer follow-up envs (round `cross-layer-decision-cells`, plan §3) ────
+# EPM_I952_DECISION_LAYERS: extra decision-cell read-out layers — a per-layer
+# pass-2 loop (battery A + battery B + bank splits) runs at each, PLUS l_star as
+# the suffixed-path calibration layer (gate 3). Empty (default) = parent
+# behavior; unsuffixed outputs stay byte-compatible either way.
+DECISION_LAYERS = tuple(
+    int(x) for x in os.environ.get("EPM_I952_DECISION_LAYERS", "").split(",") if x.strip()
+)
+assert set(DECISION_LAYERS) <= set(LAYER_GRID), (
+    f"EPM_I952_DECISION_LAYERS {DECISION_LAYERS} must be a subset of the layer grid {LAYER_GRID}"
+)
+# EPM_I952_FOLLOWUP_TAG: output namespacing for same-issue follow-up rounds.
+# out_dir -> eval_results/issue_952/<tag-hyphenated>/, npz -> a tag-specific
+# name, HF prefix -> ISSUE_SLUG/followups/<tag>/. Parent files are NEVER
+# overwritten pod-side or on HF (plan §3).
+FOLLOWUP_TAG = os.environ.get("EPM_I952_FOLLOWUP_TAG", "").strip()
+assert re.fullmatch(r"[a-z0-9_]*", FOLLOWUP_TAG), f"bad EPM_I952_FOLLOWUP_TAG: {FOLLOWUP_TAG!r}"
+_FOLLOWUP_NPZ_NAMES = {"cross_layer_decision_cells": "per_context_stats_cross_layer.npz"}
+L20_REPRO_TOL = 1e-6  # plan §3 gates 2+3: |ΔR²| tolerance (λ choices exactly equal)
+
 PREFIX_TS = (1, 2, 4, 8, 16, 32, 64, 128)
 DECILES = (0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95)
 
@@ -267,6 +288,26 @@ def resolve_base_dir(args_base_dir: str | None) -> pathlib.Path:
     return repo_root()
 
 
+def parent_eval_dir(base_dir: pathlib.Path) -> pathlib.Path:
+    """The PARENT run's eval dir — staged inputs (split, bank verification, the
+    parent's committed position_r2_by_arm.json) live here; a follow-up round
+    (FOLLOWUP_TAG set) never writes its own outputs here on the upload path."""
+    return base_dir / "eval_results" / "issue_952"
+
+
+def eval_out_dir(base_dir: pathlib.Path) -> pathlib.Path:
+    """Eval-output dir: the parent dir, or its hyphenated FOLLOWUP_TAG subdir."""
+    root = parent_eval_dir(base_dir)
+    return root / FOLLOWUP_TAG.replace("_", "-") if FOLLOWUP_TAG else root
+
+
+def per_context_npz_name() -> str:
+    """The battery npz filename (a follow-up round never overwrites the parent's)."""
+    if not FOLLOWUP_TAG:
+        return "per_context_stats.npz"
+    return _FOLLOWUP_NPZ_NAMES.get(FOLLOWUP_TAG, f"per_context_stats_{FOLLOWUP_TAG}.npz")
+
+
 def repo_root() -> pathlib.Path:
     """Repo root derived from __file__ (run_952.py is 5 levels below it)."""
     here = pathlib.Path(__file__).resolve()
@@ -320,6 +361,82 @@ def locate_phase0_file(name: str, base_dir: pathlib.Path) -> pathlib.Path:
             return c
     logger.info("Phase-0 file %s not local — fetching from HF %s/phase0/", name, ISSUE_SLUG)
     return hf_download(f"{ISSUE_SLUG}/phase0/{name}", base_dir / "hf_dl" / "phase0", "main")
+
+
+def stage_battery_inputs(base_dir: pathlib.Path, revision: str, synth_capture: bool) -> None:
+    """--stage-battery-inputs: download the parent run's battery inputs at a pinned revision.
+
+    Places (follow-up plan §3): the LMSYS + bank slot shards for every
+    EPM_I952_LAYER_GRID layer plus the spans files under
+    ``base_dir/analysis_tensors/``; ``divergence_bank_verification.json`` + the
+    parent's committed ``position_r2_by_arm.json`` under the PARENT eval dir;
+    and the git-committed ``split_seed952.json`` at
+    ``base_dir/eval_results/issue_952/split_seed952.json`` so the
+    ``_load_pool_and_split`` / ``phase0_verify`` asserts BIND. Downloads land in
+    ``base_dir/hf_stage`` (hf cache-verified at the pinned revision — a missing
+    or drifted file fails loud there) and are COPIED (always overwrite) to the
+    canonical paths, so a smoke leg's ``--synth-capture`` overwrite of the
+    canonical shards is repaired by the production leg's re-stage, never
+    skip-on-existence'd. With ``--synth-capture`` the slot-shard subset is
+    SKIPPED (smoke-only; synthetic stores replace them anyway) while the spans +
+    JSON + split placement runs the identical code path.
+    """
+    import shutil
+
+    log_phase("stage_battery_inputs")
+    stage_root = base_dir / "hf_stage"
+    tensors_dir = base_dir / "analysis_tensors"
+    tensors_dir.mkdir(parents=True, exist_ok=True)
+    p_eval = parent_eval_dir(base_dir)
+    p_eval.mkdir(parents=True, exist_ok=True)
+
+    shard_names = [f"slots_{arm}_L{layer}.pt" for arm in ARMS for layer in LAYER_GRID]
+    shard_names += [f"slots_bank_{arm}_L{layer}.pt" for arm in BANK_ARMS for layer in LAYER_GRID]
+    span_names = [f"spans_{arm}.json" for arm in ARMS] + [
+        f"spans_bank_{arm}.json" for arm in BANK_ARMS
+    ]
+    tensor_files = span_names + ([] if synth_capture else shard_names)
+    if synth_capture:
+        logger.warning(
+            "[stage] --synth-capture: skipping %d slot-shard downloads (smoke-only; "
+            "synthetic stores replace them)",
+            len(shard_names),
+        )
+    n_placed = 0
+    for name in tensor_files:
+        local = hf_download(f"{ISSUE_SLUG}/analysis_tensors/{name}", stage_root, revision)
+        dest = tensors_dir / name
+        shutil.copyfile(local, dest)  # ALWAYS overwrite — never skip-on-existence
+        assert dest.stat().st_size == local.stat().st_size and dest.stat().st_size > 0, (
+            f"staged copy size mismatch: {dest}"
+        )
+        n_placed += 1
+    for name in ("divergence_bank_verification.json", "position_r2_by_arm.json"):
+        local = hf_download(f"{ISSUE_SLUG}/eval_results/issue_952/{name}", stage_root, revision)
+        dest = p_eval / name
+        shutil.copyfile(local, dest)
+        assert dest.stat().st_size > 0, dest
+        n_placed += 1
+    # split_seed952.json: git-committed (90b201d909) — copy from the repo checkout
+    # so the base_dir-relative asserts bind; HF eval_results mirror as fallback.
+    split_dest = p_eval / "split_seed952.json"
+    split_src = repo_root() / "eval_results" / "issue_952" / "split_seed952.json"
+    if split_src.exists():
+        if split_src.resolve() != split_dest.resolve():
+            shutil.copyfile(split_src, split_dest)
+    else:
+        local = hf_download(
+            f"{ISSUE_SLUG}/eval_results/issue_952/split_seed952.json", stage_root, revision
+        )
+        shutil.copyfile(local, split_dest)
+    assert split_dest.stat().st_size > 0, split_dest
+    n_placed += 1
+    logger.info(
+        "[stage] %d files placed at revision %s (slot shards %s)",
+        n_placed,
+        revision,
+        "SKIPPED (synth-capture)" if synth_capture else "included",
+    )
 
 
 def make_split(pool_ids: list[int]) -> dict:
@@ -568,6 +685,16 @@ def phase0_verify(base_dir: pathlib.Path, smoke: bool) -> dict:
     out_dir = base_dir / "eval_results" / "issue_952"
     out_dir.mkdir(parents=True, exist_ok=True)
     split_path = out_dir / ("split_seed952_smoke.json" if smoke else "split_seed952.json")
+    if split_path.exists():
+        # A staged/committed split at the canonical path is BINDING (follow-up
+        # plan §3): recomputation drift is a hard stop, never a silent overwrite.
+        on_disk = json.loads(split_path.read_text())
+        for k in ("train", "val", "test"):
+            assert on_disk[k] == split[k], (
+                f"pre-existing {split_path} disagrees with the recomputed split ({k}) — "
+                "split-protocol drift vs the staged/committed copy"
+            )
+        logger.info("[p0] pre-existing split at %s matches the recomputed split", split_path)
     split_path.write_text(json.dumps(split, indent=2, default=_json_np))
 
     import time
@@ -1612,13 +1739,22 @@ def _hf_commit_files(label: str, paths: list[pathlib.Path], base_dir: pathlib.Pa
     """One create_commit of local files to the data repo, path-preserved under the slug.
 
     path_in_repo mirrors the path relative to base_dir (analysis_tensors/...,
-    raw_completions/..., eval_results/issue_952/...)."""
+    raw_completions/..., eval_results/issue_952/...). Under FOLLOWUP_TAG every
+    op is namespaced ISSUE_SLUG/followups/<tag>/... (the hyphenated out-dir
+    component collapses so the layout mirrors the parent's) — parent HF files
+    are structurally un-overwritable (plan §3)."""
     from huggingface_hub import CommitOperationAdd, HfApi, list_repo_tree
 
     ops = []
+    followup_dirname = FOLLOWUP_TAG.replace("_", "-")
     for p in paths:
         rel = p.relative_to(base_dir)
-        ops.append(CommitOperationAdd(path_in_repo=f"{ISSUE_SLUG}/{rel}", path_or_fileobj=str(p)))
+        if FOLLOWUP_TAG:
+            parts = tuple(x for x in rel.parts if x != followup_dirname)
+            in_repo = f"{ISSUE_SLUG}/followups/{FOLLOWUP_TAG}/{pathlib.PurePosixPath(*parts)}"
+        else:
+            in_repo = f"{ISSUE_SLUG}/{rel}"
+        ops.append(CommitOperationAdd(path_in_repo=in_repo, path_or_fileobj=str(p)))
     api = HfApi()
     api.create_commit(
         repo_id=HF_DATA_REPO,
@@ -2206,6 +2342,9 @@ def _battery_regime(
             "prefix_lstar_only": os.environ.get("EPM_I952_PREFIX_LSTAR_ONLY", ""),
             "drop_categories": os.environ.get("EPM_I952_DROP_CATEGORIES", ""),
         },
+        # Cross-layer follow-up regime keys (plan §3): both change outputs.
+        "followup_tag": FOLLOWUP_TAG,
+        "decision_layers": list(DECISION_LAYERS),
     }
 
 
@@ -2213,8 +2352,14 @@ def _init_battery_ckpt(base_dir: pathlib.Path, regime: dict) -> pathlib.Path:
     """Init (or regime-invalidate) the 1e checkpoint dir; returns the dir.
 
     A regime mismatch DELETES the stale unit shards (loudly) and rewrites the
-    regime file — a resume never mixes shards across regimes."""
-    ck = base_dir / "analysis_tensors" / "battery_ckpt"
+    regime file — a resume never mixes shards across regimes. A follow-up round
+    (FOLLOWUP_TAG) uses its own tag-suffixed dir so parent-run shards are never
+    touched pod-side."""
+    ck = (
+        base_dir
+        / "analysis_tensors"
+        / (f"battery_ckpt_{FOLLOWUP_TAG}" if FOLLOWUP_TAG else "battery_ckpt")
+    )
     ck.mkdir(parents=True, exist_ok=True)
     rpath = ck / "regime.json"
     if rpath.exists():
@@ -2257,6 +2402,138 @@ def _ckpt_load(path: pathlib.Path) -> tuple[dict[str, np.ndarray], dict] | None:
     return arrays, payload
 
 
+def l20_reproduction_gate(parent_ref: dict, position_report: dict, smoke: bool) -> dict:
+    """Follow-up plan §3 gate 2: the recomputed unsuffixed pass-2 pooled R² per
+    (slot, arm) must match the parent's committed position_r2_by_arm.json within
+    ``L20_REPRO_TOL``. Raises RuntimeError on a production miss; ``--smoke``
+    executes the identical comparison and logs it (synthetic smoke data cannot
+    match the parent's committed values by construction)."""
+    deltas: list[tuple[str, float]] = []
+    missing: list[str] = []
+    for arm in ARMS:
+        ref_arm = parent_ref.get(arm)
+        if not isinstance(ref_arm, dict):
+            continue
+        for slot, ref_rec in ref_arm.items():
+            got = position_report.get(arm, {}).get(slot)
+            if not isinstance(got, dict):
+                missing.append(f"{slot}|{arm}")
+                continue
+            deltas.append(
+                (
+                    f"{slot}|{arm}",
+                    abs(float(got["test_pooled_r2"]) - float(ref_rec["test_pooled_r2"])),
+                )
+            )
+    max_delta = max((d for _c, d in deltas), default=float("inf"))
+    worst = max(deltas, key=lambda cd: cd[1], default=("none", float("inf")))
+    rec = {
+        "n_cells_compared": len(deltas),
+        "n_missing": len(missing),
+        "missing_cells": missing[:10],
+        "max_abs_delta_r2": max_delta,
+        "worst_cell": worst[0],
+        "tol": L20_REPRO_TOL,
+        "parent_l_star": parent_ref.get("l_star"),
+        "pass": bool(deltas) and not missing and max_delta <= L20_REPRO_TOL,
+    }
+    if not rec["pass"]:
+        msg = (
+            f"L20 reproduction gate FAIL: {len(deltas)} cells compared, "
+            f"missing={missing[:5]}, max|ΔR²|={max_delta:.3e} at {worst[0]} > tol "
+            f"{L20_REPRO_TOL} — code/tensor drift; no new-layer number is trusted "
+            "(plan kill criterion)"
+        )
+        if smoke:
+            logger.warning("[xlayer-gate] SMOKE (non-binding, comparison executed): %s", msg)
+        else:
+            raise RuntimeError(msg)
+    else:
+        logger.info(
+            "[xlayer-gate] L20 reproduction gate PASS: %d cells, max|ΔR²|=%.3e",
+            len(deltas),
+            max_delta,
+        )
+    return rec
+
+
+def _pooled_from_percontext(ssr: np.ndarray, sst: np.ndarray) -> np.ndarray:
+    """Pooled R² per group from per-context (n, G) ss arrays (finite-masked ratio of sums)."""
+    fin = np.isfinite(ssr) & np.isfinite(sst)
+    num = np.where(fin, ssr, 0.0).sum(axis=0)
+    den = np.where(fin, sst, 0.0).sum(axis=0)
+    with np.errstate(invalid="ignore", divide="ignore"):
+        out = 1.0 - num / den
+    out[den <= 1e-12] = np.nan
+    return out
+
+
+def suffixed_l20_calibration_gate(
+    npz: dict[str, np.ndarray],
+    l_star: int,
+    lam_by_slot_unsuffixed: dict[str, int],
+    lam_by_slot_suffixed: dict[str, int],
+    smoke: bool,
+) -> dict:
+    """Follow-up plan §3 gate 3 (critic Must-Fix (2)): the NEW suffixed-path
+    L{l_star} pass-2 outputs must match the unsuffixed pass-2 within
+    ``L20_REPRO_TOL`` (pooled R² per group over the A + bank splits) AND select
+    IDENTICAL λ*(slot) — validating the loop/index/key code where the answer is
+    known, BEFORE any added-layer verdict. Raises RuntimeError on a production
+    miss; ``--smoke`` executes the identical comparison and logs it."""
+    lam_mismatch = {
+        s: (lam_by_slot_unsuffixed.get(s), lam_by_slot_suffixed.get(s))
+        for s in set(lam_by_slot_unsuffixed) | set(lam_by_slot_suffixed)
+        if lam_by_slot_unsuffixed.get(s) != lam_by_slot_suffixed.get(s)
+    }
+    fam_deltas: dict[str, float] = {}
+    missing: list[str] = []
+    for fam_key in ("A_test", "bank_div", "bank_ctl"):
+        un_r, un_t = f"{fam_key}_ssres", f"{fam_key}_sstot"
+        su_r, su_t = f"{fam_key}_ssres_L{l_star}", f"{fam_key}_sstot_L{l_star}"
+        if un_r not in npz and su_r not in npz:
+            continue  # bank splits legitimately absent when no bank stores exist
+        if un_r not in npz or su_r not in npz:
+            missing.append(fam_key)
+            continue
+        p_un = _pooled_from_percontext(npz[un_r].astype(np.float64), npz[un_t].astype(np.float64))
+        p_su = _pooled_from_percontext(npz[su_r].astype(np.float64), npz[su_t].astype(np.float64))
+        both_nan = np.isnan(p_un) & np.isnan(p_su)
+        delta = np.abs(p_un - p_su)
+        delta[both_nan] = 0.0  # jointly-invalid groups agree by construction
+        # A one-sided NaN is a validity drift between the two code paths.
+        fam_deltas[fam_key] = float("inf") if np.isnan(delta).any() else float(delta.max())
+    max_delta = max(fam_deltas.values(), default=float("inf"))
+    rec = {
+        "calibration_layer": l_star,
+        "lambda_mismatches": {k: list(v) for k, v in lam_mismatch.items()},
+        "max_abs_delta_pooled_r2_by_family": fam_deltas,
+        "missing_families": missing,
+        "tol": L20_REPRO_TOL,
+        "pass": (
+            not lam_mismatch and not missing and bool(fam_deltas) and max_delta <= L20_REPRO_TOL
+        ),
+    }
+    if not rec["pass"]:
+        msg = (
+            f"suffixed-path L{l_star} calibration gate FAIL: λ mismatches "
+            f"{lam_mismatch}, missing={missing}, max|ΔR²| by family {fam_deltas} > tol "
+            f"{L20_REPRO_TOL} — the per-layer loop/index/key code is untrusted "
+            "(plan kill criterion; added-layer verdicts blocked)"
+        )
+        if smoke:
+            logger.warning("[xlayer-gate] SMOKE (non-binding, comparison executed): %s", msg)
+        else:
+            raise RuntimeError(msg)
+    else:
+        logger.info(
+            "[xlayer-gate] suffixed-path L%d calibration PASS: max|ΔR²|=%.3e, λ* identical",
+            l_star,
+            max_delta,
+        )
+    return rec
+
+
 def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + selection + outputs
     base_dir: pathlib.Path,
     smoke: bool,
@@ -2282,7 +2559,7 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
     # Smoke keeps the identical code path at tiny n: only the row-count floor
     # scales (10-context pool -> ~5 train survivors; production keeps 8).
     min_train = 4 if smoke else MIN_CELL_TRAIN
-    out_dir = base_dir / "eval_results" / "issue_952"
+    out_dir = eval_out_dir(base_dir)  # follow-up rounds write under their own subdir
     out_dir.mkdir(parents=True, exist_ok=True)
     tensors_dir = base_dir / "analysis_tensors"
 
@@ -2654,13 +2931,181 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
         json.dumps(position_report, indent=2, default=_json_np)
     )
 
+    # ── cross-layer decision cells (follow-up plan §3): gates + per-layer pass-2 ─
+    if DECISION_LAYERS:
+        # Gate 1: l_star == 20 (selection drift = nothing downstream interpretable).
+        if smoke:
+            logger.warning(
+                "[xlayer-gate] SMOKE (non-binding, comparison executed): l_star==20 "
+                "assert read l_star=%d",
+                l_star,
+            )
+        elif l_star != 20:
+            raise RuntimeError(
+                f"l_star gate FAIL: selected l_star={l_star} != 20 on the layer grid "
+                f"{LAYER_GRID} — selection drift (plan kill criterion)"
+            )
+        # Gate 2: L20 reproduction vs the parent's committed position_r2_by_arm.json
+        # (staged copy) — BEFORE any new-layer number is computed.
+        parent_ref_path = parent_eval_dir(base_dir) / "position_r2_by_arm.json"
+        if parent_ref_path.exists():
+            meta["l20_reproduction_gate"] = l20_reproduction_gate(
+                json.loads(parent_ref_path.read_text()), position_report, smoke
+            )
+        elif smoke:
+            logger.warning(
+                "[xlayer-gate] SMOKE: parent reference absent (%s) — reproduction "
+                "gate comparison skipped",
+                parent_ref_path,
+            )
+        else:
+            raise RuntimeError(
+                f"L20 reproduction gate: parent reference missing at {parent_ref_path} "
+                "(stage it via --stage-battery-inputs) — refusing to trust new-layer numbers"
+            )
+
+        xlayer_report: dict[str, Any] = {
+            "l_star": l_star,
+            "calibration_layer": l_star,
+            "decision_layers": sorted(DECISION_LAYERS),
+            "lambdas": DEFAULT_LAMBDAS_LIST,
+            "universe": "U_A (span>=32 all arms)",
+            "by_layer": {},
+        }
+        # Calibration layer FIRST: gate 3 fires before any added-layer compute.
+        loop_layers = [l_star] + [la for la in sorted(DECISION_LAYERS) if la != l_star]
+        lam_by_slot_star: dict[str, int] | None = None
+        for layer in loop_layers:
+            li_l = LAYER_GRID.index(layer)
+            upath = ck_dir / f"pass2_xlayer_L{layer}.npz"
+            cached = _ckpt_load(upath)
+            if cached is not None:
+                arrs, payload = cached
+                npz.update(arrs)
+                xlayer_report["by_layer"][str(layer)] = payload["layer_block"]
+                if layer == l_star:
+                    lam_by_slot_star = {k: int(v) for k, v in payload["lam_by_slot"].items()}
+                logger.info("[1e-ckpt] SKIP xlayer pass-2 L%d (unit shard present)", layer)
+            else:
+                # Per-slot lambda* from THIS layer's own pass-1 validation row
+                # (plan §11: the registered selection rule per layer, never ported).
+                lam_idx_l, lam_by_slot_l = _lam_star_by_slot(GROUPS_A, val_pooled_a[li_l])
+                lam_idx_bl, _lam_by_slot_bl = _lam_star_by_slot(GROUPS_B, val_pooled_b[li_l])
+                slots_l = (
+                    slots_star
+                    if layer == l_star
+                    else {arm: _load_layer_slots(base_dir, arm, layer)[0] for arm in ARMS}
+                )
+                c_l = slots_l["own"][:, SLOT_IDX["c_last"], :]
+                eval_splits_l: dict[str, tuple[np.ndarray, np.ndarray]] = {
+                    "val": (c_l[va_a], _stack_targets(slots_l, va_a, GROUPS_A)),
+                    "test": (c_l[te_a], _stack_targets(slots_l, te_a, GROUPS_A)),
+                }
+                if have_bank:
+                    for role in ("divergent", "control"):
+                        b_slots: dict[str, np.ndarray] = {}
+                        ids_ref: list | None = None
+                        for arm in BANK_ARMS:
+                            arr, ids = _load_layer_slots(base_dir, f"bank_{arm}", layer)
+                            b_slots[arm] = arr
+                            ids_ref = ids
+                        assert ids_ref is not None
+                        role_rows = [
+                            i
+                            for i, qid in enumerate(ids_ref)
+                            if qid.endswith("_div") == (role == "divergent")
+                        ]
+                        key = "bank_div" if role == "divergent" else "bank_ctl"
+                        if f"{key}_ids" in npz:
+                            assert [ids_ref[i] for i in role_rows] == list(
+                                npz[f"{key}_ids"].tolist()
+                            ), f"bank id order drift at L{layer} ({key}) — rows misaligned"
+                        xb = b_slots["own"][role_rows][:, SLOT_IDX["c_last"], :]
+                        yb = _stack_targets(b_slots, np.asarray(role_rows), GROUPS_A)
+                        eval_splits_l[key] = (xb, yb)
+                res_l = run_ridge_cell(
+                    c_l[tr_a],
+                    _stack_targets(slots_l, tr_a, GROUPS_A),
+                    eval_splits_l,
+                    group_names=[f"{s}|{a}" for s, a in GROUPS_A],
+                    device=fit_device,
+                    allow_train_nan_imputation=True,
+                )
+                unit_npz: dict[str, np.ndarray] = {}
+                ssr_l, sst_l = _extract_frozen(res_l, "test", lam_idx_l)
+                unit_npz[f"A_test_ssres_L{layer}"] = ssr_l.astype(np.float32)
+                unit_npz[f"A_test_sstot_L{layer}"] = sst_l.astype(np.float32)
+                unit_npz[f"A_lam_idx_L{layer}"] = lam_idx_l
+                for key in ("bank_div", "bank_ctl"):
+                    if key in eval_splits_l:
+                        ssr_bx, sst_bx = _extract_frozen(res_l, key, lam_idx_l)
+                        unit_npz[f"{key}_ssres_L{layer}"] = ssr_bx.astype(np.float32)
+                        unit_npz[f"{key}_sstot_L{layer}"] = sst_bx.astype(np.float32)
+                pooled_l = _pooled_at_frozen(res_l, "test", lam_idx_l)
+                layer_block: dict[str, Any] = {}
+                for gi, (slot, arm) in enumerate(GROUPS_A):
+                    if slot not in POSITION_SLOTS:
+                        continue
+                    layer_block.setdefault(arm, {})[slot] = {
+                        "test_pooled_r2": float(pooled_l[gi]),
+                        "lambda": DEFAULT_LAMBDAS_LIST[int(lam_idx_l[gi])],
+                        "n_valid_test": int(res_l.n_valid["test"][gi]),
+                    }
+                # Battery-B companion at the layer (full universe; plan §3).
+                res_lb = run_ridge_cell(
+                    c_l[tr_b],
+                    _stack_targets(slots_l, tr_b, GROUPS_B),
+                    {
+                        "val": (c_l[va_b], _stack_targets(slots_l, va_b, GROUPS_B)),
+                        "test": (c_l[te_b], _stack_targets(slots_l, te_b, GROUPS_B)),
+                    },
+                    group_names=[f"{s}|{a}" for s, a in GROUPS_B],
+                    device=fit_device,
+                )
+                ssr_lb, sst_lb = _extract_frozen(res_lb, "test", lam_idx_bl)
+                unit_npz[f"B_test_ssres_L{layer}"] = ssr_lb.astype(np.float32)
+                unit_npz[f"B_test_sstot_L{layer}"] = sst_lb.astype(np.float32)
+                payload = {
+                    "layer_block": layer_block,
+                    "lam_by_slot": {k: int(v) for k, v in lam_by_slot_l.items()},
+                }
+                _ckpt_save(upath, unit_npz, payload)
+                npz.update(unit_npz)
+                xlayer_report["by_layer"][str(layer)] = layer_block
+                if layer == l_star:
+                    lam_by_slot_star = {k: int(v) for k, v in payload["lam_by_slot"].items()}
+                del res_l, res_lb
+                if layer != l_star:
+                    del slots_l
+                logger.info("[1e] xlayer pass-2 L%d done", layer)
+            # Gate 3 (suffixed-path L20 calibration cell) — fires right after the
+            # calibration layer, BEFORE any added-layer compute is trusted.
+            if layer == l_star:
+                assert lam_by_slot_star is not None
+                meta["suffixed_l20_calibration_gate"] = suffixed_l20_calibration_gate(
+                    npz,
+                    l_star,
+                    {k: int(v) for k, v in lam_by_slot_a.items()},
+                    lam_by_slot_star,
+                    smoke,
+                )
+        (out_dir / "position_r2_by_arm_cross_layer.json").write_text(
+            json.dumps(xlayer_report, indent=2, default=_json_np)
+        )
+        meta["cross_layer"] = {
+            "decision_layers": sorted(DECISION_LAYERS),
+            "loop_layers": loop_layers,
+            "calibration_layer": l_star,
+        }
+
     # ── prefix battery (per-arm survivors; layers {l_star, 17}) ─────────────────
     # Descope-ladder hook (plan §9 step 2: prefix layers {l*, 17} -> {l*}).
     if os.environ.get("EPM_I952_PREFIX_LSTAR_ONLY") == "1":
         prefix_layers = [l_star]
         logger.warning("[1e] descope: prefix battery at l_star only (EPM_I952_PREFIX_LSTAR_ONLY)")
     else:
-        prefix_layers = sorted({l_star, FALLBACK_LAYER})
+        # Follow-up plan §3(b): decision layers widen the prefix/matched batteries.
+        prefix_layers = sorted({l_star, FALLBACK_LAYER} | set(DECISION_LAYERS))
     closure: dict[str, Any] = {"layers": prefix_layers, "attrition": {}, "cells": {}}
     d10_group_names = list(D10_SLOTS)
     for layer in prefix_layers:
@@ -2943,7 +3388,7 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
     meta["pass1_svd_seconds"] = cell_seconds
     meta["phase_wall_seconds"] = time.time() - t_phase0
     (out_dir / "battery_meta.json").write_text(json.dumps(meta, indent=2, default=_json_np))
-    np.savez(tensors_dir / "per_context_stats.npz", **npz)
+    np.savez(tensors_dir / per_context_npz_name(), **npz)
     logger.info(
         "[1e] done in %.1f min; per_context_stats.npz keys=%d",
         meta["phase_wall_seconds"] / 60,
@@ -2987,18 +3432,21 @@ def _apply_frozen_preds(
     return out
 
 
-def phase_bank_score(
+def phase_bank_score(  # noqa: C901 — the 1f driver: bank reads + H3 secondary + uploads
     base_dir: pathlib.Path, smoke: bool, bank_file: str | None, uploader: _UploadWorker
 ) -> None:
     """Phase 1f: per-pair bank reads + error-cosine secondary + terminal uploads."""
     log_phase("p1f_bank_score")
-    out_dir = base_dir / "eval_results" / "issue_952"
+    out_dir = eval_out_dir(base_dir)  # follow-up rounds write under their own subdir
     tensors_dir = base_dir / "analysis_tensors"
     meta = json.loads((out_dir / "battery_meta.json").read_text())
-    npz_path = tensors_dir / "per_context_stats.npz"
+    npz_path = tensors_dir / per_context_npz_name()
     npz = dict(np.load(npz_path, allow_pickle=False))
 
-    verification = json.loads((out_dir / "divergence_bank_verification.json").read_text())
+    # The bank verification is a PARENT-run input (staged on follow-up rounds).
+    verification = json.loads(
+        (parent_eval_dir(base_dir) / "divergence_bank_verification.json").read_text()
+    )
     pair_info = {p["pair_id"]: p for p in verification["pairs"]}
 
     div_eval: dict[str, Any] = {
@@ -3106,12 +3554,21 @@ def phase_bank_score(
     # Terminal uploads: eval JSONs + npz + bank raw completions + bank shards.
     upload_paths: list[pathlib.Path] = sorted((out_dir).glob("*.json"))
     upload_paths += [npz_path]
-    upload_paths += sorted((base_dir / "raw_completions" / "bank").glob("*.json"))
-    judge_dir = base_dir / "raw_completions" / "bank" / "judge"
-    if judge_dir.exists():
-        upload_paths += sorted(p for p in judge_dir.rglob("*.json") if p.is_file())
-    upload_paths += sorted(tensors_dir.glob("slots_bank_*.pt"))
-    upload_paths += sorted(tensors_dir.glob("spans_*.json"))
+    if FOLLOWUP_TAG:
+        # Follow-up rounds re-CONSUME the parent's bank artifacts (staged inputs);
+        # only THIS round's outputs + its own verification records upload, all
+        # namespaced under followups/<tag>/ (parent HF files never overwritten).
+        for name in ("phase0_verify.json", "bank_length_filter.json"):
+            p = parent_eval_dir(base_dir) / name
+            if p.exists():
+                upload_paths.append(p)
+    else:
+        upload_paths += sorted((base_dir / "raw_completions" / "bank").glob("*.json"))
+        judge_dir = base_dir / "raw_completions" / "bank" / "judge"
+        if judge_dir.exists():
+            upload_paths += sorted(p for p in judge_dir.rglob("*.json") if p.is_file())
+        upload_paths += sorted(tensors_dir.glob("slots_bank_*.pt"))
+        upload_paths += sorted(tensors_dir.glob("spans_*.json"))
     # Workload-log leg (plan §10 artifacts: HF logs/issue-952-workload.log). A CLEAN
     # GCE run's log dies with the instance DELETE unless uploaded here; the GCE
     # startup script exports its path as EPS_LOG_PATH (backends/gcp.log_path_for).
@@ -3161,12 +3618,14 @@ def write_final_sentinel(base_dir: pathlib.Path, smoke: bool) -> None:
         deviation = rec.get("plan_deviation", deviation)
     except (OSError, json.JSONDecodeError) as e:
         logger.warning("phase0_verify.json unreadable for the results card (%s) — static note", e)
+    hf_root = f"{ISSUE_SLUG}/followups/{FOLLOWUP_TAG}" if FOLLOWUP_TAG else ISSUE_SLUG
     card = {
         "hf_data_repo": HF_DATA_REPO,
         "issue_slug": ISSUE_SLUG,
-        "analysis_tensors_prefix": f"{ISSUE_SLUG}/analysis_tensors/",
+        "followup_tag": FOLLOWUP_TAG or None,
+        "analysis_tensors_prefix": f"{hf_root}/analysis_tensors/",
         "raw_completions_prefix": f"{ISSUE_SLUG}/raw_completions/",
-        "eval_results_prefix": f"{ISSUE_SLUG}/eval_results/issue_952/",
+        "eval_results_prefix": f"{hf_root}/eval_results/issue_952/",
         "wandb_url": "n/a (no model training in this experiment)",
         "plan_deviations": [deviation],
     }
@@ -3181,7 +3640,7 @@ def write_final_sentinel(base_dir: pathlib.Path, smoke: bool) -> None:
                     "smoke": smoke,
                     "issue": ISSUE,
                     "git_sha": git_sha,
-                    "eval_results": str(base_dir / "eval_results" / "issue_952"),
+                    "eval_results": str(eval_out_dir(base_dir)),
                     "hf_upload": ISSUE_SLUG,
                     "reproducibility_card": card,
                 },
@@ -3304,6 +3763,15 @@ def parse_args():
         action="store_true",
         help="execute every deferred import (AST-walked) and exit",
     )
+    p.add_argument(
+        "--stage-battery-inputs",
+        type=str,
+        default=None,
+        metavar="REVISION",
+        help="download the parent run's battery inputs (slot shards + spans + bank "
+        "verification + parent position_r2_by_arm.json + split) from HF at this "
+        "pinned revision into --base-dir before any phase (follow-up plan §3)",
+    )
     return p.parse_args()
 
 
@@ -3381,13 +3849,19 @@ def main() -> None:  # noqa: C901 — the phase dispatcher IS the unified smoke/
         raise SystemExit("--synth-capture is SMOKE-ONLY (refusing outside --smoke)")
 
     logger.info(
-        "issue 952 dispatcher: phases=%s smoke=%s base_dir=%s fit_device=%s",
+        "issue 952 dispatcher: phases=%s smoke=%s base_dir=%s fit_device=%s "
+        "decision_layers=%s followup_tag=%r",
         phases,
         smoke,
         base_dir,
         fit_device,
+        DECISION_LAYERS,
+        FOLLOWUP_TAG,
     )
     uploader = _UploadWorker(enabled=not args.skip_upload)
+
+    if args.stage_battery_inputs:
+        stage_battery_inputs(base_dir, args.stage_battery_inputs, args.synth_capture)
 
     if "phase0" in phases:
         rec = phase0_verify(base_dir, smoke)
