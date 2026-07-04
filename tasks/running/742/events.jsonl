@@ -268,3 +268,4 @@
 {"ts": "2026-07-04T00:44:20Z", "kind": "epm:progress", "version": 114, "by": "unknown", "note": "[poll-tick] 6th launch 2h40m. Final cell (ultrachat refusal) judging, 174 rerun-dispatch dirs scored. pid alive, log fresh, no errors. Disk 64G free."}
 {"ts": "2026-07-04T01:09:38Z", "kind": "epm:progress", "version": 115, "by": "unknown", "note": "[poll-tick:bg] job alive (pid 2920893), log mtime 2026-07-03 18:09:01, refusal 179 dirs scored, disk 62G free. Auto-posted from bg tick (marker cadence independent of notification latency)."}
 {"ts": "2026-07-04T01:35:15Z", "kind": "epm:progress", "version": 116, "by": "unknown", "note": "[poll-tick:bg] job alive (pid 2920893), log mtime 2026-07-03 18:33:42, refusal 183 dirs scored, disk 47G free."}
+{"ts": "2026-07-04T02:00:45Z", "kind": "epm:progress", "version": 117, "by": "unknown", "note": "[poll-tick:bg] job alive (pid 2920893), log mtime 2026-07-03 18:59:17, refusal 187 dirs scored, disk 57G free."}
