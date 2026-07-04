@@ -5220,8 +5220,8 @@
       "goal": "On Qwen2.5-7B-Instruct base model, determine which answer-side summary of the response (mean-over-answer / last token / the turn-boundary <|im_end|> and the newline after it / a dense per-position sweep / maxp) best supports BOTH (a) the linear context->answer map c_C->summary (held-out skill-over-mean R2 per layer, #722's DV) AND (b) predicting behavior expression E0 from the summary read out two ways -- the fixed persona-vector direction r_B and a trained LOCO-ridge regression summary->E0 -- reusing #658's 50-context base grid, completions, r_B and E0; the reconstruction winner is carried into #811.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/810",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/810",
+      "status": "followups_running",
       "title": "The mean answer summary \u2014 not max-pool \u2014 carries the base context\u2192answer map across genres, and behavior read-out clears its null band only for harmful compliance on a cleanly re-judged target (MODERATE confidence)"
     },
     "811": {
