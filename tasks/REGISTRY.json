@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1031,
+  "highest_id": 1032,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -261,6 +261,13 @@
       "path": "tasks/proposed/1031",
       "status": "proposed",
       "title": "daily-fix: plan-time RAM/RSS routing gate + p90 fence sizing"
+    },
+    "1032": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1032",
+      "status": "proposed",
+      "title": "daily-fix: replan guard \u2014 re-read Goal before posting a plan version"
     },
     "104": {
       "has_clean_result": false,
