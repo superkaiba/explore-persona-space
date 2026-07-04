@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 977,
+  "highest_id": 978,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6493,6 +6493,13 @@
       "path": "tasks/proposed/977",
       "status": "proposed",
       "title": "workflow-fix: port GCP find-newer sentinel wait to RunPod"
+    },
+    "978": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/978",
+      "status": "proposed",
+      "title": "workflow-fix: distinct reason arm for RunPodWorkloadStartError"
     },
     "98": {
       "has_clean_result": true,
