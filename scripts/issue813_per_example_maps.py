@@ -26,7 +26,7 @@ HF-persisted artifacts at pinned revision ``HF_REVISION``. Computes:
   (parent convention) + the em-only per-example question-resampling null.
 - DV5 is pre-registered N/A (no per-question judge outputs exist).
 
-Reuse (imported, never re-implemented): ``issue722_fit_M._pca_basis_v0/_to64``
+Reuse (imported, never re-implemented): ``issue722_fit_M._pca_basis_v0``
 (basis), ``issue658_fit_predictors.RIDGE_LAMBDAS`` + the PRESS/dual-ridge math
 (the shared-eigh fold path below reproduces ``_press_loo_mse_per_lambda`` +
 ``_ridge_dual_weights`` from ONE eigendecomposition per fold — gated ≤1e-6
@@ -97,23 +97,10 @@ OUT_SUBDIR = "eval_results/issue_813/per_example_vs_averaged"
 
 
 # ── shared fail-loud NPZ preflight (v7 concern: perlayer-npz-key-coverage-preflight) ──
-
-
-def _require_npz_keys(path: Path | str, npz, required_keys) -> None:
-    """Fail loud BEFORE any keyed read when an NPZ is missing required keys.
-
-    ``npz`` is an ``np.lib.npyio.NpzFile`` (uses ``.files``) or any mapping. The
-    error names the missing keys AND the cell path so a schema drift between the
-    producer (issue813_run_cell / issue667_save_maps) and a consumer surfaces as
-    one actionable line instead of a bare KeyError deep in compute.
-    """
-    present = list(getattr(npz, "files", None) or npz.keys())
-    missing = [k for k in required_keys if k not in present]
-    if missing:
-        raise KeyError(
-            f"NPZ schema preflight FAILED for {path}: missing keys {missing} "
-            f"(present: {sorted(present)})"
-        )
+# Canonical def moved to issue813_save_maps (the lowest common module — round-2 fix), so
+# the imported load_reduced_cells path is preflighted for EVERY caller, not just this
+# driver's own reads; import keeps this module's 3 call sites working unchanged.
+from issue813_save_maps import _require_npz_keys  # noqa: E402
 
 
 def _git_sha() -> str:
@@ -141,11 +128,15 @@ def _repro_meta(args: argparse.Namespace) -> dict:
     }
 
 
-def _regime(args: argparse.Namespace) -> dict:
+def _regime(args: argparse.Namespace, run_equiv_gate: bool) -> dict:
     """The exact-regime resume key (v7 concern `perlayer-resume-stale-regime`).
 
-    Every output-affecting knob is part of the key; a cached cell JSON is reused
-    IFF its stored ``regime`` dict equals this one (plus schema-key presence) —
+    Every output-affecting knob is part of the key — INCLUDING the gate/diagnostic
+    flags (``dv6_oracle``, ``dv4_lambda_spotcheck``) and THIS cell's equivalence-gate
+    membership (``equiv_gate``; per-cell rather than the raw ``--equiv-cells`` string,
+    so a gate-set change invalidates exactly the cells whose membership changed —
+    round-2 fix for the resume-can-skip-a-mandatory-gate hole). A cached cell JSON is
+    reused IFF its stored ``regime`` dict equals this one (plus schema-key presence) —
     never on row count alone.
     """
     return {
@@ -165,6 +156,9 @@ def _regime(args: argparse.Namespace) -> dict:
         "dv6_floor_mode": args.dv6_floor_mode,
         "dv6_null_resamples": args.dv6_null_resamples,
         "boot_resamples": args.boot_resamples,
+        "dv4_lambda_spotcheck": args.dv4_lambda_spotcheck,
+        "dv6_oracle": bool(args.dv6_oracle),
+        "equiv_gate": bool(run_equiv_gate),
         "seed": SEED,
     }
 
@@ -1678,7 +1672,7 @@ def process_cell(
         "ctx_families": cell.families,
         "target_dim_realized": int(basis.shape[0]),
         "target_dim_pq_basis": int(basis_pq.shape[0]),
-        "regime": _regime(args),
+        "regime": _regime(args, run_equiv_gate),
         "gates": gates,
         "dv1": dv1,
         "dv2": dv2,
@@ -1786,12 +1780,15 @@ def main() -> int:
         raise RuntimeError("fact requested but r_b_fact.pt unavailable — cannot compute DV6 r̂")
 
     equiv_cells = {tuple(c.split(":")) for c in args.equiv_cells.split(",") if c}
-    expected_regime = _regime(args)
     n_done = 0
     t_run = time.time()
     for behavior in args.behaviors:
         for substrate in args.substrates:
             out_path = args.out_dir / f"transfer_L{HEADLINE_LAYER}_{behavior}__{substrate}.json"
+            # Per-cell expected regime: equiv-gate membership is part of THIS cell's key,
+            # so a --equiv-cells change recomputes exactly the cells whose gate flipped.
+            run_gate = (behavior, substrate) in equiv_cells
+            expected_regime = _regime(args, run_equiv_gate=run_gate)
             if not args.no_resume and _cell_resume_valid(out_path, expected_regime):
                 logger.info(
                     "[phase=resume] %s/%s cached (regime match) — skip", behavior, substrate
@@ -1812,9 +1809,7 @@ def main() -> int:
                 n_done += 1
                 continue
             cell = load_cell(behavior, substrate, args.reduced_root, args.maps_root)
-            result = process_cell(
-                cell, args, rb_main, rb_fact, run_equiv_gate=(behavior, substrate) in equiv_cells
-            )
+            result = process_cell(cell, args, rb_main, rb_fact, run_equiv_gate=run_gate)
             _atomic_write_json(out_path, result)
             _merge_shared_json(
                 args.out_dir / f"coeff_agreement_L{HEADLINE_LAYER}.json",

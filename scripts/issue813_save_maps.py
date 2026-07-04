@@ -64,6 +64,37 @@ LAYERS = tuple(range(1, 28))  # 1..27 (L0 extraction-aliased, dropped from the f
 HIDDEN = 3584
 N_LAYERS = 28
 
+# Every key `load_reduced_cells` reads from a reduced summary.npz (schema preflight).
+REDUCED_SUMMARY_KEYS = (
+    "c_C_base",
+    "c_C_trained",
+    "v_A_base",
+    "v_A_trained",
+    "context_ids",
+    "families",
+)
+
+
+def _require_npz_keys(path: Path | str, npz, required_keys) -> None:
+    """Fail loud BEFORE any keyed read when an NPZ is missing required keys.
+
+    Canonical home (v7 concern ``perlayer-npz-key-coverage-preflight``, closed in the
+    round-2 fix): this is the lowest common module, so BOTH consumers —
+    ``issue813_per_example_maps`` (driver NPZ reads) and ``issue813_perlayer_profile``
+    (direct drift read + the imported ``load_reduced_cells`` path below) — import it
+    from here without a cycle. ``npz`` is an ``np.lib.npyio.NpzFile`` (uses ``.files``)
+    or any mapping. The error names the missing keys AND the file path so a schema
+    drift between producer and consumer surfaces as one actionable line instead of a
+    bare KeyError deep in compute.
+    """
+    present = list(getattr(npz, "files", None) or npz.keys())
+    missing = [k for k in required_keys if k not in present]
+    if missing:
+        raise KeyError(
+            f"NPZ schema preflight FAILED for {path}: missing keys {missing} "
+            f"(present: {sorted(present)})"
+        )
+
 
 def load_reduced_cells(
     behavior: str, substrate: str, layer: int, reduced_root: Path
@@ -81,6 +112,7 @@ def load_reduced_cells(
     if not path.exists():
         raise FileNotFoundError(f"reduced summary missing: {path} (extract phase incomplete?)")
     d = np.load(path, allow_pickle=True)
+    _require_npz_keys(path, d, REDUCED_SUMMARY_KEYS)  # fail loud before any keyed read
     c_C_base = np.asarray(d["c_C_base"], dtype=np.float64)  # (n, 28, HIDDEN)
     c_C_trained = np.asarray(d["c_C_trained"], dtype=np.float64)
     v_A_base = np.asarray(d["v_A_base"], dtype=np.float64)

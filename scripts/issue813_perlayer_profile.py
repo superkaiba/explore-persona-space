@@ -66,7 +66,7 @@ import issue658_fit_predictors as fit658  # noqa: E402
 import issue667_marker_mapchange as marker_mc  # noqa: E402
 import issue722_fit_M as fitM  # noqa: E402
 import issue813_save_maps as savemaps813  # noqa: E402
-from issue813_per_example_maps import _require_npz_keys  # noqa: E402  (fail-loud NPZ preflight)
+from issue813_save_maps import _require_npz_keys  # noqa: E402  (fail-loud NPZ preflight)
 
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 

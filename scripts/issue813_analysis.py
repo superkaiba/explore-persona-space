@@ -74,6 +74,7 @@ import issue722_fit_M as fitM  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 from issue722_bootstrap import floor_sd, make_refit_pair  # noqa: E402
+from issue813_save_maps import _require_npz_keys  # noqa: E402  (fail-loud NPZ preflight)
 
 logger = logging.getLogger("issue813.analysis")
 
@@ -858,6 +859,21 @@ def substrate_swap_null(
     if not pq_path.exists():
         raise FileNotFoundError(f"per-question headline rows missing: {pq_path}")
     d = np.load(pq_path, allow_pickle=True)
+    # Fail loud before any keyed read (bug-class-sweep sibling of the round-2
+    # `perlayer-npz-key-coverage-preflight` closure; keys = exactly what this site reads).
+    _require_npz_keys(
+        pq_path,
+        d,
+        (
+            "c_C_base",
+            "c_C_trained",
+            "v_A_base",
+            "v_A_trained",
+            "row_context_index",
+            "row_question_index",
+            "families",
+        ),
+    )
     c0 = np.asarray(d["c_C_base"], dtype=np.float64)  # (n_rows, HIDDEN)
     cp = np.asarray(d["c_C_trained"], dtype=np.float64)
     v0 = np.asarray(d["v_A_base"], dtype=np.float64)
