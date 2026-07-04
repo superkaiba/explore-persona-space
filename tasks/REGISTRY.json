@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1028,
+  "highest_id": 1029,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -240,6 +240,13 @@
       "path": "tasks/proposed/1028",
       "status": "proposed",
       "title": "daily-fix: watcher auto-recovers ALIVE-BUT-STALLED sessions"
+    },
+    "1029": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1029",
+      "status": "proposed",
+      "title": "daily-fix: GCP pre-workload boot failures advance the failover ladder"
     },
     "104": {
       "has_clean_result": false,
