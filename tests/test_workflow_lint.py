@@ -3718,13 +3718,32 @@ def test_stale_label_disposition_clause_flags_missing_file(tmp_path) -> None:
     assert "missing" in errors[0], errors
 
 
+def test_stale_label_disposition_clause_paragraph_at_eof_passes(tmp_path) -> None:
+    """A conforming paragraph that is the LAST content of the file — no
+    blank-line terminator after it — still PASSes: pins the ``end == -1``
+    span fallback (the span extends to EOF when ``text.find("\\n\\n", start)``
+    misses)."""
+    body = _STALE_LABEL_CONFORMING.split("\n\n**Next.")[0]
+    assert body != _STALE_LABEL_CONFORMING
+    # Precondition for exercising the fallback: no blank line anywhere at or
+    # after the anchor, so the span-end search MUST return -1.
+    assert "\n\n" not in body[body.find("**Stale-label disposition rule") :]
+    _write_stale_label_tree(tmp_path, body)
+    assert check_stale_label_disposition_clause(repo_root=tmp_path) == []
+
+
 def test_stale_label_disposition_clause_wired_into_default_run(tmp_path, capsys, monkeypatch):
     """The no-flags CLI-path REGISTRATION test (MF1): the default run must
-    exercise ``check_stale_label_disposition_clause`` — deleting the
-    ``no_flags`` tuple membership or the dispatch branch must fail this test
-    (mutation-visible), closing the dead-tripwire gap where all direct-call
-    tests stay green while the CLI never runs the check. Follows the
-    ``test_smoke_output_hygiene_wired_into_default_run`` /
+    exercise ``check_stale_label_disposition_clause`` — deleting the dispatch
+    branch (``if args.check_stale_label_disposition or no_flags:``) or its
+    ``or no_flags`` disjunct must fail this test (mutation-visible), closing
+    the dead-tripwire gap where all direct-call tests stay green while the
+    CLI never runs the check. NOTE: this test canNOT pin the
+    ``or args.check_stale_label_disposition`` membership in the ``no_flags``
+    tuple — ``main([])`` passes no flags, so ``no_flags`` computes True with
+    or without that line; the tuple membership is pinned by
+    ``test_stale_label_disposition_clause_dedicated_flag_isolated`` below.
+    Follows the ``test_smoke_output_hygiene_wired_into_default_run`` /
     ``test_vm_thread_cap_guidance_bundled_in_no_flags`` house pattern:
     doctored non-conforming tree (execute clause deleted), ``_REPO_ROOT``
     monkeypatched to the fixture, ``main([])`` in-process. Other bundled
@@ -3743,4 +3762,33 @@ def test_stale_label_disposition_clause_wired_into_default_run(tmp_path, capsys,
         f"the #963 stale-label-disposition diagnostic is missing from the "
         f"no-flags default run's stderr — the check is not bundled into "
         f"no_flags:\n{err}"
+    )
+
+
+def test_stale_label_disposition_clause_dedicated_flag_isolated(tmp_path, capsys, monkeypatch):
+    """The dedicated ``--check-stale-label-disposition`` flag runs ONLY the
+    stale-label check (``no_flags`` computes False): on a minimal tree where
+    the stale-label paragraph CONFORMS but the full default bundle FAILs
+    (other bundled checks miss their files), the dedicated-flag invocation
+    exits 0. Mutation-visibility — the leg the ``main([])`` wiring test above
+    cannot pin: deleting ``or args.check_stale_label_disposition`` from the
+    ``no_flags`` tuple makes the dedicated-flag invocation compute
+    ``no_flags`` True and run the FULL bundle on the failing minimal tree ->
+    rc != 0 -> this test FAILs. (Verified empirically on 2026-07-04 by
+    stripping that tuple line: this test fails, the wiring test stays green.)
+    """
+    import workflow_lint as wl
+
+    _write_stale_label_tree(tmp_path, _STALE_LABEL_CONFORMING)
+    monkeypatch.setattr(wl, "_REPO_ROOT", tmp_path)
+    # Precondition: the FULL default bundle FAILs on this minimal tree, so a
+    # no_flags mis-computation below is observable as rc != 0.
+    assert wl.main([]) != 0, "precondition: the default bundle PASSed on the minimal tree"
+    capsys.readouterr()  # discard the precondition run's output
+    rc = wl.main(["--check-stale-label-disposition"])
+    err = capsys.readouterr().err
+    assert rc == 0, (
+        f"--check-stale-label-disposition ran more than the (conforming) stale-label "
+        f"check — no_flags mis-computed True, i.e. the flag's membership in the "
+        f"no_flags tuple in workflow_lint.main() is missing:\n{err}"
     )
