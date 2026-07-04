@@ -50,3 +50,4 @@
 {"ts": "2026-07-04T02:18:41Z", "kind": "epm:progress", "version": 5, "by": "poll_pipeline", "note": "phase transition: (start) -> p1_gen", "phase": "p1_gen", "pod": "pod-931"}
 {"ts": "2026-07-04T02:38:04Z", "kind": "epm:progress", "version": 6, "by": "poll_pipeline", "note": "phase transition: p1_gen -> p2_extract_armb", "phase": "p2_extract_armb", "pod": "pod-931"}
 {"ts": "2026-07-04T02:47:43Z", "kind": "epm:progress", "version": 7, "by": "poll_pipeline", "note": "phase transition: p2_extract_armb -> p3_fits", "phase": "p3_fits", "pod": "pod-931"}
+{"ts": "2026-07-04T03:16:54Z", "kind": "epm:progress", "version": 8, "by": "poll_pipeline", "note": "phase transition: p3_fits -> p4_similarity", "phase": "p4_similarity", "pod": "pod-931"}
