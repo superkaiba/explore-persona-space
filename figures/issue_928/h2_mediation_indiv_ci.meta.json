@@ -1,0 +1,516 @@
+{
+  "commit": "5954fd238f",
+  "created": "2026-07-04T06:32:25Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "direct\n(ctx\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.7050124122970371,
+      "error": 0.07253947462673993,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "stage-2 oracle\n(CoT\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.9144825582028088,
+      "error": 0.01669239561239827,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "composed\n(ctx\u2192\u0109ot\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.6780456284001605,
+      "error": 0.07679851765616313,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "CoT-augmented\n([ctx,CoT]\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.9083013726386983,
+      "error": 0.01881648039747663,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.6255846323994537,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.89596591279857,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out skill-over-mean R\u00b2": 0.5948424445651931,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.8877861223745301,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.7706635816529336,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.9293507040233665,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out skill-over-mean R\u00b2": 0.7484394798775194,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.9254190831694834,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.993032703375958,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.993032703375958,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.14553273146846893,
+      "series": "permutation band (97.5th pct)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.14553273146846893,
+      "series": "permutation band (97.5th pct)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.040042122971763905,
+      "label": "f1_house_librarian",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.0,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.05129705299463461,
+      "label": "f1_house_surgeon",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.047317775274021145,
+      "label": "f1_house_programmer",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.0,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.04269019739550628,
+      "label": "f1_house_medical_doctor",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.04166666666666663,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.06598126417680372,
+      "label": "f1_house_software_engineer",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.029878972168195017,
+      "label": "f1_house_data_scientist",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.08355548020388581,
+      "label": "f1_phub_01",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.04206821293091889,
+      "label": "f1_phub_02",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.06232836791735297,
+      "label": "f1_phub_03",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.042099487157699844,
+      "label": "f1_phub_04",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.047935750149376455,
+      "label": "f1_phub_05",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.04166666666666663,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.039118981240194306,
+      "label": "f1_phub_06",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.04166666666666663,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.08424640037741637,
+      "label": "f1_phub_07",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.06427056784968044,
+      "label": "f1_phub_08",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.0,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.577149556583113,
+      "label": "f2_wc_short_1",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.0,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.5225301031492654,
+      "label": "f2_wc_short_2",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.16666666666666663,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.5034555821127026,
+      "label": "f2_wc_short_4",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.08333333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.6411575408568362,
+      "label": "f3_icl_json_k2",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.08333333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.1362103268820789,
+      "label": "f4_reph_imperative",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.0,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.086671515795126,
+      "label": "f4_reph_polite",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.125,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.22634613186715746,
+      "label": "f4_reph_casual",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.0,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.06963293843777274,
+      "label": "f4_reph_legalese",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.08333333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.19719906474552706,
+      "label": "f4_reph_enthusiastic",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.0,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.06280090475171174,
+      "label": "f4_reph_archaic",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.03570596513037427,
+      "label": "f5_fmt_json",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.07555662078088221,
+      "label": "f5_fmt_code_comment",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.0,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.05595127709969039,
+      "label": "f5_fmt_markdown_table",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.04166666666666663,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.06380529633221954,
+      "label": "f5_fmt_xml",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.06262353455215197,
+      "label": "f5_fmt_bullets",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.06199272497074815,
+      "label": "f6_default_template",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.0,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.03662483366764424,
+      "label": "f6_helpful_asst",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.053226975102201535,
+      "label": "f8_behav_marker",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.04166666666666663,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.028310082491974642,
+      "label": "f8_behav_sycophant",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.16014208001268548,
+      "label": "f8_behav_refusal",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.03550565353663404,
+      "label": "f8_behav_fact",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.02083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.05276072273477972,
+      "label": "f8_behav_harmful",
+      "series": "context (\u226580% coverage)",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.41666666666666663,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.44006330664214033,
+      "label": "f2_wc_short_3",
+      "series": "flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.29166666666666663,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.5747006187165061,
+      "label": "f2_wc_short_5",
+      "series": "flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.5,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.726590534529946,
+      "label": "f2_wc_long_1",
+      "series": "flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.6875,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.762353147103799,
+      "label": "f2_wc_long_2",
+      "series": "flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.39583333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.71909214447584,
+      "label": "f2_wc_long_3",
+      "series": "flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.375,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.4295163511093214,
+      "label": "f2_wc_long_4",
+      "series": "flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.8125,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.5638056603301501,
+      "label": "f2_wc_long_5",
+      "series": "flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.6458333333333333,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.5428021397676438,
+      "label": "f3_icl_marker_k4",
+      "series": "flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.75,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.6690804810291597,
+      "label": "f3_icl_french_k4",
+      "series": "flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.27083333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.7581554149398756,
+      "label": "f3_icl_json_k4",
+      "series": "flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.7708333333333334,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.584052634419792,
+      "label": "f3_icl_pirate_k4",
+      "series": "flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.45833333333333337,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.4942179967983019,
+      "label": "f3_icl_marker_k2",
+      "series": "flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.6666666666666667,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.6030635942386355,
+      "label": "f3_icl_marker_k8",
+      "series": "flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context row-drop rate (parse failures)": 0.3125,
+      "per-context \u0394 skill (CoT-augmented \u2212 direct)": 0.8153767896642561,
+      "label": "f3_icl_json_k8",
+      "series": "flagged below parse floor",
+      "_kind": "scatter",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 66
+}

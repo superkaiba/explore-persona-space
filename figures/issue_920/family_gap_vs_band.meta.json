@@ -1,0 +1,590 @@
+{
+  "commit": "09006be091",
+  "created": "2026-07-03T16:37:17Z",
+  "figsize": [
+    15.0,
+    7.0
+  ],
+  "points": [
+    {
+      "category": "in-probe",
+      "best-challenger lead over incumbent (skill units)": 0.27702026367187493,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "held-out probes",
+      "best-challenger lead over incumbent (skill units)": 0.26880950927734376,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "best-challenger lead over incumbent (skill units)": 0.04152800000000001,
+      "label": "observed 0.042",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "best-challenger lead over incumbent (skill units)": 0.036202999999999985,
+      "label": "observed 0.036",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.160586,
+      "y": 0.321173,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.156388,
+      "y": 0.312776,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.158087,
+      "y": 0.316174,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.067438,
+      "y": 0.134876,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.149486,
+      "y": 0.298972,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.064175,
+      "y": 0.128351,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.150828,
+      "y": 0.301656,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.138504,
+      "y": 0.277008,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.142798,
+      "y": 0.285596,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.154791,
+      "y": 0.309583,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.141358,
+      "y": 0.282717,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.077777,
+      "y": 0.155554,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.07789,
+      "y": 0.15578,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.151012,
+      "y": 0.302025,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.076542,
+      "y": 0.153085,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.158301,
+      "y": 0.316602,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.161777,
+      "y": 0.323555,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.162603,
+      "y": 0.325206,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.140204,
+      "y": 0.280408,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.148711,
+      "y": 0.297423,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.083681,
+      "y": 0.167361,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.090638,
+      "y": 0.181277,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.159972,
+      "y": 0.319945,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.163697,
+      "y": 0.327394,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.176194,
+      "y": 0.352388,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.17265,
+      "y": 0.3453,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.174413,
+      "y": 0.348827,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.178232,
+      "y": 0.356465,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.170962,
+      "y": 0.341925,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.169622,
+      "y": 0.339243,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.173838,
+      "y": 0.347675,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.170103,
+      "y": 0.340207,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.180301,
+      "y": 0.360602,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.178858,
+      "y": 0.357715,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.160508,
+      "y": 0.321016,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.160503,
+      "y": 0.321007,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.181773,
+      "y": 0.363545,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.19471,
+      "y": 0.38942,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.193666,
+      "y": 0.387332,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.192389,
+      "y": 0.384778,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.189043,
+      "y": 0.378085,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.189648,
+      "y": 0.379297,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.18478,
+      "y": 0.369559,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.189948,
+      "y": 0.379896,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.191957,
+      "y": 0.383914,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.188643,
+      "y": 0.377286,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.0,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.001799,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.003682,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.02365,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.024856,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.026378,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.032304,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.040744,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.041528,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.04158,
+      "y": 9.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.042227,
+      "y": 10.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.054067,
+      "y": 11.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.055972,
+      "y": 12.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.068053,
+      "y": 13.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.078268,
+      "y": 14.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.083841,
+      "y": 15.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.087793,
+      "y": 16.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.088891,
+      "y": 17.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.106787,
+      "y": 18.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.108396,
+      "y": 19.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.128058,
+      "y": 20.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.135974,
+      "y": 21.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.139631,
+      "y": 22.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.148283,
+      "y": 23.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.175422,
+      "y": 24.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.182703,
+      "y": 25.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.185891,
+      "y": 26.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.190568,
+      "y": 27.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.196851,
+      "y": 28.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.202027,
+      "y": 29.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.209045,
+      "y": 30.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.211241,
+      "y": 31.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.211344,
+      "y": 32.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.219527,
+      "y": 33.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.259798,
+      "y": 34.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.260179,
+      "y": 35.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.339989,
+      "y": 36.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.561831,
+      "y": 37.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.5716,
+      "y": 38.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.587767,
+      "y": 39.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.605926,
+      "y": 40.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.610185,
+      "y": 41.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.617551,
+      "y": 42.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.626637,
+      "y": 43.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.62868,
+      "y": 44.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "gap to the sweep winner (skill units), in-probe": 0.660337,
+      "y": 45.0,
+      "_kind": "scatter",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 96
+}

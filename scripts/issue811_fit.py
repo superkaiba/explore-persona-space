@@ -46,19 +46,20 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
-
-# DOTENV_LINT_EXEMPT: analysis-phase script; shell exports cover pod/GCE/SLURM.
-from dotenv import load_dotenv
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+
+# Project wrapper (NOT bare dotenv): robust .env load + HF-upload accelerators +
+# the shared-VM thread caps (#847) — called BEFORE numpy/torch freeze their pools.
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
 load_dotenv(str(PROJECT_ROOT / ".env"))
 
 import issue658_fit_predictors as fit658  # noqa: E402
 import issue722_fit_M as fitM  # noqa: E402
 import issue722_load_activations as loadact  # noqa: E402
+import numpy as np  # noqa: E402
 
 from explore_persona_space.analysis.vectorized_mlp_skill import (  # noqa: E402
     MLPGroup,
@@ -297,7 +298,11 @@ def _load_and_prepare_cells(
 # c_C and V0 = v0 (mean) / v0_turn_nl (turn_nl) directly. compute_mlp_validity_gate
 # + _kill1_decision then run UNCHANGED on the result.
 PHASE0_STORE_PREFIX = "issue811_turn_nl_mapchange/phase0_base_leg"
-PHASE0_SUMMARY_KEYS = {"mean": "v0", "turn_nl": "v0_turn_nl"}
+# Base-leg answer key per summary. "maxp" (#811 maxp-winner round) exists only in
+# that round's phase0 store (v0_maxp); the loader below checks ONLY the REQUESTED
+# summaries' keys, so a v1-era store (mean+turn_nl) keeps loading for the default
+# test summary.
+PHASE0_SUMMARY_KEYS = {"mean": "v0", "turn_nl": "v0_turn_nl", "maxp": "v0_maxp"}
 
 
 def _load_phase0_base_cells(
@@ -356,11 +361,14 @@ def _load_phase0_base_cells(
                         continue
                     rel = f"{beh}/{layer_files[layer]}"
                     blob = streamer.load(rel)
-                    for k in ("c_C", *PHASE0_SUMMARY_KEYS.values()):
+                    # Check ONLY the REQUESTED summaries' keys — demanding every
+                    # registered key would break v1-era stores (no v0_maxp) on a
+                    # default-arm --skip-extract resume.
+                    for k in ("c_C", *(PHASE0_SUMMARY_KEYS[s] for s in summaries)):
                         if k not in blob:
                             raise KeyError(
                                 f"{rel} missing base-leg key {k!r}; keys={sorted(blob)} "
-                                f"(a mean-only store or wrong prefix?)"
+                                f"(a store without this summary, or wrong prefix?)"
                             )
                     c0 = np.asarray(blob["c_C"], dtype=np.float64)
                     assert c0.shape == (loadact.HIDDEN,), f"{rel} c_C shape {c0.shape}"
@@ -425,11 +433,20 @@ def run_phase0_gate(args) -> int:
     layer = args.primary_layer
 
     behaviors = tuple(args.behaviors)
-    summaries = ("mean", "turn_nl")
+    # The KILL-1 gate compares the TEST summary's base-leg gate margin vs mean's
+    # (--test-summary; default turn_nl = the v1 round, maxp = the #811 maxp round).
+    # getattr default keeps direct callers with pre-#maxp Namespaces working
+    # (the pinned test_issue811_turn_nl gate tests construct args by hand).
+    test_summary = getattr(args, "test_summary", "turn_nl")
+    assert test_summary in PHASE0_SUMMARY_KEYS and test_summary != "mean", test_summary
+    summaries = ("mean", test_summary)
     rb_main = fitM._load_rb_main()
-    rb_fact = fitM._load_rb_fact() if "fact" in behaviors else None
+    # required=True: a Hub error at gate time RAISES (never a silent fact-drop —
+    # r10 CONCERN rb-fact-silent-drop-headline); None here means ONLY the
+    # data-declared degenerate flag (plan §8), which legitimately drops fact.
+    rb_fact = fitM._load_rb_fact(required=True) if "fact" in behaviors else None
     if "fact" in behaviors and rb_fact is None:
-        logger.warning("fact requested but r_b_fact unavailable — dropping fact from KILL-1")
+        logger.warning("r_b_fact.pt flagged degenerate (plan §8) — dropping fact from KILL-1")
         behaviors = tuple(b for b in behaviors if b != "fact")
 
     strict = not args.smoke and args.max_sources is None and args.max_targets_per_source is None
@@ -483,7 +500,7 @@ def run_phase0_gate(args) -> int:
     for cell_key, gate in gate_by_cell.items():
         _behavior, _layer, summary = cell_key
         cells_by_summary[summary][cell_key] = gate
-    kill1 = _kill1_decision(cells_by_summary)
+    kill1 = _kill1_decision(cells_by_summary, test_summary=test_summary)
     kill1["phase"] = "phase0_base_leg"
     kill1["primary_layer"] = layer
 
@@ -523,43 +540,52 @@ def run_phase0_gate(args) -> int:
             "[phase=phase0_gate] KILL-1 REPORTED (NOT killed): store is POPULATED but "
             "every behavior's mean base-map gate margin is <= 0 (%d/%d mean_no_gate) — "
             "a legitimate #722-style negative-mean-gate outcome, NOT an empty store. "
-            "mean has no gate for turn_nl to collapse relative to, so KILL-1 cannot "
-            "decide against turn_nl — proceeding to Phase 1 (plan §7, per-behavior: %s).",
+            "mean has no gate for %s to collapse relative to, so KILL-1 cannot "
+            "decide against %s — proceeding to Phase 1 (plan §7, per-behavior: %s).",
             kill1["n_mean_no_gate"],
             len(HEADLINE_BEHAVIORS),
+            test_summary,
+            test_summary,
             json.dumps(kill1["per_behavior"], default=float),
         )
         return 0
     if kill1["fired"]:
         logger.warning(
-            "[phase=phase0_gate] KILL1_TRIGGERED: turn_nl base-leg validity gate collapsed "
-            "vs mean at L%d on %d/%d comparable behaviors (>=2) — turn_nl is a worse base-map "
+            "[phase=phase0_gate] KILL1_TRIGGERED: %s base-leg validity gate collapsed "
+            "vs mean at L%d on %d/%d comparable behaviors (>=2) — %s is a worse base-map "
             "summary on #537's 16 contexts; do NOT run the Phase-1 paired re-extraction "
             "(plan §7, H3, failure_class: data). Detail: %s",
+            test_summary,
             layer,
             kill1["n_collapse"],
             kill1["n_comparable"],
+            test_summary,
             json.dumps(kill1["per_behavior"], default=float),
         )
         return 3
     logger.info(
-        "[phase=phase0_gate] KILL-1 PASS: turn_nl base-leg validity gate holds "
+        "[phase=phase0_gate] KILL-1 PASS: %s base-leg validity gate holds "
         "(%d/%d comparable behaviors collapsed, <2) — proceed to Phase 1.",
+        test_summary,
         kill1["n_collapse"],
         kill1["n_comparable"],
     )
     return 0
 
 
-def _kill1_decision(cells_by_summary: dict[str, dict[tuple[str, int, str], dict]]) -> dict:
+def _kill1_decision(
+    cells_by_summary: dict[str, dict[tuple[str, int, str], dict]],
+    test_summary: str = "turn_nl",
+) -> dict:
     """KILL-1 base-leg validity decision at layer 14 (plan §7 / H3).
 
-    turn_nl COLLAPSES relative to mean at a behavior when mean has a positive gate
-    margin AND turn_nl's margin < KILL1_COLLAPSE_FRAC × mean's margin. KILL-1 fires
-    when ≥2 of the 3 primary-layer behaviors collapse. Returns the per-behavior
-    comparison + the fired flag; a behavior whose MEAN margin is non-positive is
-    reported as ``mean_no_gate`` and does NOT count toward the kill (no baseline to
-    collapse from).
+    The TEST summary (``turn_nl`` for the v1 round, ``maxp`` for the #811
+    maxp-winner round) COLLAPSES relative to mean at a behavior when mean has a
+    positive gate margin AND the test summary's margin < KILL1_COLLAPSE_FRAC ×
+    mean's margin. KILL-1 fires when ≥2 of the 3 primary-layer behaviors collapse.
+    Returns the per-behavior comparison + the fired flag; a behavior whose MEAN
+    margin is non-positive is reported as ``mean_no_gate`` and does NOT count
+    toward the kill (no baseline to collapse from).
 
     Two distinct zero-``n_comparable`` states are separated by the ``state`` field —
     load-bearing for the run_phase0_gate fail-loud guard (round-4 BLOCKER
@@ -588,12 +614,14 @@ def _kill1_decision(cells_by_summary: dict[str, dict[tuple[str, int, str], dict]
     n_mean_no_gate = 0  # behaviors with a mean margin <= 0 (store populated, State B)
     for beh in HEADLINE_BEHAVIORS:
         mkey = (beh, PRIMARY_LAYER, "mean")
-        tkey = (beh, PRIMARY_LAYER, "turn_nl")
+        tkey = (beh, PRIMARY_LAYER, test_summary)
         m = cells_by_summary.get("mean", {}).get(mkey, {})
-        t = cells_by_summary.get("turn_nl", {}).get(tkey, {})
+        t = cells_by_summary.get(test_summary, {}).get(tkey, {})
         m_margin = m.get("gate_margin")
         t_margin = t.get("gate_margin")
-        entry = {"mean_margin": m_margin, "turn_nl_margin": t_margin}
+        # The test-summary margin rides a summary-NAMED key (turn_nl_margin /
+        # maxp_margin) so the default arm's JSON schema is byte-unchanged.
+        entry = {"mean_margin": m_margin, f"{test_summary}_margin": t_margin}
         if m_margin is None or t_margin is None:
             entry["status"] = "incomparable_missing_gate"
             n_missing_gate += 1
@@ -625,6 +653,7 @@ def _kill1_decision(cells_by_summary: dict[str, dict[tuple[str, int, str], dict]
         state = "empty_store"  # State A: no gate computed for any behavior
     return {
         "fired": fired,
+        "test_summary": test_summary,
         "n_collapse": n_collapse,
         "n_comparable": n_comparable,
         "n_missing_gate": n_missing_gate,
@@ -636,6 +665,11 @@ def _kill1_decision(cells_by_summary: dict[str, dict[tuple[str, int, str], dict]
 
 
 def main() -> int:
+    # Round-parameterized store prefixes (#811 maxp round): declared global at the
+    # TOP of main because the argparse defaults below READ the module values and
+    # the CLI overrides REBIND them (Python requires the global decl before any
+    # same-scope use).
+    global STORE_PREFIX, PHASE0_STORE_PREFIX
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     ap = argparse.ArgumentParser(description="Issue #811 fit M0 vs M⁺ under mean + turn_nl")
     ap.add_argument("--behaviors", nargs="+", default=list(HEADLINE_BEHAVIORS))
@@ -661,6 +695,25 @@ def main() -> int:
     )
     ap.add_argument("--mlp-epochs", type=int, default=None, help="override MLP_MAX_EPOCHS (smoke)")
     ap.add_argument(
+        "--test-summary",
+        default="turn_nl",
+        choices=[s for s in PHASE0_SUMMARY_KEYS if s != "mean"],
+        help="the NEW summary the KILL-1 gate compares vs mean (turn_nl = the v1 "
+        "round; maxp = the #811 maxp-winner round). KILL1_COLLAPSE_FRAC unchanged.",
+    )
+    ap.add_argument(
+        "--store-prefix",
+        default=STORE_PREFIX,
+        help="HF prefix of the round's PAIRED store (default: the v1 turn_nl store; "
+        "the maxp round passes issue811_maxp_mapchange/analysis_tensors)",
+    )
+    ap.add_argument(
+        "--phase0-prefix",
+        default=PHASE0_STORE_PREFIX,
+        help="HF prefix of the round's phase-0 base-leg store (maxp round: "
+        "issue811_maxp_mapchange/phase0_base_leg)",
+    )
+    ap.add_argument(
         "--primary-layer",
         type=int,
         default=PRIMARY_LAYER,
@@ -671,6 +724,11 @@ def main() -> int:
     ap.add_argument("--num-threads", type=int, default=None, help="torch.set_num_threads (CPU)")
     ap.add_argument("--force-rerun", action="store_true")
     args = ap.parse_args()
+
+    # The loaders below read the module-level constants, so rebind them from the
+    # CLI (defaults preserve the v1 turn_nl round verbatim).
+    STORE_PREFIX = args.store_prefix
+    PHASE0_STORE_PREFIX = args.phase0_prefix
 
     if args.smoke:
         args.behaviors = args.behaviors[:1]
@@ -711,9 +769,11 @@ def main() -> int:
     logger.info("[phase=fit_M] ridge exactness gate PASS")
 
     rb_main = fitM._load_rb_main()
-    rb_fact = fitM._load_rb_fact() if "fact" in behaviors else None
+    # required=True: fail LOUD on a load failure (rb-fact-silent-drop-headline);
+    # None means ONLY the data-declared degenerate flag (plan §8).
+    rb_fact = fitM._load_rb_fact(required=True) if "fact" in behaviors else None
     if "fact" in behaviors and rb_fact is None:
-        logger.warning("fact requested but r_b_fact.pt unavailable/degenerate — dropping fact")
+        logger.warning("r_b_fact.pt flagged degenerate (plan §8) — dropping fact")
         behaviors = tuple(b for b in behaviors if b != "fact")
 
     strict = not args.smoke and args.max_sources is None and args.max_targets_per_source is None
@@ -773,11 +833,12 @@ def main() -> int:
     # For diagnostic continuity it logs the Phase-2 re-derived base-leg margins
     # (informational — the pre-spend decision has already been made and honored);
     # the paired-store gate margins here are on the SAME base leg Phase 0 read.
-    if set(summaries) >= {"mean", "turn_nl"} and PRIMARY_LAYER in layers:
-        kill1_recheck = _kill1_decision(cells_by_summary)
+    if set(summaries) >= {"mean", args.test_summary} and PRIMARY_LAYER in layers:
+        kill1_recheck = _kill1_decision(cells_by_summary, test_summary=args.test_summary)
         logger.info(
             "[phase=fit_M] KILL-1 re-check (informational; the pre-spend decision "
-            "was made by --phase0-gate): fired=%s n_collapse=%d/%d",
+            "was made by --phase0-gate): test_summary=%s fired=%s n_collapse=%d/%d",
+            args.test_summary,
             kill1_recheck["fired"],
             kill1_recheck["n_collapse"],
             kill1_recheck["n_comparable"],

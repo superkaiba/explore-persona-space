@@ -1,0 +1,294 @@
+{
+  "traits": {
+    "evil": {
+      "primary": {
+        "gru_source_only": {
+          "0": {
+            "delta_recon_r2_id": 0.5867663600344056,
+            "cosine_hhat_vs_true": 0.7851821184158325
+          },
+          "2": {
+            "delta_recon_r2_id": 0.5147995367225944,
+            "cosine_hhat_vs_true": 0.7819018959999084
+          },
+          "4": {
+            "delta_recon_r2_id": 0.424374384845169,
+            "cosine_hhat_vs_true": 0.7077261805534363
+          },
+          "6": {
+            "delta_recon_r2_id": 0.3960391407408209,
+            "cosine_hhat_vs_true": 0.7281571626663208
+          },
+          "8": {
+            "delta_recon_r2_id": 0.34560062169548367,
+            "cosine_hhat_vs_true": 0.6979276537895203
+          },
+          "10": {
+            "delta_recon_r2_id": 0.375025803379588,
+            "cosine_hhat_vs_true": 0.7532119154930115
+          },
+          "12": {
+            "delta_recon_r2_id": 0.4666743621705016,
+            "cosine_hhat_vs_true": 0.8130457401275635
+          },
+          "14": {
+            "delta_recon_r2_id": 0.4365565498446039,
+            "cosine_hhat_vs_true": 0.8331490159034729
+          },
+          "16": {
+            "delta_recon_r2_id": 0.4197361418468384,
+            "cosine_hhat_vs_true": 0.8530009388923645
+          },
+          "18": {
+            "delta_recon_r2_id": 0.4583974730213759,
+            "cosine_hhat_vs_true": 0.9072916507720947
+          },
+          "19": {
+            "delta_recon_r2_id": 0.42163332998830727,
+            "cosine_hhat_vs_true": 0.9475365877151489
+          }
+        }
+      },
+      "companion": {
+        "gru_source_only": {
+          "0": {
+            "delta_recon_r2_id": 0.7046588044646377,
+            "cosine_hhat_vs_true": 0.8678024411201477
+          },
+          "2": {
+            "delta_recon_r2_id": 0.6507349209040737,
+            "cosine_hhat_vs_true": 0.8688715100288391
+          },
+          "4": {
+            "delta_recon_r2_id": 0.5890936569522819,
+            "cosine_hhat_vs_true": 0.8469583988189697
+          },
+          "6": {
+            "delta_recon_r2_id": 0.4945704841519166,
+            "cosine_hhat_vs_true": 0.8480556011199951
+          },
+          "8": {
+            "delta_recon_r2_id": 0.5000300528004586,
+            "cosine_hhat_vs_true": 0.85247802734375
+          },
+          "10": {
+            "delta_recon_r2_id": 0.44864714099258185,
+            "cosine_hhat_vs_true": 0.8930339813232422
+          },
+          "12": {
+            "delta_recon_r2_id": 0.45888936422425863,
+            "cosine_hhat_vs_true": 0.9250842928886414
+          },
+          "13": {
+            "delta_recon_r2_id": 0.4065154979260981,
+            "cosine_hhat_vs_true": 0.9537876844406128
+          }
+        }
+      }
+    },
+    "sycophancy": {
+      "primary": {
+        "gru_source_only": {
+          "0": {
+            "delta_recon_r2_id": 0.6292131786800627,
+            "cosine_hhat_vs_true": 0.802486777305603
+          },
+          "2": {
+            "delta_recon_r2_id": 0.5958508129880016,
+            "cosine_hhat_vs_true": 0.7901864647865295
+          },
+          "4": {
+            "delta_recon_r2_id": 0.4725897693805946,
+            "cosine_hhat_vs_true": 0.695183515548706
+          },
+          "6": {
+            "delta_recon_r2_id": 0.4830791430306357,
+            "cosine_hhat_vs_true": 0.7150942087173462
+          },
+          "8": {
+            "delta_recon_r2_id": 0.44722094285416725,
+            "cosine_hhat_vs_true": 0.6859626173973083
+          },
+          "10": {
+            "delta_recon_r2_id": 0.4130724839725398,
+            "cosine_hhat_vs_true": 0.6798305511474609
+          },
+          "12": {
+            "delta_recon_r2_id": 0.402437933585301,
+            "cosine_hhat_vs_true": 0.6708589792251587
+          },
+          "14": {
+            "delta_recon_r2_id": 0.5433112737117449,
+            "cosine_hhat_vs_true": 0.7695978879928589
+          },
+          "16": {
+            "delta_recon_r2_id": 0.6134448741910101,
+            "cosine_hhat_vs_true": 0.8166890144348145
+          },
+          "18": {
+            "delta_recon_r2_id": 0.6522098557676836,
+            "cosine_hhat_vs_true": 0.8466719388961792
+          },
+          "20": {
+            "delta_recon_r2_id": 0.6654745012432497,
+            "cosine_hhat_vs_true": 0.8684136271476746
+          },
+          "22": {
+            "delta_recon_r2_id": 0.6600279113245346,
+            "cosine_hhat_vs_true": 0.9021974205970764
+          },
+          "24": {
+            "delta_recon_r2_id": 0.6249190227008731,
+            "cosine_hhat_vs_true": 0.9427375197410583
+          },
+          "25": {
+            "delta_recon_r2_id": 0.6118554038575579,
+            "cosine_hhat_vs_true": 0.9678572416305542
+          }
+        }
+      },
+      "companion": {
+        "gru_source_only": {
+          "0": {
+            "delta_recon_r2_id": 0.6117664367731683,
+            "cosine_hhat_vs_true": 0.8014848828315735
+          },
+          "2": {
+            "delta_recon_r2_id": 0.5450556167919212,
+            "cosine_hhat_vs_true": 0.7957932949066162
+          },
+          "4": {
+            "delta_recon_r2_id": 0.4637987338442302,
+            "cosine_hhat_vs_true": 0.7425377368927002
+          },
+          "6": {
+            "delta_recon_r2_id": 0.3465941015175311,
+            "cosine_hhat_vs_true": 0.722782552242279
+          },
+          "8": {
+            "delta_recon_r2_id": 0.32484194123368193,
+            "cosine_hhat_vs_true": 0.711650013923645
+          },
+          "10": {
+            "delta_recon_r2_id": 0.31174488652967647,
+            "cosine_hhat_vs_true": 0.7518146634101868
+          },
+          "12": {
+            "delta_recon_r2_id": 0.39852920854281637,
+            "cosine_hhat_vs_true": 0.8071405291557312
+          },
+          "14": {
+            "delta_recon_r2_id": 0.39778381070766655,
+            "cosine_hhat_vs_true": 0.8473674058914185
+          },
+          "16": {
+            "delta_recon_r2_id": 0.4161598435228686,
+            "cosine_hhat_vs_true": 0.8806654810905457
+          },
+          "18": {
+            "delta_recon_r2_id": 0.42969460556473804,
+            "cosine_hhat_vs_true": 0.9415576457977295
+          }
+        }
+      }
+    },
+    "hallucination": {
+      "primary": {
+        "gru_source_only": {
+          "0": {
+            "delta_recon_r2_id": 0.7224176154321753,
+            "cosine_hhat_vs_true": 0.8743636012077332
+          },
+          "2": {
+            "delta_recon_r2_id": 0.6677884402283074,
+            "cosine_hhat_vs_true": 0.8774967193603516
+          },
+          "4": {
+            "delta_recon_r2_id": 0.6263040031662832,
+            "cosine_hhat_vs_true": 0.859940230846405
+          },
+          "6": {
+            "delta_recon_r2_id": 0.47099135368472544,
+            "cosine_hhat_vs_true": 0.8351166248321533
+          },
+          "8": {
+            "delta_recon_r2_id": 0.4606835956674237,
+            "cosine_hhat_vs_true": 0.8321089744567871
+          },
+          "10": {
+            "delta_recon_r2_id": 0.4368832604948355,
+            "cosine_hhat_vs_true": 0.8670093417167664
+          },
+          "12": {
+            "delta_recon_r2_id": 0.5079530506238183,
+            "cosine_hhat_vs_true": 0.9046295285224915
+          },
+          "14": {
+            "delta_recon_r2_id": 0.46399407028077233,
+            "cosine_hhat_vs_true": 0.9381557106971741
+          },
+          "16": {
+            "delta_recon_r2_id": 0.49240205563982486,
+            "cosine_hhat_vs_true": 0.9759775996208191
+          }
+        }
+      },
+      "companion": {
+        "gru_source_only": {
+          "0": {
+            "delta_recon_r2_id": 0.6421382687282728,
+            "cosine_hhat_vs_true": 0.814903199672699
+          },
+          "2": {
+            "delta_recon_r2_id": 0.6245428849344726,
+            "cosine_hhat_vs_true": 0.8169997930526733
+          },
+          "4": {
+            "delta_recon_r2_id": 0.5106086001126049,
+            "cosine_hhat_vs_true": 0.7336310744285583
+          },
+          "6": {
+            "delta_recon_r2_id": 0.490520962231523,
+            "cosine_hhat_vs_true": 0.7344362139701843
+          },
+          "8": {
+            "delta_recon_r2_id": 0.46119903467281753,
+            "cosine_hhat_vs_true": 0.7093950510025024
+          },
+          "10": {
+            "delta_recon_r2_id": 0.3946803660015541,
+            "cosine_hhat_vs_true": 0.6982106566429138
+          },
+          "12": {
+            "delta_recon_r2_id": 0.5269495696184763,
+            "cosine_hhat_vs_true": 0.7868421077728271
+          },
+          "14": {
+            "delta_recon_r2_id": 0.6215013502990232,
+            "cosine_hhat_vs_true": 0.8380535244941711
+          },
+          "16": {
+            "delta_recon_r2_id": 0.6640610659194097,
+            "cosine_hhat_vs_true": 0.8612465262413025
+          },
+          "18": {
+            "delta_recon_r2_id": 0.6896925909528917,
+            "cosine_hhat_vs_true": 0.8852410912513733
+          },
+          "20": {
+            "delta_recon_r2_id": 0.685122385302071,
+            "cosine_hhat_vs_true": 0.9142268300056458
+          },
+          "22": {
+            "delta_recon_r2_id": 0.6321956652833006,
+            "cosine_hhat_vs_true": 0.9549862146377563
+          },
+          "23": {
+            "delta_recon_r2_id": 0.5884209814103757,
+            "cosine_hhat_vs_true": 0.9759865999221802
+          }
+        }
+      }
+    }
+  }
+}

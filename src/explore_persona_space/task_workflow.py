@@ -1322,6 +1322,27 @@ STAGE_LIVENESS_KINDS = frozenset(
         "epm:proposed-tests",
     }
 )
+# Progress-note substrings that are ANTI-liveness for a stage-dispatch
+# freshness window (#949; incident #810): bracketed telemetry posted by the
+# session watcher / spawn machinery, never by the stage's own worker. The
+# watcher's own progress clock excludes the same classes
+# (scripts/autonomous_session_watch.py::_WATCHER_NOTE_SENTINELS — a script,
+# not importable from src/, so matched here by the shared bracketed
+# prefixes: every watcher sentinel embeds "[autonomous_session_watch:" and
+# spawn_session's bookkeeping sentinel embeds "[spawn-session:"). The
+# self-stamped "[long-phase-heartbeat]" prefix is DELIBERATELY absent — it
+# is posted by the stage's own long-running phase and IS liveness. The
+# sibling deliberate-stop exclusion (checked inline in
+# stage_dispatch_should_skip) also drops ANY note with
+# by == "spawn_session-stop" regardless of content — a future genuine
+# liveness post from spawn_session must use a different `by` or get a
+# carve-out here.
+STAGE_ANTILIVENESS_NOTE_SUBSTRINGS = frozenset(
+    {
+        "[autonomous_session_watch:",
+        "[spawn-session:",
+    }
+)
 
 _STAGE_ALIASES = {"code-reviewing": "code-review"}
 
@@ -1400,8 +1421,12 @@ def stage_dispatch_should_skip(
     (``STAGE_RESULT_KINDS[_normalize_stage(stage)]`` — clearing is round-agnostic by
     design, result markers carry no parsable round) or ``epm:failure``. While in
     flight, the freshness clock starts at the LATEST of the breadcrumb and any later
-    liveness marker (``STAGE_LIVENESS_KINDS`` or a non-breadcrumb ``epm:progress``;
-    a breadcrumb never refreshes any window): effective age < window -> skip reason;
+    liveness marker (``STAGE_LIVENESS_KINDS`` or a non-breadcrumb ``epm:progress`` —
+    EXCLUDING anti-liveness notes: a ``deliberate-stop`` record (``by ==
+    "spawn_session-stop"``) and bracketed watcher / spawn-session telemetry
+    (``STAGE_ANTILIVENESS_NOTE_SUBSTRINGS``) are stop/bookkeeping records, not
+    stage liveness, and never refresh a window (#810); a breadcrumb never
+    refreshes any window): effective age < window -> skip reason;
     >= window -> None (stalled, re-dispatch allowed). A malformed breadcrumb ``ts``
     fails toward dispatch (None); a malformed liveness ``ts`` is ignored. TOCTOU is a
     non-goal — two orchestrators both checking BEFORE either posts its breadcrumb can
@@ -1427,6 +1452,16 @@ def stage_dispatch_should_skip(
         if kind == "epm:progress":
             note = (event.get("note", "") or "").lstrip()
             if note.startswith("stage-dispatch "):
+                continue
+            # Anti-liveness (#810/#949): a deliberate session stop is the
+            # death record of the stage's owner, and bracketed watcher /
+            # spawn-session telemetry is third-party bookkeeping — neither
+            # is evidence the stage's OWN work is alive, so neither
+            # refreshes the window. (They do NOT clear the in-flight
+            # state; only result kinds / epm:failure / expiry do that.)
+            if note.startswith("deliberate-stop ") or event.get("by") == "spawn_session-stop":
+                continue
+            if any(s in note for s in STAGE_ANTILIVENESS_NOTE_SUBSTRINGS):
                 continue
         elif kind not in STAGE_LIVENESS_KINDS:
             continue
@@ -1499,11 +1534,20 @@ TRIAGE_EXEMPT_KINDS = frozenset(
 )
 
 # ``by`` values identifying MACHINE posters (pollers, routers, CLI shims).
-# NOTE: ``by`` is UNRELIABLE for humans/sessions — post_event defaults it to
-# "unknown", and on #779 both self- and PM-chat-posted markers carried
-# by="unknown" — so this set only strips known machine identities; it never
-# claims to identify externality (that is the orchestrator's judgment call,
-# SKILL.md § Pre-dispatch external-marker triage).
+# NOTE on session/human posts: ``by`` is unreliable on LEGACY markers and
+# non-compliant emitters (post_event defaults by="unknown"; on #779 both
+# self- and PM-chat posts carried by="unknown"). Compliant emitters now set
+# a distinctive by (the #966 convention list): "pm-chat" (PM-session
+# cross-session posts), "autonomous_session_watch" (watcher passes),
+# "spawn_session" / "spawn_session-stop" (spawn helper). A value on that
+# convention list is a trustworthy-POSITIVE externality signal for the
+# LLM-side triage read (conventional, not authenticated — nothing verifies
+# the emitter, but in-repo emitters set only their own identity); absence
+# ("unknown") proves nothing (fail-toward-triage). These advisory identities
+# are deliberately NOT in this strip set — machine_by only strips known
+# bookkeeping-machine identities; it never classifies externality (that
+# stays the orchestrator's judgment call, SKILL.md § Pre-dispatch
+# external-marker triage).
 TRIAGE_MACHINE_BY = frozenset(
     {
         "poll_pipeline",
@@ -1557,8 +1601,11 @@ def triage_candidates_since_last_dispatch(
     ``"stage-dispatch "`` — same detection as ``stage_dispatch_should_skip``),
     or the note contains the triage line (it is a triage record, not an
     advisory). Chronological order preserved. Deliberately over-approximates —
-    it ENUMERATES for LLM-side triage and never classifies externality
-    (``by`` cannot: default "unknown").
+    it ENUMERATES for LLM-side triage and never classifies externality (a
+    ``by`` on the #966 convention list — pm-chat / autonomous_session_watch /
+    spawn_session / spawn_session-stop — is a trustworthy-positive EXTERNAL
+    signal for that LLM-side read, but ``by`` defaults to "unknown", so
+    absence proves nothing).
     """
     boundary = -1
     for idx in range(len(events) - 1, -1, -1):
@@ -1616,6 +1663,26 @@ _FOLLOWUP_STAGE_DISPATCH_PREFIX = "stage-dispatch stage=followup-"
 # (`followup_retro_close_evidence`). Case-sensitive by design — a missed
 # close is safe (the label stays queued), a wrong close is not.
 _ROUND_COMPLETION_WORD = re.compile(r"PASS|re-park|awaiting_promotion|clean-result")
+
+# Queue-context veto for the class-3 read (#961): a clause naming the label
+# as queued / unrun / scoped / armed / dispatched is a QUEUE mention, never
+# completion evidence (park/handoff notes routinely announce round X complete
+# while enumerating the queued next label Y on the same line — #825
+# 2026-07-04T04:21:23Z, #595 2026-06-14T06:20:31Z, #763 2026-07-02T10:47:16Z).
+# Case-INSENSITIVE by design: a veto only ever narrows.
+_QUEUE_CONTEXT_WORD = re.compile(
+    r"unrun|queue|dispatch|scoped|deferred|pending|armed", re.IGNORECASE
+)
+
+# In-clause completion-vocabulary supplement for the class-3 read (#961): the
+# dominant true-positive park-note shape is "(label) complete; ... PASS" —
+# the token's clause says complete/COMPLETE while the _ROUND_COMPLETION_WORD
+# sits in a later clause (#505/#542/#545/#559/#613/#654 park notes). Applies
+# ONLY inside a line that already passed the line-level
+# _ROUND_COMPLETION_WORD gate, so new evidence stays a strict subset of the
+# pre-#961 match. Case-sensitive (mirrors _ROUND_COMPLETION_WORD's deliberate
+# case-sensitivity); the lookbehind rejects "incomplete"/"INcomplete".
+_CLAUSE_COMPLETION_WORD = re.compile(r"(?<![iI][nN])(?:complete|COMPLETE)")
 
 
 def parse_followup_note_field(note: str, field: str) -> str | None:
@@ -1875,7 +1942,18 @@ def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
     3. an ``epm:status-changed`` / ``epm:step-completed`` / ``epm:progress``
        note with the exact parenthesized round token ``(<label>)`` AND a
        round-completion word (:data:`_ROUND_COMPLETION_WORD`) on the same
-       line.
+       line, where additionally (#961) the token's own ``;``/``.``-delimited
+       clause carries a completion word (the line-level list, or the
+       case-sensitive ``complete``/``COMPLETE`` supplement
+       :data:`_CLAUSE_COMPLETION_WORD`) and NO queue-context word
+       (:data:`_QUEUE_CONTEXT_WORD`). Park/handoff notes routinely announce
+       round X complete while enumerating the queued next label Y on the
+       same line (#825 2026-07-04, #595 2026-06-14) — binding the
+       completion signal to the label's clause and vetoing queued/unrun/
+       scoped/armed/dispatch mentions keeps such notes from closing a
+       queued round. The #961 narrowing keeps class-3 evidence a strict
+       subset of the pre-#961 line-level match (a missed close is safe,
+       a wrong close is not).
 
     Returns the one-line evidence string of the FIRST matching class (class
     order 1 → 2 → 3; multiple classes agreeing on the SAME exact label are
@@ -1910,12 +1988,35 @@ def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
         if kind not in ("epm:status-changed", "epm:step-completed", "epm:progress"):
             continue
         for line in (ev.get("note") or "").splitlines():
-            if token in line and _ROUND_COMPLETION_WORD.search(line):
+            if _class3_line_is_close_evidence(line, token):
                 return (
                     f"{kind} at {ev.get('ts', '?')} carries the round token "
-                    f"({label}) plus a round-completion word"
+                    f"({label}) plus a round-completion word in the same clause"
                 )
     return None
+
+
+def _class3_line_is_close_evidence(line: str, token: str) -> bool:
+    """The #961 two-gate class-3 line check for :func:`followup_retro_close_evidence`.
+
+    Gate 1 is the pre-#961 line-level check, retained verbatim so the #961
+    narrowing can never ADD evidence (new ⊆ old); gate 2 binds the completion
+    signal to the token's own ``;``/``.``-delimited clause and vetoes
+    queue-context mentions. Returns True iff the line is class-3 evidence.
+    """
+    # Gate 1 — the pre-#961 line-level check, retained verbatim.
+    if token not in line or not _ROUND_COMPLETION_WORD.search(line):
+        return False
+    # Gate 2 (#961) — bind the completion signal to the label's own
+    # ;/.-delimited clause and veto queue-context mentions.
+    for clause in re.split(r"[;.]", line):
+        if token not in clause:
+            continue
+        if _QUEUE_CONTEXT_WORD.search(clause):
+            continue  # label named as queued/armed/dispatched — not evidence
+        if _ROUND_COMPLETION_WORD.search(clause) or _CLAUSE_COMPLETION_WORD.search(clause):
+            return True
+    return False
 
 
 def _format_failure_lesson_entry(new_lesson_ref: dict[str, str]) -> str:
@@ -2334,12 +2435,22 @@ def _iter_jsonl(path: Path) -> list[dict[str, Any]]:
     ``errors="replace"`` substitutes U+FFFD for the bad bytes so the
     corrupted line falls through to the existing ``JSONDecodeError`` skip
     path — completing the recovery story.
+
+    Records are split on ``"\\n"`` (NOT ``str.splitlines()``): the paired
+    ``ensure_ascii=False`` writer leaves raw U+2028/U+2029/NEL inside note
+    strings, and ``splitlines()`` treats those as line boundaries — shredding
+    a valid record into skip-malformed fragments = silent marker loss
+    (gotchas.md; #825 → #950).
     """
     if not path.exists():
         return []
     out: list[dict[str, Any]] = []
     text = path.read_text(encoding="utf-8", errors="replace")
-    for lineno, line in enumerate(text.splitlines(), 1):
+    # split("\n"), NOT splitlines(): raw U+2028/U+2029/NEL inside
+    # ensure_ascii=False notes are Unicode line boundaries that would shred
+    # valid records into skip-malformed fragments = silent marker loss
+    # (gotchas.md; #825 → #950).
+    for lineno, line in enumerate(text.split("\n"), 1):
         if not line.strip():
             continue
         try:

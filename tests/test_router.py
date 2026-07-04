@@ -67,6 +67,7 @@ from explore_persona_space.backends.router import (
 from explore_persona_space.backends.router import RouteAttempt as RouteAttempt
 from explore_persona_space.backends.router import _attempt_to_dict as _attempt_to_dict
 from explore_persona_space.backends.router import _gcp_ladder_specs as _ladder_specs
+from explore_persona_space.backends.router import _thread_attempt_id_into as _thread_attempt_id_into
 
 #: The pre-GCP-first auto order (free SLURM lanes first, GCP as the
 #: terminal escalation). Tests that specifically exercise the
@@ -1088,6 +1089,177 @@ def test_lease_dir_created_with_owner_only_mode(tmp_path):
     store.write(Lease(issue=1, spec_hash="h", attempt_id="a"))
     mode = store.lease_dir.stat().st_mode & 0o777
     assert mode == 0o700, f"lease dir mode={oct(mode)}"
+
+
+# ---------------------------------------------------------------------------
+# Fresh attempt-id per launch (#927) — _thread_attempt_id_into mints per call;
+# reconnect keeps the original id (router early-return + GCP label recovery).
+# ---------------------------------------------------------------------------
+
+_ATTEMPT_ID_RE = re.compile(r"att-\d{8}-\d{6}")
+
+
+def test_thread_attempt_id_into_mints_fresh_id_when_lease_exists():
+    """#927 acceptance (1), unit level: a pre-existing lease's attempt_id is
+    NOT reused — a fresh ``att-YYYYMMDD-HHMMSS`` id is minted, threaded into
+    the spec, AND written back to the lease (lease follows the launch)."""
+    spec = _spec(backend=None)
+    lease = Lease(issue=137, spec_hash="h", attempt_id="att-old")
+    writes: list[Lease] = []
+    new_spec, new_lease = _thread_attempt_id_into(spec, lease, writes.append)
+    fresh = new_spec.extra["attempt_id"]
+    assert fresh != "att-old"
+    assert _ATTEMPT_ID_RE.fullmatch(fresh), fresh
+    # Lease-follows-launch: the lease records the id the launch will use,
+    # and the write happened inside the caller's transaction.
+    assert new_lease.attempt_id == fresh
+    assert writes and writes[-1].attempt_id == fresh
+
+
+def test_thread_attempt_id_into_preserves_counters_and_failover_fields():
+    """#927 acceptance (4): only ``attempt_id`` changes across the threading
+    write — GCP attempt counters, failover-identity fields, backend, and
+    job_id all survive. Called TWICE on the same lease (the per-rung ladder
+    shape: each rung re-threads the ORIGINAL spec inside one transaction;
+    per-rung re-mint churn is expected behavior) — fields survive BOTH."""
+    today = datetime.now(tz=UTC).date().isoformat()
+    lease = Lease(
+        issue=137,
+        spec_hash="h",
+        attempt_id="att-old",
+        backend="gcp",
+        cluster=None,
+        job_id="instance-1",
+        gcp_attempts_today=3,
+        gcp_attempts_date=today,
+        gcp_failover_of={"pod_name": "eps-issue-1", "job_id": "z"},
+        runpod_wedge_failover_of={"pod_name": "pod-1", "job_id": "w"},
+        runpod_cuda_ima_failover_of={"pod_name": "pod-1", "job_id": "c"},
+    )
+    spec = _spec(backend=None)
+    writes: list[Lease] = []
+    _s1, l1 = _thread_attempt_id_into(spec, lease, writes.append)
+    _s2, l2 = _thread_attempt_id_into(spec, l1, writes.append)
+    assert len(writes) == 2  # one lease write per threading call
+    for le in (l1, l2):
+        assert le.gcp_attempts_today == 3
+        assert le.gcp_attempts_date == today
+        assert le.gcp_failover_of == {"pod_name": "eps-issue-1", "job_id": "z"}
+        assert le.runpod_wedge_failover_of == {"pod_name": "pod-1", "job_id": "w"}
+        assert le.runpod_cuda_ima_failover_of == {"pod_name": "pod-1", "job_id": "c"}
+        assert le.backend == "gcp"
+        assert le.job_id == "instance-1"
+        assert le.attempt_id != "att-old"
+
+
+def test_thread_attempt_id_into_honors_caller_pinned_extra_id():
+    """A caller-pinned ``spec.extra["attempt_id"]`` wins over the fresh mint
+    — even when a lease exists (explicit re-attach tooling ONLY; see the
+    function docstring for why routine pinning re-creates #825) — and is
+    written to the lease verbatim."""
+    spec = RunSpec(issue=137, intent="lora-7b", backend="auto", extra={"attempt_id": "att-pin"})
+    lease = Lease(issue=137, spec_hash="h", attempt_id="att-old")
+    writes: list[Lease] = []
+    new_spec, new_lease = _thread_attempt_id_into(spec, lease, writes.append)
+    assert new_spec.extra["attempt_id"] == "att-pin"
+    assert new_lease.attempt_id == "att-pin"
+    assert writes and writes[-1].attempt_id == "att-pin"
+
+
+def test_thread_attempt_id_into_creates_lease_when_absent():
+    """Regression pin: the lease-None branch keeps its pre-#927 behavior —
+    a fresh lease is created with the minted id and written."""
+    spec = _spec(backend=None)
+    writes: list[Lease] = []
+    new_spec, lease = _thread_attempt_id_into(spec, None, writes.append)
+    aid = new_spec.extra["attempt_id"]
+    assert _ATTEMPT_ID_RE.fullmatch(aid), aid
+    assert lease.issue == 137
+    assert lease.spec_hash == spec_hash(spec)
+    assert lease.attempt_id == aid
+    assert writes and writes[0] is lease
+
+
+def test_fresh_gcp_launch_after_dead_prior_attempt_uses_new_attempt_id(
+    lease_store, marker_poster, captured_markers
+):
+    """#927 acceptance (1), route level: a fresh GCP launch with a
+    pre-existing lease carrying a dead prior attempt's id launches with a
+    DIFFERENT attempt_id, and the persisted lease reads back the NEW id
+    (the #825 shape: three relaunches all inherited the dead attempt's
+    crash-persist / sentinel namespace)."""
+    gcp = _GcpBackendDouble()
+    stale_spec = _spec(backend=None)
+    lease_store.write(
+        Lease(
+            issue=137,
+            spec_hash=spec_hash(stale_spec),  # same shape — the lease is NOT stale-keyed away
+            attempt_id="att-dead-1",
+            backend="gcp",
+            job_id="instance-dead",
+        )
+    )
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        # reconnect_fn omitted → reconnect disabled (the dead instance is gone).
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert len(gcp.launches) == 1
+    launched_id = gcp.launches[0].extra["attempt_id"]
+    assert launched_id != "att-dead-1"
+    assert _ATTEMPT_ID_RE.fullmatch(launched_id), launched_id
+    read_back = lease_store.read(137)
+    assert read_back is not None
+    assert read_back.attempt_id == launched_id  # lease follows the launch
+
+
+def test_reconnect_keeps_prior_attempt_id_no_remint(lease_store, marker_poster, captured_markers):
+    """#927 acceptance (2): a reconnect to a still-live instance early-returns
+    with ``ROUTE_REASON_RECONNECT`` — no launch, no threading call — and the
+    lease's attempt_id stays byte-unchanged."""
+    gcp = _GcpBackendDouble()
+    live_spec = _spec(backend=None)
+    lease_store.write(
+        Lease(
+            issue=137,
+            spec_hash=spec_hash(live_spec),
+            attempt_id="att-orig",
+            backend="gcp",
+            job_id="instance-live",
+        )
+    )
+    live = RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id="instance-live",
+        pod_name="eps-issue-137",
+        scratch_dir="/workspace/eps-issue-137",
+        log_path="/workspace/logs/issue-137.log",
+        extra={"issue": 137, "zone": "us-central1-a", "attempt_id": "att-orig"},
+    )
+    result = route(
+        _spec(backend=None),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        reconnect_fn=lambda _b, k, _s: live if k == "gcp" else None,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.reason == ROUTE_REASON_RECONNECT
+    assert gcp.launches == []  # reconnect — never a fresh provision
+    read_back = lease_store.read(137)
+    assert read_back is not None
+    assert read_back.attempt_id == "att-orig"  # byte-unchanged: no re-mint on reconnect
 
 
 def test_unknown_submitted_recovery_via_reconnect(lease_store):
@@ -5438,3 +5610,619 @@ def test_async_failover_hydra_spec_arrives_without_execute_workload(
     assert "execute_workload" not in (rp.launches[0].extra or {})
     warning = "\n".join(r.getMessage() for r in caplog.records)
     assert "hydra" in warning and "no backend-side executor" in warning
+
+
+# ---------------------------------------------------------------------------
+# #934: lane-suffixed attempt ids
+# ---------------------------------------------------------------------------
+
+
+def test_threaded_attempt_id_carries_lane_suffix():
+    """A spec whose extra carries lane_suffix mints att-<ts>-<suffix>, so
+    two lanes launched in the SAME second keep disjoint HF crash-persist
+    (issue<N>_partial/<attempt>/) + sentinel namespaces; without a suffix
+    the shape is byte-identical to the pre-#934 mint."""
+    writes: list[Any] = []
+    spec = RunSpec(issue=934, intent="lora-7b", backend="nibi", extra={"lane_suffix": "cpu"})
+    new_spec, lease = _thread_attempt_id_into(spec, None, writes.append)
+    assert re.fullmatch(r"att-\d{8}-\d{6}-cpu", new_spec.extra["attempt_id"])
+    assert lease.attempt_id == new_spec.extra["attempt_id"]
+
+    unsuffixed = RunSpec(issue=934, intent="lora-7b", backend="nibi")
+    new_unsuffixed, _lease2 = _thread_attempt_id_into(unsuffixed, None, writes.append)
+    assert re.fullmatch(r"att-\d{8}-\d{6}", new_unsuffixed.extra["attempt_id"])
+
+
+def test_make_attempt_id_rejects_malformed_lane_suffix():
+    """Fail loud, never strip: a malformed suffix raises out of the mint."""
+    from explore_persona_space.backends.router import _make_attempt_id
+
+    assert re.fullmatch(r"att-\d{8}-\d{6}", _make_attempt_id())
+    assert re.fullmatch(r"att-\d{8}-\d{6}-cpu", _make_attempt_id("cpu"))
+    with pytest.raises(ValueError):
+        _make_attempt_id("Not_Valid")
+
+
+def test_caller_pinned_attempt_id_wins_over_lane_suffix_mint():
+    """A caller-pinned extra['attempt_id'] still takes precedence (the
+    explicit re-attach tooling contract) — the suffix mint never clobbers
+    it."""
+    writes: list[Any] = []
+    spec = RunSpec(
+        issue=934,
+        intent="lora-7b",
+        backend="nibi",
+        extra={"lane_suffix": "cpu", "attempt_id": "att-pinned-1"},
+    )
+    new_spec, lease = _thread_attempt_id_into(spec, None, writes.append)
+    assert new_spec.extra["attempt_id"] == "att-pinned-1"
+    assert lease.attempt_id == "att-pinned-1"
+
+
+# ---------------------------------------------------------------------------
+# #940 — GCP-only GPU intent translation at the RunPod launch paths
+#
+# The RunPod terminal rung (and the explicit `backend: runpod` override)
+# translate GCP-only GPU intents (capture-7b / lora / lora-7b-h100) to the
+# nearest same-or-narrower RunPod-provisionable intent via the router-owned
+# RUNPOD_INTENT_FOR_GCP_INTENT map, so the sanctioned last-rung fallback
+# actually fires instead of dying in gpu_heuristics.resolve_intent's KeyError
+# (the #841 incident: `provision --issue 841 --intent capture-7b` exit 1 →
+# NoComputeAvailableError despite live RunPod 1-GPU capacity). An unmapped
+# GCP GPU intent (eval-h100, in RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS)
+# fails loud PRE-launch naming the missing map row.
+# ---------------------------------------------------------------------------
+
+
+def test_gcp_only_intent_exhausted_ladder_fires_runpod_with_translated_intent(
+    lease_store, marker_poster, captured_markers
+):
+    """T1 / the #841 regression test: a capture-7b auto route with every GCP
+    rung + SLURM exhausted launches RunPod EXACTLY ONCE with the translated
+    `--intent eval`, RunPod LAST in the attempt trail, and the marker extra
+    carries the translation record."""
+    rp = _PassiveRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)  # never starts
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    result = route(
+        RunSpec(issue=940, intent="capture-7b", backend="auto", time_budget_hours=1.0),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            max_gcp_attempts_per_day=99,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_RUNPOD_FALLBACK
+    assert len(rp.launches) == 1
+    # The launched spec carries the TRANSLATED RunPod-provisionable intent.
+    assert rp.launches[0].intent == "eval"
+    # RunPod is the FINAL attempt, behind every GCP rung + the nibi park-fail
+    # (capture-7b is in INTENT_A100_40_FALLBACK, so the short 5-rung ladder
+    # applies exactly as lora-7b's).
+    outcomes = [(a.kind, a.outcome) for a in result.attempts]
+    gcp_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "gcp"]
+    nibi_idxs = [i for i, (k, _o) in enumerate(outcomes) if k == "nibi"]
+    runpod_idxs = [i for i, (k, o) in enumerate(outcomes) if k == "runpod" and o == "launched"]
+    assert len(gcp_idxs) == 5, outcomes  # all five short-ladder rungs attempted + failed
+    assert nibi_idxs, "the free SLURM lane must have been attempted"
+    assert runpod_idxs and runpod_idxs[-1] == len(outcomes) - 1
+    assert max(gcp_idxs) < runpod_idxs[-1]
+    assert max(nibi_idxs) < runpod_idxs[-1]
+    finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)
+    assert finals
+    assert finals[-1]["extra"]["runpod_intent_translation"] == {
+        "from": "capture-7b",
+        "to": "eval",
+    }
+
+
+def test_runpod_native_intent_terminal_rung_untranslated_no_marker_key(
+    lease_store, marker_poster, captured_markers
+):
+    """T2: an identity-row intent (lora-7b) passes through the terminal rung
+    verbatim — no translation record on the marker (byte-identical to the
+    pre-#940 marker shape for existing intents)."""
+    rp = _PassiveRunpod()
+    nibi = _FreeLaneBackend(kind="nibi", starts_when=10**9)
+    gcp = _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED", evidence={"matched_pattern": "RESOURCE_EXHAUSTED"}
+        )
+    )
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=rp,
+        free_backends={"nibi": nibi},
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        is_started=lambda _b, _h: False,
+        is_live_after_cancel=lambda _b, _h: False,
+        marker_poster=marker_poster,
+        config=RouterConfig(
+            free_wait_seconds=1,
+            poll_interval=0.0,
+            cancel_grace_seconds=0,
+            max_gcp_attempts_per_day=99,
+        ),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert len(rp.launches) == 1
+    assert rp.launches[0].intent == "lora-7b"
+    finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)
+    assert finals
+    assert "runpod_intent_translation" not in finals[-1]["extra"]
+
+
+@pytest.mark.parametrize("reason_name", ["async_crash", "queue_timeout"])
+def test_async_failover_translates_gcp_only_intent(
+    lease_store, marker_poster, captured_markers, reason_name
+):
+    """T3: the async poller failover seam (#659) AND the queue-timeout
+    failover (#783) — both via failover_to_runpod_after_async_workload_crash —
+    inherit the translation from the shared terminal rung: a capture-7b
+    failover launches RunPod with `--intent eval`, and the marker extra
+    carries BOTH the translation record and the crash evidence."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    reason = {
+        "async_crash": ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        "queue_timeout": ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+    }[reason_name]
+    rp = _PassiveRunpod()
+    result = failover_to_runpod_after_async_workload_crash(
+        spec=RunSpec(issue=940, intent="capture-7b", backend="auto", workload_cmd="bash x.sh"),
+        runpod_backend=rp,
+        evidence={"source": "async_poller"},
+        reason=reason,
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == reason
+    assert len(rp.launches) == 1
+    assert rp.launches[0].intent == "eval"
+    finals = _by_reason(captured_markers, reason)
+    assert finals
+    assert finals[-1]["extra"]["runpod_intent_translation"] == {
+        "from": "capture-7b",
+        "to": "eval",
+    }
+    assert finals[-1]["extra"]["gcp_workload_evidence"]["source"] == "async_poller"
+
+
+def test_unmapped_gcp_gpu_intent_fails_loud_naming_map_row(
+    lease_store, marker_poster, captured_markers
+):
+    """T4: a GCP-mapped GPU intent with NO translation row (eval-h100) fails
+    loud BEFORE any provision attempt, inside the existing
+    NoComputeAvailableError / no_compute_available terminal shape, with a
+    message naming the missing RUNPOD_INTENT_FOR_GCP_INTENT row."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    with pytest.raises(NoComputeAvailableError) as excinfo:
+        failover_to_runpod_after_async_workload_crash(
+            spec=RunSpec(issue=940, intent="eval-h100", backend="auto"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        )
+    assert "eval-h100" in str(excinfo.value)
+    assert "RUNPOD_INTENT_FOR_GCP_INTENT" in str(excinfo.value)
+    # NO provision was attempted (the failure is pre-launch).
+    assert rp.launches == []
+    # A no_compute_available terminal marker was posted.
+    from explore_persona_space.backends.router import ROUTE_REASON_NO_COMPUTE
+
+    assert _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+
+
+def test_translated_runpod_intent_helper_unit():
+    """T4 companion: the helper itself raises ValueError naming the missing
+    row for eval-h100, and returns the record shape for a real translation."""
+    from explore_persona_space.backends.router import _translated_runpod_intent
+
+    with pytest.raises(ValueError, match="RUNPOD_INTENT_FOR_GCP_INTENT"):
+        _translated_runpod_intent(RunSpec(issue=1, intent="eval-h100", backend="auto"))
+    assert _translated_runpod_intent(RunSpec(issue=1, intent="capture-7b", backend="auto")) == (
+        "eval",
+        {"from": "capture-7b", "to": "eval"},
+    )
+    assert _translated_runpod_intent(RunSpec(issue=1, intent="lora-7b", backend="auto")) == (
+        "lora-7b",
+        None,
+    )
+
+
+def test_translation_map_total_over_gcp_gpu_intents():
+    """T5 completeness/drift pin: every gpu_count>0 key of gcp.INTENT_TO_MACHINE
+    is EITHER in the translation map OR in the deliberate-gap set (disjointly) —
+    a future GCP intent added without deciding its RunPod fate fails HERE, at
+    the adding PR, instead of crashing at the terminal rung months later (the
+    #841 failure mode, recurrence-proofed)."""
+    from explore_persona_space.backends.gcp import INTENT_TO_MACHINE
+    from explore_persona_space.backends.router import (
+        RUNPOD_INTENT_FOR_GCP_INTENT,
+        RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS,
+    )
+
+    gpu_keys = {k for k, m in INTENT_TO_MACHINE.items() if m.gpu_count > 0}
+    covered = set(RUNPOD_INTENT_FOR_GCP_INTENT) | set(RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS)
+    assert gpu_keys == covered, (
+        f"gcp.INTENT_TO_MACHINE GPU intents not reconciled with the RunPod "
+        f"translation map: missing={sorted(gpu_keys - covered)} "
+        f"stale={sorted(covered - gpu_keys)}"
+    )
+    assert not set(RUNPOD_INTENT_FOR_GCP_INTENT) & RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS
+
+
+def test_translation_never_widens_gpu_count_and_targets_provisionable():
+    """T6 property test: every translation target is RunPod-provisionable
+    (a gpu_heuristics.INTENTS key) at a same-or-narrower GPU width than the
+    GCP machine it translates from (never widen — constraint 2)."""
+    import sys
+    from pathlib import Path
+
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
+    import gpu_heuristics
+
+    from explore_persona_space.backends.gcp import INTENT_TO_MACHINE
+    from explore_persona_space.backends.router import RUNPOD_INTENT_FOR_GCP_INTENT
+
+    for gcp_intent, runpod_intent in RUNPOD_INTENT_FOR_GCP_INTENT.items():
+        assert runpod_intent in gpu_heuristics.INTENTS, (
+            f"{gcp_intent!r} -> {runpod_intent!r}: target is not a RunPod-provisionable "
+            f"intent (gpu_heuristics.INTENTS)"
+        )
+        assert (
+            gpu_heuristics.INTENTS[runpod_intent].gpu_count
+            <= INTENT_TO_MACHINE[gcp_intent].gpu_count
+        ), f"{gcp_intent!r} -> {runpod_intent!r} WIDENS the GPU count"
+
+
+def test_explicit_runpod_override_translates_gcp_only_intent(
+    lease_store, marker_poster, captured_markers
+):
+    """T7: the explicit `backend: runpod` override (the documented manual
+    recovery for the #667 hung-GCP-VM gap) translates a GCP-only intent too —
+    previously it could only crash (uncaught KeyError class), so no working
+    behavior is altered."""
+    rp = _PassiveRunpod()
+    result = route(
+        RunSpec(issue=940, intent="capture-7b", backend="runpod"),
+        runpod_backend=rp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_OVERRIDE
+    assert len(rp.launches) == 1
+    assert rp.launches[0].intent == "eval"
+    finals = _by_reason(captured_markers, ROUTE_REASON_OVERRIDE)
+    assert finals
+    assert finals[-1]["extra"]["runpod_intent_translation"] == {
+        "from": "capture-7b",
+        "to": "eval",
+    }
+
+
+def test_explicit_runpod_override_runpod_only_intent_verbatim(
+    lease_store, marker_poster, captured_markers
+):
+    """T7 companion: a RunPod-only intent (ft-70b — NOT GCP-mapped) passes
+    through the override verbatim, no raise, no translation record
+    (byte-identical to pre-#940). NOTE: ft-70b is reachable ONLY via the
+    override path — the terminal rung's pre-existing CPU guard
+    (machine_for_intent) raises gcp.py's own ValueError on non-GCP intents
+    before the translation helper would run there."""
+    rp = _PassiveRunpod()
+    result = route(
+        RunSpec(issue=940, intent="ft-70b", backend="runpod"),
+        runpod_backend=rp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_OVERRIDE
+    assert len(rp.launches) == 1
+    assert rp.launches[0].intent == "ft-70b"
+    finals = _by_reason(captured_markers, ROUTE_REASON_OVERRIDE)
+    assert finals
+    assert "runpod_intent_translation" not in finals[-1]["extra"]
+
+
+def test_explicit_runpod_override_unmapped_gcp_intent_raises_valueerror(
+    lease_store, marker_poster, captured_markers
+):
+    """Ensemble-review addition: the OVERRIDE x eval-h100 cell fails loud with
+    the helper's RAW ValueError (a config error, per §4d — NOT wrapped into
+    NoComputeAvailableError), pre-launch, naming the missing map row. Pins the
+    exception shape so a future "wrap it silently" regression fails here."""
+    rp = _PassiveRunpod()
+    with pytest.raises(ValueError, match="RUNPOD_INTENT_FOR_GCP_INTENT"):
+        route(
+            RunSpec(issue=940, intent="eval-h100", backend="runpod"),
+            runpod_backend=rp,
+            lease_store=lease_store,
+            marker_poster=marker_poster,
+        )
+    assert rp.launches == []
+
+
+def test_translation_helper_cpu_intents_pass_through_verbatim():
+    """T8: CPU intents (gpu_count == 0 in INTENT_TO_MACHINE) pass through the
+    helper verbatim — the #677/#747 CPU semantics are untouched at the helper
+    level (the end-to-end pins are the existing CPU tests above)."""
+    from explore_persona_space.backends.router import _translated_runpod_intent
+
+    for cpu_intent in ("cpu-small", "cpu-mid", "cpu-bigmem"):
+        assert _translated_runpod_intent(RunSpec(issue=1, intent=cpu_intent, backend="auto")) == (
+            cpu_intent,
+            None,
+        )
+
+
+# ---------------------------------------------------------------------------
+# #954 — PARTIAL RunPod terminal-rung failure: pod PROVISIONED, workload start
+# FAILED (RunPodWorkloadStartError carrying the partial handle). The rung must
+# persist the SAME launch records the success path writes (on_launched sidecar
+# hook + in-flock lease incl. the M3b gcp_failover_of stamp), record a DISTINCT
+# RouteAttempt + terminal marker (runpod_workload_start_failed), and re-raise
+# TYPED — never collapse into NoComputeAvailableError (a pod exists and BILLS;
+# the #931 incident's mislabel invited a second paid dispatch).
+# ---------------------------------------------------------------------------
+
+
+class _WorkloadStartFailedRunpod(_BaseBackend):
+    """RunPod double modeling the #954 PARTIAL failure: ``launch`` provisions
+    (records the spec) then raises the typed workload-start error CARRYING the
+    partial handle — the exact shape ``RunPodBackend.launch`` produces when the
+    #909 execution leg fails after the pod exists."""
+
+    def __init__(self) -> None:
+        self.launches: list[RunSpec] = []
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+        self.launches.append(spec)
+        partial = RunHandle(
+            backend="runpod",
+            cluster=None,
+            job_id="",
+            pod_name=f"pod-{spec.issue}",
+            scratch_dir="/workspace",
+            log_path=f"/workspace/logs/issue-{spec.issue}.log",
+            extra={
+                "issue": spec.issue,
+                "workload_executed": False,
+                "workload_start_error": "branch sync timed out (ssh TimeoutExpired)",
+            },
+        )
+        raise RunPodWorkloadStartError("branch sync timed out (ssh TimeoutExpired)", handle=partial)
+
+
+class _WorkloadStartFailedNoHandleRunpod(_BaseBackend):
+    """The HANDLE-LESS typed error (the pre-provision guard shape): nothing was
+    provisioned, nothing bills — the rung's blanket NoCompute branch applies."""
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+        raise RunPodWorkloadStartError(
+            "execute_workload requested with empty workload_cmd — refusing before provisioning"
+        )
+
+
+def test_runpod_terminal_rung_workload_start_failed_persists_launch_records_and_reraises_typed(
+    lease_store, marker_poster, captured_markers
+):
+    """#954 AC1: a typed-with-handle workload-start failure at the terminal rung
+    (i) invokes on_launched with the PARTIAL handle, (ii) writes the in-flock
+    lease incl. the M3b gcp_failover_of stamp, (iii) records the DISTINCT
+    RouteAttempt + terminal marker, and (iv) re-raises the TYPED error — never
+    NoComputeAvailableError."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_NO_COMPUTE,
+        ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED,
+        failover_to_runpod_after_async_workload_crash,
+    )
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+    rp = _WorkloadStartFailedRunpod()
+    hooked: list[RunHandle] = []
+    identity = {"pod_name": "eps-issue-137", "job_id": "instance-fake-1"}
+    with pytest.raises(RunPodWorkloadStartError) as ei:
+        failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            on_launched=hooked.append,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            gcp_failover_of_identity=identity,
+        )
+    # (iv) The TYPED class, not the NoCompute collapse.
+    assert not isinstance(ei.value, NoComputeAvailableError)
+    assert ei.value.handle is not None
+    assert ei.value.handle.pod_name == "pod-137"
+    # (i) on_launched fired exactly once, with the PARTIAL handle.
+    assert len(hooked) == 1
+    assert hooked[0] is ei.value.handle
+    # (ii) The in-flock lease records the submit + the M3b identity stamp.
+    lease = lease_store.read(137)
+    assert lease is not None
+    assert lease.backend == "runpod"
+    assert lease.gcp_failover_of == identity
+    # (iii) Terminal marker with the DISTINCT reason + the RouteAttempt outcome.
+    finals = _by_reason(captured_markers, ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED)
+    assert finals
+    attempt = finals[-1]["attempts"][-1]
+    assert attempt["outcome"] == "runpod_workload_start_failed"
+    assert "pod-137" in attempt["detail"]
+    assert "RUNNING for" in attempt["detail"]
+    # No NoCompute marker was posted for this launch.
+    assert not _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+
+
+def test_runpod_terminal_rung_workload_start_failed_without_handle_keeps_no_compute(
+    lease_store, marker_poster, captured_markers
+):
+    """#954 AC2: a HANDLE-LESS typed error (the pre-provision guard — nothing
+    provisioned, nothing bills) keeps the pre-#954 blanket branch byte-for-byte:
+    NoComputeAvailableError raised, ROUTE_REASON_NO_COMPUTE marker, NO lease
+    write, on_launched NOT called."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_NO_COMPUTE,
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _WorkloadStartFailedNoHandleRunpod()
+    hooked: list[RunHandle] = []
+    with pytest.raises(NoComputeAvailableError):
+        failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            on_launched=hooked.append,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+        )
+    assert hooked == []  # on_launched never fired
+    assert lease_store.read(137) is None  # no lease write
+    finals = _by_reason(captured_markers, ROUTE_REASON_NO_COMPUTE)
+    assert finals
+    assert finals[-1]["attempts"][-1]["outcome"] == "runpod_fallback_failed"
+
+
+def test_concurrent_triggerer_after_partial_workload_start_failure_no_second_launch(
+    lease_store, marker_poster, captured_markers
+):
+    """#954 AC4-ii: triggerer 1 partial-fails (typed raise; lease stamped
+    IN-FLOCK); an M3b concurrent second triggerer with the SAME GCP identity
+    short-circuits in-flock — total launch count stays 1 (the load-bearing
+    invariant; sequential calls on a shared LeaseStore model the
+    serialized-by-flock outcome, exactly as M2.6 does)."""
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+    rp = _WorkloadStartFailedRunpod()
+    identity = {"pod_name": "eps-issue-137", "job_id": "instance-fake-1"}
+    cfg = RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0)
+
+    def _trigger():
+        return failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=lease_store,
+            now_fn=_clock(),
+            config=cfg,
+            gcp_failover_of_identity=identity,
+        )
+
+    with pytest.raises(RunPodWorkloadStartError):
+        _trigger()  # triggerer 1: partial failure, lease stamped in-flock
+    second = _trigger()  # triggerer 2: in-flock re-check short-circuits
+
+    assert len(rp.launches) == 1  # EXACTLY ONCE — no second paid launch
+    assert second.extra.get("failover_already_launched") is True
+
+
+def test_runpod_workload_start_failed_reason_cross_module_parity():
+    """#954 AC5 (SR1 pattern): the router constant equals the established
+    ``dispatch_issue.py`` literal, and the reason is NOT in the watcher's
+    TRANSIENT_CAPACITY_REASONS allowlist — the capacity-retry pass never auto
+    re-drives a run whose pod exists and bills."""
+    import inspect
+
+    import scripts.dispatch_issue as cli
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED,
+    )
+    from scripts.autonomous_session_watch import TRANSIENT_CAPACITY_REASONS
+
+    assert ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED == "runpod_workload_start_failed"
+    # The dispatch CLI's typed arm uses the SAME literal (one reason per
+    # failure class across paths, #909/#954).
+    assert '"runpod_workload_start_failed"' in inspect.getsource(cli)
+    assert ROUTE_REASON_RUNPOD_WORKLOAD_START_FAILED not in TRANSIENT_CAPACITY_REASONS
+
+
+def test_runpod_terminal_rung_partial_lease_write_failure_preserves_typed_error(
+    tmp_path, marker_poster, captured_markers
+):
+    """#954 AC1 guard (round-1 critique, alternatives MF2): a lease-write
+    failure on the partial branch must NEVER replace the typed error — the
+    failover legs' ``except RunPodWorkloadStartError`` is the rescue path, and
+    an OSError escaping here would blind it exactly when rescue is needed. The
+    marker still posts with the DISTINCT reason, and the RouteAttempt detail
+    records the lease_write_failed note."""
+    from contextlib import contextmanager
+
+    from explore_persona_space.backends.router import (
+        failover_to_runpod_after_async_workload_crash,
+    )
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+    class _RaisingWriteLeaseStore(LeaseStore):
+        @contextmanager
+        def transaction(self, issue):
+            with super().transaction(issue) as (lease, _write):
+
+                def _raising_write(new_lease):
+                    raise OSError("Disk quota exceeded (EDQUOT) writing the lease")
+
+                yield lease, _raising_write
+
+    store = _RaisingWriteLeaseStore(lease_dir=tmp_path / ".eps-routing")
+    rp = _WorkloadStartFailedRunpod()
+    with pytest.raises(RunPodWorkloadStartError):  # STILL the typed class
+        failover_to_runpod_after_async_workload_crash(
+            spec=_spec(backend="gcp"),
+            runpod_backend=rp,
+            evidence={"source": "async_poller"},
+            marker_poster=marker_poster,
+            lease_store=store,
+            now_fn=_clock(),
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+            gcp_failover_of_identity={"pod_name": "eps-issue-137", "job_id": "i-1"},
+        )
+    finals = _by_reason(captured_markers, "runpod_workload_start_failed")
+    assert finals  # the terminal marker still posted
+    assert "lease_write_failed" in finals[-1]["attempts"][-1]["detail"]

@@ -30,6 +30,15 @@ via ``issue811_offset_decomposition.download_store(layers=(14,))`` (resumable).
 Per-point data lands in ``eval_results/issue_811/chain_scatter_points.json``
 (2,880 rows exceed the sidecar embed cap, so the sidecar carries a
 ``data_path`` pointer instead). 0 GPU-h; CPU minutes.
+
+``--round maxp`` (the ``maxp-winner-mapchange`` follow-up round) runs the SAME
+gated refit against that round's re-extracted store
+(``issue811_maxp_mapchange/analysis_tensors``, fact L14 subset — 480 npz) and
+committed ``maxp-winner-mapchange/chain_rho_M0_Mplus_{summary}.json`` targets,
+with columns = the taught fact L14 under all three summaries (answer mean /
+turn boundary / max-pool — co-extracted from one pass, so one download serves
+all three); outputs land under ``figures/issue_811/maxp-winner-mapchange/`` and
+``eval_results/issue_811/maxp-winner-mapchange/chain_scatter_points.json``.
 """
 
 from __future__ import annotations
@@ -41,12 +50,6 @@ import sys
 import time
 from pathlib import Path
 
-import matplotlib
-
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
@@ -57,9 +60,14 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
 
+import matplotlib  # noqa: E402
+
+matplotlib.use("Agg")
 import issue658_fit_predictors as fit658  # noqa: E402
 import issue722_fit_M as fitM  # noqa: E402
 import issue722_load_activations as loadact  # noqa: E402
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
 from issue811_fit import STORE_PREFIX  # noqa: E402
 from issue811_offset_decomposition import DEFAULT_DL_ROOT, download_store  # noqa: E402
 
@@ -74,6 +82,7 @@ logger = logging.getLogger("issue811.chain_scatter")
 EVAL_DIR = PROJECT_ROOT / "eval_results/issue_811"
 POINTS_JSON = EVAL_DIR / "chain_scatter_points.json"
 LAYER = 14
+FIG_NAME = "issue_811/chain_rho_scatter_L14"
 
 # The three key cells (columns): the reversal pair + the offset-driven null contrast.
 PANEL_CELLS: tuple[tuple[str, str, str], ...] = (
@@ -81,6 +90,31 @@ PANEL_CELLS: tuple[tuple[str, str, str], ...] = (
     ("fact", "turn_nl", "taught fact · L14 · turn boundary"),
     ("em", "turn_nl", "harmful-compliance · L14 · turn boundary"),
 )
+
+# Per-round configuration (#811 maxp-winner-mapchange follow-up). "v1" keeps the
+# module defaults above verbatim; "maxp" retargets the SAME gated refit at the
+# follow-up round's store + committed chain-rho JSONs, with the taught fact L14
+# under all three co-extracted summaries as columns (Lens-11 per-unit companion
+# to the round's forest figure). Selected via --round; main() installs the
+# chosen round's values into the module globals (the issue811_fit.py pattern).
+ROUNDS: dict[str, dict] = {
+    "v1": {
+        "eval_dir": EVAL_DIR,
+        "fig_name": FIG_NAME,
+        "store_prefix": STORE_PREFIX,
+        "panel_cells": PANEL_CELLS,
+    },
+    "maxp": {
+        "eval_dir": PROJECT_ROOT / "eval_results/issue_811/maxp-winner-mapchange",
+        "fig_name": "issue_811/maxp-winner-mapchange/chain_rho_scatter_L14_fact",
+        "store_prefix": "issue811_maxp_mapchange/analysis_tensors",
+        "panel_cells": (
+            ("fact", "mean", "taught fact · L14 · answer mean"),
+            ("fact", "turn_nl", "taught fact · L14 · turn boundary"),
+            ("fact", "maxp", "taught fact · L14 · max-pool"),
+        ),
+    },
+}
 MAP_LABEL = {"M0": "base map", "Mplus": "post-fine-tuning map"}
 E_LABEL = {
     "fact": "measured leakage (stated-fact rate, trained − base)",
@@ -229,9 +263,9 @@ def make_figure(results: dict[tuple[str, str], dict]) -> None:
     fig.legend(handles=handles, loc="outside lower center", ncol=4, fontsize=8)
     # 2,880 points exceed the sidecar embed cap — point data lands in POINTS_JSON,
     # pointed at from the sidecar (data_path) below.
-    paths = savefig_paper(fig, "issue_811/chain_rho_scatter_L14", dir="figures/", embed_data=False)
+    paths = savefig_paper(fig, FIG_NAME, dir="figures/", embed_data=False)
     plt.close(fig)
-    meta_path = Path(paths.get("meta", "figures/issue_811/chain_rho_scatter_L14.meta.json"))
+    meta_path = Path(paths.get("meta", f"figures/{FIG_NAME}.meta.json"))
     meta = json.loads(meta_path.read_text())
     meta["data_path"] = str(POINTS_JSON.relative_to(PROJECT_ROOT))
     meta_path.write_text(json.dumps(meta, indent=2))
@@ -276,6 +310,13 @@ def _results_from_points_json() -> dict[tuple[str, str], dict]:
 def main() -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     ap = argparse.ArgumentParser(description="Issue #811 chain-ρ per-unit scatter (L14)")
+    ap.add_argument(
+        "--round",
+        choices=tuple(ROUNDS),
+        default="v1",
+        help="which #811 round to refit: v1 (turn_nl round, default) or maxp "
+        "(the maxp-winner-mapchange follow-up round — fact L14, three summaries)",
+    )
     ap.add_argument("--dl-root", type=Path, default=DEFAULT_DL_ROOT)
     ap.add_argument("--workers", type=int, default=12)
     ap.add_argument("--skip-download", action="store_true")
@@ -289,6 +330,18 @@ def main() -> int:
     )
     args = ap.parse_args()
 
+    # Install the chosen round's targets into the module globals the helpers
+    # read (compute_cell / make_figure / _results_from_points_json) — the
+    # issue811_fit.py round-parameterization pattern.
+    global EVAL_DIR, POINTS_JSON, FIG_NAME, PANEL_CELLS
+    rnd = ROUNDS[args.round]
+    EVAL_DIR = rnd["eval_dir"]
+    POINTS_JSON = EVAL_DIR / "chain_scatter_points.json"
+    FIG_NAME = rnd["fig_name"]
+    PANEL_CELLS = rnd["panel_cells"]
+    store_prefix = rnd["store_prefix"]
+    logger.info("[phase=setup] round=%s store_prefix=%s", args.round, store_prefix)
+
     if args.plot_only:
         make_figure(_results_from_points_json())
         return 0
@@ -300,12 +353,12 @@ def main() -> int:
     logger.info("[phase=setup] device=%s", fit658.DEVICE)
 
     behaviors = tuple(sorted({beh for beh, _s, _t in PANEL_CELLS}))
-    local_root = args.dl_root / STORE_PREFIX
+    local_root = args.dl_root / store_prefix
     if args.skip_download:
         assert local_root.is_dir(), f"--skip-download but no local mirror at {local_root}"
     else:
         local_root, n_dl = download_store(
-            args.dl_root, behaviors, workers=args.workers, layers=(LAYER,)
+            args.dl_root, behaviors, workers=args.workers, layers=(LAYER,), prefix=store_prefix
         )
         logger.info("[phase=download] %d files fetched", n_dl)
 
@@ -380,7 +433,7 @@ def main() -> int:
             {
                 "meta": {
                     "issue": 811,
-                    "figure": "chain_rho_scatter_L14",
+                    "figure": Path(FIG_NAME).name,
                     "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                     "max_repro_dev_rho": worst_dev,
                     "n_rows": len(rows),
@@ -392,7 +445,10 @@ def main() -> int:
     )
     logger.info("[phase=points] %d rows → %s", len(rows), POINTS_JSON)
     make_figure(results)
-    logger.info("[phase=done] max |ρ_refit − ρ_run| = %.3e", worst_dev)
+    # No [phase=done] tag: that token is RESERVED for the dispatcher's single
+    # terminal line (pod-side reporting contract, #545); this script is not
+    # dispatcher-invoked, but keep the log surface consistent anyway.
+    logger.info("chain-scatter figure complete: max |ρ_refit − ρ_run| = %.3e", worst_dev)
     return 0
 
 

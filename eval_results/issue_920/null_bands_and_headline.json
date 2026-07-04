@@ -1,0 +1,361 @@
+{
+  "bands": {
+    "dv1_R1": {
+      "band_p97_5": 0.17044067382812497,
+      "observed_max": 0.871223,
+      "clears": true,
+      "null_draws": 1000
+    },
+    "dv1_R2": {
+      "band_p97_5": 0.15692443847656246,
+      "observed_max": 0.863049,
+      "clears": true,
+      "null_draws": 1000
+    },
+    "dv1_R3": {
+      "band_p97_5": 0.21095886230468747,
+      "observed_max": 0.866066,
+      "clears": true,
+      "null_draws": 1000
+    },
+    "dv1_R4": {
+      "band_p97_5": 0.18325500488281238,
+      "observed_max": 0.863393,
+      "clears": true,
+      "null_draws": 1000
+    },
+    "dv2": {
+      "in_probe_ctx_sycophancy": 0.5167683073229291,
+      "in_probe_ans_sycophancy": 0.5355726290516206,
+      "in_probe_ctx_refusal": 0.49769267707082826,
+      "in_probe_ans_refusal": 0.5038943577430972,
+      "in_probe_ctx_harmful_compliance": 0.5047106842737094,
+      "in_probe_ans_harmful_compliance": 0.520424969987995,
+      "in_probe_ctx_fact_expression": 0.4949133217385346,
+      "in_probe_ans_fact_expression": 0.49037048654313137,
+      "in_probe_ctx_format_style": 0.4913925570228091,
+      "in_probe_ans_format_style": 0.5238679471788715,
+      "in_probe_ctx_self_report": 0.5263505402160864,
+      "in_probe_ans_self_report": 0.5287442977190877,
+      "in_probe_ctx_persona_drift": 0.4857166866746699,
+      "in_probe_ans_persona_drift": 0.5111740696278512,
+      "input_ood_ctx_sycophancy": 0.5252412965186074,
+      "input_ood_ans_sycophancy": 0.5301848739495799,
+      "input_ood_ctx_refusal": 0.49456662665066026,
+      "input_ood_ans_refusal": 0.5207827130852342,
+      "input_ood_ctx_harmful_compliance": 0.5084777911164466,
+      "input_ood_ans_harmful_compliance": 0.5417118847539014,
+      "input_ood_ctx_fact_expression": 0.5038249141422021,
+      "input_ood_ans_fact_expression": 0.5015306863254961,
+      "input_ood_ctx_format_style": 0.5011716686674669,
+      "input_ood_ans_format_style": 0.524921968787515,
+      "input_ood_ctx_self_report": 0.5206842737094838,
+      "input_ood_ans_self_report": 0.5374789915966387,
+      "input_ood_ctx_persona_drift": 0.48484993997599024,
+      "input_ood_ans_persona_drift": 0.504266506602641
+    },
+    "dv3": {
+      "R9_sycophancy": 0.5727611044417766,
+      "R9_refusal": 0.5615102040816327,
+      "R9_harmful_compliance": 0.5643793517406962,
+      "R9_fact_expression": 0.5626860840141433,
+      "R9_format_style": 0.5399951980792317,
+      "R9_self_report": 0.5966146458583433,
+      "R9_persona_drift": 0.5563361344537815,
+      "R10_sycophancy": 0.5768571428571428,
+      "R10_refusal": 0.565812725090036,
+      "R10_harmful_compliance": 0.5720744297719087,
+      "R10_fact_expression": 0.5623211205100728,
+      "R10_format_style": 0.5434909963985594,
+      "R10_self_report": 0.5900240096038415,
+      "R10_persona_drift": 0.5564033613445378
+    }
+  },
+  "observed": {
+    "R1": {
+      "max": 0.871223154406453,
+      "argmax": 8577
+    },
+    "R2": {
+      "max": 0.8630488553417499,
+      "argmax": 8502
+    },
+    "R3": {
+      "max": 0.8660664742190137,
+      "argmax": 8577
+    },
+    "R4": {
+      "max": 0.8633930289117243,
+      "argmax": 8502
+    }
+  },
+  "h1_delta_R1": {
+    "observed_delta": 0.04152800000000001,
+    "band_p97_5": 0.27702026367187493,
+    "beats_incumbent_past_band": false,
+    "mean_family_cells": [
+      "ans_content_mean",
+      "ans_content_pool_meanmean"
+    ],
+    "incumbent_set": "ANSWER-side instantiation: incumbent = valid map cells whose a-cell family is in mean_family_cells (any context cell \u00d7 any layer); every other valid cell is a challenger. Context-side mean-pool families are challengers under this split; the persisted per-draw matrices make any other split recomputable.",
+    "n_incumbent_cells": 1354,
+    "n_challenger_cells": 33298,
+    "note": "set-size asymmetry biases TOWARD retaining the incumbent (plan \u00a76)"
+  },
+  "h1_delta_R2": {
+    "observed_delta": 0.036202999999999985,
+    "band_p97_5": 0.26880950927734376,
+    "beats_incumbent_past_band": false,
+    "mean_family_cells": [
+      "ans_content_mean",
+      "ans_content_pool_meanmean"
+    ],
+    "incumbent_set": "ANSWER-side instantiation: incumbent = valid map cells whose a-cell family is in mean_family_cells (any context cell \u00d7 any layer); every other valid cell is a challenger. Context-side mean-pool families are challengers under this split; the persisted per-draw matrices make any other split recomputable.",
+    "n_incumbent_cells": 1354,
+    "n_challenger_cells": 33298,
+    "note": "set-size asymmetry biases TOWARD retaining the incumbent (plan \u00a76)"
+  },
+  "dv23_band_convention": "null bands = 97.5th pct of per-draw max |rho| (two-sided); observed comparator = max |rho| over the same (regime[, side], behavior) cell set",
+  "dv2_observed_vs_band": {
+    "in_probe_ctx_sycophancy": {
+      "observed_max_abs_rho": 0.557935,
+      "band_p97_5": 0.5167683073229291,
+      "clears": true
+    },
+    "in_probe_ctx_refusal": {
+      "observed_max_abs_rho": 0.570996,
+      "band_p97_5": 0.49769267707082826,
+      "clears": true
+    },
+    "in_probe_ctx_harmful_compliance": {
+      "observed_max_abs_rho": 0.713421,
+      "band_p97_5": 0.5047106842737094,
+      "clears": true
+    },
+    "in_probe_ctx_fact_expression": {
+      "observed_max_abs_rho": 0.857376,
+      "band_p97_5": 0.4949133217385346,
+      "clears": true
+    },
+    "in_probe_ctx_format_style": {
+      "observed_max_abs_rho": 0.707659,
+      "band_p97_5": 0.4913925570228091,
+      "clears": true
+    },
+    "in_probe_ctx_self_report": {
+      "observed_max_abs_rho": 0.522593,
+      "band_p97_5": 0.5263505402160864,
+      "clears": false
+    },
+    "in_probe_ctx_persona_drift": {
+      "observed_max_abs_rho": 0.57551,
+      "band_p97_5": 0.4857166866746699,
+      "clears": true
+    },
+    "in_probe_ans_sycophancy": {
+      "observed_max_abs_rho": 0.592893,
+      "band_p97_5": 0.5355726290516206,
+      "clears": true
+    },
+    "in_probe_ans_refusal": {
+      "observed_max_abs_rho": 0.6291,
+      "band_p97_5": 0.5038943577430972,
+      "clears": true
+    },
+    "in_probe_ans_harmful_compliance": {
+      "observed_max_abs_rho": 0.720624,
+      "band_p97_5": 0.520424969987995,
+      "clears": true
+    },
+    "in_probe_ans_fact_expression": {
+      "observed_max_abs_rho": 0.694103,
+      "band_p97_5": 0.49037048654313137,
+      "clears": true
+    },
+    "in_probe_ans_format_style": {
+      "observed_max_abs_rho": 0.788908,
+      "band_p97_5": 0.5238679471788715,
+      "clears": true
+    },
+    "in_probe_ans_self_report": {
+      "observed_max_abs_rho": 0.770468,
+      "band_p97_5": 0.5287442977190877,
+      "clears": true
+    },
+    "in_probe_ans_persona_drift": {
+      "observed_max_abs_rho": 0.651188,
+      "band_p97_5": 0.5111740696278512,
+      "clears": true
+    },
+    "input_ood_ctx_sycophancy": {
+      "observed_max_abs_rho": 0.540456,
+      "band_p97_5": 0.5252412965186074,
+      "clears": true
+    },
+    "input_ood_ctx_refusal": {
+      "observed_max_abs_rho": 0.662521,
+      "band_p97_5": 0.49456662665066026,
+      "clears": true
+    },
+    "input_ood_ctx_harmful_compliance": {
+      "observed_max_abs_rho": 0.705162,
+      "band_p97_5": 0.5084777911164466,
+      "clears": true
+    },
+    "input_ood_ctx_fact_expression": {
+      "observed_max_abs_rho": 0.855263,
+      "band_p97_5": 0.5038249141422021,
+      "clears": true
+    },
+    "input_ood_ctx_format_style": {
+      "observed_max_abs_rho": 0.752317,
+      "band_p97_5": 0.5011716686674669,
+      "clears": true
+    },
+    "input_ood_ctx_self_report": {
+      "observed_max_abs_rho": 0.603457,
+      "band_p97_5": 0.5206842737094838,
+      "clears": true
+    },
+    "input_ood_ctx_persona_drift": {
+      "observed_max_abs_rho": 0.793709,
+      "band_p97_5": 0.48484993997599024,
+      "clears": true
+    },
+    "input_ood_ans_sycophancy": {
+      "observed_max_abs_rho": 0.617671,
+      "band_p97_5": 0.5301848739495799,
+      "clears": true
+    },
+    "input_ood_ans_refusal": {
+      "observed_max_abs_rho": 0.613253,
+      "band_p97_5": 0.5207827130852342,
+      "clears": true
+    },
+    "input_ood_ans_harmful_compliance": {
+      "observed_max_abs_rho": 0.671549,
+      "band_p97_5": 0.5417118847539014,
+      "clears": true
+    },
+    "input_ood_ans_fact_expression": {
+      "observed_max_abs_rho": 0.678256,
+      "band_p97_5": 0.5015306863254961,
+      "clears": true
+    },
+    "input_ood_ans_format_style": {
+      "observed_max_abs_rho": 0.830012,
+      "band_p97_5": 0.524921968787515,
+      "clears": true
+    },
+    "input_ood_ans_self_report": {
+      "observed_max_abs_rho": 0.711789,
+      "band_p97_5": 0.5374789915966387,
+      "clears": true
+    },
+    "input_ood_ans_persona_drift": {
+      "observed_max_abs_rho": 0.786699,
+      "band_p97_5": 0.504266506602641,
+      "clears": true
+    }
+  },
+  "dv3_observed_vs_band": {
+    "R9_sycophancy": {
+      "observed_max_abs_rho": 0.598367,
+      "band_p97_5": 0.5727611044417766,
+      "clears": true
+    },
+    "R9_refusal": {
+      "observed_max_abs_rho": 0.809748,
+      "band_p97_5": 0.5615102040816327,
+      "clears": true
+    },
+    "R9_harmful_compliance": {
+      "observed_max_abs_rho": 0.816375,
+      "band_p97_5": 0.5643793517406962,
+      "clears": true
+    },
+    "R9_fact_expression": {
+      "observed_max_abs_rho": 0.86141,
+      "band_p97_5": 0.5626860840141433,
+      "clears": true
+    },
+    "R9_format_style": {
+      "observed_max_abs_rho": 0.747419,
+      "band_p97_5": 0.5399951980792317,
+      "clears": true
+    },
+    "R9_self_report": {
+      "observed_max_abs_rho": 0.765282,
+      "band_p97_5": 0.5966146458583433,
+      "clears": true
+    },
+    "R9_persona_drift": {
+      "observed_max_abs_rho": 0.826843,
+      "band_p97_5": 0.5563361344537815,
+      "clears": true
+    },
+    "R10_sycophancy": {
+      "observed_max_abs_rho": 0.620072,
+      "band_p97_5": 0.5768571428571428,
+      "clears": true
+    },
+    "R10_refusal": {
+      "observed_max_abs_rho": 0.799376,
+      "band_p97_5": 0.565812725090036,
+      "clears": true
+    },
+    "R10_harmful_compliance": {
+      "observed_max_abs_rho": 0.82617,
+      "band_p97_5": 0.5720744297719087,
+      "clears": true
+    },
+    "R10_fact_expression": {
+      "observed_max_abs_rho": 0.85267,
+      "band_p97_5": 0.5623211205100728,
+      "clears": true
+    },
+    "R10_format_style": {
+      "observed_max_abs_rho": 0.775846,
+      "band_p97_5": 0.5434909963985594,
+      "clears": true
+    },
+    "R10_self_report": {
+      "observed_max_abs_rho": 0.748379,
+      "band_p97_5": 0.5900240096038415,
+      "clears": true
+    },
+    "R10_persona_drift": {
+      "observed_max_abs_rho": 0.869676,
+      "band_p97_5": 0.5564033613445378,
+      "clears": true
+    }
+  },
+  "excluded_families": [],
+  "excluded_families_by_source": {
+    "set_A": [],
+    "set_B": []
+  },
+  "k2_identity_ceiling_mean_families": {
+    "ans_content_mean": 0.891097,
+    "ans_content_pool_meanmean": 0.826361
+  },
+  "figures": [
+    "chain_vs_oracle_gap.png",
+    "hero_family_heatmap_R1.png",
+    "hero_family_heatmap_R2_minus_R1.png",
+    "per_layer_top5_pairs.png",
+    "r1_skill_distribution.png",
+    "r3_identity_ceiling.png",
+    "winning_cell_scatter.png"
+  ],
+  "reliability_ceilings_note": "#812 reliability ceilings are ANNOTATION-ONLY (no attenuation correction registered) \u2014 eval_results/issue_812/reliability_and_learning_curve.json",
+  "reproducibility": {
+    "git_commit": "7bae890278d45dfa029c71caf3f45e5128ab2c1d",
+    "timestamp_utc": "2026-07-03T14:58:29.696597+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

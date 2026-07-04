@@ -1,0 +1,33 @@
+{
+  "commit": "a5c565db97",
+  "created": "2026-07-03T11:27:39Z",
+  "figsize": [
+    8.0,
+    4.2
+  ],
+  "points": [
+    {
+      "min one-sided empirical p over the 12 monitoring cells (log scale)": 0.0021997800219978004,
+      "y": 6.0,
+      "series": "null min-p (2.5th-97.5th pct, 10,000 joint draws)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "min one-sided empirical p over the 12 monitoring cells (log scale)": 0.26447355264473554,
+      "y": 6.0,
+      "series": "null min-p (2.5th-97.5th pct, 10,000 joint draws)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "min one-sided empirical p over the 12 monitoring cells (log scale)": 0.00019998000199980003,
+      "y": 6.0,
+      "series": "observed min p over the 12 monitoring cells",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 3
+}

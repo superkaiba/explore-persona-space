@@ -3326,3 +3326,427 @@ def test_repo_branch_auto_default_does_not_fire_for_explicit_runpod_without_flag
         rc = di.main(_runpod_launch_args(), backends_factory=factory)
     assert rc == 0
     assert "repo_branch" not in (runpod.launches[0].extra or {})
+
+
+# ---------------------------------------------------------------------------
+# #934: --lane-suffix + reconnect loudness (launch JSON additive keys)
+# ---------------------------------------------------------------------------
+
+
+class _ReconnectedExtraBackend(_MockBackend):
+    """launch() returns a handle marked extra['reconnected']=True — the
+    GCP-INTERNAL reconnect shape (route() thinks it launched fresh; only
+    the handle extra carries the flag, the reason is NOT 'reconnect')."""
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        from dataclasses import replace
+
+        h = super().launch(spec)
+        return replace(h, extra={**h.extra, "reconnected": True})
+
+
+def _build_factory_with_reconnect(
+    *,
+    nibi: _MockBackend,
+    reconnect_fn: Any = None,
+) -> Any:
+    """Like _build_mock_factory but with an injectable reconnect_fn."""
+
+    def _factory() -> dict[str, Any]:
+        return {
+            "runpod_backend": _MockBackend(kind="runpod"),
+            "free_backends": {"nibi": nibi},
+            "gcp_backend": None,
+            "marker_poster": lambda **_kw: None,
+            "is_started": lambda _b, _h: True,
+            "is_live_after_cancel": lambda _b, _h: False,
+            "reconnect_fn": reconnect_fn or (lambda _b, _k, _s: None),
+            "mila_socket_alive": lambda: False,
+        }
+
+    return _factory
+
+
+def _reconnect_fn_for(issue: int) -> Any:
+    """A reconnect_fn returning a live nibi handle (router-scan reconnect:
+    reason == 'reconnect', handle extra WITHOUT the reconnected flag)."""
+    live = RunHandle(
+        backend="nibi",
+        cluster="nibi",
+        job_id="live-9",
+        pod_name=f"eps-issue-{issue}",
+        scratch_dir="/s",
+        log_path="/l",
+        extra={"issue": issue},
+    )
+    return lambda _b, k, _s: live if k == "nibi" else None
+
+
+def test_launch_lane_suffix_threads_extra_and_sidecar(monkeypatch, tmp_path) -> None:
+    """--lane-suffix threads into spec.extra['lane_suffix'] AND the sidecar
+    lands at the suffixed issue-<N>-<suffix>-handle.json path; the JSON
+    carries the lane_suffix key (#934)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "9341",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "smoke=1",
+                "--lane-suffix",
+                "cpu",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["lane_suffix"] == "cpu"
+    assert body["handle_sidecar_path"].endswith("issue-9341-cpu-handle.json")
+    assert (tmp_path / ".claude" / "cache" / "issue-9341-cpu-handle.json").exists()
+    assert len(nibi.launches) == 1
+    assert nibi.launches[0].extra["lane_suffix"] == "cpu"
+
+
+@pytest.mark.parametrize(
+    "workload_args", [["--workload-cmd", "bash scripts/x.sh"], ["--hydra", "smoke=1"]]
+)
+@pytest.mark.parametrize("reconnect_source", ["reason", "extra"])
+def test_launch_reconnect_workload_cmd_reports_workload_dispatched_false(
+    monkeypatch, tmp_path, caplog, reconnect_source: str, workload_args: list[str]
+) -> None:
+    """Round-1 Must-Fix matrix (the exact #923 recurrence path): BOTH
+    reconnect branches (router-scan reason-only x GCP-internal extra-only)
+    x BOTH workload surfaces (--workload-cmd x --hydra) report
+    reconnected=true / workload_dispatched=false / reconnect_note, warn,
+    and KEEP ok:true + rc 0 (the exit-75 rerun contract)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    issue = 9342
+    if reconnect_source == "reason":
+        factory = _build_factory_with_reconnect(
+            nibi=_MockBackend(kind="nibi"), reconnect_fn=_reconnect_fn_for(issue)
+        )
+    else:
+        factory = _build_factory_with_reconnect(nibi=_ReconnectedExtraBackend(kind="nibi"))
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with caplog.at_level(logging.WARNING), redirect_stdout(buf):
+        rc = main(
+            ["launch", "--issue", str(issue), "--intent", "lora-7b", *workload_args],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True  # reconnect stays a SUCCESS exit (exit-75 rerun contract)
+    assert body["reconnected"] is True
+    assert body["workload_dispatched"] is False
+    assert "reconnect_note" in body
+    assert "dispatched" in body["reconnect_note"]
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("dispatched" in m and "NO workload" in m for m in messages), messages
+
+
+def test_launch_fresh_create_reports_workload_dispatched_true(monkeypatch, tmp_path) -> None:
+    """A genuinely fresh launch: reconnected=false, workload_dispatched=true,
+    no reconnect_note, no lane_suffix key (unsuffixed byte-identity of the
+    additive-key surface)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            ["launch", "--issue", "9343", "--intent", "lora-7b", "--hydra", "smoke=1"],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["reconnected"] is False
+    assert body["workload_dispatched"] is True
+    assert "reconnect_note" not in body
+    assert "lane_suffix" not in body
+    assert "lane_suffix_unhonored_by_lane" not in body
+
+
+def test_launch_no_suffix_leaves_extra_clean(monkeypatch, tmp_path) -> None:
+    """Round-1 Must-Fix (unsuffixed byte-identity PINNED): a launch WITHOUT
+    --lane-suffix must leave spec.extra with NO lane_suffix key AT ALL —
+    an extra['lane_suffix'] = None mutant would flip canonicalize_spec
+    output and every live unsuffixed lease spec-hash (fleet-wide lease
+    replace-on-mismatch)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from explore_persona_space.backends.router import canonicalize_spec
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            ["launch", "--issue", "9344", "--intent", "lora-7b", "--hydra", "smoke=1"],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert "lane_suffix" not in body
+    assert len(nibi.launches) == 1
+    captured = nibi.launches[0]
+    assert "lane_suffix" not in (captured.extra or {})
+    # Spec-hash identity: the canonical form carries no trace of the key.
+    canonical = canonicalize_spec(captured)
+    assert "lane_suffix" not in json.dumps(canonical)
+
+
+def test_finalize_lane_suffix_resolves_suffixed_sidecar(monkeypatch, tmp_path) -> None:
+    """Round-1 Must-Fix: `finalize --lane-suffix cpu` resolves the SUFFIXED
+    sidecar — a getattr typo silently finalizing lane B against lane A's
+    handle is the same silent-wrong-lane class as #923."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    cache = tmp_path / ".claude" / "cache"
+    # Suffixed handle (the one finalize must act on) + an unsuffixed DECOY
+    # with a different job_id (must NOT be touched).
+    suffixed = RunHandle(
+        backend="nibi",
+        cluster="nibi",
+        job_id="job-suffixed",
+        pod_name="pod-9346-cpu",
+        scratch_dir="/scratch",
+        log_path="/log",
+        extra={
+            "issue": 9346,
+            "intent": "lora-7b",
+            EXPECTED_ARTIFACTS_HANDLE_KEY: {"issue": 9346, "sentinel_path": "/tmp/s.json"},
+        },
+    )
+    decoy = RunHandle(
+        backend="nibi",
+        cluster="nibi",
+        job_id="job-unsuffixed-decoy",
+        pod_name="pod-9346",
+        scratch_dir="/scratch",
+        log_path="/log",
+        extra={
+            "issue": 9346,
+            "intent": "lora-7b",
+            EXPECTED_ARTIFACTS_HANDLE_KEY: {"issue": 9346, "sentinel_path": "/tmp/s.json"},
+        },
+    )
+    write_handle_sidecar(suffixed, cache / "issue-9346-cpu-handle.json")
+    write_handle_sidecar(decoy, cache / "issue-9346-handle.json")
+    nibi = _MockBackend(kind="nibi", confirm_passes=True)
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(
+            ["finalize", "--issue", "9346", "--lane-suffix", "cpu"],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    # Teardown fired on the SUFFIXED lane's handle, not the decoy.
+    assert len(nibi.teardowns) == 1
+    assert nibi.teardowns[0].job_id == "job-suffixed"
+    # The suffixed sidecar retired to .finalized; the decoy untouched.
+    assert not (cache / "issue-9346-cpu-handle.json").exists()
+    assert (cache / "issue-9346-cpu-handle.json.finalized").exists()
+    assert (cache / "issue-9346-handle.json").exists()
+
+
+def test_launch_invalid_lane_suffix_rejected_at_parse_time(monkeypatch, tmp_path) -> None:
+    """A malformed --lane-suffix errors at the argparse surface (SystemExit
+    2) BEFORE any backend is built."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+
+    def _exploding_factory() -> dict[str, Any]:
+        raise AssertionError("backends_factory must not be called on a parse error")
+
+    from scripts.dispatch_issue import main
+
+    for bad in ("CPU", "a_b", "-x", "x-", "a" * 44):
+        with pytest.raises(SystemExit) as excinfo:
+            main(
+                [
+                    "launch",
+                    "--issue",
+                    "9345",
+                    "--intent",
+                    "lora-7b",
+                    "--hydra",
+                    "smoke=1",
+                    "--lane-suffix",
+                    bad,
+                ],
+                backends_factory=_exploding_factory,
+            )
+        assert excinfo.value.code == 2
+
+
+def test_launch_lane_suffix_non_gcp_lane_warns(monkeypatch, tmp_path, caplog) -> None:
+    """--lane-suffix on a launch that resolves to a NON-GCP lane: the
+    instance/job-name isolation is GCP-only, so the JSON carries
+    lane_suffix_unhonored_by_lane + a loud warning (the gap is loud, not
+    silent — plan §3.7)."""
+    _cd_to_tmp(monkeypatch, tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    factory = _build_mock_factory(nibi=nibi)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with caplog.at_level(logging.WARNING), redirect_stdout(buf):
+        rc = main(
+            [
+                "launch",
+                "--issue",
+                "9347",
+                "--intent",
+                "lora-7b",
+                "--hydra",
+                "smoke=1",
+                "--lane-suffix",
+                "cpu",
+            ],
+            backends_factory=factory,
+        )
+    assert rc == 0
+    body = json.loads(buf.getvalue().strip())
+    assert body["ok"] is True
+    assert body["lane_suffix"] == "cpu"
+    assert body["lane_suffix_unhonored_by_lane"] == "nibi"
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("GCP-only" in m for m in messages), messages
+
+
+# ---------------------------------------------------------------------------
+# #954 — the explicit-override typed arm persists the PARTIAL handle sidecar
+# ---------------------------------------------------------------------------
+
+
+def _partial_runpod_handle_954():
+    from explore_persona_space.backends.base import RunHandle
+
+    return RunHandle(
+        backend="runpod",
+        cluster=None,
+        job_id="",
+        pod_name="pod-909",
+        scratch_dir="/workspace",
+        log_path="/workspace/logs/issue-909.log",
+        extra={
+            "issue": 909,
+            "workload_executed": False,
+            "workload_start_error": "ssh TimeoutExpired",
+        },
+    )
+
+
+def test_cmd_launch_workload_start_failed_writes_sidecar_and_names_pod(
+    monkeypatch, tmp_path
+) -> None:
+    """#954 AC7: a typed-with-handle workload-start failure on the explicit
+    override path exits 2 with ``reason: runpod_workload_start_failed``
+    (unchanged) PLUS ``pod_name`` + ``sidecar_written: true``, and the handle
+    sidecar exists on disk at the canonical path — the billing pod is visible
+    to the handle machinery (poll / finalize / re-drive stay chained). The
+    backend mock raises from ``launch`` below ``dispatch_for_issue`` (the real
+    ``route()`` runs), so assumption 5 — no exception wrapping — is
+    exercised."""
+    from explore_persona_space.backends.issue_dispatch import read_handle_sidecar
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _pin_runpod_frontmatter(monkeypatch)
+    runpod = _MockBackend(
+        kind="runpod",
+        launch_should_raise=RunPodWorkloadStartError(
+            "workload did NOT verify alive on pod-909", handle=_partial_runpod_handle_954()
+        ),
+    )
+    factory = _build_mock_factory(runpod=runpod)
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(_runpod_launch_args("--execute-workload"), backends_factory=factory)
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip().splitlines()[-1])
+    assert body["ok"] is False
+    assert body["failure_class"] == "infra"
+    assert body["reason"] == "runpod_workload_start_failed"  # unchanged (#909)
+    assert body["pod_name"] == "pod-909"
+    assert body["sidecar_written"] is True
+    # The handle sidecar exists on disk at the canonical (tmp-pinned) path.
+    sidecar = tmp_path / ".claude" / "cache" / "issue-909-handle.json"
+    assert sidecar.is_file()
+    recovered = read_handle_sidecar(sidecar)
+    assert recovered.backend == "runpod"
+    assert recovered.pod_name == "pod-909"
+    assert recovered.extra["workload_executed"] is False
+    assert recovered.extra["workload_start_error"]
+
+
+def test_cmd_launch_workload_start_failed_sidecar_write_oserror_fail_loud(
+    monkeypatch, tmp_path
+) -> None:
+    """#954 (round-1 critique, statistics MF): the Surface-5 fail-loud contract
+    — a sidecar-write OSError NEVER masks the typed failure: rc 2, ``reason``
+    unchanged, ``pod_name`` present, ``sidecar_written: false`` + the OSError
+    recorded in the JSON note (no unhandled OSError escapes the typed arm)."""
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
+
+    _cd_to_tmp(monkeypatch, tmp_path)
+    _pin_runpod_frontmatter(monkeypatch)
+    runpod = _MockBackend(
+        kind="runpod",
+        launch_should_raise=RunPodWorkloadStartError(
+            "workload did NOT verify alive on pod-909", handle=_partial_runpod_handle_954()
+        ),
+    )
+    factory = _build_mock_factory(runpod=runpod)
+
+    def _raising_write(handle, path):
+        raise OSError("Disk quota exceeded (EDQUOT) writing the sidecar")
+
+    monkeypatch.setattr(
+        "explore_persona_space.backends.issue_dispatch.write_handle_sidecar",
+        _raising_write,
+    )
+
+    from scripts.dispatch_issue import main
+
+    buf = io.StringIO()
+    with redirect_stdout(buf):
+        rc = main(_runpod_launch_args("--execute-workload"), backends_factory=factory)
+    assert rc == 2
+    body = json.loads(buf.getvalue().strip().splitlines()[-1])
+    assert body["ok"] is False
+    assert body["failure_class"] == "infra"
+    assert body["reason"] == "runpod_workload_start_failed"
+    assert body["pod_name"] == "pod-909"
+    assert body["sidecar_written"] is False
+    assert "handle sidecar write FAILED" in body["note"]
+    assert "EDQUOT" in body["note"]
+    # The typed failure's own message is still the note's lead.
+    assert "did NOT verify alive" in body["note"]

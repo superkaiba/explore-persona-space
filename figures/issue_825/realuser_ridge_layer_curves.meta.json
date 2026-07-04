@@ -1,0 +1,1580 @@
+{
+  "commit": "2ea50d6eb8",
+  "created": "2026-07-04T01:44:10Z",
+  "figsize": [
+    12.5,
+    8.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "Held-out R\u00b2 (ridge)": -1.9345763061031,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "Held-out R\u00b2 (ridge)": -1.3588361913242215,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "Held-out R\u00b2 (ridge)": -1.0902014840634204,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "Held-out R\u00b2 (ridge)": -1.051368091505542,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 4.0,
+      "Held-out R\u00b2 (ridge)": -0.9524215220480488,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 5.0,
+      "Held-out R\u00b2 (ridge)": -0.9458637719190759,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 6.0,
+      "Held-out R\u00b2 (ridge)": -0.8794037607999985,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 7.0,
+      "Held-out R\u00b2 (ridge)": -0.8667668916248528,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 8.0,
+      "Held-out R\u00b2 (ridge)": -0.74718352990587,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 9.0,
+      "Held-out R\u00b2 (ridge)": -0.8491427191685592,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 10.0,
+      "Held-out R\u00b2 (ridge)": -0.7679989631767037,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 11.0,
+      "Held-out R\u00b2 (ridge)": -0.7181648035643717,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 12.0,
+      "Held-out R\u00b2 (ridge)": -0.6708402828881128,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 13.0,
+      "Held-out R\u00b2 (ridge)": -0.5941091888020491,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 14.0,
+      "Held-out R\u00b2 (ridge)": -0.5632310191839267,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 15.0,
+      "Held-out R\u00b2 (ridge)": -0.5014295078226627,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 16.0,
+      "Held-out R\u00b2 (ridge)": -0.49940797198959763,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 17.0,
+      "Held-out R\u00b2 (ridge)": -0.557723744180938,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 18.0,
+      "Held-out R\u00b2 (ridge)": -0.4640463345795378,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 19.0,
+      "Held-out R\u00b2 (ridge)": -0.2701471453063349,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 20.0,
+      "Held-out R\u00b2 (ridge)": -0.2574074421920918,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 21.0,
+      "Held-out R\u00b2 (ridge)": -0.2977504987829189,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 22.0,
+      "Held-out R\u00b2 (ridge)": -0.2918625573052258,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 23.0,
+      "Held-out R\u00b2 (ridge)": -0.366917779958144,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 24.0,
+      "Held-out R\u00b2 (ridge)": -0.4055622451802978,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 25.0,
+      "Held-out R\u00b2 (ridge)": -0.4871185331933088,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 26.0,
+      "Held-out R\u00b2 (ridge)": -0.5724249550843208,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 27.0,
+      "Held-out R\u00b2 (ridge)": -0.5806088569445558,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Held-out R\u00b2 (ridge)": -2.965870952321611,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Held-out R\u00b2 (ridge)": -2.205745046048779,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Held-out R\u00b2 (ridge)": -1.824618919772354,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Held-out R\u00b2 (ridge)": -1.7887015226958556,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Held-out R\u00b2 (ridge)": -1.7280466455987789,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "Held-out R\u00b2 (ridge)": -1.6243528540852417,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "Held-out R\u00b2 (ridge)": -1.6082139737907086,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "Held-out R\u00b2 (ridge)": -1.694862641312303,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "Held-out R\u00b2 (ridge)": -1.6637722718711738,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "Held-out R\u00b2 (ridge)": -1.5487811161502352,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 10.0,
+      "Held-out R\u00b2 (ridge)": -1.6206669844787713,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 11.0,
+      "Held-out R\u00b2 (ridge)": -1.6136863657293392,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 12.0,
+      "Held-out R\u00b2 (ridge)": -1.5999728629274887,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 13.0,
+      "Held-out R\u00b2 (ridge)": -1.4986096471239292,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 14.0,
+      "Held-out R\u00b2 (ridge)": -1.473762285011572,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 15.0,
+      "Held-out R\u00b2 (ridge)": -1.4307039932286743,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 16.0,
+      "Held-out R\u00b2 (ridge)": -1.3785272425772273,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 17.0,
+      "Held-out R\u00b2 (ridge)": -1.39629884463345,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 18.0,
+      "Held-out R\u00b2 (ridge)": -1.2278301212891845,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 19.0,
+      "Held-out R\u00b2 (ridge)": -0.9860948479522238,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 20.0,
+      "Held-out R\u00b2 (ridge)": -0.9150627695702174,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 21.0,
+      "Held-out R\u00b2 (ridge)": -0.9319911422903384,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 22.0,
+      "Held-out R\u00b2 (ridge)": -0.9176267724181346,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 23.0,
+      "Held-out R\u00b2 (ridge)": -0.971343525418435,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 24.0,
+      "Held-out R\u00b2 (ridge)": -0.9558886703039351,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 25.0,
+      "Held-out R\u00b2 (ridge)": -0.9805598090560577,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 26.0,
+      "Held-out R\u00b2 (ridge)": -0.9832676348851734,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 27.0,
+      "Held-out R\u00b2 (ridge)": -0.9006803578821756,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "y": -2.031351594754144,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "y": -1.395154852670606,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "y": -1.088072394148874,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "y": -0.9598146607411788,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "y": -0.7911893816037878,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "y": -0.8104268030093407,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "y": -0.7197239783892078,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "y": -0.7303926008702393,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "y": -0.6473240347278988,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "y": -0.8384857072489791,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 10.0,
+      "y": -0.7881771721275617,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 11.0,
+      "y": -0.7335259005234012,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 12.0,
+      "y": -0.6957135464744562,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 13.0,
+      "y": -0.6580995646147239,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 14.0,
+      "y": -0.6615519929157723,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 15.0,
+      "y": -0.5877700244589774,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 16.0,
+      "y": -0.5878162127564515,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 17.0,
+      "y": -0.6203382750863651,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 18.0,
+      "y": -0.5276161674026205,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 19.0,
+      "y": -0.3413725606061855,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 20.0,
+      "y": -0.31497181285106834,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 21.0,
+      "y": -0.3393022772172214,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 22.0,
+      "y": -0.34033905919348606,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 23.0,
+      "y": -0.3935742899654293,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 24.0,
+      "y": -0.4212041339391439,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 25.0,
+      "y": -0.4822633910911043,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 26.0,
+      "y": -0.5301038578677597,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 27.0,
+      "y": -0.48952999066888436,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "y": -2.9578177578729985,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "y": -2.1635585670903827,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "y": -1.8359660803551026,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "y": -1.82270695552858,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "y": -1.845218308471059,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 5.0,
+      "y": -1.7312463032836822,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 6.0,
+      "y": -1.6719209085099074,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 7.0,
+      "y": -1.6978376362737184,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 8.0,
+      "y": -1.5821767373701272,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 9.0,
+      "y": -1.5659308829530776,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 10.0,
+      "y": -1.5505587373036223,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 11.0,
+      "y": -1.5941551421164668,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 12.0,
+      "y": -1.594658628390765,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 13.0,
+      "y": -1.577878748525762,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 14.0,
+      "y": -1.587575059720332,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 15.0,
+      "y": -1.5470284923275925,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 16.0,
+      "y": -1.5231798211320395,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 17.0,
+      "y": -1.6060453451024,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 18.0,
+      "y": -1.385145917653451,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 19.0,
+      "y": -1.117326440052945,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 20.0,
+      "y": -1.0275743910979123,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 21.0,
+      "y": -1.0328737337889216,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 22.0,
+      "y": -0.9934216987927464,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 23.0,
+      "y": -0.9785354143087723,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 24.0,
+      "y": -0.948342683243101,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 25.0,
+      "y": -0.9580454799198639,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 26.0,
+      "y": -0.9184365801989733,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 27.0,
+      "y": -0.7655078949662943,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 0.0,
+      "Held-out R\u00b2 (ridge)": -2.1573147360738063,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 1.0,
+      "Held-out R\u00b2 (ridge)": -1.453323774813069,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 2.0,
+      "Held-out R\u00b2 (ridge)": -1.3073177200858233,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 3.0,
+      "Held-out R\u00b2 (ridge)": -1.2981968311624996,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 4.0,
+      "Held-out R\u00b2 (ridge)": -1.6943168197617857,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 5.0,
+      "Held-out R\u00b2 (ridge)": -2.007835442092743,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 6.0,
+      "Held-out R\u00b2 (ridge)": -2.254734850152465,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 7.0,
+      "Held-out R\u00b2 (ridge)": -1.8674434916885732,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 8.0,
+      "Held-out R\u00b2 (ridge)": -1.419552958976634,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 9.0,
+      "Held-out R\u00b2 (ridge)": -1.2926397517555452,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 10.0,
+      "Held-out R\u00b2 (ridge)": -1.2786897018871093,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 11.0,
+      "Held-out R\u00b2 (ridge)": -1.1289617301295607,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 12.0,
+      "Held-out R\u00b2 (ridge)": -1.0511056457159458,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 13.0,
+      "Held-out R\u00b2 (ridge)": -0.8912805940160895,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 14.0,
+      "Held-out R\u00b2 (ridge)": -0.8340696825558218,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 15.0,
+      "Held-out R\u00b2 (ridge)": -0.7675117645787726,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 16.0,
+      "Held-out R\u00b2 (ridge)": -0.7660274929348165,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 17.0,
+      "Held-out R\u00b2 (ridge)": -0.7758256888929334,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 18.0,
+      "Held-out R\u00b2 (ridge)": -0.6701277463813926,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 19.0,
+      "Held-out R\u00b2 (ridge)": -0.47061902131263533,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 20.0,
+      "Held-out R\u00b2 (ridge)": -0.4843381484749696,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 21.0,
+      "Held-out R\u00b2 (ridge)": -0.5277780643732446,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 22.0,
+      "Held-out R\u00b2 (ridge)": -0.53269171838462,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 23.0,
+      "Held-out R\u00b2 (ridge)": -0.545372000865453,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 24.0,
+      "Held-out R\u00b2 (ridge)": -0.5229219349132634,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 25.0,
+      "Held-out R\u00b2 (ridge)": -0.5269484868685232,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 26.0,
+      "Held-out R\u00b2 (ridge)": -0.5269527471599378,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 27.0,
+      "Held-out R\u00b2 (ridge)": -0.4432996155681508,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 0.0,
+      "Held-out R\u00b2 (ridge)": -3.0284501306330727,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 1.0,
+      "Held-out R\u00b2 (ridge)": -2.2256854152927183,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 2.0,
+      "Held-out R\u00b2 (ridge)": -1.8688669289753355,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 3.0,
+      "Held-out R\u00b2 (ridge)": -2.048707342164044,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 4.0,
+      "Held-out R\u00b2 (ridge)": -2.8915892092595925,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 5.0,
+      "Held-out R\u00b2 (ridge)": -2.9051751276889752,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 6.0,
+      "Held-out R\u00b2 (ridge)": -2.7318107128769027,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 7.0,
+      "Held-out R\u00b2 (ridge)": -2.7578629928234557,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 8.0,
+      "Held-out R\u00b2 (ridge)": -2.401201884422217,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 9.0,
+      "Held-out R\u00b2 (ridge)": -2.151294638575941,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 10.0,
+      "Held-out R\u00b2 (ridge)": -2.1249125745341484,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 11.0,
+      "Held-out R\u00b2 (ridge)": -1.8854559569354667,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 12.0,
+      "Held-out R\u00b2 (ridge)": -1.8062033963443578,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 13.0,
+      "Held-out R\u00b2 (ridge)": -1.6739910254462873,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 14.0,
+      "Held-out R\u00b2 (ridge)": -1.5474522906371764,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 15.0,
+      "Held-out R\u00b2 (ridge)": -1.447985444162227,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 16.0,
+      "Held-out R\u00b2 (ridge)": -1.3405827590457338,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 17.0,
+      "Held-out R\u00b2 (ridge)": -1.3587237112281647,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 18.0,
+      "Held-out R\u00b2 (ridge)": -1.2337197896489474,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 19.0,
+      "Held-out R\u00b2 (ridge)": -1.0466586088093872,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 20.0,
+      "Held-out R\u00b2 (ridge)": -1.0258093407022106,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 21.0,
+      "Held-out R\u00b2 (ridge)": -1.067613740370314,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 22.0,
+      "Held-out R\u00b2 (ridge)": -1.0544754076579506,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 23.0,
+      "Held-out R\u00b2 (ridge)": -1.0852717111696157,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 24.0,
+      "Held-out R\u00b2 (ridge)": -1.0570695545148752,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 25.0,
+      "Held-out R\u00b2 (ridge)": -1.0753625191665543,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 26.0,
+      "Held-out R\u00b2 (ridge)": -1.0395879619870967,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 27.0,
+      "Held-out R\u00b2 (ridge)": -0.924879012642597,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 0.0,
+      "y": -2.0687553496179434,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 1.0,
+      "y": -1.4394284318078712,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 2.0,
+      "y": -1.1419966032984012,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 3.0,
+      "y": -1.044092673898073,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 4.0,
+      "y": -0.8758596569600576,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 5.0,
+      "y": -0.9367148663845719,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 6.0,
+      "y": -0.8335490240367585,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 7.0,
+      "y": -0.8765689908835954,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 8.0,
+      "y": -0.7904076910618909,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 9.0,
+      "y": -0.9338853423498392,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 10.0,
+      "y": -0.9122295855543494,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 11.0,
+      "y": -0.8669159795945052,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 12.0,
+      "y": -0.7836456541637182,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 13.0,
+      "y": -0.7567544005962152,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 14.0,
+      "y": -0.7866445589608575,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 15.0,
+      "y": -0.7317701279783229,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 16.0,
+      "y": -0.7306870647590502,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 17.0,
+      "y": -0.7791272688986148,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 18.0,
+      "y": -0.7237058674707593,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 19.0,
+      "y": -0.6068365703210599,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 20.0,
+      "y": -0.5799935096079358,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 21.0,
+      "y": -0.5788689385922683,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 22.0,
+      "y": -0.5529876297462992,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 23.0,
+      "y": -0.5969946458083304,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 24.0,
+      "y": -0.5851213142200038,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 25.0,
+      "y": -0.6029096759978134,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 26.0,
+      "y": -0.6063797088790097,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 27.0,
+      "y": -0.4968046700552975,
+      "series": "Assistant target",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 0.0,
+      "y": -2.9618977567617546,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 1.0,
+      "y": -2.1888280657121415,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 2.0,
+      "y": -1.8850036601711206,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 3.0,
+      "y": -1.8803898743068372,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 4.0,
+      "y": -1.9167300372225653,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 5.0,
+      "y": -1.8116616934840728,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 6.0,
+      "y": -1.7810233528791444,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 7.0,
+      "y": -1.783185142915774,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 8.0,
+      "y": -1.7174904834331466,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 9.0,
+      "y": -1.6721590117263347,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 10.0,
+      "y": -1.6617745926965712,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 11.0,
+      "y": -1.7152020071489114,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 12.0,
+      "y": -1.6250207382889008,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 13.0,
+      "y": -1.5166669278279095,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 14.0,
+      "y": -1.4926096578778596,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 15.0,
+      "y": -1.4660082775378673,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 16.0,
+      "y": -1.4471503186145402,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 17.0,
+      "y": -1.4640417836428554,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 18.0,
+      "y": -1.263472874033075,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 19.0,
+      "y": -1.0339038306339665,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 20.0,
+      "y": -1.0135774890440628,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 21.0,
+      "y": -1.0068958285241503,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 22.0,
+      "y": -1.0421972876491323,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 23.0,
+      "y": -1.0685308224243641,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 24.0,
+      "y": -1.0485080425161852,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 25.0,
+      "y": -1.0840964647107816,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 26.0,
+      "y": -1.0775500262912598,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 27.0,
+      "y": -0.9329578415731963,
+      "series": "User target",
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 224
+}

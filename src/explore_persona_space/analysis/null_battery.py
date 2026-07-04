@@ -614,6 +614,59 @@ def bootstrap_ci_matched_r(
     return (float(np.percentile(valid, 2.5)), float(np.percentile(valid, 97.5)))
 
 
+def bootstrap_ci_within_r(
+    predictor_acts: np.ndarray,
+    rb_per_layer: np.ndarray,
+    target: np.ndarray,
+    condition_ids: np.ndarray,
+    selected_layer: int,
+    *,
+    n_boot: int = DEFAULT_BOOTSTRAP,
+    seed: int = 0,
+) -> tuple[float, float]:
+    """95% bootstrap CI on the WITHIN-CONDITION Fisher-z r at ``selected_layer``.
+
+    Propagates the WITHIN estimator's sampling variance via a STRATIFIED row
+    bootstrap: each draw resamples rows with replacement INSIDE each condition
+    group (preserving group sizes), then recomputes the Fisher-z-weighted
+    within-condition r at the fixed layer. ``bootstrap_ci_matched_r`` (pooled
+    row resampling of the overall Pearson r) is NOT a valid CI for the within
+    setting — the #778 within-CI bug (audit marker v70): ``compute_setting``
+    called ``bootstrap_ci_matched_r`` without ``condition_ids`` on the within
+    branch and reported the POOLED CI as the within CI. Groups with < 4 rows
+    are dropped from a draw's average (mirroring
+    ``within_condition_r_per_layer``); a draw with no usable group is NaN and
+    excluded from the percentiles.
+    """
+    predictor_acts = np.asarray(predictor_acts, dtype=np.float64)
+    target = np.asarray(target, dtype=np.float64)
+    condition_ids = np.asarray(condition_ids)
+    if n_boot <= 0:
+        return (float("nan"), float("nan"))
+    proj = project(predictor_acts[:, selected_layer, :], rb_per_layer[selected_layer])  # (n,)
+    groups = [np.where(condition_ids == c)[0] for c in np.unique(condition_ids)]
+    rng = np.random.default_rng(seed)
+    boots = np.full(n_boot, np.nan, dtype=np.float64)
+    for b in range(n_boot):
+        z_sum = 0.0
+        w_sum = 0.0
+        for g in groups:
+            if g.size < 4:
+                continue
+            idx = g[rng.integers(0, g.size, size=g.size)]
+            r = _pearson(proj[idx], target[idx])
+            if np.isnan(r):
+                continue
+            z_sum += (g.size - 3) * np.arctanh(np.clip(r, -0.999999, 0.999999))
+            w_sum += g.size - 3
+        if w_sum > 0:
+            boots[b] = np.tanh(z_sum / w_sum)
+    valid = boots[~np.isnan(boots)]
+    if valid.size == 0:
+        return (float("nan"), float("nan"))
+    return (float(np.percentile(valid, 2.5)), float(np.percentile(valid, 97.5)))
+
+
 # ── Empirical p + band ─────────────────────────────────────────────────────────
 
 
@@ -738,9 +791,22 @@ def compute_setting(
     matched_max = max_abs_over_layers(matched_r_layers)
     sel_layer = argmax_abs_layer(matched_r_layers)
     matched_r_signed = float(matched_r_layers[sel_layer])
-    ci = bootstrap_ci_matched_r(
-        predictor_acts, rb_per_layer, target, sel_layer, n_boot=n_boot, seed=seed
-    )
+    if within:
+        # The #778 within-CI fix (audit marker v70): the within setting's CI must
+        # resample WITHIN condition blocks — never the pooled row bootstrap.
+        ci = bootstrap_ci_within_r(
+            predictor_acts,
+            rb_per_layer,
+            target,
+            condition_ids,
+            sel_layer,
+            n_boot=n_boot,
+            seed=seed,
+        )
+    else:
+        ci = bootstrap_ci_matched_r(
+            predictor_acts, rb_per_layer, target, sel_layer, n_boot=n_boot, seed=seed
+        )
 
     # Pool for randnorm Σ estimation (stacked pos+neg per layer).
     pool = np.concatenate([pos_acts, neg_acts], axis=0)  # (n_pool, L, D)

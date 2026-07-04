@@ -1,0 +1,145 @@
+{
+  "note": "correct-pairing per-novel R2 from cells_armA_within (all 1982 rows); swap from cells_armA_swap (1694 derangement-eligible rows) \u2014 subsets differ slightly; the pooled delta_char_armA.json read matches subsets.",
+  "points": [
+    {
+      "novel": "AHandfulOfDust",
+      "r2_correct": -0.0823748226149148,
+      "r2_swap": -0.2377066248894535
+    },
+    {
+      "novel": "APassageToIndia",
+      "r2_correct": -0.0736605393111518,
+      "r2_swap": -0.16915901590235616
+    },
+    {
+      "novel": "ARoomWithAView",
+      "r2_correct": -0.006927884576881871,
+      "r2_swap": -0.09052597641184001
+    },
+    {
+      "novel": "AlicesAdventuresInWonderland",
+      "r2_correct": -1.3007690296916872,
+      "r2_swap": -1.363955466300029
+    },
+    {
+      "novel": "AnneOfGreenGables",
+      "r2_correct": -0.22837133146665267,
+      "r2_swap": -0.3521919068741932
+    },
+    {
+      "novel": "DaisyMiller",
+      "r2_correct": -0.18097853191983582,
+      "r2_swap": -0.30958414894766273
+    },
+    {
+      "novel": "Emma",
+      "r2_correct": -0.019540765607676702,
+      "r2_swap": -0.10771763746068497
+    },
+    {
+      "novel": "HardTimes",
+      "r2_correct": -0.08681059523606449,
+      "r2_swap": -0.22908206560346267
+    },
+    {
+      "novel": "HowardsEnd",
+      "r2_correct": -0.024445465129479427,
+      "r2_swap": -0.10674958159333481
+    },
+    {
+      "novel": "MansfieldPark",
+      "r2_correct": 0.02583432513621242,
+      "r2_swap": -0.08352226906010585
+    },
+    {
+      "novel": "NightAndDay",
+      "r2_correct": -0.03775475460329214,
+      "r2_swap": -0.11515334954065226
+    },
+    {
+      "novel": "NorthangerAbbey",
+      "r2_correct": -0.008384032224771687,
+      "r2_swap": -0.24915679138946478
+    },
+    {
+      "novel": "OliverTwist",
+      "r2_correct": -0.03360745370325202,
+      "r2_swap": -0.16922170229998268
+    },
+    {
+      "novel": "Persuasion",
+      "r2_correct": -0.01650458748222383,
+      "r2_swap": -0.06484317510456106
+    },
+    {
+      "novel": "PrideAndPrejudice",
+      "r2_correct": -0.0009212517775629703,
+      "r2_swap": -0.10050427779334559
+    },
+    {
+      "novel": "SenseAndSensibility",
+      "r2_correct": 0.016657981060514748,
+      "r2_swap": -0.07803584275073061
+    },
+    {
+      "novel": "TheAgeOfInnocence",
+      "r2_correct": -0.09377069245487157,
+      "r2_swap": -0.2202892650036128
+    },
+    {
+      "novel": "TheAwakening",
+      "r2_correct": -0.14196831052286685,
+      "r2_swap": -0.26465113405812435
+    },
+    {
+      "novel": "TheGambler",
+      "r2_correct": -0.30907567737985664,
+      "r2_swap": -0.44414905818074457
+    },
+    {
+      "novel": "TheInvisibleMan",
+      "r2_correct": -0.15904717265344015,
+      "r2_swap": -0.3251573204366103
+    },
+    {
+      "novel": "TheManWhoWasThursday",
+      "r2_correct": -0.22425612055249045,
+      "r2_swap": -0.37185276356662533
+    },
+    {
+      "novel": "TheMysteriousAffairAtStyles",
+      "r2_correct": -0.04690150503916968,
+      "r2_swap": -0.2066864633634906
+    },
+    {
+      "novel": "ThePictureOfDorianGray",
+      "r2_correct": -0.5015836047269049,
+      "r2_swap": -0.6698351543028356
+    },
+    {
+      "novel": "TheSignOfTheFour",
+      "r2_correct": -0.22155087915043392,
+      "r2_swap": -0.3425002325691169
+    },
+    {
+      "novel": "TheSportOfTheGods",
+      "r2_correct": -0.08963365912160559,
+      "r2_swap": -0.20923826080954955
+    },
+    {
+      "novel": "TheSunAlsoRises",
+      "r2_correct": -0.2596115180543448,
+      "r2_swap": -0.3486979075712846
+    },
+    {
+      "novel": "WhereAngelsFearToTread",
+      "r2_correct": -0.062097707115348344,
+      "r2_swap": -0.12277130881401743
+    },
+    {
+      "novel": "WinnieThePooh",
+      "r2_correct": -0.4272097453287258,
+      "r2_swap": -0.510471514012135
+    }
+  ]
+}

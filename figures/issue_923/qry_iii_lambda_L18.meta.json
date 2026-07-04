@@ -1,0 +1,180 @@
+{
+  "commit": "df05061f08",
+  "created": "2026-07-04T04:32:07Z",
+  "figsize": [
+    7.5,
+    4.6
+  ],
+  "points": [
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 0.01,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.4542815188240221,
+      "series": "Masked-context query read, UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 0.1,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.4542815631318985,
+      "series": "Masked-context query read, UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 1.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.4542820061957955,
+      "series": "Masked-context query read, UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 10.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.4542864353483155,
+      "series": "Masked-context query read, UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 100.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.45433057850573955,
+      "series": "Masked-context query read, UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 1000.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.4547574453755291,
+      "series": "Masked-context query read, UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 0.01,
+      "Pooled held-out skill R\u00b2 (layer 18)": -6.76289239680212,
+      "series": "Masked-context query read, Betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 0.1,
+      "Pooled held-out skill R\u00b2 (layer 18)": -6.67840129165039,
+      "series": "Masked-context query read, Betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 1.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": -5.923449263858097,
+      "series": "Masked-context query read, Betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 10.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": -2.488410225618571,
+      "series": "Masked-context query read, Betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 100.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.15385917604427513,
+      "series": "Masked-context query read, Betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 1000.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.40747583140803634,
+      "series": "Masked-context query read, Betley",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 0.01,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.41803001753978064,
+      "series": "Empty-system query read, Betley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 0.1,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.41803013116674426,
+      "series": "Empty-system query read, Betley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 1.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.41803126738146756,
+      "series": "Empty-system query read, Betley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 10.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.4180426240394951,
+      "series": "Empty-system query read, Betley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 100.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.41815564379934456,
+      "series": "Empty-system query read, Betley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 1000.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.41923317441551433,
+      "series": "Empty-system query read, Betley",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 0.01,
+      "Pooled held-out skill R\u00b2 (layer 18)": -0.9929739004599623,
+      "series": "Stitched pair (masked), Betley",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 0.1,
+      "Pooled held-out skill R\u00b2 (layer 18)": -0.9685578378590842,
+      "series": "Stitched pair (masked), Betley",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 1.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": -0.7574303817769521,
+      "series": "Stitched pair (masked), Betley",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 10.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.06347561826027226,
+      "series": "Stitched pair (masked), Betley",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 100.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5099533249583179,
+      "series": "Stitched pair (masked), Betley",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Ridge penalty \u03bb (fixed, not fold-selected)": 1000.0,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.531478809668605,
+      "series": "Stitched pair (masked), Betley",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 24
+}

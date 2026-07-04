@@ -1,0 +1,124 @@
+{
+  "commit": "5f7e9b3786",
+  "created": "2026-07-04T08:51:37Z",
+  "figsize": [
+    7.0,
+    9.24
+  ],
+  "points": [
+    {
+      "novel": "AlicesAdventuresInWonderland",
+      "r2": -1.3007690296916872
+    },
+    {
+      "novel": "ThePictureOfDorianGray",
+      "r2": -0.5015836047269049
+    },
+    {
+      "novel": "WinnieThePooh",
+      "r2": -0.4272097453287258
+    },
+    {
+      "novel": "TheGambler",
+      "r2": -0.30907567737985664
+    },
+    {
+      "novel": "TheSunAlsoRises",
+      "r2": -0.2596115180543448
+    },
+    {
+      "novel": "AnneOfGreenGables",
+      "r2": -0.22837133146665267
+    },
+    {
+      "novel": "TheManWhoWasThursday",
+      "r2": -0.22425612055249045
+    },
+    {
+      "novel": "TheSignOfTheFour",
+      "r2": -0.22155087915043392
+    },
+    {
+      "novel": "DaisyMiller",
+      "r2": -0.18097853191983582
+    },
+    {
+      "novel": "TheInvisibleMan",
+      "r2": -0.15904717265344015
+    },
+    {
+      "novel": "TheAwakening",
+      "r2": -0.14196831052286685
+    },
+    {
+      "novel": "TheAgeOfInnocence",
+      "r2": -0.09377069245487157
+    },
+    {
+      "novel": "TheSportOfTheGods",
+      "r2": -0.08963365912160559
+    },
+    {
+      "novel": "HardTimes",
+      "r2": -0.08681059523606449
+    },
+    {
+      "novel": "AHandfulOfDust",
+      "r2": -0.0823748226149148
+    },
+    {
+      "novel": "APassageToIndia",
+      "r2": -0.0736605393111518
+    },
+    {
+      "novel": "WhereAngelsFearToTread",
+      "r2": -0.062097707115348344
+    },
+    {
+      "novel": "TheMysteriousAffairAtStyles",
+      "r2": -0.04690150503916968
+    },
+    {
+      "novel": "NightAndDay",
+      "r2": -0.03775475460329214
+    },
+    {
+      "novel": "OliverTwist",
+      "r2": -0.03360745370325202
+    },
+    {
+      "novel": "HowardsEnd",
+      "r2": -0.024445465129479427
+    },
+    {
+      "novel": "Emma",
+      "r2": -0.019540765607676702
+    },
+    {
+      "novel": "Persuasion",
+      "r2": -0.01650458748222383
+    },
+    {
+      "novel": "NorthangerAbbey",
+      "r2": -0.008384032224771687
+    },
+    {
+      "novel": "ARoomWithAView",
+      "r2": -0.006927884576881871
+    },
+    {
+      "novel": "PrideAndPrejudice",
+      "r2": -0.0009212517775629703
+    },
+    {
+      "novel": "SenseAndSensibility",
+      "r2": 0.016657981060514748
+    },
+    {
+      "novel": "MansfieldPark",
+      "r2": 0.02583432513621242
+    }
+  ],
+  "n_series": 1,
+  "total_points": 28
+}

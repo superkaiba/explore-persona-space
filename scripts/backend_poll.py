@@ -1390,7 +1390,7 @@ def _relaunch_fresh_runpod(
         NoComputeAvailableError,
         failover_to_runpod_after_async_workload_crash,
     )
-    from explore_persona_space.backends.runpod import RunPodBackend
+    from explore_persona_space.backends.runpod import RunPodBackend, RunPodWorkloadStartError
     from explore_persona_space.backends.slurm import post_marker_via_task_py
 
     # #689 (round-3 blocker): a LEGACY sidecar built before RunPodBackend.launch()
@@ -1443,6 +1443,51 @@ def _relaunch_fresh_runpod(
             ),
             marker_poster=post_marker_via_task_py,
             on_launched=lambda h: write_handle_sidecar(h, sidecar),
+        )
+    except RunPodWorkloadStartError as exc:
+        # PARTIAL failure (#954): the fresh re-provision SUCCEEDED (a pod
+        # bills, left RUNNING for diagnosis per the #909 contract) but the
+        # workload-start leg failed. NOT no_compute_available — that mislabel
+        # reads "nothing launched" (false) and invites the watcher's
+        # capacity-retry re-drive while the fresh pod bills invisibly.
+        partial = getattr(exc, "handle", None)
+        if partial is None:
+            # Defensive: unreachable via the rung today (a handle-less start
+            # error takes the rung's NoComputeAvailableError branch), kept for
+            # a future direct-raise path. Nothing provisioned.
+            return _terminal_infra_json(
+                issue=issue,
+                sidecar=sidecar,
+                reason="runpod_workload_start_failed",
+                log_tail=(
+                    f"RunPod {handle.pod_name} wedge failover: fresh re-provision's "
+                    f"workload start failed with NO pod provisioned ({str(exc)[:500]})"
+                ),
+            )
+        # Fresh pod provisioned + RUNNING, workload not started. Stamp the
+        # wedge/CUDA-IMA lease (bounds a re-fired tick — mirrors the
+        # sidecar-failure branch) and re-point the sidecar at the fresh pod
+        # so it is visible to the handle machinery.
+        stamp_fn(issue, handle)
+        sidecar_note = ""
+        try:
+            write_handle_sidecar(partial, sidecar)
+        except OSError as write_exc:
+            # Never mask the typed failure — record the sidecar-write failure
+            # in the terminal note (the lease stamp above already bounds a
+            # re-fired tick, so no second terminate/re-provision).
+            sidecar_note = f"; sidecar write ALSO failed ({type(write_exc).__name__}: {write_exc})"
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="runpod_workload_start_failed",
+            log_tail=(
+                f"RunPod {handle.pod_name} wedge failover: fresh pod "
+                f"{partial.pod_name} PROVISIONED but workload start FAILED "
+                f"({str(exc)[:500]}); pod left RUNNING for diagnosis — check for a "
+                f"live workload (pidfile) before re-driving; pod BILLS until a human "
+                f"stops/terminates it{sidecar_note} (lease stamped — relaunch bounded)"
+            ),
         )
     except NoComputeAvailableError:
         # RunPod truly unavailable after the wedged pod was terminated: terminal
@@ -2415,7 +2460,7 @@ def _failover_gcp_to_runpod(
         NoComputeAvailableError,
         failover_to_runpod_after_async_workload_crash,
     )
-    from explore_persona_space.backends.runpod import RunPodBackend
+    from explore_persona_space.backends.runpod import RunPodBackend, RunPodWorkloadStartError
     from explore_persona_space.backends.slurm import post_marker_via_task_py
 
     # IDEMPOTENCY SHORT-CIRCUIT (#659). A prior tick may have ALREADY launched a
@@ -2482,6 +2527,7 @@ def _failover_gcp_to_runpod(
             )
 
     spec = _runspec_from_gcp_handle(handle, issue)
+    workload_start_error: str | None = None
     try:
         route_result = failover_to_runpod_after_async_workload_crash(
             spec=spec,
@@ -2507,6 +2553,36 @@ def _failover_gcp_to_runpod(
             # single-triggerer fast-path; this is the atomic guard.
             gcp_failover_of_identity=_gcp_handle_identity(handle),
         )
+        launched_handle = route_result.handle
+        already_launched = bool(route_result.extra.get("failover_already_launched"))
+    except RunPodWorkloadStartError as exc:
+        # PARTIAL failure (#954): the terminal rung PROVISIONED a RunPod pod
+        # (it bills, left RUNNING for diagnosis per the #909 contract) but the
+        # workload-start leg failed. The rung already persisted the launch
+        # records (in-flock lease incl. the gcp_failover_of stamp + the
+        # best-effort on_launched sidecar hook) before re-raising typed. Fall
+        # through to the SAME authoritative sidecar re-point the success path
+        # uses, then emit a DISTINCT terminal (NOT no_compute_available — that
+        # mislabel invites the watcher's capacity-retry re-drive while the pod
+        # bills, the #931 incident).
+        partial = getattr(exc, "handle", None)
+        if partial is None:
+            # Defensive: unreachable via the rung today (a handle-less start
+            # error takes the rung's NoComputeAvailableError branch), kept for
+            # a future direct-raise path. Nothing provisioned -> distinct
+            # non-re-drivable terminal, sidecar left at GCP, NO stamp.
+            return _terminal_infra_json(
+                issue=issue,
+                sidecar=sidecar,
+                reason="runpod_workload_start_failed",
+                log_tail=(
+                    f"{cause_label} on {handle.pod_name}; RunPod workload start "
+                    f"failed with NO pod provisioned ({str(exc)[:500]}) ({failover_tag})"
+                ),
+            )
+        launched_handle = partial
+        workload_start_error = str(exc)[:500]
+        already_launched = False
     except NoComputeAvailableError:
         # RunPod truly unavailable: terminal infra JSON with
         # reason=no_compute_available so the watcher's capacity-retry pass CAN
@@ -2548,7 +2624,7 @@ def _failover_gcp_to_runpod(
     # triggerer has not persisted yet — unlikely under the lease invariant but
     # possible across crashes), fall through to the terminal
     # ``sidecar_persistence_failed`` shape exactly as the no-readback case below.
-    if route_result.extra.get("failover_already_launched"):
+    if already_launched:
         try:
             existing = read_handle_sidecar(sidecar)
         except (OSError, json.JSONDecodeError, KeyError, ValueError):
@@ -2604,7 +2680,7 @@ def _failover_gcp_to_runpod(
     # breaching "exactly once". So a re-pointed RunPod sidecar is a PRECONDITION
     # of emitting "running", not a hopeful side effect.
     try:
-        write_handle_sidecar(route_result.handle, sidecar)
+        write_handle_sidecar(launched_handle, sidecar)
         recovered = read_handle_sidecar(sidecar)
     except (OSError, json.JSONDecodeError, KeyError, ValueError) as exc:
         # RunPod was ALREADY launched above; the sidecar could NOT be re-pointed.
@@ -2618,7 +2694,7 @@ def _failover_gcp_to_runpod(
             sidecar=sidecar,
             reason="sidecar_persistence_failed",
             log_tail=(
-                f"GCP->RunPod failover launched RunPod {route_result.handle.pod_name} "
+                f"GCP->RunPod failover launched RunPod {launched_handle.pod_name} "
                 f"but sidecar persistence FAILED ({type(exc).__name__}: {exc}); refusing "
                 f"to emit running (would re-launch RunPod next tick)"
             ),
@@ -2646,6 +2722,31 @@ def _failover_gcp_to_runpod(
     # this issue is not suppressed.
     _clear_failover_sentinel(sentinel)
 
+    if workload_start_error is not None:
+        # PARTIAL failure (#954): the pod is provisioned + billing but NO
+        # workload runs on it, so a RUNNING-shaped return would just defer —
+        # the next tick polls a workload-less pod (no pidfile -> status=dead)
+        # and surfaces a GENERIC failure one tick later, losing the precise
+        # reason + the recovery hint. Emit the TERMINAL infra JSON now: the
+        # reason is NOT in TRANSIENT_CAPACITY_REASONS, so the watcher parks it
+        # for a human instead of auto-churning a fresh paid dispatch.
+        return _terminal_infra_json(
+            issue=issue,
+            sidecar=sidecar,
+            reason="runpod_workload_start_failed",
+            log_tail=(
+                f"{cause_label} on {handle.pod_name}; RunPod {launched_handle.pod_name} "
+                f"PROVISIONED but workload start FAILED ({workload_start_error}); pod left "
+                f"RUNNING for diagnosis, handle sidecar re-pointed at it (poll/finalize/"
+                f"re-drive stay chained); NOT watcher-re-drivable. Recovery: FIRST check "
+                f"for a live workload (pidfile + log on the pod — a verify-timeout after a "
+                f"successful detach leaves the workload ALIVE; a blind re-drive hits the "
+                f"double-fire guard); then re-drive on THIS pod, or stop/terminate it after "
+                f"diagnosis — the pod BILLS until a human acts (no cron reaps a RUNNING pod) "
+                f"({failover_tag})"
+            ),
+        )
+
     # Sidecar is now an AUTHORITATIVE RunPod handle on disk → the orchestrator's
     # NEXT tick reads RunPod and polls RunPod. Emit a RUNNING-shaped JSON so the
     # loop does NOT post epm:failure for the GCP death.
@@ -2657,7 +2758,7 @@ def _failover_gcp_to_runpod(
         "pid_alive": True,
         "log_tail_excerpt": (
             f"{cause_label} on {handle.pod_name}; failed over to RunPod "
-            f"{route_result.handle.pod_name} ({failover_tag})"
+            f"{launched_handle.pod_name} ({failover_tag})"
         ),
         "gate": None,
         "sentinels_processed": 0,
@@ -2687,6 +2788,18 @@ def main(argv: list[str] | None = None) -> int:
             "with a legacy <cwd>/.claude/cache/ fallback probe)."
         ),
     )
+    parser.add_argument(
+        "--lane-suffix",
+        default=None,
+        help=(
+            "Per-lane instance-name suffix (#934): resolve the per-lane handle "
+            "sidecar issue-<N>-<suffix>-handle.json. Ignored when --handle-file "
+            "is given. Pass the SAME suffix the launch used — a forgotten "
+            "suffix silently polls the unsuffixed lane's handle instead; "
+            "multi-lane orchestrators should prefer --handle-file from the "
+            "launch JSON's handle_sidecar_path."
+        ),
+    )
     parser.add_argument("--debug", action="store_true", help="Log to stderr at DEBUG level.")
     args = parser.parse_args(argv)
 
@@ -2711,9 +2824,17 @@ def main(argv: list[str] | None = None) -> int:
     # loop would spin forever on "stalled"; that is the exact failure
     # mode the missing-sidecar fast path below exists to close).
     try:
-        sidecar, probed = resolve_handle_sidecar_path(args.issue, args.handle_file)
-    except RuntimeError as exc:
-        fallback = Path(".claude/cache") / f"issue-{int(args.issue)}-handle.json"
+        sidecar, probed = resolve_handle_sidecar_path(
+            args.issue, args.handle_file, lane_suffix=args.lane_suffix
+        )
+    except (RuntimeError, ValueError) as exc:
+        # RuntimeError: git missing / not a checkout (the pre-#934 case).
+        # ValueError (#934): a malformed --lane-suffix failed
+        # ``validate_lane_suffix`` inside ``default_handle_sidecar_path`` —
+        # fail LOUD but keep the never-empty-stdout contract (an empty
+        # stdout spins the bg-Bash poll loop forever).
+        stem = f"issue-{int(args.issue)}" + (f"-{args.lane_suffix}" if args.lane_suffix else "")
+        fallback = Path(".claude/cache") / f"{stem}-handle.json"
         logging.warning(
             "backend_poll: sidecar path unresolvable (%s); emitting status=dead infra", exc
         )

@@ -1124,6 +1124,11 @@ async def dispatch_calls(
         model: Claude model id (sets the per-key concurrency family).
         build_request: ``item -> Messages-API params`` (model/max_tokens/messages/...).
             MUST include the ``model`` field; this dispatcher does not inject it.
+            NOTE: the Messages API has NO "system" message role — a builder
+            forwarding caller message lists verbatim MUST lift system-role
+            entries to the top-level ``system=`` param (see
+            ``llm.models.Prompt.anthropic_format``); a system-bearing list
+            400s every request (gotchas.md, #906 r11).
         parse_response: ``model_text -> result``; may raise on a bad parse
             (caught per item -> ``error=True``).
         deadline: optional wall-clock deadline; a deadline inside the batch 24h

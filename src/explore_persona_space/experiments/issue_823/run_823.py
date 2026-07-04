@@ -35,12 +35,12 @@ import sys
 import time
 from typing import Any
 
-import numpy as np
-import torch
-
 from explore_persona_space.orchestrate.env import load_dotenv
 
 load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 logging.basicConfig(
     level=logging.INFO,
@@ -1400,6 +1400,109 @@ def _load_common_valid_idx(base_dir: pathlib.Path, n_contexts: int) -> np.ndarra
     return valid_idx
 
 
+def _length_r2_correlation(
+    span_data: dict[str, list[int]],
+    per_ctx_r2_data: dict[str, dict[str, list[float]]],
+    valid_idx: np.ndarray,
+) -> dict[str, Any]:
+    """Length-vs-R² confound diagnostic (phase 5 block 5), valid-context aligned.
+
+    span_data arrays are FULL-length (indexed by original context position;
+    phase3_tf_extract allocates ``[0] * n`` and serializes unsliced), while
+    per_ctx_r2 arrays contain ONLY the common-valid rows, ordered by sorted
+    common_valid_idx (phase4_ridge_refit fancy-indexes every per-context array
+    by that sorted index before fitting). Slicing the span arrays by
+    ``valid_idx`` therefore index-aligns the two. Raises ValueError on any
+    length / index / key inconsistency — never swallows (fail-fast, #913).
+
+    Statistic identity: this computes the pre-registered SIGNED ``len_delta``
+    (a_prime - b2) Pearson + Spearman correlation against the per-context R²
+    gap; #823's clean-result published the analyzer's absolute-length-delta
+    Spearman variant instead (0.0671 / 0.1082 / 0.0556), so a future run's
+    non-identical Spearman here is expected, not a regression.
+
+    Returns a per-trait dict matching the historical block-5 output shape; a
+    trait gets a ``note`` entry (no raise) when per_ctx_r2 lacks it (the
+    legitimate phase-4-not-yet-run ordering state).
+    """
+    from scipy import stats as scipy_stats
+
+    if "a_prime" not in span_data or "b2" not in span_data:
+        raise ValueError(
+            "phase3_span_lengths.json present but missing required keys 'a_prime'/'b2' "
+            f"(found: {sorted(span_data)}) — corrupt spans artifact"
+        )
+    ap_full = np.asarray(span_data["a_prime"], dtype=float)
+    b2_full = np.asarray(span_data["b2"], dtype=float)
+    valid_idx = np.asarray(valid_idx, dtype=int)
+    if valid_idx.size < 2:
+        raise ValueError(f"valid_idx has {valid_idx.size} element(s); need >= 2 for a correlation")
+    if int(valid_idx.min()) < 0 or int(valid_idx.max()) >= min(len(ap_full), len(b2_full)):
+        raise ValueError(
+            f"valid_idx range [{int(valid_idx.min())}, {int(valid_idx.max())}] out of bounds "
+            f"for span arrays (a_prime={len(ap_full)}, b2={len(b2_full)})"
+        )
+    if not np.all(np.diff(valid_idx) > 0):
+        raise ValueError(
+            "valid_idx must be strictly increasing (sorted, no duplicates) — "
+            "the sorted-common_valid_idx convention IS the alignment proof"
+        )
+    ap_lens, b2_lens = ap_full[valid_idx], b2_full[valid_idx]
+    len_delta = ap_lens - b2_lens
+
+    out: dict[str, Any] = {}
+    for trait in TRAITS:
+        ro = READ_OUT_LAYERS[trait]
+        ctx_ap = per_ctx_r2_data.get("A_prime", {}).get(trait)
+        ctx_b2 = per_ctx_r2_data.get("B2", {}).get(trait)
+        if ctx_ap is None or ctx_b2 is None:
+            # per_ctx_r2 not available (e.g. Phase 4 not yet run) — a legitimate
+            # ordering state, not an error.
+            out[trait] = {
+                "read_out_layer": ro,
+                "note": "per_ctx_r2 unavailable — run Phase 4 first",
+                "mean_ap_len": float(ap_lens.mean()),
+                "mean_b2_len": float(b2_lens.mean()),
+                "mean_delta": float(len_delta.mean()),
+            }
+            continue
+        r2_ap = np.asarray(ctx_ap, dtype=float)
+        r2_b2 = np.asarray(ctx_b2, dtype=float)
+        if not (len(r2_ap) == len(r2_b2) == len(valid_idx)):
+            raise ValueError(
+                f"per_ctx_r2 length mismatch for {trait}: "
+                f"A_prime={len(r2_ap)}, B2={len(r2_b2)}, valid_idx={len(valid_idx)}"
+            )
+        r2_gap = r2_ap - r2_b2  # per-context R2(A') - R2(B2)
+        # Pearson
+        pearson_r, pearson_p = scipy_stats.pearsonr(len_delta, r2_gap)
+        # Spearman
+        spearman_r, spearman_p = scipy_stats.spearmanr(len_delta, r2_gap)
+        out[trait] = {
+            "read_out_layer": ro,
+            "n_contexts": len(r2_gap),
+            "len_delta_vs_r2_gap": {
+                "pearson_r": float(pearson_r),
+                "pearson_p": float(pearson_p),
+                "spearman_r": float(spearman_r),
+                "spearman_p": float(spearman_p),
+            },
+            "mean_ap_len": float(ap_lens.mean()),
+            "mean_b2_len": float(b2_lens.mean()),
+            "mean_delta": float(len_delta.mean()),
+        }
+        logger.info(
+            "Length-R² corr [%s, L%d]: Pearson r=%.3f p=%.3f, Spearman r=%.3f p=%.3f",
+            trait,
+            ro,
+            pearson_r,
+            pearson_p,
+            spearman_r,
+            spearman_p,
+        )
+    return out
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # Phase 4: Ridge refitting
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -2137,66 +2240,15 @@ def phase5_validity_diag(base_dir: pathlib.Path, n_contexts: int, smoke: bool) -
     # 5. Length-R² correlation (if Phase 4 results exist)
     # Uses per-context R² values persisted in ridge_r2_by_arm.json["per_ctx_r2"]
     # for a genuine numeric Pearson + Spearman correlation with per-context length delta.
+    # No try/except here: any internal error fails phase 5 loudly (fail-fast, #913).
     length_r2_correlation: dict[str, Any] = {}
     ridge_path = base_dir / "eval_results" / "issue_823" / "ridge_r2_by_arm.json"
     if ridge_path.exists() and span_path.exists():
-        try:
-            from scipy import stats as scipy_stats
-
-            ridge_data = json.loads(ridge_path.read_text())
-            per_ctx_r2_data = ridge_data.get("per_ctx_r2", {})
-
-            for trait in TRAITS:
-                ro = READ_OUT_LAYERS[trait]
-                ctx_ap = per_ctx_r2_data.get("A_prime", {}).get(trait)
-                ctx_b2 = per_ctx_r2_data.get("B2", {}).get(trait)
-                has_per_ctx = ctx_ap is not None and ctx_b2 is not None
-                if "a_prime" in span_data and "b2" in span_data:
-                    ap_lens = np.array(span_data["a_prime"][:n_contexts], dtype=float)
-                    b2_lens = np.array(span_data["b2"][:n_contexts], dtype=float)
-                    len_delta = ap_lens - b2_lens
-                    if has_per_ctx:
-                        r2_ap = np.array(ctx_ap[:n_contexts])
-                        r2_b2 = np.array(ctx_b2[:n_contexts])
-                        r2_gap = r2_ap - r2_b2  # per-context R2(A') - R2(B2)
-                        # Pearson
-                        pearson_r, pearson_p = scipy_stats.pearsonr(len_delta, r2_gap)
-                        # Spearman
-                        spearman_r, spearman_p = scipy_stats.spearmanr(len_delta, r2_gap)
-                        length_r2_correlation[trait] = {
-                            "read_out_layer": ro,
-                            "n_contexts": len(r2_gap),
-                            "len_delta_vs_r2_gap": {
-                                "pearson_r": float(pearson_r),
-                                "pearson_p": float(pearson_p),
-                                "spearman_r": float(spearman_r),
-                                "spearman_p": float(spearman_p),
-                            },
-                            "mean_ap_len": float(ap_lens.mean()),
-                            "mean_b2_len": float(b2_lens.mean()),
-                            "mean_delta": float(len_delta.mean()),
-                        }
-                        logger.info(
-                            "Length-R² corr [%s, L%d]: Pearson r=%.3f p=%.3f, "
-                            "Spearman r=%.3f p=%.3f",
-                            trait,
-                            ro,
-                            pearson_r,
-                            pearson_p,
-                            spearman_r,
-                            spearman_p,
-                        )
-                    else:
-                        # per_ctx_r2 not available (e.g. Phase 4 not yet run)
-                        length_r2_correlation[trait] = {
-                            "read_out_layer": ro,
-                            "note": "per_ctx_r2 unavailable — run Phase 4 first",
-                            "mean_ap_len": float(ap_lens.mean()),
-                            "mean_b2_len": float(b2_lens.mean()),
-                            "mean_delta": float(len_delta.mean()),
-                        }
-        except Exception as e:
-            logger.warning("Length-R² correlation: %s", e)
+        ridge_data = json.loads(ridge_path.read_text())
+        valid_idx = _load_common_valid_idx(base_dir, n_contexts)
+        length_r2_correlation = _length_r2_correlation(
+            span_data, ridge_data.get("per_ctx_r2", {}), valid_idx
+        )
 
     diag = {
         "text_cosine": {

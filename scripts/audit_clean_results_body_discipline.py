@@ -36,8 +36,13 @@ PATTERNS: dict[str, tuple[str, str]] = {
         "'fail at the gate', 'gate-passed', etc.)",
     ),
     "verdict_caps": (
-        r"\b(?:REJECTED|INDETERMINATE|PASSED|EXCEEDING)\b",
-        "Pre-registration gate verdicts in CAPS (REJECTED / INDETERMINATE / PASSED / EXCEEDING)",
+        # SUCCESS|FAILURE added for the #763 residual (#970): 'Under the
+        # pre-set decision rule, SUCCESS was not met' escaped both pre_reg
+        # (no 'as registered' bigram) and the original four-word alternation.
+        # Case-sensitive scan (flags=0) keeps 'success'/'Success' clean.
+        r"\b(?:REJECTED|INDETERMINATE|PASSED|EXCEEDING|SUCCESS|FAILURE)\b",
+        "Pre-registration gate verdicts in CAPS "
+        "(REJECTED / INDETERMINATE / PASSED / EXCEEDING / SUCCESS / FAILURE)",
     ),
     "effect_size_pp": (
         # The sign char classes include the typographic Unicode minus

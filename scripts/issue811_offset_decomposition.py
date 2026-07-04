@@ -60,8 +60,6 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-import numpy as np
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
@@ -76,6 +74,7 @@ load_dotenv()
 import issue658_fit_predictors as fit658  # noqa: E402
 import issue722_fit_M as fitM  # noqa: E402
 import issue722_load_activations as loadact  # noqa: E402
+import numpy as np  # noqa: E402
 from issue722_bootstrap import clustered_bootstrap_scalar  # noqa: E402
 from issue811_fit import HEADLINE_BEHAVIORS, STORE_PREFIX, SUMMARIES, SWEEP_LAYERS  # noqa: E402
 
@@ -98,6 +97,7 @@ def download_store(
     *,
     workers: int = 12,
     layers: tuple[int, ...] | None = None,
+    prefix: str = STORE_PREFIX,
 ) -> tuple[Path, int]:
     """Mirror the #811 paired store from HF into ``dl_root`` (resumable, parallel).
 
@@ -114,7 +114,7 @@ def download_store(
     """
     from huggingface_hub import hf_hub_download
 
-    layout = loadact.list_store_layout(behaviors, prefix=STORE_PREFIX)
+    layout = loadact.list_store_layout(behaviors, prefix=prefix)
     rel_paths: list[str] = []
     for beh, srcs in layout.items():
         for src_dir, files in srcs.items():
@@ -122,7 +122,7 @@ def download_store(
                 if layers is not None and not any(fn.endswith(f"_L{li}.npz") for li in layers):
                     continue
                 rel_paths.append(f"{beh}/{src_dir}/{fn}")
-    logger.info("[phase=download] store listing: %d files under %s", len(rel_paths), STORE_PREFIX)
+    logger.info("[phase=download] store listing: %d files under %s", len(rel_paths), prefix)
     if set(behaviors) == set(HEADLINE_BEHAVIORS):
         n_layers = len(layers) if layers is not None else len(SWEEP_LAYERS)
         expected = EXPECTED_STORE_FILES * n_layers // len(SWEEP_LAYERS)
@@ -131,7 +131,7 @@ def download_store(
             f"(16 sources × 30 targets × {n_layers} layers × 3 behaviors) — "
             f"wrong prefix or partial store?"
         )
-    local_root = dl_root / STORE_PREFIX
+    local_root = dl_root / prefix
     missing = [
         rel
         for rel in rel_paths
@@ -142,7 +142,7 @@ def download_store(
     def _fetch(rel: str) -> str:
         hf_hub_download(
             DATA_REPO,
-            f"{STORE_PREFIX}/{rel}",
+            f"{prefix}/{rel}",
             repo_type="dataset",
             local_dir=str(dl_root),
         )
@@ -173,6 +173,7 @@ def decompose_cell(
     *,
     target_dim: int,
     strict: bool,
+    cells_dir: Path = RUN_CELLS_DIR,
 ) -> dict:
     """Re-fit M0/M⁺ (run-identical ridge), reproduce Delta_med, decompose δ(c).
 
@@ -203,7 +204,13 @@ def decompose_cell(
     delta_signed = ((mplus_grid - m0_grid) @ pca_basis) @ r_hat  # (n,) SIGNED δ(c)
 
     # ---- Reproduction sanity gate vs the run's own cell JSON ----
-    run_path = RUN_CELLS_DIR / f"{behavior}_L{layer}_{summary}.json"
+    run_path = cells_dir / f"{behavior}_L{layer}_{summary}.json"
+    # Repo-relative when the cells dir is inside the repo (production); absolute
+    # otherwise (an out-of-tree smoke dir) — metadata formatting only.
+    try:
+        run_path_repr = str(run_path.relative_to(PROJECT_ROOT))
+    except ValueError:
+        run_path_repr = str(run_path)
     run_cell = json.loads(run_path.read_text())
     delta_med_run = float(run_cell["Delta_med"])
     floor_combined = float(run_cell["floor_combined"])
@@ -261,7 +268,7 @@ def decompose_cell(
             "Delta_med_run": delta_med_run,
             "Delta_med_refit": delta_med_refit,
             "rel_deviation": float(rel_dev),
-            "run_cell_json": str(run_path.relative_to(PROJECT_ROOT)),
+            "run_cell_json": run_path_repr,
         },
         "Delta_med_raw": delta_med_raw,
         "Delta_med_raw_ci": raw_ci,
@@ -297,6 +304,27 @@ def main() -> int:
     ap.add_argument("--layers", nargs="+", type=int, default=list(SWEEP_LAYERS))
     ap.add_argument("--summaries", nargs="+", default=list(SUMMARIES))
     ap.add_argument("--dl-root", type=Path, default=DEFAULT_DL_ROOT)
+    ap.add_argument(
+        "--store-prefix",
+        default=STORE_PREFIX,
+        help="HF prefix of the round's paired store (maxp round: "
+        "issue811_maxp_mapchange/analysis_tensors; default: the v1 turn_nl store)",
+    )
+    ap.add_argument(
+        "--cells-dir",
+        type=Path,
+        default=RUN_CELLS_DIR,
+        help="the run's per-cell fit JSONs the reproduction gate compares against "
+        "(maxp round: eval_results/issue_811/maxp-winner-mapchange/cells)",
+    )
+    ap.add_argument(
+        "--local-store-root",
+        type=Path,
+        default=None,
+        help="read the paired store DIRECTLY from this local dir "
+        "({behavior}/{source}_seed42/{target}_L{li}.npz layout) — no HF fetch; "
+        "the in-dispatch F1 phase points this at the just-extracted store",
+    )
     ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
     ap.add_argument("--workers", type=int, default=12, help="parallel HF download workers")
     ap.add_argument("--skip-download", action="store_true", help="store already mirrored locally")
@@ -319,17 +347,24 @@ def main() -> int:
     summaries = tuple(args.summaries)
     strict = args.max_sources is None and args.max_targets_per_source is None
 
-    local_root = args.dl_root / STORE_PREFIX
     n_downloaded = 0
-    if args.skip_download:
+    if args.local_store_root is not None:
+        local_root = args.local_store_root
+        assert local_root.is_dir(), f"--local-store-root not a dir: {local_root}"
+    elif args.skip_download:
+        local_root = args.dl_root / args.store_prefix
         assert local_root.is_dir(), f"--skip-download but no local mirror at {local_root}"
     else:
-        local_root, n_downloaded = download_store(args.dl_root, behaviors, workers=args.workers)
+        local_root, n_downloaded = download_store(
+            args.dl_root, behaviors, workers=args.workers, prefix=args.store_prefix
+        )
 
     rb_main = fitM._load_rb_main()
-    rb_fact = fitM._load_rb_fact() if "fact" in behaviors else None
+    # required=True: fail LOUD on a load failure (rb-fact-silent-drop-headline);
+    # None means ONLY the data-declared degenerate flag (plan §8).
+    rb_fact = fitM._load_rb_fact(required=True) if "fact" in behaviors else None
     if "fact" in behaviors and rb_fact is None:
-        logger.warning("fact requested but r_b_fact unavailable — dropping fact")
+        logger.warning("r_b_fact.pt flagged degenerate (plan §8) — dropping fact")
         behaviors = tuple(b for b in behaviors if b != "fact")
 
     layout = loadact.list_store_layout_local(local_root, behaviors)
@@ -339,7 +374,9 @@ def main() -> int:
         "followup": "F1_offset_decomposition",
         "git_commit": _git_commit(),
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "store_prefix": STORE_PREFIX,
+        "store_prefix": args.store_prefix,
+        "local_store_root": str(args.local_store_root) if args.local_store_root else None,
+        "cells_dir": str(args.cells_dir),
         "n_files_downloaded_this_run": n_downloaded,
         "device": fit658.DEVICE,
         "target_dim": args.target_dim,
@@ -386,6 +423,7 @@ def main() -> int:
                     rb_fact,
                     target_dim=args.target_dim,
                     strict=strict,
+                    cells_dir=args.cells_dir,
                 )
                 out_cells[key] = rec
                 _write(final=False)
@@ -405,10 +443,24 @@ def main() -> int:
                     rec["verdict"],
                 )
 
+    # Requested-set completeness gate BEFORE the final (complete=True) write (r9
+    # reconciler standing rec): every requested behavior x layer x summary cell must
+    # be present — a silently skipped cell must never ship inside a payload stamped
+    # complete. `behaviors` is the post-degenerate-drop tuple (the set that ran).
+    expected_keys = {f"{b}/L{ly}/{s}" for s in summaries for b in behaviors for ly in layers}
+    missing_keys = sorted(expected_keys - set(out_cells))
+    assert not missing_keys, (
+        f"[offset-completeness-assert] {len(missing_keys)}/{len(expected_keys)} requested "
+        f"cells missing before final write: {missing_keys}"
+    )
     _write(final=True)
     max_dev = max(c["repro"]["rel_deviation"] for c in out_cells.values())
+    # NOTE: this script now ALSO runs INSIDE issue811_dispatch.sh (the maxp arm's
+    # F1 phase), whose main log reserves the literal `[phase=done]` token for the
+    # dispatcher's single terminal line (pod-side reporting contract, #545) — so
+    # this completion line deliberately does NOT carry the phase tag.
     logger.info(
-        "[phase=done] %d cells → %s (max_rel_deviation=%.3e, repro %s)",
+        "offset-decomposition complete: %d cells → %s (max_rel_deviation=%.3e, repro %s)",
         len(out_cells),
         args.out,
         max_dev,
@@ -416,7 +468,7 @@ def main() -> int:
     )
     if max_dev > args.repro_rel_tol:
         logger.error(
-            "[phase=done] REPRO FAIL: re-fit Delta_med deviates >%.1f%% from the run "
+            "offset-decomposition REPRO FAIL: re-fit Delta_med deviates >%.1f%% from the run "
             "on at least one cell — the decomposition is NOT trusted (brief item 8). "
             "JSON written with repro_pass=false for diagnosis.",
             100 * args.repro_rel_tol,
