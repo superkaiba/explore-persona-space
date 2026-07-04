@@ -980,7 +980,10 @@ _LONG_PHASE_HEARTBEAT_PREFIX = "[long-phase-heartbeat]"
 # All watcher-posted note substrings to exclude from `_latest_progress_ts`.
 # Pulled into one frozenset so every pass's filter is uniform: add a new
 # watcher-posted marker -> add its sentinel here -> _latest_progress_ts
-# transparently excludes it without an extra special case.
+# transparently excludes it without an extra special case. (The deliberate
+# session-stop exclusion is NOT a member — this set is SUBSTRING-matched,
+# which would break the prefix boundary; it lives inline in
+# _latest_progress_ts as a prefix/by check instead; #990.)
 _WATCHER_NOTE_SENTINELS: frozenset[str] = frozenset(
     {
         _ALERT_NOTE_SENTINEL,
@@ -3739,7 +3742,11 @@ def _latest_progress_ts(events: list[dict]) -> float | None:
     :data:`_WATCHER_NOTE_SENTINELS` (the watcher's own stale-alert /
     session-stalled-alert posts use ``epm:progress`` and must NOT count as
     progress — otherwise the alert would reset the staleness clock it is
-    measuring). Returns ``None`` when there is no such marker.
+    measuring) AND that is not a deliberate session-stop record (lstripped
+    note prefix ``"deliberate-stop "`` OR ``by == "spawn_session-stop"`` — a
+    session's death record is anti-liveness, never progress; #990, precedent
+    #949/#810 in ``task_workflow.stage_dispatch_should_skip``). Returns
+    ``None`` when there is no such marker.
     """
     best: float | None = None
     for ev in events:
@@ -3748,6 +3755,18 @@ def _latest_progress_ts(events: list[dict]) -> float | None:
         note = ev.get("note") or ""
         if any(sentinel in note for sentinel in _WATCHER_NOTE_SENTINELS):
             continue  # a watcher-posted alert — not real progress
+        # Anti-liveness (#990; precedent #949/#810): a deliberate session
+        # stop is the death record of the task's driver, not progress —
+        # counting it would refresh the very staleness clocks that should
+        # react to the stop. Same predicate as
+        # task_workflow.stage_dispatch_should_skip (~line 1463): the
+        # lstripped "deliberate-stop " note PREFIX (also catches PM-posted
+        # stop records, which use by="pm-chat" — research-pm.md ~719/734)
+        # OR by == "spawn_session-stop" (catches note-text drift from the
+        # cmd_stop emitter). Prefix-boundary: a note merely MENTIONING
+        # deliberate-stop mid-text still counts as progress.
+        if note.lstrip().startswith("deliberate-stop ") or ev.get("by") == "spawn_session-stop":
+            continue
         ts = _parse_event_ts(ev.get("ts"))
         if ts is not None and (best is None or ts > best):
             best = ts

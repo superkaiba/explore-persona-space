@@ -739,6 +739,130 @@ def test_latest_progress_ts_none_when_no_progress():
     assert asw._latest_progress_ts([{"kind": "epm:clarify", "ts": "2026-06-05T10:00:00Z"}]) is None
 
 
+def test_latest_progress_ts_excludes_deliberate_stop_breadcrumb():
+    # The exact spawn_session.py cmd_stop emitter shape: a deliberate session
+    # stop is the death record of the task's driver, not progress — it must
+    # NOT advance the clock (#990; precedent #949/#810 in
+    # task_workflow.stage_dispatch_should_skip).
+    import autonomous_session_watch as asw
+
+    events = [
+        # Real progress carries a benign ``by`` — it must still COUNT (pins
+        # the exclusion to by == "spawn_session-stop", not by-presence).
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T10:00:00Z",
+            "by": "unknown",
+            "note": "step 100",
+        },
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T12:00:00Z",
+            "by": "spawn_session-stop",
+            "note": (
+                "deliberate-stop pid=n/a target=happy-session:abc123 "
+                "reason=operator stop via spawn_session.py stop"
+            ),
+        },
+    ]
+    ts = asw._latest_progress_ts(events)
+    # The 12:00 stop record is excluded; newest real progress stays 10:00.
+    assert ts == asw._parse_event_ts("2026-07-01T10:00:00Z")
+
+
+def test_latest_progress_ts_counts_real_progress_with_benign_by():
+    # A lone real-progress event with a benign ``by`` returns ITS timestamp
+    # (non-None) — kills a by-presence mutation (`if ev.get("by"): continue`).
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T11:00:00Z",
+            "by": "unknown",
+            "note": "step 200",
+        },
+    ]
+    assert asw._latest_progress_ts(events) == asw._parse_event_ts("2026-07-01T11:00:00Z")
+
+
+def test_latest_progress_ts_excludes_by_field_regardless_of_note():
+    # The by-half in isolation: by == "spawn_session-stop" excludes the event
+    # even when the note lacks the "deliberate-stop " prefix (note-text
+    # drift), and even when the ``note`` key is ABSENT entirely (pins the
+    # `note = ev.get("note") or ""` normalization against the predicate).
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:progress", "ts": "2026-07-01T10:00:00Z", "note": "step 100"},
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T12:00:00Z",
+            "by": "spawn_session-stop",
+            "note": "stopping for operator replacement",
+        },
+        # No "note" key at all — the by-half alone must exclude it.
+        {"kind": "epm:progress", "ts": "2026-07-01T13:00:00Z", "by": "spawn_session-stop"},
+    ]
+    assert asw._latest_progress_ts(events) == asw._parse_event_ts("2026-07-01T10:00:00Z")
+
+
+def test_latest_progress_ts_excludes_deliberate_stop_prefix_without_by():
+    # The prefix-half in isolation: a PM-posted stop record (by="pm-chat",
+    # the research-pm.md shape) is excluded on the lstripped note prefix
+    # alone; leading whitespace does not defeat the lstrip.
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:progress", "ts": "2026-07-01T10:00:00Z", "note": "step 100"},
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T12:00:00Z",
+            "by": "pm-chat",
+            "note": "deliberate-stop pid=12345 target=tick-loop reason=operator-replace",
+        },
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T13:00:00Z",
+            "by": "pm-chat",
+            "note": "  deliberate-stop pid=999 target=tick-loop reason=leading-whitespace",
+        },
+    ]
+    assert asw._latest_progress_ts(events) == asw._parse_event_ts("2026-07-01T10:00:00Z")
+
+
+def test_latest_progress_ts_midnote_deliberate_stop_mention_still_counts():
+    # Prefix boundary (mirror of the #949 pin in test_stage_dispatch_dedup):
+    # a note merely MENTIONING deliberate-stop mid-text, with no special
+    # ``by``, DOES advance the clock.
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:progress", "ts": "2026-07-01T10:00:00Z", "note": "step 100"},
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T12:00:00Z",
+            "note": "noting the earlier deliberate-stop was expected; resuming phase 2",
+        },
+    ]
+    assert asw._latest_progress_ts(events) == asw._parse_event_ts("2026-07-01T12:00:00Z")
+
+
+def test_latest_progress_ts_only_deliberate_stop_returns_none():
+    # A list containing only the stop record has no real progress at all.
+    import autonomous_session_watch as asw
+
+    events = [
+        {
+            "kind": "epm:progress",
+            "ts": "2026-07-01T12:00:00Z",
+            "by": "spawn_session-stop",
+            "note": "deliberate-stop pid=n/a target=happy-session:abc reason=operator stop",
+        },
+    ]
+    assert asw._latest_progress_ts(events) is None
+
+
 # ─── pod-safety I/O wrapper tests ────────────────────────────────────────────
 
 
