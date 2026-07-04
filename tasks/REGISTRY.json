@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 985,
+  "highest_id": 986,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -6556,6 +6556,13 @@
       "path": "tasks/proposed/985",
       "status": "proposed",
       "title": "workflow-fix: production-body test rule for seam-stubbed fns"
+    },
+    "986": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/986",
+      "status": "proposed",
+      "title": "workflow-fix: cap-headroom check in check_agent_spec_size"
     },
     "99": {
       "has_clean_result": true,
