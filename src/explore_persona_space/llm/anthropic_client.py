@@ -169,8 +169,12 @@ def is_batch_create_grace_404(
     """True iff ``exc`` is an ``anthropic.NotFoundError`` within ``grace_s`` of create.
 
     ``created_at=None`` (unknown create time — a resumed poll of a persisted
-    ``batch_id``, or an old state.json) ALWAYS returns False: the 404 stays
-    terminal (fail-fast; preserves api_dispatch's wrong-org-404 semantics).
+    ``batch_id``, or an old state.json) ALWAYS returns False — never the
+    grace regime. Since #1035 a False here is NOT instant-terminal: the
+    wrapper / poll routes the 404 to the BOUNDED mid-poll retry schedule
+    (:func:`next_batch_404_retry` regime 3, ``BATCH_MIDPOLL_404_BACKOFF_S``),
+    and it goes terminal only after that budget — fail-fast preserved,
+    api_dispatch's wrong-org 404 delayed by <=~3 min of sleeps, never masked.
 
     ``0.0 <= elapsed``: NEGATIVE elapsed (now before created_at — an injected
     test clock, or a backwards wall-clock step) is OUT of window. Production
@@ -777,6 +781,55 @@ class AnthropicBatch:
             return created_at
         return self._created_at.get(batch_id)
 
+    async def _deadline_final_retrieve(
+        self,
+        batch_id: str,
+        created_at: "_dt.datetime | None",
+        now_fn: "Callable[[], _dt.datetime]",
+        sleep_fn: "Callable[[float], object]",
+    ):
+        """One last harvest attempt at the poll deadline, 404-tolerant (#1035).
+
+        :meth:`poll` is async, so this is a minimal local retry loop over the
+        shared ``BATCH_MIDPOLL_404_BACKOFF_S`` schedule rather than the sync
+        wrapper. After exhaustion the 404 re-raises — never masked; a success
+        after >=1 transient 404 logs the ``[batch-404-midpoll]`` recovery INFO
+        (plan criterion 5). Returns the retrieved batch object.
+        """
+        final = None
+        final_404_retries = 0
+        final_first_404_at: _dt.datetime | None = None
+        for delay in (*BATCH_MIDPOLL_404_BACKOFF_S, None):
+            try:
+                final = self.retrieve(batch_id)
+                break
+            except anthropic.NotFoundError:
+                if delay is None:
+                    raise
+                final_404_retries += 1
+                if final_first_404_at is None:
+                    final_first_404_at = now_fn()
+                logger.warning(
+                    "[batch-404-midpoll] Batch %s deadline final retrieve 404 "
+                    "(attempt %d/%d); transient suspected — retrying in %.0fs",
+                    batch_id,
+                    final_404_retries,
+                    len(BATCH_MIDPOLL_404_BACKOFF_S),
+                    delay,
+                )
+                await sleep_fn(delay)
+        assert final is not None, "final-retrieve loop invariant: break with result or raise"
+        if final_404_retries:  # recovered after >=1 transient 404 (plan criterion 5)
+            _log_batch_404_recovery(
+                batch_id,
+                0,
+                final_404_retries,
+                final_first_404_at,
+                self._effective_created_at(batch_id, created_at),
+                now_fn(),
+            )
+        return final
+
     async def poll(
         self,
         batch_id: str,
@@ -893,27 +946,7 @@ class AnthropicBatch:
                     else now_fn() + _dt.timedelta(hours=25)  # absent expires_at -> still bounded
                 )
             if now_fn() > deadline:
-                # One last harvest attempt, with bounded mid-poll 404 tolerance
-                # (#1035): poll is async, so this is a minimal local retry loop
-                # over the shared schedule rather than the sync wrapper. After
-                # exhaustion the 404 re-raises — never masked.
-                final = None
-                for attempt, delay in enumerate((*BATCH_MIDPOLL_404_BACKOFF_S, None), start=1):
-                    try:
-                        final = self.retrieve(batch_id)
-                        break
-                    except anthropic.NotFoundError:
-                        if delay is None:
-                            raise
-                        logger.warning(
-                            "[batch-404-midpoll] Batch %s deadline final retrieve 404 "
-                            "(attempt %d/%d); transient suspected — retrying in %.0fs",
-                            batch_id,
-                            attempt,
-                            len(BATCH_MIDPOLL_404_BACKOFF_S) + 1,
-                            delay,
-                        )
-                        await sleep_fn(delay)
+                final = await self._deadline_final_retrieve(batch_id, created_at, now_fn, sleep_fn)
                 if final.processing_status == "ended":
                     return final
                 raise BatchDeadlineExceeded(batch_id, deadline)
