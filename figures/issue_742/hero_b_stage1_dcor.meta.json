@@ -1,6 +1,6 @@
 {
-  "commit": "9d0b1c08ff",
-  "created": "2026-07-05T00:21:50Z",
+  "commit": "8fe4da6d4e",
+  "created": "2026-07-05T03:46:04Z",
   "figsize": [
     9.0,
     5.2
@@ -31,25 +31,25 @@
       "_group": 0
     },
     {
-      "category": "broad_em\n(betley)",
+      "category": "broad EM\n(Betley)",
       "distance correlation": 0.28255651055327113,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "sycophancy\n(betley)",
+      "category": "sycophancy\n(Betley)",
       "distance correlation": 0.2741500587377692,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "refusal\n(betley)",
+      "category": "refusal\n(Betley)",
       "distance correlation": 0.32072262221941694,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "category": "sycophancy\n(ultrachat)",
+      "category": "sycophancy\n(UltraChat)",
       "distance correlation": 0.2655783829469624,
       "_kind": "bar",
       "_group": 1

@@ -39,6 +39,25 @@ set_paper_style()
 EVAL_DIR = PROJECT_ROOT / "eval_results" / "issue_742"
 FIG_DIR = PROJECT_ROOT / "figures" / "issue_742"
 
+# Plain-English chart-internal labels (spec bans snake_case condition codes in chart text).
+BEHAVIOR_LABELS = {
+    "broad_em": "broad EM",
+    "harmful_compliance": "harmful compliance",
+    "sycophancy": "sycophancy",
+    "refusal": "refusal",
+}
+GENRE_LABELS = {"betley": "Betley", "ultrachat": "UltraChat"}
+
+
+def behavior_label(behavior: str) -> str:
+    """Plain-English display name for a behavior slug."""
+    return BEHAVIOR_LABELS.get(behavior, behavior.replace("_", " "))
+
+
+def genre_label(genre: str) -> str:
+    """Plain-English display name for a genre slug."""
+    return GENRE_LABELS.get(genre, genre)
+
 
 def _load(path: Path) -> dict | None:
     return json.loads(path.read_text()) if path.exists() else None
@@ -57,7 +76,7 @@ def plot_brackets(s0: dict, out: Path) -> Path | None:
             key=lambda b: b["bracket_width"],
             reverse=True,
         )
-        labels = [c["behavior"] for c in cells]
+        labels = [behavior_label(c["behavior"]) for c in cells]
         ceil = [c["sqrt_r_yy_headline"] for c in cells]
         ci = np.array([c["sqrt_r_yy_ci"] for c in cells])
         rho = [c["rho_lin"] for c in cells]
@@ -69,7 +88,7 @@ def plot_brackets(s0: dict, out: Path) -> Path | None:
         ax.set_yticks(y)
         ax.set_yticklabels(labels)
         ax.set_xlabel("correlation")
-        ax.set_title(f"{genre}: bracket [ρ_lin, √(r_yy)]")
+        ax.set_title(f"{genre_label(genre)}: bracket [ρ_lin, √(r_yy)]")
         ax.set_xlim(0, 1)
         if gi == 0:
             ax.legend(loc="lower right", fontsize=8)
@@ -94,7 +113,12 @@ def plot_learning_curve(s2: dict, out: Path) -> Path | None:
         means = [p["mean"] for p in pts]
         los = [p["ci"][0] for p in pts]
         his = [p["ci"][1] for p in pts]
-        line = ax.plot(ns, means, marker="o", label=f"{c['genre']}/{c['behavior']}")[0]
+        line = ax.plot(
+            ns,
+            means,
+            marker="o",
+            label=f"{genre_label(c['genre'])} / {behavior_label(c['behavior'])}",
+        )[0]
         ax.fill_between(ns, los, his, alpha=0.15, color=line.get_color())
     ax.set_xlabel("n' (contexts)")
     ax.set_ylabel("√(r_yy)(n')")
@@ -128,7 +152,7 @@ def plot_agreement_scatter(s0: dict, out: Path) -> Path | None:
         ]
         below = any(py > y for _, py in close)
         ax.annotate(
-            f"{c['genre']}/{c['behavior'].replace('_', ' ')}",
+            f"{genre_label(c['genre'])} / {behavior_label(c['behavior'])}",
             (x, y),
             fontsize=6.5,
             xytext=(-6 if x > 0.85 else 5, -11 if below else 4),
