@@ -32,6 +32,10 @@ You are the PLANNER. Your job is to design a concrete, detailed plan for the fol
 
 [TASK DESCRIPTION]
 
+**Canonical Goal (current at spawn; re-read before returning — planner.md
+§ Goal-currency guard):** [GOAL TEXT or "no goal: frontmatter — use the
+body's ## Goal H2"]
+
 **If this is a `type:batch` issue (the body lists N independent items):**
 Structure your plan as N independent sections, one per body item. Each
 section gets its own subset of the fields below — Goal, Design (with file
@@ -73,6 +77,29 @@ Be specific — name files, write pseudocode, specify hyperparameters with a lit
 ```
 
 Save the plan to a temporary file or pass it directly.
+
+**Goal-currency gate (pre-persist; EVERY `new-plan-version` call).** Capture
+the Goal snapshot when you spawn the planner —
+`GOAL_SNAP="$(uv run python scripts/task.py view <N> --json | jq -r '.frontmatter.goal // empty')"`;
+when that is empty (no `goal:` frontmatter — `kind: infra | batch | survey`),
+fall back to the body's `## Goal` H2 text (`jq -r '.body'` + the H2 slice), so
+the gate is non-vacuous on body-Goal tasks too. Inline the snapshot in the
+brief (template above). Immediately BEFORE every
+`task.py new-plan-version` persist (Phase 1 initial draft, Phase 1.5.0
+mechanical-bounce redrafts, Phase 3 revisions), re-read the same field and
+compare to the snapshot (plain text equality). On ANY difference — the user
+amended the Goal while the draft was in flight (#922: two `epm:goal-updated`
+amendments landed mid-draft; plan v3 persisted quoting the superseded Goal
+and auto-approved 3 s later) — OR when NO snapshot was captured at spawn
+(missing/empty on a task that has a Goal: treat as a mismatch — re-read
+twice, never persist on an unverifiable snapshot) — do NOT persist:
+re-spawn the planner with the
+amended Goal + the draft path as a MECHANICAL redraft bounce (same semantics
+as a Phase 1.5.0 bounce; does NOT count against the Phase 3 round cap),
+refresh `GOAL_SNAP`, then persist the redraft. A goal-currency WARN from
+verify_plan.py at Phase 1.5.0 (`c23_goal_currency`) is the same bounce
+trigger — the one WARN that bounces instead of riding into the critic
+briefs.
 
 **Strip the harness trailer before persisting.** An `Agent` tool result ends
 with harness-appended metadata — a final `agentId: <id> (use SendMessage ...)`
@@ -134,7 +161,10 @@ Run the structural verifier against the plan version just persisted:
   words, proceed anyway (verifier false positive), record `verdict: PASS-with-override`
   + the overridden check ids in the marker note, and emit a workflow-fix candidate
   against `scripts/verify_plan.py`.
-- **PASS (with WARNs) → proceed**; copy the WARN lines verbatim into the fact-checker
+- **PASS (with WARNs) → proceed** — EXCEPT a `goal_currency` WARN
+  (`c23_goal_currency`), which instead triggers the mechanical redraft
+  bounce per § Goal-currency gate above (the one WARN that bounces);
+  copy any OTHER WARN lines verbatim into the fact-checker
   brief (and later the critic briefs) as "mechanical pre-pass notes".
 - **Post the marker** (VM-side; the adversarial-planner skill always runs in the
   orchestrator session, never on a pod):

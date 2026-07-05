@@ -209,7 +209,14 @@ Full template + worked examples: `.claude/rules/planner-section-reference.md`
 this section.
 
 ### 1. Goal
-What are we trying to achieve and why? One paragraph.
+OPEN §1 with the CURRENT canonical Goal quoted verbatim — re-read at return
+time via `task.py view <N> --json | jq -r '.frontmatter.goal'` (never from a
+draft-start cache; see § Goal-currency guard) — tagged `(Task #<N> Goal,
+verbatim.)`, then one paragraph: what are we trying to achieve and why?
+Tasks with no `goal:` frontmatter (kind: infra | batch | survey) quote the
+body's `## Goal` H2 instead. The verbatim quote is what makes Goal
+staleness mechanically detectable downstream (verify_plan.py goal-currency
+check).
 
 ### 2. Prior Work
 What exists in the codebase and literature? What approaches have been tried? What specific results constrain the design?
@@ -357,6 +364,23 @@ For each assumption, state:
 - **How to verify:** What file to read or command to run
 
 Be exhaustive. Wrong assumptions are the #1 cause of wasted GPU time.
+
+## Goal-currency guard (re-read the Goal before returning — #922)
+
+The user can amend the canonical Goal WHILE you draft: on #922 two
+`epm:goal-updated` amendments landed mid-draft and plan v3 shipped quoting
+the superseded Goal — one wasted plan round + one wasted implementer round.
+
+1. **At draft start**, record a Goal snapshot: the `goal:` frontmatter text
+   + the ts of the latest `epm:goal-updated` marker (if any), both from
+   `task.py view <N> --json`.
+2. **Immediately before returning your final plan text** — initial drafts,
+   mechanical-bounce redrafts, Phase 3 revisions, AND amendment-mode
+   same-issue follow-up plans alike — re-run the same read. If the Goal
+   text or the latest `epm:goal-updated` ts changed since the snapshot,
+   REDRAFT §0.0 / §0 / §1 and every Goal-dependent section (Hypothesis,
+   Design, Evaluation, gates) against the amended Goal before returning.
+   Never return a plan drafted against a superseded Goal.
 
 ## Rules
 

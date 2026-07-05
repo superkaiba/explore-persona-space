@@ -1534,6 +1534,15 @@ plans missing any):**
 - Target pod preference
 - Plan deviations allowed vs must-ask
 
+**Goal-currency gate:** before EVERY `new-plan-version` call, re-read
+`frontmatter.goal` and compare against the spawn-time snapshot
+(`adversarial-planner` SKILL.md § Goal-currency gate) — a goal-update newer
+than the draft start forces a mechanical redraft bounce (re-spawn the
+planner against the amended Goal; NOT a critic round). Incident #922
+(2026-07-03): plan v3 persisted quoting a Goal superseded 10 minutes
+earlier by `epm:goal-updated`, was auto-approved 3 s later, and was caught
+only by a PM-chat directive one wasted implementer round later.
+
 Post the plan body via `new-plan-version` (writes
 `tasks/<status>/<N>/plans/v<K>.md` and rotates the `plan.md` symlink),
 then announce it with an `epm:plan` event. The handoff file carries a
@@ -7016,7 +7025,12 @@ orchestrators driving one round is the #778 root cause.
      picked up (it raises that label's authoritative `(ts, version)`);
      never plan against an entry-time snapshot, or a session that
      entered on `v3` and snapshotted before a `v5`/`v6` correction
-     landed plans stale (the #658 bug). The `followup_label` lives
+     landed plans stale (the #658 bug).
+     The same pre-snapshot re-read covers the canonical GOAL:
+     `frontmatter.goal` + the latest `epm:goal-updated` ts — the
+     adversarial-planner § Goal-currency gate applies in AMENDMENT scope too
+     (an amendment plan drafted against a stale Goal is the #922 bug class,
+     the Goal sibling of this bullet's #658 scope bug). The `followup_label` lives
      inside the marker NOTE body as free text (its format even differs
      across versions — `- followup_label: ...` dash-bullet, bare
      `followup_label: ...`, bold `**followup_label:** ...`), NOT as a
