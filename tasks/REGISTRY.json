@@ -167,8 +167,8 @@
     "1019": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1019",
-      "status": "reviewing",
+      "path": "tasks/completed/1019",
+      "status": "completed",
       "title": "daily-fix: stuck-batch cancel+sync fallback in batch_judge"
     },
     "102": {
