@@ -382,5 +382,18 @@
     "floors_path": "batched"
   },
   "n_families": 7,
-  "summary": "turn_nl"
+  "summary": "turn_nl",
+  "mlp_validity_gate": {
+    "rho_real": -0.17350859777301336,
+    "rho_shuffle": 0.16236167296249415,
+    "gate_margin": -0.3358702707355075,
+    "n_with_E": 480
+  },
+  "gate_status": "reference",
+  "gate_pass": null,
+  "metadata": {
+    "issue": 811,
+    "summary": "turn_nl",
+    "generated_at": "2026-07-05T22:16:29Z"
+  }
 }

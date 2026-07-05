@@ -382,5 +382,18 @@
     "floors_path": "batched"
   },
   "n_families": 7,
-  "summary": "maxp"
+  "summary": "maxp",
+  "mlp_validity_gate": {
+    "rho_real": -0.11513842303020815,
+    "rho_shuffle": -0.0548583640568125,
+    "gate_margin": -0.060280058973395646,
+    "n_with_E": 480
+  },
+  "gate_status": "reference",
+  "gate_pass": null,
+  "metadata": {
+    "issue": 811,
+    "summary": "maxp",
+    "generated_at": "2026-07-05T22:16:29Z"
+  }
 }
