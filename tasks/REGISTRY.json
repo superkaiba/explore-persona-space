@@ -83,8 +83,8 @@
     "1008": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1008",
-      "status": "approved",
+      "path": "tasks/running/1008",
+      "status": "running",
       "title": "workflow-fix: verify_task_body WARN on HF file-count claims vs scoped listing"
     },
     "1009": {
