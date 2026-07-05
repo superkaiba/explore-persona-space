@@ -141,8 +141,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    true` — incident #601: all 20 of #472's reused adapters passed (a)–(f) yet HALTed Phase-0 as
    repeaters); (h) source resolution + consumer-exact path layout + target-backend fetchability +
    staged-layout consumer-open for
-   reused TRAINING-INPUT artifacts — for a reused `train/*.jsonl` mix / on-policy response cache /
-   downstream-input `eval_results/` JSON, the plan confirms the file (i) is source-resolvable (HF
+   reused TRAINING-INPUT / downstream-input artifacts — for a reused `train/*.jsonl` mix /
+   on-policy response cache / downstream-input `eval_results/` JSON / staged multi-file
+   tensor or activation store, the plan confirms the file (i) is source-resolvable (HF
    via `huggingface_hub.list_repo_files`, OR git-tree reachable for a committed `eval_results/...`
    JSON) AND (ii) resolves at the EXACT path/filename pattern the new consumer asserts (not merely
    that the parent dir exists — #474 `i474_loc_A1.jsonl` vs a #664-style
