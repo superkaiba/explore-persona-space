@@ -1,2998 +1,2998 @@
 {
-  "commit": "2ae64d63b4",
-  "created": "2026-07-03T18:00:30Z",
+  "commit": "fb99c02663",
+  "created": "2026-07-05T11:29:09Z",
   "figsize": [
     11.0,
     7.2
   ],
   "points": [
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.101744,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.101744,
       "null density": 0.4799184315989174,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.303862,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.303862,
       "null density": 0.48981365699270946,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.505979,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.505979,
       "null density": 0.41065185384237246,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.708097,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.708097,
       "null density": 0.4007566284485806,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.910215,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.910215,
       "null density": 0.4007566284485806,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.112332,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.112332,
       "null density": 0.4601279808113328,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.31445,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.31445,
       "null density": 0.30675198720755553,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.516568,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.516568,
       "null density": 0.23748540945101074,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.718686,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.718686,
       "null density": 0.26717108563238706,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.920803,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.920803,
       "null density": 0.23748540945101074,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.122921,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.122921,
       "null density": 0.18800928248204993,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.325039,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.325039,
       "null density": 0.24243302214790652,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.527156,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.527156,
       "null density": 0.17316644439136217,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.729274,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.729274,
       "null density": 0.1335855428161934,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.931392,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.931392,
       "null density": 0.09400464124102519,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.133509,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.133509,
       "null density": 0.07421419045344077,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.335627,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.335627,
       "null density": 0.04947612696896051,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.537745,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.537745,
       "null density": 0.05937135236275275,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.739862,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.739862,
       "null density": 0.029685676181376307,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.94198,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.94198,
       "null density": 0.044528514272064564,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.144098,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.144098,
       "null density": 0.029685676181376307,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.346215,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.346215,
       "null density": 0.029685676181376307,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.548333,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.548333,
       "null density": 0.024738063484480256,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.750451,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.750451,
       "null density": 0.019790450787584207,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.952568,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.952568,
       "null density": 0.009895225393792145,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 5.154686,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 5.154686,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 5.356804,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 5.356804,
       "null density": 0.004947612696896052,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 5.558921,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 5.558921,
       "null density": 0.024738063484480256,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 5.761039,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 5.761039,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 5.963157,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 5.963157,
       "null density": 0.004947612696896073,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 6.165274,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 6.165274,
       "null density": 0.004947612696896052,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 6.367392,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 6.367392,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 6.56951,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 6.56951,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 6.771628,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 6.771628,
       "null density": 0.004947612696896052,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 6.973745,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 6.973745,
       "null density": 0.004947612696896073,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 7.175863,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 7.175863,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 7.377981,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 7.377981,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 7.580098,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 7.580098,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 7.782216,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 7.782216,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 7.984334,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 7.984334,
       "null density": 0.004947612696896095,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.037926,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.037926,
       "null density": 1.239253767572392,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.113778,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.113778,
       "null density": 1.1469689125404054,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.18963,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.18963,
       "null density": 0.9228485503198663,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.265482,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.265482,
       "null density": 1.0546840575084189,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.341334,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.341334,
       "null density": 1.2524373182912472,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.417187,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.417187,
       "null density": 0.8041965938501693,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.493039,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.493039,
       "null density": 0.8041965938501693,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.568891,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.568891,
       "null density": 0.8832978981633007,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.644743,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.644743,
       "null density": 0.5405255794730646,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.720595,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.720595,
       "null density": 0.6459939852239065,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.796447,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.796447,
       "null density": 0.5537091301919198,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.872299,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.872299,
       "null density": 0.448240724441078,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.948151,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.948151,
       "null density": 0.36913942012794654,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.024003,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.024003,
       "null density": 0.35595586940909135,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.099855,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.099855,
       "null density": 0.500974927316499,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.175708,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.175708,
       "null density": 0.2636710143771047,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.25156,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.25156,
       "null density": 0.14501905790740757,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.327412,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.327412,
       "null density": 0.17138615934511806,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.403264,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.403264,
       "null density": 0.14501905790740757,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.479116,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.479116,
       "null density": 0.11865195646969712,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.554968,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.554968,
       "null density": 0.13183550718855236,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.63082,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.63082,
       "null density": 0.13183550718855236,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.706672,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.706672,
       "null density": 0.05273420287542093,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.782524,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.782524,
       "null density": 0.06591775359427618,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.858376,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.858376,
       "null density": 0.05273420287542093,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.934229,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.934229,
       "null density": 0.06591775359427618,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.010081,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.010081,
       "null density": 0.10546840575084186,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.085933,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.085933,
       "null density": 0.05273420287542093,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.161785,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.161785,
       "null density": 0.013183550718855233,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.237637,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.237637,
       "null density": 0.039550652156565703,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.313489,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.313489,
       "null density": 0.013183550718855233,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.389341,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.389341,
       "null density": 0.026367101437710466,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.465193,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.465193,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.541045,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.541045,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.616897,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.616897,
       "null density": 0.026367101437710466,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.69275,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.69275,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.768602,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.768602,
       "null density": 0.013183550718855233,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.844454,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.844454,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.920306,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.920306,
       "null density": 0.013183550718855233,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.996158,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.996158,
       "null density": 0.013183550718855233,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.059677,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.059677,
       "null density": 1.2829495003459648,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.178154,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.178154,
       "null density": 0.8862480101074098,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.296631,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.296631,
       "null density": 0.8356052666727006,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.415108,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.415108,
       "null density": 0.7174388653250461,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.533585,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.533585,
       "null density": 0.47266560539061864,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.652062,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.652062,
       "null density": 0.362939661282082,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.770539,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.770539,
       "null density": 0.3798205757603187,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.889016,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.889016,
       "null density": 0.33761828956472745,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.007493,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.007493,
       "null density": 0.41358240471679075,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.12597,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.12597,
       "null density": 0.34605874680384596,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.244447,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.244447,
       "null density": 0.3798205757603187,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.362924,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.362924,
       "null density": 0.2447732599344276,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.481401,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.481401,
       "null density": 0.2785350888909004,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.599878,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.599878,
       "null density": 0.15192823030412747,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.718355,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.718355,
       "null density": 0.21945188821707223,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.836832,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.836832,
       "null density": 0.17724960202148207,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.955309,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.955309,
       "null density": 0.10972594410853652,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.073786,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.073786,
       "null density": 0.09284502963030013,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.192263,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.192263,
       "null density": 0.11816640134765471,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.31074,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.31074,
       "null density": 0.1350473158258911,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.429217,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.429217,
       "null density": 0.10128548686941832,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.547694,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.547694,
       "null density": 0.03376182895647278,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.666171,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.666171,
       "null density": 0.0928450296302998,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.784648,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.784648,
       "null density": 0.07596411515206374,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.903125,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.903125,
       "null density": 0.03376182895647278,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.021602,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.021602,
       "null density": 0.04220228619559097,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.140079,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.140079,
       "null density": 0.04220228619559097,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.258556,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.258556,
       "null density": 0.01688091447823639,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.377033,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.377033,
       "null density": 0.016880914478236322,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.49551,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.49551,
       "null density": 0.008440457239118194,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.613987,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.613987,
       "null density": 0.01688091447823639,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.732464,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.732464,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.850941,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.850941,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.969418,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.969418,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.087895,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.087895,
       "null density": 0.008440457239118194,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.206372,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.206372,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.324849,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.324849,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.443326,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.443326,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.561803,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.561803,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.68028,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.68028,
       "null density": 0.008440457239118194,
       "_kind": "bar",
       "_group": 2
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.6257047050534856,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.6257047050534856,
       "null density": 0.0,
       "series": "null 95th pct (widest substrate)",
       "_kind": "line",
       "_group": 3
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.6257047050534856,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.6257047050534856,
       "null density": 1.0,
       "series": "null 95th pct (widest substrate)",
       "_kind": "line",
       "_group": 3
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.709910673253426,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.709910673253426,
       "null density": 0.0,
       "series": "observed max \u2212 min spread",
       "_kind": "line",
       "_group": 4
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.709910673253426,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.709910673253426,
       "null density": 1.0,
       "series": "observed max \u2212 min spread",
       "_kind": "line",
       "_group": 4
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.043051,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.043051,
       "null density": 1.9830819838613842,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.128776,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.128776,
       "null density": 1.528139646387302,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.214501,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.214501,
       "null density": 1.2365099428782746,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.300226,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.300226,
       "null density": 1.1431884377553865,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.385951,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.385951,
       "null density": 0.8982194868078038,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.471676,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.471676,
       "null density": 0.7699024172638308,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.557402,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.557402,
       "null density": 0.6415853477198599,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.643127,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.643127,
       "null density": 0.6415853477198599,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.728852,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.728852,
       "null density": 0.6065897832987766,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.814577,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.814577,
       "null density": 0.39661639677227695,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.900302,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.900302,
       "null density": 0.39661639677227645,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.986027,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.986027,
       "null density": 0.19830819838613847,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.071752,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.071752,
       "null density": 0.16331263396505522,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.157478,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.157478,
       "null density": 0.19830819838613847,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.243203,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.243203,
       "null density": 0.15164744582469414,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.328928,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.328928,
       "null density": 0.12831706954397196,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.414653,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.414653,
       "null density": 0.10498669326324979,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.500378,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.500378,
       "null density": 0.046660752561444356,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.586103,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.586103,
       "null density": 0.08165631698252761,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.671828,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.671828,
       "null density": 0.011665188140361089,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.757554,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.757554,
       "null density": 0.06999112884216616,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.843279,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.843279,
       "null density": 0.023330376280722178,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.929004,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.929004,
       "null density": 0.034995564421083265,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.014729,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.014729,
       "null density": 0.06999112884216653,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.100454,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.100454,
       "null density": 0.023330376280722178,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.186179,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.186179,
       "null density": 0.023330376280722178,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.271905,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.271905,
       "null density": 0.023330376280722178,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.35763,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.35763,
       "null density": 0.011665188140361089,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.443355,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.443355,
       "null density": 0.011665188140361089,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.52908,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.52908,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.614805,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.614805,
       "null density": 0.023330376280722178,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.70053,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.70053,
       "null density": 0.011665188140361089,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.786255,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.786255,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.871981,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.871981,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.957706,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.957706,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.043431,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.043431,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.129156,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.129156,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.214881,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.214881,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.300606,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.300606,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.386331,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.386331,
       "null density": 0.011665188140361028,
       "_kind": "bar",
       "_group": 5
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.01419,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.01419,
       "null density": 4.8797409818742405,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.041855,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.041855,
       "null density": 4.590571145911323,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.069521,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.069521,
       "null density": 3.939939014994758,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.097186,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.097186,
       "null density": 2.963990818619908,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.124851,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.124851,
       "null density": 3.108575736601367,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.152517,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.152517,
       "null density": 2.2772124582079805,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.180182,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.180182,
       "null density": 1.6265803272914132,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.207848,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.207848,
       "null density": 1.6265803272914132,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.235513,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.235513,
       "null density": 1.481995409309954,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.263178,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.263178,
       "null density": 1.4458491798145894,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.290844,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.290844,
       "null density": 1.0120944258702136,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.318509,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.318509,
       "null density": 0.8675095078887545,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.346175,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.346175,
       "null density": 0.5783396719258352,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.37384,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.37384,
       "null density": 0.8313632783933896,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.401505,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.401505,
       "null density": 0.36146229495364696,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.429171,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.429171,
       "null density": 0.6144859014212011,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.456836,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.456836,
       "null density": 0.6144859014212011,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.484502,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.484502,
       "null density": 0.5421934424304704,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.512167,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.512167,
       "null density": 0.36146229495364696,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.539832,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.539832,
       "null density": 0.3614622949536477,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.567498,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.567498,
       "null density": 0.21687737697218862,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.595163,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.595163,
       "null density": 0.2530236064675534,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.622829,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.622829,
       "null density": 0.2891698359629182,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.650494,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.650494,
       "null density": 0.1445849179814591,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.678159,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.678159,
       "null density": 0.2530236064675524,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.705825,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.705825,
       "null density": 0.10843868848609431,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.73349,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.73349,
       "null density": 0.1445849179814591,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.761156,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.761156,
       "null density": 0.1445849179814591,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.788821,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.788821,
       "null density": 0.07229245899072954,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.816486,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.816486,
       "null density": 0.07229245899072924,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.844152,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.844152,
       "null density": 0.03614622949536477,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.871817,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.871817,
       "null density": 0.10843868848609431,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.899483,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.899483,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.927148,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.927148,
       "null density": 0.03614622949536477,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.954813,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.954813,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.982479,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.982479,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.010144,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.010144,
       "null density": 0.03614622949536477,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.03781,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.03781,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.065475,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.065475,
       "null density": 0.03614622949536491,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.093141,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.093141,
       "null density": 0.10843868848609388,
       "_kind": "bar",
       "_group": 6
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.0176,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.0176,
       "null density": 4.064605822057926,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.052536,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.052536,
       "null density": 3.406254174823191,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.087472,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.087472,
       "null density": 3.263134251511292,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.122408,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.122408,
       "null density": 2.433038696302279,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.157343,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.157343,
       "null density": 2.5761586196141786,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.192279,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.192279,
       "null density": 1.8605590030546844,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.227215,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.227215,
       "null density": 1.774687049067545,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.262151,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.262151,
       "null density": 1.4884472024437476,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.297086,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.297086,
       "null density": 1.20220735581995,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.332022,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.332022,
       "null density": 0.7442236012218738,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.366958,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.366958,
       "null density": 1.087711417170431,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.401893,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.401893,
       "null density": 0.8587195398713927,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.436829,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.436829,
       "null density": 0.4579837545980761,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.471765,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.471765,
       "null density": 0.7155996165594939,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.506701,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.506701,
       "null density": 0.42935976993569636,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.541636,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.541636,
       "null density": 0.2862398466237976,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.576572,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.576572,
       "null density": 0.2576158619614178,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.611508,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.611508,
       "null density": 0.4007357852733166,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.646444,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.646444,
       "null density": 0.08587195398713927,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.681379,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.681379,
       "null density": 0.17174390797427855,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.716315,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.716315,
       "null density": 0.2576158619614178,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.751251,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.751251,
       "null density": 0.08587195398713927,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.786187,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.786187,
       "null density": 0.08587195398713927,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.821122,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.821122,
       "null density": 0.11449593864951903,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.856058,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.856058,
       "null density": 0.057247969324759514,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.890994,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.890994,
       "null density": 0.057247969324759514,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.92593,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.92593,
       "null density": 0.028623984662379757,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.960865,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.960865,
       "null density": 0.057247969324759514,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.995801,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.995801,
       "null density": 0.08587195398713955,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.030737,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.030737,
       "null density": 0.028623984662379757,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.065672,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.065672,
       "null density": 0.028623984662379757,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.100608,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.100608,
       "null density": 0.028623984662379757,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.135544,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.135544,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.17048,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.17048,
       "null density": 0.057247969324759514,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.205415,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.205415,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.240351,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.240351,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.275287,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.275287,
       "null density": 0.057247969324759514,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.310223,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.310223,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.345158,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.345158,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.380094,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.380094,
       "null density": 0.028623984662379757,
       "_kind": "bar",
       "_group": 7
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.3577430003985997,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.3577430003985997,
       "null density": 0.0,
       "series": "null 95th pct (widest substrate)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.3577430003985997,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.3577430003985997,
       "null density": 1.0,
       "series": "null 95th pct (widest substrate)",
       "_kind": "line",
       "_group": 8
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.08845304188056086,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.08845304188056086,
       "null density": 0.0,
       "series": "observed max \u2212 min spread",
       "_kind": "line",
       "_group": 9
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.08845304188056086,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.08845304188056086,
       "null density": 1.0,
       "series": "observed max \u2212 min spread",
       "_kind": "line",
       "_group": 9
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.06864,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.06864,
       "null density": 0.5297461557243511,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.200779,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.200779,
       "null density": 0.49190714460118323,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.332918,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.332918,
       "null density": 0.5070427490504504,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.465057,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.465057,
       "null density": 0.38595791345631303,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.597195,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.597195,
       "null density": 0.4994749468258166,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.729334,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.729334,
       "null density": 0.41622912235484755,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.861473,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.861473,
       "null density": 0.4616359357026491,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.993612,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.993612,
       "null density": 0.5448817601736182,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.12575,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.12575,
       "null density": 0.4162291223548472,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.257889,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.257889,
       "null density": 0.43136472680411436,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.390028,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.390028,
       "null density": 0.2800086823114431,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.522167,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.522167,
       "null density": 0.40109351790558,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.654305,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.654305,
       "null density": 0.3027120889853434,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.786444,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.786444,
       "null density": 0.26487307786217595,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.918583,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.918583,
       "null density": 0.22703406673900756,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.050722,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.050722,
       "null density": 0.19676285784047323,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.18286,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.18286,
       "null density": 0.21189846228974038,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.314999,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.314999,
       "null density": 0.16649164894193888,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.447138,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.447138,
       "null density": 0.17405945116657248,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.579277,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.579277,
       "null density": 0.09081362669560301,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.711415,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.711415,
       "null density": 0.09081362669560333,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.843554,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.843554,
       "null density": 0.10594923114487019,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.975693,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.975693,
       "null density": 0.037839011123167926,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.107832,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.107832,
       "null density": 0.06054241779706868,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.23997,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.23997,
       "null density": 0.06054241779706868,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.372109,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.372109,
       "null density": 0.037839011123167926,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.504248,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.504248,
       "null density": 0.022703406673900754,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.636387,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.636387,
       "null density": 0.030271208898534442,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.768526,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.768526,
       "null density": 0.007567802224633585,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.900664,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.900664,
       "null density": 0.03027120889853434,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.032803,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.032803,
       "null density": 0.01513560444926717,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.164942,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.164942,
       "null density": 0.030271208898534442,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.297081,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.297081,
       "null density": 0.015135604449267221,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.429219,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.429219,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.561358,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.561358,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.693497,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.693497,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.825636,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.825636,
       "null density": 0.015135604449267221,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 4.957774,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 4.957774,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 5.089913,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 5.089913,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 5.222052,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 5.222052,
       "null density": 0.0075678022246336105,
       "_kind": "bar",
       "_group": 10
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.033143,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.033143,
       "null density": 0.9977910007971862,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.099289,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.099289,
       "null density": 1.3152699555962908,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.165435,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.165435,
       "null density": 1.390860182929411,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.231581,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.231581,
       "null density": 1.1943255918632985,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.297727,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.297727,
       "null density": 0.7861383642644494,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.363873,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.363873,
       "null density": 1.164089500930051,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.430019,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.430019,
       "null density": 0.801256409731074,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.496165,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.496165,
       "null density": 0.9524368643973137,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.562312,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.562312,
       "null density": 0.8163744551976975,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.628458,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.628458,
       "null density": 0.7105481369313292,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.694604,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.694604,
       "null density": 0.6349579095982102,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.76075,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.76075,
       "null density": 0.4837774549319689,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.826896,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.826896,
       "null density": 0.4233052730654728,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.893042,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.893042,
       "null density": 0.5442496367984658,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.959188,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.959188,
       "null density": 0.46865940946534485,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.025334,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.025334,
       "null density": 0.3628330911989766,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.091481,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.091481,
       "null density": 0.4535413639987208,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.157627,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.157627,
       "null density": 0.2267706819993604,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.223773,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.223773,
       "null density": 0.31747895479910454,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.289919,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.289919,
       "null density": 0.12094436373299222,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.356065,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.356065,
       "null density": 0.15118045466624078,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.422211,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.422211,
       "null density": 0.1662985001328643,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.488357,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.488357,
       "null density": 0.06047218186649611,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.554503,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.554503,
       "null density": 0.1662985001328643,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.620649,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.620649,
       "null density": 0.045354136399872076,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.686796,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.686796,
       "null density": 0.12094436373299222,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.752942,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.752942,
       "null density": 0.030236090933248055,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.819088,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.819088,
       "null density": 0.015118045466624076,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.885234,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.885234,
       "null density": 0.015118045466624028,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.95138,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.95138,
       "null density": 0.015118045466624028,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.017526,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.017526,
       "null density": 0.0604721818664959,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.083672,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.083672,
       "null density": 0.015118045466624028,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.149818,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.149818,
       "null density": 0.015118045466624028,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.215965,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.215965,
       "null density": 0.015118045466624028,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.282111,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.282111,
       "null density": 0.030236090933248055,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.348257,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.348257,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.414403,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.414403,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.480549,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.480549,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.546695,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.546695,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.612841,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.612841,
       "null density": 0.030236090933248257,
       "_kind": "bar",
       "_group": 11
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.045755,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.045755,
       "null density": 0.845969392826303,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.136775,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.136775,
       "null density": 0.8349827773350523,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.227795,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.227795,
       "null density": 0.9009024702825561,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.318815,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.318815,
       "null density": 0.7910363153700498,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.409835,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.409835,
       "null density": 0.7361032379137963,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.500855,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.500855,
       "null density": 0.7361032379137954,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.591874,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.591874,
       "null density": 0.8569560083175539,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.682894,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.682894,
       "null density": 0.6482103139837908,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.773914,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.773914,
       "null density": 0.5713040055450359,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.864934,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.864934,
       "null density": 0.5053843125975318,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.955954,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.955954,
       "null density": 0.47242446612377914,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.046974,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.046974,
       "null density": 0.5603173900537846,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.137993,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.137993,
       "null density": 0.3405850802287719,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.229013,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.229013,
       "null density": 0.2966386182637683,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.320033,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.320033,
       "null density": 0.2307189253162648,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.411053,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.411053,
       "null density": 0.307625233755019,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.502073,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.502073,
       "null density": 0.2087456943337629,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.593093,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.593093,
       "null density": 0.1977590788425127,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.684112,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.684112,
       "null density": 0.16479923236876018,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.775132,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.775132,
       "null density": 0.1977590788425127,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.866152,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.866152,
       "null density": 0.13183938589500815,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 1.957172,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 1.957172,
       "null density": 0.08789292393000564,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.048192,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.048192,
       "null density": 0.06591969294750391,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.139212,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.139212,
       "null density": 0.07690630843875457,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.230232,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.230232,
       "null density": 0.04394646196500304,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.321251,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.321251,
       "null density": 0.05493307745625326,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.412271,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.412271,
       "null density": 0.05493307745625379,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.503291,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.503291,
       "null density": 0.010986615491250651,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.594311,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.594311,
       "null density": 0.010986615491250651,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.685331,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.685331,
       "null density": 0.02197323098250152,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.776351,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.776351,
       "null density": 0.010986615491250651,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.86737,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.86737,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.95839,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.95839,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.04941,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.04941,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.14043,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.14043,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.23145,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.23145,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.32247,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.32247,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.413489,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.413489,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.504509,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.504509,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 3.595529,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 3.595529,
       "null density": 0.010986615491250651,
       "_kind": "bar",
       "_group": 12
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.900959869179797,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.900959869179797,
       "null density": 0.0,
       "series": "null 95th pct (widest substrate)",
       "_kind": "line",
       "_group": 13
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.900959869179797,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.900959869179797,
       "null density": 1.0,
       "series": "null 95th pct (widest substrate)",
       "_kind": "line",
       "_group": 13
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.544507346023435,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.544507346023435,
       "null density": 0.0,
       "series": "observed max \u2212 min spread",
       "_kind": "line",
       "_group": 14
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 2.544507346023435,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 2.544507346023435,
       "null density": 1.0,
       "series": "observed max \u2212 min spread",
       "_kind": "line",
       "_group": 14
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.000189,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.000189,
       "null density": 222.14532295403842,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.000553,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.000553,
       "null density": 183.74983503605645,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.000918,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.000918,
       "null density": 197.46250929247864,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.001283,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.001283,
       "null density": 230.37292750789166,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.001647,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.001647,
       "null density": 194.71997444119415,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.002012,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.002012,
       "null density": 159.06702137449673,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.002376,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.002376,
       "null density": 170.03716077963423,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.002741,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.002741,
       "null density": 148.09688196935903,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.003106,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.003106,
       "null density": 159.06702137449673,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.00347,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.00347,
       "null density": 153.5819516719277,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.003835,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.003835,
       "null density": 126.1566031590836,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.0042,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.0042,
       "null density": 93.2461849436705,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.004564,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.004564,
       "null density": 87.76111524110163,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.004929,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.004929,
       "null density": 98.73125464623912,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.005293,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.005293,
       "null density": 68.56337128211067,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.005658,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.005658,
       "null density": 65.82083643082622,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.006023,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.006023,
       "null density": 60.33576672825738,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.006387,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.006387,
       "null density": 57.59323187697295,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.006752,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.006752,
       "null density": 60.335766728257234,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.007117,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.007117,
       "null density": 41.1380227692664,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.007481,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.007481,
       "null density": 24.682813661559837,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.007846,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.007846,
       "null density": 10.970139405137704,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.00821,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.00821,
       "null density": 19.197743958990984,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.008575,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.008575,
       "null density": 21.94027881027541,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.00894,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.00894,
       "null density": 13.712674256422131,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.009304,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.009304,
       "null density": 8.227604553853277,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.009669,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.009669,
       "null density": 16.45520910770648,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.010034,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.010034,
       "null density": 2.742534851284426,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.010398,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.010398,
       "null density": 5.485069702568852,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.010763,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.010763,
       "null density": 10.970139405137704,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.011127,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.011127,
       "null density": 8.227604553853277,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.011492,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.011492,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.011857,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.011857,
       "null density": 5.485069702568852,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.012221,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.012221,
       "null density": 2.742534851284426,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.012586,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.012586,
       "null density": 2.742534851284426,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.012951,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.012951,
       "null density": 5.485069702568852,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.013315,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.013315,
       "null density": 2.742534851284426,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.01368,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.01368,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.014044,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.014044,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.014409,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.014409,
       "null density": 2.742534851284426,
       "_kind": "bar",
       "_group": 15
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 8.6e-05,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 8.6e-05,
       "null density": 449.01442053634923,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.000255,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.000255,
       "null density": 525.8195187859878,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.000424,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.000424,
       "null density": 389.9335757289347,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.000594,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.000594,
       "null density": 525.8195187859881,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.000763,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.000763,
       "null density": 478.5548429400566,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.000932,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.000932,
       "null density": 466.73867397857305,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.001101,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.001101,
       "null density": 389.93357572893495,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.001271,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.001271,
       "null density": 259.9557171526233,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.00144,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.00144,
       "null density": 242.231463710399,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.001609,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.001609,
       "null density": 265.86380163336474,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.001779,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.001779,
       "null density": 319.03656196003726,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.001948,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.001948,
       "null density": 177.24253442224295,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.002117,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.002117,
       "null density": 218.59912578743354,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.002286,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.002286,
       "null density": 153.61019649927724,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.002456,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.002456,
       "null density": 206.7829568259506,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.002625,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.002625,
       "null density": 135.8859430570529,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.002794,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.002794,
       "null density": 124.06977409557005,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.002963,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.002963,
       "null density": 64.9889292881559,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.003133,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.003133,
       "null density": 100.43743617260432,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.003302,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.003302,
       "null density": 64.9889292881559,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.003471,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.003471,
       "null density": 59.080844807414316,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.00364,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.00364,
       "null density": 47.26467584593145,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.00381,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.00381,
       "null density": 76.8050982496388,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.003979,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.003979,
       "null density": 23.632337922965664,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.004148,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.004148,
       "null density": 29.540422403707307,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.004317,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.004317,
       "null density": 41.35659136519002,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.004487,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.004487,
       "null density": 17.724253442224292,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.004656,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.004656,
       "null density": 17.724253442224292,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.004825,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.004825,
       "null density": 5.908084480741431,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.004994,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.004994,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.005164,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.005164,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.005333,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.005333,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.005502,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.005502,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.005671,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.005671,
       "null density": 5.908084480741431,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.005841,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.005841,
       "null density": 5.908084480741461,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.00601,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.00601,
       "null density": 5.908084480741431,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.006179,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.006179,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.006349,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.006349,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.006518,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.006518,
       "null density": 5.908084480741431,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.006687,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.006687,
       "null density": 5.908084480741461,
       "_kind": "bar",
       "_group": 16
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.000132,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.000132,
       "null density": 285.3957415805762,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.000384,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.000384,
       "null density": 325.03403902232293,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.000637,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.000637,
       "null density": 281.4319118364015,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.000889,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.000889,
       "null density": 269.54042260387763,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.001141,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.001141,
       "null density": 305.21489030144966,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.001393,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.001393,
       "null density": 198.19148720873338,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.001646,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.001646,
       "null density": 198.19148720873355,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.001898,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.001898,
       "null density": 190.2638277203842,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.00215,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.00215,
       "null density": 261.6127631155281,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.002403,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.002403,
       "null density": 210.08297644125776,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.002655,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.002655,
       "null density": 174.4085087436854,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.002907,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.002907,
       "null density": 198.19148720873338,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.003159,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.003159,
       "null density": 198.19148720873372,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.003412,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.003412,
       "null density": 122.87872206941469,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.003664,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.003664,
       "null density": 103.05957334854152,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.003916,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.003916,
       "null density": 95.13191386019201,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.004169,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.004169,
       "null density": 71.34893539514401,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.004421,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.004421,
       "null density": 79.27659488349335,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.004673,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.004673,
       "null density": 51.52978667427086,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.004925,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.004925,
       "null density": 35.674467697572005,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.005178,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.005178,
       "null density": 87.2042543718427,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.00543,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.00543,
       "null density": 47.56595693009601,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.005682,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.005682,
       "null density": 23.782978465048004,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.005935,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.005935,
       "null density": 23.782978465048004,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.006187,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.006187,
       "null density": 39.638297441746815,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.006439,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.006439,
       "null density": 23.782978465048004,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.006691,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.006691,
       "null density": 23.782978465048004,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.006944,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.006944,
       "null density": 7.927659488349335,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.007196,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.007196,
       "null density": 11.891489232524002,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.007448,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.007448,
       "null density": 7.927659488349363,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.0077,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.0077,
       "null density": 3.9638297441746677,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.007953,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.007953,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.008205,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.008205,
       "null density": 3.9638297441746677,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.008457,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.008457,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.00871,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.00871,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.008962,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.008962,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.009214,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.009214,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.009466,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.009466,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.009719,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.009719,
       "null density": 0.0,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.009971,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.009971,
       "null density": 3.9638297441746677,
       "_kind": "bar",
       "_group": 17
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.007678689258781439,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.007678689258781439,
       "null density": 0.0,
       "series": "null 95th pct (widest substrate)",
       "_kind": "line",
       "_group": 18
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.007678689258781439,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.007678689258781439,
       "null density": 1.0,
       "series": "null 95th pct (widest substrate)",
       "_kind": "line",
       "_group": 18
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.0007042603791191995,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.0007042603791191995,
       "null density": 0.0,
       "series": "observed max \u2212 min spread",
       "_kind": "line",
       "_group": 19
     },
     {
-      "difference in map-change size (\u0394/floor) between question pools": 0.0007042603791191995,
+      "difference in map-change size (\u0394/floor)\nbetween question pools": 0.0007042603791191995,
       "null density": 1.0,
       "series": "observed max \u2212 min spread",
       "_kind": "line",

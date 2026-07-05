@@ -95,7 +95,9 @@ def fig_hero(summary: dict, nulls: dict) -> None:
             v["substrate_matters"]
         ]
         ax.set_title(f"{BEH_LABEL[beh]} — {verdict}")
-        ax.set_xlabel("difference in map-change size (Δ/floor) between question pools")
+        # Two-line label: the single-line form overran the right panels' figure edge
+        # and rendered clipped (interp-critique v3, Codex request 3).
+        ax.set_xlabel("difference in map-change size (Δ/floor)\nbetween question pools")
         ax.set_ylabel("null density")
     handles, labels = axes[0, 0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="lower center", ncol=3, bbox_to_anchor=(0.5, -0.06))

@@ -363,9 +363,29 @@ def fig_dv6(cells: dict, out: Path) -> None:
         xs.append(x)
         ys.append(y)
         ax.plot([x], [y], "o", color=beh_colors[beh], ms=9)
-        ax.annotate(
-            f"{BEH_LABEL[beh]}, {SUB_LABEL[sub]}", (x, y), fontsize=7, ha="left", va="bottom"
-        )
+        # The three marker cells cluster within ~2 points of each other at bottom-left,
+        # so their labels get bespoke offsets + a thin leader line (interp-critique v3,
+        # Codex request 3: overlapping labels broke the "12 labeled cells" caption).
+        nudge = {
+            ("marker", "generic"): (14, 16),
+            ("marker", "elicit"): (16, 0),
+            ("marker", "mix"): (14, -16),
+        }.get((beh, sub))
+        if nudge is not None:
+            ax.annotate(
+                f"{BEH_LABEL[beh]}, {SUB_LABEL[sub]}",
+                (x, y),
+                xytext=nudge,
+                textcoords="offset points",
+                fontsize=7,
+                ha="left",
+                va="center",
+                arrowprops={"arrowstyle": "-", "lw": 0.5, "color": "0.55"},
+            )
+        else:
+            ax.annotate(
+                f"{BEH_LABEL[beh]}, {SUB_LABEL[sub]}", (x, y), fontsize=7, ha="left", va="bottom"
+            )
     if xs:
         lim = [min(xs + ys) * 0.6 + 1e-3, max(xs + ys) * 1.6]
         ax.plot(lim, lim, "--", color="0.5", lw=1.0)
