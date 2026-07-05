@@ -1610,6 +1610,192 @@ def stage_dispatch_should_skip(
     )
 
 
+# Canonical PASS-verdict pattern for an epm:upload-verification note
+# (shape: **Verdict: PASS**; case-sensitive on purpose — prose "pass" must
+# not match). scripts/dispatch_issue.py keeps a private copy
+# (_UPLOAD_VERIFICATION_PASS_RE); parity pinned by a test
+# (tests/test_upload_verifier_currency.py).
+UPLOAD_VERIFICATION_PASS_RE = re.compile(r"Verdict:\s*PASS\b")
+
+# Marker kinds recording an upload-verification VERDICT (the per-round
+# epm:upload-verification report, or the sticky epm:upload-verified the
+# skill posts right before auto-terminate).
+UPLOAD_VERDICT_KINDS = frozenset({"epm:upload-verification", "epm:upload-verified"})
+
+
+def _upload_verification_event_index(
+    events: list[dict],
+) -> tuple[list[int], dict[int, dict[str, str]], list[int], list[int]]:
+    """Index events for the currency scan (one pass, index order == chronology).
+
+    Returns ``(crumb_idxs, crumb_fields, verdict_idxs, results_idxs)``:
+    verifying-stage ``stage-dispatch`` breadcrumb indices (+ parsed fields),
+    ``UPLOAD_VERDICT_KINDS`` event indices, and ``epm:results`` indices.
+    """
+    crumb_idxs: list[int] = []
+    crumb_fields: dict[int, dict[str, str]] = {}
+    verdict_idxs: list[int] = []
+    results_idxs: list[int] = []
+    for idx, event in enumerate(events):
+        kind = event.get("kind", "")
+        if kind == "epm:progress":
+            note = (event.get("note", "") or "").lstrip()
+            if note.startswith("stage-dispatch "):
+                fields = _breadcrumb_fields(note)
+                if _normalize_stage(fields.get("stage", "")) == "verifying":
+                    crumb_idxs.append(idx)
+                    crumb_fields[idx] = fields
+        elif kind in UPLOAD_VERDICT_KINDS:
+            verdict_idxs.append(idx)
+        elif kind == "epm:results":
+            results_idxs.append(idx)
+    return crumb_idxs, crumb_fields, verdict_idxs, results_idxs
+
+
+def upload_verification_currency_blocker(
+    events: list[dict],
+    *,
+    now: datetime | None = None,
+    window_minutes: float = 15.0,
+) -> dict | None:
+    """Typed refusal record when upload-verification evidence is not a CURRENT PASS.
+
+    None when evidence is current (or there is no verifier/results activity
+    at all — the pure-sticky legacy shape stays vacuously clear). Otherwise:
+      reason: upload_verifier_in_flight | upload_verifier_stalled
+              | upload_verification_ambiguous | upload_verification_stale
+              | upload_verification_failed_current
+      state:  "in-flight" | "stalled" | None
+      stage / round / breadcrumb_ts / age_minutes / detail
+
+    Ordering compares INDICES (append-only events.jsonl => index order ==
+    chronological), mirroring stage_dispatch_should_skip. Rules, in order:
+
+    1. IN-FLIGHT / STALLED — the latest verifying-stage breadcrumb
+       (_normalize_stage(stage) == "verifying"; covers followup-verifying)
+       has NO UPLOAD_VERDICT_KINDS event at a later index. state="in-flight"
+       when stage_dispatch_should_skip(events, raw_stage, round, window)
+       still reports it (liveness-refreshing 15-min window); else "stalled"
+       (window lapsed / no parsable round / malformed ts / cleared only by
+       epm:failure — the round died with no verdict; a stale prior PASS is
+       still stale).
+    2. AMBIGUOUS (MF-B) — a verdict exists after the latest crumb c_K, but
+       some earlier crumb c_i is UNRESOLVED (no verdict-kind event in the
+       open interval (c_i, c_K)) AND an epm:results lies in (c_i, c_K):
+       the late verdict cannot be attributed to the current results-epoch
+       (it may be c_i's, leaving c_K's round unverified — or still
+       running). The stalled->re-spawn recovery [C1, C2, V] has no results
+       between crumbs (same epoch — any verdict covers it) and CLEARS;
+       recovery from a block is one verifier re-run: the fresh crumb
+       c_{K+1} + verdict resolves every earlier crumb by inclusion (a
+       verdict now lies in (c_i, c_{K+1})) — no deadlock.
+    3. STALE — the latest epm:results has no UPLOAD_VERDICT_KINDS event at
+       a later index (including: results exist, NO verdict marker ever).
+    4. FAILED-CURRENT (MF-A) — the latest UPLOAD_VERDICT_KINDS event is an
+       epm:upload-verification whose note fails UPLOAD_VERIFICATION_PASS_RE:
+       the current verification POSITIVELY failed; prior PASS/sticky
+       evidence is not current. (A sticky AFTER the FAIL is the skill's
+       subsequent-PASS record and clears; rules 3/4 are index-disjoint —
+       a FAIL predating results reads as stale, a FAIL postdating results
+       as failed-current.)
+    """
+    if now is None:
+        now = datetime.now(UTC)
+    crumb_idxs, crumb_fields, verdict_idxs, results_idxs = _upload_verification_event_index(events)
+
+    # Rule 1: unresolved latest crumb.
+    if crumb_idxs and (not verdict_idxs or verdict_idxs[-1] < crumb_idxs[-1]):
+        c_k = crumb_idxs[-1]
+        fields = crumb_fields[c_k]
+        raw_stage = fields.get("stage", "")
+        try:
+            round_num: int | None = int(fields["round"])
+        except (KeyError, ValueError):
+            round_num = None
+        in_flight = round_num is not None and bool(
+            stage_dispatch_should_skip(events, raw_stage, round_num, window_minutes, now=now)
+        )
+        ts = _stage_event_ts(events[c_k])
+        age = None if ts is None else round((now - ts).total_seconds() / 60.0, 1)
+        state = "in-flight" if in_flight else "stalled"
+        return {
+            "reason": "upload_verifier_in_flight" if in_flight else "upload_verifier_stalled",
+            "state": state,
+            "stage": raw_stage,
+            "round": round_num,
+            "breadcrumb_ts": events[c_k].get("ts", ""),
+            "age_minutes": age,
+            "detail": (
+                f"stage-dispatch stage={raw_stage} round={round_num} at "
+                f"{events[c_k].get('ts', '')} has no later upload-verification "
+                f"verdict (state={state}, age={age}m, window={window_minutes}m)"
+            ),
+        }
+
+    # Rule 2 (MF-B): unresolved earlier crumb across a results boundary.
+    if crumb_idxs:
+        c_k = crumb_idxs[-1]
+        for c_i in crumb_idxs[:-1]:
+            resolved = any(c_i < v < c_k for v in verdict_idxs)
+            crossed = any(c_i < r < c_k for r in results_idxs)
+            if not resolved and crossed:
+                return {
+                    "reason": "upload_verification_ambiguous",
+                    "state": None,
+                    "stage": None,
+                    "round": None,
+                    "breadcrumb_ts": events[c_i].get("ts", ""),
+                    "age_minutes": None,
+                    "detail": (
+                        f"verifying crumb at {events[c_i].get('ts', '')} is unresolved "
+                        f"and epm:results landed before the latest crumb at "
+                        f"{events[c_k].get('ts', '')} — the post-crumb verdict cannot "
+                        f"be attributed to the current results-epoch"
+                    ),
+                }
+
+    # Rule 3: latest results unverified (stale) — incl. no verdict ever.
+    if results_idxs and (not verdict_idxs or verdict_idxs[-1] < results_idxs[-1]):
+        verdict_txt = (
+            "no verdict marker exists"
+            if not verdict_idxs
+            else f"latest verdict at {events[verdict_idxs[-1]].get('ts', '')}"
+        )
+        return {
+            "reason": "upload_verification_stale",
+            "state": None,
+            "stage": None,
+            "round": None,
+            "breadcrumb_ts": None,
+            "age_minutes": None,
+            "detail": (
+                f"latest epm:results at {events[results_idxs[-1]].get('ts', '')} "
+                f"postdates the upload-verification evidence ({verdict_txt})"
+            ),
+        }
+
+    # Rule 4 (MF-A): the current verification is a FAIL.
+    if verdict_idxs:
+        latest = events[verdict_idxs[-1]]
+        if latest.get("kind") == "epm:upload-verification" and not (
+            UPLOAD_VERIFICATION_PASS_RE.search(str(latest.get("note", "")))
+        ):
+            return {
+                "reason": "upload_verification_failed_current",
+                "state": None,
+                "stage": None,
+                "round": None,
+                "breadcrumb_ts": None,
+                "age_minutes": None,
+                "detail": (
+                    f"latest epm:upload-verification at {latest.get('ts', '')} is not "
+                    f"a PASS — the current verification FAILED; prior PASS/sticky "
+                    f"evidence is not current"
+                ),
+            }
+    return None
+
+
 # ─── Pre-dispatch external-marker triage (#889) ─────────────────────────────
 
 # Machine-posted / lifecycle-bookkeeping kinds that never carry cross-session
