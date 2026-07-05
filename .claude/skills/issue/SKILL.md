@@ -3780,6 +3780,12 @@ with the new `pid=` (and `log_abs=`) before the next tick — the poller's
 marker-pid fallback (`_marker_pid`) reads ONLY `epm:run-launched`
 markers, so an `epm:progress` note recording the new pid is invisible to
 it and the stale pid yields a false `status=dead` on a healthy run.
+The same relaunch MUST also rewrite the pod-side pid file with the new
+live pid in the same command chain — a present-but-stale pid file
+silently probes a dead pid every tick and is rescued only while the
+marker pid is itself alive (full contract + atomic recipe:
+`.claude/rules/pod-side-reporting.md` § Pid-file launch contract;
+incident #813 v5).
 (Incident: task #521, 2026-06-10 — a VM-side pid file plus an
 `epm:progress`-only relaunch produced `status=dead, pid_alive=False`
 while the pod run was healthy.) On the GCP lane the marker's `pod=`
