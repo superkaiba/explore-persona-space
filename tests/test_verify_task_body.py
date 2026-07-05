@@ -5389,17 +5389,203 @@ def test_v4_issue_ref_in_table_row_passes():
     assert r.passed, r.render()
 
 
-def test_v4_linked_issue_ref_passes_mechanically():
-    """A `[#K](url)` LINK in Methodology is deliberately out of MECHANICAL
-    scope (plan Non-goals: the linked-form violation stays Lens 2 / Rule A
-    territory); the fixture's Goal `[#34](...)` link is sanctioned too."""
+def test_v4_task_link_in_methodology_fails():
+    """The #928 shape: a `[#K](https://eps.superkaiba.com/tasks/K)` LINK in
+    Methodology prose is a hard FAIL — the task-URL scan runs BEFORE
+    `_LINK_RE` erases link targets (#1002). Inverts the pre-#1002 pin
+    `test_v4_linked_issue_ref_passes_mechanically`, which pinned the
+    linked form as out of mechanical scope."""
     body = _V4_GOOD_BODY.replace(
         "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
         "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct. "
         "Recipe as in [#779](https://eps.superkaiba.com/tasks/779).",
     )
     r = _bare_ref_result(body)
+    assert not r.passed
+    assert "tasks/779" in r.detail
+    assert "Methodology" in r.detail
+
+
+def test_v4_task_link_in_takeaways_fails():
+    """A task link appended to a Takeaways bullet FAILs (run through
+    verify_text to pin the CHECKS registration on the Takeaways span)."""
+    body = _V4_GOOD_BODY.replace(
+        "- Caveat that binds interpretation: single model family, three seeds only.\n",
+        "- Caveat that binds interpretation: single model family, three seeds only.\n"
+        "- Protocol matches [#537](https://eps.superkaiba.com/tasks/537).\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    r = _results_by_name(results)[_BARE_REF_CHECK_NAME]
+    assert not r.passed
+    assert "tasks/537" in r.detail
+    assert "Takeaways" in r.detail
+
+
+def test_v4_task_link_in_results_fails():
+    """A task link in a `> **Figure.**` caption line under `## Results`
+    FAILs (prose, not a sanctioned form — mirrors
+    test_v4_bare_issue_ref_in_results_caption_fails)."""
+    body = _V4_GOOD_BODY.replace(
+        "error bars 95% Wald CIs.",
+        "error bars 95% Wald CIs ([#667](https://eps.superkaiba.com/tasks/667) protocol).",
+    )
+    r = _bare_ref_result(body)
+    assert not r.passed
+    assert "tasks/667" in r.detail
+    assert "Results" in r.detail
+
+
+def test_v4_bare_task_url_in_results_fails():
+    """Scope pin: a BARE task URL in Results prose FAILs — dropping the
+    `[label](...)` brackets does not dodge the check (#1002 §4b)."""
+    body = _V4_GOOD_BODY.replace(
+        "the smallest within-condition gap between seeds is 1.2 pts.",
+        "the smallest within-condition gap between seeds is 1.2 pts. "
+        "Protocol: https://eps.superkaiba.com/tasks/658.",
+    )
+    r = _bare_ref_result(body)
+    assert not r.passed
+    assert "tasks/658" in r.detail
+    assert "Results" in r.detail
+
+
+def test_v4_autolink_task_url_in_methodology_fails():
+    """Scope pin: a `<https://.../tasks/K>` angle-bracket autolink FAILs —
+    subsumed by the URL scan (#1002 §4b)."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct. "
+        "See <https://eps.superkaiba.com/tasks/658>.",
+    )
+    r = _bare_ref_result(body)
+    assert not r.passed
+    assert "tasks/658" in r.detail
+    assert "Methodology" in r.detail
+
+
+def test_v4_task_link_in_goal_passes():
+    """`## Goal` is NOT a standalone section — a second task link in the
+    context slot stays sanctioned (the fixture's `[#34](...)` link is
+    additionally asserted by test_v4_good_body_passes_all)."""
+    body = _V4_GOOD_BODY.replace(
+        "sits in the trait-transfer line.",
+        "sits in the trait-transfer line, extending [#658](https://eps.superkaiba.com/tasks/658).",
+    )
+    r = _bare_ref_result(body)
     assert r.passed, r.render()
+
+
+def test_v4_task_link_in_footer_passes():
+    """Footer-cut parity: a task link AND a bare task URL on footer lineage
+    lines are sanctioned (the bare-URL case pins the parity directly)."""
+    body = _V4_GOOD_BODY.replace(
+        "- Originating prompt: origin prompt not recorded\n",
+        "- Originating prompt: origin prompt not recorded\n"
+        "- Lineage: [#658](https://eps.superkaiba.com/tasks/658); "
+        "see also https://eps.superkaiba.com/tasks/742.\n",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_task_link_in_table_row_passes():
+    """Table-row parity (the Training-table Source column grounding
+    convention): a linked AND a bare task URL in GFM table rows are
+    sanctioned."""
+    body = _V4_GOOD_BODY.replace(
+        "| Seeds | [42, 137, 256] | plan §11 |\n",
+        "| Seeds | [42, 137, 256] | plan §11 |\n"
+        "| Judge cache | reused | [#779](https://eps.superkaiba.com/tasks/779) |\n"
+        "| Adapter | reused | https://eps.superkaiba.com/tasks/532 |\n",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_task_link_in_fenced_code_passes():
+    """A task link inside a fenced code block is sanctioned (fence lines
+    are structurally excluded from both scans)."""
+    body = _V4_GOOD_BODY.replace(
+        "\n## Results\n",
+        "\n```text\nsee [#779](https://eps.superkaiba.com/tasks/779)\n```\n\n## Results\n",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_task_link_in_inline_code_passes():
+    """The #1002 §4a semantics decision pin: inline code PROTECTS the URL
+    scan (mask parity with the bare-token scan) — a backticked example
+    link is verbatim syntax-as-data."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct. "
+        "Cite links as `[#779](https://eps.superkaiba.com/tasks/779)` in the Goal slot.",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_task_link_in_html_comment_passes():
+    """A task link inside an HTML comment is sanctioned (the char-span
+    comment mask covers the URL scan too)."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.\n"
+        "<!-- see [#779](https://eps.superkaiba.com/tasks/779) -->",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_task_link_in_details_block_passes():
+    """A task link inside the fixture's `<details open>` block (verbatim
+    sample data) is sanctioned."""
+    body = _V4_GOOD_BODY.replace(
+        "<summary>5 example training rows (5 of 2,000 rows, random sample)</summary>\n",
+        "<summary>5 example training rows (5 of 2,000 rows, random sample)</summary>\n"
+        "\nRows drawn per [#658](https://eps.superkaiba.com/tasks/658).\n",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_non_task_url_links_pass():
+    """Non-task-URL links (GitHub blob, HF) in Methodology prose are
+    unaffected — the URL scan targets the dashboard task route only."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct. Script at "
+        "[run.py](https://github.com/superkaiba/explore-persona-space/blob/abc/scripts/run.py); "
+        "adapter at [hf](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc).",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_same_domain_non_task_url_passes():
+    """Same-domain negative: a dashboard URL that is not the task route
+    (`/sessions`, or `/tasks/` with no digits) does NOT match."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct. Dashboard at "
+        "https://eps.superkaiba.com/sessions and the https://eps.superkaiba.com/tasks/ index.",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_task_link_check_skips_v3():
+    """Forward-only: a task link in a v3 `## Findings` never fires the
+    check (PASS-skip; mirror of test_bare_ref_check_skips_v3_and_legacy)."""
+    v3 = _V3_GOOD_BODY.replace(
+        "## Findings",
+        "## Findings\n\nUses [#779](https://eps.superkaiba.com/tasks/779).",
+        1,
+    )
+    r = _bare_ref_result(v3)
+    assert r.passed
+    assert "skipped" in r.detail
 
 
 def test_bare_ref_check_skips_v3_and_legacy():

@@ -921,12 +921,17 @@ Forward-only: each check branches on the sentinel. The v4 checks
     the `## Takeaways` / `## Methodology` / `## Results` section spans is
     a hard FAIL — prior-issue references live ONLY in the `## Goal`
     context slot (`[#K](...)` links) and the `**Repro:**`/`**Context:**`
-    footer. Sanctioned forms that do not trip: markdown links (label +
-    target), GFM table rows (the Training-table Source column), fenced +
-    inline code, `<details>` blocks, HTML comments, the footer,
-    frontmatter. The inline-code escape hatch is for non-issue `#N`
-    strings (colors, ordinals) only — never for a genuine issue
-    reference. (Origin: the #841 round-2 two-round Lens-2 miss; numbered
+    footer — and a prior-issue TASK LINK (any form whose text carries
+    `https://eps.superkaiba.com/tasks/<digits>`: a `[#K](...)` markdown
+    link, a `<...>` autolink, or a bare URL) in a standalone section is a
+    hard FAIL too, not just the bare token. Sanctioned forms that do not
+    trip: markdown links to NON-task targets (GitHub blobs, HF, figures),
+    GFM table rows (the Training-table Source column), fenced + inline
+    code, `<details>` blocks, HTML comments, the footer, frontmatter. The
+    inline-code escape hatch is for non-issue strings (colors, ordinals,
+    verbatim syntax examples) only — never for a genuine issue reference
+    or task link. (Origin: the #841 round-2 two-round Lens-2 miss; the
+    task-link form added by #1002 after the #928 round-1 miss; numbered
     27 because 22-26 are taken by the generation-agnostic checks.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches

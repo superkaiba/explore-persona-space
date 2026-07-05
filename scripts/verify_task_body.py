@@ -7262,6 +7262,11 @@ def check_v4_results_beat(body: str) -> CheckResult:
 # digit prefix of a mixed hex color (`#4b5563` → `#4`) never match; a
 # possessive `#658's` still does (an apostrophe is not a word char).
 _BARE_ISSUE_REF_RE = re.compile(r"(?<![\w&/#])#\d{1,4}(?!\w)")
+# Prior-issue task URL (the dashboard task route). Scanned directly rather
+# than via a [label](target) wrapper so markdown links, <...> autolinks, AND
+# bare URLs in standalone prose all hit — dropping the brackets must not
+# dodge the check, and the URL line of a multi-line link still fires.
+_TASK_URL_RE = re.compile(r"https?://eps\.superkaiba\.com/tasks/\d+")
 _V4_STANDALONE_SECTIONS = ("takeaways", "methodology", "results")
 
 
@@ -7311,20 +7316,33 @@ def _mask_html_comment_spans(line: str, in_comment: bool) -> tuple[str, bool]:
 
 def _bare_issue_ref_hits(body: str) -> list[tuple[str, str, str]]:
     """Return (section_name, matched_token, line_text) for every bare
-    `#<digits>` issue reference in the v4 standalone sections
-    (## Takeaways / ## Methodology / ## Results), excluding every
-    sanctioned form. `body` is the post-frontmatter text (as handed to
-    CHECKS entries by verify_text), so frontmatter bare refs never reach
-    the scan.
+    `#<digits>` issue reference AND every prior-issue task URL
+    (`_TASK_URL_RE` — `https://eps.superkaiba.com/tasks/<digits>`,
+    whether it appears as a `[label](target)` markdown link target, a
+    `<...>` autolink, or a bare URL in prose) in the v4 standalone
+    sections (## Takeaways / ## Methodology / ## Results), excluding
+    every sanctioned form. `body` is the post-frontmatter text (as handed
+    to CHECKS entries by verify_text), so frontmatter bare refs never
+    reach the scan.
 
-    Sanctioned forms excluded: fenced code blocks, `<details>` blocks,
-    HTML comments (char-span mask with cross-line open/closed state —
-    `_mask_html_comment_spans`); GFM table rows; the
-    `**Repro:**`/`**Context:**` footer (line-index cut); markdown links
-    (label + target) and inline code spans (in-line neutralization,
-    substituting a single SPACE — never the empty string, which could
-    JOIN adjacent characters into a fabricated `#N` token, e.g.
-    ``#`x`123`` → `#123`).
+    Sanctioned forms excluded from BOTH scans: fenced code blocks,
+    `<details>` blocks, HTML comments (char-span mask with cross-line
+    open/closed state — `_mask_html_comment_spans`); GFM table rows; the
+    `**Repro:**`/`**Context:**` footer (line-index cut); inline code
+    spans (in-line neutralization, substituting a single SPACE — never
+    the empty string, which could JOIN adjacent characters into a
+    fabricated `#N` token, e.g. ``#`x`123`` → `#123`). Markdown links
+    (label + target) are additionally neutralized for the BARE-TOKEN scan
+    only — the task-URL scan deliberately runs BEFORE the `_LINK_RE`
+    erasure (that erasure is exactly what hid `[#K](.../tasks/K)` links
+    from this check, #928), so a task link in a standalone section FAILs
+    while a markdown link to a NON-task target stays sanctioned. The URL
+    scan's mechanical scope is the dashboard task route
+    (`eps.superkaiba.com/tasks/<digits>`); a `#K`-labeled link to a
+    non-task target is LM-lens territory (residuals below). The scan does
+    not know THIS body's own task id, so a body's own task URL in a
+    standalone section also FAILs — consistent with the bare-token scan,
+    where a self-referential `#K` also hits.
 
     HTML-comment handling is character-grain, not line-grain: on a line
     that OPENS a multiline comment only the `<!--`..end-of-line span is
@@ -7351,10 +7369,35 @@ def _bare_issue_ref_hits(body: str) -> list[tuple[str, str, str]]:
     - The comment char-span pass also runs PRE-neutralization, so a
       backticked ``<!--`` prose mention opens the comment mask
       (fail-open, same family as the backticked ``<details>``).
-    - 4-space indented code blocks and multi-line `[#K](\\nurl)` links
-      are NOT excluded (both survey-clean across all on-disk v4 bodies
-      as of 2026-07-03) — a `#K` inside either would false-FAIL; the
-      inline-code escape hatch covers the code-block case.
+    - 4-space indented code blocks and the LABEL side of multi-line
+      `[#K](\\nurl)` links are NOT excluded (both survey-clean across all
+      on-disk v4 bodies as of 2026-07-03) — a `#K` inside either would
+      false-FAIL; the inline-code escape hatch covers the code-block
+      case. (The URL line of a multi-line TASK link now correctly FAILs
+      via the URL scan, so that half is no longer a pure false-FAIL edge;
+      the residual is the label-side bare `#K` of a multi-line NON-task
+      link.)
+    - Reference-style links (`[label][ref]` + a definition line
+      elsewhere) are not modeled: a `[#K][ref]` LABEL already FAILs the
+      bare-token scan, and a task-URL definition line inside a standalone
+      section hits the URL scan, but a non-`#K`-labeled reference link
+      whose definition sits outside the standalone sections escapes
+      (fail-open — the LM lens is the backstop).
+    - Case-mangled (`HTTPS://EPS...`) or schemeless
+      (`eps.superkaiba.com/tasks/K`) task URLs do not match the URL scan
+      — all project-generated URLs are lowercase + schemed; a mangled
+      form is deliberate evasion (fail-open, LM-lens backstop).
+    - A `[#K](<non-task URL>)` label-side evasion — including the legacy
+      GitHub-issue link form `[#98](https://github.com/.../issues/98)` —
+      and a RELATIVE `/tasks/K` link target both escape mechanically (the
+      `#K` label is erased with the link by `_LINK_RE` before the
+      bare-token scan; the target is not a schemed dashboard task URL) —
+      fail-open, LM-lens backstop.
+    - An odd backtick pair straddling a link can mask its URL from the
+      inline-code-masked URL scan (fail-open — same family as the
+      backticked ``<details>`` residual above; ADJACENT well-formed code
+      spans never swallow the link between them, since `_INLINE_CODE_RE`
+      excludes backticks from span content).
     - In a slash-run `#658/#742` only the first token matches (the `/`
       lookbehind protects URL fragments) — the line still FAILs, which
       is sufficient.
@@ -7403,6 +7446,13 @@ def _bare_issue_ref_hits(body: str) -> list[tuple[str, str, str]]:
             # new `#N` token that the raw line never carried. Comment
             # spans were already space-masked in comment_masked (every
             # non-fence line has an entry; fence lines are excluded).
+            # Task-URL scan — runs BEFORE _LINK_RE erases link targets
+            # (that erasure is exactly what hid [#K](.../tasks/K) links
+            # from this check, #928). Inline code protects it
+            # (escape-hatch parity with the bare-token scan below).
+            link_scan = _INLINE_CODE_RE.sub(" ", comment_masked[i])
+            for m in _TASK_URL_RE.finditer(link_scan):
+                hits.append((name, m.group(0), lines[i].strip()[:90]))
             residue = _LINK_RE.sub(" ", comment_masked[i])  # [label](target) gone
             residue = _INLINE_CODE_RE.sub(" ", residue)  # `code` escape hatch
             for m in _BARE_ISSUE_REF_RE.finditer(residue):
@@ -7411,35 +7461,50 @@ def _bare_issue_ref_hits(body: str) -> list[tuple[str, str, str]]:
 
 
 def check_v4_no_bare_issue_refs(body: str) -> CheckResult:
-    """Check 27 (v4 only): no bare `#<digits>` issue refs in the standalone
-    sections. SPEC.md § `## Goal` (v4): the Goal context slot is the ONLY
-    place in the body that may cite prior tasks; `## Takeaways` /
-    `## Methodology` / `## Results` are standalone, and lineage/provenance
-    live in the `**Repro:**`/`**Context:**` footer. Sanctioned forms that
-    do not trip: markdown links (label + target), GFM table rows (the
-    Training-table Source column), fenced/inline code, `<details>` blocks,
-    HTML comments, the footer, YAML frontmatter. Exclusion edge behavior
-    (residuals + directions) is documented on `_bare_issue_ref_hits`. Origin: #841
-    round-2 (bare `#779` x~8 in Methodology survived two ensemble review
-    rounds). PASSes vacuously on v3 / v2 / legacy bodies (forward-only)."""
+    """Check 27 (v4 only): no bare `#<digits>` issue refs AND no prior-issue
+    task links/URLs in the standalone sections. SPEC.md § `## Goal` (v4):
+    the Goal context slot is the ONLY place in the body that may cite prior
+    tasks; `## Takeaways` / `## Methodology` / `## Results` are standalone,
+    and lineage/provenance live in the `**Repro:**`/`**Context:**` footer.
+    The task-link half matches any form whose text carries the dashboard
+    task route `https://eps.superkaiba.com/tasks/<digits>` — a `[#K](...)`
+    markdown link, a `<...>` autolink, or a bare URL. Mechanical scope:
+    dashboard task URLs only; a `#K`-labeled link to a NON-task target is
+    LM-lens territory. Sanctioned forms that do not trip: markdown links to
+    NON-task targets, GFM table rows (the Training-table Source column),
+    fenced/inline code, `<details>` blocks, HTML comments, the footer, YAML
+    frontmatter. Exclusion edge behavior (residuals + directions) is
+    documented on `_bare_issue_ref_hits`. Origin: #841 round-2 (bare `#779`
+    x~8 in Methodology survived two ensemble review rounds); the task-link
+    half added by #1002 after the #928 round-1 miss (a `[#K](.../tasks/K)`
+    link in `## Methodology` sailed through mechanically because `_LINK_RE`
+    erased it before the token scan). PASSes vacuously on v3 / v2 / legacy
+    bodies (forward-only)."""
     label = "no bare issue refs in standalone sections (v4)"
     if not is_v4(body):
         return CheckResult(label, True, "skipped — not a v4 body")
     hits = _bare_issue_ref_hits(body)
     if not hits:
-        return CheckResult(label, True, "Takeaways/Methodology/Results carry no bare `#K` refs")
+        return CheckResult(
+            label,
+            True,
+            "Takeaways/Methodology/Results carry no bare `#K` refs or prior-issue task links",
+        )
     shown = "; ".join(f'## {sec}: `{tok}` in "{txt}"' for sec, tok, txt in hits[:5])
     more = f" (+{len(hits) - 5} more)" if len(hits) > 5 else ""
     return CheckResult(
         label,
         False,
-        f"bare issue reference(s) in standalone section(s) — {shown}{more}. "
-        "Prior-issue references live ONLY in the `## Goal` context slot as "
-        "`[#K](https://eps.superkaiba.com/tasks/K)` links and in the `**Repro:**`/"
-        "`**Context:**` footer (SPEC.md § `## Goal` (v4) + Rule A). Rewrite the prose to "
-        "describe the method standalone and move lineage to the footer. The inline-code "
-        "escape hatch is for NON-issue `#N` strings only (a hex color, an ordinal like "
-        "`GPU #2`) — do NOT backtick a genuine issue reference to silence this check.",
+        f"prior-issue reference(s) in standalone section(s) — {shown}{more}. "
+        "Prior-issue references — bare `#K` tokens AND task links/URLs "
+        "(`https://eps.superkaiba.com/tasks/K`, linked or bare) — live ONLY in the "
+        "`## Goal` context slot and the `**Repro:**`/`**Context:**` footer "
+        "(SPEC.md § `## Goal` (v4) + Rule A). Rewrite the prose to describe the method "
+        "standalone and move lineage to the footer; converting a bare ref into a "
+        "`[#K](...)` link in place FAILs here too. The inline-code escape hatch is for "
+        "NON-issue strings only (a hex color, an ordinal like `GPU #2`, a verbatim "
+        "syntax example) — do NOT backtick a genuine issue reference or task link to "
+        "silence this check.",
     )
 
 
