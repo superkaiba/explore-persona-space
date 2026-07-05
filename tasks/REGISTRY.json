@@ -440,8 +440,8 @@
     "1055": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1055",
-      "status": "running",
+      "path": "tasks/reviewing/1055",
+      "status": "reviewing",
       "title": "daily-fix: GCP finalize false-failed when deliverables compl"
     },
     "1056": {
