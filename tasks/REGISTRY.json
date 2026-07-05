@@ -251,8 +251,8 @@
     "1030": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1030",
-      "status": "planning",
+      "path": "tasks/approved/1030",
+      "status": "approved",
       "title": "daily-fix: task_workflow git robustness (dup markers, MERGE_HEAD)"
     },
     "1031": {
