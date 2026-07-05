@@ -377,8 +377,8 @@
     "1047": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1047",
-      "status": "approved",
+      "path": "tasks/running/1047",
+      "status": "running",
       "title": "daily-fix: Step 10d pre-merge/pre-push hardening bundle"
     },
     "1048": {
