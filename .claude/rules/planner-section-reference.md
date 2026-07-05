@@ -556,10 +556,15 @@ the worker stages (scoped `list_repo_tree` + per-file `hf_hub_download` for
 data-repo subtrees — gotchas.md), a committed `eval_results/...` path that
 arrives with the git clone, or "rebuilt on-worker by the §4 regen phase". This
 is the §11 record of the step-5 check `(h)` (source resolution +
-target-backend fetchability): a git-clone-only GCP/SLURM lane cannot stage a
+target-backend fetchability + staged-layout consumer-open): a git-clone-only
+GCP/SLURM lane cannot stage a
 VM-local-only mix, so "the parent built it locally" is NOT a valid `Source:`
 — the file must resolve on HF, be git-tree-reachable as a committed
-`eval_results/...` JSON, or be regenerated on the worker (#734).
+`eval_results/...` JSON, or be regenerated on the worker (#734). When a
+stage-from-Hub helper maps the artifact into a consumer-fixed local layout
+(leg (iv) staged-layout consumer-open), the §11 record ALSO names the
+hub-rel → local-rel mapping, and the plan schedules the 1-file staging probe
++ consumer-open gate before production (#928).
 
 **Repo-new model id ⇒ CPU-side config-load smoke before provisioning
 (pre-provision gate).** The `model` id is itself a load-bearing choice. If
