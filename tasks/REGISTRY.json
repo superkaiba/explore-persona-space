@@ -454,8 +454,8 @@
     "1057": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1057",
-      "status": "proposed",
+      "path": "tasks/planning/1057",
+      "status": "planning",
       "title": "daily-fix: guard_log_dump exempts code files from size heuri"
     },
     "1058": {
