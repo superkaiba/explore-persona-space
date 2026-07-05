@@ -5401,7 +5401,13 @@ orchestrator also refreshes the mechanical window with periodic liveness
 the watcher's stall detector reads the session SELF-REPORT, so a long-idle
 session may still be stopped — benign under this rule: the detached phase
 survives and the successor re-attaches); the identity-verified pid probe is
-the authoritative check at re-entry.
+the authoritative check at re-entry. Prefix those periodic liveness notes
+with `[long-phase-heartbeat]` — the watcher's stalled detector AND
+`tick_triage.py` (#1051) grant the 90-min leash on that opt-in; tick_triage
+probes the breadcrumb's `pid=` (a VM-LOCAL pid, start-time identity-guarded
+— never post a pod-side pid in a `stage-dispatch` breadcrumb) before any
+STALE-REDRIVE, and while that pid breadcrumb is in flight the pid evidence
+OVERRULES heartbeat notes.
 
 **Checkable guard rule (run at Step 9 / Step 8 entry on every
 re-invocation).**
