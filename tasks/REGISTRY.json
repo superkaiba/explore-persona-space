@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1065,
+  "highest_id": 1066,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -520,6 +520,13 @@
       "path": "tasks/proposed/1065",
       "status": "proposed",
       "title": "daily-held: Step 10d task-state merge-conflict contract"
+    },
+    "1066": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1066",
+      "status": "proposed",
+      "title": "daily-held: settle #779-line mapping terminology + writeup b"
     },
     "108": {
       "has_clean_result": false,
