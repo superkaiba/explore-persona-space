@@ -57,14 +57,22 @@ Usage::
 
     uv run python scripts/select_step9c_tests.py [--base main] [--repo-root <path>] [--json]
 
-Default output: the exact pytest invocation
-``uv run pytest <files...> -v --tb=short`` on stdout, then any
+Default output: the exact gate invocation
+``timeout --kill-after=60s <T>s uv run pytest <files...> -v --tb=short`` on
+stdout — ``<T>`` sized deterministically by :func:`recommended_timeout_s`
+(#1046: 120s base + 30s/file + a 900s surcharge when
+``tests/test_workflow_lint.py`` is selected; measured from 27 real gate junits
+2026-07-04/05, workflow-lint present in 26 of them) — then any
 ``untested touched file: <path>`` WARN lines on stderr. Every run also prints
 a one-line provenance breadcrumb to stderr (the resolved work root + current
 branch) so the Step 9c marker records which checkout the subset was selected
-against. ``--json`` emits
+against, plus a machine-greppable ``recommended-timeout-s=<T>`` sizing line
+(the gate exceeds the 600s foreground Bash tool cap, so Step 9c runs it as a
+BACKGROUND invocation — SKILL.md 9c step 1b). ``--json`` emits
 ``{"tests": [...], "untested_touched": [...], "base": "...",
-"missing_invariants": [...], "selection_reasons": {test: [reasons]}}`` (a
+"missing_invariants": [...], "selection_reasons": {test: [reasons]},
+"n_tests": <int>, "recommended_timeout_s": <int>,
+"slow_tests_selected": [...]}`` (a
 reason is ``invariant`` / ``touched-test`` / ``stem-map:<touched file>`` /
 ``glob-scan:<touched file>`` — #1022). Exit 0 on success (even with WARN lines);
 exit 1 if an underlying ``git`` call fails irrecoverably (work-root resolution
@@ -188,6 +196,42 @@ GLOB_SCAN_TESTS: dict[str, tuple[str, ...]] = {
         "src/explore_persona_space/experiments/*/__main__.py",
     ),
 }
+
+# --- Gate-timeout sizing (#1046). --------------------------------------------
+# Measured from 27 Step 9c gate junits on the shared VM (2026-07-04..05,
+# /tmp/step9c-junit-issue-*.xml, per-testcase `time` summed per file;
+# test_workflow_lint.py present in 26 of them):
+# tests/test_workflow_lint.py alone min 319 s / median 390 s / max 771 s;
+# whole-gate totals median ~662 s / max 1285 s on 32-46-file selections. The
+# foreground Bash tool cap is 600 s, so the printed command carries this bound
+# and Step 9c runs the gate as a BACKGROUND invocation (SKILL.md 9c step 1b).
+# Constants are deliberately generous (~1.4-2x over worst measured): an
+# oversized bound only ever fires on a genuine wedge; an undersized one kills
+# healthy gates (#991/#996/#906, exit 143 at 480-540 s foreground bounds).
+TIMEOUT_BASE_S = 120  # pytest startup + collection (~2500 tests) + imports
+TIMEOUT_PER_FILE_S = 30  # ~2x the p90 per-file runtime of non-slow files
+TIMEOUT_FLOOR_S = 900
+# Per-file surcharges for files whose OWN max exceeds the per-file allocation
+# by an order of magnitude. Pinned literal (same curation rule as
+# WORKFLOW_INVARIANT); live-tree drift pin in tests/test_select_step9c_tests.py.
+SLOW_TESTS: dict[str, int] = {
+    # 3845 lines; runs whole-tree lints repeatedly. Max 771 s measured (n=26).
+    "tests/test_workflow_lint.py": 900,
+}
+
+
+def recommended_timeout_s(tests: list[str]) -> int:
+    """Deterministic `timeout(1)` bound for a Step 9c gate selection.
+
+    ``BASE + PER_FILE * len(tests) + sum(slow surcharges)``, floored at
+    ``TIMEOUT_FLOOR_S``. Invariant-only selection (32 files incl. the
+    workflow-lint surcharge) -> 1980 s (~33 min), consistent with the existing
+    invariant-set-scale precedents (``step9c_baseline.py refresh``
+    ``--timeout-s`` default 1800 s; the SKILL.md detached refresh's 2100 s).
+    """
+    t = TIMEOUT_BASE_S + TIMEOUT_PER_FILE_S * len(tests)
+    t += sum(SLOW_TESTS.get(x, 0) for x in tests)
+    return max(t, TIMEOUT_FLOOR_S)
 
 
 def _matches_any(path: str, globs: tuple[str, ...]) -> bool:
@@ -441,6 +485,17 @@ def main(argv: list[str] | None = None) -> int:
     for t in missing:
         print(f"WORKFLOW-INVARIANT MISSING: {t}", file=sys.stderr)
 
+    # Gate-timeout sizing (#1046): a machine-greppable stderr line on every
+    # run, the bound riding in the printed command, and the same number in the
+    # --json fields — see the module docstring + recommended_timeout_s().
+    timeout_s = recommended_timeout_s(tests)
+    print(
+        f"select_step9c_tests: {len(tests)} test files; recommended-timeout-s={timeout_s} "
+        "(the gate exceeds the 600s foreground Bash tool cap — run it as a background "
+        "invocation per Step 9c step 1b)",
+        file=sys.stderr,
+    )
+
     if args.json:
         print(
             json.dumps(
@@ -450,11 +505,18 @@ def main(argv: list[str] | None = None) -> int:
                     "base": args.base,
                     "missing_invariants": missing,
                     "selection_reasons": reasons,
+                    "n_tests": len(tests),
+                    "recommended_timeout_s": timeout_s,
+                    "slow_tests_selected": [t for t in tests if t in SLOW_TESTS],
                 }
             )
         )
     else:
-        print("uv run pytest " + " ".join(tests) + " -v --tb=short")
+        print(
+            f"timeout --kill-after=60s {timeout_s}s uv run pytest "
+            + " ".join(tests)
+            + " -v --tb=short"
+        )
         for f in untested:
             print(f"untested touched file: {f}", file=sys.stderr)
 
