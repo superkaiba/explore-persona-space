@@ -289,3 +289,4 @@
 {"ts": "2026-07-05T12:01:21Z", "kind": "epm:progress", "version": 69, "by": "unknown", "note": "Mixed CPU fits phase liveness @12:05Z: status=running, selftest PASS, fits underway (log advancing, mtime 134s). Poll loop at 1800s."}
 {"ts": "2026-07-05T13:04:04Z", "kind": "epm:progress", "version": 70, "by": "unknown", "note": "Mixed CPU fits phase liveness @13:07Z: status=running, pid alive, log mtime 246s. Poll loop healthy at 1800s."}
 {"ts": "2026-07-05T14:06:24Z", "kind": "epm:progress", "version": 71, "by": "unknown", "note": "Mixed CPU fits phase liveness @14:09Z: status=running, pid alive, log mtime 266s. Poll loop healthy at 1800s. (~2.6h elapsed of the ~4-6h projection.)"}
+{"ts": "2026-07-05T15:08:21Z", "kind": "epm:progress", "version": 72, "by": "unknown", "note": "Mixed CPU fits phase liveness @15:11Z: status=running, pid alive, log mtime 9s. Poll loop healthy at 1800s. (~3.6h elapsed of the ~4-6h projection; nulls battery expected in the tail.)"}
