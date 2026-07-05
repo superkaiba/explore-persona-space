@@ -382,7 +382,15 @@ row costed at 1× the grid forgets the draw multiplier (#810: 0.75 h planned vs
 reality was ~15-30 h).
 (b) Ground `per_call_cost` on a CITED measurement (a timed single call at
 PRODUCTION shape, or a prior-issue measured figure) or a FLOP/kernel floor —
-NEVER an asserted "~2 s" for a dense factorization (#823: the plan asserted
+EXCEPT for a fit / factorization / GD loop, where the basis MUST be a
+measured 1-cell pilot THROUGH the production entrypoint on the production
+device, a cited prior-issue measured figure (same kernel + shape), or a
+pre-registered `pilot-gated` first-step pilot (inputs don't exist at plan
+time) per `.claude/rules/plan-compute-sizing.md` § Per-cell fit phases; a
+FLOP floor is the cross-check, never the basis, for these overhead-bound
+loops (#811: one inner kernel timed, the dominant frame asserted — 19h21m at
+unit 3/108) — NEVER an asserted "~2 s" for a dense factorization (#823: the
+plan asserted
 ~2 s/fit; the named fast twin's own docstring said ~125 s at N_tr≈4000, H=3584
 — a ~62× per-call error; the realized wall ran 35-57× the planned).
 (c) If the task body's reuse map or a parent issue names a fast /

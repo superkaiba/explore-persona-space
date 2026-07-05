@@ -1,6 +1,6 @@
 ---
 name: vectorize-many-cell-fits
-description: Many-cell gradient-descent fits (per-fold / per-cell MLP / AdamW LOCO sweeps, per-cell probes) AND many-draw closed-form statistical loops (permutation / bootstrap / null-draw batteries over a large fixed pool) AND many-cell repeated dense linear-algebra fits (a full svd/eigh/lstsq/GCV-ridge solve looped over fold × layer × arm × trait — a per-cell factorization is cheap ONCE, ruinous ×thousands serially) are OVERHEAD-bound, not FLOP-bound — vectorize the fold / output-dim / layer / cell / draw axes into batched tensor ops BEFORE reaching for GPU or a bigger machine. A naive serial loop is 50-100x slower than the same math vectorized.
+description: Many-cell gradient-descent fits (per-fold / per-cell MLP / AdamW LOCO sweeps, per-cell probes) AND many-draw closed-form statistical loops (permutation / bootstrap / null-draw batteries over a large fixed pool) AND many-cell repeated dense linear-algebra fits (a full svd/eigh/lstsq/GCV-ridge solve looped over fold × layer × arm × trait — a per-cell factorization is cheap ONCE, ruinous ×thousands serially) are OVERHEAD-bound, not FLOP-bound — vectorize the fold / output-dim / layer / cell / draw axes into batched tensor ops BEFORE reaching for GPU or a bigger machine. A naive serial loop is 50-100x slower than the same math vectorized. A mid-run compute-deviation exceeding 2× the plan estimate (row or total) on a RUNNING fit/battery/factorization phase forces the vectorize signature check IMMEDIATELY (§ Mid-run trigger).
 paths:
   - "scripts/issue*_fit*.py"
   - "scripts/issue*_skill*.py"
@@ -189,7 +189,9 @@ the SAME round as the rewrite:
    already executing the serial path when the batched twin lands and its
    remaining serial ETA exceeds kill+relaunch cost, kill and relaunch on the
    batched path (sibling: `.claude/rules/crash-fix-rounds.md`
-   § kill-before-relaunch). (General lesson:
+   § kill-before-relaunch). The SAME calculus fires mid-run WITHOUT a landed
+   twin on any compute-deviation exceeding 2× — § Mid-run trigger below.
+   (General lesson:
    `.claude/rules/workflow-fix-on-bug.md` § "Built-but-stranded fixes don't
    help"; this contract is its vectorization-specific mechanism.)
 2. **Tombstone the superseded serial entrypoint.** Default mechanism: the
@@ -232,6 +234,54 @@ The contract binds ANY rewrite that supersedes a serial entrypoint — a shared
 helper, a `scripts/issue*_*.py` driver, or an in-module loop replaced by a
 batched twin — whether done by an implementer mid-experiment, a workflow-fix
 session, or an emergency in-session fix.
+
+### Mid-run trigger — a 2× compute-deviation forces the vectorize check NOW
+
+The moment a compute-deviation exceeding 2× the plan §9 estimate (row or
+total — the `compute_deviation_over_2x` / `EPM_ETA_DEVIATION_MULT`
+boundary respectively) fires on — or
+is computed for — a RUNNING fit / battery / factorization phase, run the
+vectorize signature check IMMEDIATELY. The trigger is any of: the poller's
+`epm:compute-deviation` marker (`source: poller`,
+`basis: elapsed-vs-plan`, threshold `EPM_ETA_DEVIATION_MULT` default 2.0),
+an orchestrator- or implementer-posted deviation marker, or the session's
+own elapsed-vs-plan arithmetic — one threshold, shared with
+`workflow.yaml § pivot_criteria` (`compute_deviation_over_2x`), never a
+new number. Do NOT wait for a round boundary, for the phase to finish, or
+for a SECOND deviation (#811: the session pivoted only on the second
+deviation, 19h21m in at unit 3/108 — py-spy showed the dominant frame was
+a path the first deviation's fix round had ASSERTED at "~1–2 h", not
+measured). The check is cheap — minutes, not hours: this rule's
+§ diagnostic signature run against the LIVE process (py-spy the dominant
+frame, FLOP back-of-envelope, cputime/walltime ratio) plus the
+classification of `.claude/skills/issue/SKILL.md` Step 5.bis(a) step 2 —
+the routing table (descope tiers, gate id=12, once-per-component guard)
+stays orchestrator-owned THERE; this section binds the
+session/implementer/experimenter side and does not duplicate it. Outcomes:
+
+- **Overhead-bound** → duty 1's live-run calculus applies immediately:
+  when remaining serial ETA exceeds kill+relaunch cost (count lost
+  un-checkpointed in-RAM progress as part of that cost), kill the serial
+  run (`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch) and
+  relaunch on the batched path once the vectorize fix round lands.
+- **Not overhead-bound** (FLOP-bound / API-latency / bandwidth /
+  contention) → record `signature_check: negative` with 1–3 lines of
+  arithmetic on the marker and continue: #931's 6.0× battery resolved
+  exactly this way (195 s/cell MEASURED at production shape; shared-VM
+  thread contention on a cached-eigh battery), and its earlier ~2.2–2.5×
+  elapsed-vs-plan read was likewise correctly ridden out as a
+  demonstrably-in-tail FLOP-bound phase.
+
+Two scoping notes. A prior lever-0 record does NOT immunize the phase:
+when realized numbers FALSIFY the earlier residual classification (a
+DIFFERENT inner loop is the dominant frame than the one the fix round
+batched), THIS rule licenses a second session-side fix round targeting
+that loop — the #811 precedent; nothing in 5.bis(a)'s once-per-component
+guard forbids a voluntary second round on a falsified classification. And
+the SKILL.md ETA-advisory's "`continue_as_is` is nearly always the right
+mid-run resolution" scopes to the DESCOPE question (elapsed is a lower
+bound, so descoping mid-run rarely helps); it never defers this check —
+kill+relaunch-on-batched is recipe-preserving, not a descope.
 
 ## Memory sizing: calibrate the chunk cap from a MEASURED peak
 
@@ -293,7 +343,9 @@ loops → ~70× batched subset-sum GEMM), #811 r8 (`resolve_chunk_cap`
 live_factor 4→26 — measured-peak chunk-cap calibration), #823 (~3780 serial
 full-SVD ridge fits, 12-20 h realized vs 0.35 h planned — the
 dense-linear-algebra widening), #834 (parallel duplicate vectorization of
-null_battery.py — supersede contract).
+null_battery.py — supersede contract), #811 second deviation (19h21m at unit
+3/108 before the pivot — the mid-run-trigger origin) + #931
+(elapsed-vs-plan mid-run reads, worked negative example) via #1060.
 
 **Sibling rule:** `.claude/rules/selection-symmetric-nulls.md` — the same #778
 null battery is its origin incident; a permutation/bootstrap-battery plan

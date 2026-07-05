@@ -1,5 +1,5 @@
 ---
-description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
+description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the measured 1-cell fit-pilot basis for per-cell fit / factorization / GD phases (#1060), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -7,10 +7,11 @@ paths:
 
 # Plan compute sizing (planner §9 relocated recipes)
 
-These seven recipes are the planner-specific §9 sizing blocks — five relocated
+These eight recipes are the planner-specific §9 sizing blocks — five relocated
 verbatim from `.claude/agents/planner.md` (#829), plus the
-store-heavy / IO-heavy phase recipe (#910, from incident #813) and the
-CPU-phase RAM/RSS routing gate (#1031, from incidents #778/#833). The planner
+store-heavy / IO-heavy phase recipe (#910, from incident #813), the
+CPU-phase RAM/RSS routing gate (#1031, from incidents #778/#833), and the
+per-cell fit-phase pilot basis (#1060, from incidents #811/#931/#823). The planner
 applies each when its trigger matches; the compute-projection table spec +
 stratification spec stay inline in planner.md §9.
 
@@ -99,6 +100,51 @@ asserted ~2 s/fit sailed under the old 12 h trigger while the measured
 ~125 s/call implied a ~131 h serial floor).
 (#522: ~94h on 1× H100 for a job with a ~4-6h FLOPs floor; #511: 52×
 CPU wall-time blowup vs its §9 estimate.)
+
+
+**Per-cell fit phases — the per-call basis MUST be a MEASURED 1-cell pilot
+through the production entrypoint; an asserted per-call cost is NOT a
+sizing basis.** Any §9 row whose component loops a fit / solve /
+factorization (ridge / SVD / eigh / lstsq / GCV / gradient-descent probe —
+the same kernel family as the floor cross-check's call-count trigger) over
+cells × folds × layers × arms × traits × seeds MUST ground its per-call
+`basis` on a MEASURED 1-cell/1-unit pilot timing at PRODUCTION shape, on
+the machine/device the phase will actually run, executed THROUGH the
+production entrypoint (one full cell/unit end-to-end — every kernel the
+per-cell path touches), OR a cited prior-issue MEASURED figure for the
+SAME kernel + shape. Projected wall = `n_calls × measured_per_call /
+parallelism`, stated in the row. TRIVIALITY EXEMPTION — never
+self-certified by an asserted cost: a row may skip the pilot ONLY when
+total_calls ≤ ~500 AND its sub-floor (~15–30 min) projection is computed
+from a MEASURED or prior-issue-CITED per-call figure; an ASSERTED
+per-call cost can never exempt a row, because the projected wall is
+exactly the number that is wrong when the basis is fabricated (#823's
+asserted ~2 s/call would project a 25-call row at ~50 s where the
+measured ~125 s/call implies ~52 min — over the floor). Three failure
+modes this closes: (i) the
+asserted basis — #823 planned a ~3780-call full-SVD ridge phase at an
+asserted ~2 s/fit (0.35 h) while the named fast twin's own docstring said
+~125 s at that shape; 12–20 h realized. (ii) the PARTIAL measurement —
+#811 timed ONE inner kernel (the batched bootstrap refit, 0.276 s/refit)
+and asserted the surrounding ridge-LOCO headline path at "~1–2 h"; the
+unmeasured path was the dominant frame (py-spy:
+`_press_loo_mse_per_lambda`), and the phase sat at unit 3/108 after
+19h21m — realized-extrapolated wall ~700–1000 h vs the 5.0 h
+projection — before a second deviation forced the
+pivot; the round-2 fix then measured 313 s/unit END-TO-END on the
+production entrypoint, which is the pilot this block requires up front.
+(iii) the wrong-device measurement — #931's battery basis was measured on
+an A100 GPU fit while the realized armC cells ran CPU-heavier on the
+shared VM (~2.2–2.5× elapsed-vs-plan mid-run). A FLOP/kernel floor is the
+CROSS-CHECK (block above), never the basis — these loops are
+overhead-bound, so a FLOP floor under-sizes them by construction
+(`.claude/rules/vectorize-many-cell-fits.md`). When the pilot cannot run
+at plan time (its inputs don't exist yet), the plan pre-registers the
+pilot as the phase's FIRST step with an abort threshold — pilot ×
+n_calls / parallelism re-projected against the row; >2× the row ⇒ the
+vectorize signature check fires before the loop proceeds — and marks the
+row's basis `pilot-gated`. This is the fit-phase twin of the store-heavy
+block's measured one-item rule below.
 
 
 **Store-heavy / IO-heavy phase sizing — measure one item's serialization +

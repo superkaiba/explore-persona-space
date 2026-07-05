@@ -3799,7 +3799,11 @@ the #763 class (an ~80× overrun a human caught ~16h late). Surface it in the
 session text and weigh the run's remaining value: whether the plan's own
 compute-deviation machinery should engage — a mid-run `continue_as_is`
 acknowledgment, or a deliberate descope ONLY where the planner's §9
-stratification spec permits one. Elapsed-so-far is a lower bound on final
+stratification spec permits one. For a fit / battery / factorization phase,
+the vectorize mid-run trigger applies FIRST — run the signature check
+immediately, do not wait for a second deviation
+(`.claude/rules/vectorize-many-cell-fits.md` § Mid-run trigger); the
+`continue_as_is` bias below scopes to the descope question. Elapsed-so-far is a lower bound on final
 wall, so `continue_as_is` is nearly always the right mid-run resolution; the
 poller variant carries no `action:` field and is never an auto-descope input.
 When a tick's JSON reports `gpu_width_advisory_posted: true`, the poller has
