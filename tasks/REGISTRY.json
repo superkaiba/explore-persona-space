@@ -538,8 +538,8 @@
     "1068": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1068",
-      "status": "planning",
+      "path": "tasks/approved/1068",
+      "status": "approved",
       "title": "workflow-fix: check-17 verbatim equality for origin_prompt footer quote"
     },
     "1069": {
