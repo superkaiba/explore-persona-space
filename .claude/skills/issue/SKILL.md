@@ -6022,8 +6022,12 @@ dispatching this round's critics.
    path as `interpretation_marker_path` (never an `events.jsonl`
    path); pass the ABSOLUTE issue-worktree
    `docs/methodology/issue_<N>.md` path as `methodology_doc_path` when
-   the doc exists (so the twin's own `verify_task_body.py` re-run gets
-   `--methodology-doc` and its Data lens can spot-check check 21; omit
+   the doc exists (so the composer's compose-time `verify_task_body.py`
+   run gets `--methodology-doc` and the Data lens can spot-check
+   check 21 — the composer runs the mechanical verifiers on the VM and
+   inlines their output into the Codex prompt as envelopes; this twin
+   is dispatched read-only and uv cannot reliably execute in its
+   sandbox (#1050); omit
    when the methodology-writer has not yet returned — check 21 NO-OP
    PASSes); and dispatch `codex_task.py` for this twin from the repo
    root, never an issue-worktree cwd. Posts
@@ -6058,7 +6062,12 @@ dispatching this round's critics.
    `lens`/`audit` tag, leave the verdict as-is and apply the normal
    ensemble rule (the REVISE round counts). The strip operates ONLY on
    the mechanically-verifiable presentation set; it never overrides a
-   register / story-arc / statistical-framing lens judgment.
+   register / story-arc / statistical-framing lens judgment. A verdict
+   carrying the `data-access-blocked` tag, a `Verifier: UNAVAILABLE` /
+   `Audit script: UNAVAILABLE` line, or a missing-envelope declaration
+   is NEVER procedural-only — the mechanical pre-pass was unavailable,
+   so there is nothing verified to strip against; re-compose /
+   re-dispatch the twin instead of stripping (#1050).
 
 **If REVISE (rounds 2-5):**
 

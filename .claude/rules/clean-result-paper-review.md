@@ -56,6 +56,15 @@ the number-correctness guarantee. (`\metric` grounding is a documented
 **v1.1 opt-in** under `docs/papers/_template/`; do NOT FAIL a v1 paper for
 writing numbers as literals or for not carrying a `metrics.json`.)
 
+**Codex-twin adaptation (#1050).** When the `codex-clean-result-critic`
+composer inlines this rule into the Codex prompt, it REPLACES the bash
+block above with the composer-run `verify_paper.py` output envelope (the
+MECHANICAL VERIFIER OUTPUT envelope of that agent's Step 1d / Step 3
+shape) — that twin is dispatched read-only and uv cannot reliably execute
+in its sandbox, so Codex READS the inlined output instead of running the
+pre-pass itself. The Claude critic continues to run the pre-pass verbatim
+as above.
+
 Run it, record the result, and ALWAYS proceed to the seven paper lenses in
 the SAME pass — never hard-stop at a mechanical FAIL. Split the FAILs:
 
