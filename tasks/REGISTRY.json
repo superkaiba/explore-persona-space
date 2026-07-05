@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1049,
+  "highest_id": 1050,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -401,6 +401,13 @@
       "path": "tasks/completed/105",
       "status": "completed",
       "title": "Apparent assistant-persona robustness under contrastive wrong-answer SFT was a data-mixing artifact \u2014 removing 100 \"assistant + correct answer\" control examples collapses ARC-C from 84% to 1.9% (HIGH confidence)"
+    },
+    "1050": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1050",
+      "status": "proposed",
+      "title": "daily-fix: orchestrator inlines verifier output for Codex cr"
     },
     "106": {
       "has_clean_result": true,
