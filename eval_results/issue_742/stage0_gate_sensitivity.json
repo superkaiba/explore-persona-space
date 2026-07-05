@@ -1,0 +1,152 @@
+{
+  "task": "issue_742",
+  "stage": "stage0_gate_sensitivity",
+  "question": "Do any of the 8 Stage-0 gate verdicts flip when the SPLIT-HALF reliability ceiling is the headline estimator instead of the production BINOMIAL headline?",
+  "method_note": "POINT-based sensitivity re-read: swap the headline \u221a(r_yy) point (binomial\u2192split-half) and apply the canonical stage0_gate_verdict rule at the point (degenerate [point,point] CI \u21d2 \u03c1_lin<point \u21d2 headroom). A split-half CLUSTER-BOOTSTRAP CI is NOT re-derivable from committed files (raw per-context probe matrix lives in un-committed E0_expression.json), so the split-half headline is necessarily a point read. binomial_point_verdict is the matched-footing binomial POINT read; binomial_ci_verdict is the production CI verdict (reproduces the stored gate_verdict, asserted).",
+  "n_cells": 8,
+  "n_verdict_flips_split_half_vs_binomial_point": 1,
+  "cells": [
+    {
+      "behavior": "broad_em",
+      "genre": "betley",
+      "rho_lin": 0.444,
+      "sqrt_r_yy_binomial": 0.9281951398121263,
+      "sqrt_r_yy_split_half": 0.8802750107338395,
+      "sqrt_r_yy_ci": [
+        0.557259210894074,
+        0.955831609028685
+      ],
+      "binomial_ci_verdict": "headroom",
+      "binomial_point_verdict": "headroom",
+      "split_half_verdict": "headroom",
+      "verdict_flips": false,
+      "bracket_width_binomial": 0.4841951398121263,
+      "bracket_width_split_half": 0.4362750107338395
+    },
+    {
+      "behavior": "harmful_compliance",
+      "genre": "betley",
+      "rho_lin": 0.6921,
+      "sqrt_r_yy_binomial": 0.665857272320392,
+      "sqrt_r_yy_split_half": 0.8649945391527604,
+      "sqrt_r_yy_ci": [
+        0.0,
+        0.8394164750760102
+      ],
+      "binomial_ci_verdict": "ceiling-limited",
+      "binomial_point_verdict": "ceiling-limited",
+      "split_half_verdict": "headroom",
+      "verdict_flips": true,
+      "bracket_width_binomial": -0.026242727679608002,
+      "bracket_width_split_half": 0.17289453915276032
+    },
+    {
+      "behavior": "sycophancy",
+      "genre": "betley",
+      "rho_lin": 0.1268,
+      "sqrt_r_yy_binomial": 0.9939792097121402,
+      "sqrt_r_yy_split_half": 0.9872049575544307,
+      "sqrt_r_yy_ci": [
+        0.9793543695755049,
+        0.9964520304563633
+      ],
+      "binomial_ci_verdict": "headroom",
+      "binomial_point_verdict": "headroom",
+      "split_half_verdict": "headroom",
+      "verdict_flips": false,
+      "bracket_width_binomial": 0.8671792097121401,
+      "bracket_width_split_half": 0.8604049575544307
+    },
+    {
+      "behavior": "refusal",
+      "genre": "betley",
+      "rho_lin": 0.4223,
+      "sqrt_r_yy_binomial": 0.8295146872244636,
+      "sqrt_r_yy_split_half": 0.9497108853296653,
+      "sqrt_r_yy_ci": [
+        0.47375215336135823,
+        0.9125333843960507
+      ],
+      "binomial_ci_verdict": "headroom",
+      "binomial_point_verdict": "headroom",
+      "split_half_verdict": "headroom",
+      "verdict_flips": false,
+      "bracket_width_binomial": 0.40721468722446363,
+      "bracket_width_split_half": 0.5274108853296653
+    },
+    {
+      "behavior": "broad_em",
+      "genre": "ultrachat",
+      "rho_lin": 0.3981,
+      "sqrt_r_yy_binomial": 0.9119989414108753,
+      "sqrt_r_yy_split_half": 0.8384784327847756,
+      "sqrt_r_yy_ci": [
+        0.3807947649102329,
+        0.9465195783404696
+      ],
+      "binomial_ci_verdict": "ceiling-limited",
+      "binomial_point_verdict": "headroom",
+      "split_half_verdict": "headroom",
+      "verdict_flips": false,
+      "bracket_width_binomial": 0.5138989414108753,
+      "bracket_width_split_half": 0.4403784327847756
+    },
+    {
+      "behavior": "harmful_compliance",
+      "genre": "ultrachat",
+      "rho_lin": 0.6112,
+      "sqrt_r_yy_binomial": 0.6859404387970298,
+      "sqrt_r_yy_split_half": 0.8554032173883442,
+      "sqrt_r_yy_ci": [
+        0.0,
+        0.8364350613622626
+      ],
+      "binomial_ci_verdict": "ceiling-limited",
+      "binomial_point_verdict": "headroom",
+      "split_half_verdict": "headroom",
+      "verdict_flips": false,
+      "bracket_width_binomial": 0.07474043879702985,
+      "bracket_width_split_half": 0.24420321738834427
+    },
+    {
+      "behavior": "sycophancy",
+      "genre": "ultrachat",
+      "rho_lin": 0.2486,
+      "sqrt_r_yy_binomial": 0.9938054303763518,
+      "sqrt_r_yy_split_half": 0.987339346858674,
+      "sqrt_r_yy_ci": [
+        0.9790946390424405,
+        0.9962125186983023
+      ],
+      "binomial_ci_verdict": "headroom",
+      "binomial_point_verdict": "headroom",
+      "split_half_verdict": "headroom",
+      "verdict_flips": false,
+      "bracket_width_binomial": 0.7452054303763518,
+      "bracket_width_split_half": 0.738739346858674
+    },
+    {
+      "behavior": "refusal",
+      "genre": "ultrachat",
+      "rho_lin": 0.5698,
+      "sqrt_r_yy_binomial": 0.8398662430600426,
+      "sqrt_r_yy_split_half": 0.9565285078076747,
+      "sqrt_r_yy_ci": [
+        0.4779169906733849,
+        0.9180237605845847
+      ],
+      "binomial_ci_verdict": "ceiling-limited",
+      "binomial_point_verdict": "headroom",
+      "split_half_verdict": "headroom",
+      "verdict_flips": false,
+      "bracket_width_binomial": 0.2700662430600427,
+      "bracket_width_split_half": 0.38672850780767476
+    }
+  ],
+  "source_brackets": "eval_results/issue_742/stage0_brackets.json",
+  "reproducibility": {
+    "git_commit": "5f2cd092d9cfc060096b9bbe1a88b097e70c5cde",
+    "generated_utc": "2026-07-05T03:05:58.722763+00:00",
+    "generator": "scripts/issue742_estimator_sensitivity.py"
+  }
+}
