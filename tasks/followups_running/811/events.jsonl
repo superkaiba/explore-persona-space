@@ -444,3 +444,4 @@
 {"ts": "2026-07-05T19:06:09Z", "kind": "epm:progress", "version": 175, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~6.4h in, pid alive."}
 {"ts": "2026-07-05T20:09:52Z", "kind": "epm:progress", "version": 176, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~7.4h in, pid alive."}
 {"ts": "2026-07-05T20:41:25Z", "kind": "epm:progress", "version": 177, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~8h in; probing."}
+{"ts": "2026-07-05T21:12:47Z", "kind": "epm:progress", "version": 178, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~8.5h in, pid alive (100% GPU, cputime accruing at last probe)."}
