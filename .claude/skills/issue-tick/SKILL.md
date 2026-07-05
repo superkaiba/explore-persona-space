@@ -6,7 +6,10 @@ description: >
   armed at Step 0 of the full `/issue` skill (with a defense-in-depth
   re-arm at Step 6d.2). FIRST action on every fire is ONE Bash call to
   `scripts/tick_triage.py <N>` (pure Python: reads status + latest marker,
-  computes staleness, maintains the tick snapshot + runaway counter) and
+  computes staleness, screens detached-phase liveness before any
+  STALE-REDRIVE — a live identity-verified breadcrumb `pid=`, a fresh
+  `log=` mtime, or a fresh `[long-phase-heartbeat]` note reads HEALTHY,
+  #1051 — and maintains the tick snapshot + runaway counter) and
   branches on its one-word verdict: HEALTHY → end the turn immediately;
   TERMINAL → CRON-TEARDOWN, end; GATE-TRANSITION → PushNotification +
   CRON-TEARDOWN, end; STALE-REDRIVE → re-drive the full `/issue` skill
@@ -151,7 +154,10 @@ cosmetic and accepted.
 ## STALE-REDRIVE recovery branch
 
 `tick_triage.py` returns `STALE-REDRIVE` when the latest marker is stale
-(>~25 min) at a non-gate, non-terminal status. Two sub-cases, split by
+(>~25 min) at a non-gate, non-terminal status AND its detached-phase
+liveness screen found no evidence (no live identity-verified breadcrumb
+`pid=`, no fresh breadcrumb `log=` mtime, no fresh
+`[long-phase-heartbeat]` note — #1051). Two sub-cases, split by
 the status named in the verdict reason:
 
 **ACTIVE statuses** (`approved` / `running` / `verifying` /

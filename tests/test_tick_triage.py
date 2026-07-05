@@ -20,6 +20,8 @@ are monkeypatched — no live sessions, no real task folders.
 from __future__ import annotations
 
 import json
+import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -435,3 +437,341 @@ def test_main_prints_single_verdict_line(state_dir, monkeypatch, capsys):
     rc = tick_triage.main(["42"])
     out = capsys.readouterr().out.strip().splitlines()
     assert rc == 0 and len(out) == 1 and out[0].startswith("HEALTHY ")
+
+
+# ── detached-phase liveness screen (#1051) ──────────────────────────────────
+
+
+def _crumb(
+    age_s: float,
+    pid: int | None = None,
+    log: str | None = None,
+    stage: str = "followup-running",
+    extra: str = "",
+) -> dict:
+    """A ``stage-dispatch`` breadcrumb-shaped ``epm:progress`` event."""
+    parts = [f"stage-dispatch stage={stage} round=1 subagent=detached-vm-phase"]
+    if pid is not None:
+        parts.append(f"pid={pid}")
+    if log is not None:
+        parts.append(f"log={log}")
+    if extra:
+        parts.append(extra)
+    return _event("epm:progress v1", age_s, note=" ".join(parts))
+
+
+def test_stale_with_live_detached_pid_is_healthy(state_dir, monkeypatch):
+    """The #931 replay fixture: an in-flight pid-bearing breadcrumb + plain
+    liveness notes straddling the 25-min stale window (27-min gap shape) must
+    read HEALTHY when the pid probe verifies alive+identity."""
+    monkeypatch.setattr(tick_triage, "pid_alive_with_identity", lambda *_a: True)
+    events = [
+        _crumb(
+            7200,
+            pid=4025577,
+            log="/tmp/i931.log",
+            extra="choom=ok label=author-blocked-folds worktree=/x/.claude/worktrees/issue-931",
+        ),
+        _event("epm:progress v2", 3300, note="liveness: pid 4025577 verified, args match"),
+        _event("epm:progress v3", 1680, note="liveness: child worker advancing"),
+    ]
+    _patch_issue_state(monkeypatch, "followups_running", events)
+    verdict, reason = tick_triage.triage(101, "issue")
+    assert verdict == "HEALTHY", reason
+    assert "4025577" in reason
+
+
+def test_stale_with_dead_pid_redrives(state_dir, monkeypatch):
+    monkeypatch.setattr(tick_triage, "pid_alive_with_identity", lambda *_a: False)
+    events = [
+        _crumb(7200, pid=4025577),
+        _event("epm:progress v2", 3300, note="liveness: pid 4025577 verified, args match"),
+        _event("epm:progress v3", 1680, note="liveness: child worker advancing"),
+    ]
+    _patch_issue_state(monkeypatch, "followups_running", events)
+    verdict, _ = tick_triage.triage(102, "issue")
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_recycled_pid_identity_mismatch_redrives(state_dir, monkeypatch, tmp_path):
+    """Exercise the REAL start-time identity guard via the _PROC_ROOT seam: a
+    live pid whose start-epoch postdates breadcrumb ts + slack is a recycled
+    pid, never re-attached to."""
+    clk = os.sysconf("SC_CLK_TCK")
+    pid = 4025577
+    btime = int(NOW - 100_000)
+    proc = tmp_path / "proc"
+    (proc / str(pid)).mkdir(parents=True)
+    (proc / "stat").write_text(f"cpu  1 2 3 4\nbtime {btime}\nprocesses 5\n")
+    # start-epoch ~= NOW (recycled just now) — AFTER breadcrumb ts + 120s.
+    starttime_ticks = int((NOW - btime) * clk)
+    after_comm = ["S"] + ["0"] * 18 + [str(starttime_ticks)] + ["0"] * 10
+    # comm contains ') ' to exercise the parse-after-LAST-')' rule.
+    (proc / str(pid) / "stat").write_text(f"{pid} (uv (run) x) " + " ".join(after_comm) + "\n")
+    monkeypatch.setattr(tick_triage, "_PROC_ROOT", proc)
+    assert tick_triage.pid_alive_with_identity(pid, NOW - 7200) is False
+    _patch_issue_state(monkeypatch, "followups_running", [_crumb(7200, pid=pid)])
+    verdict, _ = tick_triage.triage(103, "issue")
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_proc_start_epoch_real_self():
+    """#906 production-body rule: execute the real /proc read end-to-end on
+    the test process itself."""
+    start = tick_triage.proc_start_epoch(os.getpid())
+    assert start is not None and 0 < start <= time.time()
+    assert tick_triage.pid_alive_with_identity(os.getpid(), time.time()) is True
+    # A launch deadline BEFORE the process started fails the identity guard.
+    assert tick_triage.pid_alive_with_identity(os.getpid(), 0.0) is False
+
+
+def test_cleared_breadcrumb_not_probed(state_dir, monkeypatch):
+    """A breadcrumb with a LATER stage-clearing event is dead history: the pid
+    probe is NEVER consulted. The stub is call-recording and returns True (NOT
+    a raising stub — issue_liveness_reason's blanket ``except Exception``
+    would swallow a raise and pass the test under the exact bug it pins): a
+    wrongly-consulted probe returns True -> HEALTHY -> the verdict assert
+    fails loud, and the empty-call-list assert catches the bug even if a
+    future refactor changes the verdict path."""
+    calls: list = []
+
+    def recording_probe(pid, ts):
+        calls.append((pid, ts))
+        return True
+
+    monkeypatch.setattr(tick_triage, "pid_alive_with_identity", recording_probe)
+    for clearing_kind in ("epm:upload-verification v1", "epm:failure v1"):
+        calls.clear()
+        events = [_crumb(7200, pid=999), _event(clearing_kind, 3600)]
+        _patch_issue_state(monkeypatch, "followups_running", events)
+        verdict, _ = tick_triage.triage(104, "issue")
+        assert verdict == "STALE-REDRIVE", clearing_kind
+        assert calls == [], f"cleared breadcrumb must never be probed ({clearing_kind})"
+
+
+def test_breadcrumb_without_pid_ignored():
+    # The newest PID-BEARING crumb decides even when a pid-less breadcrumb
+    # (the interpreting/clean-result shape) is newer.
+    events = [_crumb(7200, pid=4025577), _crumb(3600, pid=None)]
+    crumb = tick_triage.newest_inflight_pid_breadcrumb(events)
+    assert crumb is not None and crumb["pid"] == 4025577
+    # A lone pid-less crumb yields None.
+    assert tick_triage.newest_inflight_pid_breadcrumb([_crumb(3600, pid=None)]) is None
+
+
+def test_breadcrumb_over_max_age_not_probed(state_dir, monkeypatch):
+    monkeypatch.setattr(tick_triage, "pid_alive_with_identity", lambda *_a: True)
+    _patch_issue_state(monkeypatch, "followups_running", [_crumb(60 * 3600, pid=999)])
+    verdict, _ = tick_triage.triage(105, "issue")
+    assert verdict == "STALE-REDRIVE", "a 60h-old breadcrumb never grants HEALTHY (48h cap)"
+
+
+def test_heartbeat_prefixed_note_grants_healthy(state_dir, monkeypatch):
+    events = [_event("epm:progress v1", 3600, note="[long-phase-heartbeat] cell 2 in progress")]
+    _patch_issue_state(monkeypatch, "followups_running", events)
+    verdict, reason = tick_triage.triage(106, "issue")
+    assert verdict == "HEALTHY", reason
+    assert "heartbeat" in reason
+
+
+def test_heartbeat_older_than_window_redrives(state_dir, monkeypatch):
+    events = [_event("epm:progress v1", 6000, note="[long-phase-heartbeat] cell 2 in progress")]
+    _patch_issue_state(monkeypatch, "followups_running", events)
+    verdict, _ = tick_triage.triage(107, "issue")
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_watcher_sentinel_heartbeat_ignored(state_dir, monkeypatch):
+    events = [
+        _event("epm:progress v1", 7200, note="plain progress"),
+        _event(
+            "epm:progress v2",
+            600,
+            note="[autonomous_session_watch:session-stalled-alert] [long-phase-heartbeat] x",
+        ),
+    ]
+    _patch_issue_state(monkeypatch, "followups_running", events)
+    verdict, _ = tick_triage.triage(108, "issue")
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_heartbeat_future_ts_not_fresh():
+    # Clock-skew guard parity with the watcher: a future ts is NOT fresh.
+    events = [_event("epm:progress v1", -600, note="[long-phase-heartbeat] future")]
+    assert tick_triage.issue_liveness_reason(events, NOW, 1500.0) is None
+
+
+def test_log_mtime_fresh_grants_healthy(state_dir, monkeypatch, tmp_path):
+    monkeypatch.setattr(tick_triage, "pid_alive_with_identity", lambda *_a: False)
+    log = tmp_path / "i931.log"
+    log.write_text("tick\n")  # mtime = now -> fresh
+    _patch_issue_state(monkeypatch, "followups_running", [_crumb(7200, pid=999, log=str(log))])
+    verdict, reason = tick_triage.triage(109, "issue")
+    assert verdict == "HEALTHY", reason
+    assert str(tmp_path) not in reason, "log paths are read internally, never printed"
+
+
+def test_log_mtime_stale_redrives(state_dir, monkeypatch, tmp_path):
+    monkeypatch.setattr(tick_triage, "pid_alive_with_identity", lambda *_a: False)
+    log = tmp_path / "i931.log"
+    log.write_text("tick\n")
+    os.utime(log, times=(NOW - 7200, NOW - 7200))
+    _patch_issue_state(monkeypatch, "followups_running", [_crumb(7200, pid=999, log=str(log))])
+    verdict, _ = tick_triage.triage(110, "issue")
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_probe_exception_falls_through_to_stale(state_dir, monkeypatch):
+    def boom(_events):
+        raise RuntimeError("probe exploded")
+
+    monkeypatch.setattr(tick_triage, "newest_inflight_pid_breadcrumb", boom)
+    _patch_issue_state(monkeypatch, "followups_running", [_crumb(7200, pid=999)])
+    verdict, _ = tick_triage.triage(111, "issue")
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_liveness_disabled_by_env(state_dir, monkeypatch):
+    monkeypatch.setenv("EPM_TICK_LIVENESS_PROBE", "0")
+    monkeypatch.setattr(tick_triage, "pid_alive_with_identity", lambda *_a: True)
+    _patch_issue_state(monkeypatch, "followups_running", [_crumb(7200, pid=999)])
+    verdict, _ = tick_triage.triage(112, "issue")
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_campaign_mode_never_probes(state_dir, monkeypatch):
+    calls: list = []
+
+    def recording_probe(pid, ts):
+        calls.append(pid)
+        return True
+
+    monkeypatch.setattr(tick_triage, "pid_alive_with_identity", recording_probe)
+    events = [_event("epm:campaign-progress v1", 7200), _crumb(3600, pid=999)]
+    monkeypatch.setattr(tick_triage, "load_task_state", lambda _n: ("running", events))
+    monkeypatch.setattr(tick_triage, "load_children", lambda _n: [])
+    monkeypatch.setattr(tick_triage, "load_campaign_state", lambda _n: {})
+    verdict, _ = tick_triage.triage(113, "campaign")
+    assert verdict == "STALE-REDRIVE"
+    assert calls == [], "the liveness probe is issue-mode only"
+
+
+def test_liveness_reason_carries_no_task_text(state_dir, monkeypatch):
+    monkeypatch.setattr(tick_triage, "pid_alive_with_identity", lambda *_a: True)
+    events = [_crumb(7200, pid=999, log="/tmp/SECRETPATH.log", extra="label=SECRETLABEL")]
+    _patch_issue_state(monkeypatch, "followups_running", events)
+    verdict, reason = tick_triage.triage(114, "issue")
+    assert verdict == "HEALTHY"
+    assert "SECRET" not in f"{verdict} {reason}", reason
+
+
+def test_heartbeat_constants_match_watcher():
+    """Drift pin (text-level, no import — the watcher drags heavy deps): the
+    prefix literal + the 90-min default + the shared env knob match, AND the
+    heartbeat prefix is not a substring of any watcher-posted sentinel (nor
+    does it contain tick's own watcher-sentinel exclusion substring — either
+    would make the heartbeat leg exclude itself)."""
+    src = (SCRIPTS / "autonomous_session_watch.py").read_text()
+    m = re.search(r'_LONG_PHASE_HEARTBEAT_PREFIX\s*=\s*"([^"]+)"', src)
+    assert m is not None and m.group(1) == tick_triage.LONG_PHASE_HEARTBEAT_PREFIX
+    m = re.search(r"LONG_PHASE_HEARTBEAT_FRESH_S_DEFAULT\s*=\s*(\d+)\s*\*\s*60\b", src)
+    assert m is not None
+    assert float(m.group(1)) == tick_triage.LONG_PHASE_HEARTBEAT_FRESH_MIN_DEFAULT
+    assert "EPM_LONG_PHASE_HEARTBEAT_FRESH_MIN" in src
+    sentinels = re.findall(r'_[A-Z_]+_NOTE_SENTINEL\s*=\s*\(?\s*"(\[[^"]+\])"', src)
+    assert sentinels, "watcher sentinel extraction regex found nothing — source drifted"
+    for sentinel in sentinels:
+        assert tick_triage.LONG_PHASE_HEARTBEAT_PREFIX not in sentinel, sentinel
+        assert sentinel not in tick_triage.LONG_PHASE_HEARTBEAT_PREFIX, sentinel
+    assert tick_triage._WATCHER_NOTE_SENTINEL not in tick_triage.LONG_PHASE_HEARTBEAT_PREFIX
+
+
+def test_cleared_crumb_with_older_heartbeat_redrives(state_dir, monkeypatch):
+    """Interaction pin (v2 leg precedence): a completed phase is never
+    resurrected by its own stale heartbeat — a fresh (<90 min) heartbeat
+    OLDER than the clearing event is invalidated."""
+    monkeypatch.setattr(tick_triage, "pid_alive_with_identity", lambda *_a: True)
+    events = [
+        _crumb(7200, pid=999),
+        _event("epm:progress v2", 3600, note="[long-phase-heartbeat] cell 3"),
+        _event("epm:upload-verification v1", 3000),
+    ]
+    _patch_issue_state(monkeypatch, "followups_running", events)
+    verdict, _ = tick_triage.triage(115, "issue")
+    assert verdict == "STALE-REDRIVE"
+    # Variant: a heartbeat NEWER than the clearing event (a new
+    # post-completion long phase legitimately re-attests), no in-flight pid
+    # crumb -> HEALTHY via the fallback leg.
+    events = [
+        _event("epm:upload-verification v1", 3000),
+        _event("epm:progress v3", 1800, note="[long-phase-heartbeat] post-completion phase"),
+    ]
+    _patch_issue_state(monkeypatch, "followups_running", events)
+    verdict, reason = tick_triage.triage(115, "issue")
+    assert verdict == "HEALTHY", reason
+    assert "heartbeat" in reason
+
+
+def test_dead_pid_with_fresh_heartbeat_redrives(state_dir, monkeypatch):
+    """Interaction pin (v2 leg precedence): pid evidence is authoritative —
+    a fresh heartbeat cannot rescue a dead detached phase (pins the 'first
+    tick after the pid dies' property)."""
+    monkeypatch.setattr(tick_triage, "pid_alive_with_identity", lambda *_a: False)
+    events = [
+        _crumb(7200, pid=999),  # in-flight, <=48h, no log=
+        # 30 min: past the 25-min stale window (base verdict STALE-REDRIVE)
+        # yet well inside the 90-min heartbeat window — the heartbeat WOULD
+        # rescue if the pid leg were not authoritative.
+        _event("epm:progress v2", 1800, note="[long-phase-heartbeat] still going"),
+    ]
+    _patch_issue_state(monkeypatch, "followups_running", events)
+    verdict, _ = tick_triage.triage(116, "issue")
+    assert verdict == "STALE-REDRIVE"
+
+
+def test_stale_heartbeat_with_live_pid_healthy(state_dir, monkeypatch):
+    # A >90-min heartbeat neither grants nor blocks: the authoritative pid
+    # leg decides.
+    monkeypatch.setattr(tick_triage, "pid_alive_with_identity", lambda *_a: True)
+    events = [
+        _crumb(7200, pid=4025577),
+        _event("epm:progress v2", 6000, note="[long-phase-heartbeat] old heartbeat"),
+    ]
+    _patch_issue_state(monkeypatch, "followups_running", events)
+    verdict, reason = tick_triage.triage(117, "issue")
+    assert verdict == "HEALTHY", reason
+    assert "4025577" in reason
+
+
+# Verbatim #931 production breadcrumb note (events.jsonl 2026-07-04T20:24:12Z
+# stage-dispatch row, copied as a string literal — not read from live task
+# state, which moves).
+_REAL_931_BREADCRUMB_NOTE = (
+    "stage-dispatch stage=followup-running round=1 subagent=detached-vm-phase "
+    "label=author-blocked-folds "
+    "worktree=/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-931 "
+    "pid=4025577 "
+    "log=/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-931/logs/"
+    "issue931_author_blocked_folds_production.log "
+    "choom=ok external-markers triaged: 1 applied / 0 deferred (see epm:progress v39 "
+    "pre-launch note; compute-character statement there too). Production command: "
+    "uv run python scripts/issue931_author_blocked_folds.py (defaults: 20 nulls, 1000 boot, "
+    "20 pseudo-draws, budget 4.5h) at branch b73c8f8484, env OMP/MKL/OPENBLAS/NUMEXPR=2, "
+    "setsid-detached. Projected 4.6-5.2h wall; per-cell fingerprinted checkpoint/resume; "
+    "success = [phase=done] + eval_results/issue_931/author_blocked_folds.json with "
+    "registered_read.decision_row."
+)
+
+
+def test_breadcrumb_parse_on_real_931_note():
+    """Parse-fidelity pin: _breadcrumb_fields behavior on the real #931 note
+    shape (free text + tokens like 'OMP/MKL/OPENBLAS/NUMEXPR=2' and
+    '[phase=done]' after the key=value block)."""
+    events = [{"kind": "epm:progress", "ts": _iso(NOW - 7200), "note": _REAL_931_BREADCRUMB_NOTE}]
+    crumb = tick_triage.newest_inflight_pid_breadcrumb(events)
+    assert crumb is not None
+    assert crumb["pid"] == 4025577
+    assert crumb["log"] == (
+        "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-931/logs/"
+        "issue931_author_blocked_folds_production.log"
+    )
