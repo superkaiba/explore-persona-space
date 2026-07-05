@@ -481,7 +481,11 @@ from spawn_session import (  # noqa: E402
     _takeover_ttl_s,
     dispatch_lease_desc,
     dispatch_lease_fresh,
+    last_session_dispatch_age_s,
+    record_session_dispatch,
+    session_dispatch_stagger_s,
     spawn_output_suppressed,
+    stagger_delay_s,
     takeover_sentinel_fresh,
 )
 from tick_triage import plan_pending_over_cap  # noqa: E402
@@ -11712,6 +11716,12 @@ def infra_dispatch_has_free_slot(
     return (len(occ) + max(0, pending)) < cap
 
 
+def _stagger_sleep(seconds: float) -> None:
+    """Seam for the #1059 session-dispatch stagger — tests monkeypatch this
+    so no test ever really sleeps."""
+    time.sleep(seconds)
+
+
 def _dispatch_infra_drain(
     issue: int,
     slot_desc: str,
@@ -11746,7 +11756,12 @@ def _dispatch_infra_drain(
     a spawn-failed attempt in the callers, exactly as before). ``"suppressed"``
     ALSO covers the #1027 auth-outage gate (same no-booking contract); this
     single hook covers BOTH callers (``infra_drain_pass`` +
-    ``proposed_infra_sweep_pass``)."""
+    ``proposed_infra_sweep_pass``). Before a real spawn it additionally
+    sleeps out the remainder of the #1059 session-dispatch stagger window
+    (:func:`spawn_session.stagger_delay_s`; dry-run returns first and never
+    sleeps), so consecutive session dispatches land >=
+    ``EPM_SESSION_DISPATCH_STAGGER_S`` (60s) apart — one ~100K-token cold
+    session load per minute-boundary 429 window."""
     if _auth_outage_spawn_gate(issue, "infra-drain", dry_run=dry_run) is not None:
         print(f"  INFRA-DRAIN issue #{issue}: suppressed — auth-outage episode active")
         return "suppressed"
@@ -11757,6 +11772,19 @@ def _dispatch_infra_drain(
     if dry_run:
         print(f"  [dry-run] would dispatch infra-drain: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned, nothing to book
+    # #1059 session-dispatch stagger: sleep out the remainder of the pacing
+    # window BEFORE the pre-spawn re-check (so the re-check runs maximally
+    # fresh; a registration/lease appearing DURING the sleep is caught by the
+    # re-check below / the spawn subprocess's own #843 lease acquisition).
+    window = session_dispatch_stagger_s()
+    delay = stagger_delay_s(last_session_dispatch_age_s(), window)
+    if delay > 0:
+        print(
+            f"  INFRA-DRAIN STAGGER issue #{issue}: last session dispatch "
+            f"{window - delay:.0f}s ago < {window:.0f}s window; sleeping "
+            f"{delay:.0f}s (429 token-pacing, #1059)"
+        )
+        _stagger_sleep(delay)
     snapshot = reg_snapshot or {}
     for basename in (f"issue-{issue}.json", f"manual-issue-{issue}.json"):
         path = AUTONOMOUS_REGISTRY_DIR / basename
@@ -11800,6 +11828,7 @@ def _dispatch_infra_drain(
         return "suppressed"
     print(f"  INFRA-DRAIN DISPATCHED issue #{issue} ({slot_desc}): {first_line}")
     _auth_outage_record_spawn(issue, "infra-drain", None)
+    record_session_dispatch(issue, "watcher-infra-dispatch")
     return "spawned"
 
 
@@ -13412,8 +13441,9 @@ def _gc_orphaned_eps_autonomous_files(now: float, dry_run: bool) -> dict[str, in
       episodes whose task is BY DEFINITION terminal, so reaping them here
       would reset the miss counter every tick and the session-reconcile
       threshold could never be reached.
-    - ``session_progress.json`` / ``watch.lock`` (project-singletons, not
-      per-issue).
+    - ``session_progress.json`` / ``watch.lock`` /
+      ``last-session-dispatch.json`` (#1059 stagger stamp)
+      (project-singletons, not per-issue).
     - ``vm-disk.json`` / ``vm-disk-events.jsonl`` (project-singletons for the
       VM disk-headroom pass — :func:`vm_disk_pass` owns the state file's
       lifecycle via its episode-recovery clear).
