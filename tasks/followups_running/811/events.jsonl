@@ -440,3 +440,4 @@
 {"ts": "2026-07-05T15:57:07Z", "kind": "epm:progress", "version": 171, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~3.2h in, pid alive, L4 verified compute-bound at prior probes."}
 {"ts": "2026-07-05T16:28:46Z", "kind": "epm:progress", "version": 172, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~3.9h in — probe: L4 100% util, fit cputime accruing (3h56). Progressing; L4 flex-start is cheap, no cost pressure."}
 {"ts": "2026-07-05T17:31:41Z", "kind": "epm:progress", "version": 173, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~4.8h in, pid alive (100% GPU at last probe)."}
+{"ts": "2026-07-05T18:34:26Z", "kind": "epm:progress", "version": 174, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~5.9h in; probing continues (100% GPU at prior probes; VM-CPU projection was 280h so an L4 at ~30-50x implies ~6-9h total — likely nearing the end)."}
