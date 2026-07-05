@@ -426,8 +426,8 @@
     "1053": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1053",
-      "status": "running",
+      "path": "tasks/reviewing/1053",
+      "status": "reviewing",
       "title": "daily-fix: Step 0 detect-and-exit posts an audit marker"
     },
     "1054": {
