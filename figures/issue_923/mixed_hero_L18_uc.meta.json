@@ -1,0 +1,48 @@
+{
+  "git_commit": "232b1d990cf8489d4767c96abeea817d4658d402",
+  "timestamp_utc": "2026-07-05T15:07:09.777178Z",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "all",
+  "script": "issue923_fig_mixed",
+  "paired_reads": {
+    "primary_qry_mix_vs_qry_iii": {
+      "D_value": 0.10339388602402355,
+      "D_ci95": [
+        0.07041793712911781,
+        0.13663085080164872
+      ]
+    },
+    "s2_concat_mix_vs_concat_i": {
+      "D_value": -0.011543017718456894,
+      "D_ci95": [
+        -0.018202857716750242,
+        -0.0037421711333548435
+      ]
+    },
+    "s3_concat_mix_vs_concat_iii": {
+      "D_value": 0.0066397230736138235,
+      "D_ci95": [
+        0.0003833134335273048,
+        0.013482046823410098
+      ]
+    },
+    "s1_concat_mix_vs_full": {
+      "D_value": 0.27892096104561104,
+      "D_ci95": [
+        0.10850457653293225,
+        0.465494642936088
+      ]
+    },
+    "genre_verdict": {
+      "label": "mixing-adds",
+      "direction": "a",
+      "D_ci95": [
+        0.07041793712911781,
+        0.13663085080164872
+      ]
+    }
+  },
+  "verdict": "mixing-adds",
+  "verdict_note": "direction (a)"
+}
