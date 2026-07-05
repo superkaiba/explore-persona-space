@@ -4784,6 +4784,19 @@ class GcpBackend(ComputeBackend):
         scp will fail (VM off; fail-soft by contract) and finalize needs
         ``--skip-confirm-artifacts``.
 
+        Setup-death discrimination (#1029): a TERMINATED VM whose ``eps/phase``
+        reads ``failed`` runs the SAME §4.1.0b ``workload_started``
+        discrimination the RUNNING path runs — sentinel ABSENT ⇒
+        ``terminal_setup_failed`` (the classification is then
+        timing-independent: the identical trap-written boot death no longer
+        reads ``terminal_setup_failed`` in the brief RUNNING window but
+        ``terminal_terminated`` after shutdown); sentinel present ⇒ a mid-run
+        guest shutdown (e.g. a spot preemption whose EXIT trap completed) —
+        KEEP ``terminal_terminated``, the #669 exclusion verbatim. A probe
+        failure on the sentinel read falls back to workload-started (its
+        existing contract) ⇒ keeps ``terminal_terminated`` (conservative:
+        never manufactures a setup classification).
+
         A TERMINATED VM with any other (or absent / unreadable) ``eps/phase``
         maps to ``terminal_terminated`` EXACTLY as today (spot preemption /
         max-run-duration / manual mid-run stop → straight to dead, NO
@@ -4802,6 +4815,19 @@ class GcpBackend(ComputeBackend):
                 phase = ""
             if phase == "wedged":
                 return _terminal_dead_poll(reason="wedged_terminated")
+            # #1029: the same §4.1.0b discrimination the RUNNING path runs
+            # (see poll()'s ``phase == "failed"`` branch) — makes the
+            # NOT-STARTED case's classification timing-independent (the
+            # probe-failure and started=True cases remain on the
+            # terminal_terminated default — both today's behavior,
+            # deliberately preserved). _workload_started falls back to True on
+            # a probe failure by its existing contract -> keeps
+            # terminal_terminated (never manufactures a setup classification).
+            # A "failed" phase WITH the workload started (a mid-run guest
+            # shutdown, e.g. a spot preemption whose trap completed) falls
+            # through to terminal_terminated — the #669 exclusion verbatim.
+            if phase == "failed" and not self._workload_started(handle, zone):
+                return _terminal_dead_poll(reason="setup_failed")
             if phase == "done":
                 # #935 — purely ADDITIVE: do NOT refactor the existing
                 # ``workload_done`` / ``relaunched_workload_done`` literals

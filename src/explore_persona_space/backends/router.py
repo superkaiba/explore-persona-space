@@ -32,6 +32,13 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    queue-wait timeout (``EPS_GCP_QUEUE_WAIT_SECONDS``, task #783), which
    cancels the queued instance and fails it over to the RunPod terminal rung
    (``reason: gcp_queue_timeout_failover_runpod``) rather than waiting forever.
+   And a GCP PRE-WORKLOAD BOOT LOOP — N (default 2,
+   ``EPS_GCP_BOOT_DEATH_STREAK_N``) consecutive same-rung setup deaths,
+   counted per (issue, rung) in the durable lease — is the FOURTH
+   GCP→RunPod trigger (#1029, ``reason: gcp_boot_loop_failover_runpod``);
+   the ladder walk additionally SKIPS a rung whose same-UTC-day streak is
+   >= N on the auto chain (outcome ``boot_loop_rung_skipped``, no daily
+   attempt burned; explicit ``backend: gcp`` pins are exempt).
 3. **Cancel state machine** — request a cancel via the backend's
    ``teardown(handle)``, then poll via the injected ``is_live_after_cancel``
    callable until the job is no longer live in the cluster queue
@@ -487,6 +494,34 @@ ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC: str = "gcp_workload_failover_ru
 #: does NOT touch the per-day GCP attempt counter (that bumps only on a
 #: create, inside ``_attempt_one_gcp_rung``, which the poller never re-enters).
 ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD: str = "gcp_queue_timeout_failover_runpod"
+
+#: The ASYNC poller detected a GCP PRE-WORKLOAD BOOT LOOP (#1029): N (default
+#: :data:`GCP_BOOT_DEATH_STREAK_N_DEFAULT`) CONSECUTIVE pre-workload setup
+#: deaths on the SAME ladder rung for the SAME issue, counted per-incarnation
+#: in the durable lease's ``gcp_boot_death_streaks`` record, and failed the
+#: run over to the RunPod terminal rung. DISTINCT from BOTH workload-crash
+#: reasons (:data:`ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD` / ``_ASYNC`` —
+#: a boot death never reached the workload), from
+#: :data:`ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD` (the instance there
+#: never left the capacity queue; here it booted and DIED), and from
+#: :data:`ROUTE_REASON_RUNPOD_FALLBACK` (capacity exhaustion at create time —
+#: these creates all SUCCEEDED). Same RunPod target + terminal rung, distinct
+#: detection cause so the ``epm:backend-selected`` marker trail tells a boot
+#: loop apart from a crash, a queue timeout, and a capacity miss. The trigger
+#: never touches the per-day GCP attempt counter (that bumps only on a create,
+#: inside ``_attempt_one_gcp_rung``, which the poller never re-enters).
+ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD: str = "gcp_boot_loop_failover_runpod"
+
+#: Default N for the #1029 pre-workload boot-loop breaker: the Nth CONSECUTIVE
+#: same-rung pre-workload boot death fails over to RunPod, and a rung whose
+#: same-UTC-day streak is >= N is SKIPPED by the route()-side ladder walk
+#: (outcome ``boot_loop_rung_skipped``, no daily attempt burned). N=2 gives a
+#: lone transient setup death (a clone/uv-sync hiccup) exactly ONE free retry —
+#: the documented manual protocol for the #640 guestTerminate class ("allow
+#: exactly ONE blind GCP retry, then pivot to RunPod") and the #775 CUDA-IMA
+#: second-same-signature precedent. Env-overridable at call time via
+#: ``EPS_GCP_BOOT_DEATH_STREAK_N`` (see :func:`gcp_boot_death_streak_threshold`).
+GCP_BOOT_DEATH_STREAK_N_DEFAULT: int = 2
 
 #: The RunPod terminal rung PROVISIONED a pod but the #909 workload-start leg
 #: FAILED (``RunPodWorkloadStartError`` carrying the partial handle, #954). A
@@ -1031,6 +1066,19 @@ class Lease:
     #: fresh host with this field already set routes to terminal
     #: ``failure_class: code``. ``None`` for every non-CUDA-IMA-failover lease.
     runpod_cuda_ima_failover_of: dict[str, Any] | None = None
+    #: Per-rung consecutive pre-workload boot-death streaks (#1029). Keyed by
+    #: the GCP ladder-rung label (e.g. ``"flexstart_l4"``; the poller's
+    #: ``"unknown_rung"`` fallback pools pre-#1029 handles that lack the
+    #: threaded label); each value is ``{"count": int, "date": "YYYY-MM-DD"
+    #: (UTC), "last_ts": float, "last_incarnation": str}``. Same-UTC-day scoped
+    #: (mirrors ``gcp_attempts_date``: a stale streak must not poison a rung
+    #: after the cause — often a since-fixed commit — is gone). Written by the
+    #: poller via :func:`record_gcp_boot_death` (incarnation-keyed idempotent
+    #: increment), cleared per-rung by :func:`reset_gcp_boot_death_streak` on a
+    #: POSITIVE workload signal, read by :func:`gcp_boot_death_streak` for the
+    #: route()-side rung skip. Tolerant parse: a malformed payload reads as
+    #: ``{}`` (fail-open toward today's behavior).
+    gcp_boot_death_streaks: dict[str, Any] = field(default_factory=dict)
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -1046,6 +1094,7 @@ class Lease:
             "gcp_failover_of": self.gcp_failover_of,
             "runpod_wedge_failover_of": self.runpod_wedge_failover_of,
             "runpod_cuda_ima_failover_of": self.runpod_cuda_ima_failover_of,
+            "gcp_boot_death_streaks": self.gcp_boot_death_streaks,
         }
 
     @classmethod
@@ -1053,6 +1102,7 @@ class Lease:
         raw_failover = payload.get("gcp_failover_of")
         raw_wedge_failover = payload.get("runpod_wedge_failover_of")
         raw_cuda_ima_failover = payload.get("runpod_cuda_ima_failover_of")
+        raw_boot_streaks = payload.get("gcp_boot_death_streaks")
         return cls(
             issue=int(payload["issue"]),
             spec_hash=str(payload["spec_hash"]),
@@ -1070,6 +1120,7 @@ class Lease:
             runpod_cuda_ima_failover_of=(
                 raw_cuda_ima_failover if isinstance(raw_cuda_ima_failover, dict) else None
             ),
+            gcp_boot_death_streaks=(raw_boot_streaks if isinstance(raw_boot_streaks, dict) else {}),
         )
 
     def is_unknown_submitted(self) -> bool:
@@ -1339,6 +1390,157 @@ def _bump_gcp_attempt(lease: Lease) -> Lease:
         lease.gcp_attempts_today = 0
     lease.gcp_attempts_today += 1
     return lease
+
+
+# ---------------------------------------------------------------------------
+# GCP pre-workload boot-death streaks (#1029)
+# ---------------------------------------------------------------------------
+
+
+def gcp_boot_death_streak_threshold() -> int:
+    """The #1029 boot-loop breaker threshold N, defaulting to 2.
+
+    Read at CALL time (not import time) from ``EPS_GCP_BOOT_DEATH_STREAK_N`` so
+    ops can retune without restarting the poller (mirrors
+    ``backend_poll._gcp_queue_wait_seconds``). A missing / non-integer / ``<1``
+    value falls back to :data:`GCP_BOOT_DEATH_STREAK_N_DEFAULT` — the threshold
+    can never be zero/negative (which would fail over on the FIRST setup death,
+    killing legitimate transients) or crash a poll on a typo.
+    """
+    raw = os.environ.get("EPS_GCP_BOOT_DEATH_STREAK_N")
+    if raw is None:
+        return GCP_BOOT_DEATH_STREAK_N_DEFAULT
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        return GCP_BOOT_DEATH_STREAK_N_DEFAULT
+    return val if val >= 1 else GCP_BOOT_DEATH_STREAK_N_DEFAULT
+
+
+def record_gcp_boot_death(
+    issue: int, rung: str, *, incarnation: str, lease_store: LeaseStore | None = None
+) -> int:
+    """flock'd increment of the (issue, rung) consecutive boot-death streak (#1029).
+
+    Rollover-on-day-change: the streak resets when the record's ``date`` is not
+    today (UTC), mirroring the ``gcp_attempts_date`` probe. IDEMPOTENT on the
+    launch INCARNATION key: a re-poll of the SAME dead instance returns the
+    current count unchanged; a DISTINCT incarnation increments and stamps
+    ``last_ts`` / ``last_incarnation``. Returns the post-record count.
+
+    The INCARNATION key identifies one VM CREATE, NOT one ``route()`` call: the
+    poller builds it as ``str(handle.job_id)`` — the GCE instance id, distinct
+    per create by construction and stable across re-polls of one sidecar —
+    falling back to ``f"{attempt_id}:{gcp_launched_ts}"`` when ``job_id`` is
+    absent. ``attempt_id`` ALONE is FORBIDDEN as the key: #763's five creates
+    all shared ``att-20260630-141513`` with DISTINCT instance ids (verified
+    from the ``epm:cluster-launched`` markers), so attempt_id-keying would
+    dedupe REAL consecutive deaths and freeze the streak at 1 — the breaker
+    would never fire on the motivating incident (#927's fresh-mint default
+    landed post-incident, and a caller-pinned ``spec.extra`` attempt_id still
+    takes precedence). A DEGENERATE key (job_id absent AND both fallback
+    components empty — pre-fix handles) is the CALLER's to skip
+    (``backend_poll._maybe_escalate_gcp_boot_loop`` skips the record entirely,
+    logged, fail-open to today's behavior); this helper defensively no-ops on
+    an empty incarnation too, returning the current count.
+
+    A missing lease (no launch has written one — only reachable when the lease
+    file was wiped, since every GCP launch writes a lease inside
+    ``_attempt_one_gcp_rung``) is CREATED with placeholder ``spec_hash`` /
+    ``attempt_id`` so the streak still records; the next real launch's
+    ``_thread_attempt_id_into`` / ``_lease_after_submit`` overwrite the
+    placeholders as usual.
+    """
+    store = lease_store or LeaseStore()
+    rung = str(rung)
+    incarnation = str(incarnation)
+    with store.transaction(int(issue)) as (lease, write):
+        if lease is None:
+            lease = Lease(issue=int(issue), spec_hash="", attempt_id="")
+        today = _today_utc_iso()
+        streaks = lease.gcp_boot_death_streaks
+        rec = streaks.get(rung)
+        if not isinstance(rec, dict) or rec.get("date") != today:
+            rec = {"count": 0, "date": today, "last_ts": 0.0, "last_incarnation": ""}
+        current = _coerce_streak_count(rec.get("count"))
+        if not incarnation:
+            # Defensive no-op (the poller already skips degenerate keys):
+            # keying on "" would dedupe every pre-fix handle's deaths together.
+            logger.warning(
+                "record_gcp_boot_death: empty incarnation key for issue %d rung %s; "
+                "skipping the record (fail-open, #1029)",
+                int(issue),
+                rung,
+            )
+            return current
+        if rec.get("last_incarnation") == incarnation and current > 0:
+            # Re-poll of the SAME dead instance -> idempotent (no increment).
+            return current
+        count = current + 1
+        streaks[rung] = {
+            "count": count,
+            "date": today,
+            "last_ts": float(time.time()),  # wall-clock, not monotonic
+            "last_incarnation": incarnation,
+        }
+        lease.gcp_boot_death_streaks = streaks
+        write(lease)
+        return count
+
+
+def reset_gcp_boot_death_streak(
+    issue: int, rung: str, *, lease_store: LeaseStore | None = None
+) -> None:
+    """flock'd drop of the (issue, rung) boot-death streak record (#1029).
+
+    Called by the poller on a POSITIVE workload signal (boot demonstrably
+    succeeded — see ``backend_poll._maybe_reset_gcp_boot_streak``). Read-before-
+    write: a no-op write is avoided when no record exists for the rung, so the
+    common healthy-poll tick never rewrites the lease.
+    """
+    store = lease_store or LeaseStore()
+    rung = str(rung)
+    with store.transaction(int(issue)) as (lease, write):
+        if lease is None:
+            return
+        if rung in lease.gcp_boot_death_streaks:
+            del lease.gcp_boot_death_streaks[rung]
+            write(lease)
+
+
+def gcp_boot_death_streak(issue: int, rung: str, *, lease_store: LeaseStore | None = None) -> int:
+    """Plain read: the (issue, rung) boot-death count IF its date is today, else 0 (#1029).
+
+    A missing / malformed lease or record — or a record from a PRIOR UTC day
+    (the same-day scoping :func:`record_gcp_boot_death` writes) — reads 0:
+    fail-open toward today's behavior (the rung is attempted), never a false
+    skip.
+    """
+    store = lease_store or LeaseStore()
+    try:
+        lease = store.read(int(issue))
+    except OSError as exc:
+        logger.warning(
+            "gcp_boot_death_streak: lease read failed for issue %s (%s: %s); reading 0",
+            issue,
+            type(exc).__name__,
+            exc,
+        )
+        return 0
+    if lease is None:
+        return 0
+    rec = lease.gcp_boot_death_streaks.get(str(rung))
+    if not isinstance(rec, dict) or rec.get("date") != _today_utc_iso():
+        return 0
+    return _coerce_streak_count(rec.get("count"))
+
+
+def _coerce_streak_count(raw: Any) -> int:
+    """Coerce a streak-record ``count`` to a non-negative int (malformed -> 0)."""
+    try:
+        return max(0, int(raw))
+    except (TypeError, ValueError):
+        return 0
 
 
 # ---------------------------------------------------------------------------
@@ -4350,6 +4552,42 @@ def _attempt_one_gcp_rung(
         )
         return "advance"
 
+    # #1029 boot-loop breaker: a rung with >= N consecutive pre-workload boot
+    # deaths TODAY for THIS issue is skipped on the auto chain — advancing to
+    # the next rung (and eventually the RunPod terminal rung) instead of
+    # re-creating a VM that just boot-looped. No daily attempt is consumed
+    # (the cap counts CREATES; a skip avoids the create). The explicit
+    # `backend: gcp` pin (count_attempt_cap=False) is EXEMPT — an explicit
+    # user ask attempts anyway, mirroring the cap exemption above. The skip
+    # reads the REAL rung_label route() is walking, so the poller's
+    # transitional "unknown_rung" lease key (pre-fix handles) can never match
+    # a route-side read.
+    if count_attempt_cap:
+        streak = gcp_boot_death_streak(spec.issue, rung_label, lease_store=store)
+        if streak >= gcp_boot_death_streak_threshold():
+            attempts.append(
+                RouteAttempt(
+                    kind="gcp",
+                    cluster=None,
+                    est_start_seconds_raw=0.0,
+                    est_start_seconds_clamped=0.0,
+                    outcome="boot_loop_rung_skipped",
+                    detail=(
+                        f"rung {rung_label}: {streak} consecutive pre-workload boot "
+                        f"deaths today (#1029 boot-loop breaker); skipping without "
+                        f"burning a daily attempt"
+                    ),
+                    elapsed_seconds=now_fn() - started_at,
+                )
+            )
+            logger.warning(
+                "route: GCP rung %s boot-looped %dx today for issue %d; advancing.",
+                rung_label,
+                streak,
+                spec.issue,
+            )
+            return "advance"
+
     with store.transaction(spec.issue) as (lease, write):
         # Cap-check BEFORE bump-and-persist, RE-READ this rung iteration
         # (advisory: the ladder must stop issuing creates the moment the cap
@@ -4526,6 +4764,20 @@ def _attempt_one_gcp_rung(
                 ),
                 evidence=exc.evidence,
             ) from exc
+
+        # #1029: thread the ladder-rung label + wall-clock launch ts onto the
+        # handle so the async poller can key the boot-death streak per
+        # (issue, rung) and age post-DELETE observations. BEFORE
+        # _invoke_on_launched so even the crash-window sidecar copy carries the
+        # keys (handle.extra is a mutable dict by design — the per_zone_attempts
+        # pattern; assign in place). time.time(), NOT now_fn(): the poller ages
+        # gcp_launched_ts against time.time() and route()'s now_fn defaults to
+        # time.monotonic (a different epoch). NOTE: on the #736 reconnect path a
+        # re-minted handle's setdefault stamps a ts that post-dates the true VM
+        # create, biasing the age read YOUNGER — marginal (the heuristic floor
+        # is 1500s) but worth this comment at the site.
+        gcp_handle.extra.setdefault("gcp_ladder_rung", rung_label)
+        gcp_handle.extra.setdefault("gcp_launched_ts", float(time.time()))
 
         # Persist the handle (sidecar hook) + launched id IMMEDIATELY
         # (still under the flock).
