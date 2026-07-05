@@ -2542,8 +2542,10 @@ the same logic.
        residual blocker(s), set `status: blocked`, fire
        `PushNotification({"message": f"#{N} BLOCKED: ensemble review real
        residual at cap-5 — open it"[:200], "status": "proactive"})`, run
-       CRON-TEARDOWN (`CronList` → `CronDelete` the `/issue-tick <N>` job;
-       idempotent), and EXIT. This is the standing halt path for a
+       CRON-TEARDOWN (fresh `CronList` → `CronDelete` every job in the
+       two-leg match set: the recurring `/issue-tick <N>` tick +
+       stray one-shot `/issue <N>` wakeups; not-found = success;
+       § CRON-TEARDOWN procedure), and EXIT. This is the standing halt path for a
        genuinely-stuck real blocker after the auto-continue space is
        exhausted (halt_criteria id=6 `concern_unresolved` family) — no
        more pivots, no more silent shipping past.
@@ -3902,17 +3904,50 @@ pod-backed `kind: experiment` runs reaching Step 6d.2;
 the polling loop do NOT arm it.
 
 **CRON-TEARDOWN procedure (run INLINE at every terminal / park exit site,
-not only here in prose) — hardened 2026-06-12.** `CronList`, delete EVERY
-job matching this issue's tick: primary match is whole-string equality
-(`prompt.strip() == "/issue-tick <N>"`); hardened fallback is the anchored
-pattern `issue-tick\s+<N>(?!\d)` (harness prompt-normalization drift was
-the #501 failure mode — the whole-string teardown silently no-oped 1,951
-times; the `(?!\d)` guard prevents sibling mis-delete, `"/issue-tick 46"`
-never matches `"/issue-tick 467"`). Then ASSERT-AFTER-DELETE: re-`CronList`
-and verify no matching job survived; if one did, retry the delete ONCE,
-then log LOUDLY — the runaway parachute (`tick_triage.py`'s
-3-consecutive-terminal flag + the watcher's force-stop) bounds the damage
-of a cron that refuses to die. The backstop
+not only here in prose) — hardened 2026-06-12; widened + idempotent
+2026-07-05 (#1052).** Sweep the cron store with a TWO-LEG match set,
+resolving ids from a FRESH `CronList` at teardown time (#988 — never
+`CronDelete` an id recorded earlier in the session: recorded ids go stale
+when a one-shot fires or a concurrent teardown wins the race). Delete
+EVERY job matching EITHER leg:
+
+- **Leg 1 — the recurring tick cron:** primary match is whole-string
+  equality (`prompt.strip() == "/issue-tick <N>"`); hardened fallback is
+  the anchored pattern `issue-tick\s+<N>(?!\d)` (harness
+  prompt-normalization drift was the #501 failure mode — the whole-string
+  teardown silently no-oped 1,951 times; the `(?!\d)` guard prevents
+  sibling mis-delete, `"/issue-tick 46"` never matches
+  `"/issue-tick 467"`).
+- **Leg 2 — stray one-shot `/issue <N>` wakeups (#980 — a live one-shot
+  wakeup that survives past terminal re-drives the FULL skill on a
+  completed task):** primary match is whole-string equality against the
+  bare full-skill wakeup prompt (the f-string form in the canonical
+  block); fallback is the START-anchored pattern `/issue\s+<N>(?!\d)` via
+  `re.match` (the start anchor keeps deletion surgical — a prose prompt
+  that merely MENTIONS the issue never matches; `(?!\d)` guards siblings;
+  the `-` in `/issue-tick` fails `\s+`, so leg 2 never re-matches leg 1's
+  job; trailing text like `--auto` matches by design).
+
+A `CronDelete` error indicating the job does not exist (observed shape:
+`No scheduled job with id …`) is SUCCESS, not a failure (#988) —
+idempotent means the job being gone is the goal: continue the sweep,
+never retry that id, never abort or raise on it. Then
+ASSERT-AFTER-DELETE over BOTH legs: re-`CronList` and verify no job
+matching EITHER leg survived; if one did, retry the delete ONCE (fresh
+id from the re-list), then log LOUDLY — the runaway parachute
+(`tick_triage.py`'s 3-consecutive-terminal flag + the watcher's
+force-stop) bounds the damage of a cron that refuses to die. Canonical
+pseudocode: `.claude/skills/issue-tick/SKILL.md` § CRON-TEARDOWN.
+
+**Prevention ban (#980).** An `/issue` session must NEVER schedule its
+own re-drive — no `ScheduleWakeup` wakeup and no `CronCreate` one-shot,
+regardless of prompt shape. The Step 0 / Step 6d.2 `/issue-tick <N>`
+cron is the ONLY sanctioned self-wake: a one-shot wakeup may not be
+enumerable at teardown time, and one that fires after terminal re-drives
+a completed task (#980). Leg 2 + the self-heal sweep BOUND — they do not
+guarantee deletion of — whatever the store fails to surface.
+
+The backstop
 DELIBERATELY survives the `done` → `verifying` transition (Step 6d.3) and
 keeps re-firing through the uploading / verifying / interpreting /
 reviewing stages — those stages have no other auto-wake, so the backstop
@@ -3945,10 +3980,13 @@ finishes uninterrupted (concrete rule in Step 9). State stays coherent
 regardless because every re-entry reads `events.jsonl` fresh. If a
 teardown at a terminal/park transition is ever missed, the residue is
 cheap: the cron auto-expires at 7 days, and a tick landing on a
-`completed` / `archived` / `awaiting_promotion` issue is a no-op (the
-re-invoked skill reads terminal/park state and exits without re-arming).
-Run CRON-TEARDOWN the moment you spot a stranded cron
-(`CronList` → `CronDelete`).
+`completed` / `archived` / `awaiting_promotion` issue is a no-op that
+SELF-HEALS (the re-invoked skill reads terminal/park state, exits without
+re-arming, and runs the two-leg sweep before EXIT — so a wakeup that
+escaped an earlier teardown deletes its own stray siblings when it fires;
+the blast-radius bound for whatever the store fails to surface).
+Run CRON-TEARDOWN the moment you spot a stranded cron or stray one-shot
+wakeup (fresh `CronList` → `CronDelete`, both legs).
 
 Residual failure mode the in-session backstop does NOT cover: if the
 per-issue *session itself* dies (process exit, host reboot), a
@@ -4260,7 +4298,9 @@ Gate handlers (one per registered `<name>`):
   (the `code|infra|data` taxonomy has no `workflow` class; the failure
   classifier defaults unknown classes to `code` anyway), a note pointing
   at the unrecognised gate name + the sentinel path, run CRON-TEARDOWN
-  (`CronList` → `CronDelete` the `/issue-tick <N>` job), set
+  (fresh `CronList` → `CronDelete` every job in the two-leg match set:
+  the recurring `/issue-tick <N>` tick + stray one-shot `/issue <N>`
+  wakeups; not-found = success; § CRON-TEARDOWN procedure), set
   `status:blocked`, exit. This forces a workflow-fix-candidate before
   the gate name can silently no-op.
 
@@ -4274,11 +4314,12 @@ fresh dispatch, per the GCP-lane teardown leg above) — "no teardown" is
 RunPod-scoped. Their handler resumes the polling loop in the same turn,
 so it skips this whole paragraph.
 
-For a PARK-mode gate: run CRON-TEARDOWN before parking (the HARDENED
-Step 6d.2 procedure:
-`CronList` → delete ALL jobs matching `/issue-tick <N>` — whole-string
-equality `prompt.strip() == "/issue-tick <N>"` plus the `(?!\d)`-guarded
-fallback — then assert-after-delete, retry once) — the pipeline has EXITed and no pod is
+For a PARK-mode gate: run CRON-TEARDOWN before parking (the HARDENED +
+WIDENED Step 6d.2 procedure: fresh `CronList` → `CronDelete` every job
+in the two-leg match set — the recurring `/issue-tick <N>` tick +
+stray one-shot `/issue <N>` wakeups; not-found = success;
+assert-after-delete, retry once; § CRON-TEARDOWN
+procedure) — the pipeline has EXITed and no pod is
 burning GPU (on the GCP lane because the teardown leg above already
 finalized the instance BEFORE this park), so the backstop should not keep
 re-firing `/issue-tick <N>` (which
@@ -6519,8 +6560,10 @@ uv run python scripts/task.py post-marker <N> epm:status-changed \
 
 **Run CRON-TEARDOWN now.** `awaiting_promotion` is the terminal/park
 transition for an experiment: the pod was terminated at Step 8 and this is
-a human gate, so there is nothing left to auto-drive. `CronList` →
-`CronDelete` the job with `prompt.strip() == "/issue-tick <N>"` so the backstop
+a human gate, so there is nothing left to auto-drive. Fresh `CronList` →
+`CronDelete` every job in the two-leg match set (the recurring
+`/issue-tick <N>` tick + stray one-shot `/issue <N>` wakeups;
+not-found = success; § CRON-TEARDOWN procedure) so the backstop
 that deliberately survived the post-`done` stages stops re-firing now. (A
 later user re-invocation at `awaiting_promotion` does not re-arm — Step 6d.2
 arms only for pod-backed runs reaching the polling loop.)
@@ -7490,8 +7533,10 @@ Post `epm:test-verdict v1`. PASS = steps 1–2 pass via compare exit 0 (with
 their existing rules -> Step 10. FAIL (`epm:test-verdict` FAIL count < 3) ->
 stay in `reviewing`, re-spawn implementer. FAIL (`epm:test-verdict` FAIL
 count >= 3) -> run
-CRON-TEARDOWN (`CronList` → `CronDelete` the `/issue-tick <N>` job — idempotent;
-no-ops for a code-change task that never armed one), then status to
+CRON-TEARDOWN (fresh `CronList` → `CronDelete` every job in the two-leg
+match set: the recurring `/issue-tick <N>` tick + stray one-shot
+`/issue <N>` wakeups; not-found = success — no-ops for a code-change task
+that never armed one; § CRON-TEARDOWN procedure), then status to
 `blocked`. Fire `PushNotification({"message": f"#{N} BLOCKED: tests
 FAIL after 3 rounds — open it"[:200], "status": "proactive"})` before
 setting status (soft-fail).
@@ -7591,8 +7636,10 @@ work* contract.
      user to add one. Do NOT pick a default, and do NOT advance until
      fixed.
 
-6. Run CRON-TEARDOWN before applying the terminal status (`CronList` →
-   `CronDelete` the job with `prompt.strip() == "/issue-tick <N>"`). For an
+6. Run CRON-TEARDOWN before applying the terminal status (fresh
+   `CronList` → `CronDelete` every job in the two-leg match set: the
+   recurring `/issue-tick <N>` tick + stray one-shot `/issue <N>` wakeups;
+   not-found = success; § CRON-TEARDOWN procedure). For an
    experiment the cron was already torn down at Step 9b
    (`awaiting_promotion`), so this is an idempotent backstop; for a
    code-change path arriving via Step 9c PASS it is the teardown site (a
@@ -9118,8 +9165,8 @@ dedicated "working" statuses):
 | `interpreting` | clean-result ensemble verdict REVISE (agreed, unioned, or reconciled by a role-matching `epm:review-reconcile`; after the Step 9a-bis procedural-only strip), round < 5 | structure / register revision in progress | re-spawn analyzer with both clean-result critiques |
 | `interpreting` | clean-result ensemble verdict PASS-class or (round >= 5 AND the Step 9a-bis cap-hit resolved: all residual stripped, no substantive overclaim residual) | ready for review | advance to `reviewing`. (round >= 5 with a SUBSTANTIVE overclaim residual → apply Step 9a-bis surface-real-residual rule: interactive present to user; autonomous `epm:failure v1 failure_class: code` + `blocked` + notify) |
 | `reviewing` | (no agent dispatch; transitional single-step) | reviewer step retired; absorbed into clean-result-critic Lens 7 | move to `awaiting_promotion`, run the Step 10d auto-merge procedure, post `epm:status-changed`, EXIT |
-| `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, EXIT |
-| `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, EXIT |
+| `awaiting_promotion` | `classification == 'pending'` in body frontmatter, no `epm:merged` and PR unmerged | waiting for user to promote; worktree not yet merged | run the Step 10d auto-merge procedure (idempotent backstop — covers the case where the Step 9b auto-merge was interrupted), then show task path, prompt to promote via `task.py promote`, run CRON-TEARDOWN (self-heal sweep, § CRON-TEARDOWN procedure, stray one-shot `/issue <N>` wakeups included), EXIT |
+| `awaiting_promotion` | `classification == 'pending'` in body frontmatter, `epm:merged` present | waiting for user to promote; worktree already merged | show task path, prompt to promote via `task.py promote`, run CRON-TEARDOWN (self-heal sweep, § CRON-TEARDOWN procedure, stray one-shot `/issue <N>` wakeups included), EXIT |
 | `awaiting_promotion` | `classification != 'pending'` (user ran `task.py promote`) | user promoted | advance to Step 10 (auto-complete) |
 | `interpreting` / `reviewing` / `awaiting_promotion` / `completed` | unrun `epm:followup-scope` (≥1 UNRUN `followup_label` per `task_workflow.unrun_followup_labels`: entries grouped by label, within-label latest-(`ts`,`version`) authoritative, a label unrun iff no matching `epm:same-issue-followup-run v1`) | a `question_relation: same` follow-up is scoped to run ON this issue (takes precedence over the status rows above — see Step 0 "Same-issue follow-up dispatch") | route into the same-issue follow-up loop (Step 9b § Same-issue follow-up loop): dispatch ONE label per entry — the queue head (user-initiated first, then oldest armed ts); set status to `followups_running` + tag `followup-auto`\|`followup-manual` and run the abbreviated cycle. The loop re-reads the round's label-scoped scope at the planner snapshot (Step 9b § Same-issue follow-up loop step 3) so a crashed-mid-round resume picks up any correction posted since the round started |
 | `followups_running` | unrun `epm:followup-scope` (≥1 UNRUN `followup_label` per `task_workflow.unrun_followup_labels`: entries grouped by label, within-label latest-(`ts`,`version`) authoritative, a label unrun iff no matching `epm:same-issue-followup-run v1`) | a same-issue follow-up round is mid-flight (this row takes precedence over the two children-based rows below) | resume the same-issue follow-up loop at the phase the stage breadcrumbs (`stage=followup-<phase>`) + latest markers indicate — do NOT restart from the top; `task_workflow.executing_followup_label` resolves WHICH label the round is executing (labeled breadcrumb first, dispatchable queue head fallback), and the planner-snapshot re-read (Step 9b § Same-issue follow-up loop step 3) picks up that label's latest scope so a correction posted mid-round is honored on resume |
