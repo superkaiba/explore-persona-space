@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import os
 import random
 import subprocess
@@ -378,6 +379,180 @@ def _atomic_write_json(path: Path, payload: dict) -> None:
     os.replace(tmp, path)
 
 
+# ── Build-time mix token budget (task #906 r13/r14) ───────────────────────────
+
+_budget_logger = logging.getLogger(__name__)
+
+# Fail-loud floor for build-time row rejection: a rejected fraction above this
+# means the budget is SYSTEMATICALLY too small for the question distribution —
+# the remedy is a deliberate recipe max_length raise, never a silently shrunk
+# mix. Grounded on the #906 att-20260704-061624 crash rows: 4/200 rows (2%)
+# overflow (two extreme-tail WildChat prompts of 2181/1718 prompt-only tokens),
+# median full-row 487/419 tokens — 0.10 separates "tail outliers" from "wrong
+# budget" with wide margin on both sides.
+MIX_MAX_REJECT_FRAC = 0.10
+
+
+def mix_row_token_len(row: Mapping, tokenizer) -> int:
+    """Full tokenized row length under the trainer's EXACT render.
+
+    Matches the TRL prompt-completion tokenization ``train_lora`` performs (and
+    ``sft.py::_tokenize_probe_row`` mirrors): render ``prompt + completion`` in
+    ONE ``apply_chat_template`` call with ``add_generation_prompt=False``.
+    SFTTrainer right-truncates each row at ``cfg.max_length``, so a row longer
+    than the budget SILENTLY loses its completion tail — degraded supervision on
+    content mixes, a loud ``MarkerOnlyDataCollator`` crash on marker mixes (the
+    #906 r13 incident).
+    """
+    ids = tokenizer.apply_chat_template(
+        list(row["prompt"]) + list(row["completion"]),
+        tokenize=True,
+        add_generation_prompt=False,
+    )
+    if isinstance(ids, dict):
+        ids = ids["input_ids"]
+    return len(ids)
+
+
+def _row_question(row: Mapping) -> str | None:
+    """The row's question: the LAST user-message content (None if no user turn)."""
+    for msg in reversed(list(row["prompt"])):
+        if msg.get("role") == "user":
+            return str(msg.get("content", ""))
+    return None
+
+
+def enforce_mix_token_budget(
+    pos_rows: list[dict],
+    cn_rows: list[dict],
+    tokenizer,
+    max_length: int,
+    *,
+    generic_rows: list[dict] | None = None,
+    max_reject_frac: float = MIX_MAX_REJECT_FRAC,
+    label: str = "mix-budget",
+    log: logging.Logger | None = None,
+) -> tuple[list[dict], list[dict], list[dict] | None, dict]:
+    """Reject rows whose FULL tokenized length exceeds the training budget.
+
+    The shared build-time gate behind BOTH mix paths (#906 r13 marker crash;
+    r14 ``content-mix-token-budget-unenforced`` concern — content-class
+    truncation at ``max_length`` is SILENT, no fail-loud collator):
+
+    - pos/cn rows are QUESTION-paired (``datagen.generate_training_data``
+      emits same-question negatives; the marker inline builder is
+      index-aligned, a special case): when any pos/cn row overflows, every
+      pos + cn row sharing its question (the last user-message content) is
+      dropped from BOTH sides — preserving the same-question contrastive
+      pairing (.claude/rules/contrastive-negatives.md) regardless of row
+      ordering. A row with no user turn is dropped individually.
+    - ``generic_rows`` (interleaved generic-chat corpus rows) carry no pairing
+      and drop individually.
+    - Fail loud (RuntimeError) when the rejected fraction exceeds
+      ``max_reject_frac`` — a systematic overflow means the budget itself is
+      wrong, never silently shrink the mix.
+    - Fail loud (ValueError) when a non-empty contrastive-negative side is
+      emptied by the gate — positive-only training leaks uniformly (#18/#207).
+    - Log a WARNING on an asymmetric pos/cn drop (the ~1:1 contrastive ratio
+      was perturbed; the below-floor survivors remain usable but the drift is
+      surfaced).
+
+    Returns ``(kept_pos, kept_cn, kept_generic, stats)`` where ``kept_generic``
+    is None iff ``generic_rows`` is None. ``log`` routes telemetry to the
+    caller's logger (default: this module's).
+    """
+    lg = log or _budget_logger
+    pos_lens = [mix_row_token_len(r, tokenizer) for r in pos_rows]
+    cn_lens = [mix_row_token_len(r, tokenizer) for r in cn_rows]
+    gen_lens = [mix_row_token_len(r, tokenizer) for r in generic_rows or []]
+    all_lens = pos_lens + cn_lens + gen_lens
+    max_row_tokens = max(all_lens) if all_lens else 0
+
+    bad_questions: set[str] = set()
+    for rows, lens in ((pos_rows, pos_lens), (cn_rows, cn_lens)):
+        for r, n in zip(rows, lens, strict=True):
+            if n > max_length:
+                q = _row_question(r)
+                if q is not None:
+                    bad_questions.add(q)
+
+    def _keep(row: dict, n: int) -> bool:
+        if n > max_length:
+            return False
+        q = _row_question(row)
+        return q is None or q not in bad_questions
+
+    kept_pos = [r for r, n in zip(pos_rows, pos_lens, strict=True) if _keep(r, n)]
+    kept_cn = [r for r, n in zip(cn_rows, cn_lens, strict=True) if _keep(r, n)]
+    kept_generic: list[dict] | None = None
+    if generic_rows is not None:
+        kept_generic = [r for r, n in zip(generic_rows, gen_lens, strict=True) if n <= max_length]
+
+    n_rejected_pos = len(pos_rows) - len(kept_pos)
+    n_rejected_cn = len(cn_rows) - len(kept_cn)
+    n_rejected_generic = (len(generic_rows) - len(kept_generic)) if generic_rows is not None else 0
+    n_rejected = n_rejected_pos + n_rejected_cn + n_rejected_generic
+    total = len(pos_rows) + len(cn_rows) + len(generic_rows or [])
+    rejected_frac = (n_rejected / total) if total else 0.0
+    stats = {
+        "enforced": True,
+        "budget": int(max_length),
+        "max_row_tokens": int(max_row_tokens),
+        "n_rejected": n_rejected,
+        "n_rejected_pos": n_rejected_pos,
+        "n_rejected_cn": n_rejected_cn,
+        "n_kept_pos": len(kept_pos),
+        "n_kept_cn": len(kept_cn),
+        "rejected_frac": rejected_frac,
+        "reject_frac_floor": max_reject_frac,
+    }
+    if generic_rows is not None:
+        stats["n_rejected_generic"] = n_rejected_generic
+        stats["n_kept_generic"] = len(kept_generic or [])
+    lg.info(
+        "[%s] max_row_tokens=%d budget=%d n_rejected=%d (pos=%d cn=%d generic=%d) "
+        "kept=%d/%d rejected_frac=%.3f floor=%.2f",
+        label,
+        max_row_tokens,
+        max_length,
+        n_rejected,
+        n_rejected_pos,
+        n_rejected_cn,
+        n_rejected_generic,
+        total - n_rejected,
+        total,
+        rejected_frac,
+        max_reject_frac,
+    )
+    if rejected_frac > max_reject_frac:
+        raise RuntimeError(
+            f"[{label}] {n_rejected}/{total} mix rows ({rejected_frac:.1%}) exceed the "
+            f"training max_length={max_length} (max row = {max_row_tokens} tokens) — above "
+            f"the {max_reject_frac:.0%} rejection floor. The budget is systematically too "
+            "small for this question/generation setting: raise the recipe's max_length "
+            "override (grounded on the measured row-length distribution) or cap the "
+            "generation length; do NOT silently shrink the mix."
+        )
+    if cn_rows and not kept_cn:
+        raise ValueError(
+            f"[{label}] token-budget enforcement rejected EVERY contrastive-negative row "
+            f"({len(cn_rows)} pre-gate) while positives survived — positive-only training "
+            "leaks uniformly (.claude/rules/contrastive-negatives.md); refusing to train "
+            "a silently de-contrasted mix."
+        )
+    if n_rejected and n_rejected_pos != n_rejected_cn:
+        lg.warning(
+            "[%s] asymmetric drop: %d pos vs %d cn rows rejected — the ~1:1 "
+            "positives-to-negatives contrastive ratio is perturbed (kept %d pos / %d cn)",
+            label,
+            n_rejected_pos,
+            n_rejected_cn,
+            len(kept_pos),
+            len(kept_cn),
+        )
+    return kept_pos, kept_cn, kept_generic, stats
+
+
 def _context_content_fingerprint(ctx: Context) -> str:
     """Deterministic sha256 over the message-shaping fields (content identity).
 
@@ -710,6 +885,9 @@ def _assemble_mix(
     cn_path: Path,
     generic_data_path: Path | str | None,
     out_root: Path,
+    *,
+    tokenizer=None,
+    max_length: int | None = None,
 ) -> tuple[Path, dict[str, int], dict[str, int]]:
     """Final-mix assembly (v2 — MF-2 surplus refusal / bounded-deficit tolerance).
 
@@ -717,6 +895,16 @@ def _assemble_mix(
     shuffle; ``train_mix.jsonl`` + ``mix_meta.json`` persist the moment
     assembly completes (checkpoint-per-phase). Returns
     ``(train_mix_path, counts_planned, counts_realized)``.
+
+    When ``tokenizer`` and ``max_length`` are BOTH provided (the production
+    path), every row's full tokenized length is checked against the training
+    budget via :func:`enforce_mix_token_budget` (question-paired pos/cn drop,
+    individual generic drop, fail-loud rejection floor) BEFORE assembly — the
+    #906 r14 ``content-mix-token-budget-unenforced`` fix: SFTTrainer
+    right-truncation at ``max_length`` is SILENT on content mixes (no
+    fail-loud collator), so an overlong WildChat-lineage row would degrade its
+    completion supervision without an error. ``tokenizer=None`` (the offline
+    stub-seam test path) skips the gate, byte-identical legacy behavior.
     """
     pos_rows = _read_jsonl(pos_path)
     cn_rows = _read_jsonl(cn_path)
@@ -762,6 +950,26 @@ def _assemble_mix(
             )
         generic_rows = rng.sample(corpus, counts["generic"])
 
+    if tokenizer is not None and max_length is not None:
+        pos_rows, use_neg, kept_generic, budget_stats = enforce_mix_token_budget(
+            pos_rows,
+            use_neg,
+            tokenizer,
+            int(max_length),
+            generic_rows=generic_rows,
+            label="content-mix-budget",
+        )
+        generic_rows = kept_generic if kept_generic is not None else []
+        if not pos_rows:
+            raise ValueError(
+                "content-mix token-budget enforcement rejected every positive row "
+                f"(budget={max_length})"
+            )
+    else:
+        budget_stats = {"enforced": False, "reason": "no tokenizer/max_length provided"}
+        _budget_logger.debug("[content-mix-budget] skipped: no tokenizer/max_length")
+    _atomic_write_json(out_root / "mix_budget.json", budget_stats)
+
     mix = [*pos_rows, *use_neg, *generic_rows]
     rng.shuffle(mix)
     train_mix_path = out_root / "train_mix.jsonl"
@@ -784,6 +992,7 @@ def _assemble_mix(
         "spec": asdict(spec),
         "organism": asdict(organism),
         "seed": organism.seed,
+        "mix_token_budget": budget_stats,
     }
     _atomic_write_json(out_root / "mix_meta.json", mix_meta)
     return train_mix_path, counts, realized
@@ -802,6 +1011,7 @@ def build_organism(
     train_fn: Callable[..., tuple[str, float]] = train_lora,
     rate_fn: RateFn | None = None,
     fullft_run_fn: Callable[[list[str]], None] | None = None,
+    tokenizer=None,
 ) -> BuildResult:
     """datagen -> mix assembly -> recipe -> train -> dose-selected checkpoint.
 
@@ -818,6 +1028,12 @@ def build_organism(
     ``generate_training_data`` — mocked in tests, overridable for custom data
     pipelines. Every step fails fast; ``train_mix.jsonl`` + ``mix_meta.json``
     persist the moment assembly completes (checkpoint-per-phase).
+
+    ``tokenizer`` (optional): the base model's tokenizer. When provided, mix
+    assembly enforces the recipe's ``max_length`` token budget per row via
+    :func:`enforce_mix_token_budget` (the #906 r14 silent-truncation fix) —
+    production callers that will run the REAL trainer pass it; offline
+    stub-seam tests omit it (gate skipped, legacy behavior).
     """
     out_root = Path(out_root)
     behavior = organism.behavior_spec
@@ -857,8 +1073,19 @@ def build_organism(
         **dict(datagen_kwargs or {}),
     )
     # 3. Mix assembly (extracted; v2 — MF-2 surplus refusal / bounded-deficit tolerance).
+    # Token budget = the recipe's max_length override (a LOAD_BEARING_KEY:
+    # build_train_config refuses extra_overrides on it, so spec.overrides is
+    # authoritative for BOTH the lora and fullft branches; 1024 is the
+    # TrainLoraConfig field default when a recipe omits it).
     train_mix_path, counts, realized = _assemble_mix(
-        organism, spec, Path(pos_path), Path(cn_path), generic_data_path, out_root
+        organism,
+        spec,
+        Path(pos_path),
+        Path(cn_path),
+        generic_data_path,
+        out_root,
+        tokenizer=tokenizer,
+        max_length=int(spec.overrides.get("max_length", 1024)),
     )
 
     # 4/5. Train.

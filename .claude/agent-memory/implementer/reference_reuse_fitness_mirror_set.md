@@ -28,7 +28,7 @@ relevant set in one change:
    item-(i) code/helper-throughput recording slot AND the item-(j)
    pair-provenance dates slot.
 6. `.claude/rules/planner-section-reference.md` § 10 — the worked
-   Reproducibility Card template carries the item-(i) inspection-triple
+   Reproducibility Card template carries the item-(i) inspection record
    paragraph AND the item-(j) pair-provenance attestation paragraph (no
    lettered-range literal in this file).
 7. `.claude/agents/critic.md` — the Methodology lens item-name list names
@@ -81,7 +81,8 @@ relevant set in one change:
 only when a change affects item (i) itself.
 
 #871 added item (i): throughput fitness of reused fit/analysis/eval CODE —
-inner per-cell/per-fold/per-draw loop batched + device parametrized — scoped
+inner per-cell/per-fold/per-draw loop batched + device parametrized
+(+ scoped Hub-API calls since #972) — scoped
 to code reuse (N/A for data-only reuse), plan-time-only, with a
 SOURCE-MODULE-fix remedy (never retrain, never a caller-side workaround).
 
@@ -95,6 +96,28 @@ text itself, and a documented remedy-(2) pin PASSES the revision-scoped
 probe. #941 also shipped the gotchas.md sibling bullet and gave the
 consistency-checker a one-sentence mechanical date-ordering probe (the #734
 (h) precedent).
+
+#972 extended item (i) with a THIRD leg: (3) scoped Hub-API calls — data-repo
+verify / staging / existence-probe calls prefix-scoped
+(`list_repo_tree(path_in_repo=)` / `file_exists`) with a bounded
+first-page-429 retry (gotchas.md #833; incident #810 — a reused unscoped
+verify wedged a live A100 in 429 storms). The remedy phrase on every surface
+now reads "batch / parametrize / scope it there" (artifact-reuse.md ×2,
+planner.md step 5, CLAUDE.md), and leg (3) is ALSO mirrored where the legs
+are enumerated: critic-lens-reference.md item 9 (both spots), CLAUDE.md's
+bullet clause, vectorize-many-cell-fits.md's sibling-check parenthetical,
+the two PLANNERLESS-path pre-launch statements (CLAUDE.md
+inline-free-analysis carve-out + `.claude/skills/issue/SKILL.md` Step 9a-ter
+item (3)), methodology-baselines-critic.md's failure-signature
+parenthetical, and the review-side NEW-code twin — code-reviewer.md
+Step 0.68's Hub-call-scoping sub-check + codex-code-reviewer.md's copy-list
+bullet. #972 also widened item (i)'s TRIGGER CLASS on every class-gating
+surface: the class words now read "fit / analysis / eval /
+upload-verify-staging helpers" (artifact-reuse.md heading + class sentence,
+planner.md step 5 + §10 escape, planner-section-reference.md §10 sentence +
+escape, critic-lens-reference.md :153/:194, CLAUDE.md bullet,
+methodology-baselines-critic.md) so a pure upload/verify/staging-helper
+reuse can no longer self-classify out of item (i).
 
 Every remedy-split line on the live surfaces is deliberately worded WITHOUT a
 lettered range ("a failing check other than (i)") so the stale-range

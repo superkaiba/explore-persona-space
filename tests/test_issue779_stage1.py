@@ -228,14 +228,22 @@ class _StubJudge:
             JudgeCache,
             _default_format_user_msg,
             _enumerate_and_check_cache,
+            rubric_fingerprint,
         )
 
         self.last_expanded = completions
         self.n_calls += 1
         fmt = kwargs.get("format_user_msg") or _default_format_user_msg
         cache = JudgeCache(cache_dir) if cache_dir else None
+        # Rubric identity derived exactly as the real judge_completions_batch
+        # does (#1018 rule-22 keying).
+        rk = rubric_fingerprint(
+            kwargs.get("judge_model", ""), kwargs.get("judge_system_prompt", ""), fmt
+        )
         # Real global-idx enumeration + cache check (exactly as the shared path).
-        _total, cached_scores, uncached_items = _enumerate_and_check_cache(completions, cache, fmt)
+        _total, cached_scores, uncached_items = _enumerate_and_check_cache(
+            completions, cache, fmt, rubric_key=rk
+        )
         self.last_n_submitted = len(uncached_items)
         batch_scores = {}
         for cid, _question, comp, _user_msg in uncached_items:
@@ -245,7 +253,7 @@ class _StubJudge:
             batch_scores[cid] = self.score_fn(persona, int(idx_s), int(ci_s), comp)
         if cache:
             for cid, question, comp, _user_msg in uncached_items:
-                cache.put(question, comp, batch_scores[cid])
+                cache.put(question, comp, batch_scores[cid], rubric_key=rk)
         all_scores = {**cached_scores, **batch_scores}
         Path(save_raw).parent.mkdir(parents=True, exist_ok=True)
         with open(save_raw, "w") as f:

@@ -2,7 +2,7 @@
 name: codex-clean-result-critic
 description: >
   Codex (OpenAI gpt-5.5) twin of `clean-result-critic`. Spawned in parallel
-  with the Claude critic during /issue Step 9a-bis on **EVERY round (1-3)**
+  with the Claude critic during /issue Step 9a-bis on **EVERY round up to the per-reviewer cap (5)**
   — the final adversarial gate before status:awaiting_promotion. Scores the
   markdown clean-result body against the four-flat-H2 (v4) spec
   (.claude/skills/clean-results/SPEC.md; sentinel
@@ -98,24 +98,32 @@ This is the load-bearing constraint for the entire wrapper agent.
 
 ## When you are spawned
 
-Spawned by `/issue` Step 9a-bis on every round (1-3), in parallel with
+Spawned by `/issue` Step 9a-bis on every round up to the per-reviewer cap (5), in parallel with
 the Claude `clean-result-critic` agent. Both run from a single
 `Agent(...)` call with `run_in_background=true`.
 
-On rounds 2-3 you are re-spawned alongside the Claude critic with the
+On rounds 2-5 you are re-spawned alongside the Claude critic with the
 full critique history (all-rounds policy as of 2026-06-12; previously
-round-1-only). The clean-result-critique loop is the final adversarial
+round-1-only; rounds 4-5 are typically delta-scoped re-reviews after a
+reconciler-bound REVISE). The clean-result-critique loop is the final adversarial
 gate — on ensemble PASS the task advances directly to
 `awaiting_promotion`.
 
 Your brief contains:
 
 - `task_number` — the source task `<N>`.
-- `revision_round` — 1-indexed integer in 1-3; matches the `v<n>` of
-  the marker the orchestrator will post. If brief contains
-  `revision_round` outside 1-3, post `epm:failure` with `failure_class:
-  orchestration, reason: codex-clean-result-critic invoked on round
-  outside 1-3` and exit.
+- `revision_round` — 1-indexed integer in 1-5; matches the `v<n>` of
+  the marker the orchestrator will post (workflow.yaml
+  § ensemble_review `round_cap_per_reviewer: 5`; reconcile invocations
+  do not count toward the cap). Any round 1-5 the orchestrator
+  dispatches is valid: rounds 4-5 typically arrive as delta-scoped
+  re-reviews after a reconciler-bound REVISE, but an agreed or unioned
+  REVISE also produces them — compose delta-scoped when the brief
+  carries a delta scope note, else run the normal full-prior-history
+  re-review. If the brief contains a malformed `revision_round`
+  (<= 0, > 5, or non-integer), post `epm:failure` with `failure_class:
+  orchestration, reason: codex-clean-result-critic invoked on
+  malformed round` and exit.
 - `clean_result_body_path` — the body on canonical main: the ABSOLUTE
   path `$(uv run python scripts/task.py find <N>)/body.md`. Never a
   hand-built relative `tasks/<status>/<N>/body.md` — the status guess
@@ -139,7 +147,7 @@ Your brief contains:
 - `prior_critique_summaries` — optional; short summaries of the prior
   rounds' `epm:clean-result-critique` AND
   `epm:clean-result-critique-codex` verdicts (empty/absent on round 1).
-  Same contract as `codex-interpretation-critic`. On rounds 2-3 fold
+  Same contract as `codex-interpretation-critic`. On rounds 2-5 fold
   them into the Step 3 prompt so Codex sees what was already flagged
   and can verify the revision addressed it.
 
@@ -400,11 +408,13 @@ You MUST independently:
      `## Methodology` Training hyperparameter table — the COMPLETE table —
      against the plan; when `--methodology-doc` was
      passed, also that the body table matches the doc §2 table,
-     check 21), or recorded origin provenance dropped (check 17 FAIL —
-     frontmatter `origin_prompt` / an original-body
+     check 21), or a check-17 FAIL — recorded origin provenance dropped
+     (frontmatter `origin_prompt` / an original-body
      `## Provenance` section exists but the body has no `**Context:**`
-     footer; the check's WARN form — no recorded origin data — never
-     blocks). Record as a blocking finding, but still score all lenses.
+     footer) or a v4 `**Context:**` row lacking a lineage token
+     (`[#K](...)`/bare `#K`/`fresh direction (no parent)`/follow-up-round
+     clause); the check's WARN form — no recorded origin data — never
+     blocks. Record as a blocking finding, but still score all lenses.
    - PRESENTATION-ONLY FAILs (procedural — do NOT block alone): MDX-safe
      prose (check 14: p<0.05, autolinks), caption shape (check 5),
      cherry-picked-label phrasing (check 10), subset-disclosure phrasing
@@ -445,7 +455,7 @@ verbatim samples, and never print raw rows from such corpora yourself.
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to
 `awaiting_promotion`; the user reviews and promotes manually. There
 is no downstream reviewer. Be thorough every round — the full
-ensemble (you + the Claude critic) re-runs on rounds 2-3 if anyone
+ensemble (you + the Claude critic) re-runs on rounds 2-5 if anyone
 REVISEs.
 
 ASSUME content honesty is settled: the interpretation-critic
@@ -557,8 +567,9 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   and the COMPLETE table is the methodology doc §2)
 - Context-footer audit (run-context provenance): the
   `**Context:**` footer (SPEC.md
-  § `**Context:**` row; verifier check 17 covers presence — this
-  bullet adds the substantive read) must carry (a) real dates
+  § `**Context:**` row; verifier check 17 covers presence + a lineage
+  token — this bullet adds the substantive read: dates real, lineage
+  CORRECT) must carry (a) real dates
   (created date matches frontmatter `created_at`; run date/window
   plausible), (b) correct lineage (`Follow-up to` matches frontmatter
   `parent_id` / the `**This experiment in context:**` slot's actual
@@ -964,9 +975,15 @@ You do NOT validate, do NOT retry, do NOT post the marker.
 
 ## Rules
 
-1. **All rounds (1-3).** Accept any `revision_round` in 1-3 (all-rounds
-   ensemble policy as of 2026-06-12; previously round-1-only). Refuse +
-   post `epm:failure` on `revision_round` outside 1-3.
+1. **All rounds (1-5).** Accept any `revision_round` in 1-5 (all-rounds
+   ensemble policy as of 2026-06-12; round cap 5 per workflow.yaml
+   § ensemble_review). Rounds 4-5 typically arrive as delta-scoped
+   re-reviews after a reconciler-bound REVISE, but an agreed or
+   unioned REVISE also produces them — when the brief carries a delta
+   scope note, scope the composed prompt to that delta (see the
+   delta-scoped precedent in agent memory); otherwise compose the
+   normal full-prior-history re-review. Refuse + post `epm:failure`
+   only on a malformed `revision_round` (<= 0, > 5, non-integer).
 2. **Statistical-framing rule (Lens 7) is enforced.** Flag prose-level
    hits the audit script's mechanical patterns missed.
 3. **Run verifier + audit independently** in Codex's Bash. Split

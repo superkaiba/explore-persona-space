@@ -1,0 +1,138 @@
+{
+  "commit": "627aaaa8b5",
+  "created": "2026-07-04T06:32:31Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "category": "direct\n(ctx\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.5914952858206106,
+      "error": 0.09192768855509212,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "stage-2 oracle\n(CoT\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.7068199910266061,
+      "error": 0.07568111672469657,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "composed\n(ctx\u2192\u0109ot\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.5930387445125731,
+      "error": 0.09215461307515316,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "CoT-augmented\n([ctx,CoT]\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.7000883811584906,
+      "error": 0.06732795660510743,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.4819746263941495,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.6236578260580011,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out skill-over-mean R\u00b2": 0.48277604887058123,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.6276162195416467,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.6658300035043337,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.7750200595073943,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out skill-over-mean R\u00b2": 0.6670852750208875,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.7622721327518616,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.8084000959170985,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.8084000959170985,
+      "series": "identity ceiling",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "\u0394 skill (composed \u2212 direct), 95% bootstrap CI": 0.0015434586919624849,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 skill (composed \u2212 direct), 95% bootstrap CI": 0.0015434586919624849,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "\u0394 skill (composed \u2212 direct), 95% bootstrap CI": 0.0015434586919624849,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "\u0394 skill (composed \u2212 direct), 95% bootstrap CI": -0.026966783896876678,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "\u0394 skill (composed \u2212 direct), 95% bootstrap CI": -0.015561259583056097,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "\u0394 skill (composed \u2212 direct), 95% bootstrap CI": -0.015561259583056097,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 20
+}

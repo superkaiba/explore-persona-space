@@ -15,8 +15,10 @@ turns; a downstream extractor's `1 <= s < e` span assert then crashes on
 production data (#825 run-1: conv 723, 3 attempts × ~21 min).
 
 **Why:** the tokenizer, not the text, defines the boundary; plain-text
-delimited formats ("User: ...\n\n") have NO merge-proof boundary. Chat
-templates are immune (special tokens never BPE-merge with content).
+delimited formats ("User: ...\n\n") have NO merge-proof boundary. Exposure
+is boundary-type-scoped, NOT format-scoped: special-token boundaries never
+BPE-merge with content, but plain-text delimiters are exposed everywhere
+they appear — including INSIDE a chat-templated message body.
 
 **How to apply:**
 - Any rig that generates free text and later aligns it as a delimited

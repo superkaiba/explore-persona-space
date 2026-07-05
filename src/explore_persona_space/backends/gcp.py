@@ -1188,13 +1188,29 @@ def render_startup_script(
     # Hydra args, shell-quoted. Empty tuple → empty string.
     hydra_str = " ".join(shlex.quote(a) for a in args)
 
-    # Workload block (#588): a custom workload_cmd is embedded VERBATIM —
-    # it IS a complete shell command line (shlex-quoting would collapse
-    # it to a single token). Trusted input by design (same trust level as
-    # the plan's Reproducibility Card launch command; it runs as root on
-    # the VM). The RunSpec.__post_init__ single-line check keeps the
-    # rendered script structure intact. The hydra branch is the
-    # byte-identical pre-#588 lines, gated only by ``if spec.workload_cmd``.
+    # Workload block (#588, rc-wrapper #1004): a custom workload_cmd is
+    # rendered as the SINGLE argument of an inner
+    # ``bash -eu -o pipefail -c <shlex.quote(cmd)>`` — the inner bash
+    # re-parses it as a complete shell line (full shell syntax preserved,
+    # the original #588 verbatim concern), while from THIS script's
+    # perspective the workload is one SIMPLE command, so the outer
+    # ``set -e`` fires on ANY non-zero exit — including a
+    # ``cmd1 && cmd2`` chain whose FIRST command crashes, which the
+    # pre-#1004 bare splice rc-masked into a false phase=done (bash
+    # exempts non-final &&/|| list members from errexit; incident #952
+    # run 1). Residuals NOT closed by the wrapper: (a) a ``a && b; c``
+    # shape where ``a`` fails and ``c`` succeeds still masks (the same
+    # errexit exemption applies inside the inner bash; the #750 OOM
+    # guard remains the independent backstop); (b) the detached-driver
+    # pid-file wait loop below is liveness-only (``kill -0``), so a
+    # setsid-detached driver that CRASHES still reaches the success
+    # tail — a structurally different class (#601/#977 contract).
+    # Trusted input by design (same trust level as the plan's
+    # Reproducibility Card launch command; it runs as root on the VM).
+    # The RunSpec.__post_init__ single-line check keeps the rendered
+    # script line-structured (shlex.quote of a single-line string is a
+    # single line). The hydra branch is the byte-identical pre-#588
+    # lines, gated only by ``if spec.workload_cmd``.
     if spec.workload_cmd:
         workload_block = [
             "# === REPO_ROOT export (#641; trap #599) ===",
@@ -1243,11 +1259,22 @@ def render_startup_script(
             "mkdir -p /workspace/logs",
             "chmod 777 /workspace/logs",
             "# === Run the workload (custom workload_cmd) ===",
-            "# A non-zero exit propagates (set -e) → the EXIT trap publishes",
-            "# phase=failed + powers off → poll reads dead.",
+            "# rc-preserving wrapper (#1004, incident #952): the command is the",
+            "# single argument of an inner bash -eu -o pipefail -c, so it is ONE",
+            "# simple command here — a failure ANYWHERE inside (including the",
+            "# first member of a && chain, which errexit exempts mid-list) exits",
+            "# the inner bash non-zero, the outer set -e fires, and the EXIT trap",
+            "# publishes phase=failed + crash-persist + poweroff → poll reads dead.",
+            "# The inner -eu -o pipefail mirror the outer flags, so the command",
+            "# text's own execution semantics are identical to the pre-#1004",
+            "# in-script splice; only the propagated rc changes. Residuals: an",
+            "# `a && b; c` shape still masks (errexit exempts mid-list members",
+            "# inside the inner bash too; the #750 OOM guard is the backstop),",
+            "# and the pid-file wait below is liveness-only (kill -0) — a",
+            "# CRASHED setsid-detached driver still reaches the success tail.",
             "_eps_phase workload",
             "touch /tmp/eps-workload-start",
-            spec.workload_cmd,
+            f"bash -eu -o pipefail -c {shlex.quote(spec.workload_cmd)}",
             "# === Wait for detached workloads (self-daemonizing drivers) ===",
             "# A workload_cmd that setsid-forks the real driver returns",
             "# immediately; declaring done here would publish the completion",
@@ -4420,6 +4447,20 @@ class GcpBackend(ComputeBackend):
                 # serialize_handle's dict(handle.extra); every existing reader
                 # uses .get(...), so no consumer breaks.
                 "gpu_count": machine_for_intent(spec).gpu_count,
+                # #1010: footprint fields for the RunPod CPU-fallback
+                # feasibility gate + container-disk threading — forwarded by
+                # backend_poll._runspec_from_gcp_handle on the async failover
+                # paths (#659 crash / #783 queue-timeout). Keys OMITTED when
+                # absent/falsy — never a None value — so legacy handle shapes
+                # stay byte-identical.
+                **{
+                    k: v
+                    for k, v in {
+                        "boot_disk_gb": spec.extra.get("boot_disk_gb"),
+                        "min_ram_gb": spec.extra.get("min_ram_gb"),
+                    }.items()
+                    if v
+                },
             },
         )
         handle = self._with_artifacts_declaration(

@@ -1,0 +1,13 @@
+{
+  "protocol_fingerprint": "37caa5714783",
+  "descope": {
+    "applied": false,
+    "loao_dropped": false,
+    "ctxmean_null_draws_dropped": false,
+    "first_cell_wall_s": 8068.690276145935,
+    "budget_hours": 4.5,
+    "threshold_hours": 9.0,
+    "projected_total_hours": 4.670096028326342,
+    "frozen": true
+  }
+}

@@ -104,7 +104,7 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 33 body-only functions: the 20 pre-v3 body-only checks
+    # CHECKS has 35 body-only functions: the 20 pre-v3 body-only checks
     # (incl. the sentinel-gated `check_tldr_nested_structure` and the
     # check-8b Reproducibility artifact-URL existence probe), the four
     # v3-gated body-only checks (check 18 `check_data_shape`, check 19
@@ -115,7 +115,7 @@ def test_good_body_passes_all():
     # 21 `check_v4_results_beat` WARN, check 27
     # `check_v4_no_bare_issue_refs`; check 20 v4 `check_v4_word_caps`
     # moved to the appended-outside set — it needs `issue`, #921) — each
-    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the FIVE
+    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the EIGHT
     # generation-agnostic checks: check 22
     # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
     # this fixture's `## Reproducibility` carries no figure-sha claim,
@@ -127,24 +127,41 @@ def test_good_body_passes_all():
     # the git tree, check 26
     # (`check_figure_panel_prose_vs_sidecar`, FAIL), a NO-OP PASS here
     # because the fixture's figure carries no panel/series prose claim,
-    # and check 28 (`check_figure_label_codes`, WARN), a NO-OP PASS here
-    # for the same fake-sha / no-sidecar reason as check 24.
+    # check 28 (`check_figure_label_codes`, WARN), a NO-OP PASS here
+    # for the same fake-sha / no-sidecar reason as check 24, check 29
+    # (`check_figure_tracked_at_head`, WARN), which probes the live local
+    # refs of the REAL repo here (no monkeypatch) — `passed=True` in every
+    # state by construction (WARN/disclosure/skip never flip it), and
+    # check 30 (`check_hf_file_count_claims`, WARN), a vacuous PASS here
+    # because the fixture's HF link labels ("raw completions", "hf-hub")
+    # carry no file-count claim, so ZERO Hub probes are issued even before
+    # the fence, and check 32 (`check_hf_adjacent_file_claims`, WARN), a
+    # vacuous PASS here for the analogous reason — no backtick FILENAME
+    # token sits in an HF tree link's text or in a parenthetical
+    # immediately after one, so ZERO Hub probes are issued even before
+    # the fence.
     # check 25 (`check_audit_availability_claims_match_hf`)
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (32 functions), then appends the Goal soft check, the Lens 14
+    # (35 functions), then appends the Goal soft check, the Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
     # check-17 Context provenance-row read, the v3 check-21
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc), the v4
     # check-20 word caps (needs `issue` for the events-based round budget,
-    # #921; PASS-skip: not a v4 body), AND the
-    # #732 judge-API-error denominator check (PASS-skip: legacy body) →
-    # 41 results total (2 prepended + CHECKS[1:]=32 + 7 appended). The
+    # #921; PASS-skip: not a v4 body), the
+    # #732 judge-API-error denominator check (PASS-skip: legacy body), AND
+    # the check-31 orphaned-per-unit-figures probe (needs `issue` for
+    # figures-dir scoping, #1011; PASS here — the fixture's fake sha is not
+    # locally reachable, so the cited SHA is silently skipped) →
+    # 45 results total (2 prepended + CHECKS[1:]=35 + 8 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 41
+    assert len(results) == 45
+    # By-name membership so the NEXT check addition can key by name instead
+    # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert _HF_32_NAME in {r.name for r in results}
 
 
 def test_missing_confidence_tag():
@@ -513,6 +530,71 @@ def test_repro_fenced_github_moving_ref_ignored():
     perm = by_name["Reproducibility URL permanence"]
     assert perm.passed, perm.detail
     assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_repro_blockquoted_bare_url_ignored_by_permanence():
+    """A bare (unpinned) URL inside a `>` blockquote in `## Reproducibility`
+    — the SPEC-mandated verbatim originating-prompt quote (`**Context:**`
+    row) — is provenance TEXT, not a provenance link: check 8 must not
+    flag it (#825 → #959; mirrors the fence exemption). Nested `> >`
+    lines and INDENTED `  > ` quote lines are covered too (the strip is
+    lstrip-based, not a bare `startswith`)."""
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        "**Compute:** 1× H100, 47 min.\n\n"
+        "**Context:** Verbatim originating prompt:\n\n"
+        "> test in the base model https://huggingface.co/Qwen/Qwen2.5-7B\n"
+        "> > nested quote citing https://wandb.ai/someone/some-project\n"
+        "  > indented quote citing https://wandb.ai/someone/other-project\n"
+        "> for both user and assistant\n",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    perm = by_name["Reproducibility URL permanence"]
+    assert perm.passed, perm.detail
+    assert ok, [r.render() for r in results if not r.passed]
+
+
+def test_repro_nonquoted_bare_url_beside_blockquote_still_fails():
+    """The blockquote exemption is line-scoped: a NON-quoted unpinned HF
+    URL in the footer still FAILs check 8 even when its quoted twin sits
+    one line up (the check stays binding for non-quoted footer URLs)."""
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        "**Compute:** 1× H100, 47 min.\n\n"
+        "**Context:** Verbatim originating prompt:\n\n"
+        "> quoted: https://huggingface.co/Qwen/Qwen2.5-7B\n\n"
+        "Base model: https://huggingface.co/Qwen/Qwen2.5-7B\n",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    perm = by_name["Reproducibility URL permanence"]
+    assert not perm.passed
+    assert perm.detail.count("unpinned HF URL") == 1, perm.detail
+
+
+def test_repro_quoted_fence_does_not_corrupt_fence_state():
+    """A fence marker INSIDE a blockquote (`> ```) must not toggle fence
+    state: the quoted run (incl. a quoted moving-ref URL) is dropped by
+    the blockquote pass, and a NON-quoted unpinned URL after it is still
+    scanned and FAILs. Catches a fence-state-corruption variant (a quoted
+    fence marker toggling state would swallow the non-quoted URL)."""
+    body = GOOD_BODY.replace(
+        "**Compute:** 1× H100, 47 min.",
+        "**Compute:** 1× H100, 47 min.\n\n"
+        "> ```\n"
+        "> https://github.com/superkaiba/explore-persona-space/blob/main/x.py\n"
+        "> ```\n\n"
+        "Unquoted: https://huggingface.co/Qwen/Qwen2.5-7B\n",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    assert not ok
+    by_name = _results_by_name(results)
+    perm = by_name["Reproducibility URL permanence"]
+    assert not perm.passed
+    assert "unpinned HF URL" in perm.detail
+    assert "github.com" not in perm.detail  # the quoted moving-ref was never scanned
 
 
 def test_confidence_mismatch():
@@ -922,6 +1004,480 @@ def test_http_head_status_env_fence(monkeypatch):
     assert verify_task_body._http_head_status("https://example.com/x.png") is None
 
 
+# ─── Check 29: figure tracked at live refs (offline git drift probe) ───────
+#
+# Incident task #841 (2026-07-04): three body-linked `figures/issue_841/`
+# stems were tracked at the pinned sha `4824a567aa` but UNTRACKED at branch
+# HEAD — the immutable pinned raw URLs kept rendering, check 4b kept
+# passing (existence at the pinned sha), and nothing surfaced the tracking
+# loss. Check 29 classifies each same-repo `figures/issue_<N>/` path
+# against the live local refs (HEAD plus the `issue-<N>` / `issue-<N>-*`
+# branch family): at HEAD → PASS; branch-only → PASS with a BRANCH-ONLY
+# disclosure; missing everywhere probed → incident-class WARN (never FAIL).
+
+_FIGURE_TRACKED_CHECK = "figure tracked at live refs"
+
+
+def _make_repo_with_dropped_figure(tmp_path):
+    """git repo where commit A tracks `figures/issue_999/hero.png` +
+    `scripts/run.py` (so GOOD_BODY's check-4b/8b probes resolve when a test
+    pins `sha_pin`) and a later commit B `git rm`ed the figure; HEAD=B.
+    Callers create branches at A or B as the fixture case needs. Returns
+    (repo_path, sha_pin) with sha_pin = commit A."""
+    repo = tmp_path / "dropfigrepo"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    fig = repo / "figures" / "issue_999" / "hero.png"
+    fig.parent.mkdir(parents=True)
+    fig.write_bytes(b"\x89PNG fake bytes")
+    script = repo / "scripts" / "run.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("print('entry script')\n")
+    git("add", "figures", "scripts")
+    git("commit", "-q", "-m", "add hero figure + entry script")
+    sha_pin = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    git("rm", "-q", "figures/issue_999/hero.png")
+    git("commit", "-q", "-m", "drop hero figure")
+    return repo, sha_pin
+
+
+def test_figure_missing_everywhere_warns(tmp_path, monkeypatch):
+    """The #841 incident fixture: figure tracked at the pinned sha but
+    missing from HEAD AND the whole `issue-999` branch family → the
+    incident-class WARN (passed=True — overall verdict unaffected), while
+    check 4b still PASSes (the pinned sha resolves). Also asserts the
+    subprocess budget of a DIRECT check invocation (never a global count
+    across verify_text — check 4b legitimately adds its own git calls)."""
+    repo, sha_pin = _make_repo_with_dropped_figure(tmp_path)
+    # Branch at HEAD (=B, figure absent): the family exists but lacks it.
+    subprocess.run(["git", "-C", str(repo), "branch", "issue-999"], check=True, capture_output=True)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha_pin)
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    assert by_name["Figure URL resolvable"].passed  # check 4b: tracked at the pinned sha
+    r = by_name[_FIGURE_TRACKED_CHECK]
+    assert r.passed is True
+    assert r.is_warn is True
+    assert "figures/issue_999/hero.png" in r.detail
+    assert "git restore --source=" in r.detail
+    assert "issue-999" in r.detail  # successfully-probed ref labels named
+    assert ok  # the WARN never flips the overall verdict (no-regress guarantee)
+    # Scoped subprocess budget: 1 for-each-ref + 1 HEAD ls-tree + 1 branch
+    # ls-tree = 3 (plan §4.5 budget: <=5 with <=2 family branches).
+    calls: list = []
+    real_run = subprocess.run
+
+    def counting_run(cmd, *args, **kwargs):
+        calls.append(cmd)
+        return real_run(cmd, *args, **kwargs)
+
+    monkeypatch.setattr(verify_task_body.subprocess, "run", counting_run)
+    r2 = verify_task_body.check_figure_tracked_at_head(body)
+    assert r2.is_warn is True
+    assert len(calls) == 3
+    assert len(calls) <= 5
+
+
+def test_figure_branch_only_discloses_not_warns(tmp_path, monkeypatch):
+    """Branch `issue-999` created at commit A (has the figure), HEAD moved
+    to B (lacks it) — the stale-branch-masks-main-loss state: PASS with the
+    BRANCH-ONLY disclosure (path + holding branch + recovery), never a WARN
+    and never silent."""
+    repo, sha_pin = _make_repo_with_dropped_figure(tmp_path)
+    subprocess.run(
+        ["git", "-C", str(repo), "branch", "issue-999", sha_pin], check=True, capture_output=True
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha_pin)
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_FIGURE_TRACKED_CHECK]
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "BRANCH-ONLY" in r.detail
+    assert "figures/issue_999/hero.png" in r.detail
+    assert "issue-999" in r.detail
+    assert "git restore --source=" in r.detail
+    assert ok
+
+
+def test_figure_tracked_at_repo_head_passes_without_branch(tmp_path, monkeypatch):
+    """No `issue-999` branch, HEAD tracks the figure (the merged-and-
+    branch-deleted grandfather case): clean PASS — no WARN, no
+    disclosure."""
+    repo, sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    _ok, results = verify_task_body.verify_text(body)
+    r = _results_by_name(results)[_FIGURE_TRACKED_CHECK]
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "tracked at HEAD" in r.detail
+    assert "BRANCH-ONLY" not in r.detail
+
+
+def test_figure_on_suffix_branch_discloses_not_warns(tmp_path, monkeypatch):
+    """Figure tracked ONLY at `refs/heads/issue-999-fu` (a same-issue
+    follow-up suffix branch); absent from `issue-999` and HEAD: PASS with
+    the branch-only disclosure — a figure-adding follow-up round must not
+    WARN."""
+    repo, sha_pin = _make_repo_with_dropped_figure(tmp_path)
+    subprocess.run(
+        ["git", "-C", str(repo), "branch", "issue-999-fu", sha_pin],
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(["git", "-C", str(repo), "branch", "issue-999"], check=True, capture_output=True)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha_pin)
+    r = verify_task_body.check_figure_tracked_at_head(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "BRANCH-ONLY" in r.detail
+    assert "issue-999-fu" in r.detail
+
+
+def test_figure_check_vacuous_pass_no_matching_urls():
+    """Body whose only image is an other-host URL: vacuous PASS, no git
+    probes needed."""
+    body = GOOD_BODY.replace(
+        _GOOD_BODY_FIGURE_URL,
+        "https://eps-figures.example.com/issue_999/hero.png",
+    )
+    r = verify_task_body.check_figure_tracked_at_head(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no same-repo" in r.detail
+
+
+def test_figure_check_repo_unresolved_skips(monkeypatch):
+    """`_resolve_repo_root` → None (running outside the repo): skip-PASS."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    r = verify_task_body.check_figure_tracked_at_head(GOOD_BODY)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert r.detail.startswith("skipped")
+
+
+def test_figure_check_git_error_degrades_to_pass(tmp_path, monkeypatch):
+    """`_resolve_repo_root` pointed at a plain non-git dir (for-each-ref
+    and ls-tree both fail): fail-soft per-issue probe-failure note, never a
+    WARN, and no exception propagates through verify_text."""
+    plain = tmp_path / "notarepo"
+    plain.mkdir()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: plain)
+    r = verify_task_body.check_figure_tracked_at_head(GOOD_BODY)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "probe failure" in r.detail
+    ok, results = verify_task_body.verify_text(GOOD_BODY)  # no exception end to end
+    assert _results_by_name(results)[_FIGURE_TRACKED_CHECK].passed
+    assert ok
+
+
+def test_figure_partial_probe_failure_never_warns(tmp_path, monkeypatch):
+    """HEAD probe succeeds (figure absent from HEAD) but the family-branch
+    probe fails: the conservative rule demotes the issue dir to a skip note
+    — the path might live at the failed ref, so a narrowed ref set must
+    never manufacture a WARN. The failed ref is named as FAILED, not
+    presented as a successfully-probed ('checked') label."""
+    repo, sha_pin = _make_repo_with_dropped_figure(tmp_path)
+    subprocess.run(["git", "-C", str(repo), "branch", "issue-999"], check=True, capture_output=True)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    real_tracked = verify_task_body._git_tracked_under
+
+    def flaky_tracked(repo_, ref, prefix):
+        if ref == "HEAD":
+            return real_tracked(repo_, ref, prefix)
+        return None  # family-branch probe fails
+
+    monkeypatch.setattr(verify_task_body, "_git_tracked_under", flaky_tracked)
+    body = GOOD_BODY.replace("0123456789abcdef", sha_pin)
+    r = verify_task_body.check_figure_tracked_at_head(body)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "probe failure" in r.detail
+    assert "issue-999" in r.detail  # the failed ref is named as failed
+    assert "MISSING from every live local ref" not in r.detail
+
+
+# ─── Check 31: orphaned per-unit companion figures (inverse git probe) ─────
+#
+# Incident task #928 (round 3): the body embedded only the pooled MLP
+# aggregate while the round-committed per-context companion
+# `figures/issue_928/mlp_indiv_percontext_delta.png` — committed at a SHA
+# the body already cited — sat unreferenced by every body image URL; the
+# gap reached the LM clean-result-critic as a Lens 11 blocker instead of
+# being caught pre-gate. Check 31 runs the INVERSE direction of checks
+# 4b/22/29: ls-tree the body's OWN cited figure SHAs and WARN (never FAIL)
+# on committed per-unit-named PNGs the body neither embeds nor names in
+# prose. (#1011)
+
+_PER_UNIT_ORPHAN_CHECK = "per-unit companion figures embedded"
+
+_PER_UNIT_ORPHAN_PATH = "figures/issue_999/hero_percontext.png"
+
+
+def _make_repo_with_per_unit_orphan(tmp_path):
+    """git repo whose HEAD commit tracks `figures/issue_999/hero.png` +
+    `figures/issue_999/hero_percontext.png` (the per-unit companion) +
+    `scripts/run.py` (so GOOD_BODY's check-8b Code-blob probe resolves
+    when a test pins the real sha); returns (repo_path, head_sha)."""
+    repo = tmp_path / "perunitrepo"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    figdir = repo / "figures" / "issue_999"
+    figdir.mkdir(parents=True)
+    (figdir / "hero.png").write_bytes(b"\x89PNG fake bytes")
+    (figdir / "hero_percontext.png").write_bytes(b"\x89PNG fake bytes")
+    script = repo / "scripts" / "run.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("print('entry script')\n")
+    git("add", "figures", "scripts")
+    git("commit", "-q", "-m", "add hero + per-context companion + entry script")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha
+
+
+def test_orphan_per_unit_figure_warns(tmp_path, monkeypatch):
+    """The #928 incident shape: `hero_percontext.png` committed at the
+    body-cited sha, body embeds only `hero.png`, stem named nowhere in
+    prose → the incident-class WARN (passed=True — overall verdict
+    unaffected). Asserted BY NAME through verify_text so the dispatch
+    outside CHECKS is pinned (a refactor dropping the `verify_text`
+    append fails here); the subprocess budget is asserted on a DIRECT
+    invocation only (never a global count across verify_text — checks
+    4b/8b/29 legitimately add their own git calls)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    ok, results = verify_task_body.verify_text(body, issue=999)
+    by_name = _results_by_name(results)
+    r = by_name[_PER_UNIT_ORPHAN_CHECK]
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _PER_UNIT_ORPHAN_PATH in r.detail
+    assert "Lens 11" in r.detail
+    assert sha[:8] in r.detail
+    assert ok  # the WARN never flips the overall verdict (no-regress guarantee)
+    # Scoped subprocess budget on a DIRECT invocation: 1 unique (sha, dir)
+    # pair → exactly 1 ls-tree (plan §4.1 budget: 1 per unique pair).
+    calls: list = []
+    real_run = subprocess.run
+
+    def counting_run(cmd, *args, **kwargs):
+        calls.append(cmd)
+        return real_run(cmd, *args, **kwargs)
+
+    monkeypatch.setattr(verify_task_body.subprocess, "run", counting_run)
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r2.is_warn is True
+    assert len(calls) == 1
+
+
+def test_per_unit_figure_embedded_no_warn(tmp_path, monkeypatch):
+    """Body embeds BOTH the hero and the per-unit companion → clean PASS
+    (the companion is in the referenced path set)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no orphaned per-unit figures" in r.detail
+
+
+def test_orphan_unreachable_sha_skips_silently(tmp_path, monkeypatch):
+    """Cited sha unknown to the local object DB (GOOD_BODY's placeholder
+    sha kept; the repo has no such commit): the SHA is skipped SILENTLY —
+    counted in the PASS detail, never a WARN (hard constraint: an
+    unreachable SHA must not manufacture a false WARN)."""
+    repo, _sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    r = verify_task_body.check_orphaned_per_unit_figures(GOOD_BODY, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "not locally reachable" in r.detail
+
+
+def test_orphan_prose_mention_suppresses_warn(tmp_path, monkeypatch):
+    """The prose disclosure escape: an unembedded companion whose stem is
+    named in body prose is treated as disclosed → no WARN (mechanizes
+    'exemptions stated in prose are legitimate')."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The standalone `hero_percontext` scatter is superseded by the right panel. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_orphan_deduped_across_cited_shas(tmp_path, monkeypatch):
+    """The same orphan committed at TWO body-cited SHAs is ONE detail
+    entry (keyed by path), listing both short SHAs."""
+    repo, sha_a = _make_repo_with_per_unit_orphan(tmp_path)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    second = repo / "figures" / "issue_999" / "second.png"
+    second.write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add second figure")
+    sha_b = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    second_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha_b}/figures/issue_999/second.png"
+    )
+    body = GOOD_BODY.replace("0123456789abcdef", sha_a).replace(
+        "> **Figure.**",
+        f"![Second figure at a second sha.]({second_url})\n\n> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert r.detail.count(_PER_UNIT_ORPHAN_PATH) == 1  # deduped by path
+    assert sha_a[:8] in r.detail
+    assert sha_b[:8] in r.detail
+
+
+def test_orphan_cross_issue_dir_not_scanned_when_issue_known(tmp_path, monkeypatch):
+    """A cross-issue embed (`figures/issue_777/x.png`, whose dir holds its
+    own orphan) must NOT surface issue_777's orphans when `issue=999` is
+    known — only this task's figures dir is scanned."""
+    repo, _sha_a = _make_repo_with_per_unit_orphan(tmp_path)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    other = repo / "figures" / "issue_777"
+    other.mkdir(parents=True)
+    (other / "x.png").write_bytes(b"\x89PNG fake bytes")
+    (other / "x_percontext.png").write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add cross-issue figures")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    base_url = f"https://raw.githubusercontent.com/superkaiba/explore-persona-space/{sha}"
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![companion]({base_url}/figures/issue_999/hero_percontext.png)\n\n"
+        f"![cross-issue]({base_url}/figures/issue_777/x.png)\n\n> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False  # issue_999 fully embedded; issue_777 out of scope
+    assert "issue_777" not in r.detail
+
+
+def test_orphan_repo_unresolved_skips(monkeypatch):
+    """`_resolve_repo_root` → None (running outside the repo): skip-PASS."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    r = verify_task_body.check_orphaned_per_unit_figures(GOOD_BODY, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert r.detail.startswith("skipped")
+
+
+def test_orphan_git_error_degrades_to_pass(tmp_path, monkeypatch):
+    """`_resolve_repo_root` pointed at a plain non-git dir: every ls-tree
+    fails → every cited SHA degrades to the silent skip, never a WARN, and
+    no exception propagates through verify_text."""
+    plain = tmp_path / "notarepo2"
+    plain.mkdir()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: plain)
+    r = verify_task_body.check_orphaned_per_unit_figures(GOOD_BODY, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    ok, results = verify_task_body.verify_text(GOOD_BODY, issue=999)  # no exception end to end
+    assert _results_by_name(results)[_PER_UNIT_ORPHAN_CHECK].passed
+    assert ok
+
+
+def test_orphan_issue_none_fallback_scans_cited_dirs(tmp_path, monkeypatch):
+    """`issue=None` (the --body-stdin shape): the check falls back to
+    scanning every cited `figures/issue_<K>/` dir, so the orphan still
+    surfaces when no issue number is threaded."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    ok, results = verify_task_body.verify_text(body)  # no issue threaded
+    r = _results_by_name(results)[_PER_UNIT_ORPHAN_CHECK]
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _PER_UNIT_ORPHAN_PATH in r.detail
+    assert ok
+
+
+@pytest.mark.parametrize(
+    ("stem", "expected"),
+    [
+        ("mlp_indiv_percontext_delta", True),  # the #928 incident filename
+        ("per_context_gain", True),
+        ("per-context_x", True),
+        ("per_unit_deltas", True),
+        ("percell_grid", True),
+        ("PerContext_Upper", True),  # case-insensitive
+        ("mlp_indiv_hero_4arm", False),  # `indiv` names the regime, not a view
+        ("supercontext_map", False),  # mid-word hit blocked by the lookbehind
+        ("experiment_percent", False),
+        ("per_source_rates", False),  # other per-X families out of scope by design
+        ("per_seed_scatter", False),
+    ],
+)
+def test_per_unit_basename_pattern(stem, expected):
+    """The deliberately-narrow check-31 pattern: the three per-unit nouns
+    (context/unit/cell) with -/_ spellings match; regime names (`indiv`),
+    mid-word hits (`supercontext`), and other per-X families
+    (per_source/per_seed) do NOT — Lens 11 owns the substance."""
+    assert bool(verify_task_body._PER_UNIT_FIG_RE.search(stem)) is expected
+
+
 # ─── Check 8b: Reproducibility artifact-URL existence ─────────────────────
 #
 # Follow-up to the #507 incident class: `## Reproducibility` links got
@@ -1062,6 +1618,25 @@ def test_repro_fenced_block_urls_not_probed(monkeypatch):
     assert "no same-repo artifact URLs to check" in by_name[_REPRO_8B_NAME].detail
 
 
+def test_gather_repro_artifact_urls_skips_blockquoted():
+    """Check 8b must not existence-probe a same-repo URL quoted inside
+    the verbatim originating-prompt blockquote — same #959 collision
+    class as check 8 (a verbatim quote cannot be edited if its cited
+    path later dies). Non-quoted same-repo URLs are still gathered.
+    Deterministic unit test of the gather — no git, no network."""
+    repro = (
+        "**Code:** [run](https://github.com/superkaiba/explore-persona-space"
+        "/blob/0123456789abcdef/scripts/run.py)\n\n"
+        "**Context:** Verbatim originating prompt:\n\n"
+        "> see https://github.com/superkaiba/explore-persona-space"
+        "/blob/deadbeefdead/scripts/gone.py\n"
+    )
+    urls = verify_task_body._gather_repro_artifact_urls(repro)
+    assert urls == [
+        "https://github.com/superkaiba/explore-persona-space/blob/0123456789abcdef/scripts/run.py"
+    ]
+
+
 # ─── Check 23: HF Hub revision-pin existence ──────────────────────────────
 #
 # Incident task #537 (2026-06-16): a `## Reproducibility` `**Artifacts:**`
@@ -1085,12 +1660,20 @@ _HF_23_NAME = "HF URL pins resolve at the cited revision"
 @pytest.fixture(autouse=True)
 def _clear_hf_existence_cache():
     """The check-23/25 probes memoize definitive pass/fail verdicts in a
-    module-level `_HF_EXISTENCE_CACHE` (#733). Clear it before AND after each
-    test so a cached verdict keyed on a (repo, sha, path) reused across
+    module-level `_HF_EXISTENCE_CACHE` (#733), the check-30 count probe
+    memoizes successful exhaustive `(n_files, n_dirs)` listings in
+    `_HF_TREE_FILE_COUNT_CACHE` (#1008), and the check-32 membership probe
+    memoizes successful exhaustive basename listings in
+    `_HF_TREE_BASENAMES_CACHE` (#1016). Clear all three before AND after
+    each test so a cached verdict keyed on a (repo, sha, path) reused across
     fixtures never leaks one test's stubbed outcome into another."""
     verify_task_body._HF_EXISTENCE_CACHE.clear()
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    verify_task_body._HF_TREE_BASENAMES_CACHE.clear()
     yield
     verify_task_body._HF_EXISTENCE_CACHE.clear()
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    verify_task_body._HF_TREE_BASENAMES_CACHE.clear()
 
 
 def _stub_tree(monkeypatch, *, status="ok", entries=(), next_page=None, note="", calls=None):
@@ -1485,6 +2068,790 @@ def test_hf_check25_not_found_is_skip_not_fail(monkeypatch):
     # SKIP → PASS with an `unverified` note, NOT a FAIL.
     assert by_name[_HF_25_NAME].passed
     assert "unverified" in by_name[_HF_25_NAME].detail
+
+
+# ─── Check 30: HF file-count claims vs the Hub tree (WARN) ─────────────────
+#
+# Check 30 (`check_hf_file_count_claims`, #1008) extracts "N files" /
+# "N shards" claims adjacent to hex-pinned HF /tree markdown links and
+# compares them against a files-only scoped Hub tree count via the same
+# #733 bounded raw tree-endpoint probe stack checks 23/25 use. All tests
+# are offline: extractor tests need no stub; probe tests stub
+# `verify_task_body._hf_tree_get` (`_stub_tree` / inline stateful
+# closures) after removing the conftest EPM_VERIFY_BODY_NO_HF fence.
+
+_HF_30_NAME = "HF file-count claims match the Hub tree"
+
+_I931_SHA = "9534b9981d6b4fb4f1259c9b06f021d311a46af4"
+_I931_REPO = "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data"
+
+
+def _count_claim_body(link_label: str, hf_url: str) -> str:
+    """`_hf_body` with the dataset link's label replaced so it carries a
+    count claim in the link TEXT (Pattern A), e.g.
+    `issue931_story_map, 528 files`."""
+    return _hf_body(hf_url).replace("[raw completions](", f"[{link_label}](", 1)
+
+
+def test_hf_count_extractor_link_text_shapes():
+    """Pure extractor (no monkeypatch, no network): the three verbatim #931
+    link-text shapes each yield exactly one claim tuple with the right
+    (count, repo, type, sha, prefix); singular '1 file' and comma-grouped
+    '1,234 files' also extract."""
+    body = (
+        f"- [pairs_meta, 9 files]({_I931_REPO}/tree/{_I931_SHA}"
+        "/issue931_story_map/raw_completions/pairs_meta) — meta rows\n"
+        f"- [generation, 2 files]({_I931_REPO}/tree/{_I931_SHA}"
+        "/issue931_story_map/raw_completions/generation) — raw generations\n"
+        f"- [judge_audit, 197 files]({_I931_REPO}/tree/{_I931_SHA}"
+        "/issue931_story_map/raw_completions/judge_audit) — judge audits\n"
+    )
+    claims = verify_task_body._gather_hf_count_claims(body)
+    assert len(claims) == 3
+    by_prefix = {c[5]: c for c in claims}
+    assert by_prefix["issue931_story_map/raw_completions/pairs_meta"][0] == 9
+    assert by_prefix["issue931_story_map/raw_completions/generation"][0] == 2
+    assert by_prefix["issue931_story_map/raw_completions/judge_audit"][0] == 197
+    for _count, noun, repo_id, repo_type, sha, _prefix in claims:
+        assert noun == "files"
+        assert repo_id == "superkaiba1/explore-persona-space-data"
+        assert repo_type == "dataset"
+        assert sha == _I931_SHA
+    single = verify_task_body._gather_hf_count_claims(
+        f"[x, 1 file]({_I931_REPO}/tree/{_I931_SHA}/p)"
+    )
+    assert [(c[0], c[1]) for c in single] == [(1, "file")]
+    comma = verify_task_body._gather_hf_count_claims(
+        f"[x, 1,234 files]({_I931_REPO}/tree/{_I931_SHA}/p)"
+    )
+    assert [c[0] for c in comma] == [1234]
+
+
+def test_hf_count_extractor_paren_before_link_shape():
+    """Pure extractor: the #931 footer shape (Pattern B — a parenthetical
+    OPENING with the count-noun immediately before the markdown link) yields
+    (515, ..., 'issue931_story_map'); the same claim appearing via BOTH
+    patterns dedups to one tuple."""
+    footer = (
+        "HF artifacts (515 files verified via scoped listing): "
+        f"[issue931_story_map @ 9534b998]({_I931_REPO}/tree/{_I931_SHA}/issue931_story_map)"
+    )
+    claims = verify_task_body._gather_hf_count_claims(footer)
+    assert len(claims) == 1
+    count, noun, repo_id, repo_type, sha, prefix = claims[0]
+    assert (count, noun, prefix) == (515, "files", "issue931_story_map")
+    assert repo_id == "superkaiba1/explore-persona-space-data"
+    assert repo_type == "dataset" and sha == _I931_SHA
+    # Dedup: the same count claimed in the link TEXT and in the preceding
+    # parenthetical is ONE claim tuple.
+    both = f"(9 files, verified): [pairs, 9 files]({_I931_REPO}/tree/{_I931_SHA}/pairs)"
+    assert len(verify_task_body._gather_hf_count_claims(both)) == 1
+
+
+def test_hf_count_extractor_negative_cases():
+    """Shapes that must NOT extract (precision-first; each guards a concrete
+    false-positive class from the live #931 body)."""
+    u = f"{_I931_REPO}/tree/abc1234/p"
+    negatives = [
+        f"[x]({u}) — 9 files",  # count in prose AFTER the link
+        "[9 files](https://github.com/o/r/tree/abc1234/p)",  # non-HF link
+        f"[9 files]({_I931_REPO}/tree/main/p)",  # moving ref, not hex-pinned
+        f"[3 files]({_I931_REPO}/blob/abc1234/p/f.json)",  # /blob/ = single file
+        f"[seed 42]({u})",  # no count-noun
+        f"[8 eval JSONs]({u})",  # non-count noun (JSONs are records-adjacent)
+        f"(total 515 files): [x]({u})",  # count does not OPEN the paren
+        f"```\n[9 files]({u})\n```",  # inside a fenced code block
+        f"(9 files) and separately see [x]({u})",  # separator gap exceeds the window
+    ]
+    for body in negatives:
+        assert verify_task_body._gather_hf_count_claims(body) == [], body
+
+
+def test_hf_count_claim_match_passes(monkeypatch):
+    """A Pattern-A claim matching the (stubbed) files-only count → clean
+    check-30 PASS with no WARN and no `unverified` note; overall ok."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    entries = [{"path": "pairs_meta", "type": "directory"}] + [
+        {"path": f"pairs_meta/f{i}.json", "type": "file"} for i in range(9)
+    ]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    body = _count_claim_body(
+        "pairs_meta, 9 files",
+        f"{_I931_REPO}/tree/feedface/pairs_meta",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_HF_30_NAME]
+    assert r.passed and not r.is_warn
+    assert "unverified" not in r.detail
+    assert ok
+
+
+def test_hf_count_claim_mismatch_warns_931_shape(monkeypatch):
+    """The acceptance-criterion reproduction: the body claims 528 files where
+    the pinned tree holds 515 files + 13 folders → WARN naming BOTH numbers
+    plus the files+folders diagnostic; overall ok STAYS True (a WARN never
+    blocks)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    entries = (
+        [{"path": "issue931_story_map", "type": "directory"}]
+        + [{"path": f"issue931_story_map/f{i}.json", "type": "file"} for i in range(515)]
+        + [{"path": f"issue931_story_map/d{j}", "type": "directory"} for j in range(13)]
+    )
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    body = _count_claim_body(
+        "issue931_story_map, 528 files",
+        f"{_I931_REPO}/tree/{_I931_SHA}/issue931_story_map",
+    )
+    ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    r = by_name[_HF_30_NAME]
+    assert r.passed and r.is_warn
+    assert "528" in r.detail and "515 file(s)" in r.detail
+    assert "consistent with files+folders" in r.detail
+    assert ok  # WARN never flips overall ok
+
+
+def test_hf_count_plain_mismatch_warns_without_diagnostic(monkeypatch):
+    """An overcount that does NOT equal files+folders WARNs naming both
+    numbers WITHOUT the files+folders diagnostic (12 != 9 + 1) and WITHOUT
+    the subset hedge (an overcount cannot describe a subset)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    entries = [{"path": f"p/f{i}.json", "type": "file"} for i in range(9)] + [
+        {"path": "p/sub", "type": "directory"}
+    ]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    body = "Data: [p, 12 files](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and r.is_warn
+    assert "12" in r.detail and "9 file(s)" in r.detail
+    assert "files+folders" not in r.detail
+    assert "subset of the prefix" not in r.detail
+
+
+def test_hf_count_undercount_mismatch_carries_subset_hedge(monkeypatch):
+    """An UNDERCOUNT mismatch carries the descriptive hedge that the claim
+    may describe a subset of the prefix (concern (b))."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    entries = [{"path": f"p/f{i}.json", "type": "file"} for i in range(9)]
+    _stub_tree(monkeypatch, status="ok", entries=entries)
+    body = "Data: [p, 5 files](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and r.is_warn
+    assert "5" in r.detail and "9 file(s)" in r.detail
+    assert "subset of the prefix" in r.detail
+
+
+def test_hf_count_shard_claims_one_sided(monkeypatch):
+    """Shard claims are one-sided: claimed <= files is a clean PASS (shards +
+    a manifest legitimately undercount files); claimed > files — the #931
+    folder-inflation signature — WARNs."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    entries10 = [{"path": f"p/shard{i}.bin", "type": "file"} for i in range(9)] + [
+        {"path": "p/manifest.json", "type": "file"}
+    ]
+    _stub_tree(monkeypatch, status="ok", entries=entries10)
+    body_under = "Data: [p, 9 shards](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    r = verify_task_body.check_hf_file_count_claims(body_under)
+    assert r.passed and not r.is_warn
+
+    # Same (repo, sha, prefix) key with a DIFFERENT stubbed listing — clear
+    # the definitive cache so the second probe is not served the 10-file count.
+    verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    entries9 = [{"path": f"p/shard{i}.bin", "type": "file"} for i in range(9)]
+    _stub_tree(monkeypatch, status="ok", entries=entries9)
+    body_over = "Data: [p, 10 shards](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    r2 = verify_task_body.check_hf_file_count_claims(body_over)
+    assert r2.passed and r2.is_warn
+    assert "10" in r2.detail and "9 file(s)" in r2.detail
+
+
+def test_hf_count_network_error_skips(monkeypatch):
+    """A transient probe failure (429) and a `not_found` BOTH degrade to an
+    `unverified` note on a PASS line — never a FAIL, never a WARN (the
+    check-25-style not_found mapping: a WARN check never manufactures a
+    verdict it cannot substantiate)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    body = "Data: [p, 9 files](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    _stub_tree(monkeypatch, status="indeterminate", note="HF tree probe failed: HTTP 429")
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "HTTP 429" in r.detail
+    _stub_tree(monkeypatch, status="not_found")
+    r2 = verify_task_body.check_hf_file_count_claims(body)
+    assert r2.passed and not r2.is_warn
+    assert "unverified" in r2.detail and "no such revision/path" in r2.detail
+
+
+def test_hf_count_offline_fence_never_touches_network(monkeypatch):
+    """Under the EPM_VERIFY_BODY_NO_HF fence the check issues ZERO GETs —
+    the tree getter is stubbed to raise, so a single probe fails the test."""
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_HF", "1")
+
+    def _boom(url, params, headers, *, timeout_s):  # pragma: no cover
+        raise AssertionError("network touched under the offline fence")
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _boom)
+    body = "Data: [p, 9 files](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn
+    assert "HF probe fenced" in r.detail
+
+
+def test_hf_count_zero_claims_zero_probes(monkeypatch):
+    """A claim-free body is a vacuous PASS with ZERO Hub probes even with the
+    fence REMOVED — `_hf_tree_get` is stubbed to raise, so a single GET
+    would fail the test (GOOD_BODY's HF link labels — "raw completions",
+    "hf-hub" — carry no count claim)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+
+    def _boom(url, params, headers, *, timeout_s):  # pragma: no cover
+        raise AssertionError("probe issued on a claim-free body")
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _boom)
+    r = verify_task_body.check_hf_file_count_claims(GOOD_BODY)
+    assert r.passed and not r.is_warn
+    assert "no file-count claims" in r.detail
+
+
+def test_hf_count_importerror_skips(monkeypatch):
+    """A missing `huggingface_hub` degrades to an `unverified` skip note on a
+    PASS line (the optional-dependency guard)."""
+    import builtins
+
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    real_import = builtins.__import__
+
+    def _fake_import(name, *args, **kwargs):
+        if name == "huggingface_hub" or name.startswith("huggingface_hub."):
+            raise ImportError("huggingface_hub blocked for test")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", _fake_import)
+    body = "Data: [p, 9 files](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "huggingface_hub unavailable" in r.detail
+
+
+def test_hf_count_pagination_cap_skips(monkeypatch):
+    """A listing that never exhausts (every page carries a next-page link)
+    hits the page cap → skip note, PASS, never a WARN — a PARTIAL count must
+    never ground a mismatch."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls: list = []
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[{"path": "p/f.json", "type": "file"}],
+        next_page="https://huggingface.co/api/datasets/o/r/tree/abc1234def/p?cursor=X",
+        calls=calls,
+    )
+    body = "Data: [p, 9 files](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "exceeded page/time cap" in r.detail
+    assert len(calls) == verify_task_body._HF_PROBE_MAX_PAGES
+
+
+def test_hf_count_pagination_two_pages_accumulates(monkeypatch):
+    """A two-page listing accumulates file counts across pages (300 + 215 =
+    515 → clean PASS) within the bounded request budget; both pages are
+    genuinely fetched."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    page2 = "https://huggingface.co/api/datasets/o/r/tree/abc1234def/p?cursor=PAGE2"
+    calls: list[str] = []
+
+    def _fake(url, params, headers, *, timeout_s):
+        calls.append(url)
+        if "PAGE2" in url:
+            entries = [{"path": f"p/g{i}.json", "type": "file"} for i in range(215)]
+            return verify_task_body._TreeProbeResult("ok", entries, None, "")
+        entries = [{"path": f"p/f{i}.json", "type": "file"} for i in range(300)]
+        return verify_task_body._TreeProbeResult("ok", entries, page2, "")
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _fake)
+    body = "Data: [p, 515 files](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn, r.detail
+    assert "unverified" not in r.detail
+    max_expected = verify_task_body._HF_PROBE_MAX_PAGES * verify_task_body._HF_PROBE_ATTEMPTS
+    assert 0 < len(calls) <= max_expected
+    assert any("PAGE2" in c for c in calls)
+    assert len(calls) == 2
+
+
+def test_hf_count_probe_deduped_and_cached(monkeypatch):
+    """Two different-count claims on the SAME (repo, sha, prefix) issue
+    exactly ONE probe (intra-invocation memo + definitive cache); the
+    mismatching claim still WARNs."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls: list = []
+    entries = [{"path": f"p/f{i}.json", "type": "file"} for i in range(9)]
+    _stub_tree(monkeypatch, status="ok", entries=entries, calls=calls)
+    body = (
+        "Data: [p, 9 files](https://huggingface.co/datasets/o/r/tree/abc1234def/p) and the "
+        "footer (10 files, incl. sidecar): "
+        "[p @ abc1234](https://huggingface.co/datasets/o/r/tree/abc1234def/p)\n"
+    )
+    claims = verify_task_body._gather_hf_count_claims(body)
+    assert len(claims) == 2  # 9-files and 10-files are distinct claims on one probe key
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert len(calls) == 1  # one probe for the shared (repo, sha, prefix) key
+    assert r.passed and r.is_warn  # the 10-files claim mismatches the 9 files on the Hub
+    assert "10" in r.detail and "9 file(s)" in r.detail
+
+
+def test_hf_count_per_body_probe_cap(monkeypatch):
+    """More unique prefixes than _HF_COUNT_MAX_PROBES: the first 8 probe, the
+    9th surfaces a per-body-probe-cap `unverified` note — never a WARN."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    n = verify_task_body._HF_COUNT_MAX_PROBES + 1
+    calls: list = []
+    entries = [{"path": f"p{k}/f.json", "type": "file"} for k in range(n)]
+    _stub_tree(monkeypatch, status="ok", entries=entries, calls=calls)
+    body = (
+        "\n".join(
+            f"- [p{k}, 1 file](https://huggingface.co/datasets/o/r/tree/abc1234def/p{k})"
+            for k in range(n)
+        )
+        + "\n"
+    )
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn
+    assert "per-body probe cap" in r.detail
+    assert f"{n} claim(s) checked" in r.detail
+    assert len(calls) == verify_task_body._HF_COUNT_MAX_PROBES
+
+
+def test_hf_count_mismatch_and_unverified_coexist(monkeypatch):
+    """When one prefix mismatches and another is throttled, the WARN detail
+    carries BOTH the mismatch AND the unverified note (the unverified list
+    is never dropped)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+
+    def _fake(url, params, headers, *, timeout_s):
+        if "pfx_a" in url:
+            return verify_task_body._TreeProbeResult(
+                "ok", [{"path": "pfx_a/f1.json", "type": "file"}], None, ""
+            )
+        return verify_task_body._TreeProbeResult(
+            "indeterminate", [], None, "HF tree probe failed: HTTP 429"
+        )
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _fake)
+    body = (
+        "- [pfx_a, 2 files](https://huggingface.co/datasets/o/r/tree/abc1234def/pfx_a)\n"
+        "- [pfx_b, 3 files](https://huggingface.co/datasets/o/r/tree/abc1234def/pfx_b)\n"
+    )
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and r.is_warn
+    assert "2 files at `pfx_a`" in r.detail and "1 file(s)" in r.detail
+    assert "unverified (count not confirmed)" in r.detail and "pfx_b" in r.detail
+
+
+def test_hf_count_repo_root_link_empty_prefix(monkeypatch):
+    """A repo-root `/tree/<sha>` link (no path) probes the ROOT tree URL
+    (`_hf_tree_url(..., "")`) and displays the empty prefix as `/`."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls: list = []
+    entries = [
+        {"path": "a.json", "type": "file"},
+        {"path": "b.json", "type": "file"},
+        {"path": "sub", "type": "directory"},
+    ]
+    _stub_tree(monkeypatch, status="ok", entries=entries, calls=calls)
+    body = "Data: [3 files](https://huggingface.co/datasets/o/r/tree/abc1234def)\n"
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and r.is_warn
+    assert "at `/`" in r.detail and "2 file(s)" in r.detail
+    assert "consistent with files+folders" in r.detail  # 3 == 2 files + 1 folder
+    url, _params = calls[0]
+    assert url.endswith("/tree/abc1234def")  # empty prefix → the root tree URL
+
+
+# ─── Check 32: HF-adjacent backtick file claims vs the pinned tree (WARN) ──
+#
+# Check 32 (`check_hf_adjacent_file_claims`, #1016) extracts backtick
+# FILENAME claims adjacent to hex-pinned HF /tree markdown links — PAREN
+# (a parenthetical immediately AFTER the link, the #952-r1 incident shape;
+# check 30's paren is BEFORE the link) and LINKTEXT (a dotted backtick
+# token inside the link text) — and tests any-depth basename membership
+# against the same #733 bounded raw tree-endpoint probe stack checks
+# 23/25/30 use. All tests are offline: extractor tests need no stub; probe
+# tests stub `verify_task_body._hf_tree_get` after removing the conftest
+# EPM_VERIFY_BODY_NO_HF fence.
+
+_HF_32_NAME = "HF-adjacent backtick file claims exist under the pinned tree"
+
+_I952_SHA = "5b62649cefb34902fd630f21630164e8d1d99764"
+_I952_DATA_REPO = "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data"
+_I952_EVAL_PREFIX = "issue952_position_divergence/eval_results"
+_I952_EVAL_URL = f"{_I952_DATA_REPO}/tree/{_I952_SHA}/{_I952_EVAL_PREFIX}"
+_I952_RAW_URL = f"{_I952_DATA_REPO}/tree/{_I952_SHA}/issue952_position_divergence/raw_completions"
+_I952_GH_BLOB = (
+    "https://github.com/superkaiba/explore-persona-space/blob/"
+    "ac9f45b4ca42d7b55091a0fa169b8480e2fe0c62/eval_results/issue_952/"
+    "divergence_bank_queries.json"
+)
+
+_I952_LEAD = (
+    "Divergence-bank items are referenced by file + index only (standing content "
+    "rule for sensitive query categories — no bank text is quoted anywhere in "
+    "this body): the 229 judged candidate pairs with judge scores, refusal "
+    "labels, and keep decisions are in "
+)
+_I952_TAIL = (
+    ", and the bank generations + judge outputs are in "
+    f"[HF …/raw_completions @ 5b62649]({_I952_RAW_URL})."
+)
+
+# The VERBATIM #952 r1 incident line (recover via
+# `git show b412ddb07d:tasks/interpreting/952/body.md`, grep
+# `divergence_bank_queries`): the paren after the pinned eval_results tree
+# link claims BOTH bank files while `divergence_bank_queries.json` lived
+# only in git — the must-WARN fixture. The dot-less backtick ids
+# (`model_identity_004` / `style_format_037`) exercise the filename
+# filter's no-extension rejection in the same shot.
+_I952_R1_LINE = (
+    _I952_LEAD
+    + f"[HF issue952_position_divergence/eval_results @ 5b62649]({_I952_EVAL_URL}) "
+    + "(`divergence_bank_verification.json`, `divergence_bank_queries.json`; "
+    + "kept pairs carry ids of the form `model_identity_004` / `style_format_037`)"
+    + _I952_TAIL
+)
+
+# The VERBATIM corrected #952 line (live body, `tasks/followups_running/952/
+# body.md` line ~142): the HF paren claims only the verification file;
+# `divergence_bank_queries.json` moved to a github-blob claim on the SAME
+# line — the canonical must-NOT-warn fixture (structural anchoring must
+# never attribute the github-linked filename to the HF link).
+_I952_CORRECTED_LINE = (
+    _I952_LEAD
+    + f"[HF issue952_position_divergence/eval_results @ 5b62649]({_I952_EVAL_URL}) "
+    + "(`divergence_bank_verification.json`) and in git at "
+    + f"[`divergence_bank_queries.json` @ ac9f45b4ca]({_I952_GH_BLOB}) "
+    + "(kept pairs carry ids of the form `model_identity_004` / `style_format_037`)"
+    + _I952_TAIL
+)
+
+
+def test_hf_adjacent_claim_absent_warns_952_r1_shape(monkeypatch):
+    """Acceptance criterion 1 — the VERBATIM #952-r1 line: the paren claims
+    two bank files at the pinned eval_results tree, the stubbed exhaustive
+    listing holds only `divergence_bank_verification.json` → a `[WARN]`
+    naming the missing file + the pinned prefix + sha[:8] + the PAREN shape
+    tag; `passed` stays True (WARN never FAILs)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[
+            {"path": f"{_I952_EVAL_PREFIX}/divergence_bank_verification.json", "type": "file"},
+        ],
+    )
+    r = verify_task_body.check_hf_adjacent_file_claims(_I952_R1_LINE)
+    assert r.passed and r.is_warn
+    assert r.render().startswith("  [WARN]")
+    assert "divergence_bank_queries.json" in r.detail
+    assert _I952_EVAL_PREFIX in r.detail and _I952_SHA[:8] in r.detail
+    assert "shape: PAREN" in r.detail
+    # The PRESENT file is never reported missing.
+    assert "claims `divergence_bank_verification.json`" not in r.detail
+
+
+def test_hf_adjacent_claim_present_passes_any_depth(monkeypatch):
+    """Same r1 body, but the listing carries BOTH claimed basenames — the
+    queries file nested one level DEEPER than the prefix's direct children
+    → clean PASS (any-depth membership), no WARN, no `unverified` note."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[
+            {"path": f"{_I952_EVAL_PREFIX}/divergence_bank_verification.json", "type": "file"},
+            {"path": f"{_I952_EVAL_PREFIX}/sub", "type": "directory"},
+            {"path": f"{_I952_EVAL_PREFIX}/sub/divergence_bank_queries.json", "type": "file"},
+        ],
+    )
+    r = verify_task_body.check_hf_adjacent_file_claims(_I952_R1_LINE)
+    assert r.passed and not r.is_warn, r.detail
+    assert "unverified" not in r.detail
+    assert "2 adjacent file claim(s) against 1 pinned tree(s)" in r.detail
+
+
+def test_corrected_952_line_no_warn_and_github_never_probed(monkeypatch):
+    """Acceptance criterion 2 — the VERBATIM corrected #952 line: the HF
+    paren claims only the verification file (present in the stubbed listing
+    one level below the prefix, mirroring the live Hub layout); the
+    github-blob `divergence_bank_queries.json` claim on the SAME line is
+    never attributed to the HF link, and the paren-less raw_completions
+    link contributes zero claims. Exactly ONE claim extracts; the single
+    probe targets the HF api (never github); no WARN."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    claims = verify_task_body._gather_hf_adjacent_file_claims(_I952_CORRECTED_LINE)
+    assert [(c[4], c[5]) for c in claims] == [("divergence_bank_verification.json", "PAREN")]
+    calls: list = []
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[
+            {"path": f"{_I952_EVAL_PREFIX}/divergence_bank_verification.json", "type": "file"},
+        ],
+        calls=calls,
+    )
+    r = verify_task_body.check_hf_adjacent_file_claims(_I952_CORRECTED_LINE)
+    assert r.passed and not r.is_warn, r.detail
+    assert len(calls) == 1
+    url, _params = calls[0]
+    assert "github" not in url and "huggingface.co/api/datasets" in url
+
+
+def test_hf_adjacent_linktext_shape_tree_url(monkeypatch):
+    """LINKTEXT shape — a dotted backtick token inside a `/tree/<sha>/dir/`
+    link's text: absent from the listing → WARN with the LINKTEXT shape
+    tag; present → clean PASS (cache cleared between the two stubs — only
+    exhaustive listings are cached)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    body = (
+        "Raw rollouts: [`villain_seed42.json`]"
+        "(https://huggingface.co/datasets/o/r/tree/abc1234def/dir/)\n"
+    )
+    _stub_tree(monkeypatch, status="ok", entries=[{"path": "dir/other.json", "type": "file"}])
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and r.is_warn
+    assert "villain_seed42.json" in r.detail and "shape: LINKTEXT" in r.detail
+
+    verify_task_body._HF_TREE_BASENAMES_CACHE.clear()
+    _stub_tree(
+        monkeypatch, status="ok", entries=[{"path": "dir/villain_seed42.json", "type": "file"}]
+    )
+    r2 = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r2.passed and not r2.is_warn, r2.detail
+
+
+def test_hf_adjacent_blob_url_out_of_scope():
+    """A paren after a `/blob/` link and a dotted backtick filename inside a
+    `/blob/` link's text both extract ZERO claims — check 23 already
+    validates the full blob path."""
+    u = "https://huggingface.co/datasets/o/r/blob/abc1234def/p/f.json"
+    body = f"See [data]({u}) (`g.json`) and [`f.json` @ abc1234]({u}).\n"
+    assert verify_task_body._gather_hf_adjacent_file_claims(body) == []
+
+
+def test_hf_adjacent_filename_filter():
+    """Extraction unit test for the dotted artifact-extension whitelist: the
+    mixed real-corpus parenthetical extracts ONLY `pilot_gate.json`; paths,
+    brace-globs, wildcard globs, no-dot tokens (pod names / shas), `.py`
+    scripts, and >64-char stems are all rejected by construction."""
+    u = "https://huggingface.co/datasets/o/r/tree/abc1234def/p"
+    mixed = f"[gate artifacts]({u}) (`pilot_gate.json`, run on `eps-issue-642`, git `a0330df0e8`)"
+    claims = verify_task_body._gather_hf_adjacent_file_claims(mixed)
+    assert [(c[4], c[5]) for c in claims] == [("pilot_gate.json", "PAREN")]
+    long_stem = "x" * 70
+    rejected = [
+        f"[x]({u}) (`on_policy_R/R_train.json`)",  # relative path — a subpath claim
+        f"[x]({u}) (`R_{{train,eval}}.json`)",  # brace glob
+        f"[x]({u}) (`*_responses.json`)",  # wildcard glob
+        f"[x]({u}) (`gen.py`)",  # script — generator provenance, not an upload claim
+        f"[x]({u}) (`{long_stem}.json`)",  # >64-char stem
+        f"[x]({u}) (`no_extension_token`)",  # no dotted extension
+    ]
+    for body in rejected:
+        assert verify_task_body._gather_hf_adjacent_file_claims(body) == [], body
+
+
+def test_hf_adjacent_url_terminal_component_skipped():
+    """A backtick token equal to the URL's own terminal path component is
+    NOT a separate membership claim — check 23 already validates the URL's
+    own path (zero claims, zero probes)."""
+    body = (
+        "Raw: [`run.jsonl`](https://huggingface.co/datasets/o/r/tree/abc1234def"
+        "/raw_completions/run.jsonl)\n"
+    )
+    assert verify_task_body._gather_hf_adjacent_file_claims(body) == []
+
+
+def test_hf_adjacent_offline_fence_never_touches_network(monkeypatch):
+    """Under the EPM_VERIFY_BODY_NO_HF fence the check issues ZERO GETs —
+    the tree getter is stubbed to raise, so a single probe fails the test;
+    the claim surfaces as an `unverified` note on a PASS line."""
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_HF", "1")
+
+    def _boom(url, params, headers, *, timeout_s):  # pragma: no cover
+        raise AssertionError("network touched under the offline fence")
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _boom)
+    body = "Data: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`f.json`)\n"
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "HF probe fenced" in r.detail
+
+
+def test_hf_adjacent_not_found_skips_not_warns(monkeypatch):
+    """`not_found` degrades to an `unverified` note on a PASS line — never a
+    WARN: check 23 owns the dead-pin FAIL (the documented
+    check-23-vs-25/30/32 asymmetry), so double-reporting here is noise."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(monkeypatch, status="not_found")
+    body = "Data: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`f.json`)\n"
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "no such revision/path" in r.detail
+
+
+def test_hf_adjacent_pagination_cap_skips(monkeypatch):
+    """A listing that never exhausts (every page carries a next-page link)
+    hits the page cap → skip note, PASS, never a WARN — a PARTIAL listing
+    must never ground a missing-basename verdict, even when the pages seen
+    so far LACK the claimed basename."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls: list = []
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[{"path": "p/other.json", "type": "file"}],
+        next_page="https://huggingface.co/api/datasets/o/r/tree/abc1234def/p?cursor=X",
+        calls=calls,
+    )
+    body = "Data: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`f.json`)\n"
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "exceeded page/time cap" in r.detail
+    assert len(calls) == verify_task_body._HF_PROBE_MAX_PAGES
+
+
+def test_hf_adjacent_probe_memo_one_probe_per_prefix(monkeypatch):
+    """Two claims on ONE (repo, sha, prefix) issue exactly ONE listing walk
+    (intra-invocation memo); both basenames verify against that single
+    exhaustive listing."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls: list = []
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[
+            {"path": "p/a.json", "type": "file"},
+            {"path": "p/b.json", "type": "file"},
+        ],
+        calls=calls,
+    )
+    body = "Data: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`a.json`, `b.json`)\n"
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn, r.detail
+    assert "2 adjacent file claim(s) against 1 pinned tree(s)" in r.detail
+    assert len(calls) == 1
+
+
+def test_hf_adjacent_fenced_code_block_not_scanned():
+    """The claim pattern inside a ``` fenced block is illustrative — zero
+    claims extract."""
+    body = "```\nData: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`f.json`)\n```\n"
+    assert verify_task_body._gather_hf_adjacent_file_claims(body) == []
+
+
+def test_hf_adjacent_directory_basename_suppresses_warn(monkeypatch):
+    """A claimed dotted name matching a DIRECTORY-type entry suppresses the
+    WARN (FP-safe: dotted directory names are rare, and a directory of that
+    name still corroborates the claim's location)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(monkeypatch, status="ok", entries=[{"path": "p/data.json", "type": "directory"}])
+    body = "Data: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`data.json`)\n"
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn, r.detail
+
+
+def test_hf_adjacent_importerror_skips(monkeypatch):
+    """A missing `huggingface_hub` degrades to an `unverified` skip note on
+    a PASS line, never a WARN (fail-soft parity with checks 23/25/30)."""
+    import builtins
+
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    real_import = builtins.__import__
+
+    def _fake_import(name, *args, **kwargs):
+        if name == "huggingface_hub" or name.startswith("huggingface_hub."):
+            raise ImportError("huggingface_hub blocked for test")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", _fake_import)
+    body = "Data: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`f.json`)\n"
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "huggingface_hub unavailable" in r.detail
+
+
+def test_hf_adjacent_transient_network_error_skips_and_never_caches(monkeypatch):
+    """A transient probe failure (429) degrades to an `unverified` note on a
+    PASS line AND the skip is NEVER cached — `_HF_TREE_BASENAMES_CACHE`
+    stays empty, so a cleared throttle is re-probed on the next
+    invocation."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(monkeypatch, status="indeterminate", note="HF tree probe failed: HTTP 429")
+    body = "Data: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`f.json`)\n"
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "HTTP 429" in r.detail
+    assert verify_task_body._HF_TREE_BASENAMES_CACHE == {}
+
+
+def test_hf_adjacent_no_failing_checkresult_in_source():
+    """Committed WARN-only pin: no `CheckResult(..., False, ...)` /
+    `passed=False` construction anywhere in the check-32 function or its
+    helpers — the durable form of the report-time grep (plan #1016 §4.6
+    T16)."""
+    import ast
+    import inspect
+
+    fns = [
+        verify_task_body.check_hf_adjacent_file_claims,
+        verify_task_body._gather_hf_adjacent_file_claims,
+        verify_task_body._hf_basenames_under_prefix,
+        verify_task_body._hf_basenames_for_prefix,
+    ]
+    for fn in fns:
+        tree = ast.parse(inspect.getsource(fn))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            callee = getattr(node.func, "id", None) or getattr(node.func, "attr", None)
+            if callee != "CheckResult":
+                continue
+            if len(node.args) >= 2:
+                arg = node.args[1]
+                assert not (isinstance(arg, ast.Constant) and arg.value is False), (
+                    f"{fn.__name__} constructs CheckResult(..., False, ...)"
+                )
+            for kw in node.keywords:
+                if kw.arg == "passed":
+                    assert not (isinstance(kw.value, ast.Constant) and kw.value.value is False), (
+                        f"{fn.__name__} constructs CheckResult(passed=False)"
+                    )
+
+
+def test_hf_adjacent_per_body_probe_cap(monkeypatch):
+    """More unique prefixes than _HF_MEMBER_MAX_PROBES: the first 8 probe
+    (each claim verifies), the 9th surfaces a per-body-probe-cap
+    `unverified` note — never a WARN, `passed` stays True (the cap branch
+    is behaviorally distinct from the page cap: no probe is even
+    issued)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    n = verify_task_body._HF_MEMBER_MAX_PROBES + 1
+    calls: list = []
+    entries = [{"path": f"p{k}/f{k}.json", "type": "file"} for k in range(n)]
+    _stub_tree(monkeypatch, status="ok", entries=entries, calls=calls)
+    body = (
+        "\n".join(
+            f"- [p{k}](https://huggingface.co/datasets/o/r/tree/abc1234def/p{k}) (`f{k}.json`)"
+            for k in range(n)
+        )
+        + "\n"
+    )
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn
+    assert "per-body probe cap" in r.detail
+    assert f"{n} adjacent file claim(s)" in r.detail
+    assert len(calls) == verify_task_body._HF_MEMBER_MAX_PROBES
 
 
 # ─── Check 12: `## Figure` H2 deprecation hook (dormant) ──────────────────
@@ -2434,7 +3801,7 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 33 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 36 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe), the four
@@ -2448,7 +3815,7 @@ def test_checks_list_size():
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the SIX generation-agnostic checks:
+    (`check_v3_word_caps`) — PLUS the NINE generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
     vs the `## Reproducibility` per-figure commit claim), check 23
     (`check_hf_url_resolves`: HF Hub revision-pin existence via a bounded
@@ -2460,9 +3827,25 @@ def test_checks_list_size():
     existence, #653 r6), check 26
     (`check_figure_panel_prose_vs_sidecar`, FAIL: figure what-is-plotted
     panel/series prose vs the sidecar's `_kind` aggregate — panel/series
-    drift, #683 r1), and check 28 (`check_figure_label_codes`, WARN:
+    drift, #683 r1), check 28 (`check_figure_label_codes`, WARN:
     opaque config-code tokens — `@L<digits>` layer pins / regime-code
-    slugs — in the figure sidecar's rendered-text strings, #920). The
+    slugs — in the figure sidecar's rendered-text strings, #920), and
+    check 29 (`check_figure_tracked_at_head`, WARN: body-linked same-repo
+    `figures/issue_<N>/` figure paths still tracked on a live local ref —
+    HEAD plus the `issue-<N>` / `issue-<N>-*` branch family; branch-only →
+    PASS-disclosure, missing everywhere → WARN, #964 / incident #841), and
+    check 30 (`check_hf_file_count_claims`, WARN: numeric "N files" /
+    "N shards" claims adjacent to hex-pinned HF `/tree/<sha>` markdown
+    links vs a files-only scoped Hub tree count — folder entries excluded;
+    mismatch → WARN never FAIL, every non-definitive probe outcome SKIPs;
+    incident #931's 528-vs-515 folder-inflation miscount, #1008), and
+    check 32 (`check_hf_adjacent_file_claims`, WARN: backtick FILENAME
+    claims adjacent to hex-pinned HF `/tree/<sha>` markdown links — the
+    filename-membership sibling of check 30 — must appear by exact
+    basename, any depth, in the scoped listing at the pinned revision;
+    missing → WARN never FAIL, every non-definitive probe outcome SKIPs;
+    incident #952 r1's git-only `divergence_bank_queries.json` claimed at
+    the pinned HF tree, #1016). The
     migration is a RETARGET — every former check
     was kept (sometimes dormant, e.g. `check_figure_caption`) so downstream
     tests stay valid; the v3 checks PASS-skip on non-v3 bodies.
@@ -2474,13 +3857,18 @@ def test_checks_list_size():
     provenance row (needs frontmatter + original-body.md), the v3
     check-21 body-Parameters-⊆-doc (needs the methodology doc path),
     the v4 check-20 word caps (needs `issue` for the events-based
-    folded-round budget scaling, #921), and the #732 judge-API-error
-    denominator check (needs eval JSONs).
-    So `verify_text` returns 41 results (2 prepended + CHECKS[1:]=32 +
-    7 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 33.
+    folded-round budget scaling, #921), the #732 judge-API-error
+    denominator check (needs eval JSONs), and the check-31
+    orphaned-per-unit-figures probe (needs `issue` for figures-dir
+    scoping, #1011).
+    So `verify_text` returns 45 results (2 prepended + CHECKS[1:]=35 +
+    8 appended — see `test_good_body_passes_all`), but `CHECKS` stays
+    at 36.
     """
-    assert len(verify_task_body.CHECKS) == 33
+    assert len(verify_task_body.CHECKS) == 36
+    # By-name membership so the NEXT check addition can key by name instead
+    # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -4573,6 +5961,176 @@ def test_v4_good_body_passes_all():
     assert set(fails) <= {"Figure URL resolvable", "Reproducibility artifact URLs exist"}, fails
 
 
+def test_v4_context_blockquote_bare_url_passes_permanence():
+    """The #825 incident shape: a v4 `**Context:**` verbatim
+    originating-prompt blockquote citing a bare HF URL must PASS check 8
+    with no hyperlink-to-pinned-revision workaround (#959). Asserts the
+    permanence check only (per the `_V4_GOOD_BODY` convention — the
+    fixture's fake SHAs fail the existence probes, so overall PASS is
+    not assertable)."""
+    body = _V4_GOOD_BODY.replace(
+        "- Originating prompt: origin prompt not recorded",
+        "- Originating prompt, verbatim:\n\n"
+        "> test in the base model (https://huggingface.co/Qwen/Qwen2.5-7B)\n"
+        "> -- make sure this is the proper base model\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    by_name = _results_by_name(results)
+    perm = by_name["Reproducibility URL permanence"]
+    assert perm.passed, perm.detail
+
+
+# ─── Check 17 (v4 lineage-token sub-check, #1014) ──────────────────────────
+# All assertions are per-check by name (the `_V4_GOOD_BODY` convention —
+# fake SHAs fail the existence probes, so overall PASS is not assertable).
+
+_V4_LINEAGE_BULLET = (
+    "- Follow-up to [#34](https://eps.superkaiba.com/tasks/34) — the "
+    "X-effect generalisation question.\n"
+)
+
+
+def _v4_body_with_lineage(replacement: str) -> str:
+    """Return `_V4_GOOD_BODY` with its Context lineage bullet replaced."""
+    assert _V4_LINEAGE_BULLET in _V4_GOOD_BODY, "fixture drifted"
+    return _V4_GOOD_BODY.replace(_V4_LINEAGE_BULLET, replacement)
+
+
+def test_v4_context_issue_link_lineage_passes():
+    """The canonical v4 fixture's `[#34](...)` lineage bullet satisfies
+    the v4 lineage-token sub-check (issue-reference alternative)."""
+    _ok, results = verify_task_body.verify_text(_V4_GOOD_BODY)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn
+    assert "lineage" in ctx.detail
+
+
+def test_v4_context_fresh_direction_no_parent_passes():
+    """`fresh direction (no parent)` satisfies the lineage sub-check."""
+    body = _v4_body_with_lineage("- Lineage: fresh direction (no parent).\n")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_fresh_no_parent_short_form_passes():
+    """The task-Goal short form `fresh (no parent)` satisfies the
+    lineage sub-check (the `no parent` alternative)."""
+    body = _v4_body_with_lineage("- Lineage: fresh (no parent).\n")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_bare_issue_ref_passes():
+    """Bare `#K` refs (the #823 shape: `Child of #722 ... method parent
+    #779`) satisfy the lineage sub-check."""
+    body = _v4_body_with_lineage("- Child of #722 (context pool), method parent #779.\n")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_followup_round_clause_passes():
+    """A `same-issue follow-up round` clause with NO issue ref satisfies
+    the lineage sub-check (the follow-up-round alternative)."""
+    body = _v4_body_with_lineage("- Same-issue follow-up round `maxp-winner` run 2026-07-03.\n")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_without_lineage_token_fails():
+    """A v4 `**Context:**` row with NO lineage token is a hard FAIL
+    (the #958 gap this sub-check closes)."""
+    body = _v4_body_with_lineage("")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert not ctx.passed
+    assert "lineage" in ctx.detail
+    assert "SPEC" in ctx.detail
+
+
+def test_v4_blockquoted_issue_ref_does_not_satisfy_lineage():
+    """An issue ref inside the blockquoted verbatim originating prompt
+    must NOT satisfy the lineage sub-check — the quote is provenance
+    TEXT, not lineage."""
+    body = _v4_body_with_lineage("").replace(
+        "- Originating prompt: origin prompt not recorded",
+        "- Originating prompt, verbatim:\n\n> rerun #537 with the new adapters\n",
+    )
+    assert "> rerun #537" in body, "fixture replacement did not land"
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert not ctx.passed, ctx.detail
+
+
+def test_v4_inline_quote_on_label_line_keeps_same_line_lineage():
+    """The #763 shape: the whole Context row is ONE physical line with an
+    inline `> "..."` quote after the label and the lineage clause after
+    the quote. Pins the strip-before-slice scan order — slice-then-strip
+    would drop the whole line (it appears to start with `>` post-slice)
+    and wrongly FAIL."""
+    context_block = (
+        "**Context:**\n"
+        "- Created 2026-06-24; run executed 2026-06-24.\n"
+        + _V4_LINEAGE_BULLET
+        + "- Originating prompt: origin prompt not recorded\n"
+    )
+    assert context_block in _V4_GOOD_BODY, "fixture drifted"
+    body = _V4_GOOD_BODY.replace(
+        context_block,
+        '**Context:** > "do statistical now" · lineage: '
+        "[#658](https://eps.superkaiba.com/tasks/658) — parent.\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v3_context_without_lineage_not_newly_failed():
+    """v3 behavior stays byte-identical: a v3 `**Context:**` row with NO
+    lineage token keeps the pre-#1014 label-presence PASS (no new WARN,
+    no FAIL)."""
+    assert _V4_LINEAGE_BULLET in _V3_GOOD_BODY, "fixture drifted"
+    body = _V3_GOOD_BODY.replace(_V4_LINEAGE_BULLET, "")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+    assert "present" in ctx.detail
+
+
+def test_v4_context_fresh_direction_alone_passes():
+    """`fresh direction` WITHOUT `no parent` / any `#K` ref / any
+    follow-up-round clause (the #778/#658 phrasing family) satisfies the
+    sub-check — pins regex alternative 2 uniquely (deleting the
+    `fresh direction` arm would fail this test and only this test)."""
+    body = _v4_body_with_lineage(
+        "- Lineage: fresh direction seeded from the marker-transfer question bank.\n"
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_url_fragment_does_not_satisfy_lineage():
+    """A URL fragment (`.../page#123`) must NOT satisfy the issue-ref
+    alternative — pins the `(?<![\\w/&])` lookbehind."""
+    body = _v4_body_with_lineage("- See https://example.com/page#123 for background.\n")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert not ctx.passed, ctx.detail
+
+
+def test_v4_context_unhyphenated_followup_round_clause_passes():
+    """`Same-issue followup round` (no hyphen in `followup`, no `#` ref)
+    satisfies the sub-check — pins the `follow-?up` optional hyphen."""
+    body = _v4_body_with_lineage("- Same-issue followup round `alt2-pin` run 2026-07-04.\n")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
 def test_v4_v3_content_h2_is_hard_fail():
     """A leftover v3 content H2 (`## Findings`) in a v4 body is a hard FAIL."""
     body = _V4_GOOD_BODY.replace("## Results\n", "## Findings\n\nstale v3 H2\n\n## Results\n")
@@ -5070,17 +6628,203 @@ def test_v4_issue_ref_in_table_row_passes():
     assert r.passed, r.render()
 
 
-def test_v4_linked_issue_ref_passes_mechanically():
-    """A `[#K](url)` LINK in Methodology is deliberately out of MECHANICAL
-    scope (plan Non-goals: the linked-form violation stays Lens 2 / Rule A
-    territory); the fixture's Goal `[#34](...)` link is sanctioned too."""
+def test_v4_task_link_in_methodology_fails():
+    """The #928 shape: a `[#K](https://eps.superkaiba.com/tasks/K)` LINK in
+    Methodology prose is a hard FAIL — the task-URL scan runs BEFORE
+    `_LINK_RE` erases link targets (#1002). Inverts the pre-#1002 pin
+    `test_v4_linked_issue_ref_passes_mechanically`, which pinned the
+    linked form as out of mechanical scope."""
     body = _V4_GOOD_BODY.replace(
         "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
         "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct. "
         "Recipe as in [#779](https://eps.superkaiba.com/tasks/779).",
     )
     r = _bare_ref_result(body)
+    assert not r.passed
+    assert "tasks/779" in r.detail
+    assert "Methodology" in r.detail
+
+
+def test_v4_task_link_in_takeaways_fails():
+    """A task link appended to a Takeaways bullet FAILs (run through
+    verify_text to pin the CHECKS registration on the Takeaways span)."""
+    body = _V4_GOOD_BODY.replace(
+        "- Caveat that binds interpretation: single model family, three seeds only.\n",
+        "- Caveat that binds interpretation: single model family, three seeds only.\n"
+        "- Protocol matches [#537](https://eps.superkaiba.com/tasks/537).\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    r = _results_by_name(results)[_BARE_REF_CHECK_NAME]
+    assert not r.passed
+    assert "tasks/537" in r.detail
+    assert "Takeaways" in r.detail
+
+
+def test_v4_task_link_in_results_fails():
+    """A task link in a `> **Figure.**` caption line under `## Results`
+    FAILs (prose, not a sanctioned form — mirrors
+    test_v4_bare_issue_ref_in_results_caption_fails)."""
+    body = _V4_GOOD_BODY.replace(
+        "error bars 95% Wald CIs.",
+        "error bars 95% Wald CIs ([#667](https://eps.superkaiba.com/tasks/667) protocol).",
+    )
+    r = _bare_ref_result(body)
+    assert not r.passed
+    assert "tasks/667" in r.detail
+    assert "Results" in r.detail
+
+
+def test_v4_bare_task_url_in_results_fails():
+    """Scope pin: a BARE task URL in Results prose FAILs — dropping the
+    `[label](...)` brackets does not dodge the check (#1002 §4b)."""
+    body = _V4_GOOD_BODY.replace(
+        "the smallest within-condition gap between seeds is 1.2 pts.",
+        "the smallest within-condition gap between seeds is 1.2 pts. "
+        "Protocol: https://eps.superkaiba.com/tasks/658.",
+    )
+    r = _bare_ref_result(body)
+    assert not r.passed
+    assert "tasks/658" in r.detail
+    assert "Results" in r.detail
+
+
+def test_v4_autolink_task_url_in_methodology_fails():
+    """Scope pin: a `<https://.../tasks/K>` angle-bracket autolink FAILs —
+    subsumed by the URL scan (#1002 §4b)."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct. "
+        "See <https://eps.superkaiba.com/tasks/658>.",
+    )
+    r = _bare_ref_result(body)
+    assert not r.passed
+    assert "tasks/658" in r.detail
+    assert "Methodology" in r.detail
+
+
+def test_v4_task_link_in_goal_passes():
+    """`## Goal` is NOT a standalone section — a second task link in the
+    context slot stays sanctioned (the fixture's `[#34](...)` link is
+    additionally asserted by test_v4_good_body_passes_all)."""
+    body = _V4_GOOD_BODY.replace(
+        "sits in the trait-transfer line.",
+        "sits in the trait-transfer line, extending [#658](https://eps.superkaiba.com/tasks/658).",
+    )
+    r = _bare_ref_result(body)
     assert r.passed, r.render()
+
+
+def test_v4_task_link_in_footer_passes():
+    """Footer-cut parity: a task link AND a bare task URL on footer lineage
+    lines are sanctioned (the bare-URL case pins the parity directly)."""
+    body = _V4_GOOD_BODY.replace(
+        "- Originating prompt: origin prompt not recorded\n",
+        "- Originating prompt: origin prompt not recorded\n"
+        "- Lineage: [#658](https://eps.superkaiba.com/tasks/658); "
+        "see also https://eps.superkaiba.com/tasks/742.\n",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_task_link_in_table_row_passes():
+    """Table-row parity (the Training-table Source column grounding
+    convention): a linked AND a bare task URL in GFM table rows are
+    sanctioned."""
+    body = _V4_GOOD_BODY.replace(
+        "| Seeds | [42, 137, 256] | plan §11 |\n",
+        "| Seeds | [42, 137, 256] | plan §11 |\n"
+        "| Judge cache | reused | [#779](https://eps.superkaiba.com/tasks/779) |\n"
+        "| Adapter | reused | https://eps.superkaiba.com/tasks/532 |\n",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_task_link_in_fenced_code_passes():
+    """A task link inside a fenced code block is sanctioned (fence lines
+    are structurally excluded from both scans)."""
+    body = _V4_GOOD_BODY.replace(
+        "\n## Results\n",
+        "\n```text\nsee [#779](https://eps.superkaiba.com/tasks/779)\n```\n\n## Results\n",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_task_link_in_inline_code_passes():
+    """The #1002 §4a semantics decision pin: inline code PROTECTS the URL
+    scan (mask parity with the bare-token scan) — a backticked example
+    link is verbatim syntax-as-data."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct. "
+        "Cite links as `[#779](https://eps.superkaiba.com/tasks/779)` in the Goal slot.",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_task_link_in_html_comment_passes():
+    """A task link inside an HTML comment is sanctioned (the char-span
+    comment mask covers the URL scan too)."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.\n"
+        "<!-- see [#779](https://eps.superkaiba.com/tasks/779) -->",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_task_link_in_details_block_passes():
+    """A task link inside the fixture's `<details open>` block (verbatim
+    sample data) is sanctioned."""
+    body = _V4_GOOD_BODY.replace(
+        "<summary>5 example training rows (5 of 2,000 rows, random sample)</summary>\n",
+        "<summary>5 example training rows (5 of 2,000 rows, random sample)</summary>\n"
+        "\nRows drawn per [#658](https://eps.superkaiba.com/tasks/658).\n",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_non_task_url_links_pass():
+    """Non-task-URL links (GitHub blob, HF) in Methodology prose are
+    unaffected — the URL scan targets the dashboard task route only."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct. Script at "
+        "[run.py](https://github.com/superkaiba/explore-persona-space/blob/abc/scripts/run.py); "
+        "adapter at [hf](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc).",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_v4_same_domain_non_task_url_passes():
+    """Same-domain negative: a dashboard URL that is not the task route
+    (`/sessions`, or `/tasks/` with no digits) does NOT match."""
+    body = _V4_GOOD_BODY.replace(
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct.",
+        "- **Training:** LoRA SFT on Qwen-2.5-7B-Instruct. Dashboard at "
+        "https://eps.superkaiba.com/sessions and the https://eps.superkaiba.com/tasks/ index.",
+    )
+    r = _bare_ref_result(body)
+    assert r.passed, r.render()
+
+
+def test_task_link_check_skips_v3():
+    """Forward-only: a task link in a v3 `## Findings` never fires the
+    check (PASS-skip; mirror of test_bare_ref_check_skips_v3_and_legacy)."""
+    v3 = _V3_GOOD_BODY.replace(
+        "## Findings",
+        "## Findings\n\nUses [#779](https://eps.superkaiba.com/tasks/779).",
+        1,
+    )
+    r = _bare_ref_result(v3)
+    assert r.passed
+    assert "skipped" in r.detail
 
 
 def test_bare_ref_check_skips_v3_and_legacy():

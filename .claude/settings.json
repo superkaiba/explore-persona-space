@@ -113,6 +113,15 @@
             "command": "a=$(printf '%s' \"${EPM_AUTONOMOUS_SESSION:-}\" | tr '[:upper:]' '[:lower:]'); if [ -n \"$a\" ] && [ \"$a\" != \"0\" ] && [ \"$a\" != \"false\" ] && [ \"$a\" != \"no\" ]; then echo 'BLOCKED (autonomous session): AskUserQuestion is forbidden when EPM_AUTONOMOUS_SESSION is set. Autonomous policy: asking IS the failure mode — every fork must auto-resolve toward the task Goal. The conditional gates that previously asked (plan_approval, whack_a_mole_pivot, compute_deviation_resolution, concern_deferral_request, experiment_goal_refine, fact_candidates, living_docs_update, etc.) all have auto-resolve rules in `.claude/skills/issue/SKILL.md` § Autonomous session behavior. plan_approval is code-enforced by `task.py set-status <N> plan_pending --auto-approve-if-autonomous --gpu-hours <X>`. If you genuinely need user input that no autonomous reasoning can supply, post `epm:failure v1` with `failure_class: <code|infra|data>` and `set-status <N> blocked` instead. Re-read the task status and act on it; do NOT ask the user.' >&2; exit 2; fi"
           }
         ]
+      },
+      {
+        "matcher": "Read|Bash|Grep|mcp__ssh__ssh_execute",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/home/thomasjiralerspong/explore-persona-space/.claude/hooks/guard_harmful_bank_read.sh"
+          }
+        ]
       }
     ],
     "PostToolUse": [

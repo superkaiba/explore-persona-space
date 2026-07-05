@@ -569,12 +569,17 @@ def rollout_phase(  # noqa: C901 — one builder per rollout variant; the phase 
     device,
     *,
     corpus: str,
-    drift: torch.Tensor,
+    drift: torch.Tensor | None,
     out_npz: Path | None,
     cond_blob: dict | None = None,
     direct_dir: Path | None = None,
 ) -> dict:
     """Score rollout skill vs horizon for one corpus's evaluation contexts.
+
+    ``drift=None`` (the paired-provenance repair round, which reuses only the
+    persisted fp16 map subset — no fit store to derive the train-mean drift
+    from) skips the ``mean_drift`` variant + its paired reads; every other
+    variant and the H6/H7 paired reads are unchanged.
 
     Variants are built LAZILY and scored one at a time (generate → score →
     free): holding every variant's 40 × (29, N, H) fp32 state stack at once is
@@ -644,8 +649,9 @@ def rollout_phase(  # noqa: C901 — one builder per rollout variant; the phase 
             lambda: M.roll_states_ridge(seed, b_ctx, a_ctx, k_max, use_boundary_first=False),
         ),
         ("tok_ceiling", rows, _build_tok_ceiling),
-        ("mean_drift", rows, _build_mean_drift),
     ]
+    if drift is not None:  # repair rounds carry no fit store → no train-mean drift null
+        builders.append(("mean_drift", rows, _build_mean_drift))
     if mlp_blob is not None and "ctx__raw" in mlp_blob["fits"]:
         builders.append(("mlp_ctx_boundary_first", rows, _build_mlp))
     b1_rows = [r for r in rows if r in ridge.get("b1_answer", {})]
@@ -750,7 +756,7 @@ def rollout_phase(  # noqa: C901 — one builder per rollout variant; the phase 
     # paired reads: roll − mean_drift per-context skill delta at each (row, k).
     paired = {}
     for name in ("ridge_ctx_boundary_first", "mlp_ctx_boundary_first"):
-        if name not in scored:
+        if name not in scored or "mean_drift" not in scored:
             continue
         pr = {}
         for bk in scored[name]["per_ctx_skill"]:

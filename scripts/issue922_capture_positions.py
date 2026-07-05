@@ -42,6 +42,7 @@ everything (the VM stub-model smoke, where mismatch is expected).
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import sys
@@ -78,13 +79,36 @@ def assert_template_tail(tokenizer) -> None:
     assert ids[-2:] == [C.IM_END_ID, C.NL_ID], f"template tail {ids[-2:]} != [151645, 198]"
 
 
+def content_hashes(tokenizer, item: dict) -> tuple[str, str]:
+    """Exact-string sha256 identity of one (messages, response) item.
+
+    ``prompt_sha256`` = sha256 of the RENDERED chat-template prompt text (the
+    exact string the capture tokenizes — chat-template drift therefore also
+    changes it); ``response_sha256`` = sha256 of the raw response text (the
+    gen artifact's ``cached_response_sha256`` convention). Documented pick
+    (concern ``eval-repaired-response-identity-unchecked``): exact-STRING
+    hashes, NOT token-id-sequence hashes — string identity implies token
+    identity under the fixed capture tokenizer, and the string form stays
+    well-defined independent of tokenizer version.
+    """
+    prompt_text = tokenizer.apply_chat_template(
+        item["messages"], tokenize=False, add_generation_prompt=True
+    )
+    return (
+        hashlib.sha256(prompt_text.encode()).hexdigest(),
+        hashlib.sha256(item["response"].encode()).hexdigest(),
+    )
+
+
 def tokenize_item(tokenizer, item: dict, wp: int, wa: int) -> dict:
     """Concat-tokenize one (messages, response) item + window arithmetic.
 
     Returns the item extended with ``full_ids`` (list[int]), ``prompt_len`` P,
     ``ans_len`` A (response CONTENT tokens), ``window_start``/``window_end``
-    (absolute), and ``segments`` (n_pos−1 uint8, the per-transition tag of
-    source position t: prompt / boundary / answer / template_end).
+    (absolute), ``segments`` (n_pos−1 uint8, the per-transition tag of
+    source position t: prompt / boundary / answer / template_end), and the
+    ``content_hashes`` pair (``prompt_sha256``/``response_sha256`` — persisted
+    into every capture record so shard reuse can be content-validated).
     """
     prompt_text = tokenizer.apply_chat_template(
         item["messages"], tokenize=False, add_generation_prompt=True
@@ -110,6 +134,7 @@ def tokenize_item(tokenizer, item: dict, wp: int, wa: int) -> dict:
             segs[i] = C.SEG_ANSWER
         else:
             segs[i] = C.SEG_TEMPLATE_END
+    prompt_sha, resp_sha = content_hashes(tokenizer, item)
     return {
         **item,
         "full_ids": full_ids,
@@ -118,6 +143,8 @@ def tokenize_item(tokenizer, item: dict, wp: int, wa: int) -> dict:
         "window_start": ws,
         "window_end": we,
         "segments": segs,
+        "prompt_sha256": prompt_sha,
+        "response_sha256": resp_sha,
     }
 
 
@@ -218,7 +245,16 @@ def capture_windows_batched(model, tokenizer, items: list[dict], batch_size: int
                 "window_start": it["window_start"],
                 **{
                     k: it[k]
-                    for k in ("trait", "cond_id", "mode", "qi", "question_provenance")
+                    for k in (
+                        "trait",
+                        "cond_id",
+                        "mode",
+                        "qi",
+                        "question_provenance",
+                        "response_provenance",
+                        "prompt_sha256",
+                        "response_sha256",
+                    )
                     if k in it
                 },
             }
@@ -386,6 +422,33 @@ def parity_probe(rows_by_ci: dict, items: list[dict], mode: str, tol_cos: float)
     return summary
 
 
+# ── repair items (--corpus eval_repaired; the paired-provenance follow-up) ────
+
+
+def load_repair_items(path: Path) -> list[dict]:
+    """Items for ``--corpus eval_repaired``: the repair gen phase's completions.
+
+    Each row carries the SAME message construction as
+    ``build_eval_subset_items`` (persisted verbatim at gen time by
+    ``issue922_repair_provenance.py --phase gen``) with ``response`` = the
+    FRESH on-policy completion to the CURRENT question (the
+    ``eval-questions-regenerated-parity-rescope`` repair). The item set is
+    enumerated FROM the gen artifact — the smoke subset threads through with
+    no re-truncation here. Fail-loud schema checks; ``ci`` must be dense
+    0..n−1 (the shard resume predicate keys on the exact ci set).
+    """
+    with open(path) as f:
+        blob = json.load(f)
+    items = blob["items"]
+    assert items, f"no items in {path}"
+    for i, it in enumerate(items):
+        assert int(it["ci"]) == i, ("ci not dense", it["ci"], i)
+        for k in ("trait", "cond_id", "mode", "qi", "question_provenance", "messages", "response"):
+            assert k in it, (k, sorted(it))
+        assert it.get("response_provenance") == "fresh_onpolicy", it.get("response_provenance")
+    return items
+
+
 # ── shard-resume validation (the r1 Codex MAJOR / plan §4.2 binding fix) ─────
 
 
@@ -398,6 +461,7 @@ def validate_shard(
     wa: int,
     labels: list[str],
     expected_hidden: int,
+    expected_hashes: dict[int, tuple[str, str]] | None = None,
 ) -> tuple[dict | None, str]:
     """(shard blob, "ok") when an existing shard matches the CURRENT regime.
 
@@ -408,6 +472,16 @@ def validate_shard(
     context-id set for the shard's index range; per-context h dtype fp16,
     rank 3, row count == len(labels), hidden dim. Returns ``(None, reason)``
     on any mismatch (caller recaptures; fail-loud on a second mismatch).
+
+    ``expected_hashes`` (ci → (prompt_sha256, response_sha256), computed from
+    the CURRENT items via ``content_hashes``) adds CONTENT identity on top of
+    the ci-set/shape keys — the ``eval_repaired`` hardening (concern
+    ``eval-repaired-response-identity-unchecked``): a shard captured under
+    DIFFERENT completions with the same ci set and token counts is otherwise
+    silently reused. A record MISSING the hash fields (a pre-hash shard) is
+    INVALID — no silent grandfathering. ``None`` (the lmsys / eval_subset
+    callers, whose pinned production shards predate the fields) skips the
+    content check unchanged.
     """
     try:
         blob = torch.load(path, weights_only=False)
@@ -441,6 +515,20 @@ def validate_shard(
                 None,
                 f"ci={ci} h invalid: {got} (want fp16 (n_pos, {len(labels)}, {expected_hidden}))",
             )
+        if expected_hashes is not None:
+            got_h = (rec.get("prompt_sha256"), rec.get("response_sha256"))
+            if got_h[0] is None or got_h[1] is None:
+                return None, (
+                    f"ci={ci} missing content-hash fields (pre-hash shard — "
+                    "no silent grandfathering)"
+                )
+            want_h = expected_hashes[int(ci)]
+            if got_h != want_h:
+                which = "prompt" if got_h[0] != want_h[0] else "response"
+                return None, (
+                    f"ci={ci} {which}_sha256 mismatch vs the CURRENT completions items "
+                    "(shard captured under different content)"
+                )
     return blob, "ok"
 
 
@@ -449,7 +537,13 @@ def validate_shard(
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Issue #922 per-position window capture.")
-    ap.add_argument("--corpus", choices=("lmsys", "eval_subset"), required=True)
+    ap.add_argument("--corpus", choices=("lmsys", "eval_subset", "eval_repaired"), required=True)
+    ap.add_argument(
+        "--completions",
+        type=Path,
+        default=None,
+        help="eval_repaired: the repair gen phase's fresh-completions JSON (required)",
+    )
     ap.add_argument("--out", type=Path, default=Path("/workspace/issue922_store"))
     ap.add_argument("--batch", type=int, default=16)
     ap.add_argument("--wp", type=int, default=C.W_P)
@@ -491,6 +585,9 @@ def main() -> int:
     if args.corpus == "lmsys":
         n_ctx = 20 if args.smoke else (args.n_contexts or C.N_LMSYS)
         items = C.load_lmsys_items(n_contexts=n_ctx)
+    elif args.corpus == "eval_repaired":
+        assert args.completions is not None, "--corpus eval_repaired requires --completions"
+        items = load_repair_items(args.completions)
     else:
         items = C.build_eval_subset_items(
             n_per_cell=args.n_per_cell,
@@ -498,6 +595,13 @@ def main() -> int:
             smoke_cells=1 if args.smoke else None,
         )
     logger.info("[inputs] corpus=%s n_items=%d", args.corpus, len(items))
+
+    # Content-identity keys for the shard-resume validation (eval_repaired
+    # only — lmsys/eval_subset production shards predate the hash fields and
+    # keep the ci-set/shape validation unchanged).
+    expected_hashes = None
+    if args.corpus == "eval_repaired":
+        expected_hashes = {int(it["ci"]): content_hashes(tokenizer, it) for it in items}
 
     out_dir = args.out / args.corpus
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -519,6 +623,7 @@ def main() -> int:
                 wa=args.wa,
                 labels=labels,
                 expected_hidden=args.expected_hidden,
+                expected_hashes=expected_hashes,
             )
             if blob is not None:
                 logger.info("[shard %d/%d] exists + regime-valid — skip (resume)", k + 1, n_shards)
@@ -556,6 +661,7 @@ def main() -> int:
             wa=args.wa,
             labels=labels,
             expected_hidden=args.expected_hidden,
+            expected_hashes=expected_hashes,
         )
         if _blob2 is None:
             raise RuntimeError(f"freshly-written shard {path} fails validation: {why2}")
@@ -598,7 +704,9 @@ def main() -> int:
         else None,
         "realized_store_bytes": realized_bytes,
         "per_ctx_upper_bound_bytes": per_ctx_bound,
-        "projected_full_gb": per_ctx_bound * (C.N_LMSYS if args.corpus == "lmsys" else 432) / 1e9,
+        "projected_full_gb": per_ctx_bound
+        * (C.N_LMSYS if args.corpus == "lmsys" else len(items))
+        / 1e9,
         "wall_seconds": time.time() - t0,
         "smoke": args.smoke,
     }

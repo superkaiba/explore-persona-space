@@ -438,6 +438,26 @@ recovery for a hung-but-RUNNING VM is a manual RunPod pivot. (See also the
 #491 `bufio.Scanner: token too long` zombie in `.claude/rules/gotchas.md`,
 a sibling hung-but-RUNNING mode recoverable in place via SSH relaunch.)
 
+### Live-diagnosis access to a GCE instance (SSH / serial / Monitoring)
+
+Three access facts, each re-discovered by multiple sessions on 2026-07-02
+(≥5 sessions ate a failed first attempt):
+
+- **SSH: external-IP first.** The default `gcloud compute ssh` tries an
+  IAP tunnel, which the `eps-gcp` configuration is NOT authorized for —
+  the first attempt fails every time. Pass the external-IP form up front
+  (`gcloud compute ssh <name> --configuration=eps-gcp --zone=<zone>
+  --tunnel-through-iap=false`, or plain `ssh` to the instance's external
+  IP); fall back to the serial console when guest networking is dead
+  (the #667 wedge above).
+- **Serial console is the always-available read** (`gcloud compute
+  instances get-serial-port-output --configuration=eps-gcp`); the #854
+  eager `[crash-persist]` lines land there.
+- **The Cloud Monitoring API is not enabled** on `eps-persona-gpu-jun2026`
+  — metric probes return nothing. Diagnose via serial console + SSH, or
+  enable the API once (a deliberate ops change, not something a session
+  does mid-run).
+
 ### Gate-park zombie — RUNNING + terminal `eps/phase` (#908/#935)
 
 A GCP workload that exits CLEANLY at a blocking gate (or finishes) leaves

@@ -316,6 +316,18 @@ Behaviours:
   non-blank line. Also enforced at commit time by the
   ``workflow-lint-phase-done-reserved`` pre-commit hook on any
   ``scripts/*.sh|py`` change (#930).
+* ``--check-stale-label-disposition`` (also bundled into the no-flags default
+  run): FAIL if the /issue SKILL.md Step 0 "Stale-label disposition rule"
+  paragraph (bold anchor ``**Stale-label disposition rule``, which must be
+  UNIQUE — the check carries a negative assertion, so span identity is
+  load-bearing) loses any of its five #894/#763 semantic tokens — most
+  critically the fresh-label-execute clause ("the label EXECUTES as the
+  dispatched round") — or regains an unconditional skip-on-None coupling
+  ("On None ... skip", a targeted negative regex over the
+  whitespace-normalized paragraph span; a literal-coupling backstop only,
+  the positive tokens are the primary defense). Paragraph-scoped: the span
+  runs from the anchor to the first blank line, so a mid-paragraph split
+  FAILs loudly (#963).
 
 Exit codes:
 
@@ -5083,6 +5095,99 @@ def check_long_loop_restartability_review_lens(*, repo_root: Path | None = None)
     return errors
 
 
+def check_hollow_verification_gate_review_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the hollow-verification-gate lens (#779/#890) is absent from
+    any of its three surfaces, or the tag drops off a surface's
+    ``**Blocker tags:**`` verdict-template line.
+
+    Task #779: a green `--verify-vectorized` gated an UNUSED helper's
+    self-check while the dispatched ridge hot loop (~17k fits, 18-20h) ran
+    unverified; rounds 6/7 PASSed. #890 added the Step 0.68
+    hollow-verification-gate sub-check + blocker tag to both code-reviewer
+    agent files and deferred this parity lint. Three surfaces, per-file
+    tokens (the #881 shape):
+
+    (a) code-reviewer.md — the ``Hollow-verification-gate sub-check``
+        Step 0.68 heading phrase;
+    (b) codex-code-reviewer.md — the lowercase copy-contract phrase
+        ``hollow-verification-gate sub-check`` PLUS ``0.68`` on the
+        ``{{INLINED RUBRIC`` placeholder line (a copy-list-only token check
+        false-PASSes while the composed executable Codex prompt omits
+        Step 0.68 — the #606 twin-omission class);
+    (c) efficiency-critic.md — the v2 owner
+        (.claude/rules/lens-coverage-map.md), IMPLEMENTATION-MODE rubric
+        item ``Hollow-verification-gate``.
+
+    Every surface ADDITIONALLY requires the tag on a line starting with
+    ``**Blocker tags:**`` — the verdict template's tag-vocabulary line, the
+    orchestrator's Step 5c-bis parse target (#890's line-scoped verify:
+    a broad grep false-greens a prose-only partial implementation).
+    Tokens are case-sensitive substrings. ``repo_root`` is a unit-test
+    override hook; production callers pass None. Bundled into the no-flags
+    default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    tag = "hollow-verification-gate"
+    blocker_prefix = "**Blocker tags:**"
+    prose_by_file: dict[Path, tuple[str, ...]] = {
+        root / ".claude" / "agents" / "code-reviewer.md": ("Hollow-verification-gate sub-check",),
+        root / ".claude" / "agents" / "codex-code-reviewer.md": (
+            "hollow-verification-gate sub-check",
+        ),
+        root / ".claude" / "agents" / "efficiency-critic.md": ("Hollow-verification-gate",),
+    }
+    errors: list[str] = []
+    for p, required in prose_by_file.items():
+        if not p.is_file():
+            errors.append(
+                f"{p}: missing — the #890 hollow-verification-gate lens must "
+                f"live in code-reviewer.md, codex-code-reviewer.md, and "
+                f"efficiency-critic.md (the workflow-v2 owner)."
+            )
+            continue
+        text = p.read_text(encoding="utf-8")
+        for token in required:
+            if token not in text:
+                errors.append(
+                    f"{p}: missing the hollow-verification-gate lens token "
+                    f"{token!r} (#779/#890). The Step 0.68 sub-check (a "
+                    f"verify/equivalence gate must assert on the function the "
+                    f"entrypoint actually dispatches) must stay on all three "
+                    f"reviewer surfaces so a green gate on an unused sibling "
+                    f"keeps FAILing review (incident #779: an unverified ~17k-"
+                    f"fit hot loop was laundered as verified)."
+                )
+        bt_lines = [ln for ln in text.splitlines() if ln.startswith(blocker_prefix)]
+        if not bt_lines:
+            errors.append(
+                f"{p}: no line starts with {blocker_prefix!r} (#890) — the "
+                f"verdict template's blocker-tag vocabulary line (the Step "
+                f"5c-bis parse target) is gone."
+            )
+        elif not any(tag in ln for ln in bt_lines):
+            errors.append(
+                f"{p}: no {blocker_prefix!r} line names {tag!r} (#890) — the "
+                f"tag dropped out of the verdict template's vocabulary; a "
+                f"reviewer could no longer declare the finding (the "
+                f"2-without-2b partial-implementation class a broad grep "
+                f"false-greens)."
+            )
+    codex = root / ".claude" / "agents" / "codex-code-reviewer.md"
+    if codex.is_file():
+        rubric_lines = [
+            ln for ln in codex.read_text(encoding="utf-8").splitlines() if "{{INLINED RUBRIC" in ln
+        ]
+        if not any("0.68" in ln for ln in rubric_lines):
+            errors.append(
+                f"{codex}: '0.68' is absent from the '{{{{INLINED RUBRIC' "
+                f"placeholder line (#890) — the composed Codex prompt would "
+                f"omit the Step 0.68 named-helper + hollow-gate lens (the "
+                f"#606 twin-omission class; same pin as #822's '0.55' and "
+                f"#881's '3.5, 3.6, 3.7')."
+            )
+    return errors
+
+
 def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> list[str]:
     """FAIL if the smoke-architecture marker presence gate (#822) is absent
     from ANY of its three surfaces.
@@ -5198,6 +5303,82 @@ def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> li
                 f"to distinguish a stale-worktree false absence (STRIP) from "
                 f"a genuine one (leave the FAIL in place)."
             )
+    return errors
+
+
+# The #963 stale-label disposition-clause tokens. The paragraph span runs from
+# the bold anchor (which must be UNIQUE — the check carries a NEGATIVE
+# assertion, so span identity is load-bearing) to the first blank line, and is
+# whitespace-normalized before matching (two tokens span a hard line wrap in
+# the live file, and an innocent prose reflow must not FAIL the fleet).
+_STALE_LABEL_ANCHOR = "**Stale-label disposition rule"
+_STALE_LABEL_REQUIRED_TOKENS = (
+    "followup_retro_close_evidence",
+    "GHOST-label filter, NOT an execution gate",
+    "A None return means NO prior-run evidence exists",
+    "the label EXECUTES as the dispatched round",
+    "The skip-and-surface disposition applies ONLY when",
+)
+_STALE_LABEL_SKIP_ON_NONE_RE = re.compile(r"\bon\s+(?:a\s+)?none\b.{0,120}?\bskip", re.IGNORECASE)
+
+
+def check_stale_label_disposition_clause(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the /issue Step 0 stale-label disposition paragraph (#894/#763)
+    loses its fresh-label-execute semantics or regains an unconditional
+    skip-on-None branch (#963).
+
+    Scope notes (round-1 critique):
+
+    (a) The negative regex is a LITERAL-COUPLING BACKSTOP only — phrasings
+        like "when None is returned, skip" are covered by the positive
+        tokens, not the regex; do not weaken a positive token "because the
+        regex covers it".
+    (b) The check is paragraph-scoped — a contradictory instruction written
+        OUTSIDE the anchored paragraph is invisible to it (inherent to the
+        token-lint class).
+    (c) A mid-paragraph blank line truncates the span and FAILs all
+        downstream tokens at once — the span ends at the first blank line,
+        so a deliberate restructure requires a deliberate lint update.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    if not skill.is_file():
+        return [f"{skill}: missing — the Step 0 stale-label disposition paragraph must exist."]
+    text = skill.read_text(encoding="utf-8")
+    n_anchors = text.count(_STALE_LABEL_ANCHOR)
+    if n_anchors == 0:
+        return [
+            f"{skill}: missing the bold anchor {_STALE_LABEL_ANCHOR!r} (#963) — the Step 0 "
+            f"stale-label disposition paragraph pins the #894/#763 fresh-label-execute "
+            f"semantics and must not be removed or renamed without updating this lint."
+        ]
+    if n_anchors > 1:
+        return [
+            f"{skill}: {n_anchors} bold anchors {_STALE_LABEL_ANCHOR!r} found — the stale-label "
+            f"disposition paragraph must be UNIQUE (a stale duplicate could satisfy the token "
+            f"scan while the operative Step 0 paragraph regresses; #963). Remove the duplicate."
+        ]
+    start = text.find(_STALE_LABEL_ANCHOR)
+    end = text.find("\n\n", start)
+    normalized = re.sub(r"\s+", " ", text[start : end if end != -1 else len(text)])
+    errors: list[str] = []
+    for token in _STALE_LABEL_REQUIRED_TOKENS:
+        if token not in normalized:
+            errors.append(
+                f"{skill}: stale-label disposition paragraph missing token {token!r} (#963) — "
+                f"note: the span ends at the first blank line, so a split paragraph FAILs all "
+                f"downstream tokens at once (a deliberate restructure needs a lint update)."
+            )
+    if _STALE_LABEL_SKIP_ON_NONE_RE.search(normalized):
+        errors.append(
+            f"{skill}: stale-label disposition paragraph couples a None return to a skip "
+            f"instruction ('On None ... skip') — a fresh never-run label must EXECUTE as the "
+            f"dispatched round (#963); the skip-and-surface disposition is reserved for "
+            f"suspected-stale ghost labels."
+        )
     return errors
 
 
@@ -5378,21 +5559,28 @@ def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
 # every row in LESSONS.md must point at an existing rule file. Closes the
 # silent-drift class: a rule added/removed without an index update would
 # otherwise re-open the #722 load-timing gap (a lesson with no always-on index
-# row). The row format is the stable, machine-parseable:
-#   - **<name>** ([`.claude/rules/<name>.md`](<name>.md)) — fires when: ...
+# row). The row format is the stable, machine-parseable (#992 slim — the
+# name appears once, linkified; the link target is relative to
+# `.claude/rules/`):
+#   - **[<name>](<name>.md)** — fires when: ...
 _LESSONS_ROW_RE = re.compile(
-    r"^- \*\*(?P<name>[a-z0-9-]+)\*\* \(\[`\.claude/rules/(?P=name)\.md`\]"
-    r"\((?P=name)\.md\)\)",
+    r"^- \*\*\[(?P<name>[a-z0-9-]+)\]\((?P=name)\.md\)\*\*",
     re.MULTILINE,
 )
 
 
-_LESSONS_MAX_BYTES = (
-    8000  # leanness cap: ~2000 tokens always-on (7500->8000, #869/#872 coordinated raise)
-)
+# Leanness cap: ~2000 tokens always-on (7500->8000, #869/#872 coordinated
+# raise; #992 restored headroom under the SAME cap via the row-format slim).
+_LESSONS_MAX_BYTES = 8000
+# Early-warning band (#992): a stderr-only advisory WARN once the index
+# crosses this, so a near-cap landing is visible a few rows before the
+# 8000-byte FAIL (early warning only — advisory, never a FAIL).
+_LESSONS_WARN_BYTES = 7200
 
 
-def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
+def check_lessons_index(
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
     """FAIL if `.claude/rules/LESSONS.md` and the `.claude/rules/*.md` set
     diverge OR the index exceeds the leanness cap.
 
@@ -5404,14 +5592,27 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
     of the rows silently drift), (d) the index exceeds `_LESSONS_MAX_BYTES`
     (the always-on token budget — the whole point of the index is leanness;
     the Option-B rejected alternative was inlining all rule bodies, paying
-    tens of K tokens per call). `repo_root` is a unit-test override hook;
-    production callers pass None (canonical repo root). Bundled into the
-    no-flags default run.
+    tens of K tokens per call). Failure mode (d) additionally carries an
+    advisory WARN band (#992): an index over `_LESSONS_WARN_BYTES` but at or
+    under the cap emits an early-warning WARN — stderr-only / advisory, never
+    a FAIL — so a near-cap landing is visible a few rows before the next
+    addition FAILs. `repo_root` is a unit-test override hook; production
+    callers pass None (canonical repo root). `warn_sink` mirrors
+    `check_lens_coverage`'s hook: WARNs append there when provided, else go
+    to stderr with a ``WARN: `` prefix; WARNs never enter the returned FAIL
+    list. Bundled into the no-flags default run.
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
     rules_dir = root / ".claude" / "rules"
     lessons = rules_dir / "LESSONS.md"
     errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
     if not lessons.is_file():
         errors.append(
             f"{lessons}: missing — the always-on lessons index (#739) must "
@@ -5427,6 +5628,12 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
             f"(em-dashes are multibyte; counting in BYTES not chars is "
             f"deliberate.)"
         )
+    elif len(raw) > _LESSONS_WARN_BYTES:
+        _warn(
+            f".claude/rules/LESSONS.md at {len(raw)}/{_LESSONS_MAX_BYTES} bytes — inside "
+            f"the warn band (>{_LESSONS_WARN_BYTES}); slim rows or plan a deliberate cap "
+            f"decision before the next addition FAILs."
+        )
     # Count occurrences (not a set) so a name appearing on >1 row is caught —
     # a set comprehension would collapse duplicates and let both the missing
     # and stale set-diffs read empty, silently passing the check (#739 r2).
@@ -5437,8 +5644,9 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
         errors.append(
             f".claude/rules/LESSONS.md: no index row for rule "
             f"'{missing}' (.claude/rules/{missing}.md). Add a "
-            f"'- **{missing}** ([`.claude/rules/{missing}.md`]"
-            f"({missing}.md)) — fires when: ...' row."
+            f"'- **[{missing}]({missing}.md)** — fires when: ...' row, "
+            f"or reformat an existing old-format row for '{missing}' to "
+            f"that format."
         )
     for stale in sorted(indexed - rule_files):
         errors.append(
@@ -5470,8 +5678,19 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
 AGENT_SPEC_WARN_BYTES = 28_000
 AGENT_SPEC_FAIL_BYTES = 40_000
 
+# A grandfather cap must hug the measured size: cap - size <= this bound
+# (the documented "measured + <=3 KB margin" convention, mechanized by #986).
+# STRICTLY-GREATER like the other thresholds (headroom exactly 3_000 passes).
+# A larger headroom means a loose cap-raise (defeats the regrowth ratchet) or
+# a stale cap after a trim (ratchet DOWN when trimmed) — both FAIL. Scope:
+# this bounds BANKED SLACK only — a reviewed growth+cap-raise in one commit
+# still passes; the check forces growth into a visible dict edit, it does not
+# approve it.
+AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES = 3_000
+
 # Grandfather-ratchet caps for agent specs still above AGENT_SPEC_FAIL_BYTES.
-# Each cap = measured size + <=3 KB margin (post-#829 for the first two
+# Each cap = measured size + <=3 KB margin (headroom mechanically enforced —
+# see AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES; post-#829 for the first two
 # entries; at the #838 FAIL tightening 70K -> 40K for the rest); a
 # grandfathered file FAILs above its cap (regrowth ratchet) and FAILs as stale
 # once it drops to <= AGENT_SPEC_FAIL_BYTES ("remove the entry"). Ratchet DOWN
@@ -5506,7 +5725,7 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
 }
 
 
-def check_agent_spec_size(
+def check_agent_spec_size(  # noqa: C901 -- flat per-entry hygiene ladder (stale/retired/headroom, #986); extracting a branch would just relocate it
     *, repo_root: Path | None = None, warn_sink: list[str] | None = None
 ) -> list[str]:
     """WARN/FAIL agent specs (`.claude/agents/*.md`) over the size budget (#829).
@@ -5516,9 +5735,12 @@ def check_agent_spec_size(
     size > ``AGENT_SPEC_FAIL_BYTES`` FAILs unless the file is grandfathered in
     ``AGENT_SPEC_SIZE_GRANDFATHER`` (then it WARNs while under its per-file cap
     and FAILs above it — the regrowth ratchet); size > ``AGENT_SPEC_WARN_BYTES``
-    WARNs. Grandfather hygiene FAILs a stale entry (file missing) and an entry
+    WARNs. Grandfather hygiene FAILs a stale entry (file missing), an entry
     whose file dropped to <= the FAIL threshold (remove the entry — ratchet
-    down), and a config self-check FAILs any cap <= the FAIL threshold. WARNs
+    down), and an entry whose cap sits more than
+    ``AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES`` above the live file size
+    (loose cap / stale cap — lower it), and a config self-check FAILs any cap
+    <= the FAIL threshold. WARNs
     go to ``warn_sink`` when provided (unit-test hook), else stderr with a
     ``WARN: `` prefix; WARNs never enter the returned FAIL list. ``repo_root``
     is a unit-test override; production callers pass None. Bundled into the
@@ -5587,8 +5809,10 @@ def check_agent_spec_size(
             )
 
     # Grandfather-entry hygiene: entries must point at existing files that
-    # still NEED grandfathering (size > FAIL threshold).
-    for gf_name in sorted(AGENT_SPEC_SIZE_GRANDFATHER):
+    # still NEED grandfathering (size > FAIL threshold) AND whose cap hugs the
+    # measured size (headroom <= AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES —
+    # the regrowth ratchet is meaningless under a loose cap; #986).
+    for gf_name, cap in sorted(AGENT_SPEC_SIZE_GRANDFATHER.items()):
         gf_path = agents_dir / gf_name
         if not gf_path.is_file():
             errors.append(
@@ -5596,12 +5820,24 @@ def check_agent_spec_size(
                 f"entry — .claude/agents/{gf_name} does not exist; remove the "
                 f"entry."
             )
-        elif gf_path.stat().st_size <= AGENT_SPEC_FAIL_BYTES:
+            continue
+        gf_size = gf_path.stat().st_size
+        if gf_size <= AGENT_SPEC_FAIL_BYTES:
             errors.append(
                 f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: "
-                f".claude/agents/{gf_name} is {gf_path.stat().st_size} bytes "
+                f".claude/agents/{gf_name} is {gf_size} bytes "
                 f"(<= {AGENT_SPEC_FAIL_BYTES}) and no longer needs "
                 f"grandfathering — remove the entry (ratchet down)."
+            )
+        elif cap - gf_size > AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES:
+            errors.append(
+                f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: cap {cap} sits "
+                f"{cap - gf_size} bytes above .claude/agents/{gf_name} "
+                f"({gf_size} bytes) — max headroom is "
+                f"{AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES} bytes (cap = "
+                f"measured + <=3 KB); lower the cap to <= "
+                f"{gf_size + AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES}, or "
+                f"remove the entry if the file no longer needs grandfathering."
             )
 
     return errors
@@ -5919,8 +6155,8 @@ def check_lens_coverage(
     whose State (last) column does not start with one of the four exact prefixes
     :data:`_LENS_STATE_PREFIXES` (``v2-owner:`` / ``v1-only`` / ``retired:`` /
     ``GAP:``) — a coverage row MUST declare a state; (b) a rule listed in
-    ``.claude/rules/LESSONS.md`` (the ``- **<name>**`` bullets) with NO row in
-    the map — a lesson silently uncovered. ``GAP:`` rows PASS (an honest "no v2
+    ``.claude/rules/LESSONS.md`` (the ``- **[<name>](<name>.md)**`` rows) with
+    NO row in the map — a lesson silently uncovered. ``GAP:`` rows PASS (an honest "no v2
     owner yet") but are surfaced as WARN lines. WARNs go to ``warn_sink`` when
     provided (unit-test hook), else stderr with a ``WARN: `` prefix; WARNs never
     enter the returned FAIL list. ``repo_root`` is a unit-test override; a
@@ -6256,6 +6492,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-hollow-verification-gate-review-lens",
+        action="store_true",
+        help="FAIL if the #890 hollow-verification-gate lens (the Step 0.68 "
+        "sub-check prose in code-reviewer.md, the copy-contract clause + "
+        "'0.68' on the inlined-rubric placeholder in codex-code-reviewer.md, "
+        "the IMPLEMENTATION-MODE rubric item in efficiency-critic.md — the "
+        "workflow-v2 owner) is absent from any surface, or the tag drops "
+        "off any surface's '**Blocker tags:**' verdict-template line. Pins "
+        "that a verify/equivalence gate asserting on an unused sibling stays "
+        "a Major substantive blocker (incident #779: a green "
+        "--verify-vectorized laundered an unverified ~17k-fit hot loop). "
+        "Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-smoke-architecture-review-lens",
         action="store_true",
         help="FAIL if the #822 smoke-architecture marker presence gate (Step "
@@ -6267,6 +6517,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "epm:smoke-architecture-check events row (incident #811: the verdict "
         "lived in prose across 5 PASSed rounds and the gap surfaced only at "
         "Step 6d.0 post-provision). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-stale-label-disposition",
+        action="store_true",
+        help="FAIL if the /issue SKILL.md Step 0 stale-label disposition "
+        "paragraph (bold anchor '**Stale-label disposition rule', which must "
+        "be UNIQUE) loses any of its five #894/#763 semantic tokens — most "
+        "critically the fresh-label-execute clause ('the label EXECUTES as "
+        "the dispatched round') — or regains an unconditional skip-on-None "
+        "coupling ('On None ... skip', a targeted negative regex over the "
+        "whitespace-normalized paragraph span). Paragraph-scoped: the span "
+        "runs from the anchor to the first blank line (#963). Bundled into "
+        "the no-flags default run.",
     )
     parser.add_argument(
         "--check-smoke-output-hygiene",
@@ -6422,7 +6685,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_lessons_index
         or args.check_compute_shape_review_lens
         or args.check_long_loop_restartability_review_lens
+        or args.check_hollow_verification_gate_review_lens
         or args.check_smoke_architecture_review_lens
+        or args.check_stale_label_disposition
         or args.check_smoke_output_hygiene
         or args.check_vm_thread_cap_guidance
         or args.check_judge_model_pins
@@ -6506,8 +6771,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_compute_shape_review_lens())
     if args.check_long_loop_restartability_review_lens or no_flags:
         errors.extend(check_long_loop_restartability_review_lens())
+    if args.check_hollow_verification_gate_review_lens or no_flags:
+        errors.extend(check_hollow_verification_gate_review_lens())
     if args.check_smoke_architecture_review_lens or no_flags:
         errors.extend(check_smoke_architecture_review_lens())
+    if args.check_stale_label_disposition or no_flags:
+        errors.extend(check_stale_label_disposition_clause())
     if args.check_smoke_output_hygiene or no_flags:
         errors.extend(check_smoke_output_hygiene())
     if args.check_vm_thread_cap_guidance or no_flags:

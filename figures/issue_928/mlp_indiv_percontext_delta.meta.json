@@ -1,0 +1,326 @@
+{
+  "commit": "ffae04c6",
+  "created": "2026-07-04T13:59:30Z",
+  "figsize": [
+    6.4,
+    4.4
+  ],
+  "points": [
+    {
+      "per-context linear-direct skill (L25)": 0.9147920963734004,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.01436566450824972,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.897131795448139,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.027868948279093697,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.896579366169478,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.034614737682236774,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.8918448991321364,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.010458437886655236,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.8851090211064054,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.01419042562439965,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.9296227262492024,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.0014106834551351755,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.8573615932072384,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.09159524266546593,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.909880756056594,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.0029295511349705095,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.874460645486305,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.037025672383956265,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.9068080109380033,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.0022887976751312378,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.9022370685590156,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.002798424758476359,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.9176341328340827,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.019989049899766353,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.7032334844692043,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.06328683702986249,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.8529015188088496,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.012137589256486447,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.29262663513395715,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.8313035306542086,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.17414772232889686,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.22031430479224567,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.23845688011122024,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.7871380124017305,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.2602718176405666,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.07523024389518806,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.7581328306982384,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.06958532245183935,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.8424266168712674,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.013109377318153315,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.602776087801367,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.08367993543578489,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.8099457490512201,
+      "per-context \u0394 skill (MLP direct - linear direct)": -2.6171184384535575,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.6735553453176123,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.2017564983792074,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.871887653793144,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.00934511980069841,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.9195897214649345,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.009875866728442761,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.8348613105678547,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.02059242092616531,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.8866166182499893,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.006752930572995086,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.8671423380328366,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.03509575126219189,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.8790163078039386,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.008179650919075021,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.8695575743923223,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.4273586844999486,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.9124032315319731,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.009006071416655104,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.8950496820805719,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.014932851943982639,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.9276496029117215,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.0142407186282546,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.756872308902582,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.0004053097119744997,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.921453668808456,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.003165169830780523,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.8901721291353363,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.018724641022590194,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.45700762131840966,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.5160569045348641,
+      "series": "below parse floor (flagged)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.3195707756548378,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.8803809475356266,
+      "series": "below parse floor (flagged)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.11632816654901301,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.2229026492110564,
+      "series": "below parse floor (flagged)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.08935037000537438,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.19203292574327646,
+      "series": "below parse floor (flagged)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.17267349356254869,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.2694838211697774,
+      "series": "below parse floor (flagged)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.23520416306256997,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.8385127545522696,
+      "series": "below parse floor (flagged)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.26835374364448994,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.006381099814478763,
+      "series": "below parse floor (flagged)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.3889780171213143,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.09919506608073181,
+      "series": "below parse floor (flagged)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.2545097808175012,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.07352915082246603,
+      "series": "below parse floor (flagged)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.1861576145855769,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.07431195519030487,
+      "series": "below parse floor (flagged)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.36516501505889687,
+      "per-context \u0394 skill (MLP direct - linear direct)": -0.33972435331326845,
+      "series": "below parse floor (flagged)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.4391796900715156,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.029844527490066386,
+      "series": "below parse floor (flagged)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.33512381742449726,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.05871949194042547,
+      "series": "below parse floor (flagged)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context linear-direct skill (L25)": 0.1293673637525714,
+      "per-context \u0394 skill (MLP direct - linear direct)": 0.0425506740925935,
+      "series": "below parse floor (flagged)",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 50
+}

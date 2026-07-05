@@ -64,7 +64,9 @@ a one-line provenance breadcrumb to stderr (the resolved work root + current
 branch) so the Step 9c marker records which checkout the subset was selected
 against. ``--json`` emits
 ``{"tests": [...], "untested_touched": [...], "base": "...",
-"missing_invariants": [...]}``. Exit 0 on success (even with WARN lines);
+"missing_invariants": [...], "selection_reasons": {test: [reasons]}}`` (a
+reason is ``invariant`` / ``touched-test`` / ``stem-map:<touched file>`` /
+``glob-scan:<touched file>`` — #1022). Exit 0 on success (even with WARN lines);
 exit 1 if an underlying ``git`` call fails irrecoverably (work-root resolution
 or the diff) or if the selection comes back EMPTY (the zero-test-gate
 refusal).
@@ -237,27 +239,30 @@ def compute_touched(
     return [line.strip() for line in out.splitlines() if line.strip()]
 
 
-def select_tests(touched: list[str], work_root: Path) -> tuple[list[str], list[str]]:
-    """Map *touched* files to their covering tests + the workflow-invariant set.
+def select_tests_with_reasons(
+    touched: list[str], work_root: Path
+) -> tuple[list[str], list[str], dict[str, list[str]]]:
+    """Superset of :func:`select_tests`: also returns ``{test: sorted reasons}``.
 
-    All existence checks + the stem-glob mapping resolve against *work_root*
-    (the invoking checkout), so a branch-new touched test is admitted and a
-    deleted-on-branch test is correctly dropped (it does not exist at the
-    worktree's HEAD either). Returns ``(tests, untested_touched)``:
-      * ``tests`` — sorted union of mapped per-file tests and the present-on-disk
-        subset of :data:`WORKFLOW_INVARIANT` (deterministic order; required so two
-        invocations on the same git state return an identical list).
-      * ``untested_touched`` — non-trivial touched code files with no mapped test
-        (a WARN list the Step 9c marker surfaces; never silently dropped).
+    A reason is ``'invariant' | 'touched-test' | 'stem-map:<touched file>' |
+    'glob-scan:<touched file>'``; a test may carry several (e.g. an invariant
+    that is also stem-mapped from a touched file). Selection behavior is
+    IDENTICAL to :func:`select_tests` — same tests, same ``untested_touched``
+    WARN list, same sorted ordering (#1022: the reasons feed
+    ``step9c_baseline.py compare``'s diff-linked-ness read, which must come
+    from the SAME mapping logic that selected the run's tests).
     """
-    selected: set[str] = set()
+    selected: dict[str, set[str]] = {}
     untested: list[str] = []
+
+    def _add(test: str, reason: str) -> None:
+        selected.setdefault(test, set()).add(reason)
 
     for f in touched:
         # Glob-scan invariant tests (#895): additive, never sets ``matched``.
         for scan_test, scan_globs in GLOB_SCAN_TESTS.items():
             if _matches_any(f, scan_globs) and (work_root / scan_test).exists():
-                selected.add(scan_test)
+                _add(scan_test, f"glob-scan:{f}")
         # Workflow-surface files gate via the invariant set; not "untested".
         if _matches_any(f, WORKFLOW_SURFACE_GLOBS):
             continue
@@ -265,7 +270,7 @@ def select_tests(touched: list[str], work_root: Path) -> tuple[list[str], list[s
         # A touched test file includes itself.
         if f.startswith("tests/") and p.name.startswith("test_") and p.suffix == ".py":
             if (work_root / f).exists():
-                selected.add(f)
+                _add(f, "touched-test")
             continue
         # Data / config / doc files: not code, no test mapping.
         if p.suffix in _DATA_DOC_SUFFIXES:
@@ -276,19 +281,40 @@ def select_tests(touched: list[str], work_root: Path) -> tuple[list[str], list[s
             matched = False
             exact = work_root / "tests" / f"test_{stem}.py"
             if exact.exists():
-                selected.add(f"tests/test_{stem}.py")
+                _add(f"tests/test_{stem}.py", f"stem-map:{f}")
                 matched = True
             for hit in sorted((work_root / "tests").glob(f"test_*{stem}*.py")):
-                selected.add(f"tests/{hit.name}")
+                _add(f"tests/{hit.name}", f"stem-map:{f}")
                 matched = True
             if not matched:
                 untested.append(f)
         # Any other extension (no recognized mapping): ignore silently — it is
         # neither code with a test nor a workflow-invariant surface.
 
-    present_invariant = [t for t in WORKFLOW_INVARIANT if (work_root / t).exists()]
-    final = sorted(selected | set(present_invariant))
-    return final, untested
+    for t in WORKFLOW_INVARIANT:
+        if (work_root / t).exists():
+            _add(t, "invariant")
+    final = sorted(selected)
+    reasons = {t: sorted(rs) for t, rs in selected.items()}
+    return final, untested, reasons
+
+
+def select_tests(touched: list[str], work_root: Path) -> tuple[list[str], list[str]]:
+    """Map *touched* files to their covering tests + the workflow-invariant set.
+
+    UNCHANGED signature — delegates to :func:`select_tests_with_reasons` and
+    drops the reasons. All existence checks + the stem-glob mapping resolve
+    against *work_root* (the invoking checkout), so a branch-new touched test
+    is admitted and a deleted-on-branch test is correctly dropped (it does not
+    exist at the worktree's HEAD either). Returns ``(tests, untested_touched)``:
+      * ``tests`` — sorted union of mapped per-file tests and the present-on-disk
+        subset of :data:`WORKFLOW_INVARIANT` (deterministic order; required so two
+        invocations on the same git state return an identical list).
+      * ``untested_touched`` — non-trivial touched code files with no mapped test
+        (a WARN list the Step 9c marker surfaces; never silently dropped).
+    """
+    tests, untested, _ = select_tests_with_reasons(touched, work_root)
+    return tests, untested
 
 
 def missing_invariants(work_root: Path) -> list[str]:
@@ -394,7 +420,7 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
 
-    tests, untested = select_tests(touched, work_root)
+    tests, untested, reasons = select_tests_with_reasons(touched, work_root)
     missing = missing_invariants(work_root)
 
     # Fail loud on an EMPTY selection (defense-in-depth beside the Step 9c shell
@@ -423,6 +449,7 @@ def main(argv: list[str] | None = None) -> int:
                     "untested_touched": untested,
                     "base": args.base,
                     "missing_invariants": missing,
+                    "selection_reasons": reasons,
                 }
             )
         )

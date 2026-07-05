@@ -1,0 +1,48 @@
+{
+  "commit": "328ab540",
+  "created": "2026-07-04T06:08:41Z",
+  "figsize": [
+    5.2,
+    4.2
+  ],
+  "points": [
+    {
+      "LOCO best-layer skill": 0.7050124122970371,
+      "LOFO best-layer skill": 0.5812494211166281,
+      "label": "direct (ctx\u2192ans)",
+      "_kind": "scatter"
+    },
+    {
+      "LOCO best-layer skill": 0.7604877390402778,
+      "LOFO best-layer skill": 0.41526033113327354,
+      "label": "stage 1 (ctx\u2192cot)",
+      "_kind": "scatter"
+    },
+    {
+      "LOCO best-layer skill": 0.9148410309730108,
+      "LOFO best-layer skill": 0.8907561933304178,
+      "label": "stage 2 oracle (cot\u2192ans)",
+      "_kind": "scatter"
+    },
+    {
+      "LOCO best-layer skill": 0.689451152713981,
+      "LOFO best-layer skill": 0.4437031700857804,
+      "label": "composed (ctx\u2192\u0109ot\u2192ans)",
+      "_kind": "scatter"
+    },
+    {
+      "LOCO best-layer skill": 0.7425999750262703,
+      "LOFO best-layer skill": 0.5371014269686942,
+      "label": "joint (ctx\u2192[cot,ans])",
+      "_kind": "scatter"
+    },
+    {
+      "LOCO best-layer skill": 0.9093244766917024,
+      "LOFO best-layer skill": 0.8638081338586594,
+      "label": "augmented ([ctx,cot]\u2192ans)",
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 6
+}

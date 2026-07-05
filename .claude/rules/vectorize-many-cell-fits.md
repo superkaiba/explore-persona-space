@@ -257,6 +257,15 @@ a many-cell repeated dense-factorization loop: per-cell full
 same overhead class (redundant recompute of shareable work), and neither a GPU
 lane nor a bigger CPU fixes it (#823).
 
+**GPU caveat — batched `eigh`/small-matrix factorizations are cuSOLVER's weak
+spot.** Batching many SMALL symmetric eigendecompositions (or similar small
+dense factorizations) onto CUDA does not reliably beat CPU: cuSOLVER's batched
+paths on many small matrices show high, unpredictable per-cell variance
+(#813, 2026-07-03: the CUDA leg ran ~30–100 min/cell and was swapped for the
+CPU-verified path). For many small symmetric eigs, prefer the vectorized CPU
+path or a shared-factorization restructure; benchmark one cell on BOTH devices
+before committing a long sweep to the GPU leg.
+
 ## Files of record
 
 `.claude/rules/vectorize-many-cell-fits.md` (this file);

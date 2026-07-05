@@ -1179,7 +1179,7 @@ ensemble_review:
       notes: |
         Both reviewers run all 7 lenses (lens 6 plot-prose match works on
         both — Codex multimodal verified 2026-05-10). Ensembled on ALL
-        rounds 1-3 (round-1-only policy reversed 2026-06-12 —
+        rounds up to the per-reviewer cap (5) (round-1-only policy reversed 2026-06-12 —
         cross-family reviewer diversity beats Claude-only later rounds).
         Codex twin no-show falls back to single-Claude-critic for that
         round. Round cap 5 per reviewer; reconcile rounds free.
@@ -1197,7 +1197,7 @@ ensemble_review:
       notes: |
         Final adversarial gate before status:awaiting_promotion (as of
         2026-05-13 — absorbed the retired reviewer step's statistical-framing
-        rule). Ensembled on ALL rounds 1-3 (round-1-only policy reversed
+        rule). Ensembled on ALL rounds up to the per-reviewer cap (5) (round-1-only policy reversed
         2026-06-12). Scores against the v3 clean-result spec (five flat H2s:
         ## Takeaways / ## What I ran / ## Findings / ## Data /
         ## Reproducibility; sentinel <!-- clean-result-v3 -->; 2026-W24;
@@ -1574,11 +1574,11 @@ markers:
   - kind: "epm:codex-task-spawned"
     posted_by: scripts/codex_task.py
     when: "Whenever the orchestrator dispatches a Codex companion task via scripts/codex_task.py with --issue N"
-    fields: "Codex job_id (task-xxxx-yyy), effort, write flag, poll interval, max-wait cap, probe-error cap"
+    fields: "Codex job_id (task-xxxx-yyy), effort, write flag, poll interval, max-wait cap, probe-error cap, optional reattach=true token when re-attaching to an existing job (#1020)"
   - kind: "epm:codex-task-completed"
     posted_by: scripts/codex_task.py
     when: "Codex companion task terminated cleanly (phase=done) after the polling loop observed it"
-    fields: "Codex job_id, elapsed seconds, terminal phase"
+    fields: "Codex job_id, elapsed seconds, terminal phase, fetch_retries=<k> token"
   - kind: "epm:codex-task-failed"
     posted_by: scripts/codex_task.py
     when: "Codex companion task terminated non-cleanly (phase in {failed, cancelled}), force-cancelled after max-wait cap, force-cancelled by stall detector (phase=running but log untouched > stall_detect_secs), killed by SIGTERM/SIGINT, exceeded probe-error cap, post-spawn probe rejected the job-id, or spawn failed before a job-id was assigned"
@@ -1992,7 +1992,7 @@ markers:
   - kind: "epm:humanize-loop"
     posted_by: skill (via /humanize loop)
     when: "Step 9a-humanize"
-    fields: "Final 6-axis scores (vocabulary, structure, rhythm, voice, interpretation honesty, results-writing discipline) for the v3 reader-facing prose surfaces (`## Takeaways` + `## What I ran` + `## Findings` setup/read bullets; for an in-flight v2/legacy body the `## TL;DR` block instead — branch on the sentinel). Note line: 'converged in cycle K' or 'exited at cap, residual debt: axis X' or 'skipped — /humanize skill not loaded' or 'skipped — paper-task (analyzer ran inline /humanize academic on the .tex)'. Fires once per task on the first epm:clean-result-drafted v1; not re-fired on 9a-bis REVISE rounds. For a `paper: true` task the orchestrator-level pass is SKIPPED — the analyzer already ran `/humanize academic` on the paper's Abstract/Introduction/Results/Discussion prose INSIDE PAPER-TASK MODE."
+    fields: "Final 6-axis scores (vocabulary, structure, rhythm, voice, interpretation honesty, results-writing discipline) for the v3 reader-facing prose surfaces (`## Takeaways` + `## What I ran` + `## Findings` setup/read bullets; for an in-flight v2/legacy body the `## TL;DR` block instead — branch on the sentinel). Note line: 'converged in cycle K' or 'exited at cap, residual debt: axis X' or 'skipped — /humanize skill not loaded' or 'skipped — paper-task (analyzer ran inline /humanize academic on the .tex)' or, appended when the ban gate recorded a verbatim-sample false positive, the disposition naming the banned string AND its location, e.g. 'ban gate: PASS on authored prose; 1 hit ('Certainly!', ## Methodology sample block) — false positive, left in place' (the #923 disposition form; a ban hit whose only occurrences are inside elided verbatim sample surfaces is documented here, never rewritten — SKILL.md § 9a-humanize ban-gate scoping). Fires once per task on the first epm:clean-result-drafted v1; not re-fired on 9a-bis REVISE rounds. For a `paper: true` task the orchestrator-level pass is SKIPPED — the analyzer already ran `/humanize academic` on the paper's Abstract/Introduction/Results/Discussion prose INSIDE PAPER-TASK MODE."
   - kind: "epm:clean-result-critique"
     posted_by: skill (via clean-result-critic)
     when: "Step 9a-bis"

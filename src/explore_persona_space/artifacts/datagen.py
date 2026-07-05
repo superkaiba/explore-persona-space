@@ -300,6 +300,41 @@ def _mk_request(request_id, arm, question_id, variant_id, question, gen, emit) -
 # ── Generation (default dispatcher-backed generate_fn) ───────────────────────
 
 
+def _gen_params_from_messages(
+    messages: list[dict[str, str]], *, model: str, max_tokens: int, temperature: float
+) -> dict:
+    """Anthropic Messages params from an OpenAI-style message list (system lift).
+
+    The Anthropic Messages API rejects ``system`` as a message ROLE (HTTP 400 on
+    every request — the #906 first-``--full`` crash): system content must ride
+    the TOP-LEVEL ``system=`` parameter. Datagen ``gen_messages`` begin with a
+    ``{"role": "system", ...}`` persona+elicitation entry, so this helper lifts
+    every system-role entry out (joined with a blank line, order preserved) and
+    passes the non-system remainder as ``messages``.
+
+    Returns a params dict with NO ``system`` key when the input carries no
+    system entry (byte-identical behavior to the pre-fix path for system-less
+    message lists). Raises ``ValueError`` on an empty non-system remainder —
+    the API rejects an empty ``messages`` list anyway, so fail loud locally.
+    """
+    system_parts = [m["content"] for m in messages if m.get("role") == "system"]
+    remainder = [m for m in messages if m.get("role") != "system"]
+    if not remainder:
+        raise ValueError(
+            "message list contains no non-system messages — the Anthropic Messages "
+            f"API requires at least one user turn (got {len(messages)} system-only messages)"
+        )
+    params: dict = {
+        "model": model,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+        "messages": remainder,
+    }
+    if system_parts:
+        params["system"] = "\n\n".join(system_parts)
+    return params
+
+
 def _default_generate_fn(
     *, gen_model: str, gen_temperature: float, cache_dir: Path, checkpoint_dir: Path
 ) -> GenerateFn:
@@ -317,12 +352,12 @@ def _default_generate_fn(
         ]
 
         def build_request(item: DispatchItem) -> dict:
-            return {
-                "model": gen_model,
-                "max_tokens": DEFAULT_GEN_MAX_TOKENS,
-                "temperature": gen_temperature,
-                "messages": item.payload["messages"],
-            }
+            return _gen_params_from_messages(
+                item.payload["messages"],
+                model=gen_model,
+                max_tokens=DEFAULT_GEN_MAX_TOKENS,
+                temperature=gen_temperature,
+            )
 
         results = asyncio.run(
             dispatch_calls(

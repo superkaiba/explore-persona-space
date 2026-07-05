@@ -1,0 +1,77 @@
+{
+  "commit": "b8df338393",
+  "created": "2026-07-04T08:52:03Z",
+  "figsize": [
+    8.4,
+    6.6
+  ],
+  "points": [
+    {
+      "direction": "chat \u2192 real novels (single-position X)",
+      "recentered": -11.106866395456388,
+      "strict": -15.615654017748987
+    },
+    {
+      "direction": "separator control \u2192 real novels (single-position X)",
+      "recentered": -10.87201615551746,
+      "strict": -14.34352094085668
+    },
+    {
+      "direction": "chat \u2192 real novels (span-mean X)",
+      "recentered": -5.138030328810224,
+      "strict": -10.63520312467274
+    },
+    {
+      "direction": "preceding-sentence control \u2192 real novels (span-mean X)",
+      "recentered": -4.491420064547757,
+      "strict": -6.9606650887288986
+    },
+    {
+      "direction": "chat \u2192 model stories (single-position X)",
+      "recentered": -1.947194974141167,
+      "strict": -4.689395101937105
+    },
+    {
+      "direction": "chat \u2192 model stories (span-mean X)",
+      "recentered": -0.27201448927670757,
+      "strict": -3.262739686613851
+    },
+    {
+      "direction": "model stories \u2192 real novels (span-mean X)",
+      "recentered": -0.11142184086240214,
+      "strict": -1.9528382450148998
+    },
+    {
+      "direction": "model stories \u2192 chat (span-mean X)",
+      "recentered": -0.008248988579699912,
+      "strict": -0.8686073766526894
+    },
+    {
+      "direction": "real novels \u2192 chat (span-mean X)",
+      "recentered": 0.014015028776731775,
+      "strict": -1.3682897813124177
+    },
+    {
+      "direction": "real novels \u2192 chat (single-position X)",
+      "recentered": 0.015187988532943675,
+      "strict": -1.3918273322044241
+    },
+    {
+      "direction": "model stories \u2192 chat (single-position X)",
+      "recentered": 0.018733471812966918,
+      "strict": -0.8168802251851304
+    },
+    {
+      "direction": "real novels \u2192 separator control (single-position X)",
+      "recentered": 0.01885150352171172,
+      "strict": -1.092276780446876
+    },
+    {
+      "direction": "real novels \u2192 model stories (span-mean X)",
+      "recentered": 0.024071006057760802,
+      "strict": -1.4247071271954437
+    }
+  ],
+  "n_series": 2,
+  "total_points": 26
+}

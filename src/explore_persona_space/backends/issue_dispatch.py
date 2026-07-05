@@ -86,9 +86,11 @@ from explore_persona_space.backends.base import (
 )
 from explore_persona_space.backends.router import (
     ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
+    ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
     ROUTE_REASON_RECONNECT,
     BackendPrepareError,
     CpuExhaustedNoRunpodLaneError,
+    CpuFallbackInfeasibleError,
     GcpAttemptCapExceededError,
     LeaseStore,
     ManualAttentionRequiredError,
@@ -445,6 +447,29 @@ def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
                 f"kind: {exc.kind}\n"
                 f"cluster: {exc.cluster}\n"
                 f"detail: {exc.reason}"
+            ),
+        )
+    if isinstance(exc, CpuFallbackInfeasibleError):
+        # #1010: the RunPod CPU lane EXISTS for this intent but cannot satisfy
+        # the plan's stated footprint (disk / RAM). Distinct reason so the
+        # marker trail names the real cause; like the parent, NOT in the
+        # watcher's TRANSIENT_CAPACITY_REASONS (the instance can never grow to
+        # fit the plan — auto-retry would loop a structurally-infeasible
+        # launch). MUST come BEFORE the CpuExhaustedNoRunpodLaneError branch
+        # (a subclass IS-A parent, so the parent check would shadow it — the
+        # same ordering rule documented on the branches below).
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: {ROUTE_REASON_CPU_FALLBACK_INFEASIBLE}\n"
+                "recovery: re-dispatch on the big-footprint CPU lane — "
+                "uv run python scripts/dispatch_issue.py launch --issue <N> "
+                "--intent cpu-bigmem ... (or shrink the plan footprint below "
+                "the instance cap)\n"
+                f"detail: {exc.reason}\n"
+                f"attempts: {json.dumps(exc.attempts, sort_keys=True)}"
             ),
         )
     if isinstance(exc, CpuExhaustedNoRunpodLaneError):

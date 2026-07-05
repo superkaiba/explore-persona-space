@@ -131,7 +131,15 @@ RunPod-on-error, ``route(spec)`` orchestrates the full multi-backend ladder:
    ``cpu_exhausted_no_runpod_lane`` typed terminal VERBATIM (the >50 GB
    analysis lane has no cheap RunPod equivalent) — it does NOT fall over
    to RunPod. RunPod CPU pods are on-demand only; a CPU no-capacity miss
-   surfaces :class:`RunPodNoCapacityError` → terminal.
+   surfaces :class:`RunPodNoCapacityError` → terminal. As of #1010 the rung
+   also gates a plan-STATED footprint (``spec.extra["boot_disk_gb"]`` /
+   ``["min_ram_gb"]``) against :data:`RUNPOD_CPU_INSTANCE_CAPS`, raising the
+   typed :class:`CpuFallbackInfeasibleError`
+   (``reason: cpu_fallback_infeasible_for_plan``) BEFORE any RunPod API
+   call when the mapped instance cannot hold it, and
+   ``RunPodBackend.launch`` threads the disk requirement into the provision
+   argv (``--container-disk-gb max(50, boot_disk_gb)``) for mapped CPU
+   intents.
 8b. **GCP-only GPU intent translation (#940).** The RunPod launch paths
    (terminal rung + explicit override) translate a GCP-only GPU intent to
    its nearest same-or-narrower RunPod intent via
@@ -292,11 +300,68 @@ ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD: str = "cpu_exhausted_no_runpod_lane"
 #: ``cpu-mid`` (``e2-standard-8`` = 8 vCPU / 32 GB) and the RunPod ``cpu-mid``
 #: (``cpu3c-8-16`` = 8 vCPU / 16 GB) differ in RAM by design — the RunPod lane
 #: is a CAPACITY backstop, and a >16 GB CPU job should target ``cpu-bigmem``
-#: anyway; the asymmetry is accepted, not a bug.
+#: anyway; the asymmetry is accepted, not a bug. As of #1010 a plan that
+#: STATES its footprint (``spec.extra["boot_disk_gb"]`` / ``["min_ram_gb"]``)
+#: is checked against the fixed capabilities in
+#: :data:`RUNPOD_CPU_INSTANCE_CAPS` by the feasibility gate in
+#: :func:`_runpod_terminal_rung` — an unsatisfiable footprint refuses the
+#: fallback typed (:class:`CpuFallbackInfeasibleError`) instead of
+#: provisioning an undersized pod (incident #958).
 RUNPOD_CPU_INSTANCE_FOR_INTENT: dict[str, str] = {
     "cpu-small": "cpu3g-2-8",  # 2 vCPU / 8 GB, gen-3 general purpose
     "cpu-mid": "cpu3c-8-16",  # 8 vCPU / 16 GB, gen-3 compute-optimized
 }
+
+
+@dataclass(frozen=True)
+class RunPodCpuInstanceCaps:
+    """Fixed capabilities of one mapped RunPod CPU instance (#1010)."""
+
+    vcpu: int
+    ram_gb: int
+    max_container_disk_gb: int
+
+
+#: Fixed capabilities of the mapped RunPod CPU instances (#1010, incident
+#: #958). RAM is fixed per instance_id (encoded in the id itself:
+#: ``<flavor>-<vCPU>-<RAM_GB>``, not threadable). ``max_container_disk_gb``
+#: bounds the EFFECTIVE ``deployCpuPod`` ``containerDiskInGb`` payload —
+#: ``max(container_disk_gb, volume_gb)``, because
+#: ``runpod_api._deploy_cpu_once`` folds the CPU volume request into the
+#: container disk (``deployCpuPodInput`` has no volume field).
+#: PROBE-VERIFIED 2026-07-04 (issue #1010, live ``deployCpuPod`` probes):
+#:   * ``cpu3g-2-8`` -> 20; verified_by: accept-reject-only — API validation
+#:     rejects effective 50 (today's untouched default payload) with
+#:     "Container Disk must be less than or equal to 20" (flavor cpu3g).
+#:     20 sits BELOW the 50 default, so this cap can only refuse — safe.
+#:   * ``cpu3c-8-16`` -> 50; verified_by: accept-reject-only — the API
+#:     ACCEPT bound is 80 (effective 80 accepted; effective 100 rejected
+#:     with "Container Disk must be less than or equal to 80", flavor
+#:     cpu3c), but no realized in-pod filesystem read was obtainable, so
+#:     the recorded cap is the empirically-HONORED floor: pod-958's
+#:     measured 50 GB overlay. An unverified value above the honored floor
+#:     would be an unverified ALLOW cap re-creating the #958 shape inside
+#:     the "accepted" band; a later df-verified probe may raise it to 80.
+#: Keys MUST cover every value of :data:`RUNPOD_CPU_INSTANCE_FOR_INTENT`
+#: (pinned by tests/test_router.py::
+#: test_runpod_cpu_instance_caps_cover_every_mapped_instance); the
+#: feasibility gate does a direct ``[]`` lookup so a missing row fails LOUD
+#: (KeyError), never silently skips the check.
+RUNPOD_CPU_INSTANCE_CAPS: dict[str, RunPodCpuInstanceCaps] = {
+    "cpu3g-2-8": RunPodCpuInstanceCaps(vcpu=2, ram_gb=8, max_container_disk_gb=20),
+    "cpu3c-8-16": RunPodCpuInstanceCaps(vcpu=8, ram_gb=16, max_container_disk_gb=50),
+}
+
+#: Reason token for a RunPod CPU fallback refused because the plan's STATED
+#: footprint (``spec.extra["boot_disk_gb"]`` / ``spec.extra["min_ram_gb"]``)
+#: exceeds the mapped instance's fixed capabilities (#1010, incident #958).
+#: Distinct-reason-per-distinct-cause is the established router pattern
+#: (:data:`ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD` #677,
+#: :data:`ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD` #783): this intent
+#: HAS a RunPod lane — it just cannot hold this plan — so reusing the
+#: parent's "no runpod lane" token would mislead triage. Like the parent's
+#: reason, NOT in the watcher's ``TRANSIENT_CAPACITY_REASONS``.
+ROUTE_REASON_CPU_FALLBACK_INFEASIBLE: str = "cpu_fallback_infeasible_for_plan"
 
 #: GCP GPU intent -> the RunPod intent the terminal rung provisions (#940).
 #: TOTAL over the gpu_count>0 keys of gcp.INTENT_TO_MACHINE (identity rows
@@ -565,6 +630,28 @@ class CpuExhaustedNoRunpodLaneError(NoComputeAvailableError):
     ``TRANSIENT_CAPACITY_REASONS``) re-drives ONLY ``no_compute_available``; a
     structurally-unservable ``cpu-bigmem`` RunPod launch must NOT auto-retry (no
     lane will ever free up to make RunPod accept it). Inherits ``__init__``
+    verbatim (reason message + attempts).
+    """
+
+
+class CpuFallbackInfeasibleError(CpuExhaustedNoRunpodLaneError):
+    """Terminal: a mapped cheap CPU intent reached the RunPod terminal rung,
+    but the plan's STATED footprint (``spec.extra["boot_disk_gb"]`` /
+    ``spec.extra["min_ram_gb"]``) exceeds the mapped RunPod CPU instance's
+    fixed capabilities in :data:`RUNPOD_CPU_INSTANCE_CAPS` (#1010, incident
+    #958: an 80 GB-disk / 32 GB-RAM plan was dispatched onto a 50 GB / 16 GB
+    ``cpu3c-8-16`` pod and refused only AFTER a full paid provision cycle).
+
+    Subclass of :class:`CpuExhaustedNoRunpodLaneError` so every existing
+    catch site keeps working unchanged; ``classify_terminal_exception``
+    (``issue_dispatch.py``) maps it to the DISTINCT reason
+    :data:`ROUTE_REASON_CPU_FALLBACK_INFEASIBLE`
+    (``cpu_fallback_infeasible_for_plan``) — like the parent's reason, NOT in
+    the watcher's ``TRANSIENT_CAPACITY_REASONS``: the RunPod instance can
+    never grow to fit the plan, so auto-retry would loop a
+    structurally-infeasible launch. (GCP capacity COULD free up later, but
+    that sub-case is a deliberate manual re-dispatch decision — park-not-loop
+    matches today's experimenter-refusal end-state.) Inherits ``__init__``
     verbatim (reason message + attempts).
     """
 
@@ -2365,6 +2452,82 @@ def _skip_gcp_lane_no_headroom(
     )
 
 
+def _refuse_infeasible_cpu_footprint(
+    *,
+    spec: RunSpec,
+    machine_gpu_count: int,
+    attempts: list[RouteAttempt],
+    marker_poster: Callable[..., None] | None,
+    residual_gap: str,
+) -> None:
+    """Feasibility gate for the RunPod CPU fallback (#1010, incident #958).
+
+    The mapped RunPod CPU instance has FIXED RAM and a provider
+    container-disk cap (:data:`RUNPOD_CPU_INSTANCE_CAPS`, probe-verified); a
+    plan-stated footprint (``spec.extra["boot_disk_gb"]`` /
+    ``["min_ram_gb"]``) that exceeds them is deterministically infeasible —
+    refuse BEFORE the paid provision cycle by raising the typed
+    :class:`CpuFallbackInfeasibleError` (after posting the terminal marker
+    with :data:`ROUTE_REASON_CPU_FALLBACK_INFEASIBLE`). No stated
+    requirement (the common case) => both ints are 0 => no-op,
+    byte-identical to pre-#1010 routing. Called ONLY from
+    :func:`_runpod_terminal_rung`'s CPU branch, AFTER the #677 not-in-map
+    guard — the single placement that covers all four automated GCP→RunPod
+    paths (capacity fallback #656, sync workload failover #658, async
+    workload failover #659, queue-timeout failover #783). A GPU intent
+    (``machine_gpu_count > 0``) is a no-op.
+    """
+    if machine_gpu_count != 0:
+        return
+    instance_id = RUNPOD_CPU_INSTANCE_FOR_INTENT[spec.intent]
+    caps = RUNPOD_CPU_INSTANCE_CAPS[instance_id]  # missing row -> loud KeyError
+    extra = spec.extra or {}
+
+    def _footprint_int(key: str) -> int:
+        """spec.extra[key] as a non-negative int; 0 when absent/falsy.
+
+        A malformed (non-integral) value raises a ValueError NAMING the
+        key -- fail-loud with a diagnosable message, never a bare int()
+        traceback deep in the rung.
+        """
+        raw = extra.get(key) or 0
+        try:
+            return int(raw)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(
+                f"spec.extra[{key!r}] is not an integer: {raw!r} "
+                f"(malformed footprint requirement on issue {spec.issue})"
+            ) from exc
+
+    required_disk_gb = _footprint_int("boot_disk_gb")
+    required_ram_gb = _footprint_int("min_ram_gb")
+    shortfalls: list[str] = []
+    if required_disk_gb > caps.max_container_disk_gb:
+        shortfalls.append(
+            f"disk: plan requires {required_disk_gb} GB > "
+            f"{instance_id} max container disk {caps.max_container_disk_gb} GB"
+        )
+    if required_ram_gb > caps.ram_gb:
+        shortfalls.append(
+            f"RAM: plan requires {required_ram_gb} GB > {instance_id} fixed {caps.ram_gb} GB"
+        )
+    if shortfalls:
+        _post_terminal_failure_marker(
+            spec=spec,
+            marker_poster=marker_poster,
+            reason=ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
+            chosen_kind="gcp",  # precedent: the #677 guard in the rung
+            attempts=attempts,
+        )
+        raise CpuFallbackInfeasibleError(
+            f"CPU intent {spec.intent!r}: RunPod CPU fallback ({instance_id}) "
+            f"cannot satisfy the plan footprint — {'; '.join(shortfalls)}. "
+            f"Route to cpu-bigmem (or shrink the footprint). "
+            f"residual_gap: {residual_gap}",
+            attempts=[_attempt_to_dict(a) for a in attempts],
+        )
+
+
 def _runpod_terminal_rung(
     *,
     spec: RunSpec,
@@ -2445,6 +2608,13 @@ def _runpod_terminal_rung(
             f"has no CPU fallback lane for this intent. residual_gap: {residual_gap}",
             attempts=[_attempt_to_dict(a) for a in attempts],
         )
+    _refuse_infeasible_cpu_footprint(
+        spec=spec,
+        machine_gpu_count=machine.gpu_count,
+        attempts=attempts,
+        marker_poster=marker_poster,
+        residual_gap=residual_gap,
+    )
     # #940: translate a GCP-only GPU intent (capture-7b / lora / lora-7b-h100)
     # to its RunPod-provisionable equivalent BEFORE building runpod_spec —
     # pod_lifecycle's gpu_heuristics.resolve_intent KeyErrors on a GCP-only
@@ -4999,6 +5169,7 @@ __all__ = [
     "ROUTE_REASON_AUTO_FALLBACK_GCP",
     "ROUTE_REASON_AUTO_STARTED",
     "ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD",
+    "ROUTE_REASON_CPU_FALLBACK_INFEASIBLE",
     "ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC",
@@ -5008,11 +5179,13 @@ __all__ = [
     "ROUTE_REASON_RECONNECT",
     "ROUTE_REASON_RUNPOD_FALLBACK",
     "ROUTE_REASON_WORKLOAD_FAILURE",
+    "RUNPOD_CPU_INSTANCE_CAPS",
     "RUNPOD_CPU_INSTANCE_FOR_INTENT",
     "RUNPOD_INTENT_FOR_GCP_INTENT",
     "RUNPOD_INTENT_TRANSLATION_DELIBERATE_GAPS",
     "BackendPrepareError",
     "CpuExhaustedNoRunpodLaneError",
+    "CpuFallbackInfeasibleError",
     "GcpAttemptCapExceededError",
     "Lease",
     "LeaseStore",
@@ -5022,6 +5195,7 @@ __all__ = [
     "RouteError",
     "RouteResult",
     "RouterConfig",
+    "RunPodCpuInstanceCaps",
     "WorkloadSurfacedError",
     "auto_lane_order",
     "cancel_and_wait",

@@ -139,7 +139,7 @@ they invoke `implementer` directly.
    subprocess dispatcher. The orchestrator's `/issue` Step 6d.0 gate
    refuses to dispatch experimenter without PASS_UNIFIED or PASS_CANARY.
 
-   Three additional smoke-contract requirements (the first two bit hard on 2026-06-09, the third on 2026-07-02):
+   Four additional smoke-contract requirements (the first two bit hard on 2026-06-09, the third on 2026-07-02):
 
    - **Cross-phase data-contract smoke.** When any phase CONSUMES artifacts
      produced under a DIFFERENT issue / condition registry (a parent's
@@ -163,6 +163,15 @@ they invoke `implementer` directly.
      GPU-hours (gotchas.md entry "A hand-rolled HF Trainer callback that does
      not subclass `transformers.TrainerCallback` crashes at
      `Trainer.__init__` …").
+   - **Tiny-real CPU e2e before the FIRST GPU launch of a multi-stage
+     driver.** Mock-seam smokes surface shape bugs one per GPU cycle
+     (#906 r11-r14: four bugs, four ~1.5h pod cycles). Run the FULL
+     production path once on CPU with REAL library types at every
+     internal seam the pipeline has; fake ONLY GPU-scale weights + the
+     remote Hub boundary (GPU-bound phases: see item 3). Full recipe +
+     traps + worked example: `.claude/rules/gotchas.md` "Mock-seam
+     smokes". Record it under `## Smoke run` — Step 6d.0-bis refuses
+     seam-stubbed evidence.
 6. **Cite CLAUDE.md gotchas in your mini-plan.** Grep `CLAUDE.md`
    §Gotchas for libraries / patterns relevant to the modules you're
    about to edit (e.g. vLLM, TRL, Hydra, MooseFS, RunPod, persona

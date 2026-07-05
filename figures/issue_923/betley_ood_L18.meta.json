@@ -1,6 +1,6 @@
 {
-  "commit": "df05061f08",
-  "created": "2026-07-04T04:32:01Z",
+  "commit": "b412955da6",
+  "created": "2026-07-04T05:47:10Z",
   "figsize": [
     12.5,
     4.6
@@ -86,14 +86,14 @@
     {
       "x": -0.12,
       "Held-out skill R\u00b2 (layer 18)": 0.14996492669882144,
-      "series": "wildchat",
+      "series": "WildChat",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": -0.06,
       "Held-out skill R\u00b2 (layer 18)": 0.18554150208258435,
-      "series": "icl",
+      "series": "in-context learning",
       "_kind": "scatter",
       "_group": 12
     },

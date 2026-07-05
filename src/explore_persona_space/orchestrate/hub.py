@@ -8,12 +8,15 @@ Default repos (public, unlimited storage):
 import glob
 import json
 import logging
+import math
 import os
+import random
 import re
 import shutil
 import sys
 import time
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -535,6 +538,49 @@ def list_repo_files_complete(
     return sorted(files)
 
 
+def list_hf_files_under_path(
+    api,
+    repo_id: str,
+    path: str,
+    *,
+    repo_type: str = "model",
+    revision: str | None = None,
+) -> list[str]:
+    """Files under ``path`` via ONE server-side scoped tree walk — never a
+    full-repo listing (#920: a bare listing wedges >600 s on the ~1M-file
+    data repo).
+
+    ``path`` naming a DIRECTORY returns every file under it (full repo-root-
+    relative paths); an exact FILE returns ``[path]`` (the tree endpoint 404s
+    on file paths — verified on hub 0.36.2, #939 — so an
+    ``EntryNotFoundError`` falls back to one ``HfApi.file_exists`` HEAD
+    probe); an absent path returns ``[]``. Repository/Revision-not-found and
+    transport/auth errors PROPAGATE (the file_exists fallback only fires
+    after the tree call proved repo+revision resolve, so its swallowing of
+    RepositoryNotFoundError is unreachable here). Empty ``path`` raises
+    ValueError — a falsy path would silently degrade to the full-repo
+    listing this helper exists to avoid.
+    """
+    from huggingface_hub.utils import EntryNotFoundError
+
+    normalized = path.strip("/")
+    if not normalized:
+        raise ValueError("list_hf_files_under_path: empty path (would full-list the repo)")
+    try:
+        files = list_repo_files_complete(
+            api, repo_id, repo_type=repo_type, revision=revision, path_in_repo=normalized
+        )
+    except EntryNotFoundError:
+        if api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision):
+            return [normalized]
+        return []
+    prefix = normalized + "/"
+    # Defensive client-side filter: a no-op against real scoped results (every
+    # returned path is under the prefix) but keeps strict test fakes — whose
+    # list_repo_tree ignores path_in_repo — matching the same semantics.
+    return [f for f in files if f == normalized or f.startswith(prefix)]
+
+
 def _is_storage_quota_403(err: Exception) -> bool:
     """Persistent account-wide public-storage 403 (NOT transient). Mirrors the
     issue658 predicate; upload-policy.md § HF storage-quota 403."""
@@ -543,11 +589,26 @@ def _is_storage_quota_403(err: Exception) -> bool:
 
 
 def _is_transient_upload_error(err: Exception) -> bool:
-    """True for retryable transient HF/HTTP upload errors (5xx gateway timeouts,
-    429, connection drops) — NOT the persistent storage-quota-403."""
+    """True for retryable transient HF/HTTP upload errors (408/429/5xx by
+    status code, connection drops / timeouts by message) — NOT the persistent
+    storage-quota-403. When the exception carries a real integer HTTP status
+    code, the decision is made ENTIRELY by code: 408 (request timeout), 429,
+    and any 5xx are transient; every other code (all remaining 4xx) is
+    non-transient, with NO substring fallback — 4xx messages can embed digit
+    triplets ('issue504_raw/...', byte counts) that would read as
+    false-transient (#989). The substring scan applies only to response-less
+    errors (ConnectionError, timeouts).
+
+    Response-less rate-limit text ('too many requests' / 'rate limit') is
+    transient (#931: a 429 during an hf_xet transfer can cross the Rust
+    token-refresher boundary as a wrapped exception without ``.response``);
+    NEVER bare '429' (the #989 digit-triplet trap). Note: a response-less
+    PERMANENT failure whose text happens to contain one of these markers now
+    burns the full retry budget before re-raising — bounded by design
+    (``EPM_HF_RETRY_BUDGET_S``, default 1800 s)."""
     code = getattr(getattr(err, "response", None), "status_code", None)
-    if code in (429, 500, 502, 503, 504):
-        return True
+    if isinstance(code, int):
+        return code in (408, 429) or 500 <= code < 600
     msg = str(err).lower()
     return any(
         s in msg
@@ -562,37 +623,219 @@ def _is_transient_upload_error(err: Exception) -> bool:
             "timeout",
             "connection",
             "temporarily unavailable",
+            "too many requests",  # response-less 429 text — xet Rust boundary (#931)
+            "rate limit",  # matches "rate limit(ed)"; NEVER bare "429" (#989)
         )
     )
 
 
-def _retry_upload(fn, *, what: str, max_attempts: int = 6):
-    """Call ``fn()`` (a zero-arg thunk) with exp-backoff retry on transient
-    HF 5xx/429/timeout/connection errors. Name is legacy — this is a generic
-    transient-retry wrapper, also used for READS (``list_repo_files_complete``),
-    not only uploads. Storage-quota-403 and any non-transient error re-raise
-    IMMEDIATELY (so the caller's overflow-routing / soft-fail logic fires
-    unchanged); after max_attempts the final exception propagates (fail-loud)."""
-    for attempt in range(1, max_attempts + 1):
+_RETRY_AFTER_CAP_S = 900.0  # defensive cap on a pathological server Retry-After header
+_BACKOFF_CAP_S = 180.0  # exp-backoff ceiling (#735); also caps Retry-After under budget_s=0
+
+
+def _retry_after_seconds(err: Exception) -> float | None:
+    """Seconds from a ``Retry-After`` header on the error's response, if any.
+
+    Seconds-form only (an RFC 9110 HTTP-date value parses to None -> caller
+    falls back to exp backoff). Mirrors ``llm/api_dispatch._retry_after_seconds``.
+    """
+    headers = getattr(getattr(err, "response", None), "headers", None)
+    if headers is None:
+        return None
+    try:
+        raw = headers.get("Retry-After")  # requests' CaseInsensitiveDict
+    except Exception:
+        return None
+    if raw is None:
+        return None
+    try:
+        val = float(raw)
+    except (TypeError, ValueError):
+        return None
+    return val if val > 0 else None
+
+
+def _retry_budget_s() -> float:
+    """Wall-clock transient-retry budget (s). 0 disables the budget extension
+    (legacy attempt-bound behavior). Env: ``EPM_HF_RETRY_BUDGET_S`` (default
+    1800). Unparseable or NON-FINITE values (``inf``/``nan``/``1e999``) fall
+    back to 1800 with a warning — ``inf`` would make the fail-loud deadline
+    unbounded (retry forever on a permanently-down Hub), and ``nan`` would
+    silently degrade to the 0 kill switch via ``max(0.0, nan)``."""
+    raw = os.environ.get("EPM_HF_RETRY_BUDGET_S")
+    if raw is None or not raw.strip():
+        return 1800.0
+    try:
+        val = float(raw)
+    except ValueError:
+        logger.warning("EPM_HF_RETRY_BUDGET_S=%r unparseable; using 1800", raw)
+        return 1800.0
+    if not math.isfinite(val):
+        logger.warning("EPM_HF_RETRY_BUDGET_S=%r non-finite; using 1800", raw)
+        return 1800.0
+    return max(0.0, val)
+
+
+def _retry_upload(fn, *, what: str, max_attempts: int = 6, budget_s: float | None = None):
+    """Call ``fn()`` (a zero-arg thunk) with retry on transient HF
+    5xx/429/timeout/connection errors. Name is legacy — generic transient-retry
+    wrapper, also used for READS (``list_repo_files_complete``) and downloads.
+
+    Retry is allowed while EITHER bound holds (raise only when BOTH exhaust):
+      - attempt floor: the first ``max_attempts`` calls (the #735 contract);
+      - wall-clock budget ``budget_s`` (default env ``EPM_HF_RETRY_BUDGET_S`` =
+        1800): sized to outlive an org-wide 429 storm — #931's storm outlived
+        the pre-#997 310 s attempt-bound stack. ``budget_s=0`` => legacy
+        attempt-bound behavior.
+
+    Bound convention: with ``budget > 0``, no sleep starts or extends past the
+    deadline and TOTAL SLEEP <= budget; elapsed wall time can exceed the budget
+    only by IN-FLIGHT call durations (each ``fn()`` — including
+    huggingface_hub's inner pagination retries — runs to completion before the
+    deadline check). Attempt-floor retries past the deadline sleep 0 and retry
+    immediately (<= ``max_attempts`` calls total).
+
+    Sleep: ``Retry-After`` header when present (capped ``_RETRY_AFTER_CAP_S``;
+    under ``budget_s=0`` capped at ``_BACKOFF_CAP_S`` instead — the kill
+    switch has no deadline clamp, so a pathological header would otherwise be
+    honored un-clamped, defeating the switch's fail-fast purpose), else exp
+    backoff ``min(180, 10*2^k)`` with 0-25% jitter (de-synchronizes fleet
+    retries). Storage-quota-403 / non-transient re-raise IMMEDIATELY; on
+    exhaustion the final exception propagates (fail-loud, no swallow).
+    """
+    budget = _retry_budget_s() if budget_s is None else budget_s
+    start = time.monotonic()
+    deadline = start + budget
+    attempt = 0
+    while True:
+        attempt += 1
         try:
             return fn()
         except Exception as e:
-            if (
-                _is_storage_quota_403(e)
-                or not _is_transient_upload_error(e)
-                or attempt == max_attempts
-            ):
+            if _is_storage_quota_403(e) or not _is_transient_upload_error(e):
                 raise
-            sleep_s = min(180, 10 * 2 ** (attempt - 1))
+            ra = _retry_after_seconds(e)
+            if ra is not None:
+                # budget_s=0 (kill switch) skips the deadline clamp below, so
+                # cap the header at the legacy backoff ceiling there — else a
+                # pathological Retry-After stacks 5 x 900 s of sleep vs the
+                # ~310 s legacy stack the switch is meant to restore.
+                sleep_s = min(ra, _RETRY_AFTER_CAP_S if budget > 0 else _BACKOFF_CAP_S)
+            else:
+                sleep_s = min(_BACKOFF_CAP_S, 10.0 * 2.0 ** min(attempt - 1, 6)) * (
+                    1.0 + random.random() * 0.25
+                )
+            now = time.monotonic()
+            within_attempts = attempt < max_attempts
+            within_budget = budget > 0 and now < deadline
+            if not (within_attempts or within_budget):
+                logger.warning(
+                    "%s transient-retry exhausted after %d calls (elapsed %.0fs, "
+                    "budget %.0fs); re-raising",
+                    what,
+                    attempt,
+                    now - start,
+                    budget,
+                )
+                raise
+            if budget > 0:
+                # Clamp EVERY sleep — the Retry-After branch AND the backoff
+                # branch, including attempt-floor retries — to the remaining
+                # budget, so the attempt floor can never stack un-clamped
+                # Retry-After sleeps past the deadline (pathological
+                # Retry-After: 4000 -> 900-cap x 5 floor attempts ~ 4500 s >
+                # 1800 s budget). With the clamp, TOTAL SLEEP <= budget; floor
+                # attempts after the deadline sleep 0 and retry immediately
+                # (<= max_attempts calls total — the #735 6-call contract
+                # holds; legacy tests assert sleep COUNTS, never durations).
+                sleep_s = min(sleep_s, max(0.0, deadline - now))
             logger.warning(
-                "%s transient error (attempt %d/%d): %s; retrying in %ds",
+                "%s transient error (attempt %d, elapsed %.0fs / budget %.0fs): %s; "
+                "retrying in %.0fs",
                 what,
                 attempt,
-                max_attempts,
+                time.monotonic() - start,
+                budget,
                 str(e)[:200],
                 sleep_s,
             )
             time.sleep(sleep_s)
+
+
+# Public, greppable name for per-issue dispatch scripts (#606: scripts assumed a
+# hub `_retry_transient` that never existed; the i528 family hand-rolled four copies).
+retry_transient = _retry_upload
+
+
+def verify_repo_paths_uploaded(
+    api,
+    repo_id: str,
+    expected_repo_paths: Sequence[str],
+    *,
+    path_in_repo: str,
+    repo_type: str = "dataset",
+    revision: str | None = None,
+) -> list[str]:
+    """Exact-set post-upload verify: return expected paths NOT on the Hub.
+
+    Canonical retried + server-side-SCOPED verify leg for dispatch scripts.
+    #920: a bare full-repo ``list_repo_files`` on the ~1M-file data repo wedges
+    >600 s (#833 gotcha) AND a transient 500 on it crashed a workload after
+    every upload had succeeded. Routes through ``list_repo_files_complete``
+    with ``path_in_repo`` scoping — the paginated walk rides ``_retry_upload``
+    (Retry-After-aware, wall-clock-budgeted).
+
+    ``path_in_repo`` is a REQUIRED non-empty prefix covering every expected
+    path (ValueError otherwise — an unscoped verify recreates the wedge). A
+    directory-like prefix absent on the repo (``EntryNotFoundError`` during
+    the walk — hub 0.36.2's lazy ``list_repo_tree`` generator raises it inside
+    the retry thunk) returns ALL expected paths as missing (caller's fail-loud
+    fires with the full list). An exact-FILE prefix (an expected path EQUAL to
+    ``path_in_repo``) ALSO raises ``EntryNotFoundError`` — the tree endpoint
+    404s on file paths (verified live on hub 0.36.2, #939; the sibling
+    ``list_hf_files_under_path`` documents the same behavior) — so that case
+    falls back to ONE retried ``HfApi.file_exists`` HEAD probe instead of
+    falsely reporting a successfully-uploaded file as missing. Transport/auth
+    errors propagate after the retry budget.
+    """
+    from huggingface_hub.utils import EntryNotFoundError
+
+    prefix = path_in_repo.strip("/")
+    if not prefix:
+        raise ValueError("verify_repo_paths_uploaded: empty path_in_repo (unscoped verify)")
+    expected = list(expected_repo_paths)
+    outside = [p for p in expected if not (p == prefix or p.startswith(prefix + "/"))]
+    if outside:
+        raise ValueError(
+            f"verify_repo_paths_uploaded: {len(outside)} expected paths outside "
+            f"path_in_repo={prefix!r} (first: {outside[:3]})"
+        )
+    try:
+        uploaded = set(
+            list_repo_files_complete(
+                api, repo_id, repo_type=repo_type, revision=revision, path_in_repo=prefix
+            )
+        )
+    except EntryNotFoundError:
+        # The tree endpoint 404s on an exact-FILE path as well as on an absent
+        # prefix (hub 0.36.2, #939 — the same live behavior the sibling
+        # ``list_hf_files_under_path`` handles at its ``file_exists``
+        # fallback). When the expected set names the prefix itself — the only
+        # way ``p == prefix`` passes the coverage check above — probe the file
+        # directly, wrapped in ``_retry_upload`` (a fresh Hub call on the
+        # verify path; un-retried, a transient 500 here would reintroduce the
+        # #920 class through the fallback). Probe True => the exact file IS
+        # uploaded (a same-named subtree cannot coexist with a file, so any
+        # ``prefix + "/"`` children stay missing); probe False => all expected
+        # paths are missing. Directory-like prefixes (``prefix`` not in the
+        # expected set) keep the all-missing semantics unchanged.
+        if prefix in expected and _retry_upload(
+            lambda: api.file_exists(repo_id, prefix, repo_type=repo_type, revision=revision),
+            what=f"file_exists({repo_id}/{prefix})",
+        ):
+            return [p for p in expected if p != prefix]
+        return expected
+    return [p for p in expected if p not in uploaded]
 
 
 def _upload(
@@ -694,17 +937,16 @@ def _upload(
                 what="upload_folder",
             )
 
-        # Verify upload: check that files actually exist on Hub. Use the
-        # paginated tree walk (not repo_info().siblings, which truncates at
-        # ~7901 entries) so verification of a large repo never spuriously
-        # reports 0 committed files.
+        # Verify upload: check that files actually exist on Hub. Scoped verify
+        # (#920/#988): never full-list the repo to confirm one upload — a bare
+        # listing wedges >600 s on the ~1M-file data repo. Exact-file uploads
+        # resolve via the helper's file_exists fallback; folder uploads via
+        # the server-side scoped tree walk (paginated, so a large subtree
+        # never spuriously reports 0 committed files).
         expected_prefix = (path_in_repo or local_path.name).rstrip("/")
-        uploaded_files = list_repo_files_complete(api, repo_id, repo_type=repo_type)
-        if is_file_upload:
-            committed_files = [f for f in uploaded_files if f == expected_prefix]
-        else:
-            prefix = expected_prefix + "/"
-            committed_files = [f for f in uploaded_files if f.startswith(prefix)]
+        committed_files = list_hf_files_under_path(
+            api, repo_id, expected_prefix, repo_type=repo_type
+        )
 
         if not committed_files:
             logger.error(
@@ -830,10 +1072,17 @@ def _upload_folder_filtered(
         )
 
         # EXACT expected-set verification on a fresh paginated listing (mirror
-        # the #664 per-cell rule). list_repo_files_complete walks the paginated
-        # tree — NOT repo_info().siblings, which truncates (see the _upload
-        # comment) — so a large repo never spuriously reports a missing file.
-        uploaded_files = set(list_repo_files_complete(api, repo_id, repo_type=repo_type))
+        # the #664 per-cell rule), SCOPED to path_in_repo (#920/#988): every
+        # element of expected_repo_paths is <path_in_repo>/<rel> by this
+        # function's contract (see the expected_repo_paths arg doc + the sole
+        # caller upload_raw_completions_to_data_repo), so the scoped walk sees
+        # every checkable path — never a full ~1M-file repo listing. An
+        # expected path OUTSIDE the prefix would have been flagged missing by
+        # the old full listing too (it was never uploaded under this prefix),
+        # so flagging it against the scoped set is not a semantics change.
+        uploaded_files = set(
+            list_hf_files_under_path(api, repo_id, path_in_repo.rstrip("/"), repo_type=repo_type)
+        )
         missing = [p for p in expected_repo_paths if p not in uploaded_files]
         if missing:
             logger.error(
@@ -1233,13 +1482,19 @@ def download_dataset(
     token = os.environ.get("HF_TOKEN")
 
     try:
-        downloaded = hf_hub_download(
-            repo_id=repo_id,
-            filename=path_in_repo,
-            repo_type="dataset",
-            local_dir=str(Path(local_path).parent),
-            local_dir_use_symlinks=False,
-            token=token,
+        # A xet-read-token 429 / transient 5xx inside hf_hub_download rides the
+        # budgeted retry (#931/#997); the outer fail-soft contract (return ""
+        # on final failure) is unchanged.
+        downloaded = _retry_upload(
+            lambda: hf_hub_download(
+                repo_id=repo_id,
+                filename=path_in_repo,
+                repo_type="dataset",
+                local_dir=str(Path(local_path).parent),
+                local_dir_use_symlinks=False,
+                token=token,
+            ),
+            what=f"hf_hub_download({repo_id}/{path_in_repo})",
         )
         # hf_hub_download saves to local_dir/path_in_repo — move to exact local_path
         downloaded = Path(downloaded)
@@ -1260,9 +1515,16 @@ def list_hub_datasets(
 ) -> list[str]:
     """List all files in the HF Hub dataset repo.
 
+    Prefix-shape dispatch (#920/#988): a DIR-LIKE ``path_prefix`` (ends with
+    ``/``) routes to a server-side SCOPED tree walk; an empty or BARE-name
+    prefix keeps the full listing (see the branch comments below).
+
     Args:
         repo_id: HF Hub dataset repo ID.
         path_prefix: Filter to files under this prefix (e.g. 'leakage/').
+            A bare (non-slash) prefix like 'dpo' is a PARTIAL-NAME match
+            that also matches 'dpo_v2/...' — load-bearing for
+            scripts/sync_datasets.py.
 
     Returns:
         List of file paths in the repo.
@@ -1273,9 +1535,23 @@ def list_hub_datasets(
 
     try:
         api = HfApi(token=token)
-        files = list_repo_files_complete(api, repo_id, repo_type="dataset")
-        if path_prefix:
+        if path_prefix.endswith("/"):
+            # Dir-like prefix: server-side scoped walk (#920/#988). Client-side
+            # filter kept for exactness (a no-op against real scoped results).
+            files = list_hf_files_under_path(
+                api, repo_id, path_prefix.rstrip("/"), repo_type="dataset"
+            )
             files = [f for f in files if f.startswith(path_prefix)]
+        else:
+            # Empty prefix = the function's list-everything contract; a bare
+            # (non-slash) prefix is a PARTIAL-NAME match ("dpo" must also match
+            # dpo_v2/...) that no server-side scope can express. DELIBERATE
+            # full listing — bounded use only; on the ~1M-file data repo this
+            # is the #920 hang class, so prefer a dir-like prefix wherever the
+            # caller can.
+            files = list_repo_files_complete(api, repo_id, repo_type="dataset")
+            if path_prefix:
+                files = [f for f in files if f.startswith(path_prefix)]
         return sorted(files)
     except Exception as e:
         logger.error("Failed to list datasets: %s", e)
@@ -1333,17 +1609,28 @@ def _kind_to_repo_type(kind: str | None) -> str:
 def _hf_artifact_exists(api, repo_id: str, repo_type: str, revision: str | None, path: str) -> bool:
     """Check whether a specific HF repo (and optional in-repo path) resolves.
 
+    Scoped probe (#920/#988): the cited path is checked via ONE server-side
+    scoped tree walk (dir paths) with an exact-file ``file_exists`` fallback
+    (blob paths) — never a full-repo listing, which wedges >600 s on the
+    ~1M-file data repo. A repo-root URL (empty ``path``) is proven by one
+    cheap ``repo_info`` call (retry-wrapped for transport 5xx parity with the
+    old retried listing).
+
     A reachable repo whose tree is missing the cited ``path`` is a normal
     ``False`` — NOT an exception. Genuine transport / auth errors propagate so
     the caller fails loud rather than reporting a real artifact as missing.
     """
-    files = list_repo_files_complete(api, repo_id, repo_type=repo_type, revision=revision)
     if not path:
-        # URL points at the repo root (no file/dir path) — repo resolving is enough.
+        # URL points at the repo root — repo (+revision) resolving is enough.
+        # ONE cheap repo_info call, NOT a full listing (#920 hang class).
+        _retry_upload(
+            lambda: api.repo_info(repo_id, repo_type=repo_type, revision=revision),
+            what=f"repo_info({repo_id})",
+        )
         return True
-    path = path.strip("/")
-    # Match an exact file OR any file under a cited directory path.
-    return any(f == path or f.startswith(path + "/") for f in files)
+    return bool(
+        list_hf_files_under_path(api, repo_id, path, repo_type=repo_type, revision=revision)
+    )
 
 
 def _wandb_run_exists(entity: str, project: str, run_id: str) -> bool:

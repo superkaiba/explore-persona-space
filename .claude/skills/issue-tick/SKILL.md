@@ -82,6 +82,41 @@ A broken triage must fail toward coverage (full re-drive), never toward
 silence — a no-op-on-crash tick would leave the alive-stalled-at-PARK
 class permanently unrecovered.
 
+## Digest-only task-state reads (every tick turn, every task)
+
+Any task-state read a tick turn makes BEYOND the one `tick_triage.py`
+call MUST be a bounded, jq-filtered digest — unconditionally, for every
+task, not just visibly harmful-content ones:
+
+- NEVER a bare `task.py view <N>`, and NEVER an unpiped
+  `task.py view <N> --json` without a narrow `| jq` filter on the same
+  command: the JSON payload carries the full task BODY plus EVERY
+  `events.jsonl` note (~625 KB on #906 — 296 events). For a
+  harmful-content task (insecure-code datagen, EM vocabulary, jailbreak
+  banks) that text is trigger-dense enough to refusal-kill the turn —
+  #906's ticks were killed 3× this way (2026-07-03); the #866 prevention
+  rule (CLAUDE.md § Spurious usage-policy refusals (e)) applies to tick
+  turns exactly as it does to briefs.
+- NEVER an unfiltered `task.py latest-marker <N>` when only freshness /
+  resume position is needed — its `note` field can be up to 50,000
+  chars. Use `... latest-marker <N> | jq '{kind, ts}'`.
+- Pipes are the mechanism: `task.py view <N> --json | jq -r '<narrow
+  filter>'` is safe by construction — only jq's output enters context;
+  the body and notes never do.
+
+Everything a tick turn legitimately needs is digest-shaped: status,
+marker kind + timestamp, the title, and the ≤80-char blocked-reason
+slice. Deciding per-task whether content is "safe" would itself require
+reading the content, so the thinning is unconditional — it also bounds
+the tick's context cost on benign tasks (#522 class). This contract
+binds the TICK TURN's own reads on all four branches, up to and
+including the decision to load the full `/issue` skill; once the full
+skill is loaded, its own steps govern its reads — and the refusal-thinned
+re-drive rule below additionally constrains the re-driven skill's resume
+reads after a refusal-killed predecessor. Content-heavy work belongs to
+the full skill's downstream subagents (fresh-context firewalls), never
+to a tick turn.
+
 ## Argument
 
 One required argument: the issue number `<N>` (the integer naming
@@ -175,9 +210,13 @@ project's marker/EM/implant vocabulary), a naive re-drive replays the
 same trigger-dense context and gets refused again: on 2026-06-10 the
 #543 session was bricked for ~75 min by 4 consecutive tick re-drives
 each re-refused. On a refusal-killed predecessor turn, re-drive THINNED:
-resume from `task.py latest-marker <N>` + status only — do NOT page the
-clean-result body, `epm:interpretation` bodies, or any raw-completion
-text back into context; let the next step's subagent (which starts with
+resume from status + the filtered latest-marker digest
+(`task.py latest-marker <N> | jq '{kind, ts}'`) only — do NOT page the
+task body, full marker-note text, the clean-result body,
+`epm:interpretation` bodies, or any raw-completion text back into
+context (the § Digest-only contract above already bans the unfiltered
+reads on every tick turn; after a refusal kill the posture tightens to
+kind+ts+status only); let the next step's subagent (which starts with
 fresh context) do the content-heavy lifting behind the analyzer's
 content firewall. If the thinned re-drive is refused too, exit and leave
 recovery to the watcher's respawn (a fresh session clears the poisoned
@@ -193,15 +232,26 @@ snapshot at a gate also counts — a duplicate push beats a missed one).
 
 ```python
 # Build the message body. Keep under 200 chars (push payload limits).
-# Slug: one `task.py view <N> --json` call (rare path; the healthy path
-# never pays it).
+# Slug + blocked reason come from ONE digest-only Bash call (rare path;
+# the healthy path never pays it) — never an unpiped dump; the jq filter
+# rides the same command line (§ Digest-only task-state reads):
+#   uv run python scripts/task.py view <N> --json | jq -r \
+#     '.frontmatter.title,
+#      ([.events[] | select(.kind == "epm:failure")] | last
+#        | (.note // "")[0:80] | gsub("\n"; " "))'
+# → line 1 = slug, line 2 = blocked reason (empty when no failure marker).
+# (Exact-equality select: event kinds are BARE strings with a separate
+#  integer `version` field; startswith("epm:failure") would over-match
+#  epm:failure-lesson — verified live on #906, where it returned the
+#  newest failure-LESSON note instead of the failure reason.)
 if status == "awaiting_promotion":
     msg = f"#{N} {slug} · clean-result ready — open to promote"
 elif status == "plan_pending":  # over-cap (per the triage verdict reason)
     cap = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100")
     msg = f"#{N} {slug} parked at plan_pending — over {cap} GPU-h cap; open to approve"
 elif status == "blocked":
-    reason = read_blocked_reason()  # latest epm:failure note, trimmed to ~80 chars
+    # reason = the jq-extracted ≤80-char epm:failure slice above — the ONLY
+    # marker-note text a tick turn ever pages in, and only on this branch.
     msg = f"#{N} BLOCKED: {reason} — open it"
 
 PushNotification({"message": msg[:200], "status": "proactive"})
@@ -264,8 +314,10 @@ if no matching job exists, this is a no-op. Do not raise.
   heartbeat (`epm:progress`, ACTIVE-status verified-alive case). The
   snapshot + runaway-flag files are written by `tick_triage.py`, not by
   the skill.
-- It does NOT page clean-result bodies, interpretation bodies, or raw
-  completions into context (see the refusal-thinned re-drive rule).
+- It does NOT page the task body, full marker-note text, clean-result
+  bodies, interpretation bodies, or raw completions into context — every
+  task-state read beyond the triage call is a jq-filtered digest
+  (§ Digest-only task-state reads; refusal-thinned re-drive rule).
 
 ## Why this skill exists (background)
 

@@ -1,8 +1,10 @@
 """Tests for orchestrate/hub.py — upload/download utilities."""
 
 import json
+import logging
 import tempfile
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import pytest
@@ -10,6 +12,7 @@ from huggingface_hub.hf_api import RepoFile
 from huggingface_hub.utils import HfHubHTTPError
 from requests.exceptions import ConnectionError
 
+from explore_persona_space.orchestrate import hub
 from explore_persona_space.orchestrate.hub import (
     DEFAULT_DATASET_REPO,
     DEFAULT_MODEL_REPO,
@@ -465,13 +468,15 @@ class TestRetryUpload:
 
     def test_exhausts_and_reraises(self):
         """A transient error on EVERY attempt re-raises the final exception after
-        max_attempts (fail-loud, no swallow) — 6 calls, 5 sleeps."""
+        max_attempts (fail-loud, no swallow) — 6 calls, 5 sleeps. ``budget_s=0``
+        pins the legacy attempt-bound contract (#735) under the #997 wall-clock
+        budget kill switch."""
         thunk = Mock(side_effect=[_http_err(504)] * 6)
         with (
             patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep,
             pytest.raises(HfHubHTTPError),
         ):
-            _retry_upload(thunk, what="t")
+            _retry_upload(thunk, what="t", budget_s=0)
         assert thunk.call_count == 6
         assert mock_sleep.call_count == 5
 
@@ -500,6 +505,68 @@ class TestRetryUpload:
         assert _is_transient_upload_error(_http_err(404)) is False
         assert _is_transient_upload_error(_storage_403()) is False
         assert _is_transient_upload_error(ValueError("bad args")) is False
+
+    def test_4xx_digit_triplet_in_message_not_retried(self):
+        """A 404 whose MESSAGE embeds a digit triplet ('issue504_raw') must NOT
+        retry: a real 4xx status code decides non-transient BEFORE the fuzzy
+        substring scan can false-match on message digits (#989)."""
+        err = _http_err(404, "404 Client Error: Not Found for url: .../issue504_raw/final/x.json")
+        assert _is_transient_upload_error(err) is False
+        thunk = Mock(side_effect=err)
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep,
+            pytest.raises(HfHubHTTPError),
+        ):
+            _retry_upload(thunk, what="t")
+        assert thunk.call_count == 1
+        mock_sleep.assert_not_called()
+
+    def test_413_byte_count_digits_not_retried(self):
+        """A 413 whose message embeds '500' inside a byte count must NOT retry
+        (the byte-count digit trap, #989)."""
+        err = _http_err(413, "413 Payload Too Large: 15000000000 bytes exceeds limit")
+        assert _is_transient_upload_error(err) is False
+        thunk = Mock(side_effect=err)
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep"),
+            pytest.raises(HfHubHTTPError),
+        ):
+            _retry_upload(thunk, what="t")
+        assert thunk.call_count == 1
+
+    def test_5xx_transient_by_code_full_range(self):
+        """Any 5xx is transient BY CODE — pinned at the inclusive lower endpoint
+        (500, i.e. ``500 <= code`` not ``500 < code``) and at representative
+        codes outside the old (500, 502, 503, 504) tuple (507, 520)."""
+        assert _is_transient_upload_error(_http_err(500)) is True
+        assert _is_transient_upload_error(_http_err(507)) is True
+        assert _is_transient_upload_error(_http_err(520)) is True
+        thunk = Mock(side_effect=[_http_err(520), "ok"])
+        with patch("explore_persona_space.orchestrate.hub.time.sleep"):
+            assert _retry_upload(thunk, what="t") == "ok"
+        assert thunk.call_count == 2
+
+    def test_408_request_timeout_transient_by_code(self):
+        """Coded 408 Request Timeout stays transient BY CODE (RFC 9110 §15.5.9
+        invites the client to repeat) — previously retried only via the
+        'timeout' substring accident; the #989 tightening must preserve it."""
+        assert _is_transient_upload_error(_http_err(408, "408 Request Timeout")) is True
+        thunk = Mock(side_effect=[_http_err(408, "408 Request Timeout"), "ok"])
+        with patch("explore_persona_space.orchestrate.hub.time.sleep"):
+            assert _retry_upload(thunk, what="t") == "ok"
+        assert thunk.call_count == 2
+
+    def test_code_wins_over_substring_and_isinstance_guard(self):
+        """(a) a real 4xx code OVERRIDES a transient-looking substring
+        ('connection'); (b) a response-less TimeoutError keeps the substring
+        path; (c) a non-int status_code (the STRING '500') never enters the
+        code branch (isinstance guard) and falls to the substring scan."""
+        assert _is_transient_upload_error(_http_err(400, "connection header malformed")) is False
+        assert _is_transient_upload_error(TimeoutError("Read timed out")) is True
+        r = Mock()
+        r.status_code = "500"
+        str_code_err = HfHubHTTPError("opaque failure", response=r)
+        assert _is_transient_upload_error(str_code_err) is False
 
     def test_upload_folder_branch_uses_retry(self):
         """Integration: a 504 on the FIRST _upload folder commit then success ->
@@ -570,10 +637,14 @@ class TestListRepoFilesRetry:
         assert result == ["f.json"]
         assert api.list_repo_tree.call_count == 2
 
-    def test_list_repo_files_complete_exhausts_retries(self):
+    def test_list_repo_files_complete_exhausts_retries(self, monkeypatch):
         """A 504 on EVERY attempt re-raises the final exception after
         max_attempts (fail-loud, no swallow) — 6 calls, 5 sleeps — so a
-        genuinely persistent gateway outage still surfaces."""
+        genuinely persistent gateway outage still surfaces.
+        ``list_repo_files_complete`` invokes ``_retry_upload`` with DEFAULT
+        kwargs, so the legacy attempt bound is pinned via the
+        ``EPM_HF_RETRY_BUDGET_S=0`` env kill switch (#997)."""
+        monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "0")
         api = Mock()
         api.list_repo_tree = Mock(side_effect=[_http_err(504)] * 6)
         with (
@@ -612,3 +683,580 @@ class TestListRepoFilesRetry:
         assert result == ["a/y.json", "b/x.json"]  # sorted files only; non-file dropped
         assert api.list_repo_tree.call_count == 1
         mock_sleep.assert_not_called()
+
+
+# ---------------------------------------------------------------------------
+# #988 — scoped post-upload verifies + list_hub_datasets prefix dispatch
+# ---------------------------------------------------------------------------
+
+
+def _rf(path: str) -> RepoFile:
+    return RepoFile(path=path, size=1, blob_id="b", oid="o")
+
+
+class TestUploadVerifyScoped:
+    """#988 site 8: ``_upload``'s post-upload verify is SCOPED to
+    ``expected_prefix`` — never a full-repo listing."""
+
+    def test_file_upload_verify_uses_file_exists_fallback(self, tmp_path):
+        """An exact-file dest 404s on the tree endpoint (EntryNotFoundError)
+        and resolves via ONE file_exists probe."""
+        from huggingface_hub.utils import EntryNotFoundError
+
+        from explore_persona_space.orchestrate.hub import _upload
+
+        f = tmp_path / "x.json"
+        f.write_text("{}")
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "t"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+        ):
+            api = MockApi.return_value
+            api.list_repo_tree.side_effect = EntryNotFoundError("entry bucket/x.json not found")
+            api.file_exists.return_value = True
+            result = _upload(f, "org/data", "dataset", "bucket/x.json", upload_as_file=True)
+        assert result == "org/data/bucket/x.json"
+        # The walk was scoped server-side to the exact dest...
+        assert api.list_repo_tree.call_args.kwargs["path_in_repo"] == "bucket/x.json"
+        # ...and the exact-file fallback resolved it.
+        api.file_exists.assert_called_once()
+
+    def test_folder_upload_verify_scoped_walk(self, tmp_path):
+        """A folder dest verifies via the scoped tree walk (path_in_repo
+        threaded); no file_exists probe fires."""
+        d = tmp_path / "adir"
+        d.mkdir()
+        (d / "a.json").write_text("{}")
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "t"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+        ):
+            from explore_persona_space.orchestrate.hub import _upload
+
+            api = MockApi.return_value
+            api.list_repo_tree.side_effect = lambda **kw: iter([_rf("bucket/sub/a.json")])
+            result = _upload(d, "org/data", "dataset", "bucket/sub")
+        assert result == "org/data/bucket/sub"
+        assert api.list_repo_tree.call_args.kwargs["path_in_repo"] == "bucket/sub"
+        api.file_exists.assert_not_called()
+
+    def test_absent_dest_returns_empty_not_success(self, tmp_path):
+        """An absent dest (EntryNotFoundError + file_exists False) keeps the
+        existing '0 files found ... NOT marking as successful' branch."""
+        from huggingface_hub.utils import EntryNotFoundError
+
+        from explore_persona_space.orchestrate.hub import _upload
+
+        f = tmp_path / "x.json"
+        f.write_text("{}")
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "t"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+        ):
+            api = MockApi.return_value
+            api.list_repo_tree.side_effect = EntryNotFoundError("entry bucket/x.json not found")
+            api.file_exists.return_value = False
+            result = _upload(f, "org/data", "dataset", "bucket/x.json", upload_as_file=True)
+        assert result == ""
+
+
+class TestUploadFolderFilteredVerifyScoped:
+    """#988 site 9: ``_upload_folder_filtered``'s exact-set verify is SCOPED
+    to ``path_in_repo`` (every expected path is <path_in_repo>/<rel> by the
+    function's contract)."""
+
+    def test_verify_threads_path_in_repo(self, tmp_path):
+        from explore_persona_space.orchestrate.hub import _upload_folder_filtered
+
+        d = tmp_path / "src"
+        d.mkdir()
+        (d / "raw_completions.json").write_text("{}")
+        expected = ["exp/raw/raw_completions.json"]
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "t"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+        ):
+            api = MockApi.return_value
+            api.list_repo_tree.side_effect = lambda **kw: iter(
+                [_rf("exp/raw/raw_completions.json")]
+            )
+            result = _upload_folder_filtered(
+                d,
+                "org/data",
+                "dataset",
+                "exp/raw",
+                allow_patterns=["raw_completions.json"],
+                expected_repo_paths=expected,
+            )
+        assert result == "org/data/exp/raw"
+        assert api.list_repo_tree.call_args.kwargs["path_in_repo"] == "exp/raw"
+
+    def test_partial_listing_still_reports_missing(self, tmp_path):
+        """The exact-set check against the SCOPED listing still fails on a
+        partial commit (one expected path missing -> '')."""
+        from explore_persona_space.orchestrate.hub import _upload_folder_filtered
+
+        d = tmp_path / "src"
+        d.mkdir()
+        (d / "a.json").write_text("{}")
+        (d / "b.json").write_text("{}")
+        expected = ["exp/raw/a.json", "exp/raw/b.json"]
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "t"}),
+            patch("huggingface_hub.HfApi") as MockApi,
+        ):
+            api = MockApi.return_value
+            # Scoped listing sees only ONE of the two expected paths.
+            api.list_repo_tree.side_effect = lambda **kw: iter([_rf("exp/raw/a.json")])
+            result = _upload_folder_filtered(
+                d,
+                "org/data",
+                "dataset",
+                "exp/raw",
+                allow_patterns=["*.json"],
+                expected_repo_paths=expected,
+            )
+        assert result == ""
+
+
+class TestListHubDatasetsPrefixDispatch:
+    """#988 site 10: prefix-shape dispatch — dir-like prefixes scope
+    server-side; empty / bare-name prefixes keep the full listing (bare-name
+    partial matching is load-bearing: 'dpo' must keep matching dpo_v2/...)."""
+
+    def _run(self, path_prefix: str, files: list[str], calls: list[dict]):
+        from explore_persona_space.orchestrate.hub import list_hub_datasets
+
+        def _fake_complete(api, repo_id, **kw):
+            calls.append(dict(kw))
+            return list(files)
+
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "t"}),
+            patch("huggingface_hub.HfApi"),
+            patch(
+                "explore_persona_space.orchestrate.hub.list_repo_files_complete",
+                side_effect=_fake_complete,
+            ),
+        ):
+            return list_hub_datasets(repo_id="org/data", path_prefix=path_prefix)
+
+    def test_dir_like_prefix_scopes_server_side(self):
+        calls: list[dict] = []
+        result = self._run("leakage/", ["leakage/a.json", "leakage/b.json"], calls)
+        assert result == ["leakage/a.json", "leakage/b.json"]
+        assert len(calls) == 1
+        assert calls[0].get("path_in_repo") == "leakage"
+
+    def test_bare_name_prefix_keeps_full_listing_and_partial_match(self):
+        calls: list[dict] = []
+        result = self._run("dpo", ["dpo/a.json", "dpo_v2/b.json", "other/c.json"], calls)
+        # Partial-name contract pinned: 'dpo' also matches dpo_v2/...
+        assert result == ["dpo/a.json", "dpo_v2/b.json"]
+        assert len(calls) == 1
+        assert "path_in_repo" not in calls[0]
+
+    def test_empty_prefix_full_listing(self):
+        calls: list[dict] = []
+        result = self._run("", ["b.json", "a.json"], calls)
+        assert result == ["a.json", "b.json"]
+        assert len(calls) == 1
+        assert "path_in_repo" not in calls[0]
+
+    def test_exception_returns_empty_list(self):
+        from explore_persona_space.orchestrate.hub import list_hub_datasets
+
+        with (
+            patch.dict("os.environ", {"HF_TOKEN": "t"}),
+            patch("huggingface_hub.HfApi"),
+            patch(
+                "explore_persona_space.orchestrate.hub.list_repo_files_complete",
+                side_effect=RuntimeError("boom"),
+            ),
+        ):
+            assert list_hub_datasets(repo_id="org/data", path_prefix="leakage/") == []
+
+
+# ---------------------------------------------------------------------------
+# #997 — wall-clock retry budget + Retry-After honoring + scoped verify helper
+# ---------------------------------------------------------------------------
+
+
+class _FakeClock:
+    """Coupled fake clock: ``sleep`` advances the SAME source ``monotonic``
+    reads (plan #997 §9b — the budget math depends on this coupling; an
+    uncoupled fake would let every sleep read as zero elapsed time)."""
+
+    def __init__(self) -> None:
+        self.now = 0.0
+        self.sleeps: list[float] = []
+
+    def monotonic(self) -> float:
+        return self.now
+
+    def sleep(self, s: float) -> None:
+        self.sleeps.append(s)
+        self.now += s
+
+
+def _rate_limited(retry_after: str | None = None) -> HfHubHTTPError:
+    """A coded-429 error, optionally carrying a Retry-After header."""
+    r = Mock()
+    r.status_code = 429
+    r.headers = {"Retry-After": retry_after} if retry_after is not None else {}
+    return HfHubHTTPError("429 Too Many Requests", response=r)
+
+
+def _permanent_storm(err_factory, guard: int = 200):
+    """A thunk that ALWAYS raises ``err_factory()`` — with a finite call-count
+    guard so a wrong-clock implementation fails loudly instead of hanging CI
+    (plan #997 §5 test 3b)."""
+    calls = {"n": 0}
+
+    def thunk():
+        calls["n"] += 1
+        if calls["n"] > guard:
+            raise AssertionError(
+                f"permanent-storm fake exceeded {guard} calls — budget bound not applied"
+            )
+        raise err_factory()
+
+    return thunk, calls
+
+
+class TestRetryBudgetAndRetryAfter:
+    """#997: ``_retry_upload`` dual bound (attempt floor OR wall-clock budget)
+    + Retry-After-aware sleeps. Fake clock couples sleep -> monotonic;
+    determinism via a pinned ``hub.random``."""
+
+    def _clock(self):
+        clock = _FakeClock()
+        return (
+            clock,
+            patch("explore_persona_space.orchestrate.hub.time.monotonic", clock.monotonic),
+            patch("explore_persona_space.orchestrate.hub.time.sleep", clock.sleep),
+        )
+
+    def test_retry_after_header_honored(self, monkeypatch):
+        """Retry-After: 37 produces exactly a 37 s sleep (server-paced, no
+        jitter on the header branch)."""
+        monkeypatch.setattr(hub, "random", SimpleNamespace(random=lambda: 0.0))
+        thunk = Mock(side_effect=[_rate_limited("37"), "ok"])
+        clock, p_mono, p_sleep = self._clock()
+        with p_mono, p_sleep:
+            assert _retry_upload(thunk, what="t", budget_s=1800.0) == "ok"
+        assert clock.sleeps == [37.0]
+        assert thunk.call_count == 2
+
+    def test_retry_after_capped_at_900(self):
+        """A pathological Retry-After: 4000 is capped at _RETRY_AFTER_CAP_S=900."""
+        thunk = Mock(side_effect=[_rate_limited("4000"), "ok"])
+        clock, p_mono, p_sleep = self._clock()
+        with p_mono, p_sleep:
+            assert _retry_upload(thunk, what="t", budget_s=1800.0) == "ok"
+        assert clock.sleeps == [900.0]
+
+    def test_budget_survives_storm_beyond_attempt_floor(self):
+        """Acceptance 1 (#931 shape): a 20-min 429 storm (Retry-After: 60) then
+        success — the wall-clock budget keeps retrying PAST the 6-attempt floor
+        (pre-#997 behavior: raise at attempt 6, ~310 s)."""
+        thunk = Mock(side_effect=[_rate_limited("60")] * 20 + ["ok"])
+        clock, p_mono, p_sleep = self._clock()
+        with p_mono, p_sleep:
+            assert _retry_upload(thunk, what="t", budget_s=1800.0) == "ok"
+        assert thunk.call_count == 21  # > 6: the attempt floor alone would have raised
+        assert clock.now == 1200.0  # 20 x 60 s, within the 1800 s budget
+
+    def test_budget_exhaustion_bounded_fail_loud(self):
+        """Acceptance 2 (short header): a PERMANENT 429 storm (Retry-After: 60)
+        raises the ORIGINAL exception with total sleep <= budget — fail-loud
+        stays bounded (zero-duration fake calls => elapsed == total sleep)."""
+        thunk, calls = _permanent_storm(lambda: _rate_limited("60"))
+        clock, p_mono, p_sleep = self._clock()
+        with p_mono, p_sleep, pytest.raises(HfHubHTTPError):
+            _retry_upload(thunk, what="t", budget_s=1800.0)
+        assert clock.now <= 1800.0
+        assert calls["n"] > 6  # the budget extended past the attempt floor...
+        assert calls["n"] <= 200  # ...but the guard never tripped
+
+    def test_budget_clamps_pathological_retry_after(self):
+        """Acceptance 2, pathological header (round-1 Must-Fix — the
+        discriminating pin): permanent 429 with Retry-After: 4000 under an
+        1800 s budget. Every sleep — including attempt-floor retries — is
+        clamped to the remaining budget, so total sleep <= 1800. The
+        un-clamped OR-logic design sleeps 5 x 900 = 4500 s and FAILS here."""
+        thunk, calls = _permanent_storm(lambda: _rate_limited("4000"))
+        clock, p_mono, p_sleep = self._clock()
+        with p_mono, p_sleep, pytest.raises(HfHubHTTPError):
+            _retry_upload(thunk, what="t", budget_s=1800.0)
+        assert clock.now <= 1800.0
+        # 900-capped, then clamped to remaining budget; floor attempts past the
+        # deadline sleep 0 and retry immediately (the #735 6-call contract).
+        assert clock.sleeps == [900.0, 900.0, 0.0, 0.0, 0.0]
+        assert calls["n"] == 6
+
+    def test_budget_zero_restores_legacy_attempt_bound(self, monkeypatch):
+        """Acceptance 4: ``budget_s=0`` is the legacy #735 contract — 6 calls,
+        5 exp-backoff sleeps (jitter pinned to 0), final exception propagates."""
+        monkeypatch.setattr(hub, "random", SimpleNamespace(random=lambda: 0.0))
+        thunk, calls = _permanent_storm(lambda: _http_err(504))
+        clock, p_mono, p_sleep = self._clock()
+        with p_mono, p_sleep, pytest.raises(HfHubHTTPError):
+            _retry_upload(thunk, what="t", budget_s=0)
+        assert calls["n"] == 6
+        assert clock.sleeps == [10.0, 20.0, 40.0, 80.0, 160.0]
+
+    def test_budget_zero_caps_retry_after_at_backoff_ceiling(self):
+        """Round-2 Minor: under the ``budget_s=0`` kill switch there is no
+        deadline clamp, so a pathological Retry-After: 4000 would sleep
+        5 x 900 s ~ 4500 s — defeating the fail-fast purpose the switch
+        restores (~310 s legacy stack). The header is capped at the legacy
+        180 s backoff ceiling instead."""
+        thunk, calls = _permanent_storm(lambda: _rate_limited("4000"))
+        clock, p_mono, p_sleep = self._clock()
+        with p_mono, p_sleep, pytest.raises(HfHubHTTPError):
+            _retry_upload(thunk, what="t", budget_s=0)
+        assert calls["n"] == 6
+        assert clock.sleeps == [180.0] * 5
+
+    def test_backoff_jitter_upper_endpoint_capped(self, monkeypatch):
+        """§9b jitter endpoint: with jitter pinned to its UPPER endpoint (1.0),
+        the capped backoff sleep is 180 x 1.25 = 225 (cap applies BEFORE
+        jitter), and the final sleep is clamped to the remaining budget
+        (jitter-then-clamp ordering)."""
+        monkeypatch.setattr(hub, "random", SimpleNamespace(random=lambda: 1.0))
+        thunk, _calls = _permanent_storm(lambda: _http_err(504))
+        clock, p_mono, p_sleep = self._clock()
+        with p_mono, p_sleep, pytest.raises(HfHubHTTPError):
+            _retry_upload(thunk, what="t", budget_s=2000.0)
+        assert max(clock.sleeps) == 225.0  # min(180, base) * (1 + 0.25)
+        assert clock.now <= 2000.0
+        assert clock.sleeps[-1] == pytest.approx(37.5)  # clamped to remaining budget
+
+    def test_retry_transient_is_retry_upload(self):
+        """The public alias is the SAME object (#606: scripts assumed a hub
+        ``_retry_transient`` that never existed)."""
+        assert hub.retry_transient is hub._retry_upload
+
+    def test_env_budget_parsed_and_unparseable_falls_back(self, monkeypatch, caplog):
+        """EPM_HF_RETRY_BUDGET_S: numeric binds; unparseable falls back to 1800
+        with a warning; unset/empty default 1800; negative floors at 0;
+        NON-FINITE (inf/nan/1e999) falls back to 1800 (round-2 Minor: "inf"
+        would make the retry loop unbounded on a permanently-down Hub, "nan"
+        would silently degrade to the 0 kill switch)."""
+        monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "120")
+        assert hub._retry_budget_s() == 120.0
+        monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "abc")
+        with caplog.at_level(logging.WARNING, logger="explore_persona_space.orchestrate.hub"):
+            assert hub._retry_budget_s() == 1800.0
+        assert "EPM_HF_RETRY_BUDGET_S" in caplog.text
+        monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "")
+        assert hub._retry_budget_s() == 1800.0
+        monkeypatch.delenv("EPM_HF_RETRY_BUDGET_S")
+        assert hub._retry_budget_s() == 1800.0
+        monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", "-5")
+        assert hub._retry_budget_s() == 0.0
+        for nonfinite in ("inf", "-inf", "nan", "1e999"):
+            monkeypatch.setenv("EPM_HF_RETRY_BUDGET_S", nonfinite)
+            assert hub._retry_budget_s() == 1800.0, nonfinite
+
+    def test_transient_message_rate_limit_markers(self):
+        """Response-less rate-limit TEXT is transient (#931 xet Rust boundary);
+        bare '429' digits are NOT (#989); a real 4xx code still beats a
+        transient-looking body (#989 code-wins)."""
+        assert _is_transient_upload_error(RuntimeError("Too Many Requests on xet-read-token")) is (
+            True
+        )
+        assert _is_transient_upload_error(RuntimeError("request was rate limited")) is True
+        # No bare-"429" substring rule: digit triplets in paths stay non-transient.
+        err = RuntimeError("issue429_raw upload failed")
+        assert _is_transient_upload_error(err) is False
+        thunk = Mock(side_effect=err)
+        with (
+            patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep,
+            pytest.raises(RuntimeError),
+        ):
+            _retry_upload(thunk, what="t")
+        assert thunk.call_count == 1
+        mock_sleep.assert_not_called()
+        # Coded 400 with a rate-limit body: the code decides (non-transient).
+        assert _is_transient_upload_error(_http_err(400, "400 Bad Request: too many requests")) is (
+            False
+        )
+
+
+class TestVerifyRepoPathsUploaded:
+    """#997: public scoped + retried exact-set post-upload verify (the #920
+    crash class). The fake ``list_repo_tree`` records kwargs so server-side
+    scoping is asserted — never a full-repo listing."""
+
+    def _api(self, paths: list[str]) -> Mock:
+        api = Mock()
+        api.list_repo_tree = Mock(return_value=iter(_repo_files(*paths)))
+        return api
+
+    def test_complete_set_returns_empty(self):
+        api = self._api(["bucket/a.json", "bucket/b.json"])
+        missing = hub.verify_repo_paths_uploaded(
+            api, "org/data", ["bucket/a.json", "bucket/b.json"], path_in_repo="bucket"
+        )
+        assert missing == []
+
+    def test_one_missing_returned(self):
+        api = self._api(["bucket/a.json"])
+        missing = hub.verify_repo_paths_uploaded(
+            api, "org/data", ["bucket/a.json", "bucket/b.json"], path_in_repo="bucket"
+        )
+        assert missing == ["bucket/b.json"]
+
+    def test_absent_prefix_returns_all_missing(self):
+        """A prefix absent on the repo (EntryNotFoundError during the scoped
+        walk) returns ALL expected paths — the caller's fail-loud fires with
+        the full list."""
+        from huggingface_hub.utils import EntryNotFoundError
+
+        api = Mock()
+        api.list_repo_tree = Mock(side_effect=EntryNotFoundError("tree bucket not found"))
+        missing = hub.verify_repo_paths_uploaded(
+            api, "org/data", ["bucket/a.json", "bucket/b.json"], path_in_repo="bucket"
+        )
+        assert missing == ["bucket/a.json", "bucket/b.json"]
+
+    def test_empty_prefix_raises(self):
+        """An empty/slash-only path_in_repo raises — an unscoped verify would
+        recreate the #920 full-repo wedge."""
+        with pytest.raises(ValueError, match="empty path_in_repo"):
+            hub.verify_repo_paths_uploaded(Mock(), "org/data", ["a.json"], path_in_repo="/")
+
+    def test_outside_prefix_raises(self):
+        """Expected paths not covered by the prefix raise BEFORE any listing."""
+        api = Mock()
+        with pytest.raises(ValueError, match="outside"):
+            hub.verify_repo_paths_uploaded(api, "org/data", ["other/x.json"], path_in_repo="bucket")
+        api.list_repo_tree.assert_not_called()
+
+    @staticmethod
+    def _file_exists_fake(results: list):
+        """Signature-conformant ``HfApi.file_exists`` fake (mirrors the real
+        ``file_exists(repo_id, filename, *, repo_type=..., revision=..., token=...)``
+        keyword surface); pops ``results`` per call — an Exception entry is
+        raised, anything else returned. Records calls for assertion."""
+        calls: list[tuple] = []
+
+        def fake_file_exists(repo_id, filename, *, repo_type=None, revision=None, token=None):
+            calls.append((repo_id, filename, repo_type, revision))
+            result = results.pop(0)
+            if isinstance(result, Exception):
+                raise result
+            return result
+
+        return fake_file_exists, calls
+
+    def test_exact_file_prefix_verifies_via_file_exists(self):
+        """Round-1 BLOCKER regression (exact-file-prefix-verify-false-missing):
+        the LIVE tree endpoint 404s on an exact-FILE path_in_repo (hub 0.36.2,
+        #939), so the fake ``list_repo_tree`` RAISES EntryNotFoundError and the
+        helper must fall back to a ``file_exists`` probe — a successfully-
+        uploaded file must NOT be reported missing. Pre-fix this returned
+        ``["bucket/x.json"]`` (EntryNotFoundError => all expected missing)."""
+        from huggingface_hub.utils import EntryNotFoundError
+
+        api = Mock()
+        api.list_repo_tree = Mock(side_effect=EntryNotFoundError("tree 404s on file paths"))
+        api.file_exists, fe_calls = self._file_exists_fake([True])
+        missing = hub.verify_repo_paths_uploaded(
+            api, "org/data", ["bucket/x.json"], path_in_repo="bucket/x.json"
+        )
+        assert missing == []
+        assert fe_calls == [("org/data", "bucket/x.json", "dataset", None)]
+
+    def test_exact_file_prefix_absent_reports_missing(self):
+        """The False variant: tree 404s AND ``file_exists`` is False -> the
+        exact file IS missing (the caller's fail-loud still fires on a
+        genuinely absent file)."""
+        from huggingface_hub.utils import EntryNotFoundError
+
+        api = Mock()
+        api.list_repo_tree = Mock(side_effect=EntryNotFoundError("tree 404s on file paths"))
+        api.file_exists, _fe_calls = self._file_exists_fake([False])
+        missing = hub.verify_repo_paths_uploaded(
+            api, "org/data", ["bucket/x.json"], path_in_repo="bucket/x.json"
+        )
+        assert missing == ["bucket/x.json"]
+
+    def test_exact_file_fallback_probe_is_retried(self):
+        """The ``file_exists`` fallback is a fresh Hub call on the verify path
+        — a transient 500 on the probe retries instead of crashing the verify
+        leg (the #920 class must not re-enter through the fallback)."""
+        from huggingface_hub.utils import EntryNotFoundError
+
+        api = Mock()
+        api.list_repo_tree = Mock(side_effect=EntryNotFoundError("tree 404s on file paths"))
+        api.file_exists, fe_calls = self._file_exists_fake([_http_err(500), True])
+        with patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep:
+            missing = hub.verify_repo_paths_uploaded(
+                api, "org/data", ["bucket/x.json"], path_in_repo="bucket/x.json"
+            )
+        assert missing == []
+        assert len(fe_calls) == 2
+        mock_sleep.assert_called_once()
+
+    def test_directory_prefix_absent_never_probes_file_exists(self):
+        """A directory-like prefix (no expected path EQUAL to it) keeps the
+        all-missing semantics on EntryNotFoundError — the file_exists fallback
+        never fires."""
+        from huggingface_hub.utils import EntryNotFoundError
+
+        api = Mock()
+        api.list_repo_tree = Mock(side_effect=EntryNotFoundError("tree bucket not found"))
+        api.file_exists, fe_calls = self._file_exists_fake([])
+        missing = hub.verify_repo_paths_uploaded(
+            api, "org/data", ["bucket/a.json", "bucket/b.json"], path_in_repo="bucket"
+        )
+        assert missing == ["bucket/a.json", "bucket/b.json"]
+        assert fe_calls == []
+
+    def test_scoped_kwarg_forwarded(self):
+        """The walk is scoped SERVER-side: path_in_repo + recursive=True are
+        forwarded to list_repo_tree (never a full listing)."""
+        api = self._api(["bucket/a.json"])
+        hub.verify_repo_paths_uploaded(
+            api, "org/data", ["bucket/a.json"], path_in_repo="bucket/", repo_type="dataset"
+        )
+        kwargs = api.list_repo_tree.call_args.kwargs
+        assert kwargs["path_in_repo"] == "bucket"  # stripped of slashes
+        assert kwargs["recursive"] is True
+        assert kwargs["repo_type"] == "dataset"
+
+
+class TestDownloadDatasetRetry:
+    """#997 §3.6: ``download_dataset`` wraps its lazy ``hf_hub_download`` in
+    the budgeted retry (the #931 xet-read-token 429 leg); the outer fail-soft
+    ``return ""`` contract is unchanged. This is the real-body test for the
+    seam (#906 rule): ``_retry_upload``'s real body executes; the fake sits at
+    the network boundary only and mirrors the call-site signature."""
+
+    def test_download_dataset_retries_transient_500(self, tmp_path):
+        calls = {"n": 0}
+
+        def fake_hf_hub_download(
+            *, repo_id, filename, repo_type, local_dir, local_dir_use_symlinks, token
+        ):
+            calls["n"] += 1
+            if calls["n"] == 1:
+                raise _http_err(500)
+            dest = Path(local_dir) / filename
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text("{}")
+            return str(dest)
+
+        target = tmp_path / "out" / "file.json"
+        with (
+            patch("huggingface_hub.hf_hub_download", fake_hf_hub_download),
+            patch("explore_persona_space.orchestrate.hub.time.sleep") as mock_sleep,
+        ):
+            result = hub.download_dataset("bucket/file.json", str(target), repo_id="org/data")
+        assert calls["n"] == 2
+        mock_sleep.assert_called_once()
+        assert result == str(target)
+        assert target.read_text() == "{}"

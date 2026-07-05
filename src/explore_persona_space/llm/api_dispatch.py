@@ -41,10 +41,11 @@ Design (all FIRM requirements from § 1b + Phase 4):
    warm-up ramp on start avoids acceleration-429s.
 
 5. **Caching / resume (interrupt-safe).** A per-item content-hash cache
-   (extends :class:`~explore_persona_space.eval.batch_judge.JudgeCache`) skips
-   already-completed items on restart; results are checkpointed with atomic
-   temp-file-then-rename writes so a crash / full disk leaves the last good
-   checkpoint intact.
+   (extends :class:`~explore_persona_space.eval.batch_judge.JudgeCache`, keyed
+   with the built-request fingerprint so different builders/rubrics never
+   cross-read — rule 22, #1018) skips already-completed items on restart;
+   results are checkpointed with atomic temp-file-then-rename writes so a
+   crash / full disk leaves the last good checkpoint intact.
 
 6. **Batch path.** For large / cost-sensitive N, reuse ``batch_judge``'s
    ``_chunk_requests`` with SMALL chunks (~1000, NOT 8000) + the ``#663``
@@ -74,6 +75,8 @@ from __future__ import annotations
 import argparse
 import asyncio
 import datetime as _dt
+import functools
+import hashlib
 import json
 import logging
 import os
@@ -88,6 +91,8 @@ from explore_persona_space.eval.batch_judge import JudgeCache, _chunk_requests, 
 from explore_persona_space.llm.anthropic_client import (
     BatchDeadlineExceeded,
     deadline_from_expires_at,
+    parse_batch_submitted_at,
+    retrieve_with_create_grace,
 )
 
 logger = logging.getLogger(__name__)
@@ -248,6 +253,51 @@ class DispatchResult:
 BuildRequest = Callable[[DispatchItem], dict]
 # Response parser: model text -> per-item result. May raise on a bad parse.
 ParseResponse = Callable[[str], Any]
+
+
+def _assert_no_system_role(params: dict, item_id: str) -> None:
+    """Fail fast on a system-role message in built Messages-API params.
+
+    The Anthropic Messages API has no "system" message ROLE — a system-bearing
+    ``messages`` list 400s EVERY request (invalid_request_error; the #906 r11
+    incident, .claude/rules/gotchas.md). System content must be lifted by the
+    BUILDER to the top-level ``system=`` param (see
+    ``llm.models.Prompt.anthropic_format`` for a leading-system splitter or
+    ``artifacts.datagen._gen_params_from_messages`` for an arbitrary-position
+    lift). Only the documented dict shape is inspected: non-dict params /
+    entries and a missing ``messages`` key pass through untouched (the API
+    itself owns those errors).
+    """
+    messages = params.get("messages") if isinstance(params, dict) else None
+    if not isinstance(messages, list):
+        return
+    for i, msg in enumerate(messages):
+        if isinstance(msg, dict) and msg.get("role") == "system":
+            raise ValueError(
+                f"build_request(item_id={item_id!r}) returned a messages list with "
+                f'role="system" at index {i}. The Anthropic Messages API has no '
+                "system message role — every such request 400s "
+                "(invalid_request_error). Lift system content to the top-level "
+                "system= param in your builder (see llm.models.Prompt."
+                "anthropic_format or artifacts.datagen._gen_params_from_messages)."
+            )
+
+
+def _guarded_build_request(build_request: BuildRequest) -> BuildRequest:
+    """Wrap ``build_request`` so every produced params dict is system-role-checked.
+
+    Applied ONCE at the dispatch_calls seam; covers all three consumers (sync
+    ``_do_one``, batch state-init, batch submit/resubmit) because they all
+    receive the same threaded callable. Raises ValueError at BUILD time —
+    before any wire call or paid batch create.
+    """
+
+    def _built(item: DispatchItem) -> dict:
+        params = build_request(item)
+        _assert_no_system_role(params, item.item_id)
+        return params
+
+    return _built
 
 
 # ── Per-org runtime state (AIMD + headroom) ──────────────────────────────────
@@ -777,6 +827,18 @@ async def _dispatch_sync(
 # ── Batch path (org-aware, checkpointed) ─────────────────────────────────────
 
 
+def _batch_run_fingerprint(items: list[DispatchItem], build_request: BuildRequest) -> str:
+    """Run-level request fingerprint over the dispatched set (rule 22, #1018).
+
+    Hashes the sorted ``(item_id, built-request fingerprint)`` pairs of the
+    pending set, binding a batch checkpoint to the builder/rubric that created
+    it — so a rubric-B dispatch reusing rubric-A's ``checkpoint_dir`` fails
+    loud at state load instead of replaying A's judgments under B's key.
+    """
+    pairs = sorted((it.item_id, _cache_key_parts(it, build_request)[2]) for it in items)
+    return hashlib.sha256(json.dumps(pairs).encode()).hexdigest()[:16]
+
+
 def _load_or_init_batch_state(
     state_path: Path,
     items: list[DispatchItem],
@@ -792,9 +854,27 @@ def _load_or_init_batch_state(
     Org assignment is round-robin across the present orgs at init so resume
     re-polls each sub-batch on the SAME org it was created on (a batch created
     on org B 404s if polled on org A).
+
+    Rubric binding (rule 22, #1018): the state carries a run-level
+    ``request_fingerprint`` over the dispatched set; a LOAD whose recomputed
+    fingerprint mismatches — or a pre-fix state.json with no fingerprint field
+    (rubric provenance unknown) — raises ValueError, NEVER silently re-inits
+    (that would discard the prior state pointer and orphan paid batches).
     """
+    run_fp = _batch_run_fingerprint(items, build_request)
     if state_path.exists():
-        return json.loads(state_path.read_text())
+        state = json.loads(state_path.read_text())
+        stored_fp = state.get("request_fingerprint")
+        if stored_fp != run_fp:
+            raise ValueError(
+                f"Batch checkpoint at {state_path} does not match this dispatch: stored "
+                f"request_fingerprint={stored_fp!r}, recomputed={run_fp!r}. This checkpoint "
+                "belongs to a different builder/rubric, predates the #1018 fingerprint field, "
+                "or a partially-persisted prior run shrank the pending set. Use a distinct "
+                f"checkpoint_dir per rubric, or delete {state_path} to resubmit the remainder. "
+                "Refusing to resume across the mismatch."
+            )
+        return state
 
     # Build one request per item, chunk small, assign orgs round-robin.
     cid_for = {it.item_id: make_custom_id(it.item_id) for it in items}
@@ -803,6 +883,7 @@ def _load_or_init_batch_state(
     state = {
         "version": 1,
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "request_fingerprint": run_fp,
         "sub_batches": [
             {
                 "index": i,
@@ -861,12 +942,18 @@ async def _submit_one_sub_batch(
                 "dedicated to this run, or clear the cache for these items, then re-run. Refusing "
                 "to submit a partial sub-batch."
             )
-        sb["status"] = "submitting"
-        _atomic_write_json(state_path, state)  # intent BEFORE create
+        # Build requests BEFORE flipping status to "submitting" (#991): the build
+        # is pure, so a builder raise on RESUME (e.g. the system-role guard)
+        # leaves this sub-batch "pending" — cleanly resumable after the builder
+        # is fixed — instead of wedging at the crashed-mid-submit RuntimeError.
+        # The #663 preserve-before-propagate contract is untouched: the
+        # "submitting" intent is still persisted BEFORE batches.create.
         requests = [
             {"custom_id": cid, "params": build_request(items_by_cid[cid])}
             for cid in sb["custom_ids"]
         ]
+        sb["status"] = "submitting"
+        _atomic_write_json(state_path, state)  # intent BEFORE create
         # api_dispatch IS a sanctioned hardened batch client: reuses _chunk_requests (<=8k shards)
         # + bounded expires_at poll (deadline_from_expires_at/BatchDeadlineExceeded) + org-aware
         # resume by custom_id; routing through judge_completions_batch would lose multi-org fan-out.
@@ -875,6 +962,11 @@ async def _submit_one_sub_batch(
         try:
             sb["batch_id"] = batch.id
             sb["status"] = "submitted"
+            # #995: create-time anchor for the poll step's 404 grace (mirrors
+            # judge_dispatch). Additive state key — an OLD state.json lacks it,
+            # so a resume reads None via .get() -> no grace -> terminal 404,
+            # exactly the desired resume default.
+            sb["submitted_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
             expires_at = getattr(batch, "expires_at", None)
             if expires_at is not None:
                 sb["deadline"] = deadline_from_expires_at(
@@ -894,11 +986,32 @@ async def _poll_one_sub_batch_step(
     sync_clients: dict[str, Any],
     parse_response: ParseResponse,
     now_fn: Callable[[], _dt.datetime],
+    sleep_fn: Callable[[float], None] | None = None,
 ) -> None:
-    """Poll one not-yet-collected sub-batch ONCE on its org; harvest on end."""
+    """Poll one not-yet-collected sub-batch ONCE on its org; harvest on end.
+
+    Create-grace 404 (#995): a ``NotFoundError`` on the loop retrieve within
+    ``BATCH_CREATE_404_GRACE_S`` of the sub-batch's persisted ``submitted_at``
+    is retried with bounded backoff INSIDE the ``to_thread`` worker (the event
+    loop is never blocked by the grace sleeps). Org-mismatch semantics are
+    preserved (``_load_or_init_batch_state``: a batch created on org B 404s if
+    polled on org A): create and poll share ``sb["org"]`` within a run, so a
+    wrong-org 404 arises only on resume (stale/absent ``submitted_at`` ->
+    terminal, unchanged) or from an org-routing code bug (delayed <=60s, then
+    still fails loud — never masked). The overdue final retrieve below stays
+    UNGUARDED (plan §4.3). ``sleep_fn`` is additive + injectable for tests
+    (default ``time.sleep``).
+    """
     org = sb["org"]
     client = sync_clients[org]
-    batch = await asyncio.to_thread(client.messages.batches.retrieve, sb["batch_id"])
+    batch = await asyncio.to_thread(
+        retrieve_with_create_grace,
+        functools.partial(client.messages.batches.retrieve, sb["batch_id"]),
+        created_at=parse_batch_submitted_at(sb.get("submitted_at")),
+        batch_id=sb["batch_id"],
+        now_fn=now_fn,
+        sleep_fn=sleep_fn,
+    )
     if sb.get("deadline") is None and getattr(batch, "expires_at", None) is not None:
         sb["deadline"] = deadline_from_expires_at(
             batch.expires_at, BATCH_DEADLINE_GRACE_MIN
@@ -1124,13 +1237,21 @@ async def dispatch_calls(
         model: Claude model id (sets the per-key concurrency family).
         build_request: ``item -> Messages-API params`` (model/max_tokens/messages/...).
             MUST include the ``model`` field; this dispatcher does not inject it.
+            NOTE: the Messages API has NO "system" message role — a builder
+            forwarding caller message lists verbatim MUST lift system-role
+            entries to the top-level ``system=`` param (see
+            ``llm.models.Prompt.anthropic_format``). ENFORCED at runtime:
+            a system-bearing built params dict raises ValueError at build
+            time, before any wire call (gotchas.md, #906 r11; #991).
         parse_response: ``model_text -> result``; may raise on a bad parse
             (caught per item -> ``error=True``).
         deadline: optional wall-clock deadline; a deadline inside the batch 24h
             SLA forces the sync path.
         cost_pref: ``"balanced"`` (default) | ``"cost"`` (prefer 50% batch) |
             ``"latency"`` (prefer sync fan-out).
-        cache_dir: per-item content-hash cache root (resume skips cached items).
+        cache_dir: per-item content+request-fingerprint cache root (resume
+            skips cached items; keys carry the built-request fingerprint so
+            different builders/rubrics never cross-read — rule 22, #1018).
         checkpoint_dir: batch-path checkpoint root (REQUIRED for the batch path).
         concurrency_overrides: ``{family: cap}`` overrides for the per-key caps.
         crossover_n: sync/batch routing threshold (Phase 3 calibrates).
@@ -1152,6 +1273,11 @@ async def dispatch_calls(
     """
     if not items:
         return {}
+
+    # Runtime enforcement of the system-role contract (docstring NOTE above):
+    # one wrap covers the sync build (_do_one), the batch state-init build,
+    # and the batch submit/resubmit build — they all thread this callable.
+    build_request = _guarded_build_request(build_request)
 
     async_clients, sync_clients, owned = _resolve_clients(async_clients, sync_clients, org_keys)
     try:
@@ -1212,10 +1338,12 @@ async def _dispatch_calls_inner(
     """Routing + execution, with clients already resolved (closing is the caller's job)."""
     org_labels = list(async_clients)
 
-    # Cache check (resume skips already-completed items).
+    # Cache check (resume skips already-completed items). build_request here is
+    # the GUARDED builder threaded from dispatch_calls (#991) — so the
+    # system-role check fires at cache-check time, before any wire call.
     if cache is None and cache_dir is not None:
         cache = JudgeCache(cache_dir)
-    results, pending = _split_cached(items, cache)
+    results, pending = _split_cached(items, cache, build_request)
     if not pending:
         logger.info("dispatch_calls: all %d items served from cache", len(items))
         return results
@@ -1266,7 +1394,7 @@ async def _dispatch_calls_inner(
             poll_interval=poll_interval,
             now_fn=now_fn,
         )
-        _persist_results_to_cache(new_results, pending, cache)
+        _persist_results_to_cache(new_results, pending, cache, build_request)
 
     results.update(new_results)
     return results
@@ -1315,13 +1443,19 @@ async def _close_clients(async_clients: dict[str, Any], sync_clients: dict[str, 
 
 
 def _split_cached(
-    items: list[DispatchItem], cache: JudgeCache | None
+    items: list[DispatchItem],
+    cache: JudgeCache | None,
+    build_request: BuildRequest,
 ) -> tuple[dict[str, DispatchResult], list[DispatchItem]]:
-    """Partition items into (cached results, still-pending items)."""
+    """Partition items into (cached results, still-pending items).
+
+    ``build_request`` supplies the built-request fingerprint half of the cache
+    key (see the cache-adapter block below) — it runs once per item here.
+    """
     results: dict[str, DispatchResult] = {}
     pending: list[DispatchItem] = []
     for it in items:
-        cached = _cache_get(cache, it) if cache is not None else None
+        cached = _cache_get(cache, it, build_request) if cache is not None else None
         if cached is not None:
             # A cached entry only ever stores a successful (non-error) result
             # today (_persist gates on ``not res.error``), so the RESULT_OK
@@ -1343,6 +1477,7 @@ def _persist_results_to_cache(
     results: dict[str, DispatchResult],
     items: list[DispatchItem],
     cache: JudgeCache | None,
+    build_request: BuildRequest,
 ) -> None:
     """Write every non-error result to the cache (no-op when cache is None)."""
     if cache is None:
@@ -1350,7 +1485,7 @@ def _persist_results_to_cache(
     item_by_id = {it.item_id: it for it in items}
     for item_id, res in results.items():
         if not res.error and item_id in item_by_id:
-            _cache_put(cache, item_by_id[item_id], res)
+            _cache_put(cache, item_by_id[item_id], res, build_request)
 
 
 async def _run_sync_path(
@@ -1371,7 +1506,7 @@ async def _run_sync_path(
 
     def _persist(res: DispatchResult) -> None:
         if cache is not None and not res.error:
-            _cache_put(cache, item_by_id[res.item_id], res)
+            _cache_put(cache, item_by_id[res.item_id], res, build_request)
 
     return await _dispatch_sync(
         pending,
@@ -1385,28 +1520,58 @@ async def _run_sync_path(
     )
 
 
-# ── Cache adapters (JudgeCache keys on (question, completion)) ────────────────
+# ── Cache adapters (JudgeCache keys on (rubric identity, question, completion)) ─
 #
-# JudgeCache hashes (question, completion). We reuse it generically by hashing
-# the item_id (stable) as the "question" and the json-serialized payload as the
-# "completion", so two items with the same id+payload share a cache entry.
+# JudgeCache requires a rubric_key on every read/write (rule 22, #810/#1018).
+# This generic adapter derives it from the BUILT request: build_request(item)
+# returns the Messages-API params dict, which embeds model + system + the user
+# messages — so the rubric enters the key wherever it lives (system prompt or
+# user-message template), with zero new public parameters on dispatch_calls.
+# We hash item_id (stable) as the "question", the json-serialized payload as
+# the "completion", and the built-request fingerprint as the rubric_key.
+# Behavior notes: (i) build_request now runs once per item at cache-CHECK time,
+# not only for pending items — cheap pure dict assembly for every in-repo
+# builder (determinism/re-callability is existing contract: the batch resubmit
+# path re-calls it); (ii) the #991 no-system-role ValueError consequently fires
+# at cache check, strictly EARLIER — fail-fast-compatible; (iii) a max_tokens /
+# param change now busts the cache — deliberate OVER-keying on full request
+# params (a miss re-judges; an under-key is the #810 bug; contrast
+# batch_judge.rubric_fingerprint, which keys rubric IDENTITY only).
 
 
-def _cache_key_parts(item: DispatchItem) -> tuple[str, str]:
+def _cache_key_parts(item: DispatchItem, build_request: BuildRequest) -> tuple[str, str, str]:
+    """(item_id, payload_json, request_fingerprint) — rule 22 (#810/#1018).
+
+    The request fingerprint hashes the FULL built params (model + system +
+    messages + max_tokens, ...), a superset of the rubric identity, so two
+    callers sharing a cache dir with different judges/rubrics can never
+    cross-read. Deliberate over-keying: this is full-REQUEST identity, not the
+    minimal rubric identity (the adapter cannot distinguish rubric from
+    non-rubric params generically).
+    """
     try:
         payload_repr = json.dumps(item.payload, sort_keys=True, default=str)
     except TypeError:
         payload_repr = str(item.payload)
-    return item.item_id, payload_repr
+    built = json.dumps(build_request(item), sort_keys=True, default=str)
+    fp = hashlib.sha256(built.encode()).hexdigest()[:16]
+    return item.item_id, payload_repr, fp
 
 
-def _cache_get(cache: JudgeCache, item: DispatchItem) -> dict | None:
-    q, c = _cache_key_parts(item)
-    return cache.get(q, c)
+def _cache_get(cache: JudgeCache, item: DispatchItem, build_request: BuildRequest) -> dict | None:
+    """Adapter read: JudgeCache.get keyed on (built-request fp, item_id, payload)."""
+    q, c, fp = _cache_key_parts(item, build_request)
+    return cache.get(q, c, rubric_key=fp)
 
 
-def _cache_put(cache: JudgeCache, item: DispatchItem, res: DispatchResult) -> None:
-    q, c = _cache_key_parts(item)
+def _cache_put(
+    cache: JudgeCache,
+    item: DispatchItem,
+    res: DispatchResult,
+    build_request: BuildRequest,
+) -> None:
+    """Adapter write: JudgeCache.put keyed on (built-request fp, item_id, payload)."""
+    q, c, fp = _cache_key_parts(item, build_request)
     cache.put(
         q,
         c,
@@ -1416,6 +1581,7 @@ def _cache_put(cache: JudgeCache, item: DispatchItem, res: DispatchResult) -> No
             "reason": res.reason,
             "category": res.category,
         },
+        rubric_key=fp,
     )
 
 

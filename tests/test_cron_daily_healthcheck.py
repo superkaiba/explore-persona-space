@@ -73,7 +73,14 @@ def test_missing_yesterday_log_triggers_push_and_writes_sentinel(harness):
     assert result.returncode == 0
     assert _push_count(harness["push_log"]) == 1
     # The message names the missing day.
-    assert yesterday in harness["push_log"].read_text()
+    message = harness["push_log"].read_text()
+    assert yesterday in message
+    # #994: the alert carries the paste-ready backfill command (env-var name,
+    # the /daily <yesterday> invocation, and the cd-into-project prefix) so a
+    # future MSG edit cannot silently drop the recovery affordance.
+    assert "CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=" in message
+    assert f"claude -p '/daily {yesterday}'" in message
+    assert "backfill: cd " in message
     assert (harness["sentinel_dir"] / f"sent-{yesterday}.flag").exists()
 
 

@@ -1,0 +1,17 @@
+{
+  "metadata": {
+    "git_commit": "d8b07645cef8d28c641e7ea6ab5db19d3566ae5f",
+    "timestamp": "2026-07-04T05:48:02Z",
+    "seed": 0,
+    "n": 5000,
+    "script": "scripts/issue931_fit_cells.py",
+    "issue": 931
+  },
+  "layer": 19,
+  "r2_parent_fit_h": 0.6537062862439944,
+  "r2_batched_multihead": 0.6540838036368606,
+  "abs_delta": 0.0003775173928661779,
+  "tolerance": 0.02,
+  "smoke": false,
+  "pass": true
+}

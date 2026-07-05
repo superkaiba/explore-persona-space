@@ -148,9 +148,13 @@ class RunSpec:
       without bloating the schema (e.g. ``per_pod_quota_gb`` override).
     * ``workload_cmd``: custom workload command (repo-relative shell
       line, e.g. ``bash scripts/issue588_dispatch.sh --foo``). Mutually
-      exclusive with ``hydra_args``. Executed verbatim by the lane
-      renderers from the repo checkout root after env bootstrap.
-      ``""`` = use the standard Hydra entrypoint (#588).
+      exclusive with ``hydra_args``. GCP/SLURM render it as the single
+      argument of an rc-preserving inner ``bash -eu -o pipefail -c``
+      (#1004 — a compound ``cmd1 && cmd2`` whose first command crashes
+      must not rc-mask into a false done); the RunPod launcher embeds
+      it verbatim (no ``set -e`` there; ``WORKLOAD_RC=$?`` captures the
+      list status). Runs from the repo checkout root after env
+      bootstrap. ``""`` = use the standard Hydra entrypoint (#588).
 
     Frozen by design: a run spec is the contract for the launch; mutating
     it mid-run would break the marker trail and any auditable replay.
@@ -172,8 +176,10 @@ class RunSpec:
     extra: dict[str, Any] = field(default_factory=dict)
     # Custom workload command (repo-relative shell line, e.g.
     # "bash scripts/issue588_dispatch.sh --foo"). Mutually exclusive with
-    # hydra_args. Executed verbatim by the lane renderers from the repo
-    # checkout root after env bootstrap. "" = use the hydra entrypoint.
+    # hydra_args. GCP/SLURM render it inside an rc-preserving inner
+    # `bash -eu -o pipefail -c` wrapper (#1004); RunPod embeds it verbatim
+    # (its launcher captures WORKLOAD_RC=$? without set -e). Runs from the
+    # repo checkout root after env bootstrap. "" = use the hydra entrypoint.
     # Declared LAST so existing positional constructions are unaffected.
     workload_cmd: str = ""
 
@@ -186,6 +192,11 @@ class RunSpec:
         never render a workload; the production fail-loud lives at the
         dispatch CLI (exactly-one check) and the GCP renderer
         (neither-set raise, the #571 crash point).
+
+        The single-line check keeps every renderer's output
+        line-structured (the GCP/SLURM wrapper shlex-quotes the command
+        — a single-line input quotes to a single line — and the RunPod
+        heredoc embeds it verbatim).
         """
         if self.workload_cmd and self.hydra_args:
             raise ValueError(
@@ -361,6 +372,19 @@ class PollResult:
     # serialization), so it adds no key to the orchestrator's parser. Declared
     # LAST so existing positional ``PollResult`` constructions are unaffected.
     crash_signature: str | None = None
+    # #983 post-done phase-consistency guard, mirroring
+    # ``scripts/poll_pipeline.PollResult``: True when the tick posted the
+    # ``[post-done-phase-advisory]`` marker — a poll AFTER a corroborated done
+    # observed genuinely NEW ``[phase=...]`` lines after the recorded done
+    # line — plus the new phase lines observed this tick. The RunPod lane
+    # copies both through from ``poll_once`` (``RunPodBackend.poll``); SLURM +
+    # GCP never set them, so the defaults keep cross-lane serialization
+    # uniform. ``backend_poll._serialize_poll_result`` reads both via
+    # ``getattr`` so a mixed-version worktree degrades to the defaults rather
+    # than crashing. Declared LAST so existing positional ``PollResult``
+    # constructions are unaffected.
+    post_done_phase_advisory_posted: bool = False
+    post_done_phase_lines: tuple[str, ...] = ()
 
 
 # ---------------------------------------------------------------------------

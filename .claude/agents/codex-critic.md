@@ -92,7 +92,7 @@ Your brief contains:
 - `lens`: one of `methodology`, `statistics`, `alternatives`.
 - `plan_body`: the full plan text under critique (markdown, may be the v1 or
   a revised v<n>).
-- `revision_round`: 1-indexed; max 3 per `/adversarial-planner` policy.
+- `revision_round`: 1-indexed; max 5 per the `/adversarial-planner` per-reviewer round cap (reconciler invocations don't count).
 - `prior_critique_summaries` (round 2+): one-line summaries of prior critique
   rounds across both Claude AND Codex twins for the same lens.
 

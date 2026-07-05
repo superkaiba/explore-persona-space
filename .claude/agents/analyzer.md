@@ -361,6 +361,15 @@ per axis (the six /humanize axes): vocabulary · structure · rhythm · voice
 revise, re-score; cap 3 cycles, then ship best + flag residual. All ≤ 1 →
 Step 5.
 
+The /humanize hard ban gate (`check_bans.sh`) scans AUTHORED PROSE only:
+elide fenced/`<details>` example blocks, `>`-blockquoted lines, and
+`**Completion:**` sample lines from the scan input first (fail-loud recipe:
+analyzer-section-reference.md § Step 4.5). A hit only inside verbatim
+sample data is a documented false positive (PASS; never rewrite the
+sample — #498/#518/#923); a hit surviving elision is presumptively
+authored prose — a real FAIL (if it is missed sample text, strengthen the
+elision, never rewrite the sample).
+
 Full rubric: `analyzer-section-reference.md`
 § Step 4.5: Humanize-loop self-pass on the v4 reader-facing prose (grep heading, chunked Read).
 

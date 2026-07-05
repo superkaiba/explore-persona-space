@@ -5438,6 +5438,196 @@ def test_runpod_cpu_instance_map_is_single_source_of_truth():
 
 
 # ---------------------------------------------------------------------------
+# #1010 — RunPod CPU-fallback footprint feasibility gate (incident #958)
+# ---------------------------------------------------------------------------
+
+
+def _cpu_caps_for_intent(intent: str):
+    """The RunPodCpuInstanceCaps row the gate reads for a mapped CPU intent."""
+    from explore_persona_space.backends.router import (
+        RUNPOD_CPU_INSTANCE_CAPS,
+        RUNPOD_CPU_INSTANCE_FOR_INTENT,
+    )
+
+    return RUNPOD_CPU_INSTANCE_CAPS[RUNPOD_CPU_INSTANCE_FOR_INTENT[intent]]
+
+
+def _exhausted_gcp_double() -> _GcpBackendDouble:
+    """A GCP double whose every create capacity-misses (the #747 fallover shape)."""
+    return _GcpBackendDouble(
+        launch_raises=GcpProvisioningError(
+            "ZONE_RESOURCE_POOL_EXHAUSTED",
+            evidence={"matched_pattern": "RESOURCE_EXHAUSTED"},
+        )
+    )
+
+
+@pytest.mark.parametrize("intent", ["cpu-small", "cpu-mid"])
+def test_runpod_cpu_fallback_refuses_oversized_disk_requirement(
+    lease_store, marker_poster, captured_markers, intent
+):
+    """#1010: a mapped CPU intent whose plan-stated boot_disk_gb exceeds the
+    instance's container-disk cap raises the TYPED CpuFallbackInfeasibleError
+    at the terminal rung, BEFORE any RunPod launch — no pod is provisioned,
+    and the terminal marker carries the DISTINCT reason
+    cpu_fallback_infeasible_for_plan (never auto_fallback_runpod).
+    Parametrized over BOTH mapped intents (per-instance caps differ)."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
+        CpuFallbackInfeasibleError,
+    )
+
+    caps = _cpu_caps_for_intent(intent)
+    rp = _PassiveRunpod()
+    spec = RunSpec(
+        issue=1010,
+        intent=intent,
+        backend="auto",
+        time_budget_hours=1.0,
+        extra={"boot_disk_gb": caps.max_container_disk_gb + 20},
+    )
+    with pytest.raises(CpuFallbackInfeasibleError):
+        route(
+            spec,
+            runpod_backend=rp,
+            free_backends={"nibi": _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("x"))},
+            gcp_backend=_exhausted_gcp_double(),
+            lease_store=lease_store,
+            marker_poster=marker_poster,
+            config=RouterConfig(
+                free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    # RunPod NEVER attempted — the refusal is pre-API, pre-provision.
+    assert len(rp.launches) == 0
+    assert _by_reason(captured_markers, ROUTE_REASON_CPU_FALLBACK_INFEASIBLE), captured_markers
+    assert not _by_reason(captured_markers, ROUTE_REASON_RUNPOD_FALLBACK)
+
+
+def test_runpod_cpu_fallback_refuses_oversized_ram_requirement(
+    lease_store, marker_poster, captured_markers
+):
+    """#1010: min_ram_gb above the instance's FIXED RAM (cpu3c-8-16 = 16 GB)
+    refuses with the same typed terminal — the #958 shape (a 32 GB-RAM plan
+    on a 16 GB pod) now refuses at $0 instead of after a provision cycle."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
+        CpuFallbackInfeasibleError,
+    )
+
+    rp = _PassiveRunpod()
+    spec = RunSpec(
+        issue=1010,
+        intent="cpu-mid",
+        backend="auto",
+        time_budget_hours=1.0,
+        extra={"min_ram_gb": 32},
+    )
+    with pytest.raises(CpuFallbackInfeasibleError):
+        route(
+            spec,
+            runpod_backend=rp,
+            free_backends={"nibi": _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("x"))},
+            gcp_backend=_exhausted_gcp_double(),
+            lease_store=lease_store,
+            marker_poster=marker_poster,
+            config=RouterConfig(
+                free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99
+            ),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert len(rp.launches) == 0
+    assert _by_reason(captured_markers, ROUTE_REASON_CPU_FALLBACK_INFEASIBLE), captured_markers
+
+
+def test_runpod_cpu_fallback_feasible_requirement_launches_and_preserves_extra(
+    lease_store, marker_poster, captured_markers
+):
+    """#1010 control: a feasible stated footprint (below the cap) still falls
+    over to RunPod exactly as the no-requirement #747 path does, with
+    boot_disk_gb PRESERVED on the launched spec.extra (RunPodBackend.launch
+    threads it into --container-disk-gb) and NO infeasible marker."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
+    )
+
+    caps = _cpu_caps_for_intent("cpu-mid")
+    rp = _PassiveRunpod()
+    spec = RunSpec(
+        issue=1010,
+        intent="cpu-mid",
+        backend="auto",
+        time_budget_hours=1.0,
+        extra={"boot_disk_gb": caps.max_container_disk_gb - 20},
+    )
+    result = route(
+        spec,
+        runpod_backend=rp,
+        free_backends={"nibi": _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("x"))},
+        gcp_backend=_exhausted_gcp_double(),
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, max_gcp_attempts_per_day=99),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    assert len(rp.launches) == 1
+    assert rp.launches[0].extra["boot_disk_gb"] == caps.max_container_disk_gb - 20
+    assert not _by_reason(captured_markers, ROUTE_REASON_CPU_FALLBACK_INFEASIBLE)
+
+
+def test_runpod_cpu_instance_caps_cover_every_mapped_instance():
+    """#1010 completeness (the #841/#940 pattern): every instance_id the
+    intent map can route MUST have a caps row — a future intent/instance
+    cannot land without deciding its caps (the gate's direct [] lookup would
+    otherwise KeyError at route time instead of failing CI at the adding PR)."""
+    from explore_persona_space.backends.router import (
+        RUNPOD_CPU_INSTANCE_CAPS,
+        RUNPOD_CPU_INSTANCE_FOR_INTENT,
+        RunPodCpuInstanceCaps,
+    )
+
+    assert set(RUNPOD_CPU_INSTANCE_CAPS) == set(RUNPOD_CPU_INSTANCE_FOR_INTENT.values())
+    for caps in RUNPOD_CPU_INSTANCE_CAPS.values():
+        assert isinstance(caps, RunPodCpuInstanceCaps)
+        assert caps.vcpu > 0 and caps.ram_gb > 0 and caps.max_container_disk_gb > 0
+
+
+def test_async_failover_seam_cpu_infeasible_disk_raises_typed(lease_store, marker_poster):
+    """#1010: the ASYNC failover seam (poller-detected GCP crash / queue
+    timeout) inherits the feasibility gate via _runpod_terminal_rung — an
+    oversized cpu-mid spec raises the typed terminal instead of provisioning
+    an undersized fallback pod (the #958 shape on the async paths)."""
+    from explore_persona_space.backends.router import (
+        CpuFallbackInfeasibleError,
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    caps = _cpu_caps_for_intent("cpu-mid")
+    rp = _PassiveRunpod()
+    spec = RunSpec(
+        issue=1010,
+        intent="cpu-mid",
+        backend="runpod",
+        extra={"boot_disk_gb": caps.max_container_disk_gb + 30},
+    )
+    with pytest.raises(CpuFallbackInfeasibleError):
+        failover_to_runpod_after_async_workload_crash(
+            spec=spec,
+            runpod_backend=rp,
+            lease_store=lease_store,
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+            now_fn=_clock(),
+        )
+    assert len(rp.launches) == 0
+
+
+# ---------------------------------------------------------------------------
 # #774 round 2 — RouteAttempt.evidence carries the GCP per-zone fan-out to the
 # epm:backend-selected marker. A GcpProvisioningError whose evidence holds
 # per_zone_attempts must round-trip through the catch site -> _attempt_to_dict

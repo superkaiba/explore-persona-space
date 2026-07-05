@@ -49,7 +49,9 @@ CLI::
 ``--slug`` is optional — when omitted, falls back to the task's frontmatter
 title via ``explore_persona_space.task_workflow.get_task`` (so the skill does
 not have to thread the slug through every tick). Fail-loud: an unknown issue
-raises rather than silently writing a blank string.
+raises rather than silently writing a blank string. A *transient*
+resolver/environment ``RuntimeError`` (e.g. a detached repo-root HEAD
+mid-rebase) instead degrades soft — see :func:`write_self_report`.
 """
 
 from __future__ import annotations
@@ -230,16 +232,26 @@ def write_self_report(
     summarizer pass never reads a partial file.
 
     ``slug`` defaults to the task's frontmatter ``title`` via
-    :func:`_load_task_frontmatter`. Pass an explicit slug to override
+    :func:`_load_task`. Pass an explicit slug to override
     (e.g. the SKILL.md helper that already has the task loaded — saves the
     extra disk read).
 
     **Fail-loud on unknown issue regardless of ``--slug``.** We ALWAYS call
-    :func:`_load_task_frontmatter` even when the caller supplied an explicit
+    :func:`_load_task` even when the caller supplied an explicit
     slug, so a typo'd issue number produces a ``FileNotFoundError`` (from
     ``task.py find <N>``) instead of silently writing a self-report file for
     a non-existent task — keeps the fail-loud contract consistent across
     both code paths.
+
+    **Fail-SOFT on transient resolver/environment errors.** A ``RuntimeError``
+    from the task-workflow repo-root resolver (e.g. a detached shared-checkout
+    HEAD during a concurrent rebase — #999; since #996 the resolver
+    bounded-waits on a LIVE rebase before raising, so this catch is the
+    backstop for wait-timeout / stranded-detached / other environment
+    RuntimeErrors) degrades instead of crashing: caller-supplied slug or
+    empty, no ETA suffix, self-report still written, one stderr line, normal
+    return. The unknown-issue ``FileNotFoundError`` contract above is
+    unaffected.
 
     ``eta=True`` (default) appends the progress-bar/ETA suffix for
     machine-active statuses via :func:`_compute_eta_suffix` (task #587).
@@ -247,13 +259,40 @@ def write_self_report(
     status produces the byte-identical historical string. ``eta=False``
     (CLI ``--no-eta``) skips the estimator entirely.
     """
-    task = _load_task(issue)
-    fm = task.get("frontmatter")
-    fm = fm if isinstance(fm, dict) else {}
-    if slug is None:
-        title = fm.get("title")
-        slug = title.strip() if isinstance(title, str) else ""
-    suffix = _compute_eta_suffix(issue, task.get("status"), now_iso) if eta else None
+    try:
+        task: dict | None = _load_task(issue)
+    except RuntimeError as exc:
+        # TRANSIENT resolver/environment failure — e.g. the repo-root branch
+        # guard's detached-HEAD raise (task_workflow._resolve_repo_root_cached)
+        # while a concurrent session's rebase window holds the shared checkout
+        # (#999; crash observed in the #906 session, 2026-07-03). Since #996
+        # the resolver bounded-waits on a LIVE rebase before raising, so this
+        # catch is the backstop for wait-timeout / stranded-detached / other
+        # environment RuntimeErrors. The title/self-report path is
+        # OBSERVABILITY ONLY (SKILL.md § set_title), so degrade instead of
+        # crashing: keep the caller-supplied slug (else empty), skip the ETA
+        # suffix (status unknown), and STILL write the self-report — its `ts`
+        # is an activity signal for the stalled detector, and this tick IS
+        # activity. Unknown-issue typos still fail loud: FileNotFoundError
+        # (incl. StaleTaskPathError) is an OSError, not a RuntimeError, and
+        # is deliberately not caught here.
+        print(
+            f"session_progress_report: task lookup degraded ({exc})",
+            file=sys.stderr,
+        )
+        task = None
+    if task is None:
+        status: str | None = None
+        if slug is None:
+            slug = ""
+    else:
+        fm = task.get("frontmatter")
+        fm = fm if isinstance(fm, dict) else {}
+        if slug is None:
+            title = fm.get("title")
+            slug = title.strip() if isinstance(title, str) else ""
+        status = task.get("status")
+    suffix = _compute_eta_suffix(issue, status, now_iso) if eta else None
     text = build_progress_string(issue, slug, step, suffix=suffix)
     ts = now_iso or _utcnow_iso()
     payload = {

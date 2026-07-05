@@ -17,8 +17,9 @@ Reuses the existing overflow mechanism from
   predicate (`403` + `storage`; NOT a transient 5xx).
 - :func:`hub._emit_overflow_routing_event` — the fail-soft JSONL deviation
   breadcrumb the orchestrator / upload-verifier drains into an `epm:` marker.
-- :func:`hub.list_repo_files_complete` — the truncation-safe (paginated,
-  504-retried) post-upload verify listing.
+- :func:`hub.list_hf_files_under_path` — the server-side SCOPED (paginated,
+  504-retried) post-upload verify probe (#920/#988: never a full-repo listing
+  per shard).
 
 The one thing hub's mechanism cannot do for a dataset shard is the canonical
 ``OVERFLOW_POINTER.json`` breadcrumb: ``hub._write_overflow_pointer`` hardcodes
@@ -40,7 +41,7 @@ from explore_persona_space.orchestrate.hub import (
     DEFAULT_OVERFLOW_REPO,
     _emit_overflow_routing_event,
     _is_storage_quota_403,
-    list_repo_files_complete,
+    list_hf_files_under_path,
 )
 
 logger = logging.getLogger(__name__)
@@ -160,8 +161,17 @@ def _reroute_to_overflow(
 
 
 def _verify_present(api, *, repo_id: str, repo_type: str, dest: str) -> bool:
-    files = list_repo_files_complete(api, repo_id, repo_type=repo_type)
-    return dest in set(files)
+    """True iff the exact shard file ``dest`` is present on the Hub.
+
+    Exact-file probe (#920/#988): never full-list the repo per shard — the
+    per-shard full listing was the worst repeat offender in the sharded
+    upload loop (>600 s per shard on the ~1M-file data repo). A file path
+    resolves via the helper's EntryNotFoundError -> file_exists fallback;
+    the pathological case where ``dest`` names a DIRECTORY returns files
+    UNDER it (none equal to ``dest``), so the membership test still returns
+    False — same as the old full-listing check.
+    """
+    return dest in set(list_hf_files_under_path(api, repo_id, dest, repo_type=repo_type))
 
 
 def upload_dir_sharded(

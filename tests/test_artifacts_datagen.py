@@ -12,6 +12,7 @@ and fresh per-run judge cache dirs.
 from __future__ import annotations
 
 import dataclasses
+import inspect
 import json
 
 import pytest
@@ -549,3 +550,106 @@ def test_fresh_judge_cache_dir(tmp_path):
         )
     # Distinct out_dirs -> distinct judge cache dirs (no n_draws-collapse across runs).
     assert len(set(seen)) == len(seen)
+
+
+# ── _gen_params_from_messages: the r11 system-lift fix (#906 first --full crash) ─
+# The Anthropic Messages API rejects "system" as a message ROLE (HTTP 400);
+# system content must ride the top-level ``system=`` param. These tests pin the
+# split on the REAL datagen message shapes plus the production build_request
+# closure inside _default_generate_fn (dispatcher boundary faked signature-bound).
+
+
+def test_gen_params_system_lift_on_real_gen_messages():
+    """Datagen-shaped gen_messages (persona+elicitation system entry first) lift
+    the system content into ``params["system"]``; the remainder carries no
+    system role and starts with the user turn."""
+    emit = SRC.messages("Q?")
+    gen = datagen._inject_instruction(emit, "exhibit the behavior")
+    assert gen[0]["role"] == "system"  # the exact pre-fix 400 trigger
+
+    params = datagen._gen_params_from_messages(
+        gen, model="claude-sonnet-4-5-20250929", max_tokens=1024, temperature=1.0
+    )
+    assert params["model"] == "claude-sonnet-4-5-20250929"
+    assert params["max_tokens"] == 1024
+    assert params["temperature"] == 1.0
+    assert params["system"] == gen[0]["content"]
+    assert all(m["role"] != "system" for m in params["messages"])
+    assert params["messages"][0]["role"] == "user"
+    assert params["messages"] == [m for m in gen if m["role"] != "system"]
+
+
+def test_gen_params_multiple_system_entries_joined_in_order():
+    msgs = [
+        {"role": "system", "content": "first"},
+        {"role": "user", "content": "hi"},
+        {"role": "system", "content": "second"},
+        {"role": "assistant", "content": "prev"},
+        {"role": "user", "content": "Q?"},
+    ]
+    params = datagen._gen_params_from_messages(msgs, model="m", max_tokens=8, temperature=0.5)
+    assert params["system"] == "first\n\nsecond"  # blank-line join, order preserved
+    assert [m["role"] for m in params["messages"]] == ["user", "assistant", "user"]
+
+
+def test_gen_params_no_system_key_when_absent():
+    """A system-less message list passes verbatim with NO ``system`` key at all
+    (behavior identical to the pre-fix path)."""
+    msgs = [{"role": "user", "content": "Q?"}]
+    params = datagen._gen_params_from_messages(msgs, model="m", max_tokens=8, temperature=0.5)
+    assert "system" not in params
+    assert params["messages"] == msgs
+
+
+def test_gen_params_all_system_raises():
+    with pytest.raises(ValueError, match="no non-system"):
+        datagen._gen_params_from_messages(
+            [{"role": "system", "content": "only"}], model="m", max_tokens=8, temperature=0.5
+        )
+
+
+def test_default_generate_fn_build_request_lifts_system(tmp_path, monkeypatch):
+    """The REAL ``_default_generate_fn`` wiring: fake ONLY the dispatcher
+    boundary (signature-bound to the real ``dispatch_calls`` — drift raises
+    TypeError) and let the fake invoke the PRODUCTION ``build_request`` closure
+    per item, asserting the params it produces carry the system lift (the exact
+    payload shape the Anthropic API 400'd on pre-fix)."""
+    from explore_persona_space.llm import api_dispatch
+
+    real_sig = inspect.signature(api_dispatch.dispatch_calls)
+    captured: list[dict] = []
+
+    async def fake_dispatch_calls(*args, **kwargs):
+        bound = real_sig.bind(*args, **kwargs)  # signature drift -> TypeError
+        items = bound.arguments["items"]
+        build_request = bound.arguments["build_request"]
+        parse_response = bound.arguments["parse_response"]
+        out = {}
+        for item in items:
+            captured.append(build_request(item))  # the production closure
+            out[item.item_id] = api_dispatch.DispatchResult(
+                item_id=item.item_id, result=parse_response("resp text")
+            )
+        return out
+
+    monkeypatch.setattr(api_dispatch, "dispatch_calls", fake_dispatch_calls)
+
+    emit = SRC.messages("Q?")
+    gen_msgs = datagen._inject_instruction(emit, "exhibit")
+    req = GenRequest("pos-00000", POSITIVE, "q0", "ev0", "Q?", gen_msgs, emit)
+    generate = datagen._default_generate_fn(
+        gen_model="claude-sonnet-4-5-20250929",
+        gen_temperature=1.0,
+        cache_dir=tmp_path / "cache",
+        checkpoint_dir=tmp_path / "ckpt",
+    )
+    cands = generate([req])
+
+    assert len(captured) == 1
+    params = captured[0]
+    assert params["system"] == gen_msgs[0]["content"]
+    assert all(m["role"] != "system" for m in params["messages"])
+    assert params["messages"][0]["role"] == "user"
+    assert len(cands) == 1
+    assert cands[0].completion == "resp text"
+    assert cands[0].drop_reason is None

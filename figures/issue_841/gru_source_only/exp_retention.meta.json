@@ -1,0 +1,530 @@
+{
+  "commit": "5ab0f95f7a",
+  "created": "2026-07-04T05:33:01Z",
+  "figsize": [
+    15.0,
+    4.0
+  ],
+  "points": [
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retention (row r / ceiling r)": 0.6819259417259077,
+      "series": "system",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 2.0,
+      "Retention (row r / ceiling r)": 0.2874465288854798,
+      "series": "system",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 4.0,
+      "Retention (row r / ceiling r)": 0.4099934314975053,
+      "series": "system",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 6.0,
+      "Retention (row r / ceiling r)": 0.22454287423632335,
+      "series": "system",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 8.0,
+      "Retention (row r / ceiling r)": 0.18797564625630908,
+      "series": "system",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 10.0,
+      "Retention (row r / ceiling r)": 0.1065191663120218,
+      "series": "system",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 12.0,
+      "Retention (row r / ceiling r)": -0.06931039059364733,
+      "series": "system",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 14.0,
+      "Retention (row r / ceiling r)": 0.016843728703961353,
+      "series": "system",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 16.0,
+      "Retention (row r / ceiling r)": 0.25832127279629447,
+      "series": "system",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 18.0,
+      "Retention (row r / ceiling r)": 0.18845300337620094,
+      "series": "system",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 20.0,
+      "Retention (row r / ceiling r)": -0.1248672740197925,
+      "series": "system",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retention (row r / ceiling r)": 1.0008262029640498,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 2.0,
+      "Retention (row r / ceiling r)": 0.7553595595694702,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 4.0,
+      "Retention (row r / ceiling r)": 0.6142330245357914,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 6.0,
+      "Retention (row r / ceiling r)": 0.3843669904784671,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 8.0,
+      "Retention (row r / ceiling r)": 0.26887841614794095,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 10.0,
+      "Retention (row r / ceiling r)": -0.24985340616948032,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 12.0,
+      "Retention (row r / ceiling r)": 0.640211214233245,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 14.0,
+      "Retention (row r / ceiling r)": 0.005992302361237204,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 16.0,
+      "Retention (row r / ceiling r)": 0.1927371102771935,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 18.0,
+      "Retention (row r / ceiling r)": 0.5584600497563686,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 20.0,
+      "Retention (row r / ceiling r)": -0.07373706644082388,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 0.0,
+      "Retention (row r / ceiling r)": 1.0,
+      "series": "ceiling (1.0)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retention (row r / ceiling r)": 1.0,
+      "series": "ceiling (1.0)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retention (row r / ceiling r)": 0.9573418445541612,
+      "series": "system",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 2.0,
+      "Retention (row r / ceiling r)": 0.9391216380227315,
+      "series": "system",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 4.0,
+      "Retention (row r / ceiling r)": 0.940547566937801,
+      "series": "system",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 6.0,
+      "Retention (row r / ceiling r)": 0.8144301008841516,
+      "series": "system",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 8.0,
+      "Retention (row r / ceiling r)": 0.8040491852553157,
+      "series": "system",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 10.0,
+      "Retention (row r / ceiling r)": 0.7457089144512123,
+      "series": "system",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 12.0,
+      "Retention (row r / ceiling r)": 0.6939535115586416,
+      "series": "system",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 14.0,
+      "Retention (row r / ceiling r)": 0.1435168495429744,
+      "series": "system",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 16.0,
+      "Retention (row r / ceiling r)": 0.6288681239174271,
+      "series": "system",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 18.0,
+      "Retention (row r / ceiling r)": 0.0858326426702616,
+      "series": "system",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 20.0,
+      "Retention (row r / ceiling r)": -0.13923884853119248,
+      "series": "system",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 22.0,
+      "Retention (row r / ceiling r)": 0.5905809649749928,
+      "series": "system",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 24.0,
+      "Retention (row r / ceiling r)": 0.002572945818874364,
+      "series": "system",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 26.0,
+      "Retention (row r / ceiling r)": -0.17342261401729095,
+      "series": "system",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retention (row r / ceiling r)": 1.0242504498562979,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 2.0,
+      "Retention (row r / ceiling r)": 0.9602942721172452,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 4.0,
+      "Retention (row r / ceiling r)": 0.9936784822481086,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 6.0,
+      "Retention (row r / ceiling r)": 0.7841365716339161,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 8.0,
+      "Retention (row r / ceiling r)": 0.8344390309167349,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 10.0,
+      "Retention (row r / ceiling r)": 0.7395968740384851,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 12.0,
+      "Retention (row r / ceiling r)": 0.5365781587764331,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 14.0,
+      "Retention (row r / ceiling r)": 0.5908968096412797,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 16.0,
+      "Retention (row r / ceiling r)": 0.24831092026645296,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 18.0,
+      "Retention (row r / ceiling r)": -0.4571513536274804,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 20.0,
+      "Retention (row r / ceiling r)": -0.04136960988054393,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 22.0,
+      "Retention (row r / ceiling r)": 0.5234401910837903,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 24.0,
+      "Retention (row r / ceiling r)": -0.3513492960301381,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 26.0,
+      "Retention (row r / ceiling r)": -0.09436424871748289,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 0.0,
+      "Retention (row r / ceiling r)": 1.0,
+      "series": "ceiling (1.0)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retention (row r / ceiling r)": 1.0,
+      "series": "ceiling (1.0)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retention (row r / ceiling r)": 0.9411414997635715,
+      "series": "system",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 3.0,
+      "Retention (row r / ceiling r)": 0.5718422716087311,
+      "series": "system",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 5.0,
+      "Retention (row r / ceiling r)": 0.4292078420415248,
+      "series": "system",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 7.0,
+      "Retention (row r / ceiling r)": 0.6135076692069967,
+      "series": "system",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 9.0,
+      "Retention (row r / ceiling r)": 0.2011404364080293,
+      "series": "system",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 11.0,
+      "Retention (row r / ceiling r)": 0.5121568297740831,
+      "series": "system",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 13.0,
+      "Retention (row r / ceiling r)": 0.6339304641091335,
+      "series": "system",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 15.0,
+      "Retention (row r / ceiling r)": 0.7282421204427578,
+      "series": "system",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 17.0,
+      "Retention (row r / ceiling r)": 0.5889211699241117,
+      "series": "system",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retention (row r / ceiling r)": 0.9411666616453899,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 3.0,
+      "Retention (row r / ceiling r)": 0.6148609417271518,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 5.0,
+      "Retention (row r / ceiling r)": -0.8925055137321158,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 7.0,
+      "Retention (row r / ceiling r)": 1.0743773759924475,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 9.0,
+      "Retention (row r / ceiling r)": 0.4801727672327724,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 11.0,
+      "Retention (row r / ceiling r)": 0.5555444842603796,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 13.0,
+      "Retention (row r / ceiling r)": 1.2518594148409263,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 15.0,
+      "Retention (row r / ceiling r)": 0.8502173418211441,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 17.0,
+      "Retention (row r / ceiling r)": -0.13559092949445292,
+      "series": "many_shot",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 0.0,
+      "Retention (row r / ceiling r)": 1.0,
+      "series": "ceiling (1.0)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Prediction horizon k = \u2113* \u2212 \u2113": 1.0,
+      "Retention (row r / ceiling r)": 1.0,
+      "series": "ceiling (1.0)",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 74
+}

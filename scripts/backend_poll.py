@@ -46,6 +46,7 @@ import json
 import logging
 import os
 import re
+import subprocess
 import sys
 import time
 from dataclasses import dataclass, replace
@@ -62,6 +63,97 @@ from pathlib import Path
 _REPO_ROOT = str(Path(__file__).resolve().parents[1])
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
+
+# Lane-infra main-checkout pin (#987): the two functions below are duplicated
+# VERBATIM in scripts/dispatch_issue.py by design (importing a shared helper
+# before the pin would cache the ambient package and defeat it); the full
+# consumer audit comment lives next to dispatch_issue.py's copy, and
+# tests/test_lane_infra_main_pin.py pins the two copies source-identical.
+
+
+def _resolve_main_checkout_root(anchor: Path) -> Path:
+    """MAIN repo-checkout root, resolved cwd-independently from ``anchor``.
+
+    Mirrors ``backends/issue_dispatch._main_checkout_root`` (#612) WITHOUT
+    importing it — importing the package before the pin would cache the
+    ambient (possibly stale worktree) package in ``sys.modules``, defeating
+    the pin (#987). Fails LOUD; never a cwd fallback.
+    """
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"}
+    }
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(anchor),
+            env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError(
+            f"cannot resolve the MAIN checkout root from {anchor} "
+            f"(git rev-parse --git-common-dir failed: {exc}); lane infra "
+            "must import from main (#987) — refusing the ambient package"
+        ) from exc
+    common_dir = Path(proc.stdout.strip())
+    if common_dir.name != ".git" or not common_dir.is_dir():
+        raise RuntimeError(
+            f"git common-dir {common_dir!s} does not look like a "
+            "main-checkout .git dir; refusing to pin lane infra (#987)"
+        )
+    root = common_dir.parent
+    if not (root / "src" / "explore_persona_space" / "__init__.py").is_file():
+        raise RuntimeError(
+            f"resolved main root {root!s} has no src/explore_persona_space; "
+            "refusing to pin lane infra (#987)"
+        )
+    return root
+
+
+def _pin_main_lane_infra(anchor: Path | None = None) -> Path:
+    """Insert ``<main>/src`` + ``<main>`` at the FRONT of ``sys.path`` (#987).
+
+    Guarantees the lane infra (``explore_persona_space.backends.*``, incl.
+    the GCE startup template in ``gcp.py``, plus lazy ``scripts.*`` imports)
+    always resolves from the MAIN checkout — beating a worktree venv's
+    editable install — while ``--repo-branch`` keeps cloning the issue
+    branch for the remote WORKLOAD (unchanged). Idempotent (re-entrant calls
+    remove-then-insert, no duplicates); returns the resolved main root.
+    """
+    anchor = anchor or Path(__file__).resolve().parent
+    main_root = _resolve_main_checkout_root(anchor)
+    already = sys.modules.get("explore_persona_space")
+    if already is not None:
+        mod_file = getattr(already, "__file__", "") or ""
+        if not mod_file.startswith(str(main_root / "src") + os.sep):
+            raise RuntimeError(
+                f"explore_persona_space already imported from {mod_file!r} "
+                "before the main-checkout pin — a submodule import would "
+                "resolve under the stale package __path__ (#987)"
+            )
+    for p in (str(main_root), str(main_root / "src")):
+        if p in sys.path:
+            sys.path.remove(p)
+        sys.path.insert(0, p)  # final order: [<main>/src, <main>, ...]
+    invoked_root = Path(__file__).resolve().parents[1]
+    if invoked_root != main_root:
+        sys.stderr.write(
+            f"[lane-infra-pin] WARNING: invoked script copy lives under "
+            f"{invoked_root} but lane infra is pinned to main {main_root} "
+            f"(#987); prefer invoking <main>/scripts/{Path(__file__).name}\n"
+        )
+    return main_root
+
+
+if __name__ == "__main__":
+    _pin_main_lane_infra()
 
 # Conservative short bg-poll interval (seconds). Mirrors
 # ``scripts.poll_pipeline.POLL_INTERVAL_DEFAULT_SEC`` — kept as a local
@@ -242,6 +334,15 @@ def _serialize_poll_result(result) -> dict:
         # result that predates the field (the GCP/SLURM lanes do not set
         # it) so the JSON shape stays uniform across lanes without crashing.
         "stall_reason": getattr(result, "stall_reason", None),
+        # #983 post-done phase-consistency guard surfaces: True when the
+        # tick posted the [post-done-phase-advisory] marker, plus the new
+        # [phase=...] lines the guard observed after the recorded done.
+        # ``getattr``-defended like ``stall_reason`` so an older /
+        # duck-typed result degrades to the defaults, never crashes.
+        "post_done_phase_advisory_posted": bool(
+            getattr(result, "post_done_phase_advisory_posted", False)
+        ),
+        "post_done_phase_lines": list(getattr(result, "post_done_phase_lines", ()) or ()),
     }
 
 
@@ -1181,11 +1282,46 @@ def _issue_cells_for_handle(issue: int, handle) -> list:
     return []
 
 
+def _list_issue664_hub_files(repo_id: str, prefixes: tuple[str, ...]) -> set[str]:
+    """Union of server-side SCOPED listings for the wedge gate (#920/#988).
+
+    Replaces the bare full-repo ``list_repo_files`` on the ~1M-file data repo
+    (which wedges >600 s, #920) with one scoped tree walk per root prefix.
+    An absent prefix contributes zero files (EntryNotFoundError is mapped to
+    [] inside list_hf_files_under_path) — identical to a full listing having
+    no files under it. Transport/auth/RepositoryNotFound errors PROPAGATE
+    (the gate must fail loud, never fail open, before an irreversible
+    terminate).
+
+    NOTE the listing is now TOKEN-BEARING (``HfApi(token=HF_TOKEN)``) where
+    the old module-level ``huggingface_hub.list_repo_files`` call was
+    anonymous — on a token problem the failure direction is loud/safe (an
+    auth error propagates and blocks the terminate), never a silent
+    fail-open.
+    """
+    import os
+
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import list_hf_files_under_path
+
+    api = HfApi(token=os.environ.get("HF_TOKEN"))
+    files: set[str] = set()
+    for prefix in prefixes:
+        files.update(
+            list_hf_files_under_path(api, repo_id, prefix, repo_type="dataset", revision="main")
+        )
+    return files
+
+
 def _wedged_run_inputs_on_hf(issue: int, handle) -> _WedgeInputsGate:
     """Per-cell three-state inputs-on-HF gate for the irreversible auto-terminate.
 
-    Classifies each selected cell ``complete | partial | absent`` from ONE fresh
-    ``list_repo_files`` (EXACT expected file set per S1, not prefix-presence).
+    Classifies each selected cell ``complete | partial | absent`` from a UNION
+    of three server-side SCOPED listings (EXACT expected file set per S1, not
+    prefix-presence) — the three root prefixes are the ONLY prefixes
+    ``issue664_dispatch._classify_cell_hub_state`` matches files against, so
+    the union is a superset of every file the classifier can see (#988).
     Terminate is allowed iff there are ZERO partial cells — a COMPLETE cell's
     data is preserved, a not-yet-run ABSENT cell is rerunnable, and only a
     half-uploaded PARTIAL cell would lose recoverable work.
@@ -1202,12 +1338,12 @@ def _wedged_run_inputs_on_hf(issue: int, handle) -> _WedgeInputsGate:
     scripts_dir = str(_Path(__file__).resolve().parent)
     if scripts_dir not in sys.path:
         sys.path.insert(0, scripts_dir)
-    import huggingface_hub
     import issue664_common as C
     import issue664_dispatch as D
 
-    files = set(
-        huggingface_hub.list_repo_files(C.HF_DATA_REPO, repo_type="dataset", revision="main")
+    files = _list_issue664_hub_files(
+        C.HF_DATA_REPO,
+        (C.HF_RAW_COMPLETIONS_PREFIX, C.HF_STORE_PREFIX, C.HF_MARKER_SLOT_PREFIX),
     )
     complete: list[str] = []
     partial: list[str] = []
@@ -2261,6 +2397,18 @@ def _runspec_from_gcp_handle(handle, issue):
     # #909: thread repo_branch through so the RunPod re-execution syncs the
     # ISSUE branch, not `main` (per-issue dispatch scripts live on issue
     # branches). A legacy handle without the key still reconstructs.
+    # #1010: ALSO forward the footprint fields (boot_disk_gb / min_ram_gb)
+    # so the RunPod CPU-fallback feasibility gate + container-disk threading
+    # cover the async failover paths (#659 crash / #783 queue-timeout) —
+    # pre-#1010 the rebuilt extra carried ONLY repo_branch, so the gate would
+    # fail-OPEN there and the #958 shape could recur. Keys forwarded only when
+    # present/truthy, so a legacy handle reconstructs byte-identically.
+    rebuilt_extra: dict = {}
+    if extra.get("repo_branch"):
+        rebuilt_extra["repo_branch"] = extra["repo_branch"]
+    for key in ("boot_disk_gb", "min_ram_gb"):
+        if extra.get(key):
+            rebuilt_extra[key] = extra[key]
     return RunSpec(
         issue=int(issue),
         intent=extra.get("intent", "lora-7b"),
@@ -2269,7 +2417,7 @@ def _runspec_from_gcp_handle(handle, issue):
         time_budget_hours=extra.get("time_budget_hours"),
         workload_cmd=workload_cmd,
         hydra_args=hydra_args,
-        extra=({"repo_branch": extra["repo_branch"]} if extra.get("repo_branch") else {}),
+        extra=rebuilt_extra,
     )
 
 

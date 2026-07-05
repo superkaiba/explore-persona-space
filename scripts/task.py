@@ -1691,8 +1691,11 @@ def main() -> None:
 
     args = parser.parse_args()
     # The canonical resolver (task_workflow.repo_root) raises a loud, distinct
-    # RuntimeError for the non-routable states it still refuses: detached HEAD,
-    # missing `tasks/`, bare/submodule layouts, or a feature-branch primary with
+    # RuntimeError for the non-routable states it still refuses: a genuinely
+    # detached HEAD (after the bounded live-rebase wait,
+    # `EPM_TASKPY_REBASE_WAIT_SECONDS` — #996; the wait-timeout refusal is
+    # still a RuntimeError, so this catch covers it too), missing `tasks/`,
+    # bare/submodule layouts, or a feature-branch primary with
     # no local `main` to route through. (The common "primary parked on a real
     # feature branch" case is auto-routed through a managed main-pinned worktree
     # and does NOT raise.) Catch RuntimeError at the top-level dispatch so EVERY

@@ -13,7 +13,11 @@ What this module ships (post slice 6):
 * ``prepare`` — currently a no-op (provision triggers bootstrap inline).
 * ``launch`` — delegates to ``scripts/pod_lifecycle.py provision`` via
   the existing subprocess entrypoint and returns a :class:`RunHandle`
-  built from the resulting ``pods_ephemeral.json`` row.
+  built from the resulting ``pods_ephemeral.json`` row. On the
+  backend-executed leg (#909) the rendered launcher chains the
+  success-gated completion-sentinel write and (#977) waits on fresh
+  detached ``/workspace/logs/*.pid`` workloads before the sentinel
+  write (GCP #601 parity).
 * ``estimate_start`` — returns "now" (UTC); RunPod pods come up within
   a few minutes, so a precise estimate would be noise.
 * ``poll`` — delegates to :func:`scripts.poll_pipeline.poll_once` so
@@ -80,6 +84,14 @@ logger = logging.getLogger(__name__)
 #: (Step 6d.2's bg-Bash poller emits a ~5-line tail in the JSON-line
 #: output; a one-shot foreground tail gets a bit more headroom).
 LOG_TAIL_LINES = 200
+
+#: Floor for the #1010 CPU-fallback container-disk threading in
+#: :meth:`RunPodBackend.launch` — mirrors ``runpod_api.DEFAULT_CONTAINER_DISK_GB``
+#: (50), the value an un-threaded provision gets, so threading a plan's
+#: ``boot_disk_gb`` can only ever GROW the container disk relative to
+#: today's default, never shrink it. (Not imported from ``scripts/runpod_api``
+#: — this module's imports stay ``base``-only by documented convention.)
+_CPU_CONTAINER_DISK_FLOOR_GB = 50
 
 
 def _shell_quote(s: str) -> str:
@@ -392,14 +404,72 @@ def _render_launch_script(
     ``sentinel_path`` the launch handle declares. This mirrors the
     established backend-owned writer convention on the sibling lanes
     (``gcp.py``'s startup-script sentinel heredoc; ``slurm.py``'s
-    terminal block). The outer portion clears any stale sentinel at the
-    declared path before detach (same guard family as the pidfile rm),
-    and the launcher exits with the workload's own rc so the exit status
-    is unchanged by the chain.
+    terminal block). The outer portion clears, before detach (same guard
+    family as the pidfile rm), EVERY stale sentinel the #685
+    single-live-sibling fallback could resolve on a same-pod
+    re-execution: the declared attempt path PLUS the flat legacy path
+    ``issue_<N>/.completion-sentinel.json`` and the attempt-sibling
+    wildcard ``issue_<N>/*/.completion-sentinel.json`` — the
+    experimenter step-11.3 breadth, ported here by #976 (a prior
+    attempt's success sentinel survives on the persistent ``/workspace``
+    volume, and ``_check_sentinel`` validates phase+issue only, so a
+    resolved stale sibling would finalize a crashed re-execution green).
+    The widened clear also removes a COMPLETED prior attempt's sentinel
+    before a pending finalize reads it — the fail-loud direction
+    (finalize FAILs "sentinel missing", never a false green; the same
+    supersession semantics as the experimenter step-11.3 clear). The
+    launcher exits with the workload's own rc so the exit status is
+    unchanged by the chain.
+
+    Detached-workload wait before the sentinel write (#977, the GCP #601
+    parity — ``gcp.py``'s find-newer wait): ``workload_cmd`` is expected
+    to BLOCK until the workload completes; a SELF-DAEMONIZING command
+    (one that setsid-forks the real driver and returns at daemonize
+    time) would otherwise publish ``phase=done`` minutes into a
+    multi-hour run. So the rc==0 branch, BEFORE the sentinel write,
+    waits on every live pid found in a FRESH ``/workspace/logs/*.pid``
+    (mtime at or after the in-launcher workload-start epoch, captured
+    immediately before ``workload_cmd``). Contract (write-before-return):
+    a detached workload MUST write its driver pid to such a fresh
+    pidfile BEFORE ``workload_cmd`` returns — the ``launch_issue_<N>.sh``
+    convention — for the wait to bind; a pidfile written only AFTER
+    ``workload_cmd`` returns may be missed by the loop's scan and
+    degrades to the pre-#977 behavior (premature sentinel) — the same
+    residual GCP #601 carries, documented, not fixed here. Two deliberate
+    mechanism deltas from the GCP reference: freshness is the INCLUSIVE
+    ``stat -c %Y >= $WORKLOAD_START_EPOCH`` (the verify-script idiom;
+    GCP's strictly-newer ``find -newer`` would miss a pidfile written in
+    the same second as the start-mark at coarse MooseFS mtime
+    granularity), and self-exclusion is by PID VALUE
+    (``[ "$wpid" = "$$" ]``, race-free at any mtime granularity — the
+    launcher writes its OWN pid to the canonical pidfile pre-workload,
+    so a naive port would self-deadlock) rather than by pidfile PATH — a
+    convention-following detached driver OVERWRITES the canonical
+    pidfile with its own pid, so a path-based skip would miss exactly
+    the driver that must be waited on, while ``$$`` cannot be reused
+    while this launcher is alive. Blocking workloads write no fresh
+    pidfile, so the wait is a no-op pass-through. No in-script timeout
+    (faithful parity — an in-script timeout would re-create the
+    premature-done class on a slow-but-healthy run); the wait is bounded
+    externally by the pod TTL + the poller's stall escalation + the
+    watcher's pod-safety pass (the GCP analogue is
+    ``--max-run-duration``). The sentinel is written after the wait
+    regardless of the DETACHED process's exit status (``kill -0``
+    polling cannot recover a non-child's exit code on either lane; the
+    detached driver's own results sentinel / failure classification is
+    the poller's outcome channel).
     """
     launcher = _launcher_path(issue)
     epoch_file = _launch_epoch_path(issue)
     sentinel_dir = sentinel_path.rsplit("/", 1)[0]
+    # #976: stale-clear breadth mirrors artifacts._resolve_live_sentinel's
+    # sibling probe (_default_glob_sentinels: grandparent-of-declared +
+    # */<name>) plus the experimenter step-11.3 flat legacy path — whatever
+    # the #685 single-live-sibling fallback COULD resolve on a same-pod
+    # re-execution, this clear removes first. Derived from sentinel_path
+    # itself (no second copy of the /workspace/eval_results/issue_<N> root).
+    issue_dir = sentinel_dir.rsplit("/", 1)[0]
+    sentinel_name = sentinel_path.rsplit("/", 1)[1]
     sentinel_json = json.dumps({"phase": "done", "issue": int(issue), "attempt_id": attempt_id})
     if "'" in sentinel_json:
         # The JSON is embedded single-quoted inside the launcher; both
@@ -418,7 +488,7 @@ def _render_launch_script(
             "  exit 5",
             "fi",
             f"rm -f {pid_file}",
-            f"rm -f {sentinel_path}",
+            f"rm -f {sentinel_path} {issue_dir}/{sentinel_name} {issue_dir}/*/{sentinel_name}",
             f"mkdir -p {sentinel_dir}",
             f"date +%s > {epoch_file}",
             f"cat > {launcher} << 'EPSEOF'",
@@ -430,11 +500,38 @@ def _render_launch_script(
             'export REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"',
             f'export WANDB_PROJECT="${{WANDB_PROJECT:-issue{issue}}}"',
             f"echo $$ > {pid_file}",
+            "WORKLOAD_START_EPOCH=$(date +%s)",
             workload_cmd,
             "WORKLOAD_RC=$?",
             "# Completion sentinel: written ONLY when the workload exited 0 (the",
             "# backend-owned twin of the GCP/SLURM terminal sentinel write).",
             'if [ "$WORKLOAD_RC" -eq 0 ]; then',
+            "  # Wait for detached workloads (#601 GCP parity, #977): a workload_cmd",
+            "  # that self-daemonizes (forks the real driver) returns immediately —",
+            "  # writing the sentinel here would publish done at daemonize time.",
+            "  # (Comment says 'forks', not the s-word: the liveness tests token-scan",
+            "  # the rendered script for the detach line's own tokens.) Contract: a",
+            "  # detached workload writes its pid to a fresh /workspace/logs/*.pid",
+            "  # (the launch_issue_<N>.sh convention). Freshness = stat mtime >=",
+            "  # workload-start epoch (inclusive, the verify-script predicate — a",
+            "  # strictly-newer find would miss a same-second pidfile at MooseFS",
+            "  # mtime granularity). Self-exclusion is by PID VALUE, never path:",
+            "  # a convention-following driver OVERWRITES the canonical pidfile,",
+            "  # so a path skip would miss it, while $$ cannot be reused while",
+            "  # this launcher is alive. Blocking workloads write no fresh pidfile",
+            "  # -> no-op. Bounded externally by the pod TTL + the poller's stall",
+            "  # escalation (the GCP analogue is --max-run-duration).",
+            "  for pf in /workspace/logs/*.pid; do",
+            '    [ -f "$pf" ] || continue',
+            '    [ "$(stat -c %Y "$pf" 2>/dev/null || echo 0)"'
+            ' -ge "$WORKLOAD_START_EPOCH" ] || continue',
+            '    wpid=$(cat "$pf" 2>/dev/null) || continue',
+            '    [ -n "$wpid" ] || continue',
+            '    [ "$wpid" = "$$" ] && continue',
+            '    echo "[launcher] waiting on detached workload pid=$wpid ($pf)"',
+            '    while kill -0 "$wpid" 2>/dev/null; do sleep 30; done',
+            '    echo "[launcher] detached workload pid=$wpid exited"',
+            "  done",
             f"  mkdir -p {sentinel_dir}",
             f"  printf '%s\\n' '{sentinel_json}' > {sentinel_path}",
             "fi",
@@ -663,6 +760,29 @@ class RunPodBackend(ComputeBackend):
         ]
         if spec.gpus is not None:
             cmd += ["--gpu-count", str(spec.gpus)]
+        # #1010: thread the plan's disk requirement into the RunPod CPU
+        # fallback's container disk (the pod's only writable disk on the CPU
+        # lane -- /workspace rides the overlay; incident #958). CPU intents
+        # ONLY: on GPU pods the big-data mount is the 200 GB /workspace
+        # VOLUME, not the container overlay, so boot_disk_gb does not map.
+        # Floored at runpod_api.DEFAULT_CONTAINER_DISK_GB (50,
+        # _CPU_CONTAINER_DISK_FLOOR_GB here) so threading can never REDUCE
+        # below today's behavior. The router's feasibility gate guarantees
+        # boot_disk_gb <= the instance cap on every AUTOMATED path; an
+        # explicit `backend: runpod` pin above the cap fails loud at
+        # pod_lifecycle's pre-API cap check / RunPod's own create-time
+        # validation.
+        boot_disk_gb = int((spec.extra or {}).get("boot_disk_gb") or 0)
+        if boot_disk_gb:
+            from explore_persona_space.backends.router import (
+                RUNPOD_CPU_INSTANCE_FOR_INTENT,  # lazy: module top stays base-only
+            )
+
+            if spec.intent in RUNPOD_CPU_INSTANCE_FOR_INTENT:
+                cmd += [
+                    "--container-disk-gb",
+                    str(max(_CPU_CONTAINER_DISK_FLOOR_GB, boot_disk_gb)),
+                ]
         # subprocess.run raises CalledProcessError on non-zero exit; that
         # propagates to the selector, which logs + lets the orchestrator
         # surface the failure as `epm:failure` (slice 1 does NOT add a
@@ -939,6 +1059,16 @@ class RunPodBackend(ComputeBackend):
             # getattr-guarded so a mixed-version worktree (a poll_once that
             # predates the field) degrades to None rather than crashing.
             crash_signature=getattr(raw, "crash_signature", None),
+            # #983: copy the post-done phase-consistency advisory surfaces
+            # through (same passthrough contract as stall_reason above —
+            # dropping them at this rewrap would silently strip the advisory
+            # from the backend_poll lane's JSON before
+            # ``_serialize_poll_result`` can surface it, the #664
+            # stall_reason lesson). getattr-guarded for a mixed-version
+            # worktree; the marker + Telegram push already fired inside
+            # ``poll_once`` regardless.
+            post_done_phase_advisory_posted=getattr(raw, "post_done_phase_advisory_posted", False),
+            post_done_phase_lines=tuple(getattr(raw, "post_done_phase_lines", ()) or ()),
         )
 
     def fetch_logs(self, handle: RunHandle) -> str:

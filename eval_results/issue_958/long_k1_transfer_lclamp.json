@@ -1,0 +1,424 @@
+{
+  "policy": "source-map-composite",
+  "clamp": {
+    "definition": "turn-1 long-panel map REFIT on the same fit fold with per-row ridge \u03bb clamped to the target turn's own-map GCV selection (maps_meta.json), removing the \u03bb\u22485-vs-1000 shrinkage-scale confound of the as-fitted read",
+    "turn1_original_lambda": {
+      "14": 5.10896977450693,
+      "17": 5.10896977450693,
+      "19": 5.10896977450693,
+      "20": 5.10896977450693,
+      "24": 5.10896977450693,
+      "26": 3.1622776601683795
+    },
+    "per_turn_clamp_lambda": {
+      "k5": {
+        "14": 1000.0,
+        "17": 1000.0,
+        "19": 1000.0,
+        "20": 1000.0,
+        "24": 1000.0,
+        "26": 1000.0
+      },
+      "k6": {
+        "14": 1000.0,
+        "17": 1000.0,
+        "19": 1000.0,
+        "20": 1000.0,
+        "24": 1000.0,
+        "26": 1000.0
+      },
+      "k7": {
+        "14": 1000.0,
+        "17": 1000.0,
+        "19": 1000.0,
+        "20": 1000.0,
+        "24": 1000.0,
+        "26": 1000.0
+      },
+      "k8": {
+        "14": 1000.0,
+        "17": 1000.0,
+        "19": 1000.0,
+        "20": 1000.0,
+        "24": 1000.0,
+        "26": 1000.0
+      }
+    }
+  },
+  "validation_gate": {
+    "max_abs_row_delta_vs_committed_long_own_k1": 3.219646771412954e-15,
+    "moments_max_rel_delta_vs_saved_long_k1_own": 5.2239357616072176e-08
+  },
+  "duplicates": {
+    "grouping_key": "first user message of the conversation (long corpus, n=600)",
+    "sidecar": "eval_results/issue_958/duplicate_first_message_groups.json (definition)",
+    "per_normalization": {
+      "exact": {
+        "n_dup_conversations": 67,
+        "n_dup_groups": 14,
+        "n_test_conversations_in_dup_groups": 8,
+        "test_ci_in_dup_groups": [
+          113,
+          290,
+          317,
+          372,
+          491,
+          503,
+          526,
+          591
+        ],
+        "test_ci_with_fit_fold_partner": [
+          113,
+          290,
+          317,
+          372,
+          491,
+          503,
+          526,
+          591
+        ]
+      },
+      "lowercased": {
+        "n_dup_conversations": 72,
+        "n_dup_groups": 14,
+        "n_test_conversations_in_dup_groups": 8,
+        "test_ci_in_dup_groups": [
+          113,
+          290,
+          317,
+          372,
+          491,
+          503,
+          526,
+          591
+        ],
+        "test_ci_with_fit_fold_partner": [
+          113,
+          290,
+          317,
+          372,
+          491,
+          503,
+          526,
+          591
+        ]
+      }
+    }
+  },
+  "gcv_selected_reference": {
+    "long_1to5": {
+      "transfer_skill": -0.22507564579508968,
+      "recalibrated_transfer_skill": 0.05616052153084363,
+      "own_skill": 0.36682852233943736
+    },
+    "long_1to6": {
+      "transfer_skill": -0.2061015320068297,
+      "recalibrated_transfer_skill": 0.06367319802404374,
+      "own_skill": 0.3211811828012822
+    },
+    "long_1to7": {
+      "transfer_skill": -0.2505429669175378,
+      "recalibrated_transfer_skill": 0.046168346953488405,
+      "own_skill": 0.3565060169874688
+    },
+    "long_1to8": {
+      "transfer_skill": -0.20751855914648157,
+      "recalibrated_transfer_skill": 0.06958947084087826,
+      "own_skill": 0.38817054862488604
+    }
+  },
+  "cells": {
+    "long_1to5": {
+      "transfer_skill": 0.16568666140501093,
+      "transfer_skill_ci95": [
+        0.11259629192207822,
+        0.21166210923739537
+      ],
+      "recalibrated_transfer_skill": 0.2809252282713689,
+      "recalibrated_transfer_skill_ci95": [
+        0.24177341198321928,
+        0.32083889511814223
+      ],
+      "own_skill": 0.36682852233943736,
+      "deficit": 0.20114186093442643,
+      "deficit_ci95": [
+        0.1755019735567448,
+        0.23411762649824186
+      ],
+      "shuffle_band": {
+        "readout_mean_p975": -0.4503452542905226,
+        "readout_mean_p025": -0.5730707623061695
+      },
+      "n_test": 60,
+      "lambda_used": {
+        "14": 1000.0,
+        "17": 1000.0,
+        "19": 1000.0,
+        "20": 1000.0,
+        "24": 1000.0,
+        "26": 1000.0
+      },
+      "excl_dup": {
+        "exact": {
+          "n_test_excl": 52,
+          "transfer_skill": 0.1510532771243537,
+          "transfer_skill_ci95": [
+            0.09454108349145844,
+            0.20462027215492493
+          ],
+          "recalibrated_transfer_skill": 0.2740574128879331,
+          "recalibrated_transfer_skill_ci95": [
+            0.22800725328296473,
+            0.3187629406683419
+          ],
+          "own_skill": 0.36466607451438904,
+          "deficit": 0.21361279739003533,
+          "deficit_ci95": [
+            0.18473633751172874,
+            0.24903612432657485
+          ]
+        },
+        "lowercased": {
+          "n_test_excl": 52,
+          "transfer_skill": 0.1510532771243537,
+          "transfer_skill_ci95": [
+            0.09454108349145844,
+            0.20462027215492493
+          ],
+          "recalibrated_transfer_skill": 0.2740574128879331,
+          "recalibrated_transfer_skill_ci95": [
+            0.22800725328296473,
+            0.3187629406683419
+          ],
+          "own_skill": 0.36466607451438904,
+          "deficit": 0.21361279739003533,
+          "deficit_ci95": [
+            0.18473633751172874,
+            0.24903612432657485
+          ]
+        }
+      }
+    },
+    "long_1to6": {
+      "transfer_skill": 0.16047037762351926,
+      "transfer_skill_ci95": [
+        0.1149284182863222,
+        0.20329523487866344
+      ],
+      "recalibrated_transfer_skill": 0.2726428969197546,
+      "recalibrated_transfer_skill_ci95": [
+        0.23548721927247016,
+        0.30908638546175077
+      ],
+      "own_skill": 0.3211811828012822,
+      "deficit": 0.16071080517776296,
+      "deficit_ci95": [
+        0.1258201906808745,
+        0.19091121421599452
+      ],
+      "shuffle_band": {
+        "readout_mean_p975": -0.4044888917115528,
+        "readout_mean_p025": -0.5198037096987559
+      },
+      "n_test": 60,
+      "lambda_used": {
+        "14": 1000.0,
+        "17": 1000.0,
+        "19": 1000.0,
+        "20": 1000.0,
+        "24": 1000.0,
+        "26": 1000.0
+      },
+      "excl_dup": {
+        "exact": {
+          "n_test_excl": 52,
+          "transfer_skill": 0.14287987454340872,
+          "transfer_skill_ci95": [
+            0.09255688511150176,
+            0.18825782997369772
+          ],
+          "recalibrated_transfer_skill": 0.2608509968170367,
+          "recalibrated_transfer_skill_ci95": [
+            0.22176864084046902,
+            0.30042836296447756
+          ],
+          "own_skill": 0.3106641471385956,
+          "deficit": 0.16778427259518686,
+          "deficit_ci95": [
+            0.13057145471866966,
+            0.2028880777621586
+          ]
+        },
+        "lowercased": {
+          "n_test_excl": 52,
+          "transfer_skill": 0.14287987454340872,
+          "transfer_skill_ci95": [
+            0.09255688511150176,
+            0.18825782997369772
+          ],
+          "recalibrated_transfer_skill": 0.2608509968170367,
+          "recalibrated_transfer_skill_ci95": [
+            0.22176864084046902,
+            0.30042836296447756
+          ],
+          "own_skill": 0.3106641471385956,
+          "deficit": 0.16778427259518686,
+          "deficit_ci95": [
+            0.13057145471866966,
+            0.2028880777621586
+          ]
+        }
+      }
+    },
+    "long_1to7": {
+      "transfer_skill": 0.13653900296301666,
+      "transfer_skill_ci95": [
+        0.07865647581278098,
+        0.183714718690989
+      ],
+      "recalibrated_transfer_skill": 0.2671828741478699,
+      "recalibrated_transfer_skill_ci95": [
+        0.2251414881547233,
+        0.30775901499056263
+      ],
+      "own_skill": 0.3565060169874688,
+      "deficit": 0.21996701402445215,
+      "deficit_ci95": [
+        0.18739356001166116,
+        0.25720783885254106
+      ],
+      "shuffle_band": {
+        "readout_mean_p975": -0.42056467316659624,
+        "readout_mean_p025": -0.5607403425697062
+      },
+      "n_test": 60,
+      "lambda_used": {
+        "14": 1000.0,
+        "17": 1000.0,
+        "19": 1000.0,
+        "20": 1000.0,
+        "24": 1000.0,
+        "26": 1000.0
+      },
+      "excl_dup": {
+        "exact": {
+          "n_test_excl": 52,
+          "transfer_skill": 0.1283695760884733,
+          "transfer_skill_ci95": [
+            0.07285704713760403,
+            0.1809786199429228
+          ],
+          "recalibrated_transfer_skill": 0.2677537616864691,
+          "recalibrated_transfer_skill_ci95": [
+            0.2239648156751157,
+            0.3082453357738881
+          ],
+          "own_skill": 0.36306047439575195,
+          "deficit": 0.23469089830727866,
+          "deficit_ci95": [
+            0.1962032265746642,
+            0.2765743468534985
+          ]
+        },
+        "lowercased": {
+          "n_test_excl": 52,
+          "transfer_skill": 0.1283695760884733,
+          "transfer_skill_ci95": [
+            0.07285704713760403,
+            0.1809786199429228
+          ],
+          "recalibrated_transfer_skill": 0.2677537616864691,
+          "recalibrated_transfer_skill_ci95": [
+            0.2239648156751157,
+            0.3082453357738881
+          ],
+          "own_skill": 0.36306047439575195,
+          "deficit": 0.23469089830727866,
+          "deficit_ci95": [
+            0.1962032265746642,
+            0.2765743468534985
+          ]
+        }
+      }
+    },
+    "long_1to8": {
+      "transfer_skill": 0.1606750230361759,
+      "transfer_skill_ci95": [
+        0.09668454077946123,
+        0.2192300164037869
+      ],
+      "recalibrated_transfer_skill": 0.2881921506036818,
+      "recalibrated_transfer_skill_ci95": [
+        0.2372450536804888,
+        0.33665301303731193
+      ],
+      "own_skill": 0.38817054862488604,
+      "deficit": 0.22749552558871014,
+      "deficit_ci95": [
+        0.19538586734260247,
+        0.26032824978664515
+      ],
+      "shuffle_band": {
+        "readout_mean_p975": -0.4362622922103665,
+        "readout_mean_p025": -0.5511523430156421
+      },
+      "n_test": 60,
+      "lambda_used": {
+        "14": 1000.0,
+        "17": 1000.0,
+        "19": 1000.0,
+        "20": 1000.0,
+        "24": 1000.0,
+        "26": 1000.0
+      },
+      "excl_dup": {
+        "exact": {
+          "n_test_excl": 52,
+          "transfer_skill": 0.15240312321998692,
+          "transfer_skill_ci95": [
+            0.0894801499449247,
+            0.2166351047099954
+          ],
+          "recalibrated_transfer_skill": 0.28607854870585386,
+          "recalibrated_transfer_skill_ci95": [
+            0.23566262376210503,
+            0.33891901424830884
+          ],
+          "own_skill": 0.3887021243572235,
+          "deficit": 0.2362990011372366,
+          "deficit_ci95": [
+            0.19888643397774305,
+            0.27402099205726094
+          ]
+        },
+        "lowercased": {
+          "n_test_excl": 52,
+          "transfer_skill": 0.15240312321998692,
+          "transfer_skill_ci95": [
+            0.0894801499449247,
+            0.2166351047099954
+          ],
+          "recalibrated_transfer_skill": 0.28607854870585386,
+          "recalibrated_transfer_skill_ci95": [
+            0.23566262376210503,
+            0.33891901424830884
+          ],
+          "own_skill": 0.3887021243572235,
+          "deficit": 0.2362990011372366,
+          "deficit_ci95": [
+            0.19888643397774305,
+            0.27402099205726094
+          ]
+        }
+      }
+    }
+  },
+  "metadata": {
+    "git_commit": "92bfe5d96f6e111035d502060379d6d185a04691",
+    "timestamp_utc": "2026-07-04T16:38:35.163707Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue958_long_k1_transfer_lclamp"
+  }
+}

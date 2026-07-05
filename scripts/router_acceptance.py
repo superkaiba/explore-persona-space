@@ -423,12 +423,29 @@ class VerifierIO:
         return self.gcloud_instances_list or _default_gcloud_instances_list
 
 
-def _default_list_hf_repo_files(repo_id: str, *, repo_type: str) -> list[str]:
-    """Production HF Hub lister (NEVER the ``hf`` CLI -- has no ``api`` subcommand)."""
+def _default_list_hf_repo_files(
+    repo_id: str, *, repo_type: str, path_in_repo: str | None = None
+) -> list[str]:
+    """Production HF Hub lister (NEVER the ``hf`` CLI -- has no ``api`` subcommand).
+
+    ``path_in_repo`` scopes the walk SERVER-side (#920/#988); an absent
+    path returns [] (mapped from EntryNotFoundError / a False file_exists
+    probe inside list_hf_files_under_path). ``None`` full-lists (kept for
+    seam-contract compatibility; production check (a) always scopes) -- a
+    future caller passing ``None`` against the ~1M-file DATA repo re-enters
+    the #920 hang class, so data-repo callers must scope.
+    """
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate.hub import (
+        list_hf_files_under_path,
+        list_repo_files_complete,
+    )
+
     api = HfApi(token=os.environ.get("HF_TOKEN"))
-    return list(api.list_repo_files(repo_id=repo_id, repo_type=repo_type))
+    if path_in_repo is not None:
+        return list_hf_files_under_path(api, repo_id, path_in_repo, repo_type=repo_type)
+    return list_repo_files_complete(api, repo_id, repo_type=repo_type)
 
 
 def _default_git_tracked(repo_root: Path, rel_paths: Iterable[str]) -> set[str]:
@@ -582,7 +599,11 @@ def check_hf_artifact_present(
     """
     subfolder = ACCEPTANCE_HF_SUBFOLDER.format(issue=issue, lane=lane)
     try:
-        files = io._list_hf()(repo_id, repo_type="model")
+        # Scoped listing (#920/#988): the check only matches files under the
+        # acceptance subfolder, so the walk is scoped server-side. An absent
+        # prefix returns [] -> the (more informative) "no files under prefix"
+        # FAIL below rather than a raised-404 FAIL.
+        files = io._list_hf()(repo_id, repo_type="model", path_in_repo=subfolder)
     except Exception as exc:
         return CheckResult(
             name="hf_artifact_present",

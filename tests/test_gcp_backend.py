@@ -27,6 +27,7 @@ import json
 import logging
 import os
 import re
+import shlex
 import subprocess
 import sys
 from dataclasses import replace
@@ -5293,19 +5294,29 @@ def _workload_spec(cmd: str = "bash scripts/issue588_smoke.sh") -> RunSpec:
     return _spec(hydra_args=(), workload_cmd=cmd)
 
 
-def test_render_startup_script_workload_cmd_verbatim_with_lifecycle_intact() -> None:
-    """#588: the custom command replaces ONLY the workload line — every
-    lifecycle pin (secrets fetch, in-VM preflight, phase publishing,
-    EXIT trap, completion sentinel) is unchanged."""
+def _wrapped(cmd: str) -> str:
+    """The #1004 rc-preserving rendered workload line for ``cmd``."""
+    return f"bash -eu -o pipefail -c {shlex.quote(cmd)}"
+
+
+def test_render_startup_script_workload_cmd_rc_wrapped_with_lifecycle_intact() -> None:
+    """#588/#1004: the custom command replaces ONLY the workload line —
+    every lifecycle pin (secrets fetch, in-VM preflight, phase publishing,
+    EXIT trap, completion sentinel) is unchanged. The command renders
+    inside the #1004 rc-preserving inner-bash wrapper, never as a bare
+    line."""
     script = render_startup_script(
         spec=_workload_spec("bash scripts/issue588_smoke.sh --flag 'v 1'"),
         config=_test_config(),
         attempt_id="att-fixed-001",
     )
     lines = script.splitlines()
-    # The command is embedded VERBATIM as its own line (no shlex-quoting
-    # that would collapse it to a single token).
-    assert "bash scripts/issue588_smoke.sh --flag 'v 1'" in lines
+    # The command is the single shlex-quoted argument of an inner
+    # `bash -eu -o pipefail -c` (#1004); the inner bash re-parses it as a
+    # full shell line, so the #588 "complete shell command" contract holds.
+    assert _wrapped("bash scripts/issue588_smoke.sh --flag 'v 1'") in lines
+    # The bare, rc-masking pre-#1004 form is GONE.
+    assert "bash scripts/issue588_smoke.sh --flag 'v 1'" not in lines
     assert "# === Run the workload (custom workload_cmd) ===" in lines
     # The hardcoded hydra entrypoint is GONE on the custom path.
     assert "scripts/train.py" not in script
@@ -5320,14 +5331,16 @@ def test_render_startup_script_workload_cmd_verbatim_with_lifecycle_intact() -> 
     # The custom command runs AFTER cd "$WORKLOAD_ROOT" (repo-relative
     # `bash scripts/...` must resolve).
     assert lines.index('cd "$WORKLOAD_ROOT"') < lines.index(
-        "bash scripts/issue588_smoke.sh --flag 'v 1'"
+        _wrapped("bash scripts/issue588_smoke.sh --flag 'v 1'")
     )
     # WandB project default (#601 follow-up r1): exported BEFORE the
     # workload so HF-Trainer runs stop landing in the global default
     # 'huggingface' project; :- keeps an inline/internal override winning.
     wandb_export = 'export WANDB_PROJECT="${WANDB_PROJECT:-issue137}"'
     assert wandb_export in lines
-    assert lines.index(wandb_export) < lines.index("bash scripts/issue588_smoke.sh --flag 'v 1'")
+    assert lines.index(wandb_export) < lines.index(
+        _wrapped("bash scripts/issue588_smoke.sh --flag 'v 1'")
+    )
     # The hydra branch must NOT gain the export (byte-pinned by the #588
     # snapshot fixture; asserted here for a readable failure too).
     hydra_script = render_startup_script(
@@ -5357,7 +5370,7 @@ def test_render_startup_script_workload_cmd_exports_repo_root() -> None:
     # Exported AFTER the shared ``cd "$WORKLOAD_ROOT"`` and BEFORE the
     # workload command, so the workload subprocess inherits it.
     assert lines.index('cd "$WORKLOAD_ROOT"') < lines.index(repo_root_export)
-    assert lines.index(repo_root_export) < lines.index("bash scripts/issue588_smoke.sh")
+    assert lines.index(repo_root_export) < lines.index(_wrapped("bash scripts/issue588_smoke.sh"))
     # The hydra branch must NOT gain the export — it runs scripts/train.py
     # directly (no REPO_ROOT dependency), and the #588 byte-identity
     # snapshot fixture pins the hydra branch unchanged.
@@ -5391,7 +5404,7 @@ def test_render_startup_script_workload_cmd_waits_on_detached_pid_files() -> Non
     # Ordering: start-marker touch < workload cmd < pid-wait loop <
     # sentinel write < phase=done publish.
     i_touch = lines.index("touch /tmp/eps-workload-start")
-    i_cmd = lines.index("bash scripts/issue588_smoke.sh")
+    i_cmd = lines.index(_wrapped("bash scripts/issue588_smoke.sh"))
     i_wait = lines.index(wait_for)
     i_sentinel = next(i for i, line in enumerate(lines) if line.startswith("cat > "))
     i_done = lines.index("_eps_phase done")
@@ -5423,7 +5436,9 @@ def test_render_startup_script_workload_cmd_precreates_drain_logs_dir() -> None:
     assert "mkdir -p /workspace/logs" in lines
     assert "chmod 777 /workspace/logs" in lines
     # Ordering: dir exists before the workload command runs.
-    assert lines.index("mkdir -p /workspace/logs") < lines.index("bash scripts/issue588_smoke.sh")
+    assert lines.index("mkdir -p /workspace/logs") < lines.index(
+        _wrapped("bash scripts/issue588_smoke.sh")
+    )
     # The hydra branch must NOT gain the #610 sentinel-drain stanza.
     # Discriminate on its unique `chmod 777` line: as of #607 BOTH
     # branches carry a common-prelude `mkdir -p /workspace/logs` (the
@@ -5435,6 +5450,69 @@ def test_render_startup_script_workload_cmd_precreates_drain_logs_dir() -> None:
         attempt_id="att-fixed-001",
     )
     assert "chmod 777 /workspace/logs" not in hydra_script
+
+
+def test_render_startup_script_workload_cmd_compound_is_rc_wrapped() -> None:
+    """#1004 (incident #952): a compound && workload_cmd renders inside the
+    rc-preserving inner-bash wrapper, never as a bare line — a bare splice
+    under set -e rc-masks a first-command crash into a false phase=done
+    (errexit exempts non-final &&/|| list members)."""
+    cmd = "uv run python scripts/a.py && uv run python scripts/b.py"
+    script = render_startup_script(
+        spec=_workload_spec(cmd), config=_test_config(), attempt_id="att-fixed-001"
+    )
+    lines = script.splitlines()
+    assert _wrapped(cmd) in lines
+    assert cmd not in lines  # the bare, rc-masking form is GONE
+    # Wrapper sits between the start-marker touch and the pid-wait loop.
+    assert lines.index("touch /tmp/eps-workload-start") < lines.index(_wrapped(cmd))
+    i_wait = next(i for i, ln in enumerate(lines) if ln.startswith("for pf in $(find"))
+    assert lines.index(_wrapped(cmd)) < i_wait
+
+
+def _rendered_workload_line(cmd: str) -> str:
+    """Extract the ACTUAL rendered workload line (the line after the
+    start-marker touch) from a real ``render_startup_script`` output —
+    live-dispatched-path discipline: never rebuild the line via a twin."""
+    script = render_startup_script(
+        spec=_workload_spec(cmd), config=_test_config(), attempt_id="att-fixed-001"
+    )
+    lines = script.splitlines()
+    return lines[lines.index("touch /tmp/eps-workload-start") + 1]
+
+
+def test_workload_cmd_wrapper_propagates_compound_first_command_rc() -> None:
+    """#1004 behavioral proof on the LIVE rendered line: under set -euo
+    pipefail, a `cmd1 && cmd2` workload whose FIRST command exits 7
+    aborts the script with rc 7 (success tail unreached); a succeeding
+    compound reaches the tail with rc 0. Pre-#1004 the failing case fell
+    through and published done (probe: bash -c 'set -euo pipefail;
+    false && true; echo FELL_THROUGH' prints FELL_THROUGH, rc=0)."""
+    for cmd, want_rc, want_tail in (
+        ("bash -c 'exit 7' && echo NOT_REACHED", 7, False),
+        ("true && echo CHAIN_OK", 0, True),
+    ):
+        harness = "set -euo pipefail\n" + _rendered_workload_line(cmd) + "\necho SUCCESS_TAIL\n"
+        proc = subprocess.run(["bash", "-c", harness], capture_output=True, text=True)
+        assert proc.returncode == want_rc, (cmd, proc.returncode, proc.stderr)
+        assert ("SUCCESS_TAIL" in proc.stdout) is want_tail
+        assert "NOT_REACHED" not in proc.stdout
+
+
+def test_workload_cmd_wrapper_inherits_exported_env() -> None:
+    """#1004: exported env (the #641 REPO_ROOT / #601 WANDB_PROJECT
+    contract) reaches the inner bash — POSIX process inheritance holds
+    through the wrapper, so the export stanzas rendered BEFORE the
+    workload line keep working unchanged."""
+    cmd = 'test "$EPS_PROBE_VAR" = ok'
+    harness = (
+        "set -euo pipefail\nexport EPS_PROBE_VAR=ok\n"
+        + _rendered_workload_line(cmd)
+        + "\necho ENV_OK\n"
+    )
+    proc = subprocess.run(["bash", "-c", harness], capture_output=True, text=True)
+    assert proc.returncode == 0, (proc.returncode, proc.stderr)
+    assert "ENV_OK" in proc.stdout
 
 
 def test_render_startup_script_neither_workload_nor_hydra_raises_571() -> None:

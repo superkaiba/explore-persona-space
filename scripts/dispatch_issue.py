@@ -140,6 +140,112 @@ _REPO_ROOT = str(Path(__file__).resolve().parents[1])
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
+# Lane-infra main-checkout pin (#987) — consumer audit (who imports
+# explore_persona_space.backends, and how the pin covers them):
+#   - scripts/dispatch_issue.py + scripts/backend_poll.py: script-mode
+#     entrypoints; the __main__-guarded _pin_main_lane_infra() below covers
+#     them (duplicated into both files by design — importing a shared helper
+#     before the pin would cache the ambient package and defeat it).
+#   - Module-IMPORT consumers get NO pin BY DESIGN (the __main__ guard
+#     deliberately excludes imports so worktree pytest keeps testing branch
+#     code): scripts/autonomous_session_watch.py (imports
+#     backend_poll._failover_wedged_runpod + backends.issue_dispatch and CAN
+#     launch a RunPod pod — safe today only because
+#     cron_autonomous_session_watch.sh cd's to the MAIN checkout before
+#     invoking it), scripts/gcp_audit.py, scripts/gpu_heuristics.py,
+#     scripts/mila_socket_refresh.py, scripts/router_acceptance.py. The
+#     cron-wrapper / main-cwd invocation convention is LOAD-BEARING for
+#     these module-import consumers.
+#   - scripts/poll_pipeline.py imports only task_workflow (no backends);
+#     when reached via main's backends/runpod.py lazy
+#     `from scripts.poll_pipeline import ...` it resolves as main's copy
+#     through the pinned path.
+
+
+def _resolve_main_checkout_root(anchor: Path) -> Path:
+    """MAIN repo-checkout root, resolved cwd-independently from ``anchor``.
+
+    Mirrors ``backends/issue_dispatch._main_checkout_root`` (#612) WITHOUT
+    importing it — importing the package before the pin would cache the
+    ambient (possibly stale worktree) package in ``sys.modules``, defeating
+    the pin (#987). Fails LOUD; never a cwd fallback.
+    """
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"}
+    }
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(anchor),
+            env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError(
+            f"cannot resolve the MAIN checkout root from {anchor} "
+            f"(git rev-parse --git-common-dir failed: {exc}); lane infra "
+            "must import from main (#987) — refusing the ambient package"
+        ) from exc
+    common_dir = Path(proc.stdout.strip())
+    if common_dir.name != ".git" or not common_dir.is_dir():
+        raise RuntimeError(
+            f"git common-dir {common_dir!s} does not look like a "
+            "main-checkout .git dir; refusing to pin lane infra (#987)"
+        )
+    root = common_dir.parent
+    if not (root / "src" / "explore_persona_space" / "__init__.py").is_file():
+        raise RuntimeError(
+            f"resolved main root {root!s} has no src/explore_persona_space; "
+            "refusing to pin lane infra (#987)"
+        )
+    return root
+
+
+def _pin_main_lane_infra(anchor: Path | None = None) -> Path:
+    """Insert ``<main>/src`` + ``<main>`` at the FRONT of ``sys.path`` (#987).
+
+    Guarantees the lane infra (``explore_persona_space.backends.*``, incl.
+    the GCE startup template in ``gcp.py``, plus lazy ``scripts.*`` imports)
+    always resolves from the MAIN checkout — beating a worktree venv's
+    editable install — while ``--repo-branch`` keeps cloning the issue
+    branch for the remote WORKLOAD (unchanged). Idempotent (re-entrant calls
+    remove-then-insert, no duplicates); returns the resolved main root.
+    """
+    anchor = anchor or Path(__file__).resolve().parent
+    main_root = _resolve_main_checkout_root(anchor)
+    already = sys.modules.get("explore_persona_space")
+    if already is not None:
+        mod_file = getattr(already, "__file__", "") or ""
+        if not mod_file.startswith(str(main_root / "src") + os.sep):
+            raise RuntimeError(
+                f"explore_persona_space already imported from {mod_file!r} "
+                "before the main-checkout pin — a submodule import would "
+                "resolve under the stale package __path__ (#987)"
+            )
+    for p in (str(main_root), str(main_root / "src")):
+        if p in sys.path:
+            sys.path.remove(p)
+        sys.path.insert(0, p)  # final order: [<main>/src, <main>, ...]
+    invoked_root = Path(__file__).resolve().parents[1]
+    if invoked_root != main_root:
+        sys.stderr.write(
+            f"[lane-infra-pin] WARNING: invoked script copy lives under "
+            f"{invoked_root} but lane infra is pinned to main {main_root} "
+            f"(#987); prefer invoking <main>/scripts/{Path(__file__).name}\n"
+        )
+    return main_root
+
+
+if __name__ == "__main__":
+    _pin_main_lane_infra()
+
 
 def _current_git_branch() -> str | None:
     """Current branch of the invoking checkout (None on detached HEAD / error).
@@ -836,9 +942,19 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # --workload-cmd, so this key never rides a hydra launch.
         extra["execute_workload"] = True
     if getattr(args, "boot_disk_gb", None):
-        # GCP-only knob (backends/gcp.py:815 reads spec.extra["boot_disk_gb"]);
-        # inert on SLURM / RunPod lanes.
+        # GCP boot disk (backends/gcp.py reads spec.extra["boot_disk_gb"]);
+        # ALSO read by the RunPod CPU fallback as of #1010 — container-disk
+        # threading in RunPodBackend.launch + the feasibility gate in
+        # router._runpod_terminal_rung. Inert on SLURM lanes.
         extra["boot_disk_gb"] = int(args.boot_disk_gb)
+    if getattr(args, "min_ram_gb", None):
+        # RunPod-CPU-fallback knob (#1010): read by the feasibility gate in
+        # router._runpod_terminal_rung — RunPod CPU instances have FIXED RAM,
+        # so an unsatisfiable requirement refuses the fallback typed
+        # (reason: cpu_fallback_infeasible_for_plan) instead of provisioning
+        # an undersized pod. GCP machine selection is unchanged (by intent);
+        # inert on SLURM lanes.
+        extra["min_ram_gb"] = int(args.min_ram_gb)
     if getattr(args, "max_run_duration", None):
         # GCP-only knob: the instance-create renderer reads
         # spec.extra["max_run_duration"], falling back to the 7d
@@ -1785,11 +1901,29 @@ def _build_argparser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help=(
-            "GCP boot-disk size override in GB (GCP lane only; threads to "
-            "spec.extra['boot_disk_gb'], honored at backends/gcp.py:815). "
-            "Default 300 GB is too tight for full-FT checkpoint grids "
-            "(issue 606 needed 500: 13 consolidated ZeRO-3 ckpts ~= 195 GB "
-            "+ model + cache). Inert on non-GCP lanes."
+            "Boot/data disk size the plan's stage requires, in GB. GCP lane: "
+            "boot-disk size override (threads to spec.extra['boot_disk_gb'], "
+            "honored by backends/gcp.py; default 300 GB is too tight for "
+            "full-FT checkpoint grids — issue 606 needed 500: 13 consolidated "
+            "ZeRO-3 ckpts ~= 195 GB + model + cache). RunPod CPU fallback "
+            "(#1010): threaded into the pod's containerDiskInGb "
+            "(max(50, value)) and checked by the feasibility gate — an "
+            "unsatisfiable disk requirement refuses the fallback typed "
+            "(cpu_fallback_infeasible_for_plan) instead of provisioning an "
+            "undersized pod. Inert on SLURM lanes."
+        ),
+    )
+    launch.add_argument(
+        "--min-ram-gb",
+        type=int,
+        default=None,
+        help=(
+            "Minimum RAM (GB) the plan's CPU stage requires. Read by the "
+            "RunPod CPU fallback feasibility gate (#1010) — RunPod CPU "
+            "instances have FIXED RAM, so an unsatisfiable requirement "
+            "refuses the fallback with reason cpu_fallback_infeasible_for_plan "
+            "instead of provisioning an undersized pod. GCP machine selection "
+            "is unchanged (by intent). Inert on SLURM lanes."
         ),
     )
     launch.add_argument(

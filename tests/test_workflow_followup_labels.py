@@ -607,6 +607,133 @@ def test_retro_close_evidence_exact_label_only():
     assert "methodology-doc-generated" in evidence
 
 
+def test_retro_close_evidence_825_queued_label_park_notes():
+    label = "role-map-comparison"
+    # The founding #825 false positive (2026-07-04T04:21:23Z), VERBATIM:
+    # completion words (re-park / awaiting_promotion) describe the
+    # real-user-turn-null round; the label is named only as QUEUED.
+    ev_step = _ev(
+        "epm:step-completed",
+        "2026-07-04T04:21:23Z",
+        "<!-- epm:step-completed v1 -->\n## Step Completed\n\n"
+        "step: 9a-bis\nat: 031492f2\ntimestamp: 2026-07-04T04:21:23+00:00\n"
+        "next_expected_step: 9a-quater\nexit_kind: parked\n"
+        "notes: real-user-turn-null round re-parked at awaiting_promotion; "
+        "1 unrun user-chat label (role-map-comparison) queued — next entry "
+        "dispatches it; cron kept armed\n"
+        "<!-- /epm:step-completed -->",
+    )
+    assert followup_retro_close_evidence([ev_step], label) is None
+    # Sibling status-changed note (04:20:49Z), VERBATIM: the token there is
+    # `(role-map-comparison,` — not the exact `(role-map-comparison)` — so it
+    # does not match today either; pinned so a future token relaxation
+    # cannot silently reintroduce the false positive (the clause/veto logic
+    # would reject it anyway).
+    ev_status = _ev(
+        "epm:status-changed",
+        "2026-07-04T04:20:49Z",
+        "real-user-turn-null round complete; clean-result-critic PASS (r2, "
+        "ensemble); re-parking for user promotion. NOTE: 1 unrun user-chat "
+        "followup label queued (role-map-comparison, armed 2026-07-03T06:16Z, "
+        "now unblocked — all three provenances landed); next /issue 825 entry "
+        "dispatches it.",
+    )
+    assert followup_retro_close_evidence([ev_status], label) is None
+
+
+def test_retro_close_evidence_595_deferred_scope_recap():
+    # The second live false positive (#595, 2026-06-14T06:20:31Z), VERBATIM:
+    # the token's clause ("routes next /issue 595 invocation into same-issue
+    # loop") carries NO queue-context vocabulary at all — only the #961
+    # clause-binding leg catches it; an exclusion regex alone would not.
+    label = "h2-full-probes-multiseed"
+    ev_step = _ev(
+        "epm:step-completed",
+        "2026-06-14T06:20:31Z",
+        "<!-- epm:step-completed v1 -->\n## Step Completed\n\n"
+        "step: 9a-bis\nat: 44eedb0d\ntimestamp: 2026-06-14T06:20:31+00:00\n"
+        "next_expected_step: 9a-quater\nexit_kind: parked\n"
+        "notes: awaiting clean-result promotion. Full /issue 595 lifecycle "
+        "complete: planning → 3 plan revs (v3 corrected squared-gauge) → 3 "
+        "implementer rounds (round 3 vendored issue503/) → fullrun-v3 on "
+        "pod-595 (after 3 failed GCP auto-lane attempts + 1 Anthropic 429 "
+        "mid-run) → upload-verify PASS r2 → analyzer interpretation loop "
+        "(2 rounds, reconciler PASS) → clean-result-critic loop (2 rounds, "
+        "reconciler PASS) → methodology doc landed + secret gist + body "
+        "link-append → awaiting_promotion. Follow-ups: child #640 filed "
+        "(postfix carrier, substantially-different); epm:followup-scope v1 "
+        "for proposal #2 (h2-full-probes-multiseed) routes next /issue 595 "
+        "invocation into same-issue loop; proposal #1 (free-analysis "
+        "leverage check) surfaced in epm:follow-ups v1 for user "
+        "post-promotion pick. Merge to main BLOCKED — epm:merge-failed v1 "
+        "requires manual rebase resolution (Guard 3 + new-shared-src/-infra "
+        "guard).\n"
+        "<!-- /epm:step-completed -->",
+    )
+    assert followup_retro_close_evidence([ev_step], label) is None
+
+
+def test_retro_close_evidence_clause_binding_shapes():
+    """Synthetic clause shapes pinning the #961 two-gate class-3 logic."""
+    label = "some-label"
+    # The dominant park-shape true positive (mirrors #505): completion word
+    # in the token's clause via the complete/COMPLETE supplement, PASS later.
+    ev = _ev(
+        "epm:status-changed",
+        "2026-07-04T00:00:00Z",
+        "notes: round-2 followup (some-label) complete; clean-result re-gated "
+        "PASS; re-parked at awaiting_promotion",
+    )
+    assert followup_retro_close_evidence([ev], label) is not None
+    # The COMPLETE variant (mirrors #545).
+    ev = _ev(
+        "epm:status-changed",
+        "2026-07-04T00:00:00Z",
+        "/issue same-issue follow-up (some-label) loop COMPLETE. Both critic ensembles PASS",
+    )
+    assert followup_retro_close_evidence([ev], label) is not None
+    # Cross-clause split: completion words describe ANOTHER round's clause;
+    # the token's clause needs no veto word to be rejected.
+    ev = _ev(
+        "epm:status-changed",
+        "2026-07-04T00:00:00Z",
+        "real-round re-parked at awaiting_promotion; label (some-label) held for next entry",
+    )
+    assert followup_retro_close_evidence([ev], label) is None
+    # Same-clause veto: clause binding alone would wrongly match
+    # (awaiting_promotion is in the token's clause) — the queue veto rejects.
+    ev = _ev(
+        "epm:status-changed",
+        "2026-07-04T00:00:00Z",
+        "unrun label (some-label) queued for the awaiting_promotion park",
+    )
+    assert followup_retro_close_evidence([ev], label) is None
+    # Veto is per-clause: a queued mention of ANOTHER label elsewhere on the
+    # line does not block a legitimate close of this one.
+    ev = _ev(
+        "epm:status-changed",
+        "2026-07-04T00:00:00Z",
+        "round-4 (some-label) clean-result-critic PASS; next label (other-label) queued unrun",
+    )
+    assert followup_retro_close_evidence([ev], "some-label") is not None
+    assert followup_retro_close_evidence([ev], "other-label") is None
+    # Narrowing-only guard: no gate-1 word on the line ⇒ the `complete`
+    # supplement alone can never CREATE evidence the old predicate rejected.
+    ev = _ev(
+        "epm:status-changed",
+        "2026-07-04T00:00:00Z",
+        "(some-label) round complete, nothing more",
+    )
+    assert followup_retro_close_evidence([ev], label) is None
+    # `incomplete` lookbehind + cross-clause: neither leg matches.
+    ev = _ev(
+        "epm:status-changed",
+        "2026-07-04T00:00:00Z",
+        "(some-label) round incomplete; clean-result-critic PASS pending",
+    )
+    assert followup_retro_close_evidence([ev], label) is None
+
+
 # ─── 14. corpus replay over the real tasks/ tree ─────────────────────────────
 
 
@@ -643,6 +770,14 @@ def _corpus_events_by_task() -> dict[int, list[dict]]:
     return by_task
 
 
+def _run_labels(events: list[dict]) -> set[str]:
+    return {
+        parse_followup_note_field(e.get("note") or "", "followup_label")
+        for e in events
+        if e.get("kind") == "epm:same-issue-followup-run"
+    } - {None}
+
+
 def test_corpus_replay_all_historical_markers():
     # Alt-Claude MF1 corpus-replay validation: every HISTORICAL
     # epm:same-issue-followup-run marker in the checkout must parse a
@@ -665,13 +800,6 @@ def test_corpus_replay_all_historical_markers():
                 unparseable.append((task_id, str(ev.get("ts"))))
     assert n_run > 0, "corpus unexpectedly carries no run markers"
     assert unparseable == [], f"unparseable run-marker labels: {unparseable}"
-
-    def _run_labels(events: list[dict]) -> set[str]:
-        return {
-            parse_followup_note_field(e.get("note") or "", "followup_label")
-            for e in events
-            if e.get("kind") == "epm:same-issue-followup-run"
-        } - {None}
 
     # #763 (the driving incident): the queued user-chat label must surface as
     # dispatchable-unrun for as long as no run marker closes it (events are
@@ -728,3 +856,24 @@ def test_corpus_replay_all_historical_markers():
         unrun = {g["followup_label"] for g in unrun_followup_labels(by_task[task_id])}
         for label in closed_labels:
             assert label not in unrun, f"#{task_id} {label} must be closed by its run marker"
+
+
+def test_corpus_replay_retro_close_verdicts():
+    # #961 retro-close pins (events are append-only; guards make each leg
+    # inert once the label legitimately closes via a run marker):
+    import pytest
+
+    if _tasks_root() is None:
+        pytest.skip("tasks/ not present in this checkout (sparse worktree)")
+    by_task = _corpus_events_by_task()
+    for task_id, queued_label in (
+        (825, "role-map-comparison"),
+        (595, "h2-full-probes-multiseed"),
+    ):
+        if task_id in by_task and queued_label not in _run_labels(by_task[task_id]):
+            assert followup_retro_close_evidence(by_task[task_id], queued_label) is None, (
+                f"#{task_id} {queued_label} is queued/unrun — retro-close evidence "
+                "for it is the #961 false positive"
+            )
+    if 658 in by_task:  # the canonical ghost close must SURVIVE the narrowing
+        assert followup_retro_close_evidence(by_task[658], "persona-vectors-style-rb") is not None

@@ -1,0 +1,649 @@
+{
+  "commit": "895e4c7831",
+  "created": "2026-07-04T14:56:09Z",
+  "figsize": [
+    12.5,
+    4.6
+  ],
+  "points": [
+    {
+      "evaluation turn (long panel, 60 test conversations)": -0.27,
+      "held-out skill (6-block mean)": 0.36682852233943736,
+      "error": 0.03768746554851532,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 0.73,
+      "held-out skill (6-block mean)": 0.3211811828012822,
+      "error": 0.05147938430309296,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 1.73,
+      "held-out skill (6-block mean)": 0.3565060169874688,
+      "error": 0.03577764332294464,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 2.73,
+      "held-out skill (6-block mean)": 0.38817054862488604,
+      "error": 0.0473916232585907,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": "turn 5",
+      "held-out skill (6-block mean)": -0.22507564579508968,
+      "error": 0.08406099902445154,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": "turn 6",
+      "held-out skill (6-block mean)": -0.2061015320068297,
+      "error": 0.07210772205877519,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": "turn 7",
+      "held-out skill (6-block mean)": -0.2505429669175378,
+      "error": 0.08407322488861253,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": "turn 8",
+      "held-out skill (6-block mean)": -0.20751855914648157,
+      "error": 0.09449094459722918,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 0.27,
+      "held-out skill (6-block mean)": 0.05616052153084363,
+      "error": 0.06028264788159893,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 1.27,
+      "held-out skill (6-block mean)": 0.06367319802404374,
+      "error": 0.05217844567437695,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 2.27,
+      "held-out skill (6-block mean)": 0.046168346953488405,
+      "error": 0.05966949344382058,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 3.27,
+      "held-out skill (6-block mean)": 0.06958947084087826,
+      "error": 0.06441076835111972,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": -0.27,
+      "held-out skill (6-block mean)": 0.3295559883117676,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 0.73,
+      "held-out skill (6-block mean)": 0.26378893852233887,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 1.73,
+      "held-out skill (6-block mean)": 0.3220632076263428,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 2.7299999999999995,
+      "held-out skill (6-block mean)": 0.3404683768749237,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": -0.27,
+      "held-out skill (6-block mean)": 0.4049309194087982,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 0.73,
+      "held-out skill (6-block mean)": 0.3667477071285248,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 1.73,
+      "held-out skill (6-block mean)": 0.39361849427223206,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 2.7299999999999995,
+      "held-out skill (6-block mean)": 0.4352516233921051,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 0.0,
+      "held-out skill (6-block mean)": -0.3151818026640476,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 1.0,
+      "held-out skill (6-block mean)": -0.28264203924492426,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 2.0,
+      "held-out skill (6-block mean)": -0.3428183484083156,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 3.0,
+      "held-out skill (6-block mean)": -0.30860666816201643,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 0.0,
+      "held-out skill (6-block mean)": -0.14705980461514453,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 1.0,
+      "held-out skill (6-block mean)": -0.13842659512737387,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 2.0,
+      "held-out skill (6-block mean)": -0.17467189863109053,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 3.0,
+      "held-out skill (6-block mean)": -0.11962477896755809,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 0.27,
+      "held-out skill (6-block mean)": -0.008504088278224499,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 1.27,
+      "held-out skill (6-block mean)": 0.007101874848723343,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 2.2699999999999996,
+      "held-out skill (6-block mean)": -0.017320706598040837,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 3.2699999999999996,
+      "held-out skill (6-block mean)": 0.00240559237773795,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 0.27,
+      "held-out skill (6-block mean)": 0.11206120748497336,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 1.27,
+      "held-out skill (6-block mean)": 0.11145876619747723,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 2.2699999999999996,
+      "held-out skill (6-block mean)": 0.10201828028960032,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "evaluation turn (long panel, 60 test conversations)": 3.2699999999999996,
+      "held-out skill (6-block mean)": 0.13122712907997738,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.11071264743804932,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.1385185718536377,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.46868789196014404,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.03192859888076782,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.3180047273635864,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.5757211446762085,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.27592331171035767,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.06649565696716309,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.23404377698898315,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.055449843406677246,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.3493965268135071,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.04734337329864502,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.10804659128189087,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.17812860012054443,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.21310275793075562,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.3831777572631836,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.3505503535270691,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.010293185710906982,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.1931115984916687,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.07221722602844238,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.3962855339050293,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.1085273027420044,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.6933749914169312,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.445112407207489,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.2823878526687622,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.3327827453613281,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.4988945722579956,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.3546859622001648,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.11684691905975342,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.056757211685180664,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.161532461643219,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.3225497007369995,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.19660121202468872,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.029378294944763184,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": -0.030968427658081055,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.15736746788024902,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.7153366208076477,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.12933051586151123,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.17806756496429443,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.382532000541687,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.21540004014968872,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.2818336486816406,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.4825737476348877,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.24369418621063232,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.09034299850463867,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.30048561096191406,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.49497950077056885,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.11866122484207153,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.6264113783836365,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.5390335321426392,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.2108272910118103,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.26033449172973633,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.492681086063385,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.050871968269348145,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.16902178525924683,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.7422623634338379,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.3101409077644348,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.16160881519317627,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.266521692276001,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.28209805488586426,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.5271012783050537,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.2870038151741028,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.6004769206047058,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.40004241466522217,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.5822475552558899,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.23860836029052734,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.4234086871147156,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.3078504800796509,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.20830190181732178,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.3983970880508423,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.4651678800582886,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.07296830415725708,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.5082978010177612,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.05514180660247803,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.6105639934539795,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.4056330919265747,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.21562927961349487,
+      "turn-1 map skill at turn 5 (clipped at -3)": -1.2749521732330322,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.3296080231666565,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.005339682102203369,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.4317735433578491,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.07077217102050781,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.23689967393875122,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.06796139478683472,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.6481317281723022,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.531928539276123,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.07520264387130737,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.11842203140258789,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.33075469732284546,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.10087168216705322,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.1812136173248291,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.5289132595062256,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.07558244466781616,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.5429099798202515,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.24258124828338623,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.1520977020263672,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.3226286768913269,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.007042229175567627,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.531920313835144,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.32266008853912354,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": -0.031963229179382324,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.5307153463363647,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.24718785285949707,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.0037955641746520996,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.21606475114822388,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.17386174201965332,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.24562406539916992,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.1774422526359558,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.1892930269241333,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.38747966289520264,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.33644503355026245,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.09681141376495361,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.09603047370910645,
+      "turn-1 map skill at turn 5 (clipped at -3)": -1.3654236793518066,
+      "label": "conv 562",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.38442176580429077,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.11209559440612793,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.2417534589767456,
+      "turn-1 map skill at turn 5 (clipped at -3)": 0.07136434316635132,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "own turn-5 map skill per conversation (clipped at -3)": 0.03277021646499634,
+      "turn-1 map skill at turn 5 (clipped at -3)": -0.18434584140777588,
+      "label": "conv 437",
+      "_kind": "scatter",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 96
+}

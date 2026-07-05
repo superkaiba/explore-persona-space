@@ -1256,6 +1256,11 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
         # Machine-readable stall cause (#664) — zombie-GPU-allocation stall on
         # the RunPod lane; None on every other lane / verdict.
         "stall_reason",
+        # #983 post-done phase-consistency guard — emitted by both
+        # poll_pipeline.py.main and backend_poll._serialize_poll_result
+        # (getattr-defended defaults False / [] on lanes that never set them).
+        "post_done_phase_advisory_posted",
+        "post_done_phase_lines",
         # GCP-lane GPU-idle advisory + escalation parity (#730 / #727 RunPod
         # analogue) — always emitted by backend_poll.main, default False on
         # every non-GCP / non-running tick.
@@ -1496,3 +1501,52 @@ def test_dispatch_for_issue_fresh_launch_with_workload_no_warning(
         )
     messages = [r.getMessage() for r in caplog.records]
     assert not any(_RECONNECT_WARNING_SNIPPET in m for m in messages), messages
+
+
+def test_cpu_fallback_infeasible_maps_to_distinct_reason() -> None:
+    """#1010: a CpuFallbackInfeasibleError maps to the DISTINCT reason
+    cpu_fallback_infeasible_for_plan — NOT the parent's
+    cpu_exhausted_no_runpod_lane and NOT no_compute_available — so the
+    watcher's capacity-retry pass never hot-retries a structurally-infeasible
+    launch, and the note carries the concrete cpu-bigmem recovery command.
+
+    Removing the isinstance branch (or placing it AFTER the parent
+    CpuExhaustedNoRunpodLaneError branch) turns this RED — the subclass would
+    be shadowed and emit the parent's reason."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
+        CpuFallbackInfeasibleError,
+    )
+
+    exc = CpuFallbackInfeasibleError(
+        "CPU intent 'cpu-mid': RunPod CPU fallback (cpu3c-8-16) cannot satisfy "
+        "the plan footprint — disk: plan requires 80 GB > cpu3c-8-16 max "
+        "container disk 50 GB",
+        attempts=[{"kind": "gcp", "outcome": "capacity_miss"}],
+    )
+    t = classify_terminal_exception(exc)
+    assert t.failure_class == "infra"
+    assert t.status == "blocked"
+    assert f"reason: {ROUTE_REASON_CPU_FALLBACK_INFEASIBLE}" in t.note
+    assert "reason: cpu_exhausted_no_runpod_lane" not in t.note
+    assert "reason: no_compute_available" not in t.note
+    # The recovery line names the big-footprint lane.
+    assert "cpu-bigmem" in t.note
+    assert "detail: CPU intent 'cpu-mid'" in t.note
+
+
+def test_cpu_exhausted_parent_does_not_emit_infeasible_reason() -> None:
+    """#1010 control: the PARENT CpuExhaustedNoRunpodLaneError keeps its own
+    reason verbatim — the new subclass branch narrows, never widens."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
+        CpuExhaustedNoRunpodLaneError,
+    )
+
+    exc = CpuExhaustedNoRunpodLaneError(
+        "CPU intent 'cpu-bigmem': GCP exhausted and RunPod has no CPU lane",
+        attempts=[],
+    )
+    t = classify_terminal_exception(exc)
+    assert "reason: cpu_exhausted_no_runpod_lane" in t.note
+    assert ROUTE_REASON_CPU_FALLBACK_INFEASIBLE not in t.note

@@ -17,6 +17,8 @@ build/
 data/*
 !data/canonical_persona_pool/
 !data/assistant_axis/
+# issue #923 Phase-0 committed inputs (probe pools, folds, store pins)
+!data/issue923/
 outputs/
 *.output
 .pytest_cache/

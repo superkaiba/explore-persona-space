@@ -102,6 +102,9 @@ def origin_and_clone(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setattr(srr, "ROOT_SYNC_LOCK", lock_dir / "root-sync.lock")
     monkeypatch.setattr(srr, "RESCUE_ROOT", tmp_path / "rescue")
     monkeypatch.setattr(srr.task_workflow, "LOCK_PATH", lock_dir / "task-workflow-lock")
+    # A dev shell exporting a non-default husk age must not flake the husk
+    # age-gate tests (per-test setenv still wins — it runs after fixture setup).
+    monkeypatch.delenv("EPM_ROOT_SYNC_HUSK_AGE_S", raising=False)
     return origin, local, other
 
 
@@ -611,6 +614,246 @@ def test_young_husk_untouched_exit_5(origin_and_clone, capsys):
     assert rc == 5
     assert husk.exists()  # untouched
     assert "young rebase-merge husk" in err
+
+
+# ─── 11b. Head-name-less husk recovery (#971) ────────────────────────────────
+
+
+def _stash_shaped_sha(local: Path) -> str:
+    """Commit+push a tracked file, dirty it, ``git stash create``, restore worktree.
+
+    Returns a stash-shaped commit sha (>= 2 parents) — the same object shape a
+    crashed autostash-pull leaves behind in ``<state-dir>/autostash``.
+    """
+    _write(local, "dirty.txt", "base\n")
+    _commit(local, "dirty.txt")
+    _git(local, "push", "-q", "origin", "main")
+    _write(local, "dirty.txt", "base\nuncommitted\n")
+    sha = _git(local, "stash", "create", "autostash-sim").stdout.strip()
+    _git(local, "checkout", "--", "dirty.txt")
+    assert sha
+    return sha
+
+
+def _make_headnameless_husk(
+    local: Path, dirname: str = "rebase-merge", autostash: str | None = None, stale: bool = True
+) -> Path:
+    """Synthesize the #971 incident husk: a rebase state dir with NO head-name."""
+    husk = local / ".git" / dirname
+    husk.mkdir()
+    if autostash is not None:
+        (husk / "autostash").write_text(autostash + "\n")
+    if stale:
+        t = time.time() - 7200
+        os.utime(husk, (t, t))
+    return husk
+
+
+def _make_conflicted_am_state(local: Path) -> Path:
+    """Genuinely conflicted ``git am`` (the MF1 fact pattern): a patch from a
+    side branch applied onto diverged main leaves ``.git/rebase-apply`` with
+    ``applying`` + ``patch``, and NO ``head-name``."""
+    _write(local, "am.txt", "base\n")
+    _commit(local, "am.txt")
+    _git(local, "checkout", "-q", "-b", "patchsrc")
+    _write(local, "am.txt", "patch-side\n")
+    _commit(local, "am.txt")
+    patch = _git(local, "format-patch", "-1", "--stdout").stdout
+    _git(local, "checkout", "-q", "main")
+    _write(local, "am.txt", "main-side\n")
+    _commit(local, "am.txt")
+    proc = subprocess.run(
+        ["git", "-C", str(local), "am"], input=patch, capture_output=True, text=True, check=False
+    )
+    assert proc.returncode != 0
+    state = local / ".git" / "rebase-apply"
+    assert state.is_dir() and (state / "applying").exists()
+    assert not (state / "head-name").exists()
+    t = time.time() - 7200
+    os.utime(state, (t, t))
+    return state
+
+
+def test_headnameless_husk_valid_autostash_rescued_then_archived(origin_and_clone, capsys):
+    """(a) The incident repro: valid autostash rescued, husk archived, exit 0."""
+    _origin, local, _other = origin_and_clone
+    sha = _stash_shaped_sha(local)
+    _make_headnameless_husk(local, autostash=sha)
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    assert not (local / ".git" / "rebase-merge").exists()
+    archived = list(srr.RESCUE_ROOT.glob("*/rebase-merge"))
+    assert len(archived) == 1
+    assert (archived[0] / "autostash").read_text().strip() == sha
+    assert any("STALE-HUSK ARCHIVED" in m for m in rep["messages"])
+    assert any(r.startswith("husk-rescue: stored autostash") for r in rep["stash"])
+    # The stranded-autostash pass consumed the rescued entry in the SAME run:
+    # the uncommitted content is back in the worktree and the stash is empty.
+    assert "uncommitted" in (local / "dirty.txt").read_text()
+    assert _git(local, "stash", "list").stdout.strip() == ""
+    assert rep["actions_performed"] is True
+
+
+@pytest.mark.parametrize("dirname", ["rebase-merge", "rebase-apply"])
+@pytest.mark.parametrize("autostash", [None, ""])
+def test_headnameless_husk_no_autostash_archived(origin_and_clone, capsys, dirname, autostash):
+    """(b) Absent/empty autostash: husk ARCHIVED (never deleted), exit 0."""
+    _origin, local, _other = origin_and_clone
+    _make_headnameless_husk(local, dirname=dirname, autostash=autostash)
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    assert not (local / ".git" / dirname).exists()
+    assert len(list(srr.RESCUE_ROOT.glob(f"*/{dirname}"))) == 1
+    msg = next(m for m in rep["messages"] if "STALE-HUSK ARCHIVED" in m)
+    expected = "no autostash file present" if autostash is None else "autostash file empty"
+    assert expected in msg
+    assert _git(local, "stash", "list").stdout.strip() == ""
+
+
+def test_young_headnameless_husk_exit_5(origin_and_clone, capsys):
+    """(c) A YOUNG head-name-less husk still exits 5, untouched (age gate)."""
+    _origin, local, _other = origin_and_clone
+    husk = _make_headnameless_husk(local, stale=False)
+
+    rc, _rep, err = _run(local, capsys=capsys)
+    assert rc == 5
+    assert husk.exists()  # untouched
+    assert "young rebase-merge husk" in err
+
+
+@pytest.mark.parametrize(
+    "content_kind, reason_substr",
+    [
+        ("non-hex", "not a 40-hex sha"),
+        ("missing-object", "does not resolve to a commit"),
+        ("ordinary-commit", "not stash-shaped"),
+    ],
+)
+def test_headnameless_husk_nonstorable_autostash_preserved(
+    origin_and_clone, capsys, content_kind, reason_substr
+):
+    """(e) Non-storable autostash content is preserved verbatim, NEVER stored."""
+    _origin, local, _other = origin_and_clone
+    content = {
+        "non-hex": "not-a-sha",
+        "missing-object": "deadbeef" + "0" * 32,
+        "ordinary-commit": _git(local, "rev-parse", "HEAD").stdout.strip(),
+    }[content_kind]
+    _make_headnameless_husk(local, autostash=content)
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    assert not (local / ".git" / "rebase-merge").exists()
+    assert list(srr.RESCUE_ROOT.glob("*/rebase-merge"))  # archived intact
+    msg = next(m for m in rep["messages"] if "STALE-HUSK ARCHIVED" in m)
+    assert reason_substr in msg
+    rescue_files = list(srr.RESCUE_ROOT.glob("husk-autostash-*.txt"))
+    assert len(rescue_files) == 1
+    assert rescue_files[0].read_text() == content + "\n"  # verbatim
+    # Nothing was stored — pins the C1 downstream stash-show wedge guard.
+    assert _git(local, "stash", "list").stdout.strip() == ""
+
+
+def test_headnameless_husk_store_failure_blocks_archival(origin_and_clone, monkeypatch, capsys):
+    """(f) A store failure on a storable commit exits 6 with the husk KEPT."""
+    _origin, local, _other = origin_and_clone
+    sha = _stash_shaped_sha(local)
+    husk = _make_headnameless_husk(local, autostash=sha)
+
+    real_git = srr.git
+
+    def fake_git(repo, *args, **kwargs):
+        if args[:2] == ("stash", "store"):
+            return subprocess.CompletedProcess(args, 1, stdout="", stderr="simulated store failure")
+        return real_git(repo, *args, **kwargs)
+
+    monkeypatch.setattr(srr, "git", fake_git)
+    rc, _rep, err = _run(local, capsys=capsys)
+    assert rc == 6
+    assert husk.exists()  # KEPT — rescue failure blocks the move
+    assert (husk / "autostash").read_text().strip() == sha
+    assert sha in err  # full sha named
+    assert f"git stash store -m autostash {sha}" in err  # manual recipe
+
+
+def test_headnameless_husk_dry_run_reports_distinctly(origin_and_clone, capsys):
+    """(g) Dry-run reports the head-name-less case distinctly; mutates nothing."""
+    _origin, local, _other = origin_and_clone
+    sha = _stash_shaped_sha(local)
+    husk = _make_headnameless_husk(local, autostash=sha)
+
+    rc, rep, _err = _run(local, "--dry-run", capsys=capsys)
+    assert rc == 0
+    assert rep["state"] == "dry-run"
+    msg = next(m for m in rep["messages"] if "DRY-RUN: stale head-name-less" in m)
+    assert "would be rescued" in msg
+    assert husk.exists()  # untouched
+    assert _git(local, "stash", "list").stdout.strip() == ""
+    assert not srr.RESCUE_ROOT.exists()  # rescue root untouched
+
+
+def test_headnameless_husk_already_stashed_idempotent(origin_and_clone, capsys):
+    """(h) Re-run after a crashed prior recovery (store succeeded, move crashed):
+    the reflog containment check reports idempotently, no duplicate entry."""
+    _origin, local, _other = origin_and_clone
+    sha = _stash_shaped_sha(local)
+    _make_headnameless_husk(local, autostash=sha)
+    _git(local, "stash", "store", "-m", "autostash", sha)
+    assert len(_git(local, "stash", "list").stdout.strip().splitlines()) == 1
+
+    rc, rep, _err = _run(local, capsys=capsys)
+    assert rc == 0
+    assert not (local / ".git" / "rebase-merge").exists()
+    assert list(srr.RESCUE_ROOT.glob("*/rebase-merge"))
+    assert any("already present in the stash reflog" in r for r in rep["stash"])
+    # Exactly one entry existed before the stranded pass consumed it (no dup).
+    assert _git(local, "stash", "list").stdout.strip() == ""
+    assert "uncommitted" in (local / "dirty.txt").read_text()
+
+
+def test_am_state_refused_intact(origin_and_clone, capsys):
+    """(i, MF1) A stale, genuinely conflicted `git am` state is REFUSED (exit 5)
+    and survives byte-intact — its patch data + --continue capability kept."""
+    _origin, local, _other = origin_and_clone
+    state = _make_conflicted_am_state(local)
+    before = {p.name: p.read_bytes() for p in state.iterdir() if p.is_file()}
+
+    rc, _rep, err = _run(local, capsys=capsys)
+    assert rc == 5
+    assert state.is_dir()
+    assert (state / "applying").exists()
+    assert (state / "patch").exists()
+    after = {p.name: p.read_bytes() for p in state.iterdir() if p.is_file()}
+    assert after == before  # INTACT, including the patch file
+    assert "git am --continue" in err and "git am --abort" in err
+    assert not srr.RESCUE_ROOT.exists()
+    assert _git(local, "stash", "list").stdout.strip() == ""
+
+
+def test_abort_failure_with_headname_present_refuses(origin_and_clone, monkeypatch, capsys):
+    """(j, MF2) Abort fails but head-name IS present: explicit exit-6 refusal,
+    husk KEPT — the one guard between recovery and a real rebase state."""
+    _origin, local, other = origin_and_clone
+    husk = _make_conflicted_rebase_husk(local, other)
+    t = time.time() - 7200
+    os.utime(husk, (t, t))
+
+    real_git = srr.git
+
+    def fake_git(repo, *args, **kwargs):
+        if args[:2] == ("rebase", "--abort"):
+            return subprocess.CompletedProcess(args, 1, stdout="", stderr="simulated abort failure")
+        return real_git(repo, *args, **kwargs)
+
+    monkeypatch.setattr(srr, "git", fake_git)
+    rc, _rep, err = _run(local, capsys=capsys)
+    assert rc == 6
+    assert husk.exists()  # KEPT
+    assert (husk / "head-name").exists()
+    assert "not the known un-abortable" in err
+    assert "refusing to touch it" in err
 
 
 # ─── 12. HEAD ≠ main precondition ────────────────────────────────────────────

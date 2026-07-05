@@ -60,7 +60,7 @@ Spawned by `/adversarial-planner-v2` Phase 2, in PARALLEL with the Claude
 `methodology-baselines-critic`. Your brief contains:
 
 - `plan_body`: the full plan text under critique.
-- `revision_round`: 1-indexed; max 3.
+- `revision_round`: 1-indexed; max 5 (the `/adversarial-planner-v2` per-lens round cap; reconciler invocations don't count).
 - `prior_critique_summaries` (round 2+): one-line summaries across both Methodology
   & Baselines twins.
 

@@ -435,6 +435,31 @@ def negative_panel_cids() -> list[str]:
 
 
 def _device(gpu_id: int, cpu_only: bool) -> torch.device:
+    """Resolve the torch device; fail loud on a mis-pinned --gpu-id launch (#813).
+
+    This worker class treats --gpu-id as INFORMATIONAL: the physical GPU is
+    selected ONLY by the CUDA_VISIBLE_DEVICES pin the launcher sets in the
+    child env (gotchas.md § hand-launching a dispatcher-managed per-cell GPU
+    worker). --gpu-id N>0 without CVD set to exactly str(N) would silently
+    bind the first visible device — the busy default GPU under an absent or
+    inherited multi-GPU pin (incident #813: 4 workers crashed at vLLM
+    init_device) — so raise unless the pin matches.
+    """
+    if not cpu_only and gpu_id > 0:
+        cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
+        if cvd != str(gpu_id):
+            observed = "unset" if cvd is None else repr(cvd)
+            raise RuntimeError(
+                f"--gpu-id {gpu_id} requires CUDA_VISIBLE_DEVICES={gpu_id} in the "
+                f"launcher environment (observed: {observed}). This worker treats "
+                "--gpu-id as informational and always binds cuda:0 — the physical "
+                "GPU is selected ONLY by the env pin, so this launch would "
+                "silently target the wrong GPU (incident #813). Relaunch as: "
+                f"env CUDA_VISIBLE_DEVICES={gpu_id} uv run python "
+                f"scripts/<worker>.py ... --gpu-id {gpu_id} — one distinct GPU "
+                "per parallel worker; see .claude/rules/gotchas.md, entry "
+                "'Hand-launching a dispatcher-managed per-cell GPU worker'."
+            )
     if cpu_only or not torch.cuda.is_available():
         return torch.device("cpu")
     return torch.device("cuda:0")  # CVD pins the physical GPU in the launcher env

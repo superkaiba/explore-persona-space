@@ -33,6 +33,7 @@ import re
 import subprocess
 import sys
 import textwrap
+import time
 from pathlib import Path
 
 import pytest
@@ -41,8 +42,31 @@ import pytest
 # explore_persona_space.task_workflow`. We pass this on PYTHONPATH below.
 _REPO_SRC = str(Path(__file__).resolve().parents[1] / "src")
 
+# Bounded live-rebase wait knobs (#996). EVERY child env in this file flows
+# through `_clean_env()`, which POPS both — a knob leaked into the CI/parent
+# env (e.g. a non-float value, which the resolver parses fail-loud) would
+# otherwise perturb knob-default tests. Tests that exercise a knob re-set it
+# explicitly AFTER the pop (`_child_env`).
+_REBASE_WAIT_ENV = "EPM_TASKPY_REBASE_WAIT_SECONDS"
+_REBASE_POLL_ENV = "EPM_TASKPY_REBASE_POLL_SECONDS"
+
 
 # ─── Helpers ───────────────────────────────────────────────────────────────
+
+
+def _clean_env() -> dict[str, str]:
+    """Copy of the parent env with both #996 rebase-wait knobs POPPED.
+
+    The single knob-hygiene chokepoint (round-2 concern
+    `resolver-test-rebase-env-hygiene`): every subprocess env in this file
+    is built from this copy, so a knob leaked into the CI/parent env can
+    never reach a child. Tests that deliberately exercise a knob set it
+    explicitly AFTER this pop (see ``_child_env``).
+    """
+    env = os.environ.copy()
+    for key in (_REBASE_WAIT_ENV, _REBASE_POLL_ENV):
+        env.pop(key, None)
+    return env
 
 
 def _make_main_repo(repo: Path) -> None:
@@ -72,7 +96,7 @@ def _run_resolver(
     stderr). We do NOT pass `check=True` — many tests assert on the
     error message in stderr.
     """
-    env = dict(os.environ)
+    env = _clean_env()
     # Make sure the subprocess can import the project.
     env["PYTHONPATH"] = _REPO_SRC + os.pathsep + env.get("PYTHONPATH", "")
     if extra_env:
@@ -152,7 +176,7 @@ def test_resolves_main_repo_from_worktree(tmp_path: Path) -> None:
 
     # Invoke from inside the worktree, with PYTHONPATH pointing at the
     # tmp repo's src (so we import the test copy of task_workflow).
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", _resolver_snippet()],
@@ -197,7 +221,7 @@ def test_branch_guard_routes_non_main_to_managed_worktree(tmp_path: Path) -> Non
     real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
     (src_dir / "task_workflow.py").write_text(real_tw.read_text())
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", _resolver_snippet()],
@@ -230,7 +254,9 @@ def test_branch_guard_routes_non_main_to_managed_worktree(tmp_path: Path) -> Non
 
 
 def test_branch_guard_distinct_error_on_detached_head(tmp_path: Path) -> None:
-    """Detached HEAD → DISTINCT error mentioning 'detached'."""
+    """Detached HEAD (no rebase marker) → DISTINCT error mentioning
+    'detached'. Under the #996 bounded-wait this path pays at most one 0.5s
+    marker-less grace re-probe before the refusal — semantics unchanged."""
     main_repo = tmp_path / "repo"
     _make_main_repo(main_repo)
     # Detach.
@@ -245,8 +271,10 @@ def test_branch_guard_distinct_error_on_detached_head(tmp_path: Path) -> None:
     real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
     (src_dir / "task_workflow.py").write_text(real_tw.read_text())
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
+    # Knob hygiene (#996): `_clean_env()` popped both rebase-wait knobs, so a
+    # leaked CI value cannot perturb this knob-DEFAULT detached refusal.
     proc = subprocess.run(
         [sys.executable, "-c", _resolver_snippet()],
         cwd=str(main_repo),
@@ -276,7 +304,7 @@ def test_validation_rejects_missing_tasks_dir(tmp_path: Path) -> None:
     real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
     (src_dir / "task_workflow.py").write_text(real_tw.read_text())
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", _resolver_snippet()],
@@ -299,7 +327,7 @@ def test_validation_rejects_bare_repo(tmp_path: Path) -> None:
     # We need a place to drop task_workflow.py such that the subprocess
     # CWD lands inside the bare repo's reach. Just cwd in bare.git and
     # use PYTHONPATH pointing at the dev repo.
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = _REPO_SRC + os.pathsep + env.get("PYTHONPATH", "")
     snippet = textwrap.dedent(
         """
@@ -389,7 +417,7 @@ def test_validation_rejects_real_submodule_layout(tmp_path: Path) -> None:
     real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
     (src_dir / "task_workflow.py").write_text(real_tw.read_text())
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(inner / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", _resolver_snippet()],
@@ -430,7 +458,7 @@ def test_resolver_ignores_git_env_poisoning(tmp_path: Path) -> None:
     real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
     (src_dir / "task_workflow.py").write_text(real_tw.read_text())
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     env["GIT_DIR"] = str(bogus)
     env["GIT_WORK_TREE"] = str(tmp_path / "nonexistent")
@@ -475,7 +503,7 @@ def test_pep562_attribute_access_works_lazily(tmp_path: Path) -> None:
         print('REGISTRY_PATH=' + str(tw.REGISTRY_PATH))
         """
     )
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", snippet],
@@ -521,7 +549,7 @@ def test_cache_hits_avoid_extra_git_calls(tmp_path: Path) -> None:
         }))
         """
     )
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", snippet],
@@ -564,7 +592,7 @@ def test_resolver_uses_module_dir_not_cwd(tmp_path: Path) -> None:
     cwd = tmp_path / "neutral"
     cwd.mkdir()
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", _resolver_snippet()],
@@ -614,7 +642,7 @@ def test_primary_checkout_root_resolves_main_from_worktree(tmp_path: Path) -> No
     )
 
     # PYTHONPATH -> the WORKTREE's src copy (not the primary's).
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(worktree / "src") + os.pathsep + env.get("PYTHONPATH", "")
     snippet = textwrap.dedent(
         """
@@ -657,7 +685,7 @@ def test_primary_checkout_root_ignores_branch_state(tmp_path: Path) -> None:
     real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
     (src_dir / "task_workflow.py").write_text(real_tw.read_text())
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     snippet = textwrap.dedent(
         """
@@ -719,7 +747,7 @@ def test_invalidate_cache_clears_primary_checkout_cache(tmp_path: Path) -> None:
         }))
         """
     )
-    env = dict(os.environ)
+    env = _clean_env()
     env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
     proc = subprocess.run(
         [sys.executable, "-c", snippet],
@@ -778,7 +806,7 @@ def test_tasks_dir_cli_subcommand_invokes_real_task_py(tmp_path: Path) -> None:
     _make_main_repo(main_repo)
     _stage_task_cli_tree(main_repo)
 
-    env = dict(os.environ)
+    env = _clean_env()
     # No PYTHONPATH manipulation needed — task.py prepends `src/` to
     # sys.path on import. TASK_PY_NO_COMMIT=1 prevents any inadvertent
     # git commit attempt (tasks-dir is read-only, but defense in depth).
@@ -810,7 +838,7 @@ def test_tasks_dir_cli_routes_on_non_main_branch(tmp_path: Path) -> None:
         check=True,
     )
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["TASK_PY_NO_COMMIT"] = "1"
     proc = subprocess.run(
         [sys.executable, str(main_repo / "scripts" / "task.py"), "tasks-dir"],
@@ -845,8 +873,10 @@ def test_cli_exits_cleanly_on_detached_head(tmp_path: Path) -> None:
         check=True,
     )
 
-    env = dict(os.environ)
+    env = _clean_env()
     env["TASK_PY_NO_COMMIT"] = "1"
+    # Knob hygiene (#996): `_clean_env()` popped both rebase-wait knobs, so a
+    # leaked CI value cannot perturb this knob-DEFAULT detached refusal.
     proc = subprocess.run(
         [sys.executable, str(main_repo / "scripts" / "task.py"), "tasks-dir"],
         cwd=str(main_repo),
@@ -881,7 +911,7 @@ def _commit_cli_tree(main_repo: Path) -> None:
 
 def _run_task_cli(main_repo: Path, *cli_args: str) -> subprocess.CompletedProcess[str]:
     """Invoke the real `scripts/task.py` in ``main_repo`` (commits enabled)."""
-    env = dict(os.environ)
+    env = _clean_env()
     return subprocess.run(
         [sys.executable, str(main_repo / "scripts" / "task.py"), *cli_args],
         cwd=str(main_repo),
@@ -1044,6 +1074,271 @@ def test_managed_worktree_dodges_stale_worktree_audit() -> None:
         "managed main-pin worktree name matches the audit target regex — it "
         "could be reaped while routing is active"
     )
+
+
+# ─── Bounded live-rebase wait before the detached-HEAD refusal (#996) ──────
+#
+# A concurrent `git pull --rebase` on the shared repo root detaches the
+# primary HEAD for the rebase duration; the resolver now bounded-waits
+# (default 120s, `EPM_TASKPY_REBASE_WAIT_SECONDS`; 0 disables) when a live
+# rebase state dir (`.git/rebase-merge` / `rebase-apply`) is present, then
+# re-runs the FULL branch guard. These tests drive the resolver as a CHILD
+# process (the copied-module subprocess fixture) so the pytest parent can
+# mutate the repo mid-wait.
+
+
+def _stage_tw_module(main_repo: Path) -> None:
+    """Drop the real task_workflow.py into ``main_repo`` (uncommitted) so a
+    subprocess can import the test repo's copy via PYTHONPATH."""
+    src_dir = main_repo / "src" / "explore_persona_space"
+    src_dir.mkdir(parents=True)
+    (src_dir / "__init__.py").touch()
+    real_tw = Path(_REPO_SRC) / "explore_persona_space" / "task_workflow.py"
+    (src_dir / "task_workflow.py").write_text(real_tw.read_text())
+
+
+def _child_env(main_repo: Path, *, wait: str | None, poll: str | None) -> dict[str, str]:
+    """Child env with PYTHONPATH at the test repo's src and BOTH rebase
+    knobs explicitly set (str) or POPPED (None) — test-env knob hygiene."""
+    env = _clean_env()
+    env["PYTHONPATH"] = str(main_repo / "src") + os.pathsep + env.get("PYTHONPATH", "")
+    for key, value in ((_REBASE_WAIT_ENV, wait), (_REBASE_POLL_ENV, poll)):
+        if value is None:
+            env.pop(key, None)
+        else:
+            env[key] = value
+    return env
+
+
+def _detach_with_rebase_marker(main_repo: Path) -> Path:
+    """Detach the primary HEAD and fake a live primary-checkout rebase by
+    creating `.git/rebase-merge`. Returns the marker dir path."""
+    subprocess.run(
+        ["git", "-C", str(main_repo), "checkout", "-q", "--detach", "HEAD"],
+        check=True,
+    )
+    rebase_dir = main_repo / ".git" / "rebase-merge"
+    rebase_dir.mkdir()
+    return rebase_dir
+
+
+def _spawn_resolver_and_await_wait_announcement(
+    main_repo: Path,
+    stderr_path: Path,
+    env: dict[str, str],
+) -> subprocess.Popen[str]:
+    """Start the resolver child (stderr → file) and block until its wait
+    announcement appears in stderr — proof it OBSERVED detached+rebasing —
+    or the child exits early / ~15s passes. Waiting on the announcement
+    (not a fixed sleep) kills the race where a slow child start would let
+    the parent finish the fake rebase before the child's first probe, so
+    the child would never wait at all.
+    """
+    stderr_f = open(stderr_path, "w")  # noqa: SIM115 — handle owned by the child process
+    child = subprocess.Popen(
+        [sys.executable, "-c", _resolver_snippet()],
+        cwd=str(main_repo),
+        env=env,
+        stdout=subprocess.PIPE,
+        stderr=stderr_f,
+        text=True,
+    )
+    stderr_f.close()  # the child holds its own dup of the fd
+    deadline = time.monotonic() + 15.0
+    while time.monotonic() < deadline:
+        if "waiting up to" in stderr_path.read_text():
+            break
+        if child.poll() is not None:
+            break  # child exited early — the caller's asserts surface it
+        time.sleep(0.05)
+    return child
+
+
+def _finish_child(child: subprocess.Popen[str]) -> tuple[int, str]:
+    """Wait for the resolver child (bounded); kill on overrun. Returns
+    (returncode, stdout)."""
+    try:
+        stdout, _ = child.communicate(timeout=30)
+    except subprocess.TimeoutExpired:
+        child.kill()
+        stdout, _ = child.communicate()
+    return child.returncode, stdout
+
+
+def test_detached_live_rebase_waits_then_succeeds(tmp_path: Path) -> None:
+    """Detached HEAD + LIVE rebase marker → the resolver WAITS (loudly) and
+    succeeds once the rebase 'finishes' (#996 criteria 1 + 6).
+
+    The parent finishes the fake rebase in the race-safe order: re-attach
+    HEAD FIRST via plumbing (`git symbolic-ref` — porcelain `checkout` may
+    balk at the fake in-progress rebase state), THEN remove the marker, so
+    the child only ever observes "attached" (success) or "detached+marker"
+    (keep waiting). The stderr assertion also empirically pins the
+    assumption that the `_log.warning` announcement reaches a child
+    process's stderr via logging's lastResort handler (criterion 6).
+    """
+    main_repo = tmp_path / "repo"
+    _make_main_repo(main_repo)
+    _stage_tw_module(main_repo)
+    rebase_dir = _detach_with_rebase_marker(main_repo)
+
+    stderr_path = tmp_path / "child-stderr.txt"
+    child = _spawn_resolver_and_await_wait_announcement(
+        main_repo, stderr_path, _child_env(main_repo, wait="15", poll="0.1")
+    )
+    # Finish the fake rebase: HEAD re-attach FIRST, marker removal SECOND.
+    subprocess.run(
+        ["git", "-C", str(main_repo), "symbolic-ref", "HEAD", "refs/heads/main"],
+        check=True,
+    )
+    rebase_dir.rmdir()
+    returncode, stdout = _finish_child(child)
+    stderr = stderr_path.read_text()
+
+    assert returncode == 0, f"resolver failed:\nstdout: {stdout}\nstderr: {stderr}"
+    resolved = _parse_resolved(stdout)
+    assert Path(resolved["REPO"]).resolve() == main_repo.resolve(), (
+        f"post-wait resolution is not the primary root: {resolved}"
+    )
+    # Criterion 6: the loud wait announcement reached the child's stderr.
+    assert "waiting up to" in stderr, f"wait announcement missing from child stderr: {stderr!r}"
+
+
+def test_knob_zero_marker_present_refuses_immediately(tmp_path: Path) -> None:
+    """The DISCRIMINATIVE knob=0 cell (#996 criterion 5): detached + rebase
+    marker PRESENT + `EPM_TASKPY_REBASE_WAIT_SECONDS=0` → IMMEDIATE refusal
+    with the byte-identical OLD message — no marker probe, no grace, no
+    wait/timeout wording, wall time far under the 120s default bound.
+
+    (The existing ``test_branch_guard_distinct_error_on_detached_head``
+    keeps pinning the detached + NO-marker default-knob refusal.)
+    """
+    main_repo = tmp_path / "repo"
+    _make_main_repo(main_repo)
+    _stage_tw_module(main_repo)
+    _detach_with_rebase_marker(main_repo)
+
+    start = time.monotonic()
+    proc = subprocess.run(
+        [sys.executable, "-c", _resolver_snippet()],
+        cwd=str(main_repo),
+        env=_child_env(main_repo, wait="0", poll="0.1"),
+        capture_output=True,
+        text=True,
+    )
+    wall = time.monotonic() - start
+    assert proc.returncode != 0
+    # Byte-identical OLD refusal message.
+    assert "is detached; re-attach to 'main' before running task.py." in proc.stderr, (
+        f"old refusal message missing: {proc.stderr!r}"
+    )
+    # No wait/timeout wording — the knob=0 branch fires BEFORE any probe.
+    assert "waiting up to" not in proc.stderr, proc.stderr
+    assert "rebase state dir" not in proc.stderr, proc.stderr
+    assert wall < 5.0, f"knob=0 refusal took {wall:.1f}s (expected immediate)"
+
+
+def test_detached_stale_rebase_marker_refuses_after_bound(tmp_path: Path) -> None:
+    """Detached + a rebase marker that never clears → refusal after the
+    bound, with EVERY criterion-3 diagnostic in the message: `detached`, the
+    state-dir name, the formatted wait duration, the CRASHED/stale-rebase
+    hedge, and the `git rebase --abort` remedy (#996 criterion 3).
+    """
+    main_repo = tmp_path / "repo"
+    _make_main_repo(main_repo)
+    _stage_tw_module(main_repo)
+    _detach_with_rebase_marker(main_repo)  # never cleared
+
+    start = time.monotonic()
+    proc = subprocess.run(
+        [sys.executable, "-c", _resolver_snippet()],
+        cwd=str(main_repo),
+        env=_child_env(main_repo, wait="1", poll="0.1"),
+        capture_output=True,
+        text=True,
+    )
+    wall = time.monotonic() - start
+    assert proc.returncode != 0
+    for needle in (
+        "detached",
+        "rebase-merge",
+        "waiting 1s",
+        "CRASHED rebase",
+        "rebase --abort",
+    ):
+        assert needle in proc.stderr, f"{needle!r} missing from stderr: {proc.stderr!r}"
+    # Subprocess startup + imports on a loaded VM ride on top of the 1s
+    # bound; 10s still discriminates decisively vs the 120s default.
+    assert wall <= 10.0, f"stale-marker refusal took {wall:.1f}s (bound was 1s)"
+
+
+def test_post_wait_nonmain_reattach_routes_managed_worktree(tmp_path: Path) -> None:
+    """Post-wait re-attach to a NON-main branch → the re-entered branch
+    guard routes through the existing `_ensure_managed_main_worktree` path
+    (#844), not a refusal (#996 criterion 4). No monkeypatch — the
+    subprocess fixture exercises the real routing.
+    """
+    main_repo = tmp_path / "repo"
+    _make_main_repo(main_repo)
+    _stage_tw_module(main_repo)
+    rebase_dir = _detach_with_rebase_marker(main_repo)
+
+    stderr_path = tmp_path / "child-stderr.txt"
+    child = _spawn_resolver_and_await_wait_announcement(
+        main_repo, stderr_path, _child_env(main_repo, wait="15", poll="0.1")
+    )
+    # Finish the fake rebase onto a FEATURE branch: create it, re-attach
+    # HEAD to it FIRST (plumbing), THEN remove the marker.
+    subprocess.run(["git", "-C", str(main_repo), "branch", "feature-x"], check=True)
+    subprocess.run(
+        ["git", "-C", str(main_repo), "symbolic-ref", "HEAD", "refs/heads/feature-x"],
+        check=True,
+    )
+    rebase_dir.rmdir()
+    returncode, stdout = _finish_child(child)
+    stderr = stderr_path.read_text()
+
+    assert returncode == 0, (
+        f"resolver refused instead of routing:\nstdout: {stdout}\nstderr: {stderr}"
+    )
+    resolved = _parse_resolved(stdout)
+    managed = (main_repo / ".claude" / "worktrees" / "_task-main-pin").resolve()
+    assert Path(resolved["REPO"]).resolve() == managed, (
+        f"post-wait non-main re-attach did not route to the managed worktree: {resolved}"
+    )
+    assert Path(resolved["TASKS_DIR"]).resolve() == (managed / "tasks").resolve()
+
+
+def test_rebase_knobs_reject_non_finite_values(tmp_path: Path) -> None:
+    """A `nan`/`inf` knob value parses via ``float()`` but would defeat the
+    ``time.monotonic() >= deadline`` bound (unbounded wait) — the knob
+    readers raise ``ValueError`` on any non-finite value (#996 round 2).
+
+    Subprocess-shaped like the other tests so the STAGED worktree copy of
+    ``task_workflow.py`` is exercised (an in-process import could resolve
+    to the primary checkout's editable install instead).
+    """
+    repo = tmp_path / "repo"
+    _stage_tw_module(repo)
+    for env, fn in (
+        (_child_env(repo, wait="nan", poll=None), "_rebase_wait_bound_s"),
+        (_child_env(repo, wait=None, poll="inf"), "_rebase_poll_s"),
+    ):
+        snippet = textwrap.dedent(
+            f"""
+            from explore_persona_space.task_workflow import {fn}
+            {fn}()
+            """
+        )
+        proc = subprocess.run(
+            [sys.executable, "-c", snippet],
+            cwd=str(repo),
+            env=env,
+            capture_output=True,
+            text=True,
+        )
+        assert proc.returncode != 0, f"{fn} accepted a non-finite knob: {proc.stdout!r}"
+        assert "must be finite" in proc.stderr, f"guard missing for {fn}: {proc.stderr!r}"
 
 
 if __name__ == "__main__":

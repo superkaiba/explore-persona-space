@@ -1,0 +1,19 @@
+{
+  "dv": "reconstruction",
+  "genre": "betley",
+  "axes": "summary -> layer -> [per-draw ridge skill]",
+  "n_perms": 0,
+  "seed": 658,
+  "reconstruction": {
+    "im_end": {},
+    "turn_nl": {},
+    "uh_im_start": {},
+    "uh_user": {},
+    "uh_nl": {},
+    "uh_mean3": {},
+    "uh_max3": {},
+    "bnd_mean5": {},
+    "bnd_max5": {}
+  },
+  "union_band": null
+}

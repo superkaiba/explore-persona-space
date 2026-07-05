@@ -1,0 +1,67 @@
+{
+  "metadata": {
+    "git_commit": "d8b07645cef8d28c641e7ea6ab5db19d3566ae5f",
+    "timestamp": "2026-07-04T02:09:24Z",
+    "seed": 931,
+    "n": 240,
+    "script": "scripts/issue931_build_pairs.py",
+    "issue": 931
+  },
+  "pdnc_sha": "6fda0a78bda5e9da0854f7befb5dab268abefb7e",
+  "per_novel": [
+    {
+      "novel_id": "AHandfulOfDust",
+      "span_mode": "char",
+      "span_match_rate": 1.0,
+      "mismatch_rate": 0.026525198938992044,
+      "n_pairs": 84,
+      "n_windows": 31,
+      "n_tokens": 95731,
+      "n_quotes_span_unparsed": 0,
+      "quotes_total": 2337,
+      "quotes_speaker_excluded": 75,
+      "quotes_span_mismatch": 60,
+      "quotes_window_straddle": 20,
+      "quotes_kept": 2202
+    },
+    {
+      "novel_id": "APassageToIndia",
+      "span_mode": "char",
+      "span_match_rate": 1.0,
+      "mismatch_rate": 0.006243996157540826,
+      "n_pairs": 88,
+      "n_windows": 39,
+      "n_tokens": 139251,
+      "n_quotes_span_unparsed": 0,
+      "quotes_total": 2123,
+      "quotes_speaker_excluded": 41,
+      "quotes_span_mismatch": 13,
+      "quotes_window_straddle": 24,
+      "quotes_kept": 2069
+    },
+    {
+      "novel_id": "ARoomWithAView",
+      "span_mode": "char",
+      "span_match_rate": 1.0,
+      "mismatch_rate": 0.007774538386783284,
+      "n_pairs": 68,
+      "n_windows": 29,
+      "n_tokens": 92655,
+      "n_quotes_span_unparsed": 0,
+      "quotes_total": 1634,
+      "quotes_speaker_excluded": 605,
+      "quotes_span_mismatch": 8,
+      "quotes_window_straddle": 24,
+      "quotes_kept": 1021
+    }
+  ],
+  "dropped_novels": [],
+  "n_pairs": 240,
+  "n_pairs_before_subsample": 240,
+  "n_novels_kept": 3,
+  "n_windows": 99,
+  "gate_min_pairs": 800,
+  "gate_min_novels": 10,
+  "smoke": true,
+  "pass": false
+}

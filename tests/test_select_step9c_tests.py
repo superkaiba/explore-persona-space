@@ -190,10 +190,40 @@ def test_json_output_shape(tmp_path: Path, monkeypatch, capsys):
     rc = sel.main(["--json", "--repo-root", str(repo)])
     assert rc == 0
     out = json.loads(capsys.readouterr().out)
-    assert set(out.keys()) == {"tests", "untested_touched", "base", "missing_invariants"}
+    assert set(out.keys()) == {
+        "tests",
+        "untested_touched",
+        "base",
+        "missing_invariants",
+        "selection_reasons",
+    }
     assert "tests/test_widget.py" in out["tests"]
     assert out["base"] == "main"
     assert out["missing_invariants"] == []  # all invariants present in the fixture tree
+    assert out["selection_reasons"]["tests/test_widget.py"] == ["stem-map:scripts/widget.py"]
+
+
+# --- Case 10b (#1022): select_tests_with_reasons — reasons content ------------
+def test_selection_reasons_content(tmp_path: Path):
+    """Pins the reason vocabulary (invariant / touched-test / stem-map:<f> /
+    glob-scan:<f>) and that select_tests still returns the identical 2-tuple."""
+    repo = _make_tree(tmp_path, ["test_widget.py", "test_thing.py"])
+    touched = ["scripts/widget.py", "tests/test_thing.py", "scripts/issue999_fake.py"]
+    tests, untested, reasons = sel.select_tests_with_reasons(touched, repo)
+    # Stem-mapped from a touched code file:
+    assert reasons["tests/test_widget.py"] == ["stem-map:scripts/widget.py"]
+    # A touched test file includes itself:
+    assert reasons["tests/test_thing.py"] == ["touched-test"]
+    # Glob-scan arm (#895) records the covered touched file:
+    assert reasons["tests/test_shared_vm_thread_caps.py"] == ["glob-scan:scripts/issue999_fake.py"]
+    # A pure invariant carries exactly the invariant reason:
+    assert reasons["tests/test_task_workflow.py"] == ["invariant"]
+    # Reason keys exactly cover the selection, and every reason list is sorted:
+    assert set(reasons) == set(tests)
+    assert all(rs == sorted(rs) for rs in reasons.values())
+    # The unchanged-signature wrapper returns the IDENTICAL selection:
+    assert sel.select_tests(touched, repo) == (tests, untested)
+    assert untested == ["scripts/issue999_fake.py"]  # scan hit never marks "tested"
 
 
 # --- Case 11: _resolve_work_root uses --show-toplevel (#851) ------------------
@@ -240,7 +270,9 @@ def test_empty_selection_fails_loud(tmp_path: Path, monkeypatch, capsys):
     monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
     monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: [])
     # Force the degenerate empty selection the invariant set normally prevents.
-    monkeypatch.setattr(sel, "select_tests", lambda *_a, **_k: ([], []))
+    # (main() routes through select_tests_with_reasons as of #1022 — same
+    # selection, plus the reasons map the Step 9c compare consumes.)
+    monkeypatch.setattr(sel, "select_tests_with_reasons", lambda *_a, **_k: ([], [], {}))
     rc = sel.main(["--repo-root", str(repo)])
     assert rc == 1
     err = capsys.readouterr().err

@@ -53,7 +53,15 @@ re-dispatched); batch-routed retries resume through their nested
 across resumes so a threshold flip cannot strand an in-flight nested
 batch or a partial file); and a complete-but-unmerged
 ``results_retry.json`` (crash between its atomic write and the state
-flip) is merged with zero API calls.
+flip) is merged with zero API calls. A sub-batch still ``in_progress`` and
+wedged at zero succeeded requests past ``EPS_BATCH_STUCK_HOURS`` (default
+4h; ``<=0`` disables) is CANCELED (escape intent persisted BEFORE the
+cancel side effect), its partial results harvested at ``ended``, and its
+``canceled`` ids re-dispatched through the retry machinery pre-pinned to
+the SYNC path (#1019, incident #810). A batch already ``canceling`` with no
+persisted intent (an operator's out-of-band Console cancel) is never
+adopted by the escape — its canceled rows keep the #663 error-dict
+no-retry contract.
 
 NOTE: ``_build_params`` is underscore-private by convention but imported
 by ``explore_persona_space.eval.alignment`` (single source of truth for
@@ -77,6 +85,7 @@ Dry-run CLI (zero API calls; OTPM from ``EPM_JUDGE_OTPM`` or 400k assumed)::
 import argparse
 import asyncio
 import datetime as _dt
+import functools
 import hashlib
 import json
 import logging
@@ -91,7 +100,10 @@ from explore_persona_space.eval import DEFAULT_JUDGE_MODEL
 from explore_persona_space.eval.utils import parse_judge_json
 from explore_persona_space.llm.anthropic_client import (
     BatchDeadlineExceeded,
+    batch_stuck_threshold_hours,
     deadline_from_expires_at,
+    parse_batch_submitted_at,
+    retrieve_with_create_grace,
 )
 
 if TYPE_CHECKING:
@@ -401,11 +413,11 @@ def _collect_batch_results(
     client: "anthropic.Anthropic",
     batch_id: str,
     error_dict_factory: Callable[[str], dict],
-) -> tuple[dict[str, dict], list[str], list[str], list[str]]:
+) -> tuple[dict[str, dict], list[str], list[str], list[str], list[str]]:
     """Stream one ended batch's results; join on custom_id (order is not guaranteed).
 
-    Returns (scores, retriable_ids, expired_ids, quarantined_ids). Two-level
-    branch per the Anthropic doc example:
+    Returns (scores, retriable_ids, expired_ids, quarantined_ids, canceled_ids).
+    Two-level branch per the Anthropic doc example:
 
       succeeded                                 -> parse + keep
       errored, error.error.type == invalid_request_error
@@ -415,10 +427,22 @@ def _collect_batch_results(
       errored, other (server error)             -> retriable
       expired                                   -> retriable (never reached the
                                                    model; safe to resubmit)
-      canceled / unknown                        -> error dict, no retry
-                                                   (user-initiated terminal)
+      canceled                                  -> ``canceled`` list (never
+                                                   reached the model, not billed
+                                                   — docs-confirmed; same
+                                                   resubmit-safety class as
+                                                   expired). Whether canceled
+                                                   ids actually RETRY is gated
+                                                   downstream by the sub-batch's
+                                                   ``stuck_cancel_intent_at``
+                                                   marker (#1019): only OUR
+                                                   stuck-cancel escape retries;
+                                                   an out-of-band (Console)
+                                                   cancel keeps the #663
+                                                   no-retry contract.
+      unknown                                   -> error dict, no retry
 
-    errored/expired/quarantined all get error dicts in ``scores`` too
+    errored/expired/quarantined/canceled all get error dicts in ``scores`` too
     (overwritten if a retry later succeeds). The SDK error nesting is
     ``result.result.error.error.type`` (double ``.error``); access is
     getattr-guarded so a shape mismatch fails OPEN (routed to retriable, the
@@ -428,6 +452,7 @@ def _collect_batch_results(
     retriable: list[str] = []
     expired: list[str] = []
     quarantined: list[str] = []
+    canceled: list[str] = []
     for result in client.messages.batches.results(batch_id):
         cid = result.custom_id
         rtype = result.result.type
@@ -451,9 +476,12 @@ def _collect_batch_results(
         elif rtype == "expired":
             expired.append(cid)
             scores[cid] = error_dict_factory("batch_error: expired")
-        else:  # canceled (or unknown): surface, never retry
+        elif rtype == "canceled":
+            canceled.append(cid)
+            scores[cid] = error_dict_factory("batch_error: canceled")
+        else:  # unknown: surface, never retry
             scores[cid] = error_dict_factory(f"batch_error: {rtype}")
-    return scores, retriable, expired, quarantined
+    return scores, retriable, expired, quarantined, canceled
 
 
 # ── Sync path ────────────────────────────────────────────────────────────────
@@ -663,11 +691,24 @@ class _BatchCollector:
 
 
 def _load_collected_into(acc: _BatchCollector, dispatch_dir: Path, sb: dict) -> None:
-    """Merge one collected sub-batch's persisted results into ``acc``."""
+    """Merge one collected sub-batch's persisted results into ``acc``.
+
+    ``canceled_ids`` join the retry set ONLY when this sub-batch carries the
+    ``stuck_cancel_intent_at`` escape-intent marker (#1019) — i.e. OUR
+    stuck-cancel escape canceled it. The gate keys on the INTENT marker (not
+    the ``stuck_canceled_at`` confirm stamp): intent is persisted BEFORE the
+    external cancel side effect, so it is set in every crash ordering —
+    including resume-at-``ended``, where the confirm stamp never landed. An
+    out-of-band cancel (a human canceling in the Console — no intent marker)
+    keeps the #663 contract: error dict, never retried. ``.get(..., [])``
+    keeps pre-existing results files readable.
+    """
     payload = json.loads((dispatch_dir / f"results_{sb['batch_id']}.json").read_text())
     acc.scores.update(payload["scores"])
     acc.retry_candidates.extend(payload["retriable_ids"])
     acc.retry_candidates.extend(payload["expired_ids"])
+    if sb.get("stuck_cancel_intent_at"):
+        acc.retry_candidates.extend(payload.get("canceled_ids", []))
     acc.quarantined_ids.extend(payload.get("quarantined_ids", []))
 
 
@@ -682,7 +723,7 @@ def _harvest_sub_batch(
     sb: dict,
 ) -> None:
     """Collect an ended sub-batch, persist its results json, mark it collected."""
-    sb_scores, retriable, expired, quarantined = _collect_batch_results(
+    sb_scores, retriable, expired, quarantined, canceled = _collect_batch_results(
         client, sb["batch_id"], error_dict_factory
     )
     _atomic_write_json(
@@ -692,11 +733,78 @@ def _harvest_sub_batch(
             "retriable_ids": retriable,
             "expired_ids": expired,
             "quarantined_ids": quarantined,
+            "canceled_ids": canceled,
         },
     )
+    if sb.get("stuck_cancel_intent_at"):
+        # Frozen-counts fingerprint (#1019 §12 A5): the escape fired on
+        # succeeded==0, so nonzero API-succeeded results harvested here mean
+        # request_counts was frozen/stale (a false-positive stuck fire).
+        # Count TRUE API-succeeded rows only: unknown-rtype rows sit in no
+        # list (plain subtraction would count them as succeeded) but carry
+        # "batch_error: " error dicts; a "parse_error" row IS API-succeeded.
+        non_succeeded = {*retriable, *expired, *quarantined, *canceled}
+        n_succeeded = sum(
+            1
+            for cid, score in sb_scores.items()
+            if cid not in non_succeeded
+            and not str(score.get("reasoning", "")).startswith("batch_error: ")
+        )
+        logger.warning(
+            "Stuck-canceled sub-batch %s harvested: n_succeeded=%d n_canceled=%d "
+            "(nonzero succeeded after a 0-counts cancel is the frozen-request_counts "
+            "false-positive signature)",
+            sb["batch_id"],
+            n_succeeded,
+            len(canceled),
+        )
     sb["status"] = "collected"
     _atomic_write_json(state_path, state)
     _load_collected_into(acc, dispatch_dir, sb)
+
+
+def _cancel_stuck_sub_batch(
+    client: "anthropic.Anthropic",
+    sb: dict,
+    state: dict,
+    state_path: Path,
+    now_fn: "Callable[[], _dt.datetime]",
+) -> None:
+    """Persist escape intent, cancel the stuck sub-batch, confirm (#1019).
+
+    Ordering is load-bearing (#1019 critic round 1):
+      1. persist ``stuck_cancel_intent_at`` (the retry DISCRIMINATOR — written
+         BEFORE the external side effect, so a crash at ANY later point still
+         routes this sub-batch's ``canceled`` ids to the sync retry, even when
+         the resume's first retrieve already reads ``ended`` and the normal
+         ended-harvest path runs before the stuck check);
+      2. ``batches.cancel`` (race guard below);
+      3. persist ``stuck_canceled_at`` (cancel-confirmed observability stamp;
+         its absence on resume re-drives step 2, which is idempotent-safe
+         because the guard accepts ``canceling``/``ended``).
+    """
+    import anthropic as anthropic_mod
+
+    if sb.get("stuck_cancel_intent_at") is None:
+        sb["stuck_cancel_intent_at"] = now_fn().strftime("%Y-%m-%dT%H:%M:%SZ")
+        _atomic_write_json(state_path, state)  # intent durable BEFORE the cancel
+    try:
+        client.messages.batches.cancel(sb["batch_id"])
+    except anthropic_mod.APIStatusError:
+        # Race / re-drive: the batch may already be canceling (a prior cancel —
+        # ours after a crash, or an out-of-band Console cancel) or ended. BOTH
+        # are accepted cancellation outcomes: the poll loop harvests at ended
+        # either way. Anything else re-raises (fail fast, no swallowed faults).
+        final = client.messages.batches.retrieve(sb["batch_id"])
+        if final.processing_status not in ("canceling", "ended"):
+            raise
+        logger.info(
+            "Cancel of %s raced with state %s; accepted as canceled",
+            sb["batch_id"],
+            final.processing_status,
+        )
+    sb["stuck_canceled_at"] = now_fn().strftime("%Y-%m-%dT%H:%M:%SZ")
+    _atomic_write_json(state_path, state)
 
 
 def _poll_one_sub_batch_step(
@@ -709,9 +817,35 @@ def _poll_one_sub_batch_step(
     error_dict_factory: Callable[[str], dict],
     now_fn: "Callable[[], _dt.datetime]",
     sb: dict,
+    sleep_fn: "Callable[[float], None] | None" = None,
 ) -> None:
-    """Poll one not-yet-collected sub-batch once; harvest on end, raise on overdue."""
-    batch = client.messages.batches.retrieve(sb["batch_id"])
+    """Poll one not-yet-collected sub-batch once; harvest on end, raise on overdue.
+
+    Stuck-batch escape (#1019): AFTER the ended-harvest and overdue blocks (their
+    precedence is load-bearing), a sub-batch still ``in_progress`` at
+    ``request_counts.succeeded == 0`` for >= ``EPS_BATCH_STUCK_HOURS`` since
+    ``submitted_at`` is canceled via :func:`_cancel_stuck_sub_batch` (intent-first
+    crash-safe ordering); the enclosing poll loop then harvests it when the API
+    flips canceling -> ended. A batch already ``canceling`` with NO persisted
+    intent (an out-of-band Console cancel) is NEVER adopted — its canceled rows
+    surface as error dicts, not retries (#1019 round 2).
+
+    Create-grace 404 (#995): a ``NotFoundError`` on the loop retrieve within
+    ``BATCH_CREATE_404_GRACE_S`` of this sub-batch's persisted ``submitted_at``
+    (l.636, the #742 crash site) is retried with bounded backoff. A resumed poll
+    with an old/absent ``submitted_at`` stays terminal on the first 404. This
+    step is sync and already blocks the async outer loop on the retrieve; the
+    worst-case +60s of grace sleeps is consistent with existing behavior. The
+    overdue final retrieve below stays UNGUARDED (plan §4.3). ``sleep_fn`` is
+    additive + injectable for tests (default ``time.sleep``).
+    """
+    batch = retrieve_with_create_grace(
+        functools.partial(client.messages.batches.retrieve, sb["batch_id"]),
+        created_at=parse_batch_submitted_at(sb.get("submitted_at")),
+        batch_id=sb["batch_id"],
+        now_fn=now_fn,
+        sleep_fn=sleep_fn,
+    )
     counts = getattr(batch, "request_counts", None)
     if counts is not None:
         logger.info(
@@ -745,6 +879,54 @@ def _poll_one_sub_batch_step(
             _harvest_sub_batch(acc, sb=sb, **harvest_kw)
             return
         raise BatchDeadlineExceeded(sb["batch_id"], sb["deadline"])
+    # Stuck-batch escape (#1019, incident #810): zero succeeded after the
+    # threshold -> persist escape INTENT, then cancel; partial results are
+    # harvested on a later iteration when the API flips canceling -> ended
+    # (docs-confirmed); canceled ids re-dispatch SYNC, keyed on the INTENT
+    # marker (which survives every crash ordering). Ordering is load-bearing:
+    # the ended-harvest and overdue blocks above run FIRST, so a finished
+    # batch is never touched and BatchDeadlineExceeded keeps precedence.
+    # FRESH ENTRY additionally requires ``processing_status == "in_progress"``
+    # (#1019 round 2, concern out-of-band-canceling-retried): a batch already
+    # ``canceling`` at the poll — an operator's out-of-band Console cancel —
+    # must NOT be adopted by the escape; stamping intent on it would route the
+    # operator-canceled ids into the sync retry, violating the out-of-band
+    # no-retry contract (see :func:`_load_collected_into`). The escape-intent
+    # RESUME leg below deliberately keeps accepting canceling/ended — that leg
+    # completes OUR OWN already-committed escape after a crash.
+    stuck_hours = batch_stuck_threshold_hours()
+    if (
+        stuck_hours is not None
+        and batch.processing_status == "in_progress"  # never adopt an out-of-band cancel
+        and sb.get("stuck_cancel_intent_at") is None  # escape entered at most once
+        and counts is not None  # fail-safe: no counts, no verdict
+        and counts.succeeded == 0
+    ):
+        anchor = parse_batch_submitted_at(sb.get("submitted_at") or state.get("created_at"))
+        if anchor is not None:
+            elapsed_h = (now_fn() - anchor).total_seconds() / 3600.0
+            if elapsed_h >= stuck_hours:
+                logger.warning(
+                    "STUCK BATCH: %s at succeeded=0 after %.1fh (threshold %.1fh; "
+                    "processing=%s errored=%s) — canceling; unprocessed items will "
+                    "re-dispatch on the SYNC path (#810 escape)",
+                    sb["batch_id"],
+                    elapsed_h,
+                    stuck_hours,
+                    counts.processing,
+                    counts.errored,
+                )
+                _cancel_stuck_sub_batch(client, sb, state, state_path, now_fn)
+    # Escape-intent RESUME leg: intent persisted but cancel never confirmed
+    # (crash between the intent write and the cancel/confirm writes) ->
+    # re-drive the cancel. Bounded: the race guard accepts canceling/ended,
+    # so this converges in one step. Deliberately keyed on the persisted
+    # INTENT alone — not stuck_hours, not processing_status: an escape
+    # committed by the intent write is COMPLETED on resume even when
+    # EPS_BATCH_STUCK_HOURS has since been set to 0 (disabling the knob stops
+    # NEW escapes; it never strands a half-done one).
+    elif sb.get("stuck_cancel_intent_at") is not None and sb.get("stuck_canceled_at") is None:
+        _cancel_stuck_sub_batch(client, sb, state, state_path, now_fn)
 
 
 async def _poll_and_collect_sub_batches(
@@ -952,12 +1134,20 @@ async def _run_or_resume_retry(
     retry_partial_path = dispatch_dir / "results_retry_partial.json"
     items_map = {cid: (q, c, u) for cid, q, c, u in items}
     recomputed_ids = sorted(set(retry_candidates))
+    stuck_cancel_present = any(sb.get("stuck_cancel_intent_at") for sb in state["sub_batches"])
     if retry_state is None:
         retry_state = {
             "status": "pending",
             "custom_ids": recomputed_ids,
             "results_merged": False,
-            "routed_path": None,
+            # Stuck-cancel retries are PRE-PINNED to sync (#1019): re-batching a
+            # canceled remainder risks re-wedging (#810: sync cleared 39,512
+            # calls in 18 min). DELIBERATE breadth: any() pins the WHOLE retry
+            # set sync — including errored/expired ids from healthy sibling
+            # sub-batches in the same dispatch. Their discount loss is
+            # accepted: one retry, one route, deterministic on resume (no
+            # per-id route partitioning).
+            "routed_path": "sync" if stuck_cancel_present else None,
         }
         state["retry"] = retry_state
         _atomic_write_json(state_path, state)
