@@ -58,6 +58,26 @@ TICK_LABEL = {
 ARM_LABEL = {"base": "base model", "trained": "finetuned model"}
 L = 14
 
+# Battery-context family prefixes -> reader-facing family names (interp-critique
+# v4, Codex request 2: figure labels must not show raw `f*_` slugs).
+CTX_FAMILY_LABEL = {
+    "f1": "persona",
+    "f2": "WildChat",
+    "f3": "ICL demo",
+    "f4": "rephrase",
+    "f5": "format",
+    "f6": "default",
+    "f8": "behavior instr.",
+}
+
+
+def ctx_label(cid: str) -> str:
+    """Reader-facing label for a battery context id (e.g. f8_behav_fact -> 'behavior instr.: fact')."""
+    fam, _, rest = str(cid).partition("_")
+    for tok in ("house_", "phub_", "wc_", "icl_", "reph_", "fmt_", "behav_"):
+        rest = rest.replace(tok, "hub " if tok == "phub_" else "")
+    return f"{CTX_FAMILY_LABEL.get(fam, fam)}: {rest.replace('_', ' ')}"
+
 
 def load_cells(res_dir: Path) -> dict[tuple[str, str], dict]:
     cells = {}
@@ -164,10 +184,10 @@ def fig_per_context(cells: dict, arm: str, out: Path) -> None:
                 0.5 / max(len(gaps), 1)
             )
             ax.scatter(xs, gaps, s=12, color=colors[i], alpha=0.75)
-            # label extreme contexts (top-2 |gap|) with their battery context id
+            # label extreme contexts (top-2 |gap|) with a reader-facing name
             ids = c.get("ctx_ids", [str(j) for j in range(len(gaps))])
             for j in np.argsort(-np.abs(gaps))[:2]:
-                ax.annotate(str(ids[j])[:14], (xs[j], gaps[j]), fontsize=6, ha="left", va="bottom")
+                ax.annotate(ctx_label(ids[j]), (xs[j], gaps[j]), fontsize=6, ha="left", va="bottom")
         ax.axhline(0, color="0.3", lw=0.8)
         ax.set_xticks(range(3))
         ax.set_xticklabels([TICK_LABEL[s] for s in SUBSTRATES], fontsize=8)
@@ -239,7 +259,10 @@ def fig_overlap(cells: dict, arm: str, out: Path) -> None:
                 tw = blk[twk]["cka"]
                 if tw.get("n", 0) > 0:
                     ax.plot([i - 0.15, i + 0.15], [tw["p5"]] * 2, color=colors[i], lw=1.4)
-                    ax.plot([i], [tw["mean"]], marker=mk, color=colors[i], ms=7, mfc="none")
+                    # "_" / "x" are line-art markers: the blog style zeroes
+                    # lines.markeredgewidth, so an explicit mew is required or
+                    # they render invisible (interp-critique v4, Codex request 3).
+                    ax.plot([i], [tw["mean"]], marker=mk, ls="", color=colors[i], ms=8, mew=1.8)
         ax.set_xticks(range(3))
         ax.set_xticklabels([TICK_LABEL[s] for s in SUBSTRATES], fontsize=8)
         ax.set_ylim(0, 1.05)
