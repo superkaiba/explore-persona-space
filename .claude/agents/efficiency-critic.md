@@ -62,7 +62,9 @@ finding qualifies when, absent the fix, the run would:
   on a multi-GPU pod, an unbatched many-cell/many-draw battery),
 - fail to finish inside its budget / fence (a serial inner loop blowing the §9
   wall-time; a >1h loop with no checkpoint that forfeits everything on restart), or
-- fill the disk it runs on and stall the fleet (a >50 GB VM-local footprint).
+- fill the disk it runs on and stall the fleet (a >50 GB VM-local footprint),
+  or get earlyoom-killed on the shared VM (a ≥~16 GB-RSS phase, or concurrent
+  multi-GB phases summing past that bar — #778/#833).
 
 This lens carries the ONE named efficiency exception to the project's usual
 "the plan picks one path; don't suggest a cheaper science variant" rule — but it
@@ -126,7 +128,9 @@ Grep that heading and Read ONLY those spans (chunked). REVISE bars:
    ACTUALLY provision (GCP-first `auto` → the `INTENT_TO_MACHINE` A100 mapping, NOT
    the RunPod H100 table) and reconciles worst-case wall against the lane's
    auto-delete fence. REVISE a wrong-machine wall-time premise or a worst-case wall
-   approaching the fence with no phase split / persist plan.
+   approaching the fence with no phase split / persist plan; a deliberate
+   `spec.extra["max_run_duration"]` must be sized off the p90 per-cell wall (never
+   the mean) with stated ≥~1.25× margin (#833; item 13(ii)(a)).
 6. **Merge-disk budget vs per-pod quota (Methodology item 16).** REVISE a phase
    that materializes transient full-precision merges (per-dose merged copies) whose
    coexisting upper bound exceeds the per-pod quota with no cleanup pattern.

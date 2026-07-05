@@ -122,13 +122,13 @@ outcome-changing) · 5 marker-dynamics logging · 6 contrastive negatives for
 behavior implantation (two named exemptions) · 7 replication fidelity ·
 8 few-shot / ICL demonstration content · 9 trained-artifact reuse fitness
 check (a)–(j) · 10 CPU/analysis-phase placement (i)–(iv): idle multi-GPU pod /
->50 GB VM footprint / gradient-descent / dense-factorization fit — or any
+>50 GB disk or ≥~16 GB-RSS VM footprint / gradient-descent / dense-factorization fit — or any
 high-count tiny-op battery (draws, per-item serialization, per-file uploads) —
 on the VM CPU or left serial / narrow phase holding the peak-width pod ·
 11 marker stopping recipe (parity is NOT a
 `Source:`) + runtime-guard smoke-verifiability · 12 multi-arm resolution-band
 simultaneity · 13 compute projection costed on the routed machine + GCP fence
-reconcile + store-heavy per-item serialization sizing (measured wall-time;
+reconcile + p90 fence basis + store-heavy per-item serialization sizing (measured wall-time;
 compression default OFF for fp16→Xet) · 14 completion provenance
 (on-policy-first positives) ·
 15 data-source realism tier · 16 merge-disk budget vs per-pod quota ·
