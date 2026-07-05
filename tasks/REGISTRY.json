@@ -349,8 +349,8 @@
     "1043": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1043",
-      "status": "approved",
+      "path": "tasks/running/1043",
+      "status": "running",
       "title": "workflow-fix: verify_plan.py resume-provenance check (persist+resume-skip plans must name input-fingerprint validation)"
     },
     "1044": {
