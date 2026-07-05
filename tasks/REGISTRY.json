@@ -300,8 +300,8 @@
     "1037": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1037",
-      "status": "proposed",
+      "path": "tasks/planning/1037",
+      "status": "planning",
       "title": "daily-fix: issue-763 branch surgery \u2014 strip foreign files, re-merge"
     },
     "1038": {
