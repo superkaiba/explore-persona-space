@@ -9,3 +9,4 @@
 {"ts": "2026-07-05T06:38:30Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr7f2acx-titkbo phase=done after 211s fetch_retries=0."}
 {"ts": "2026-07-05T06:40:56Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr7f6os6-j3nex7 phase=done after 151s fetch_retries=0."}
 {"ts": "2026-07-05T06:42:55Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr7f5cl7-h85b3i phase=done after 333s fetch_retries=0."}
+{"ts": "2026-07-05T06:59:45Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verify_plan.py v2 (kind=infra): PASS, n_fail=0, n_warn=1 (same c8 kill-criteria-in-TLDR WARN as v1; acceptable for infra). Plan v2 persisted."}
