@@ -96,6 +96,16 @@ Your brief contains:
 - `figure_paths` — list of PNG paths referenced in the interpretation body
   (for lens 6 plot-prose match — Codex multimodal works, verified
   2026-05-10).
+  COMPOSE-TIME BLOB-VERIFICATION (#922): for each body figure reference,
+  pass a path you verified blob-identical to the body-pinned SHA
+  (`git hash-object <local>` == `git rev-parse <sha>:<path>`); prefer the
+  issue-worktree copy, NEVER an untracked repo-root duplicate. When no
+  local copy matches the pin, materialize it
+  (`git show <sha>:<path> > /tmp/issue-<N>-fig-<file>.png`) and pass that;
+  if the pinned SHA is absent from the local object DB, fetch the body's
+  raw URL to the same /tmp path and pass that. For an unpinned reference
+  (rare), pass the worktree copy and mark it `unpinned-working-copy` in
+  the prompt line.
 - `raw_completions_path` — path to raw eval JSON for lens 7 sample
   plausibility checks.
 - `prior_critique_summaries` — one-line summaries of every prior
@@ -222,6 +232,11 @@ You must independently:
 - Read the JSONs and verify claims against raw numbers.
 - LOAD each PNG via the file system and verify the figure shows what the
   caption claims (lens 6).
+  The FIGURES paths above were blob-verified against the body-pinned SHAs
+  at compose time — do not substitute other working-tree copies; if you
+  read any additional figure/sidecar path yourself, verify it against the
+  body pin first (lens 6), and never cite an unverified untracked copy as
+  evidence.
 - Sample raw completions and verify firing-rate claims (lens 7) — load
   N=5 firing + N=5 non-firing rows from {{raw_completions_path}}, read the
   actual completions, check the body's sample-output blocks against the raw

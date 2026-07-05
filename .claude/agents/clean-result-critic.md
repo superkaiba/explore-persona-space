@@ -656,6 +656,25 @@ one `### <finding>` per result.)
 
 ### Lens 3 — Figure (absorbs the what-is-plotted/interpretation–figure pairing check)
 
+- **Figure-source resolution (pin-first — #922).** The review target for
+  every figure AND its `.meta.json` sidecar is the BODY-PINNED blob (the
+  `<sha>` + `<path>` in the body's
+  `raw.githubusercontent.com/<owner>/<repo>/<sha>/<path>` URL), never an
+  unverified working-tree file. Resolution order: (1) read text sidecars
+  straight off the pin — `git show <sha>:<path>` (works from any checkout;
+  worktrees share the object DB; if the SHA is locally absent, fetch the
+  raw URL instead); (2) a local copy (issue worktree or repo root) may
+  serve as the read target ONLY after blob-identity is verified:
+  `[ "$(git hash-object <local>)" = "$(git rev-parse <sha>:<path>)" ]`;
+  (3) to VIEW a pinned PNG with no identity-verified local copy,
+  materialize it: `git show <sha>:<path> > /tmp/pin-<file>.png`, then Read
+  that. NEVER treat an untracked (`git status --porcelain` → `??`) or
+  identity-failed local copy as evidence — a blocker resting on such a
+  read is INVALID. A local-vs-pin mismatch is a NOTE ("possible stale
+  stray at <path>; review target is the pin"), not a body defect. (#922:
+  a stale untracked repo-root `figures/issue_922/*.meta.json` produced a
+  spurious REVISE and burned a reconciler round; the pinned blob was
+  correct.)
 - At least one image exists in the body, inline `![alt](url)` inside a
   `### <result>` under `## Results` (each result carries its own
   figure; one figure per result). (v3: `### <finding>` under

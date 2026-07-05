@@ -6268,12 +6268,11 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # growth; cap = measured + <=~1 KB. Prior: 82,176 B post-#875+#869+#881)
     # #948: seam-stubbed production-body lens (Step 3.8)
     "code-reviewer.md": 92_300,
-    # measured 71,430 B post-#1050 r2 (placeholder-rejecting envelope
-    # guard + composer Bash-allowlist amendment + compose-time
-    # substitution note — concern-mandated growth; cap = measured
-    # + <=~1 KB. Prior: 71,000 (measured 70,022 B post-#1050 r1),
-    # 60,554 B pre-#1050)
-    "codex-clean-result-critic.md": 72_000,
+    # measured 72,064 B post-#1056 (figure pin-first carve-out in the
+    # composed-prompt header — plan-mandated growth; cap = measured
+    # + <=~1 KB. Prior: 72,000 (measured 71,430 B post-#1050 r2),
+    # 71,000 post-#1050 r1, 60,554 B pre-#1050)
+    "codex-clean-result-critic.md": 73_000,
     # measured 50,642 B post-#948 (Step 3.8 copy-list bullet + the
     # inlined-rubric 3.8 slot — plan-mandated growth; cap = measured
     # + <=~1 KB. Prior: 47,930 B post-#881)

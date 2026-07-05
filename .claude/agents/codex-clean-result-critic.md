@@ -477,6 +477,15 @@ PRIOR CRITIQUE SUMMARIES (empty on round 1): {{prior_critique_summaries}}
 
 All paths above are absolute and were existence-checked at compose
 time; resolve any relative repo path you encounter against REPO ROOT.
+EXCEPTION — figures + sidecars (`figures/issue_<N>/…`): review the
+BODY-PINNED blob, never an unverified working-tree copy — follow Lens 3
+"Figure-source resolution" below (read-only git — `git show
+<sha>:<path>`, `git hash-object`, `git rev-parse` — is permitted; not a
+repo script). If git is denied or unavailable (e.g. `fatal: not a git
+repository`), mark the figure sub-check sandbox-unverifiable (advisory)
+instead of citing an unverified local file — advisory here governs ONLY
+this pin-identity sub-check (it overrides the generic denied-capability
+BLOCKED rule; the figure content itself stays scoreable). (#922)
 Do not execute any repo script — the mechanical pre-pass output you
 need is inlined below.
 
