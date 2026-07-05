@@ -87,7 +87,16 @@ GC pass:
    one-time alert, but a user-driven session is NEVER auto-respawned
    (#505 round-2 orphaning, 2026-06-10 — a dead bare-spawned session at
    an ACTIVE status previously orphaned silently because this pass only
-   globbed ``issue-*.json``).
+   globbed ``issue-*.json``).  A daemon-blocked stop+respawn is never
+   dropped: the persisted per-issue episode state plus the
+   alerted->eligible escalation executes it on the next daemon-reachable
+   tick, and the #845 (c) escalation pages after 2 blocked ticks (#1071).
+   A corroboration-debounced alert (#759 downgrade) names the debounce in
+   its marker note, never a daemon outage.  A pathological
+   reachable/unreachable daemon flap can repeatedly reset the
+   K-corroboration ``live_consecutive`` counter and defer escalation,
+   bounded in practice by the #845 (c) page after 2 blocked ticks plus
+   the persistent staleness re-fire.
 5. **Orphan sweep (registration-INDEPENDENT safety net).** Every other
    session pass starts from the registry files (``issue-<N>.json`` /
    ``manual-issue-<N>.json``), so an ACTIVE-status task with NO registration
@@ -8448,6 +8457,8 @@ class _StalledActionCtx:
         daemon_blocked_pushed: bool = False,
         wedge_hits: int = 0,
         wedge_note: str | None = None,
+        daemon_reachable: bool = True,
+        downgrade_note: str | None = None,
     ) -> None:
         self.issue = issue
         self.happy_session_id = happy_session_id
@@ -8519,6 +8530,18 @@ class _StalledActionCtx:
         self.daemon_blocked_pushed = daemon_blocked_pushed
         self.wedge_hits = wedge_hits
         self.wedge_note = wedge_note
+        # #1071 evidence-based alert reasons: ``daemon_reachable`` is the
+        # pass-level flag (computed once per tick) and ``downgrade_note`` is
+        # the #759 live-corroboration downgrade explanation (None on every
+        # other path). Both are PER-TICK EVIDENCE for the alert handler's
+        # reason ladder — recomputed each tick, deliberately NOT persisted by
+        # :func:`_persist_stalled_ctx` (no state-file schema change). Before
+        # these were threaded, the handler's exhaustive-pre-#759 else-branch
+        # misattributed a corroboration debounce as "Happy daemon
+        # unreachable" (both #813 incidents, 2026-07-03/04), prompting manual
+        # respawns that raced an in-flight auto-recovery.
+        self.daemon_reachable = daemon_reachable
+        self.downgrade_note = downgrade_note
 
     @property
     def happy_session_id_str(self) -> str | None:
@@ -8575,7 +8598,19 @@ def _stalled_arm_deferral(ctx: _StalledActionCtx) -> bool:
     edit); defer the stop/respawn, bounded at :data:`WT_HOLD_MAX_TICKS`
     consecutive holds (~1h) so a cross-writer can't defer recovery forever.
     ``missed`` is pinned at the threshold while held so the arm re-fires on
-    the very next tick (stay armed, mirroring the crash arm's hold)."""
+    the very next tick (stay armed, mirroring the crash arm's hold).
+
+    #1071 post-stop gate: the #812 mid-edit protection guards the STOP;
+    once ``stop_pending_sid`` is set, a stop has already been ISSUED for
+    that sid (issued, not necessarily landed) — the fence (verify-dead ->
+    spawn / retry-stop / stop-failed terminal) still guarantees no spawn
+    next to a live sid, so holding only delays the verified-dead spawn and
+    leaves the issue driverless (incident #813, 2026-07-03: 3 held ticks
+    post-stop while a detached analysis process — which survives respawn
+    and was re-attached by the successor — fed the activity signal).
+    Mirrors the existing mid-fence gate on the K-corroboration. The
+    spawn-grace skip stays UNCONDITIONAL (it guards concurrent respawns,
+    still valid mid-fence)."""
     grace_s = _respawn_spawn_grace_s()
     if ctx.entry_spawned_at is not None and 0 <= ctx.now - ctx.entry_spawned_at < grace_s:
         print(
@@ -8587,7 +8622,7 @@ def _stalled_arm_deferral(ctx: _StalledActionCtx) -> bool:
         _persist_stalled_ctx(ctx, ctx.happy_session_id_str, 0)
         return True
     activity = _worktree_recent_activity(ctx.issue, ctx.now, _wt_activity_fresh_s())
-    if decide_worktree_hold(activity, ctx.wt_hold_count):
+    if ctx.stop_pending_sid is None and decide_worktree_hold(activity, ctx.wt_hold_count):
         held = ctx.wt_hold_count + 1
         print(
             f"  issue #{ctx.issue}: HOLD-RESPAWN — worktree activity < "
@@ -8884,12 +8919,47 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
     (``refresh_attempted`` flag, cleared on self-report advancement,
     same shape as ``alerted``)."""
     sid = ctx.happy_session_id_str
+    # #1071 evidence-based reason ladder. Pre-#759 this ladder was exhaustive
+    # (manual / non-ACTIVE / daemon-down were the ONLY alert producers); the
+    # #759 live-corroboration downgrade added a fourth producer AFTER
+    # decide(), and the stale else-branch then fabricated "Happy daemon
+    # unreachable" for it even with the daemon up (both #813 incidents) —
+    # prompting manual respawns that raced an in-flight auto-recovery. Each
+    # branch now states the observed cause AND what the watcher does NEXT
+    # (``next_step``), so the note never invites a manual stop+respawn while
+    # an auto-recovery is mid-flight (the manual branch is the one place
+    # that instruction is true). The else-branch self-identifies as a
+    # watcher bug instead of inventing a daemon outage.
     if ctx.manual:
         reason = "manual user-driven session; alert-only by design"
+        next_step = (
+            f"open the session (phone / `spawn_session.py list`) and "
+            f"re-drive `/issue {ctx.issue}` manually if confirmed dead"
+        )
     elif not ctx.in_active:
-        reason = "task status not ACTIVE"
+        reason = f"task status not ACTIVE ({ctx.task_status})"
+        next_step = (
+            "no auto-respawn at a parked/terminal status; re-drive manually if this is wrong"
+        )
+    elif ctx.downgrade_note is not None:
+        reason = ctx.downgrade_note
+        next_step = (
+            f"the watcher auto-escalates to a stop+respawn once the "
+            f"live-stall debounce is exhausted (typically the NEXT tick); no "
+            f"manual action needed unless a later "
+            f"'{_STALLED_EXHAUSTED_NOTE_SENTINEL}' or "
+            f"'{_STALLED_STOP_FAILED_NOTE_SENTINEL}' marker appears"
+        )
+    elif not ctx.daemon_reachable:
+        reason = "Happy daemon unreachable; cannot stop+spawn THIS tick"
+        next_step = (
+            "episode state persists on disk; the stop+respawn fires "
+            "automatically on the next daemon-reachable tick, and a phone "
+            "push fires after 2 blocked ticks (#845 c)"
+        )
     else:
-        reason = "Happy daemon unreachable; cannot stop+spawn"
+        reason = "unexpected alert cause (watcher bug — please report)"
+        next_step = "investigate _handle_stalled_alert's reason ladder"
 
     # #488 stale-port self-heal — see method docstring above. Skip when:
     # we already refreshed this episode; the pod name is unknown (no
@@ -8920,10 +8990,8 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
             f"for {ctx.self_gap} and the latest non-watcher progress marker "
             f"is {ctx.marker_gap} old (has_pod={ctx.has_pod}, "
             f"status={ctx.task_status}). The session is likely dead or its "
-            f"bg-Bash chain died. NOT auto-respawned ({reason}); open the "
-            f"session (phone / `spawn_session.py list`) and re-drive "
-            f"`/issue {ctx.issue}` manually if confirmed dead. Confirmed "
-            f"for >= {ctx.threshold} checks."
+            f"bg-Bash chain died. NOT auto-respawned ({reason}); "
+            f"{next_step}. Confirmed for >= {ctx.threshold} checks."
         )
     else:
         note = (
@@ -8934,8 +9002,7 @@ def _handle_stalled_alert(ctx: _StalledActionCtx) -> None:
             f"(has_pod={ctx.has_pod}, status={ctx.task_status}). Likely a dead "
             f"bg-Bash chain inside a still-live Claude process — the session "
             f"looks healthy to the respawn pass but is not advancing. NOT "
-            f"auto-respawned ({reason}); investigate via the phone session "
-            f"and stop+respawn manually if confirmed dead. Confirmed for >= "
+            f"auto-respawned ({reason}); {next_step}. Confirmed for >= "
             f"{ctx.threshold} checks."
         )
     _post_progress_marker(
@@ -9075,10 +9142,17 @@ def _apply_stalled_live_corroboration(
     live_ids: set[str] | None,
     live_consecutive: int,
     dry_run: bool,
-) -> tuple[str, int]:
+) -> tuple[str, int, str | None]:
     """Bounded K-escalation for the stalled detector's live-session
     corroboration (#759, bug class b.1; Option A). Rewrites
-    ``(action, live_consecutive)``.
+    ``(action, live_consecutive)`` and additionally returns a
+    ``downgrade_note`` (third element): a human-readable explanation of the
+    downgrade on the respawn->alert branch, ``None`` on every other branch.
+    The caller threads the note into :class:`_StalledActionCtx` so
+    :func:`_handle_stalled_alert`'s reason ladder can attribute the alert to
+    THIS debounce instead of falling through to a fabricated
+    daemon-unreachable reason (#1071; both #813 incidents had
+    ``daemon_reachable=True`` on every tick).
 
     Applied AFTER the provision-in-flight + followups exemptions, so it only
     sees a respawn THOSE did not already turn into keep. A respawn-eligible
@@ -9117,11 +9191,11 @@ def _apply_stalled_live_corroboration(
     if action != "respawn":
         # keep / clear (incl. provision/followups exemptions) — not a live-stall
         # respawn episode; reset so the counter never straddles unrelated stalls.
-        return action, 0
+        return action, 0, None
     if not daemon_reachable or live_ids is None or not _session_alive(entry, live_ids):
         # Genuinely-dead wrapper (or daemon down) — today's behavior. No
         # live-stall episode in progress; reset the counter.
-        return action, 0
+        return action, 0, None
     # A LIVE id is being respawned.
     k = _stalled_live_escalation_k()
     live_consecutive += 1
@@ -9133,7 +9207,12 @@ def _apply_stalled_live_corroboration(
             f"duplicate driver (transient busy stretch on a live session)."
         )
         _append_stalled_live_event(issue, "stalled-live-downgrade", live_consecutive, k, dry_run)
-        return "alert", live_consecutive
+        note = (
+            f"live-session corroboration debounce: consecutive live-stall "
+            f"episode {live_consecutive}/{k}; the session id is still in the "
+            f"daemon live set"
+        )
+        return "alert", live_consecutive, note
     # Kth consecutive live stall — escalate to the canonical respawn arm and
     # reset the counter (a fresh --auto session begins a new episode).
     print(
@@ -9143,7 +9222,7 @@ def _apply_stalled_live_corroboration(
         f"class). Resetting live_consecutive."
     )
     _append_stalled_live_event(issue, "stalled-live-escalation", live_consecutive, k, dry_run)
-    return "respawn", 0
+    return "respawn", 0, None
 
 
 def _apply_prompt_wedge_override(
@@ -9613,8 +9692,11 @@ def _process_stalled_session(
     # on the Kth (the #506 dead-bg-chain class), and resets the counter on
     # every other path. Factored into a helper to keep this function under the
     # C901 cap; the returned live_consecutive is what the ctx below persists.
+    # The third element (downgrade_note) is per-tick evidence for the alert
+    # handler's reason ladder — threaded into the ctx below, never persisted.
+    downgrade_note: str | None = None
     if hard["stop_pending_sid"] is None:
-        action, live_consecutive = _apply_stalled_live_corroboration(
+        action, live_consecutive, downgrade_note = _apply_stalled_live_corroboration(
             issue=issue,
             entry=entry,
             action=action,
@@ -9727,6 +9809,8 @@ def _process_stalled_session(
         daemon_blocked_pushed=hard["daemon_blocked_pushed"],
         wedge_hits=hard["wedge_hits"],
         wedge_note=wedge_note,
+        daemon_reachable=daemon_reachable,
+        downgrade_note=downgrade_note,
     )
 
     if action == "respawn":
