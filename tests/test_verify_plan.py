@@ -37,7 +37,7 @@ sys.modules["verify_plan"] = verify_plan
 _spec.loader.exec_module(verify_plan)  # type: ignore[union-attr]
 
 
-# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18,19)
+# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-21)
 
 # Surgery anchors (must appear verbatim in GOOD_PLAN exactly once).
 MV_HEADING = "### Measurement validity"
@@ -157,10 +157,11 @@ def test_good_plan_passes_all():
         "c18_paired_contrast_source_coverage": "SKIP",
         "c19_ood_folds": "SKIP",
         "c20_verdict_lattice_coherence": "SKIP",
+        "c21_cross_section_param_consistency": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 21
+    assert len(results) == 22
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -2729,6 +2730,231 @@ def test_c20_paired_before_primary_binds_primary_axis():
     assert "tier 1" in r.detail
 
 
+# ─── Check 21 — cross-section param consistency ────────────────────────────
+
+C21 = "c21_cross_section_param_consistency"
+
+
+def _c21(text: str, kind: str = "infra"):
+    return verify_plan.check_cross_section_param_consistency(text, kind)
+
+
+def test_c21_contradictory_restatement_warns():
+    # Brief item (a): the same tracked param with contradictory values in two
+    # top-level sections WARNs; detail names the param, both matched spans
+    # (values included), both section headings, and both 1-based line
+    # numbers. Run under kind="infra" — pins the all-kinds scope (#1024's
+    # offender is kind: infra).
+    plan = (
+        "## 4. Design\n\n"
+        "Judging runs at temperature=1.0 for every draw.\n\n"
+        "## 11. Rationale\n\n"
+        "- **What:** replicate temperature=0.7, same rubric.\n"
+    )
+    r = _c21(plan, kind="infra")
+    assert r.status == "WARN"
+    assert "temperature:" in r.detail
+    assert "temperature=1.0" in r.detail and "temperature=0.7" in r.detail
+    assert "4. Design" in r.detail and "11. Rationale" in r.detail
+    assert "L3" in r.detail and "L7" in r.detail  # 1-based line numbers
+
+
+def test_c21_same_value_restated_passes():
+    # Brief item (b): identical restatement across sections is consistent.
+    plan = (
+        "## 4. Design\n\nTraining uses lr = 3e-5 throughout.\n\n"
+        "## 11. Rationale\n\n- lr = 3e-5. Source: #612.\n"
+    )
+    assert _c21(plan).status == "PASS"
+    # Float normalization: 1e-4 == 0.0001 (scientific vs decimal notation).
+    plan_norm = (
+        "## 4. Design\n\nTraining uses lr = 1e-4 throughout.\n\n"
+        "## 11. Rationale\n\n- lr = 0.0001. Source: #612.\n"
+    )
+    assert _c21(plan_norm).status == "PASS"
+
+
+def test_c21_historical_clause_not_counted():
+    # Brief item (c): a value inside a historical / declared-but-never-
+    # threaded clause is excluded, so the param spans only ONE section → SKIP.
+    plan = (
+        "## 4. Design\n\nThe run trains at lr = 5e-6.\n\n"
+        "## 11. Rationale\n\n- lr = 1e-4 (declared but never threaded into the trainer).\n"
+    )
+    assert _c21(plan).status == "SKIP"
+
+
+def test_c21_sweep_range_set_not_flagged():
+    # Brief item (d): sweep/range/brace-set declarations overlapping a single
+    # grounded value are consistent (set-overlap, not set-equality).
+    # Head overlap: schedule "1e-4 → 1e-5" vs the grounded head value.
+    plan_head = (
+        "## 4. Design\n\nThe lr schedule is lr = 1e-4 → 1e-5 over training.\n\n"
+        "## 11. Rationale\n\n- lr = 1e-4. Source: #612.\n"
+    )
+    assert _c21(plan_head).status == "PASS"
+    # END-overlap discriminator (round-1 MF-1 cell 1): {1, 3} ∩ {3} passes
+    # ONLY if the range-tail parse is live — a dead _C21_RANGE_TAIL_RE
+    # yields {1} vs {3} → spurious WARN and this assertion goes red.
+    plan_end = (
+        "## 4. Design\n\nWe anneal epochs = 1 → 3 across restarts.\n\n"
+        "## 11. Rationale\n\n- epochs = 3. Source: arXiv 2507.21509 appendix table.\n"
+    )
+    assert _c21(plan_end).status == "PASS"
+    # Brace-set vs member value (seed list restated as one headline seed).
+    plan_set = (
+        "## 3. Conditions\n\nSeeds: {42, 137, 256} shared across conditions.\n\n"
+        "## 10. Repro\n\nThe headline cell re-runs seed=137 only.\n"
+    )
+    assert _c21(plan_set).status == "PASS"
+    # A `sweep`-line occurrence is skipped entirely: lr then spans one
+    # section → SKIP (were it counted, {1e-4} vs {5e-6} would WARN).
+    plan_sweep = (
+        "## 4. Design\n\nThe sweep varies lr = 1e-4 across cells.\n\n"
+        "## 11. Rationale\n\n- lr = 5e-6. Source: #612.\n"
+    )
+    assert _c21(plan_sweep).status == "SKIP"
+
+
+def test_c21_value_vs_omission_1024_shape_warns():
+    # Brief item (e): the #1024 v2 offender shape — a corrected
+    # "temperature OMITTED … API default 1.0" section vs a stale §11
+    # `temperature=0.7` *What:* restatement. Also pins that
+    # `JUDGE_TEMPERATURE=0.7` (compound token, no \b before `temperature`)
+    # creates no occurrence: if it did, the §7 value set would gain 0.7 and
+    # OVERLAP §11's {0.7} → PASS, so the WARN assertion itself discriminates.
+    plan = (
+        "## 7. Decision gates\n\n"
+        "Scoring uses `max_tokens=64`, temperature OMITTED — the #778 request builders "
+        "never set it, so the API default 1.0 applies (JUDGE_TEMPERATURE=0.7 is a separate "
+        "env knob).\n\n"
+        "## 11. Hyperparameter grounding\n\n"
+        "- *What:* replicate `max_tokens=64`, `temperature=0.7`, same rubric.\n"
+    )
+    r = _c21(plan, kind="infra")
+    assert r.status == "WARN"
+    assert "temperature:" in r.detail
+    assert "temperature OMITTED" in r.detail and "temperature=0.7" in r.detail
+    assert "max_tokens" not in r.detail  # 64 == 64 across sections — consistent
+
+
+def test_c21_per_phase_and_alpha_context():
+    # Phase-qualified values key separately (epochs@phase1 / epochs@phase2 —
+    # each spans one section → SKIP).
+    plan_phase = (
+        "## 4. Design\n\nPhase 1 trains epochs = 3 on the coupling mix.\n\n"
+        "## 5. Pipeline\n\nPhase 2 runs epochs = 1 on the EM mix.\n"
+    )
+    assert _c21(plan_phase).status == "SKIP"
+    # Stats-alpha (no LoRA context) never enters the pool; the LoRA alpha
+    # spans one section → SKIP (were stats-alpha counted, 0.05 vs 64 → WARN).
+    plan_alpha = (
+        "## 6. Stats\n\nSignificance uses alpha: 0.05 two-sided.\n\n"
+        "## 11. Rationale\n\n- LoRA alpha = 64. Source: #474.\n"
+    )
+    assert _c21(plan_alpha).status == "SKIP"
+
+
+def test_c21_fenced_commands_ignored():
+    # A fenced launch command's seed=999 never votes (fence mask), so seed
+    # spans only the §4 prose → SKIP.
+    plan = (
+        "## 4. Design\n\nSeeds: {42} for the smoke cell.\n\n"
+        "## 10. Repro\n\n```bash\nuv run python scripts/train.py seed=999\n```\n"
+    )
+    assert _c21(plan).status == "SKIP"
+
+
+def test_c21_registration_end_to_end():
+    # End-to-end through verify_plan_text: pins registration in CHECKS +
+    # fence-mask integration + WARN-never-blocks (overall ok stays True).
+    filler = "We re-run the aggregation over the existing eval JSONs and re-plot. " * 25
+    plan = (
+        "# Plan — Task #997: c21 end-to-end fixture (analysis)\n\n"
+        "## Goal\n\n" + filler + "\n\n"
+        "## 4. Design\n\nJudging runs at temperature=1.0 for every draw.\n\n"
+        "## 11. Rationale\n\n- **What:** replicate temperature=0.7, same rubric.\n\n"
+        "## Resources\n\nNo pod. `Estimated GPU-hours (total): 0`\n"
+    )
+    ok, by_id = _run(plan, kind="analysis")
+    assert by_id[C21].status == "WARN"
+    assert ok is True  # WARN never blocks exit
+
+
+def test_c21_alias_contradictions_warn():
+    # Round-1 MF-1 cell 2 (silent-SKIP escape): learning_rate/lr and
+    # batch_size/batch fold to one key — a dropped _C21_ALIASES fold leaves
+    # two single-section keys → SKIP → this test goes red.
+    plan_lr = (
+        "## 4. Design\n\nTraining uses learning_rate = 3e-5 for the full run.\n\n"
+        "## 11. Rationale\n\n- lr = 1e-4. Source: #612.\n"
+    )
+    r = _c21(plan_lr)
+    assert r.status == "WARN"
+    assert r.detail.startswith("lr:")  # names the FOLDED param
+    plan_batch = (
+        "## 4. Design\n\nWe pack batch_size: 16 per device.\n\n"
+        "## 11. Rationale\n\n- batch = 32. Source: ungrounded — needs smoke-test.\n"
+    )
+    assert _c21(plan_batch).status == "WARN"
+    # Same-value alias restatement: fold + overlap together → PASS.
+    plan_same = (
+        "## 4. Design\n\nTraining uses learning_rate = 3e-5 for the full run.\n\n"
+        "## 11. Rationale\n\n- lr = 3e-5. Source: #612.\n"
+    )
+    assert _c21(plan_same).status == "PASS"
+
+
+def test_c21_sibling_h3_one_h2_not_flagged():
+    # Round-1 MF-1 cell 3 (pins FP layer 2): sibling H3 arms under ONE H2
+    # attribute to the shared H2 ancestor — one section, so the union
+    # {1e-4, 1e-5} spans one section → SKIP. Non-phase H3 names are chosen so
+    # phase keying cannot mask a grouping bug; a broken innermost-H3 grouping
+    # yields two disjoint sections → spurious WARN → red test.
+    plan = (
+        "## 4. Design\n\n"
+        "### Arm A\n\nThis arm trains lr = 1e-4.\n\n"
+        "### Arm B\n\nThis arm trains lr = 1e-5.\n"
+    )
+    assert _c21(plan).status == "SKIP"
+
+
+def test_c21_omission_with_exclusion_vocab_still_counts():
+    # Round-1 MF-1 cell 4 (pins the §3.4 omission-exemption): exclusion
+    # vocabulary in-window does NOT filter an omission match — the corrected
+    # text legitimately explains WHY the param is omitted. An implementation
+    # that wrongly exclusion-filters omissions sees temperature in one
+    # section only → SKIP → red test. (The parenthetical `was 0.7` is not a
+    # `param[=:]` token, so no competing value occurrence exists on the line.)
+    plan = (
+        "## 7. Decision gates\n\n"
+        "temperature OMITTED (was 0.7, never threaded — superseded).\n\n"
+        "## 11. Rationale\n\n- temperature=0.7. Source: #1024 v2.\n"
+    )
+    r = _c21(plan)
+    assert r.status == "WARN"
+    assert "temperature OMITTED" in r.detail
+
+
+def test_c21_consistent_corrected_plan_stays_quiet():
+    # Durable negative control (round-1 standing recommendation): a minimal
+    # post-correction v3-shaped fixture — the omission form lives in ONE
+    # section only, lr is restated identically across §4/§11, and
+    # JUDGE_TEMPERATURE=0.7 compound tokens never match — stays quiet (no
+    # WARN), pinning the "corrected plan stays quiet" property against
+    # future exclusion-vocab tuning.
+    plan = (
+        "## 4. Design\n\n"
+        "Scoring: `max_tokens=64`, temperature OMITTED (API default 1.0; "
+        "JUDGE_TEMPERATURE=0.7 is a separate env knob).\n"
+        "The run trains lr = 5e-6 on the coupling mix.\n\n"
+        "## 11. Rationale\n\n- lr = 5e-6. Source: #612.\n"
+    )
+    r = _c21(plan)
+    assert r.status in ("PASS", "SKIP")  # the pinned property: no WARN
+    assert r.status == "PASS"  # lr restated consistently across two sections
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -2778,12 +3004,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 13
+    assert payload["n_skip"] == 14
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 21
-    assert len({c["id"] for c in payload["checks"]}) == 21
+    assert len(payload["checks"]) == 22
+    assert len({c["id"] for c in payload["checks"]}) == 22
 
 
 def test_cli_exit_one_on_fail(tmp_path):
