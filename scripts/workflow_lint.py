@@ -173,6 +173,18 @@ Behaviours:
   workflow-surface file is never allowlisted, it is fixed). Unparseable
   files (SyntaxError / non-UTF-8) are skipped WITH a printed notice,
   never silently.
+* ``--check-upload-or-true`` (also bundled into the no-flags default
+  run): walk every ``*.sh`` under ``scripts/`` and FAIL any
+  upload/result-persist command line whose failure is swallowed by
+  ``|| true`` / ``|| :`` / ``; true`` (#841 silent artifact loss —
+  swallowed plot-phase failures + a missing upload phase lost stage
+  JSONs/plots across attempts). Terminal swallows mask the whole
+  ``&&``-chain (whole-line token check); non-terminal ``|| true`` is
+  segment-scoped; swallowed heredoc openers and multi-line
+  ``python -c "…"`` blocks are scanned for BODY upload-call tokens.
+  Legacy deliberate uses frozen in
+  :data:`UPLOAD_OR_TRUE_LEGACY_ALLOWLIST`; waive with
+  ``# UPLOAD_OR_TRUE_EXEMPT: <reason>`` (reason ≥ 10 chars).
 * ``--check-dotenv-before-hf-import`` (also bundled into the no-flags
   default run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on
   any script that uses the BARE python-dotenv ``load_dotenv``
@@ -723,6 +735,92 @@ CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
 # dual-engine test (test_workflow_lint.py) sources the hook ERE from
 # `.claude/settings.json` and pins the agreement.
 PIPE_PYTHON_RE = re.compile(r"\|\s*python3?(?:\.\d+)?\s+(?:-\S+\s+)*-[cm]\b")
+
+# `--check-upload-or-true` (#1036): an upload / result-persist /
+# result-production command whose failure is swallowed by `|| true` /
+# `|| :` / `; true` in a `scripts/**/*.sh` shell line (#841: swallowed
+# plot-phase failures compounded a missing upload phase — stage
+# JSONs/plots were silently lost across attempts until the fail-loud fix
+# commits 4ece51a22a / 0efbce6575 removed the swallows).
+#
+# Flagged (per logical shell line, backslash continuations merged,
+# trailing comments stripped quote-aware):
+#   * TERMINAL swallow (`|| true` / `|| :` / `; true` at line end) +
+#     an upload/result token ANYWHERE on the line — bash `&&`/`||` are
+#     equal-precedence left-associative, so a terminal swallow masks the
+#     WHOLE preceding chain (`upload && echo ok || true`,
+#     `{ upload; } || true`);
+#   * NON-terminal `|| true` / `|| :` + a token in the SAME `&&`/`;`
+#     segment (preserves the `mkdir || true && upload` FP kill);
+#   * a swallowed heredoc opener whose BODY calls an upload helper
+#     (`... <<'PY' 2>&1 || true` + body `api.upload_file(` — the
+#     i632_dispatch_with_log_capture.sh:30 shape a line-only scan misses);
+#   * a swallowed multi-line `python -c "…"` quoted block whose BODY
+#     calls an upload helper (the CURRENT #841 upload-phase shape —
+#     `upload_split_lfs_to_overflow(` bodies).
+# NOT flagged:
+#   * `#`-comment lines (issue841_scaling_dispatch.sh:85 is a comment
+#     containing both `|| true` and "upload") and `echo `-prefixed lines
+#     (an echo performs no upload; known accepted FN:
+#     `echo "…"; upload || true` merged on ONE logical line is skipped
+#     whole — frozen by a test fixture);
+#   * `clean_experiment_downloads.py … || true` ("downloads" contains no
+#     "upload" substring), `ls eval_results/ || true` (bare result-dir
+#     names are tokens ONLY inside the `git add|commit` alternation);
+#   * lines waived via `# UPLOAD_OR_TRUE_EXEMPT: <reason>` (reason ≥ 10
+#     chars; same logical line or immediately preceding non-blank line —
+#     the CVD_PIN_EXEMPT convention). Deliberate best-effort side
+#     channels (crash-diagnostics uploads on a FAILURE path) use this.
+# Named residual evasion shapes (fail-toward-false-negative, the safe
+# direction for a pre-commit-gating lint — all deliberate scope bounds):
+#   * `|| echo WARN` swallows (leave a log trace, lesser severity than
+#     `|| true`'s pure silence);
+#   * `|| rc=$?`-then-ignore and `set +e` blocks;
+#   * shell-function-call swallows (`do_upload || true` — the function
+#     name carries no token unless it contains "upload");
+#   * a multi-line subshell wrapper with the swallow on the CLOSING paren
+#     (`(cmd <<'PY' … PY` newline `) || true`) — no live instance;
+#   * the naive quote-unaware `&&`/`;` segment split can mis-split on
+#     quoted separators (non-terminal rule only);
+#   * a MISSING upload phase (the other half of #841's loss) is not
+#     lintable and is named here, not claimed.
+UPLOAD_OR_TRUE_SWALLOW_OR_RE = re.compile(r"\|\|\s*(?:true\b|:(?=[\s;)&|]|$))")
+# Terminal swallow — masks the WHOLE line/chain:
+UPLOAD_OR_TRUE_SWALLOW_TERMINAL_RE = re.compile(r"(?:\|\|\s*(?:true|:)|;\s*true)\s*$")
+# Shell-line upload/result-persist/result-production tokens. Notes:
+#   * `upload_raw_completions\w*` (NOT a trailing `\b` before `_`) — the
+#     canonical helper is upload_raw_completions_to_data_repo;
+#   * `*upload*.py` — upload helper scripts (verify_uploads.py, …);
+#   * `*plot*.py` — result-production (plot) scripts, the founding #841
+#     offender shape (issue841_scaling_plots.py);
+#   * `git add|commit` of result dirs + `git push` — git persistence;
+#   * `$HF_DATA_REPO` / `$HF_MODEL_REPO` — repo-destination env vars.
+UPLOAD_OR_TRUE_LINE_TOKEN_RE = re.compile(
+    r"(?:"
+    r"\bupload_file\b|\bupload_folder\b|\bupload_raw_completions\w*"
+    r"|\bhf\s+upload\b|\bhuggingface-cli\s+upload\b"
+    r"|\b[A-Za-z0-9_]*upload[A-Za-z0-9_]*\.py\b"
+    r"|\b[A-Za-z0-9_]*plot[A-Za-z0-9_]*\.py\b"
+    r"|\bgit\s+push\b"
+    r"|\bgit\s+(?:add|commit)\b[^#]*\b(?:eval_results|figures|ood_eval_results)\b"
+    r"|\$\{?HF_DATA_REPO\b|\$\{?HF_MODEL_REPO\b"
+    r")"
+)
+# Quoted/heredoc BODY upload-call tokens (inline-python upload blocks — the
+# dominant dispatcher upload shape; the widened `\w*upload\w*(` covers
+# upload_file(, upload_folder(, _upload(, api.upload_file(,
+# upload_split_lfs_to_overflow():
+UPLOAD_OR_TRUE_BODY_TOKEN_RE = re.compile(
+    r"(?:\b[A-Za-z0-9_]*upload[A-Za-z0-9_]*\s*\("
+    r"|\bupload_raw_completions\w*|\bcreate_commit\s*\(|\.push_to_hub\s*\()"
+)
+UPLOAD_OR_TRUE_WAIVER_RE = re.compile(r"#\s*UPLOAD_OR_TRUE_EXEMPT:\s*(.+)")
+UPLOAD_OR_TRUE_WAIVER_MIN_REASON_CHARS = 10
+# Multi-line `python -c "` opener (captures the quote char); a block whose
+# captured quote is unclosed on the logical line is consumed physically
+# until the first line containing the closing quote char, bounded below.
+UPLOAD_OR_TRUE_PYC_OPENER_RE = re.compile(r"\bpython3?\s+-c\s+([\"'])")
+UPLOAD_OR_TRUE_PYC_MAX_BODY_LINES = 300  # bounded; unclosed at EOF/cap -> skip (FN-safe)
 
 # `--check-agent-model-pins`: every `.claude/agents/*.md` carries a YAML
 # frontmatter line ``model: "claude-..."`` that the Claude Code harness reads
@@ -1304,6 +1402,32 @@ JUDGE_PIN_LEGACY_ALLOWLIST_SH: frozenset[str] = frozenset(
 )
 JUDGE_PIN_WAIVER_RE = re.compile(r"#\s*noqa:\s*judge-model-pin\b")
 JUDGE_PIN_FILE_WAIVER_RE = re.compile(r"#\s*epm-allow-judge-model-pin\b")
+
+# Grandfathered `|| true` swallows on upload/result-persist lines. New
+# deliberate best-effort uploads use the inline `# UPLOAD_OR_TRUE_EXEMPT:`
+# waiver instead of growing this list (test_live_trees_pass locks it to
+# today's tree; mirrors JUDGE_PIN_LEGACY_ALLOWLIST's style). File-level
+# granularity (the JUDGE_PIN precedent) — accepted trade-off: a whole-file
+# exemption can mask a FUTURE genuine violation added to one of these
+# files; all three are historical dispatchers of completed issues.
+UPLOAD_OR_TRUE_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # --- deliberate best-effort diagnostics side-channels (permanent) ---
+        # #654 crash-diagnostics upload on the FAILURE path; `|| true` +
+        # in-Python try/except keep a failed HF upload from masking the real
+        # failure rc=2 (documented at the call site, lines 154-160):
+        "scripts/issue654_dispatch.sh",
+        # #632 debug wrapper: best-effort diagnostics upload "regardless of
+        # RC"; primary results ride the dispatcher's own fail-loud path:
+        "scripts/i632_dispatch_with_log_capture.sh",
+        # --- pre-existing, tracked ---
+        # `git add eval_results/ figures/ || true` (line 251) before a guarded
+        # commit; the fail-loud PRIMARY persist is the HF upload_folder phase
+        # (p5) directly above, and the git-push leg degrades to a logged
+        # WARNING by design; historical dispatcher of a completed issue:
+        "scripts/issue931_dispatch.sh",
+    }
+)
 
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
@@ -2123,20 +2247,21 @@ def _heredoc_body_dotenv_errors(path: Path, lines: list[str], start: int, end: i
     return errors
 
 
-def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
-    """Walk one shell script, tracking heredoc bodies, and return the
-    dotenv errors found in bodies that feed a python interpreter's stdin.
+def _iter_sh_logicals_with_heredocs(lines: list[str]):
+    """Yield ``(first_idx, last_idx, logical, heredoc_bodies)`` per logical
+    shell line; ``heredoc_bodies`` is a list of ``(body_start, body_end)``
+    0-based physical-line bounds (end EXCLUSIVE of the terminator line),
+    one per heredoc opener on the logical line, in opener order.
 
-    Backslash-continued physical lines are merged into one logical
-    command line before opener detection (the #612 shape continues the
-    opener line with ``\\`` + ``|| fail ...``; the body starts after the
-    last physical line of the logical command). ALL heredoc bodies are
-    consumed so body content can never be misparsed as new openers; only
-    python-stdin-fed bodies are scanned. The terminator match is lenient
+    Shared cursor logic extracted from the heredoc-dotenv scanner (#1036):
+    backslash-continued physical lines are merged into one logical command
+    line before opener detection (the #612 shape continues the opener line
+    with ``\\`` + ``|| fail ...``; the body starts after the last physical
+    line of the logical command). ALL heredoc bodies are CONSUMED — body
+    content is never re-yielded as logical shell lines, so it can never be
+    misparsed as new openers. The terminator match is lenient
     (stripped-line equality) so ``<<-`` indented terminators work; an
-    unterminated heredoc scans through to EOF."""
-    lines = path.read_text(encoding="utf-8").splitlines()
-    errors: list[str] = []
+    unterminated heredoc consumes through to EOF."""
     n = len(lines)
     i = 0
     while i < n:
@@ -2146,13 +2271,7 @@ def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
             last += 1
             logical = logical.rstrip()[:-1] + " " + lines[last]
         openers = list(HEREDOC_OPENER_RE.finditer(logical))
-        if not openers:
-            i = last + 1
-            continue
-        prefix = logical[: openers[0].start()]
-        python_fed = bool(HEREDOC_PY_STDIN_DASH_RE.search(prefix)) or bool(
-            HEREDOC_PY_STDIN_BARE_RE.search(prefix)
-        )
+        bodies: list[tuple[int, int]] = []
         body_cursor = last + 1
         for opener in openers:
             delim = opener.group(2)
@@ -2160,10 +2279,34 @@ def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
             body_end = body_start
             while body_end < n and lines[body_end].strip() != delim:
                 body_end += 1
-            if python_fed:
-                errors.extend(_heredoc_body_dotenv_errors(path, lines, body_start, body_end))
+            bodies.append((body_start, body_end))
             body_cursor = body_end + 1
-        i = body_cursor
+        yield i, last, logical, bodies
+        i = body_cursor if openers else last + 1
+
+
+def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
+    """Walk one shell script, tracking heredoc bodies, and return the
+    dotenv errors found in bodies that feed a python interpreter's stdin.
+
+    The cursor logic (backslash merge, opener detection, delimiter-bounded
+    body consumption) lives in the shared :func:`_iter_sh_logicals_with_heredocs`
+    generator; only the python-stdin-fed classification + dotenv body scan
+    stay here."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    errors: list[str] = []
+    for _first, _last, logical, bodies in _iter_sh_logicals_with_heredocs(lines):
+        if not bodies:
+            continue
+        openers = list(HEREDOC_OPENER_RE.finditer(logical))
+        prefix = logical[: openers[0].start()]
+        python_fed = bool(HEREDOC_PY_STDIN_DASH_RE.search(prefix)) or bool(
+            HEREDOC_PY_STDIN_BARE_RE.search(prefix)
+        )
+        if not python_fed:
+            continue
+        for body_start, body_end in bodies:
+            errors.extend(_heredoc_body_dotenv_errors(path, lines, body_start, body_end))
     return errors
 
 
@@ -2218,26 +2361,51 @@ def _iter_logical_shell_lines(lines: list[str]):
         i = last + 1
 
 
-def _cvd_pin_waiver_present(lines: list[str], first_idx: int, last_idx: int) -> bool:
-    """Return True iff a ``# CVD_PIN_EXEMPT: <reason>`` waiver (reason ≥
-    :data:`CVD_PIN_WAIVER_MIN_REASON_CHARS` chars) covers the logical
-    command spanning ``lines[first_idx:last_idx + 1]``. Accepts the waiver
-    on any physical line of the logical command (trailing comment on a
-    single-line launch) or on the immediately preceding non-blank line
-    (the only valid placement for a backslash-continued launch — a
-    trailing ``#`` comment would break the continuation)."""
+def _sh_waiver_present(
+    lines: list[str],
+    first_idx: int,
+    last_idx: int,
+    *,
+    waiver_re: re.Pattern[str],
+    min_reason_chars: int,
+) -> bool:
+    """Return True iff a reason-bearing inline waiver comment (matched by
+    ``waiver_re``, group(1) = reason, reason ≥ ``min_reason_chars`` chars
+    after strip) covers the logical command spanning
+    ``lines[first_idx:last_idx + 1]``. Accepts the waiver on any physical
+    line of the logical command (trailing comment on a single-line
+    command) or on the immediately preceding non-blank line (the only
+    valid placement for a backslash-continued command — a trailing ``#``
+    comment would break the continuation). Runs on the RAW lines: the
+    waiver IS a comment, so it must be read before comment stripping.
+    Generalized from the CVD_PIN_EXEMPT helper (#1036) so sibling checks
+    (UPLOAD_OR_TRUE_EXEMPT) share the placement semantics."""
     for idx in range(first_idx, last_idx + 1):
-        match = CVD_PIN_WAIVER_RE.search(lines[idx])
-        if match and len(match.group(1).strip()) >= CVD_PIN_WAIVER_MIN_REASON_CHARS:
+        match = waiver_re.search(lines[idx])
+        if match and len(match.group(1).strip()) >= min_reason_chars:
             return True
     back = first_idx - 1
     while back >= 0 and lines[back].strip() == "":
         back -= 1
     if back >= 0:
-        match = CVD_PIN_WAIVER_RE.search(lines[back])
-        if match and len(match.group(1).strip()) >= CVD_PIN_WAIVER_MIN_REASON_CHARS:
+        match = waiver_re.search(lines[back])
+        if match and len(match.group(1).strip()) >= min_reason_chars:
             return True
     return False
+
+
+def _cvd_pin_waiver_present(lines: list[str], first_idx: int, last_idx: int) -> bool:
+    """Return True iff a ``# CVD_PIN_EXEMPT: <reason>`` waiver (reason ≥
+    :data:`CVD_PIN_WAIVER_MIN_REASON_CHARS` chars) covers the logical
+    command spanning ``lines[first_idx:last_idx + 1]`` — see
+    :func:`_sh_waiver_present` for the placement semantics."""
+    return _sh_waiver_present(
+        lines,
+        first_idx,
+        last_idx,
+        waiver_re=CVD_PIN_WAIVER_RE,
+        min_reason_chars=CVD_PIN_WAIVER_MIN_REASON_CHARS,
+    )
 
 
 def check_dispatcher_cvd_pin(*, scripts_dir: Path | None = None) -> list[str]:
@@ -2360,6 +2528,248 @@ def check_pipe_python(*, scripts_dir: Path | None = None) -> list[str]:
                 f'(`... | uv run python -c "..."`). See CLAUDE.md '
                 f"§ Task Workflow API (#753)."
             )
+    return errors
+
+
+def _upload_or_true_segments(text: str) -> list[str]:
+    """Naive split of a comment-stripped logical shell line on ``&&`` and
+    ``;`` — the NON-terminal swallow scoping unit for
+    :func:`check_upload_or_true`. Deliberately quote-UNAWARE: a quoted
+    separator mis-splits toward a false NEGATIVE (the safe direction for a
+    pre-commit-gating lint, same philosophy as
+    :func:`_strip_sh_trailing_comment`)."""
+    return re.split(r"&&|;", text)
+
+
+def _upload_or_true_error(sh: Path, first_idx: int) -> str:
+    """Compose the (deliberately verbose, incident-citing) violation string
+    for one swallowed upload/result-persist/result-production line."""
+    return (
+        f"{sh}:{first_idx + 1}: upload/result-persist/result-production "
+        f"command swallows failure with '|| true' / '; true'. A swallowed "
+        f"failure on a result-bearing phase silently loses artifacts "
+        f"(#841: swallowed plot-phase failures compounded a missing upload "
+        f"phase — stage JSONs/plots lost across attempts until the "
+        f"fail-loud fix) — remove the swallow and let the failure abort "
+        f"(fail fast; the crash-persist/poller path reports it). A "
+        f"deliberate best-effort side-channel (crash-diagnostics upload) "
+        f"is waived with '# UPLOAD_OR_TRUE_EXEMPT: <reason>' (reason ≥ "
+        f"{UPLOAD_OR_TRUE_WAIVER_MIN_REASON_CHARS} chars) on the same or "
+        f"previous non-blank line."
+    )
+
+
+def _upload_or_true_pyc_block(
+    lines: list[str],
+    last: int,
+    stripped: str,
+    pyc: re.Match[str],
+) -> tuple[int, bool] | None:
+    """Handle :func:`check_upload_or_true` rule 5 — a multi-line
+    ``python -c "…"`` quoted block (the CURRENT #841 upload-phase shape).
+
+    ``pyc`` is the opener match on the comment-stripped logical line
+    ``stripped``; ``last`` is the logical line's last physical index.
+    Returns ``None`` when the captured quote CLOSES on the logical line
+    (single-line ``python -c`` — the normal rules apply). Otherwise
+    consumes physical lines until the first line containing the closing
+    quote char (cap :data:`UPLOAD_OR_TRUE_PYC_MAX_BODY_LINES`) and returns
+    ``(consumed_until_idx, swallowed_upload_hit)``: the block flags when
+    the command TAIL after the closing quote carries a swallow (terminal,
+    or ``|| true`` in a token-bearing segment) AND an upload token matches
+    a non-comment body line or the opener/tail. Unclosed at EOF / cap hit
+    → ``(scan_window_end, False)`` — the block is skipped entirely
+    (fail-toward-false-negative) and its lines are consumed so they are
+    never re-parsed as shell. Simplification (plan §4.3 rule 5): a
+    first-closing-quote-char scan suffices for this repo's blocks
+    (single-quoted bodies cannot contain ``'``; double-quoted bodies carry
+    no unescaped ``"``); anything trickier degrades to a false negative."""
+    quote = pyc.group(1)
+    remainder = stripped[pyc.end() :]
+    if quote in remainder:
+        return None
+    limit = min(len(lines), last + 1 + UPLOAD_OR_TRUE_PYC_MAX_BODY_LINES)
+    close_idx = None
+    for j in range(last + 1, limit):
+        if quote in lines[j]:
+            close_idx = j
+            break
+    if close_idx is None:
+        return limit - 1, False
+    qpos = lines[close_idx].index(quote)
+    tail = _strip_sh_trailing_comment(lines[close_idx][qpos + 1 :]).strip()
+    body_frags = [remainder, *lines[last + 1 : close_idx], lines[close_idx][:qpos]]
+    swallow_hit = bool(UPLOAD_OR_TRUE_SWALLOW_TERMINAL_RE.search(tail)) or any(
+        UPLOAD_OR_TRUE_SWALLOW_OR_RE.search(seg) and UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(seg)
+        for seg in _upload_or_true_segments(tail)
+    )
+    token_hit = (
+        any(
+            UPLOAD_OR_TRUE_BODY_TOKEN_RE.search(frag)
+            for frag in body_frags
+            if not frag.strip().startswith("#")
+        )
+        or bool(UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(stripped))
+        or bool(UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(tail))
+    )
+    return close_idx, swallow_hit and token_hit
+
+
+def _upload_or_true_line_hit(
+    stripped: str, bodies: list[tuple[int, int]], lines: list[str]
+) -> bool:
+    """Evaluate :func:`check_upload_or_true` rules 2-4 for one
+    comment-stripped logical shell line (waivers are the caller's).
+
+    Rule 2 — TERMINAL swallow (``|| true`` / ``|| :`` / ``; true`` at line
+    end) hits iff an upload/result token matches ANYWHERE on the line (a
+    terminal swallow masks the whole ``&&``-chain). Rule 3 — a
+    NON-terminal ``|| true`` / ``|| :`` hits iff a token matches in the
+    SAME ``&&``/``;`` segment. Rule 4 — a swallowed heredoc opener
+    (terminal, or a segment-scoped swallow in the segment carrying the
+    ``<<`` opener; token NOT required on the opener) hits when any of its
+    heredoc bodies' non-comment lines carries a BODY upload-call token."""
+    terminal = bool(UPLOAD_OR_TRUE_SWALLOW_TERMINAL_RE.search(stripped))
+    segments = _upload_or_true_segments(stripped)
+    # Rule 2: terminal swallow — whole-logical-line token check.
+    if terminal and UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(stripped):
+        return True
+    # Rule 3: non-terminal swallow — same-segment token check.
+    if any(
+        UPLOAD_OR_TRUE_SWALLOW_OR_RE.search(seg) and UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(seg)
+        for seg in segments
+    ):
+        return True
+    # Rule 4: heredoc bodies under a swallowed opener (token not required
+    # on the opener line itself).
+    if not bodies:
+        return False
+    opener_swallowed = terminal or any(
+        "<<" in seg and UPLOAD_OR_TRUE_SWALLOW_OR_RE.search(seg) for seg in segments
+    )
+    if not opener_swallowed:
+        return False
+    return any(
+        UPLOAD_OR_TRUE_BODY_TOKEN_RE.search(lines[j])
+        for body_start, body_end in bodies
+        for j in range(body_start, min(body_end, len(lines)))
+        if not lines[j].strip().startswith("#")
+    )
+
+
+def check_upload_or_true(
+    *,
+    scripts_dir: Path | None = None,
+    allowlist: frozenset[str] | None = None,
+) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL any upload /
+    result-persist / result-production (plot-script) command line whose
+    failure is swallowed by ``|| true`` / ``|| :`` / ``; true`` (#1036;
+    incident #841 — the pre-fix swallows were ``|| true`` on the PLOT
+    phases of both #841 dispatch scripts, and the att-7 stage-JSON loss
+    additionally involved a MISSING upload phase, which no lint can catch
+    and is a named residual, not a claim).
+
+    Detection (see the ``UPLOAD_OR_TRUE_*`` regex block for the full
+    flagged/not-flagged matrix), per logical line (backslash continuations
+    merged, heredoc bodies consumed via
+    :func:`_iter_sh_logicals_with_heredocs`, trailing comments stripped
+    quote-aware via :func:`_strip_sh_trailing_comment`):
+
+    1. ``#``-comment and ``echo ``-prefixed logical lines are skipped (an
+       echo performs no upload; known accepted FN: ``echo "…"; upload ||
+       true`` merged on ONE logical line is skipped whole).
+    2. A TERMINAL swallow (``|| true`` / ``|| :`` / ``; true`` at line
+       end) flags iff an upload/result token matches ANYWHERE on the line
+       — bash ``&&``/``||`` are equal-precedence left-associative, so a
+       terminal swallow masks the WHOLE preceding chain.
+    3. A NON-terminal ``|| true`` / ``|| :`` flags iff a token matches in
+       the SAME ``&&``/``;`` segment (:func:`_upload_or_true_segments`;
+       preserves the ``mkdir || true && upload`` FP kill).
+    4. A swallowed heredoc opener (terminal swallow, or a segment-scoped
+       swallow in the segment carrying the ``<<`` opener; token NOT
+       required on the opener) flags when any of its heredoc bodies'
+       non-comment lines carries a BODY upload-call token — the i632
+       shape a line-only scan provably misses.
+    5. A multi-line ``python -c "…"`` quoted block (opener quote unclosed
+       on the logical line) is consumed physically until the first line
+       containing the closing quote char (cap
+       :data:`UPLOAD_OR_TRUE_PYC_MAX_BODY_LINES`; unclosed at EOF or cap
+       hit → the block is skipped entirely, fail-toward-false-negative);
+       the command TAIL after the closing quote is checked for a swallow
+       and the quoted body for upload tokens — the CURRENT #841
+       upload-phase shape (``upload_split_lfs_to_overflow(`` bodies).
+    6. Violations dedupe per (file, opener first-line).
+    7. ``# UPLOAD_OR_TRUE_EXEMPT: <reason>`` (reason ≥ 10 chars, same
+       logical line or immediately preceding non-blank line) waives.
+
+    Files whose repo-root-relative path is in
+    :data:`UPLOAD_OR_TRUE_LEGACY_ALLOWLIST` are skipped whole-file
+    (grandfathered deliberate uses; locked by ``test_live_trees_pass``).
+    Named residual evasion shapes (``|| echo WARN``, ``|| rc=$?``,
+    ``set +e``, function-wrapped uploads, subshell-closing-paren swallows)
+    are documented in the regex block above — every parse limitation
+    degrades to a false NEGATIVE, never a false positive.
+
+    ``scripts_dir`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical ``<repo_root>/scripts``
+    tree. ``allowlist`` overrides the legacy allowlist for tests. Bundled
+    into the no-flags default run (same policy as ``check_heredoc_dotenv``
+    / ``check_dispatcher_cvd_pin``) + the ``workflow-lint-upload-or-true``
+    pre-commit hook.
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    allow = UPLOAD_OR_TRUE_LEGACY_ALLOWLIST if allowlist is None else allowlist
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        if _judge_pin_rel(sh) in allow:
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        flagged: set[int] = set()
+        # 0-based physical index; logical lines starting at or before this
+        # were consumed as a multi-line `python -c` quoted block.
+        pyc_skip_until = -1
+        for first, last, logical, bodies in _iter_sh_logicals_with_heredocs(lines):
+            if first <= pyc_skip_until or first in flagged:
+                continue
+            if logical.strip().startswith("#"):
+                continue
+            stripped = _strip_sh_trailing_comment(logical).strip()
+            if not stripped or stripped.startswith("echo "):
+                continue
+
+            # Rule 5: multi-line `python -c "…"` quoted block (no heredoc on
+            # the same line — a heredoc-bearing opener takes rules 2-4).
+            pyc = UPLOAD_OR_TRUE_PYC_OPENER_RE.search(stripped)
+            if pyc is not None and not bodies:
+                block = _upload_or_true_pyc_block(lines, last, stripped, pyc)
+                if block is not None:
+                    consumed_until, block_hit = block
+                    pyc_skip_until = consumed_until
+                    if block_hit and not _sh_waiver_present(
+                        lines,
+                        first,
+                        consumed_until,
+                        waiver_re=UPLOAD_OR_TRUE_WAIVER_RE,
+                        min_reason_chars=UPLOAD_OR_TRUE_WAIVER_MIN_REASON_CHARS,
+                    ):
+                        flagged.add(first)
+                        errors.append(_upload_or_true_error(sh, first))
+                    continue
+
+            if _upload_or_true_line_hit(stripped, bodies, lines) and not _sh_waiver_present(
+                lines,
+                first,
+                last,
+                waiver_re=UPLOAD_OR_TRUE_WAIVER_RE,
+                min_reason_chars=UPLOAD_OR_TRUE_WAIVER_MIN_REASON_CHARS,
+            ):
+                flagged.add(first)
+                errors.append(_upload_or_true_error(sh, first))
     return errors
 
 
@@ -6645,6 +7055,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "only — never a workflow-surface file). Bundled into the no-flags "
         "default run.",
     )
+    parser.add_argument(
+        "--check-upload-or-true",
+        action="store_true",
+        help="Walk scripts/**/*.sh and FAIL any upload/result-persist "
+        "command line whose failure is swallowed by '|| true' / '|| :' / "
+        "'; true' (#841 silent artifact loss). Terminal swallows mask the "
+        "whole &&-chain (whole-line token check); non-terminal '|| true' "
+        "is segment-scoped; swallowed heredoc openers + multi-line "
+        "python -c blocks are scanned for BODY upload-call tokens. Legacy "
+        "deliberate uses frozen in UPLOAD_OR_TRUE_LEGACY_ALLOWLIST; waive "
+        "with '# UPLOAD_OR_TRUE_EXEMPT: <reason>'. Bundled into the "
+        "no-flags default run.",
+    )
     args = parser.parse_args(argv)
 
     path = Path(args.file) if args.file else None
@@ -6698,6 +7121,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_lens_coverage
         or args.check_phase_done_reserved
         or args.check_jsonl_splitlines
+        or args.check_upload_or_true
     )
 
     errors: list[str] = []
@@ -6794,6 +7218,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_phase_done_reserved())
     if args.check_jsonl_splitlines or no_flags:
         errors.extend(check_jsonl_splitlines())
+    if args.check_upload_or_true or no_flags:
+        errors.extend(check_upload_or_true())
 
     if errors:
         for err in errors:
