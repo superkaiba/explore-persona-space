@@ -90,8 +90,8 @@
     "1009": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1009",
-      "status": "proposed",
+      "path": "tasks/planning/1009",
+      "status": "planning",
       "title": "workflow-fix: gotchas \u2014 vLLM bank length-validation at load"
     },
     "101": {
