@@ -1,5 +1,5 @@
 ---
-description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), and costing wall-time against the machine the router will ACTUALLY provision (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
+description: Planner §9 compute-sizing recipes — activation-capture HBM sizing, merge-disk budget, sentinel-signaling lane pins, the floor cross-check for long / many-call phases (planned_wall_h > 4 OR >~500 serial calls), the store-heavy / IO-heavy phase recipe (measured per-item serialization+upload wall-time; compression-default-OFF for fp16→Xet), the CPU-phase RAM/RSS routing gate (projected peak RSS per VM-placed phase; ≥~16 GB single-or-summed routes off the shared VM), and costing wall-time against the machine the router will ACTUALLY provision + p90-based fence sizing (loads at plan time via plan-file paths; relocated verbatim from planner.md §9, #829)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -7,9 +7,10 @@ paths:
 
 # Plan compute sizing (planner §9 relocated recipes)
 
-These six recipes are the planner-specific §9 sizing blocks — five relocated
+These seven recipes are the planner-specific §9 sizing blocks — five relocated
 verbatim from `.claude/agents/planner.md` (#829), plus the
-store-heavy / IO-heavy phase recipe (#910, from incident #813). The planner
+store-heavy / IO-heavy phase recipe (#910, from incident #813) and the
+CPU-phase RAM/RSS routing gate (#1031, from incidents #778/#833). The planner
 applies each when its trigger matches; the compute-projection table spec +
 stratification spec stay inline in planner.md §9.
 
@@ -129,6 +130,47 @@ out-of-band or batched — is `.claude/rules/code-style.md`
 § Compute-throughput discipline).
 
 
+**CPU-phase RAM/RSS routing — state each VM-placed CPU phase's projected
+peak RSS; ≥~16 GB (single phase OR summed concurrent phases) routes OFF
+the shared VM.** The shared VM's RAM is fleet-shared (~128 GB total) and
+policed by `earlyoom`: SIGTERM to the highest-badness process below 10%
+MemAvailable (~12.8 GB), SIGKILL below 5%, with a `--prefer` +300 bonus on
+every python process — under typical fleet pressure (~95 GB resident) a
+multi-GB analysis phase is the default kill victim, and the kill is SILENT
+(no traceback — `.claude/rules/gotchas.md` "VM `earlyoom` SIGTERMs bulk
+in-memory tensor loads"). Any §9 CPU/analysis phase placed on the VM MUST
+state its projected peak RSS in the row's `basis` — a measured one-chunk
+`ru_maxrss` at production shape, or `resident_pool_bytes × live_factor`
+with the live-factor MEASURED, never the explicit-temporary count
+(gotchas.md "Memory caps for torch fit loops"). Route the phase OFF the
+VM — `cpu-mid` (GCP 32 GB) or `cpu-bigmem` (128 GB) — when projected peak
+RSS ≥ ~16 GB, OR when concurrent VM-resident phases' SUMMED projected RSS
+crosses the same ~16 GB bar (#833: two ~13-15 GB phases concurrently
+resident lost 5 cells to earlyoom — concurrent residency SUMS; #778: a
+22-GiB-RSS null battery was earlyoom-killed 3× on the starved VM —
+~128 GB total, ~95 GB resident — before its cpu-bigmem pivot). A routed
+phase sizing ≥16 GB MUST state `--min-ram-gb` in its launch row
+(CLAUDE.md's ADOPTION sentence says '>16 GB'; this rule's ≥ closes the
+exactly-16 GB edge — the RunPod `cpu-mid` fallback has exactly 16 GB, zero
+headroom — the stricter bar governs) — the flag is what arms the #1010
+footprint-feasibility gate (a flag-less launch can land on an undersized
+pod — `.claude/rules/compute-backend-failover.md` § Footprint feasibility
+gate; CLAUDE.md § Pods CPU-intents ADOPTION note) — or target `cpu-bigmem`
+directly. STREAM-REDUCE FIRST: when a stream-reduce / chunked formulation
+bounds peak RSS at O(one item), that is the fix, not a bigger machine (the
+RAM sibling of "vectorize before routing to GPU"). Runtime choom
+protection (`/issue` SKILL.md § "Detached VM-side long compute phases") is
+mitigation for sanctioned sub-threshold phases, never permission to place
+a ≥16 GB phase on the VM — #778's battery died 3× despite the
+earlyoom-aware relaunch loop. This is the RAM sibling of the >50 GB disk
+carve-out (`VM_ANALYSIS_FOOTPRINT_GB_MAX`); the two gates are ORTHOGONAL —
+a VM-placed phase must clear BOTH. Accepted residual (named, not assumed
+away): the summed-concurrency gate sees ONE plan/issue's phases —
+cross-SESSION stacking of compliant sub-threshold phases can still cross
+the fleet's earlyoom headroom; the watcher + earlyoom telemetry remain the
+runtime backstop. Plan-time placement, not a mid-run gate.
+
+
 **Cost wall-time against the machine the router will ACTUALLY provision —
 then reconcile worst-case wall against the GCP auto-delete fence.**
 Each row's `planned_wall_h` + `basis` MUST name the machine type of the
@@ -144,7 +186,24 @@ into ~34h). Then reconcile the WORST-CASE wall — base phases PLUS every
 conditional / extension phase that could run on the same provision —
 against the GCP lane's auto-delete fence
 (`--instance-termination-action=DELETE` + `--max-run-duration`,
-default 7d — the FLEX_START ceiling, #741). If worst-case wall on the routed
+default 7d — the FLEX_START ceiling, #741). Size that worst case off the
+**p90 per-cell wall estimate, NEVER the mean**:
+`worst_case_wall ≈ n_cells × p90_per_cell / parallelism + fixed overheads`,
+with p90 derived (i) from a prior-issue per-cell wall DISTRIBUTION for the
+same kernel/shape when one exists (cite it), else (ii) as the measured mean
+basis × a STATED dispersion factor — default ×2 when only a mean is
+available (#833: realized per-cell wall ran ~2× the plan mean and overran a
+deliberate 36h fence, hard-deleting the instance before the tail cells
+finished; the ×2 default is a conservative single-incident heuristic —
+#833's ~2× is a realized-vs-planned MEAN overrun, so the factor absorbs
+estimate bias AND tail dispersion, not a calibrated p90/mean ratio — a
+prior-issue distribution wins whenever one exists). A deliberately
+shortened `spec.extra["max_run_duration"]` MUST clear the p90-based worst
+case with stated margin (≥~1.25×). p90, not max/p99: the fence doubles as
+the GCP janitor's reap bound (own fence + 1h grace — `backends/gcp.py`), so
+an over-long fence delays the credit-leak backstop on a wedged instance,
+while a mean-sized fence kills healthy tail runs — p90 × margin is the
+balance. If worst-case wall on the routed
 machine approaches the routed lane's fence (the GCP `--max-run-duration`
 default is 7d, but a plan may deliberately set a shorter fence), the plan
 MUST do one of: (a) declare a deliberate `spec.extra["max_run_duration"]`
