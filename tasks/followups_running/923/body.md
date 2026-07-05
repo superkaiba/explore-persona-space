@@ -267,7 +267,7 @@ First figure: pooled held-out skill R² at layer 18 for the three query-only pre
 
 > **Figure.** *A penalty-selection failure, not absent signal.* The masked-context read pools −3.03 on Betley (inside its null band, p = 1.0) but reads 0.407 at the largest fixed penalty — in family with the empty-system read (0.419) — and is healthy on UltraChat at every penalty (0.454–0.455).
 
-The read fails only where penalty selection must extrapolate: within-train-fold validation prefers small-to-mid penalties on Betley's 36-query folds, while only heavy shrinkage survives the family transfer no train-fold selector sees. The pooled number stands as measured; the UltraChat presentation match (0.455 vs 0.448/0.457) still licenses the attention-mixing reading of the residual over template mismatch. The collapse recurs under the span-mean summary (−5.11 pooled on Betley, p = 1.0; healthy 0.462 on UltraChat), as this mechanism predicts.
+The read fails only where penalty selection must extrapolate: within-train-fold validation prefers small-to-mid penalties on Betley's 36-query folds, while only heavy shrinkage survives the family transfer no train-fold selector sees. The pooled number stands as measured; the UltraChat presentation match (0.455 vs 0.448/0.457) still rules out template mismatch, though the attention-mixing reading of the residual was the pre-mixed-round attribution, superseded by the last-token-slot and span-dilution account. The collapse recurs under the span-mean summary (−5.11 pooled on Betley, p = 1.0; healthy 0.462 on UltraChat), as this mechanism predicts.
 
 ### Group-level penalty re-selection does not rescue the Betley masked read and degrades the stitched arm
 
