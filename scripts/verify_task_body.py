@@ -3367,6 +3367,183 @@ _V4_CONTEXT_LINEAGE_TOKEN_RE = re.compile(
 )
 
 
+# ── Check-17 origin-prompt verbatim sub-check (#1068, incident #813 r1) ──
+# The **Context:** row promises the originating prompt VERBATIM
+# (SPEC.md § `**Context:**` row). The sub-check requires normalized
+# frontmatter `origin_prompt` to appear as a SUBSTRING of the normalized
+# Context-region text (blockquote markers stripped). Substring — not
+# per-segment equality — because the row legitimately carries MORE quoted
+# text than the creation prompt (follow-up-round prompts, lineage prose,
+# inline quote marks), and because the containment DIRECTION is what
+# catches truncation: a truncated quote means the full origin_prompt
+# appears NOWHERE in the row. (A quote-inside-origin_prompt test would
+# PASS every truncation — direction matters.)
+
+_MD_ESCAPE_RE = re.compile(r'\\([\\`*_{}\[\]()#+\-.!|>~"\'])')
+
+# Leading blockquote-marker run on a line: `>`, `> >`, `  > `, etc.
+_BLOCKQUOTE_MARKER_RE = re.compile(r"^\s*(?:>\s?)+")
+
+# Same pattern check 17 already used inline for the label-presence test.
+_CONTEXT_LABEL_RE = re.compile(r"\*\*\s*Context\s*:?\s*\*\*")
+
+# An inline quote-mark-delimited span (>= 20 chars): ASCII `"` or the
+# curly forms (escapes dodge the ambiguous-unicode lint).
+_INLINE_QUOTE_SPAN_RE = re.compile('["\u201c]([^"\u201c\u201d]{20,})["\u201d]', re.S)
+
+
+def _normalize_prompt_text(s: str) -> str:
+    """Whitespace-collapse + unicode-punctuation fold for the check-17
+    origin-prompt comparison. Collapses all whitespace runs (incl.
+    newlines from wrapped blockquotes) to single spaces, folds NBSP and
+    curly quotes/apostrophes to their ASCII forms (editors smart-quote;
+    a fold applied to BOTH sides never masks a real word-level edit)."""
+    s = s.replace("\u00a0", " ")  # NBSP
+    s = s.replace("\u2018", "'").replace("\u2019", "'")  # curly single quotes
+    s = s.replace("\u201c", '"').replace("\u201d", '"')  # curly double quotes
+    return " ".join(s.split())
+
+
+def _unescape_markdown(s: str) -> str:
+    """Undo backslash-escapes of markdown punctuation (body side only —
+    an analyzer writing an ``origin_prompt`` containing ``**`` or
+    backticks into markdown may escape it; the frontmatter value is raw
+    text and is never unescaped)."""
+    return _MD_ESCAPE_RE.sub(r"\1", s)
+
+
+def _strip_blockquote_markers(text: str) -> str:
+    """Remove leading `>` marker runs per line, KEEPING the line text.
+
+    The opposite transform of ``_strip_blockquote_lines`` (which drops
+    the whole line for the #959 URL-scan exemption): here the quoted
+    text IS the object under test, only the markers are noise."""
+    return "\n".join(_BLOCKQUOTE_MARKER_RE.sub("", ln) for ln in text.splitlines())
+
+
+def _common_prefix_len(a: str, b: str) -> int:
+    """Length of the longest common prefix of ``a`` and ``b``."""
+    n = min(len(a), len(b))
+    i = 0
+    while i < n and a[i] == b[i]:
+        i += 1
+    return i
+
+
+def _context_quote_candidates(region: str) -> list[str]:
+    """Extract quoted-prompt CANDIDATES from the Context region for the
+    check-17 truncation classifier.
+
+    Candidates: the label line's post-label remainder (`>`-stripped, if
+    non-empty), blockquote segments (contiguous `>` runs with markdown
+    lazy-continuation lines joined — inclusion fails toward PASS/WARN,
+    the safe direction), and inline quote-mark-delimited spans (>= 20
+    chars) over the marker-stripped region. Only consulted AFTER the
+    containment PASS test failed, to classify the mismatch."""
+    lines = region.splitlines()
+    candidates: list[str] = []
+    segment: list[str] = []
+
+    def _close() -> None:
+        if segment:
+            candidates.append("\n".join(segment))
+            segment.clear()
+
+    if lines:
+        first = _BLOCKQUOTE_MARKER_RE.sub("", lines[0]).strip()
+        if first:
+            candidates.append(first)
+    for ln in lines[1:]:
+        if ln.lstrip().startswith(">"):
+            segment.append(_BLOCKQUOTE_MARKER_RE.sub("", ln))
+        elif ln.strip() and segment:
+            segment.append(ln)  # markdown lazy continuation joins the quote
+        else:
+            _close()
+    _close()
+    candidates.extend(_INLINE_QUOTE_SPAN_RE.findall(_strip_blockquote_markers(region)))
+    return candidates
+
+
+def _origin_prompt_quote_verdict(repro: str, fm: dict) -> tuple[str, str]:
+    """Classify the Context row's originating-prompt quote against
+    frontmatter ``origin_prompt``.
+
+    Returns ``(status, detail)`` with status one of:
+
+    - ``"noop"`` — no frontmatter ``origin_prompt``, or no
+      ``**Context:**`` label in the region;
+    - ``"pass"`` — normalized ``origin_prompt`` appears as a substring
+      of the normalized, blockquote-marker-stripped Context-region text
+      (tested raw AND markdown-unescaped);
+    - ``"fail-trunc"`` — a quoted candidate is a strict normalized
+      PREFIX of ``origin_prompt``, >= 20 chars AND covering >= 50% of it
+      (the #813 r1 / #742 silent-tail-truncation signature);
+    - ``"warn-mismatch"`` — containment fails with no truncation
+      signature (e.g. the row quotes a spec-sanctioned alternate
+      verbatim source; #825).
+    """
+    op = str(fm.get("origin_prompt") or "").strip()
+    if not op:
+        return "noop", "no frontmatter origin_prompt"
+    m = _CONTEXT_LABEL_RE.search(repro)
+    if m is None:
+        return "noop", "no **Context:** label"  # caller's label branch makes this unreachable
+    region = repro[m.end() :]  # Context row -> end of footer/section
+    nop = _normalize_prompt_text(op)
+    stripped = _strip_blockquote_markers(region)
+    if nop in _normalize_prompt_text(stripped) or nop in _normalize_prompt_text(
+        _unescape_markdown(stripped)
+    ):
+        return "pass", ""
+    # Containment failed — classify. Candidates: blockquote segments
+    # (contiguous `>` runs, lazy-continuation lines joined) + inline
+    # quote-mark-delimited spans (>= 20 chars) in the stripped region.
+    candidates = _context_quote_candidates(region)
+    best_lcp, truncated = 0, None
+    for cand in candidates:
+        ncand = _normalize_prompt_text(_unescape_markdown(cand))
+        ncand_p = ncand.rstrip(".,;:!?\u2026 ")  # a truncating editor appends `.`/ellipsis (#742)
+        best_lcp = max(best_lcp, _common_prefix_len(ncand_p, nop))
+        # FAIL guard (plan D10): a strict-prefix candidate must ALSO cover
+        # >= 50% of the normalized origin_prompt. Rationale: the incident
+        # class (silent tail truncation — #742 at 85%, the #813-r1-shaped
+        # fixture at ~60%) characteristically preserves most of the
+        # prompt, while the false-positive scenario (an innocent SHORT
+        # elided pointer quoting the fm opener alongside a full
+        # alternate-source quote — the #825+ shape) characteristically
+        # quotes a small head fraction (~10%). Below the floor the case
+        # routes to WARN, whose message names the alternate-source
+        # escape. Per-candidate + fraction semantics deliberately do NOT
+        # suppress on the presence of a longer non-prefix candidate —
+        # that variant would false-NEGATIVE the multi-round true positive
+        # (truncated creation quote + a longer full round-2 quote).
+        if (
+            20 <= len(ncand_p) < len(nop)
+            and len(ncand_p) >= 0.5 * len(nop)
+            and nop.startswith(ncand_p)
+        ):
+            truncated = ncand_p
+    if truncated is not None:
+        cut = len(truncated)
+        return "fail-trunc", (
+            f"context-origin-prompt-mismatch: the quoted originating prompt is a strict "
+            f"PREFIX of frontmatter `origin_prompt` — truncated at normalized offset "
+            f"{cut}/{len(nop)} (quote ends '...{truncated[-40:]}'; origin_prompt continues "
+            f"'{nop[cut : cut + 60]}...'). Quote the FULL origin_prompt verbatim "
+            f"(SPEC.md § `**Context:**` row)."
+        )
+    return "warn-mismatch", (
+        f"context-origin-prompt-mismatch: frontmatter `origin_prompt` does not appear "
+        f"verbatim (whitespace-normalized) in the `**Context:**` row — first divergence at "
+        f"normalized offset {best_lcp}/{len(nop)} (origin_prompt continues "
+        f"'{nop[best_lcp : best_lcp + 60]}...'). If the row quotes a spec-sanctioned "
+        f"alternate verbatim source (original-body `## Provenance` / an "
+        f"`epm:followup-scope` marker), this is informational; otherwise re-quote "
+        f"origin_prompt verbatim."
+    )
+
+
 def check_repro_context_provenance(
     body: str, fm: dict, *, original_body_path: Path | None = None
 ) -> CheckResult:
@@ -3388,6 +3565,37 @@ def check_repro_context_provenance(
     lineage token is a hard FAIL. v3/v2 bodies keep the pre-#1014
     label-presence-only behavior verbatim.
 
+    **Origin-prompt verbatim sub-check (#1068, incident #813 r1).** When
+    frontmatter ``origin_prompt`` is recorded and the row is present, the
+    normalized ``origin_prompt`` must appear as a SUBSTRING of the
+    normalized, blockquote-marker-stripped Context-region text (tested
+    raw AND markdown-unescaped) — containment in THIS direction is what
+    catches truncation: a truncated quote means the full prompt appears
+    nowhere in the row (the reverse quote-inside-origin_prompt test
+    would PASS every truncation). On a containment failure: a quoted
+    candidate that is a >=20-char strict normalized PREFIX of
+    ``origin_prompt`` covering >=50% of it is a hard v4 FAIL naming the
+    truncation offset (`_origin_prompt_quote_verdict`); any other
+    mismatch is a WARN, because SPEC.md sanctions alternate verbatim
+    sources (original-body ``## Provenance`` / ``epm:followup-scope``
+    markers), so a non-truncation mismatch may be innocent (#825). v3/v2
+    bodies get the WARN-only form for BOTH classes (grandfathering —
+    never a new hard FAIL below the v4 sentinel). No ``origin_prompt``
+    or no ``**Context:**`` label: NO-OP (pre-#1068 behavior verbatim).
+
+    Documented residuals (deliberate, all fail toward PASS/WARN):
+    (a) FAIL scope — only strict-prefix truncations >=20 chars covering
+    >=50% of ``origin_prompt`` hard-FAIL; non-prefix truncations
+    (mid-string deletions, truncate-and-fabricate), sub-floor cuts, and
+    non-extractable quote shapes degrade to WARN — clean-result-critic
+    Lens 5 keeps the substantive read on Context-row WARNs. (b)
+    Trailing-punct asymmetry — a quote missing ``origin_prompt``'s final
+    period FAILs (a 1-char truncation) while an ADDED period PASSes via
+    containment — verbatim-consistent, not a verifier bug. (c) An
+    ``origin_prompt`` containing line-leading ``>`` characters yields a
+    conforming-body WARN (the marker strip applies to the body side
+    only — the safe direction).
+
     A missing row FAILs only when recorded origin data exists —
     frontmatter ``origin_prompt`` or a ``## Provenance`` section in the
     sibling ``original-body.md`` — i.e. the body DROPPED provenance it
@@ -3403,10 +3611,18 @@ def check_repro_context_provenance(
     if repro is None:
         # Missing-section is check_required_sections' job; don't double-FAIL.
         return CheckResult(name, True, "skipped — no Reproducibility section")
-    if re.search(r"\*\*\s*Context\s*:?\s*\*\*", repro):
+    if _CONTEXT_LABEL_RE.search(repro):
         if not is_v4(body):
             # v2/v3 keep the pre-#1014 label-presence behavior verbatim
             # (forward-only; the v4 lineage sub-check never binds them).
+            # The #1068 origin-prompt sub-check is WARN-ONLY here
+            # (grandfathering: NEVER a new hard FAIL below the v4
+            # sentinel).
+            status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
+            if status in ("fail-trunc", "warn-mismatch"):
+                return CheckResult(
+                    name, True, "**Context:** row present; " + sub_detail, is_warn=True
+                )
             return CheckResult(name, True, "**Context:** row present")
         # v4 lineage-token sub-check. Strip fences + blockquote LINES
         # FIRST, then slice at the label: a single-line row with an inline
@@ -3429,6 +3645,20 @@ def check_repro_context_provenance(
         # same shape that PASSes unconditionally today.
         ctx_scan = scan_src[m.end() :] if m else scan_src
         if _V4_CONTEXT_LINEAGE_TOKEN_RE.search(ctx_scan):
+            # #1068 origin-prompt verbatim sub-check — runs AFTER the
+            # lineage sub-check (one failure at a time, the file's
+            # convention; a body failing both surfaces the truncation on
+            # the next verifier run after the lineage fix).
+            status, sub_detail = _origin_prompt_quote_verdict(repro, fm)
+            if status == "fail-trunc":
+                return CheckResult(name, False, sub_detail)
+            if status == "warn-mismatch":
+                return CheckResult(
+                    name,
+                    True,
+                    "**Context:** row present with lineage token; " + sub_detail,
+                    is_warn=True,
+                )
             return CheckResult(name, True, "**Context:** row present with lineage token")
         return CheckResult(
             name,
