@@ -223,8 +223,8 @@
     "1026": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1026",
-      "status": "approved",
+      "path": "tasks/running/1026",
+      "status": "running",
       "title": "daily-fix: upload-verifier in flight blocks finalize/status-advance"
     },
     "1027": {
