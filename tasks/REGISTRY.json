@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1045,
+  "highest_id": 1046,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -366,6 +366,13 @@
       "path": "tasks/proposed/1045",
       "status": "proposed",
       "title": "daily-fix: choom-protect Step 9c gates + VM long fits by def"
+    },
+    "1046": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1046",
+      "status": "proposed",
+      "title": "daily-fix: Step 9c timeout sizing + slow-file batch + rc hyg"
     },
     "105": {
       "has_clean_result": true,
