@@ -437,3 +437,4 @@
 {"ts": "2026-07-05T13:49:41Z", "kind": "epm:progress", "version": 168, "by": "unknown", "note": "tick heartbeat: GPU leg gate phase verified via direct SSH probe — L4 at 100% GPU util (13.7GiB VRAM), fit pid feeding at 102% CPU, RSS 9.6/15GB. Log quiet by design during the gate. Healthy."}
 {"ts": "2026-07-05T14:21:37Z", "kind": "epm:progress", "version": 169, "by": "unknown", "note": "tick heartbeat: GPU leg gate phase continuing (~1.6h in; GPU verified 100% util at last probe)."}
 {"ts": "2026-07-05T14:53:22Z", "kind": "epm:progress", "version": 170, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~2.3h in — re-probe confirms L4 at 100% util, fit cputime accruing. Progressing."}
+{"ts": "2026-07-05T15:57:07Z", "kind": "epm:progress", "version": 171, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~3.2h in, pid alive, L4 verified compute-bound at prior probes."}
