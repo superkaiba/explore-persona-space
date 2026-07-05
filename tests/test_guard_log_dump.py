@@ -8,7 +8,7 @@ file passes while every log-shaped block and every unbounded read stays
 blocked.
 
 This file is a THIN wrapper (plan #1057 §4b): the in-script ``--self-test``
-suite (54 cases) stays the single source of truth for the behavior matrix;
+suite (64 cases) stays the single source of truth for the behavior matrix;
 here we (1) run that suite in CI, (2) pin the #986 incident repro against a
 deterministic fixture, (3) pin one block per preserved class + the new
 codedoc retry-shape message, and (4) assert the settings.json wiring

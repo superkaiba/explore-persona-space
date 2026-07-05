@@ -21,6 +21,10 @@
 #     files are ALLOWED (see is_code_doc; #1057); record formats and .txt keep
 #     the strict path. Accepted residual: a wide-line listed-extension file can
 #     exceed MAX_BYTES within the line cap — bounded, deliberate;
+#   - r3: head/tail OPTION tokens are quote-stripped before matching — quoted
+#     signed spellings ('-n' +201 / '-n+201' / '--lines=+201') now refuse, a
+#     deliberate strengthening (each new refusal has an unquoted twin that was
+#     already refused). Bare space-separated `--lines N` stays an accepted miss;
 #   - unparseable / ambiguous commands are ALLOWED (fail-soft).
 #
 # Escape hatch: EPM_ALLOW_LOG_DUMP=1 — honored both as session env and as an
@@ -83,6 +87,21 @@ is_big() {
   local sz
   sz=$(stat -c %s -- "$1" 2>/dev/null) || return 1
   [ "$sz" -gt "$MAX_BYTES" ]
+}
+
+strip_quotes() {
+  # ITERATIVELY trim leading/trailing quote chars into $sq_val (r3): word
+  # splitting removes no quotes and quoting layers can stack (''+201''), so a
+  # one-pass ${x#\'} strip leaves a residual quote that hides a +/- sign the
+  # real shell would reveal. Each iteration removes one char -> terminates.
+  sq_val=$1
+  while :; do
+    case "$sq_val" in
+      \'* | \"*) sq_val=${sq_val#?} ;;
+      *\' | *\") sq_val=${sq_val%?} ;;
+      *) break ;;
+    esac
+  done
 }
 
 # Evaluate the accumulated state for one dump verb. Uses/clears the globals
@@ -165,7 +184,7 @@ check_cmd() {
   # Token walk. set -f: no glob expansion while splitting the command string.
   mode=""; nlines=0; sed_n=0; sedrange_big=0; sedrange_huge=0; sed_nranges=0
   nlines_signed=0; await_n=0; files=()
-  local tok st a b val
+  local tok st a b val opt
   set -f
   # shellcheck disable=SC2086
   set -- $cmd
@@ -204,27 +223,38 @@ check_cmd() {
         if [ "$await_n" = 1 ]; then
           # Signed counts (+K / -K) are open-ended / complement reads — track
           # the sign so pending_check can deny them the bounded-range relief.
-          # Quote-strip BEFORE the sign check (same idiom as files/sed scripts):
+          # Quote-strip BEFORE the sign check, iteratively (strip_quotes):
           # word-splitting does no quote removal, so a quoted operand like
-          # '+201' would hide the sign while the real shell strips the quotes
-          # and tail/head sees +201 — genuinely unbounded.
-          val=${tok#\'}; val=${val%\'}; val=${val#\"}; val=${val%\"}
-          case "$val" in +* | -*) nlines_signed=1 ;; esac
+          # '+201' or ''+201'' would hide the sign while the real shell strips
+          # the quotes and tail/head sees +201 — genuinely unbounded.
+          strip_quotes "$tok"; val=$sq_val
+          # Sign-conservative residue rule (r3): a count whose residue does
+          # not START with a digit (leading +, -, $, \, residual quote) may
+          # hide a sign the real shell would reveal ($'+201', \+201) — treat
+          # as signed. Only bites when nlines > MAX_LINES, where the pre-#1057
+          # hook blocked anyway — no new block of any previously-passing form.
+          case "$val" in [0-9]*) : ;; *) nlines_signed=1 ;; esac
           nlines=$(printf '%s' "$tok" | tr -dc '0-9')
           : "${nlines:=0}"
           await_n=0
           continue
         fi
-        case "$tok" in
+        # Quote-strip the OPTION token too (r3): word-splitting keeps quote
+        # chars, so '-n' / '-n+201' / '--lines=+201' would otherwise fall to
+        # the file arm / the sign-blind -[0-9]* arm and dodge sign detection
+        # (see the header deviation note).
+        strip_quotes "$tok"; opt=$sq_val
+        case "$opt" in
           -n) await_n=1 ;;
           -n* | --lines=*)
             # Prefix-strip FIRST, then quote-strip: quotes can sit after the
             # '=' (--lines='+201') and after -n (-n'+201').
-            val=${tok#--lines=}; val=${val#-n}
-            val=${val#\'}; val=${val%\'}; val=${val#\"}; val=${val%\"}
-            case "$val" in +* | -*) nlines_signed=1 ;; esac
-            nlines=$(printf '%s' "$tok" | tr -dc '0-9'); : "${nlines:=0}" ;;
-          -[0-9]*) nlines=$(printf '%s' "$tok" | tr -dc '0-9'); : "${nlines:=0}" ;;
+            val=${opt#--lines=}; val=${val#-n}
+            strip_quotes "$val"; val=$sq_val
+            # Same sign-conservative residue rule as the await_n site above.
+            case "$val" in [0-9]*) : ;; *) nlines_signed=1 ;; esac
+            nlines=$(printf '%s' "$opt" | tr -dc '0-9'); : "${nlines:=0}" ;;
+          -[0-9]*) nlines=$(printf '%s' "$opt" | tr -dc '0-9'); : "${nlines:=0}" ;;
           -*) : ;;  # -f, -q, -c (byte mode), etc. — conservative: not line dumps
           *) files+=("$tok") ;;
         esac
@@ -359,6 +389,20 @@ EOF'
   run_case "tail -n'+201' glued quoted of big .py blocks"            2 "tail -n'+201' big_source.py"
   run_case "head -n '-201' of big .py blocks (quoted complement)"    2 "head -n '-201' big_source.py"
   run_case "tail --lines='+201' quoted of big .py blocks"            2 "tail --lines='+201' big_source.py"
+  # --- round-3 pins: sibling signed-count spellings (quoted option / stacked
+  # quotes / ANSI-C / backslash-escape) must not escape sign detection ---
+  run_case "head '-n' -201 quoted-opt complement blocks"             2 "head '-n' -201 big_source.py"
+  run_case "tail -n ''+201'' doubled-quote signed blocks"            2 "tail -n ''+201'' big_source.py"
+  run_case "tail -n \$'+201' ANSI-C signed blocks"                   2 "tail -n \$'+201' big_source.py"
+  run_case "tail -n \\+201 escaped signed blocks"                    2 'tail -n \+201 big_source.py'
+  run_case "head -n \\+201 escaped signed blocks (conservative)"     2 'head -n \+201 big_source.py'
+  # deliberate r3 strengthening: quoted-option signed spellings now refuse —
+  # each has an unquoted twin the pre-#1057 hook already refused (see header)
+  run_case "tail '-n' +201 quoted-opt signed blocks (deviation)"     2 "tail '-n' +201 big_source.py"
+  run_case "tail '-n+201' quoted glued signed blocks (deviation)"    2 "tail '-n+201' big_source.py"
+  run_case "tail '--lines=+201' quoted signed blocks (deviation)"    2 "tail '--lines=+201' big_source.py"
+  run_case "tail '-n' 400 quoted-opt bounded keeps relief"           0 "tail '-n' 400 big_source.py"
+  run_case "tail --lines '+201' bare --lines stays allowed (miss)"   0 "tail --lines '+201' big_source.py"
 
   if [ "$FAILED" = 1 ]; then
     echo "self-test: FAIL" >&2
