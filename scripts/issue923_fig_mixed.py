@@ -281,7 +281,8 @@ def layer_curves(skill, pooled_skill, genre, out_dir, meta) -> None:
         ax.plot(p_layers, ys, ls=ls, lw=1.2, color="black", label=ARM_LABELS[arm])
     ax.set_xlabel("Layer")
     ax.set_ylabel("Pooled held-out skill R²")
-    ax.set_title(f"Layer sweep, mixed-forward arms — {genre}")
+    genre_label = {"uc": "UltraChat", "betley": "Betley"}.get(genre, genre)
+    ax.set_title(f"Layer sweep, mixed-forward arms — {genre_label}")
     ax.legend(fontsize=7)
     _save(fig, out_dir, f"mixed_layer_curves_{genre}", meta)
 
