@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1066,
+  "highest_id": 1067,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -527,6 +527,13 @@
       "path": "tasks/proposed/1066",
       "status": "proposed",
       "title": "daily-held: settle #779-line mapping terminology + writeup b"
+    },
+    "1067": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1067",
+      "status": "proposed",
+      "title": "daily-held: Happy mobile push down all day (Remote Control o"
     },
     "108": {
       "has_clean_result": false,
