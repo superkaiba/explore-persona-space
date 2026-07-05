@@ -563,8 +563,8 @@ VM-local-only mix, so "the parent built it locally" is NOT a valid `Source:`
 `eval_results/...` JSON, or be regenerated on the worker (#734). When a
 stage-from-Hub helper maps the artifact into a consumer-fixed local layout
 (leg (iv) staged-layout consumer-open), the §11 record ALSO names the
-hub-rel → local-rel mapping, and the plan schedules the 1-file staging probe
-+ consumer-open gate before production (#928).
+hub-rel → local-rel mapping, and the plan schedules the 1-file staging
+probe + consumer-open gate before production (#928).
 
 **Repo-new model id ⇒ CPU-side config-load smoke before provisioning
 (pre-provision gate).** The `model` id is itself a load-bearing choice. If
