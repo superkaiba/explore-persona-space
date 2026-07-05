@@ -11,7 +11,7 @@ update this index (lint: `--check-lessons-index`).
 
 - **[analyzer-paper-mode](analyzer-paper-mode.md)** — fires when: the analyzer runs a `paper: true` task (LaTeX clean-result; verify_paper.py gate).
 - **[analyzer-section-reference](analyzer-section-reference.md)** — fires when: the analyzer executes a protocol step (pointer-loaded step span).
-- **[artifact-reuse](artifact-reuse.md)** — fires when: a plan reuses an HF adapter/checkpoint/mix/completions/eval JSON/fit-analysis helper vs retraining ((a)-(j) fitness check).
+- **[artifact-reuse](artifact-reuse.md)** — fires when: a plan reuses an HF adapter/checkpoint/mix/completions/eval JSON/fit-analysis helper vs retraining, or designs a reuse-validation gate ((a)-(j) + gate calibration/severity).
 - **[arxiv-mcp](arxiv-mcp.md)** — fires when: you search / read an arXiv paper to ground a hyperparameter or replicate a recipe.
 - **[background-automation](background-automation.md)** — fires when: you touch/reason about the cron audits/session watcher/pod-GCP janitors.
 - **[clean-result-paper-review](clean-result-paper-review.md)** — fires when: either clean-result critic twin reviews a `paper: true` task (P1-P7 lenses, verify_paper.py pre-pass).
