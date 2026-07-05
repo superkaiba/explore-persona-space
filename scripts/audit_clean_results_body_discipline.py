@@ -31,7 +31,9 @@ INVENTORY_PATH = OUT_DIR / "inventory.json"
 PATTERNS: dict[str, tuple[str, str]] = {
     # name: (regex, plain-English description)
     "pre_reg": (
-        r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis|registered alpha|\bas registered\b|fail at the gate|passed the gate|gate-pre-?registered",
+        r"pre-?registered|pre-?registration|(?<![a-z])pre-reg(?![a-z])|registered hypothesis"
+        r"|registered alpha|\bas registered\b|fail at the gate|passed the gate"
+        r"|gate-pre-?registered",
         "Pre-registration jargon ('pre-registered', 'as registered', "
         "'fail at the gate', 'gate-passed', etc.)",
     ),
@@ -115,7 +117,8 @@ PATTERNS: dict[str, tuple[str, str]] = {
         "'(upper|lower) bound (+x)' / 'bound = x' in prose (banned)",
     ),
     "named_tests": (
-        r"\bpaired t-test\b|\bFisher(?:'s)? exact\b|\bMann-Whitney\b|\bbootstrap test\b|\bWilcoxon\b",
+        r"\bpaired t-test\b|\bFisher(?:'s)? exact\b|\bMann-Whitney\b"
+        r"|\bbootstrap test\b|\bWilcoxon\b",
         "Named statistical tests in prose (paired t-test / Fisher / Mann-Whitney / Wilcoxon)",
     ),
     "h_symbols": (
@@ -128,11 +131,18 @@ PATTERNS: dict[str, tuple[str, str]] = {
     ),
     "bin_alpha": (
         r"\bBin\s+[A-E](?!\s*[a-z])",
-        "Project-internal Bin labels (Bin A / Bin B / Bin C / Bin D / Bin E) without inline definition",
+        "Project-internal Bin labels (Bin A / Bin B / Bin C / Bin D / Bin E) "
+        "without inline definition",
     ),
     "condition_labels": (
-        r"\b[CcHhP][1-9](?:'|′)?(?:\s*(?:condition|control|completion|coefficient|hypothesis|test|sub-?(?:claim|experiment|hypothesis)))?(?![a-zA-Z0-9_])",
-        "Project-internal condition/hypothesis labels (C1/C2/C3, H1/H2/H3, P1/P2/P3 with optional prime) — replace with named conditions inline",
+        # The U+2032 PRIME below is the literal char being matched (primed
+        # condition labels like C1-prime), not an accidental homoglyph --
+        # hence the noqa, mirroring the U+2212 entries above.
+        r"\b[CcHhP][1-9](?:'|′)?"  # noqa: RUF001
+        r"(?:\s*(?:condition|control|completion|coefficient|hypothesis|test"
+        r"|sub-?(?:claim|experiment|hypothesis)))?(?![a-zA-Z0-9_])",
+        "Project-internal condition/hypothesis labels (C1/C2/C3, H1/H2/H3, P1/P2/P3 "
+        "with optional prime) — replace with named conditions inline",
     ),
     "cell_tags": (
         # Per-cell / per-condition / per-judge plan-internal tags:
@@ -142,7 +152,9 @@ PATTERNS: dict[str, tuple[str, str]] = {
         #   M1 / M2 (extraction-method labels — only flag when paired with "cosine"/"cell"/"method")
         #   "Method A" / "Method B" (extraction-method labels — uppercase Method + capital letter)
         r"\bBS_E[0-9A-Za-z_]*|\bZ_[a-zA-Z_]+|\b[Gg][0-9]+[a-c]?\b(?=\s|:|\.|,|$)|\bMethod\s+[AB]\b|\b[Mm][1-9]\b(?=\s+(?:cosine|cell|mean|extraction|method|sub-experiment))",
-        "Plan-internal per-cell / extraction-method / judge / gate tags (BS_E*, Z_*, G*, Method A/B, M1) — replace with plain English; tags go in <details>Setup details</details>",
+        "Plan-internal per-cell / extraction-method / judge / gate tags (BS_E*, Z_*, G*, "
+        "Method A/B, M1) — replace with plain English; tags go in "
+        "<details>Setup details</details>",
     ),
     "experimental_arm": (
         # "arm" / "arms" used as a project-internal experiment-strand label.
@@ -150,7 +162,8 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # Triggers on: "<adj>-arm", "the <adj> arm", "behavioral arm", "geometric arm",
         # "five arms", "experimental arm(s)".
         r"\b(?:experimental|behavioral|geometric|reverse-?order|forward-?order|length(?:[-/\s]style)?|full[-\s]?param(?:eter)?|LoRA)\s+arms?\b|\b(?:five|four|three|two)\s+arms?\b|\bexperimental\s+arms?\b|\b(?:the|a)\s+(?:behavioral|geometric|reverse-?order|forward-?order|length(?:[-/\s]style)?|full[-\s]?param(?:eter)?|LoRA)\s+arm\b",
-        "Project-internal experiment-strand 'arm' label — describe what was done, not the strand's name",
+        "Project-internal experiment-strand 'arm' label — describe what was done, "
+        "not the strand's name",
     ),
     "bare_method_acronym": (
         r"\b(?:GCG|PAIR|EvoPrompt|nanoGCG)\b",
@@ -176,7 +189,8 @@ PATTERNS: dict[str, tuple[str, str]] = {
         # we only flag CamelCase / multi-letter subscripts that look like
         # math identifiers — not file paths or `eval_results/foo` variables.
         r"\b[A-Za-z][A-Za-z0-9]*(?:_[A-Za-z0-9]+)*\^[A-Za-z0-9_*+\-]+|\b[A-Z]_[A-Z][A-Za-z]{2,}\b",
-        "Math-style subscript/superscript notation in prose (R_BgivenA^P2, R^P2, P_TopK) — markdown doesn't render these",
+        "Math-style subscript/superscript notation in prose (R_BgivenA^P2, R^P2, P_TopK) "
+        "— markdown doesn't render these",
     ),
     "bit_byte_identical": (
         # "byte identical" / "byte-identical" AND the same-family "bit
