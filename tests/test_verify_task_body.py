@@ -141,13 +141,16 @@ def test_good_body_passes_all():
     # check-17 Context provenance-row read, the v3 check-21
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc), the v4
     # check-20 word caps (needs `issue` for the events-based round budget,
-    # #921; PASS-skip: not a v4 body), AND the
-    # #732 judge-API-error denominator check (PASS-skip: legacy body) →
-    # 42 results total (2 prepended + CHECKS[1:]=33 + 7 appended). The
+    # #921; PASS-skip: not a v4 body), the
+    # #732 judge-API-error denominator check (PASS-skip: legacy body), AND
+    # the check-30 orphaned-per-unit-figures probe (needs `issue` for
+    # figures-dir scoping, #1011; PASS here — the fixture's fake sha is not
+    # locally reachable, so the cited SHA is silently skipped) →
+    # 43 results total (2 prepended + CHECKS[1:]=33 + 8 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 42
+    assert len(results) == 43
 
 
 def test_missing_confidence_tag():
@@ -1197,6 +1200,271 @@ def test_figure_partial_probe_failure_never_warns(tmp_path, monkeypatch):
     assert "probe failure" in r.detail
     assert "issue-999" in r.detail  # the failed ref is named as failed
     assert "MISSING from every live local ref" not in r.detail
+
+
+# ─── Check 30: orphaned per-unit companion figures (inverse git probe) ─────
+#
+# Incident task #928 (round 3): the body embedded only the pooled MLP
+# aggregate while the round-committed per-context companion
+# `figures/issue_928/mlp_indiv_percontext_delta.png` — committed at a SHA
+# the body already cited — sat unreferenced by every body image URL; the
+# gap reached the LM clean-result-critic as a Lens 11 blocker instead of
+# being caught pre-gate. Check 30 runs the INVERSE direction of checks
+# 4b/22/29: ls-tree the body's OWN cited figure SHAs and WARN (never FAIL)
+# on committed per-unit-named PNGs the body neither embeds nor names in
+# prose. (#1011)
+
+_PER_UNIT_ORPHAN_CHECK = "per-unit companion figures embedded"
+
+_PER_UNIT_ORPHAN_PATH = "figures/issue_999/hero_percontext.png"
+
+
+def _make_repo_with_per_unit_orphan(tmp_path):
+    """git repo whose HEAD commit tracks `figures/issue_999/hero.png` +
+    `figures/issue_999/hero_percontext.png` (the per-unit companion) +
+    `scripts/run.py` (so GOOD_BODY's check-8b Code-blob probe resolves
+    when a test pins the real sha); returns (repo_path, head_sha)."""
+    repo = tmp_path / "perunitrepo"
+    repo.mkdir()
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    git("init", "-q")
+    git("config", "user.email", "test@example.com")
+    git("config", "user.name", "Test")
+    figdir = repo / "figures" / "issue_999"
+    figdir.mkdir(parents=True)
+    (figdir / "hero.png").write_bytes(b"\x89PNG fake bytes")
+    (figdir / "hero_percontext.png").write_bytes(b"\x89PNG fake bytes")
+    script = repo / "scripts" / "run.py"
+    script.parent.mkdir(parents=True)
+    script.write_text("print('entry script')\n")
+    git("add", "figures", "scripts")
+    git("commit", "-q", "-m", "add hero + per-context companion + entry script")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    return repo, sha
+
+
+def test_orphan_per_unit_figure_warns(tmp_path, monkeypatch):
+    """The #928 incident shape: `hero_percontext.png` committed at the
+    body-cited sha, body embeds only `hero.png`, stem named nowhere in
+    prose → the incident-class WARN (passed=True — overall verdict
+    unaffected). Asserted BY NAME through verify_text so the dispatch
+    outside CHECKS is pinned (a refactor dropping the `verify_text`
+    append fails here); the subprocess budget is asserted on a DIRECT
+    invocation only (never a global count across verify_text — checks
+    4b/8b/29 legitimately add their own git calls)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    ok, results = verify_task_body.verify_text(body, issue=999)
+    by_name = _results_by_name(results)
+    r = by_name[_PER_UNIT_ORPHAN_CHECK]
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _PER_UNIT_ORPHAN_PATH in r.detail
+    assert "Lens 11" in r.detail
+    assert sha[:8] in r.detail
+    assert ok  # the WARN never flips the overall verdict (no-regress guarantee)
+    # Scoped subprocess budget on a DIRECT invocation: 1 unique (sha, dir)
+    # pair → exactly 1 ls-tree (plan §4.1 budget: 1 per unique pair).
+    calls: list = []
+    real_run = subprocess.run
+
+    def counting_run(cmd, *args, **kwargs):
+        calls.append(cmd)
+        return real_run(cmd, *args, **kwargs)
+
+    monkeypatch.setattr(verify_task_body.subprocess, "run", counting_run)
+    r2 = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r2.is_warn is True
+    assert len(calls) == 1
+
+
+def test_per_unit_figure_embedded_no_warn(tmp_path, monkeypatch):
+    """Body embeds BOTH the hero and the per-unit companion → clean PASS
+    (the companion is in the referenced path set)."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    companion_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha}/figures/issue_999/hero_percontext.png"
+    )
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![Per-context deltas behind the aggregate.]({companion_url})\n\n> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "no orphaned per-unit figures" in r.detail
+
+
+def test_orphan_unreachable_sha_skips_silently(tmp_path, monkeypatch):
+    """Cited sha unknown to the local object DB (GOOD_BODY's placeholder
+    sha kept; the repo has no such commit): the SHA is skipped SILENTLY —
+    counted in the PASS detail, never a WARN (hard constraint: an
+    unreachable SHA must not manufacture a false WARN)."""
+    repo, _sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    r = verify_task_body.check_orphaned_per_unit_figures(GOOD_BODY, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert "not locally reachable" in r.detail
+
+
+def test_orphan_prose_mention_suppresses_warn(tmp_path, monkeypatch):
+    """The prose disclosure escape: an unembedded companion whose stem is
+    named in body prose is treated as disclosed → no WARN (mechanizes
+    'exemptions stated in prose are legitimate')."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "The 17-pt lift holds at every seed;",
+        "The standalone `hero_percontext` scatter is superseded by the right panel. "
+        "The 17-pt lift holds at every seed;",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+
+
+def test_orphan_deduped_across_cited_shas(tmp_path, monkeypatch):
+    """The same orphan committed at TWO body-cited SHAs is ONE detail
+    entry (keyed by path), listing both short SHAs."""
+    repo, sha_a = _make_repo_with_per_unit_orphan(tmp_path)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    second = repo / "figures" / "issue_999" / "second.png"
+    second.write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add second figure")
+    sha_b = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    second_url = (
+        "https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        f"{sha_b}/figures/issue_999/second.png"
+    )
+    body = GOOD_BODY.replace("0123456789abcdef", sha_a).replace(
+        "> **Figure.**",
+        f"![Second figure at a second sha.]({second_url})\n\n> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is True
+    assert r.detail.count(_PER_UNIT_ORPHAN_PATH) == 1  # deduped by path
+    assert sha_a[:8] in r.detail
+    assert sha_b[:8] in r.detail
+
+
+def test_orphan_cross_issue_dir_not_scanned_when_issue_known(tmp_path, monkeypatch):
+    """A cross-issue embed (`figures/issue_777/x.png`, whose dir holds its
+    own orphan) must NOT surface issue_777's orphans when `issue=999` is
+    known — only this task's figures dir is scanned."""
+    repo, _sha_a = _make_repo_with_per_unit_orphan(tmp_path)
+
+    def git(*args):
+        subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True)
+
+    other = repo / "figures" / "issue_777"
+    other.mkdir(parents=True)
+    (other / "x.png").write_bytes(b"\x89PNG fake bytes")
+    (other / "x_percontext.png").write_bytes(b"\x89PNG fake bytes")
+    git("add", "figures")
+    git("commit", "-q", "-m", "add cross-issue figures")
+    sha = subprocess.run(
+        ["git", "-C", str(repo), "rev-parse", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    base_url = f"https://raw.githubusercontent.com/superkaiba/explore-persona-space/{sha}"
+    body = GOOD_BODY.replace("0123456789abcdef", sha).replace(
+        "> **Figure.**",
+        f"![companion]({base_url}/figures/issue_999/hero_percontext.png)\n\n"
+        f"![cross-issue]({base_url}/figures/issue_777/x.png)\n\n> **Figure.**",
+    )
+    r = verify_task_body.check_orphaned_per_unit_figures(body, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False  # issue_999 fully embedded; issue_777 out of scope
+    assert "issue_777" not in r.detail
+
+
+def test_orphan_repo_unresolved_skips(monkeypatch):
+    """`_resolve_repo_root` → None (running outside the repo): skip-PASS."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    r = verify_task_body.check_orphaned_per_unit_figures(GOOD_BODY, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    assert r.detail.startswith("skipped")
+
+
+def test_orphan_git_error_degrades_to_pass(tmp_path, monkeypatch):
+    """`_resolve_repo_root` pointed at a plain non-git dir: every ls-tree
+    fails → every cited SHA degrades to the silent skip, never a WARN, and
+    no exception propagates through verify_text."""
+    plain = tmp_path / "notarepo2"
+    plain.mkdir()
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: plain)
+    r = verify_task_body.check_orphaned_per_unit_figures(GOOD_BODY, issue=999)
+    assert r.passed is True
+    assert r.is_warn is False
+    ok, results = verify_task_body.verify_text(GOOD_BODY, issue=999)  # no exception end to end
+    assert _results_by_name(results)[_PER_UNIT_ORPHAN_CHECK].passed
+    assert ok
+
+
+def test_orphan_issue_none_fallback_scans_cited_dirs(tmp_path, monkeypatch):
+    """`issue=None` (the --body-stdin shape): the check falls back to
+    scanning every cited `figures/issue_<K>/` dir, so the orphan still
+    surfaces when no issue number is threaded."""
+    repo, sha = _make_repo_with_per_unit_orphan(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = GOOD_BODY.replace("0123456789abcdef", sha)
+    ok, results = verify_task_body.verify_text(body)  # no issue threaded
+    r = _results_by_name(results)[_PER_UNIT_ORPHAN_CHECK]
+    assert r.passed is True
+    assert r.is_warn is True
+    assert _PER_UNIT_ORPHAN_PATH in r.detail
+    assert ok
+
+
+@pytest.mark.parametrize(
+    ("stem", "expected"),
+    [
+        ("mlp_indiv_percontext_delta", True),  # the #928 incident filename
+        ("per_context_gain", True),
+        ("per-context_x", True),
+        ("per_unit_deltas", True),
+        ("percell_grid", True),
+        ("PerContext_Upper", True),  # case-insensitive
+        ("mlp_indiv_hero_4arm", False),  # `indiv` names the regime, not a view
+        ("supercontext_map", False),  # mid-word hit blocked by the lookbehind
+        ("experiment_percent", False),
+        ("per_source_rates", False),  # other per-X families out of scope by design
+        ("per_seed_scatter", False),
+    ],
+)
+def test_per_unit_basename_pattern(stem, expected):
+    """The deliberately-narrow check-30 pattern: the three per-unit nouns
+    (context/unit/cell) with -/_ spellings match; regime names (`indiv`),
+    mid-word hits (`supercontext`), and other per-X families
+    (per_source/per_seed) do NOT — Lens 11 owns the substance."""
+    assert bool(verify_task_body._PER_UNIT_FIG_RE.search(stem)) is expected
 
 
 # ─── Check 8b: Reproducibility artifact-URL existence ─────────────────────
@@ -2774,10 +3042,12 @@ def test_checks_list_size():
     provenance row (needs frontmatter + original-body.md), the v3
     check-21 body-Parameters-⊆-doc (needs the methodology doc path),
     the v4 check-20 word caps (needs `issue` for the events-based
-    folded-round budget scaling, #921), and the #732 judge-API-error
-    denominator check (needs eval JSONs).
-    So `verify_text` returns 42 results (2 prepended + CHECKS[1:]=33 +
-    7 appended — see `test_good_body_passes_all`), but `CHECKS` stays
+    folded-round budget scaling, #921), the #732 judge-API-error
+    denominator check (needs eval JSONs), and the check-30
+    orphaned-per-unit-figures probe (needs `issue` for figures-dir
+    scoping, #1011).
+    So `verify_text` returns 43 results (2 prepended + CHECKS[1:]=33 +
+    8 appended — see `test_good_body_passes_all`), but `CHECKS` stays
     at 34.
     """
     assert len(verify_task_body.CHECKS) == 34
