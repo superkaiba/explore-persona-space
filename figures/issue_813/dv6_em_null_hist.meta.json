@@ -1,0 +1,760 @@
+{
+  "commit": "279e114463",
+  "created": "2026-07-05T10:42:41Z",
+  "figsize": [
+    7.2,
+    4.4
+  ],
+  "points": [
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.055947,
+      "null density": 0.6370794285629752,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.165823,
+      "null density": 0.6370794285629752,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.2757,
+      "null density": 0.36404538775027157,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.385576,
+      "null density": 0.40955106121905543,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.495452,
+      "null density": 0.5005624081566236,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.605329,
+      "null density": 0.5460680816254075,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.715205,
+      "null density": 0.4095510612190552,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.825082,
+      "null density": 0.5460680816254075,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.934958,
+      "null density": 0.5460680816254075,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.044834,
+      "null density": 0.4095510612190548,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.154711,
+      "null density": 0.2275283673439198,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.264587,
+      "null density": 0.3185397142814877,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.374464,
+      "null density": 0.3640453877502717,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.48434,
+      "null density": 0.3185397142814871,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.594217,
+      "null density": 0.3185397142814877,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.704093,
+      "null density": 0.40955106121905566,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.813969,
+      "null density": 0.3185397142814877,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.923846,
+      "null density": 0.18202269387513584,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.033722,
+      "null density": 0.13651702040635189,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.143599,
+      "null density": 0.2275283673439198,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.253475,
+      "null density": 0.09101134693756792,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.363351,
+      "null density": 0.27303404081270377,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.473228,
+      "null density": 0.09101134693756792,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.583104,
+      "null density": 0.13651702040635189,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.692981,
+      "null density": 0.18202269387513584,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.802857,
+      "null density": 0.04550567346878396,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.912733,
+      "null density": 0.04550567346878378,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.02261,
+      "null density": 0.04550567346878396,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.132486,
+      "null density": 0.04550567346878396,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.242363,
+      "null density": 0.04550567346878396,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.352239,
+      "null density": 0.04550567346878396,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.462115,
+      "null density": 0.04550567346878396,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.571992,
+      "null density": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.681868,
+      "null density": 0.04550567346878396,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.791745,
+      "null density": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.901621,
+      "null density": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 4.011498,
+      "null density": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 4.121374,
+      "null density": 0.04550567346878396,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 4.23125,
+      "null density": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 4.341127,
+      "null density": 0.09101134693756792,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.056818,
+      "null density": 1.1440087039949636,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.170453,
+      "null density": 0.8800066953807412,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.284089,
+      "null density": 0.7920060258426669,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.397724,
+      "null density": 0.5280040172284446,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.51136,
+      "null density": 0.3520026781522966,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.624995,
+      "null density": 0.3080023433832595,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.738631,
+      "null density": 0.1320010043071111,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.852266,
+      "null density": 0.22000167384518537,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.965902,
+      "null density": 0.2640020086142222,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.079537,
+      "null density": 0.3080023433832595,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.193173,
+      "null density": 0.26400200861422246,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.306808,
+      "null density": 0.1760013390761483,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.420444,
+      "null density": 0.1760013390761483,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.534079,
+      "null density": 0.3080023433832589,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.647715,
+      "null density": 0.1760013390761483,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.76135,
+      "null density": 0.1760013390761483,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.874986,
+      "null density": 0.26400200861422246,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.988621,
+      "null density": 0.22000167384518451,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.102257,
+      "null density": 0.1760013390761483,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.215892,
+      "null density": 0.08800066953807414,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.329528,
+      "null density": 0.13200100430711123,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.443163,
+      "null density": 0.13200100430711123,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.556799,
+      "null density": 0.3520026781522966,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.670434,
+      "null density": 0.08800066953807414,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.78407,
+      "null density": 0.22000167384518537,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.897705,
+      "null density": 0.04400033476903707,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.011341,
+      "null density": 0.044000334769036906,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.124976,
+      "null density": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.238612,
+      "null density": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.352247,
+      "null density": 0.04400033476903707,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.465883,
+      "null density": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.579518,
+      "null density": 0.13200100430711123,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.693154,
+      "null density": 0.1760013390761483,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.806789,
+      "null density": 0.04400033476903707,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.920425,
+      "null density": 0.13200100430711123,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 4.03406,
+      "null density": 0.044000334769036906,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 4.147696,
+      "null density": 0.17600133907614895,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 4.261331,
+      "null density": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 4.374967,
+      "null density": 0.04400033476903724,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 4.488602,
+      "null density": 0.044000334769036906,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.053501,
+      "null density": 1.2540917999582428,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.145201,
+      "null density": 0.9814631477934076,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.236901,
+      "null density": 0.5452573043296707,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.328601,
+      "null density": 0.49073157389670385,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.420301,
+      "null density": 0.8724116869274735,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.512,
+      "null density": 0.38168011303076915,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.6037,
+      "null density": 0.43620584346373703,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.6954,
+      "null density": 0.2726286521648353,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.7871,
+      "null density": 0.32715438259780233,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.8788,
+      "null density": 0.3271543825978028,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 0.970499,
+      "null density": 0.49073157389670413,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.062199,
+      "null density": 0.38168011303076943,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.153899,
+      "null density": 0.32715438259780233,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.245599,
+      "null density": 0.27262865216483595,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.337299,
+      "null density": 0.16357719129890116,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.428999,
+      "null density": 0.21810292173186824,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.520698,
+      "null density": 0.4362058434637365,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.612398,
+      "null density": 0.2726286521648353,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.704098,
+      "null density": 0.21810292173186877,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.795798,
+      "null density": 0.32715438259780233,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.887498,
+      "null density": 0.10905146086593412,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.979198,
+      "null density": 0.32715438259780155,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.070897,
+      "null density": 0.16357719129890158,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.162597,
+      "null density": 0.2181029217318677,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.254297,
+      "null density": 0.05452573043296719,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.345997,
+      "null density": 0.05452573043296693,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.437697,
+      "null density": 0.16357719129890158,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.529397,
+      "null density": 0.10905146086593438,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.621096,
+      "null density": 0.10905146086593386,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.712796,
+      "null density": 0.05452573043296719,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.804496,
+      "null density": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.896196,
+      "null density": 0.05452573043296719,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 2.987896,
+      "null density": 0.16357719129890158,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.079595,
+      "null density": 0.05452573043296693,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.171295,
+      "null density": 0.10905146086593438,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.262995,
+      "null density": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.354695,
+      "null density": 0.10905146086593438,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.446395,
+      "null density": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.538095,
+      "null density": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.629794,
+      "null density": 0.05452573043296719,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.2249628199360756,
+      "null density": 0.0,
+      "series": "observed per-example max \u2212 min spread",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 1.2249628199360756,
+      "null density": 1.0,
+      "series": "observed per-example max \u2212 min spread",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.6257047050534856,
+      "null density": 0.0,
+      "series": "parent averaged-grain null p95 (1000 draws, widest substrate)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "difference in map-change size between question halves (\u0394/floor units)": 3.6257047050534856,
+      "null density": 1.0,
+      "series": "parent averaged-grain null p95 (1000 draws, widest substrate)",
+      "_kind": "line",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 124
+}
