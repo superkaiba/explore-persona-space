@@ -5783,7 +5783,15 @@ cells × folds × draws × epochs and the projected wall-time it implies;
 `analysis/null_battery.py`), or why the work is genuinely not batchable;
 (3) for reused parent code, that its inner loop, device routing, + data-repo
 Hub-call scoping were
-INSPECTED, not assumed (cf. `.claude/rules/artifact-reuse.md`). Projected
+INSPECTED, not assumed (cf. `.claude/rules/artifact-reuse.md`); (4) for any
+VM-PLACED phase, the projected peak RSS (measured one-chunk `ru_maxrss` at
+production shape, or resident-pool bytes × MEASURED live-factor —
+`.claude/rules/plan-compute-sizing.md` § CPU-phase RAM/RSS routing);
+projected peak RSS ≥ ~16 GB — single phase, or summed with
+concurrently-resident VM phases — is a STOP: route the phase off the
+shared VM (`cpu-mid` / `cpu-bigmem`) before launching (#778's 22-GiB
+battery was earlyoom-killed 3× on exactly this plannerless path; #833 lost
+5 cells to two concurrent ~13-15 GB phases). Projected
 wall-time > ~1h without a batched inner loop is a STOP: vectorize first
 (`.claude/rules/vectorize-many-cell-fits.md`), then launch. If the
 realized implementation later adds a fit/battery the dispatch statement
@@ -7035,8 +7043,8 @@ orchestrators driving one round is the #778 root cause.
      own latest prior run, not a from-scratch plan. Planner-exempt
      re-runs (step 2) skip this.
    - **Compute-character pre-launch statement** (canonical block: Step
-     9a-ter § Compute-character pre-launch statement — same three
-     elements, same > ~1h stop-and-vectorize rule): REQUIRED in the
+     9a-ter § Compute-character pre-launch statement — same four elements,
+     same > ~1h stop-and-vectorize + ≥~16 GB-RSS off-VM rules): REQUIRED in the
      `stage=followup-<phase>` dispatch breadcrumb (or an adjacent
      `epm:progress` note) before dispatching ANY stage of the round that
      launches a fit, sweep, or statistical battery — INCLUDING
