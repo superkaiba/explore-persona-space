@@ -157,10 +157,11 @@ def test_good_plan_passes_all():
         "c18_paired_contrast_source_coverage": "SKIP",
         "c19_ood_folds": "SKIP",
         "c20_verdict_lattice_coherence": "SKIP",
+        "c21_grep_arity_gate": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 21
+    assert len(results) == 22
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -2729,6 +2730,127 @@ def test_c20_paired_before_primary_binds_primary_axis():
     assert "tier 1" in r.detail
 
 
+# ─── Check 21 — grep-arity acceptance gate ─────────────────────────────────
+
+# Verbatim #1024 gate shapes (plans/v2.md lines 175 + 25 = the incident;
+# inlined copies keep the suite self-contained — task folders move between
+# status dirs, so tests never hard-read tasks/<status>/1024 paths).
+C21 = "c21_grep_arity_gate"
+C21_PIPELINE_GATE = (
+    '\n- Audit grep → 0 two-arg shared-parser calls: `grep -rn "parse_judge_json(" '
+    'src/ scripts/ tests/ | grep -v run_em_multiseed | grep ", " | wc -l` == 0.\n'
+)
+C21_PROSE_GATE = (
+    "\n2. Every call site compiles with the new signature; `grep -rn 'parse_judge_json(' "
+    "src/ scripts/ tests/` shows zero two-argument calls of the shared parser.\n"
+)
+C21_AST_EVIDENCE = (
+    "\nAudit: ast.parse each target file, ast.walk over Call nodes whose func resolves "
+    "to parse_judge_json, count len(node.args) + len(node.keywords), whitelist the "
+    "deliberate two-arg pytest.raises test.\n"
+)
+
+
+def test_c21_no_trigger_skips():
+    for kind in ("experiment", "infra"):
+        _, by_id = _run(GOOD_PLAN, kind=kind)
+        r = by_id[C21]
+        assert r.status == "SKIP", kind
+        assert "no grep-based call-arity" in r.detail
+
+
+def test_c21_pipeline_arity_gate_warns():
+    ok, by_id = _run(GOOD_PLAN + C21_PIPELINE_GATE, kind="infra")
+    r = by_id[C21]
+    assert r.status == "WARN"
+    assert ok is True  # WARN never blocks
+    assert "ast.walk" in r.detail
+    assert "#1024" in r.detail
+    assert "N/A — no arity acceptance gate" in r.detail
+
+
+def test_c21_prose_arity_gate_warns():
+    assert _status(GOOD_PLAN + C21_PROSE_GATE, C21, kind="infra") == "WARN"
+
+
+def test_c21_kind_experiment_also_fires():
+    # Pins the all-kinds scope: signature migrations ride experiment plans'
+    # code-port phases too (plan §11 item 4).
+    assert _status(GOOD_PLAN + C21_PIPELINE_GATE, C21, kind="experiment") == "WARN"
+
+
+def test_c21_ast_evidence_passes():
+    _, by_id = _run(GOOD_PLAN + C21_PIPELINE_GATE + C21_AST_EVIDENCE, kind="infra")
+    r = by_id[C21]
+    assert r.status == "PASS"
+    assert "AST" in r.detail
+
+
+def test_c21_na_escape_passes():
+    plan = GOOD_PLAN + C21_PIPELINE_GATE + "\nN/A — no arity acceptance gate.\n"
+    _, by_id = _run(plan, kind="infra")
+    r = by_id[C21]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c21_discovery_grep_does_not_trigger():
+    # A repro-card discovery/enumeration grep (no count form, no arity
+    # vocabulary, no zero comparator) must never fire.
+    plan = GOOD_PLAN + '\nRepro: `grep -rn "parse_judge_json(" src/ scripts/ tests/`\n'
+    assert _status(plan, C21, kind="infra") == "SKIP"
+
+
+def test_c21_plain_removal_gate_does_not_trigger():
+    # A full-removal migration gate (call-pattern + count + zero comparator,
+    # but NO comma pattern and NO arity vocabulary) counts call sites, not
+    # argument arity — legitimate and out of scope.
+    plan = GOOD_PLAN + '\n- `grep -rn "old_fn(" src/ | wc -l` == 0.\n'
+    assert _status(plan, C21, kind="infra") == "SKIP"
+
+
+def test_c21_fenced_gate_still_triggers():
+    # Pins the no-fence-mask decision: gate commands live in fenced
+    # verification blocks too (plan §4.1).
+    plan = GOOD_PLAN + "\n```bash" + C21_PIPELINE_GATE + "```\n"
+    assert _status(plan, C21, kind="infra") == "WARN"
+
+
+def test_c21_comma_call_grep_without_count_does_not_trigger():
+    # A comma inside a call-shaped grep pattern without any count form or
+    # zero comparator is discovery, not a gate.
+    plan = GOOD_PLAN + '\n`grep -rn "load(x, y)" docs/`\n'
+    assert _status(plan, C21, kind="infra") == "SKIP"
+
+
+def test_c21_branch_a_only_pipeline_gate_warns():
+    # Reconciler MF-2: pins Branch A's DETECTION-LOSS direction — every other
+    # WARN fixture co-fires Branch B, so a dead Branch A would otherwise ship
+    # green. No arity vocabulary, no zero comparator on this line.
+    plan = GOOD_PLAN + (
+        '\n- `grep -rn "load_config(" src/ | grep ", " | wc -l` must return no rows.\n'
+    )
+    assert _status(plan, C21, kind="infra") == "WARN"
+
+
+def test_c21_grep_dash_c_count_form_warns():
+    # Claude-statistics concern 2: the `grep -c` flag-cluster branch of
+    # _C21_COUNT_RE has no other coverage.
+    plan = GOOD_PLAN + '\n- `grep -rnc "parse_judge_json(.*," src/` == 0 two-arg calls.\n'
+    assert _status(plan, C21, kind="infra") == "WARN"
+
+
+def test_c21_na_wins_over_ast_evidence():
+    # Escape-ORDER pin (shared Claude/Codex concern): with BOTH escapes
+    # present the N/A detail is reported, not the AST-evidence detail.
+    plan = GOOD_PLAN + C21_PIPELINE_GATE + C21_AST_EVIDENCE + "\nN/A — no arity acceptance gate.\n"
+    _, by_id = _run(plan, kind="infra")
+    r = by_id[C21]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+    assert "AST-based arity audit" not in r.detail
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -2778,12 +2900,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 13
+    assert payload["n_skip"] == 14
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 21
-    assert len({c["id"] for c in payload["checks"]}) == 21
+    assert len(payload["checks"]) == 22
+    assert len({c["id"] for c in payload["checks"]}) == 22
 
 
 def test_cli_exit_one_on_fail(tmp_path):

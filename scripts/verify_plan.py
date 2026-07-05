@@ -44,11 +44,13 @@ Check catalog (id — classification — kind scope)
                                                           analysis
   c20 verdict-lattice           FAIL (experiment) / WARN  experiment +
       coherence                 (analysis), conditional   analysis
+  c21 grep-arity acceptance     WARN-only, conditional    all kinds
+      gate → AST arity audit
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20) also SKIP when their content trigger does not fire.
+19, 20, 21) also SKIP when their content trigger does not fire.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
 
@@ -66,6 +68,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no paired contrast`` (check 18)
   - ``N/A — no held-out predictive DV`` (check 19)
   - ``N/A — no registered verdict lattice`` (check 20)
+  - ``N/A — no arity acceptance gate`` (check 21)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -3006,6 +3009,107 @@ def check_verdict_lattice_coherence(plan: str, kind: str) -> CheckResult:
     return _c20_tier2_result(cid, name, kind, lattices)
 
 
+# ─── Check 21 — grep-arity acceptance gate → AST arity audit (WARN-only) ──
+
+# A grep invocation whose quoted pattern is call-shaped: an identifier
+# immediately followed by `(` inside the quotes
+# (`grep -rn "parse_judge_json(" ...`). [^|\n] bounds the scan to the
+# grep component's own arguments, not a later pipeline component.
+_C21_GREP_CALL_RE = re.compile(r"""grep\b[^|\n]*["'][^"'\n]*\w\(""")
+
+# Pipeline-form arity discriminator: any grep component on the SAME line
+# whose quoted pattern contains a comma (`| grep ", "`, `grep -c 'f(.*,'`).
+_C21_GREP_COMMA_RE = re.compile(r"""grep\b[^|\n]*["'][^"'\n]*,[^"'\n]*["']""")
+
+# Count form: `... | wc -l`, or a grep flag cluster carrying -c
+# (`grep -c`, `grep -rnc`; a separated `grep -r -c` is a known miss).
+_C21_COUNT_RE = re.compile(r"""wc\s+-l|\bgrep\s+-\w*c\b""")
+
+# Prose-form arity vocabulary ("shows zero two-argument calls").
+_C21_ARITY_VOCAB_RE = re.compile(
+    r"(?i)\btwo-?arg\w*|\b(?:one|two|three|\d+)[- ]argument|\barity\b"
+    r"|second argument|keyword[- ]arg\w*"
+)
+
+# Registered zero-count pass condition — the comparator that makes a grep
+# a GATE rather than a discovery command. Deliberately absent: bare
+# `\bempty\b` and un-bounded `→ 0` (matched unrelated prose on #416/#467/
+# #870 in the calibration sweep).
+_C21_ZERO_RE = re.compile(
+    r"(?i)==?\s*`?0\b|\bshows zero\b|\bzero\b[^.\n]{0,40}\bcalls?\b"
+    r"|returns nothing|\b0 hits\b|must be 0\b"
+)
+
+# Evidence escape: the plan names an AST-based arity audit anywhere.
+_C21_AST_EVIDENCE_RE = re.compile(
+    r"(?i)ast\.(?:walk|parse)|\bAST[- ](?:based|arity|audit|walker)|libcst"
+)
+
+_C21_NA_RE = re.compile(NA_RE + r"no arity acceptance gate")
+
+
+def check_grep_arity_gate(plan: str, kind: str) -> CheckResult:
+    """Plans registering a grep/`wc -l`-based signature-ARITY acceptance
+    gate (`grep "func(" ... | grep ", " | wc -l` == 0, or a call-pattern
+    grep whose stated pass condition is "shows zero two-argument calls")
+    get a WARN pointing at the AST-based arity audit as the robust form:
+    comma heuristics over call sites are BOTH unsatisfiable (they count
+    deliberate two-arg tests + comma-bearing string literals) AND
+    under-detecting (split-line and keyword-argument calls carry no
+    same-line comma) — #1024 plan v1/v2 registered exactly this gate and
+    the critic ensemble replaced it with an ast.walk audit in v3. WARN
+    not FAIL: greps are legitimate for discovery/enumeration, and the
+    conjunctive line trigger (call-pattern grep + arity discriminator +
+    count/comparator) is a heuristic — the Phase 1.5/2 reviewers
+    adjudicate. ALL kinds: the incident was kind: infra, but signature
+    migrations also ride experiment plans' code-port phases, and the
+    2026-07-04 corpus sweep (1,329 plans/v*.md) fired on ZERO lines
+    outside #1024's own plan versions, so kind confinement buys no
+    precision and costs recall. Raw lines are scanned WITHOUT the fence
+    mask (gate commands live in inline backticks and fenced verification
+    blocks alike); section-window confinement is the first tightening
+    lever if a future sweep surfaces false positives. The 0-FP figure is
+    an IN-SAMPLE calibration (regexes tuned on the same historical
+    corpus the acceptance sweep re-runs) — it bounds nuisance cost on
+    yesterday's planner distribution, not a guarantee for future plans."""
+    cid, name = "c21_grep_arity_gate", "grep-arity acceptance gate points at AST audit"
+    del kind  # all kinds — trigger precision carries the false-positive discipline
+    hits: list[tuple[int, str]] = []
+    for i, line in enumerate(plan.splitlines(), 1):
+        if not _C21_GREP_CALL_RE.search(line):
+            continue
+        pipeline = _C21_GREP_COMMA_RE.search(line) and _C21_COUNT_RE.search(line)
+        prose = _C21_ARITY_VOCAB_RE.search(line) and _C21_ZERO_RE.search(line)
+        if pipeline or prose:
+            hits.append((i, line.strip()))
+    if not hits:
+        return _skip(cid, name, "no grep-based call-arity pass condition detected")
+    if _C21_NA_RE.search(plan):
+        return _pass(
+            cid, name, "explicit N/A declared (flagged grep is not an arity pass condition)"
+        )
+    if _C21_AST_EVIDENCE_RE.search(plan):
+        i, line = hits[0]
+        return _pass(
+            cid,
+            name,
+            f"grep-arity gate present (line {i}: {line[:80]!r}) but the plan also names an "
+            "AST-based arity audit — the robust form is registered",
+        )
+    i, line = hits[0]
+    return _warn(
+        cid,
+        name,
+        f"a registered pass condition counts comma-bearing call-pattern grep hits (line {i}: "
+        f"{line[:100]!r}) — comma-grep arity gates are both unsatisfiable (they count "
+        "deliberate two-arg tests and comma-bearing string literals) and under-detecting "
+        "(split-line and keyword-argument calls carry no same-line comma; #1024 plan v1/v2). "
+        "Register an AST arity audit instead: ast.parse each target file, ast.walk over Call "
+        "nodes matching the function, count len(node.args) + len(node.keywords), whitelist "
+        "named exceptions — or declare `N/A — no arity acceptance gate`",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -3029,6 +3133,7 @@ CHECKS = [
     check_paired_contrast_source_coverage,
     check_ood_folds,
     check_verdict_lattice_coherence,
+    check_grep_arity_gate,
 ]
 
 
