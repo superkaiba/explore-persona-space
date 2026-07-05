@@ -1,0 +1,106 @@
+{
+  "task": "issue_742",
+  "stage": "stage2_learning_curve",
+  "feasibility_note": "MI-in-nats is NOT reported (capped at ~ln 50 \u2248 3.9 nats, needs ~e^I samples \u2014 out of reach); the gap/ceiling need n in the low hundreds with d_eff \u2264 ~10; the dependence yes/no IS feasible at n=50",
+  "curves": [
+    {
+      "behavior": "broad_em",
+      "genre": "betley",
+      "layer": 0,
+      "lc_grid": [
+        10,
+        50
+      ],
+      "sqrt_r_yy_curve": [
+        {
+          "n_prime": 10,
+          "mean": 0.6548252320237017,
+          "ci": [
+            0.0,
+            0.9594932039783114
+          ],
+          "half_width": 0.4797466019891557
+        },
+        {
+          "n_prime": 50,
+          "mean": 0.9281951398121262,
+          "ci": [
+            0.9281951398121263,
+            0.9281951398121263
+          ],
+          "half_width": 0.0
+        }
+      ],
+      "rho_lin_curve": [
+        {
+          "n_prime": 10,
+          "mean": 0.08263552642549256,
+          "ci": [
+            -0.3873529334749007,
+            0.7958020683318678
+          ],
+          "half_width": 0.5915775009033842
+        },
+        {
+          "n_prime": 50,
+          "mean": 0.33118450159140256,
+          "ci": [
+            0.33118450159140256,
+            0.33118450159140256
+          ],
+          "half_width": 0.0
+        }
+      ],
+      "dcor_curve": [
+        {
+          "n_prime": 10,
+          "mean": 0.46825022926341814,
+          "ci": [
+            0.36323848714684404,
+            0.5509906736159689
+          ],
+          "half_width": 0.09387609323456242
+        },
+        {
+          "n_prime": 50,
+          "mean": 0.272746882925321,
+          "ci": [
+            0.2727468826292879,
+            0.27274688318688295
+          ],
+          "half_width": 2.7879751285375676e-10
+        }
+      ],
+      "inverse_power_fit": null,
+      "fit_ci": null,
+      "n_to_resolve_ceiling_halfwidth_0.05": null,
+      "n_to_resolve_gap_r2_0.05": null,
+      "non_extrapolable": true,
+      "non_extrapolability_note": "the inverse-power fit CIs span an order of magnitude \u2014 the extrapolated n is not supportable at these thin points (\u00a74 Stage-2 step 3)"
+    }
+  ],
+  "config": {
+    "behaviors": [
+      "broad_em"
+    ],
+    "genres": [
+      "betley"
+    ],
+    "lc_grid": [
+      10,
+      50
+    ],
+    "b_repeat": 20,
+    "n_boot_fit": 50,
+    "seed": 742,
+    "d_eff": 10
+  },
+  "metadata": {
+    "git_commit": "15e23395161fe96549b4e3d1905ed381e93b7fdf",
+    "timestamp_utc": "2026-06-30T08:05:49.891955Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue742_learning_curve"
+  }
+}

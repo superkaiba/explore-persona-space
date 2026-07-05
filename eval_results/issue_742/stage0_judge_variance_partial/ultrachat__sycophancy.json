@@ -1,0 +1,11 @@
+{
+  "genre": "ultrachat",
+  "behavior": "sycophancy",
+  "result": {
+    "var_total": 0.006200000000000001,
+    "var_judge": 4.9999999999999996e-05,
+    "var_generation": 0.00285,
+    "var_signal": 0.003300000000000001,
+    "sqrt_r_yy_honest": 0.7295601856708801
+  }
+}

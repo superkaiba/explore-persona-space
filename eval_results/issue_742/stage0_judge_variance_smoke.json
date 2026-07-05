@@ -1,0 +1,54 @@
+{
+  "task": "issue_742",
+  "stage": "stage0_judge_variance",
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "r_rerun": 2,
+  "j_completions": 20,
+  "j_sampling_seed": 7428,
+  "genres": [
+    "betley"
+  ],
+  "behaviors": [
+    "broad_em"
+  ],
+  "snapshot_provenance": {
+    "betley": {
+      "n_cells": 0,
+      "manifest": [],
+      "snapshot": "pre-seeded"
+    }
+  },
+  "judge_variance": {
+    "betley": {
+      "broad_em": {
+        "var_total": 0.015625,
+        "var_judge": 0.0006250000000000003,
+        "var_generation": 0.010000000000000002,
+        "var_signal": 0.0049999999999999975,
+        "sqrt_r_yy_honest": 0.5656854249492379
+      }
+    }
+  },
+  "transport_record": {
+    "registered_transport": "anthropic_batch_api (eval.batch_judge)",
+    "actual_transport": "anthropic_batch_api (eval.batch_judge.judge_completions_batch)",
+    "deviation_exists": false,
+    "n_contexts_by_genre": {
+      "betley": 1
+    },
+    "est_judge_calls_rerun_set": 40,
+    "est_judge_calls_generation_halves": 40,
+    "est_judge_calls_total": 80,
+    "why_batch_chosen": "plan v9 \u00a74 Stage-0 step 2 + \u00a711 row 8 bind the Stage-0 judge rerun to the Anthropic Batch API via eval.batch_judge ('never a hand-rolled poller'); the realized ~16,000-call set is 8\u00d7 the \u00a711 row 8 ~2k sync revisit floor, so Batch wins on operator-time (no-latency-need, free self-harvest at expires_at) per the CLAUDE.md 'judge set \u2273 a few thousand \u2192 Batch API' standing rule. The per-behavior binary rubric (E0_COLUMNS[behavior].judge_prompt + _verdict_truthy) is transport-agnostic \u2014 judge_completions_batch takes judge_system_prompt as a parameter \u2014 so Var_judge is measured on the SAME construct #658's E0 rate used (the construct-correctness BLOCKER fix holds). Dispatch: dc.judge_column_via_batch_judge (the default of dc.per_behavior_judge_rate).",
+    "cost_spend_walltime_impact": "the registered set loops over contexts: \u03a3_genre n_contexts \u00d7 1 behaviors \u00d7 R_rerun=2 \u00d7 J=20 = 40 re-judge calls (+40 generation-half calls = 80 total) for 1 contexts across 1 genre(s) \u2014 the registered ~16,000 at the default (50 contexts \u00d7 2 genres \u00d7 4 behaviors \u00d7 R=2 \u00d7 J=20). The judge_dispatch router (eval.batch_judge) routes sync below its tier-scaled threshold and Message Batches at/above it (\u22648k sub-batches); at this N the Batch path self-harvests at expires_at with no orchestrator polling. Cost is a small fraction of #658's ~141k-call judging (< $20 at Sonnet-4.5 batch pricing)."
+  },
+  "note": "non-dry counting-judge smoke: exercised the LIVE _judge_reruns_for_cell -> _decompose_variance -> judge_variance write path with a deterministic, no-API counting judge (make_counting_judge) \u2014 NO Anthropic spend. Proves the J=20 sampling + R_rerun decomposition + judge_variance write run end-to-end (BLOCKER judge-rerun-smoke-dry-run-only). The production run swaps in the real per-behavior Anthropic Batch-API dispatch (dc.judge_column_via_batch_judge).",
+  "metadata": {
+    "git_commit": "15e23395161fe96549b4e3d1905ed381e93b7fdf",
+    "timestamp_utc": "2026-06-30T08:05:02.887283Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue742_judge_rerun"
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "task": "issue_742",
+  "stage": "stage0_brackets",
+  "primary_dv": "bracket_width = sqrt(r_yy) - rho_lin",
+  "headline_note": "disattenuated rho_lin/sqrt(r_yy) is NEVER reported as a headline (unstable at n=50, Storrs 2020); the bracket width IS the headline",
+  "brackets": [
+    {
+      "behavior": "broad_em",
+      "genre": "betley",
+      "n_contexts": 50,
+      "var_c_e0": 6.805735479073878e-05,
+      "low_dynamic_range": true,
+      "rho_lin": 0.444,
+      "estimator_kind": "split_half_over_probes",
+      "over_rollouts_available": false,
+      "over_rollouts_unavailable_reason": "per-rollout labels not persisted in E0_expression.json (per-probe rates only); over-probes split-half is the disk-supported estimator",
+      "r_yy_split_half": 0.7626684078910804,
+      "split_half_m_actual_probes": 8,
+      "r_yy_binomial": 0.8615462175708528,
+      "sqrt_r_yy_split_half": 0.8733088845827004,
+      "sqrt_r_yy_binomial": 0.9281951398121263,
+      "sqrt_r_yy_cv_matched_mean": 0.927052720966398,
+      "sqrt_r_yy_cv_matched_fold_ci": [
+        0.924429598407941,
+        0.931297541464155
+      ],
+      "sqrt_r_yy_honest_judge_folded": 0.5656854249492379,
+      "sqrt_r_yy_headline": 0.9281951398121263,
+      "headline_estimator": "binomial_variance",
+      "estimators_disagree": false,
+      "sqrt_r_yy_ci": [
+        0.6486451353044751,
+        0.9570392884757217
+      ],
+      "ceiling_ci_kind": "cluster_bootstrap",
+      "n_boot": 50,
+      "ridge_join_integrity": {
+        "refit_rho": 0.33118450159140256,
+        "persisted_rho": 0.444,
+        "delta": 0.11281549840859745,
+        "join_ok": false,
+        "tol": 0.05,
+        "layer": 0
+      },
+      "bracket": [
+        0.444,
+        0.9281951398121263
+      ],
+      "bracket_width": 0.4841951398121263,
+      "bracket_width_ci": [
+        0.2046451353044751,
+        0.5130392884757218
+      ],
+      "gate_verdict": "headroom",
+      "bayes_error_beta": 0.0038510043954106373,
+      "m_cell_median": 400.0,
+      "noise_floor_658": 0.14372626282802528,
+      "noise_floor_agreement": false
+    }
+  ],
+  "input_provenance": {
+    "betley": {
+      "genre": "betley",
+      "source_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-742/data/issue_658/store/v0_summaries.pt",
+      "snapshot_path": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-742/data/issue_742/inputs/v0_summaries_betley.pt",
+      "sha256": "1b94e5ff7bf4fe2291a3b4c2839d97f7e4df820285d9d22fef8baea85acb38ac",
+      "expected_probe_pool_hash": "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7"
+    }
+  },
+  "config": {
+    "behaviors": [
+      "broad_em"
+    ],
+    "genres": [
+      "betley"
+    ],
+    "n_split_seeds": 10,
+    "n_boot": 50,
+    "seed": 742,
+    "disagree_threshold": 0.1,
+    "join_tol": 0.05,
+    "judge_variance_source": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-742/eval_results/issue_742/stage0_judge_variance_smoke.json",
+    "ceiling_ci_kind": "cluster_bootstrap",
+    "bootstrap_seed": 742
+  },
+  "metadata": {
+    "git_commit": "15e23395161fe96549b4e3d1905ed381e93b7fdf",
+    "timestamp_utc": "2026-06-30T08:05:19.070776Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue742_reliability"
+  }
+}

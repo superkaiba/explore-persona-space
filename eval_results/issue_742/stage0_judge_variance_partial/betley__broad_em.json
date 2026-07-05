@@ -1,0 +1,11 @@
+{
+  "genre": "betley",
+  "behavior": "broad_em",
+  "result": {
+    "var_total": 0.00040100000000000004,
+    "var_judge": 0.0,
+    "var_generation": 0.00025000000000000006,
+    "var_signal": 0.00015099999999999998,
+    "sqrt_r_yy_honest": 0.6136437105448663
+  }
+}

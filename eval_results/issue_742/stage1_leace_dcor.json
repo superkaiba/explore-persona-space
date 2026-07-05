@@ -1,0 +1,170 @@
+{
+  "task": "issue_742",
+  "stage": "stage1_leace_dcor",
+  "cells": [
+    {
+      "behavior": "broad_em",
+      "genre": "betley",
+      "layer": 0,
+      "d_eff": 15,
+      "coordinate_scheme": "single_full_sample_pca_basis+single_full_sample_leace; dCor pipeline refit per permutation (Option A)",
+      "power_selection": {
+        "chosen_d_eff": 15,
+        "realized_power": 0.085,
+        "variance_limited": true,
+        "target_power": 0.8,
+        "per_d_eff_power": {
+          "10": 0.08,
+          "15": 0.085,
+          "20": 0.065
+        }
+      },
+      "dcor_observed": 0.2770731270105483,
+      "dcor_p_value": 0.5894105894105894,
+      "dcor_null_median": 0.28255651055327113,
+      "dcor_pass": false,
+      "control_task_dcor": 0.26690669848514514,
+      "control_task_p_value": 0.7882117882117882,
+      "held_out_linear_rho": 1.0,
+      "held_out_null_ci": [
+        0.9999999999999997,
+        1.0
+      ],
+      "post_leace_linear_pass": true,
+      "selectivity_rule_passed": false,
+      "selectivity_branch": "not-applicable",
+      "stage1_verdict": "indistinguishable-from-null-given-variance",
+      "n_perm": 1000
+    },
+    {
+      "behavior": "sycophancy",
+      "genre": "betley",
+      "layer": 27,
+      "d_eff": 10,
+      "coordinate_scheme": "single_full_sample_pca_basis+single_full_sample_leace; dCor pipeline refit per permutation (Option A)",
+      "power_selection": {
+        "chosen_d_eff": 10,
+        "realized_power": 0.05,
+        "variance_limited": true,
+        "target_power": 0.8,
+        "per_d_eff_power": {
+          "10": 0.05,
+          "15": 0.045,
+          "20": 0.025
+        }
+      },
+      "dcor_observed": 0.31383826286935446,
+      "dcor_p_value": 0.07592407592407592,
+      "dcor_null_median": 0.2741500587377692,
+      "dcor_pass": false,
+      "control_task_dcor": 0.27987999032135674,
+      "control_task_p_value": 0.4085914085914086,
+      "held_out_linear_rho": 0.9199167648835721,
+      "held_out_null_ci": [
+        0.3561454214149645,
+        0.9865853533135307
+      ],
+      "post_leace_linear_pass": true,
+      "selectivity_rule_passed": false,
+      "selectivity_branch": "not-applicable",
+      "stage1_verdict": "indistinguishable-from-null-given-variance",
+      "n_perm": 1000
+    },
+    {
+      "behavior": "refusal",
+      "genre": "betley",
+      "layer": 8,
+      "d_eff": 15,
+      "coordinate_scheme": "single_full_sample_pca_basis+single_full_sample_leace; dCor pipeline refit per permutation (Option A)",
+      "power_selection": {
+        "chosen_d_eff": 15,
+        "realized_power": 0.08,
+        "variance_limited": true,
+        "target_power": 0.8,
+        "per_d_eff_power": {
+          "10": 0.04,
+          "15": 0.08,
+          "20": 0.065
+        }
+      },
+      "dcor_observed": 0.4700557627271491,
+      "dcor_p_value": 0.000999000999000999,
+      "dcor_null_median": 0.32072262221941694,
+      "dcor_pass": true,
+      "control_task_dcor": 0.29943570284031584,
+      "control_task_p_value": 0.8491508491508492,
+      "held_out_linear_rho": 1.0,
+      "held_out_null_ci": [
+        0.9999999999999998,
+        1.0
+      ],
+      "post_leace_linear_pass": true,
+      "selectivity_rule_passed": true,
+      "selectivity_branch": "control-fails-null",
+      "stage1_verdict": "nonlinear-yes",
+      "n_perm": 1000
+    },
+    {
+      "behavior": "sycophancy",
+      "genre": "ultrachat",
+      "layer": 26,
+      "d_eff": 20,
+      "coordinate_scheme": "single_full_sample_pca_basis+single_full_sample_leace; dCor pipeline refit per permutation (Option A)",
+      "power_selection": {
+        "chosen_d_eff": 20,
+        "realized_power": 0.075,
+        "variance_limited": true,
+        "target_power": 0.8,
+        "per_d_eff_power": {
+          "10": 0.065,
+          "15": 0.055,
+          "20": 0.075
+        }
+      },
+      "dcor_observed": 0.27220493703744075,
+      "dcor_p_value": 0.38161838161838163,
+      "dcor_null_median": 0.2655783829469624,
+      "dcor_pass": false,
+      "control_task_dcor": 0.24525767682934052,
+      "control_task_p_value": 0.8871128871128872,
+      "held_out_linear_rho": 0.9999999999999998,
+      "held_out_null_ci": [
+        0.9999999999999997,
+        1.0
+      ],
+      "post_leace_linear_pass": true,
+      "selectivity_rule_passed": false,
+      "selectivity_branch": "not-applicable",
+      "stage1_verdict": "indistinguishable-from-null-given-variance",
+      "n_perm": 1000
+    }
+  ],
+  "fired": true,
+  "absent_by_design": false,
+  "gate_source": "stage0_brackets",
+  "config": {
+    "behaviors": [
+      "broad_em",
+      "harmful_compliance",
+      "sycophancy",
+      "refusal"
+    ],
+    "genres": [
+      "betley",
+      "ultrachat"
+    ],
+    "d_eff": 10,
+    "n_perm": 1000,
+    "seed": 742,
+    "power_trials": 200,
+    "power_perm": 1000
+  },
+  "metadata": {
+    "git_commit": "f6f02904accd0cbc77004af2331db4b2c1995814",
+    "timestamp_utc": "2026-07-04T05:49:30.954041Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue742_nonlinear_residual"
+  }
+}

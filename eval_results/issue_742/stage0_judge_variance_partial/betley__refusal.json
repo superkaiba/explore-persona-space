@@ -1,0 +1,11 @@
+{
+  "genre": "betley",
+  "behavior": "refusal",
+  "result": {
+    "var_total": 0.0056250000000000015,
+    "var_judge": 0.0006250000000000003,
+    "var_generation": 0.0,
+    "var_signal": 0.005000000000000001,
+    "sqrt_r_yy_honest": 0.9428090415820634
+  }
+}

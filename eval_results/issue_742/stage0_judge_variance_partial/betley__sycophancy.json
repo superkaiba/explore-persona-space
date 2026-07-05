@@ -1,0 +1,11 @@
+{
+  "genre": "betley",
+  "behavior": "sycophancy",
+  "result": {
+    "var_total": 0.00548125,
+    "var_judge": 8.749999999999999e-05,
+    "var_generation": 0.0045000000000000005,
+    "var_signal": 0.0008937499999999996,
+    "sqrt_r_yy_honest": 0.40380177351257895
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "task": "issue_742",
+  "stage": "stage1_leace_dcor",
+  "cells": [
+    {
+      "behavior": "broad_em",
+      "genre": "betley",
+      "layer": 0,
+      "d_eff": 10,
+      "coordinate_scheme": "single_full_sample_pca_basis+single_full_sample_leace; dCor pipeline refit per permutation (Option A)",
+      "power_selection": {
+        "chosen_d_eff": 10,
+        "realized_power": 0.0,
+        "variance_limited": true,
+        "target_power": 0.8,
+        "per_d_eff_power": {
+          "10": 0.0,
+          "15": 0.0,
+          "20": 0.0
+        }
+      },
+      "dcor_observed": 0.2727468831059949,
+      "dcor_p_value": 0.25,
+      "dcor_null_median": 0.25642072955193973,
+      "dcor_pass": false,
+      "control_task_dcor": 0.24613098730511115,
+      "control_task_p_value": 1.0,
+      "held_out_linear_rho": 0.795608005672287,
+      "held_out_null_ci": [
+        0.5259759505647396,
+        0.9611443428846361
+      ],
+      "post_leace_linear_pass": true,
+      "selectivity_rule_passed": false,
+      "selectivity_branch": "not-applicable",
+      "stage1_verdict": "indistinguishable-from-null-given-variance",
+      "n_perm": 3
+    }
+  ],
+  "fired": true,
+  "absent_by_design": false,
+  "gate_source": "force_all",
+  "config": {
+    "behaviors": [
+      "broad_em"
+    ],
+    "genres": [
+      "betley"
+    ],
+    "d_eff": 10,
+    "n_perm": 3,
+    "seed": 742,
+    "power_trials": 3,
+    "power_perm": 10
+  },
+  "metadata": {
+    "git_commit": "15e23395161fe96549b4e3d1905ed381e93b7fdf",
+    "timestamp_utc": "2026-06-30T08:05:26.930132Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue742_nonlinear_residual"
+  }
+}

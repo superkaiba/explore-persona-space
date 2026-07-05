@@ -1,0 +1,11 @@
+{
+  "genre": "ultrachat",
+  "behavior": "broad_em",
+  "result": {
+    "var_total": 9.6e-05,
+    "var_judge": 0.0,
+    "var_generation": 0.00010000000000000002,
+    "var_signal": 0.0,
+    "sqrt_r_yy_honest": 0.0
+  }
+}
