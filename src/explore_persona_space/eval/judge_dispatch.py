@@ -103,7 +103,7 @@ from explore_persona_space.llm.anthropic_client import (
     batch_stuck_threshold_hours,
     deadline_from_expires_at,
     parse_batch_submitted_at,
-    retrieve_with_create_grace,
+    retrieve_with_404_tolerance,
 )
 
 if TYPE_CHECKING:
@@ -769,6 +769,7 @@ def _cancel_stuck_sub_batch(
     state: dict,
     state_path: Path,
     now_fn: "Callable[[], _dt.datetime]",
+    sleep_fn: "Callable[[float], None] | None" = None,
 ) -> None:
     """Persist escape intent, cancel the stuck sub-batch, confirm (#1019).
 
@@ -782,6 +783,9 @@ def _cancel_stuck_sub_batch(
       3. persist ``stuck_canceled_at`` (cancel-confirmed observability stamp;
          its absence on resume re-drives step 2, which is idempotent-safe
          because the guard accepts ``canceling``/``ended``).
+
+    ``sleep_fn`` is additive + injectable for tests (default ``time.sleep``);
+    it drives the #1035 bounded 404 tolerance on the race-confirm retrieve.
     """
     import anthropic as anthropic_mod
 
@@ -795,7 +799,15 @@ def _cancel_stuck_sub_batch(
         # ours after a crash, or an out-of-band Console cancel) or ended. BOTH
         # are accepted cancellation outcomes: the poll loop harvests at ended
         # either way. Anything else re-raises (fail fast, no swallowed faults).
-        final = client.messages.batches.retrieve(sb["batch_id"])
+        # #1035: the confirm probe tolerates a transient 404 (bounded, then
+        # terminal — same crash class as the poll retrieves).
+        final = retrieve_with_404_tolerance(
+            functools.partial(client.messages.batches.retrieve, sb["batch_id"]),
+            created_at=parse_batch_submitted_at(sb.get("submitted_at")),
+            batch_id=sb["batch_id"],
+            now_fn=now_fn,
+            sleep_fn=sleep_fn,
+        )
         if final.processing_status not in ("canceling", "ended"):
             raise
         logger.info(
@@ -830,16 +842,19 @@ def _poll_one_sub_batch_step(
     intent (an out-of-band Console cancel) is NEVER adopted — its canceled rows
     surface as error dicts, not retries (#1019 round 2).
 
-    Create-grace 404 (#995): a ``NotFoundError`` on the loop retrieve within
+    404 tolerance (#995 + #1035): a ``NotFoundError`` on any retrieve here —
+    the loop retrieve, the overdue final retrieve, and the cancel-race probe —
+    is retried with bounded backoff: the create-grace schedule within
     ``BATCH_CREATE_404_GRACE_S`` of this sub-batch's persisted ``submitted_at``
-    (l.636, the #742 crash site) is retried with bounded backoff. A resumed poll
-    with an old/absent ``submitted_at`` stays terminal on the first 404. This
-    step is sync and already blocks the async outer loop on the retrieve; the
-    worst-case +60s of grace sleeps is consistent with existing behavior. The
-    overdue final retrieve below stays UNGUARDED (plan §4.3). ``sleep_fn`` is
-    additive + injectable for tests (default ``time.sleep``).
+    (l.636, the #742 crash site), the ``BATCH_MIDPOLL_404_BACKOFF_S`` mid-poll
+    schedule anywhere else (incl. a resumed poll with an old/absent
+    ``submitted_at``). Past both budgets the 404 re-raises — delayed by
+    <=~230s worst case, never masked. This step is sync and already blocks the
+    async outer loop on the retrieve; the bounded sleeps are consistent with
+    existing behavior. ``sleep_fn`` is additive + injectable for tests
+    (default ``time.sleep``).
     """
-    batch = retrieve_with_create_grace(
+    batch = retrieve_with_404_tolerance(
         functools.partial(client.messages.batches.retrieve, sb["batch_id"]),
         created_at=parse_batch_submitted_at(sb.get("submitted_at")),
         batch_id=sb["batch_id"],
@@ -874,7 +889,16 @@ def _poll_one_sub_batch_step(
         _atomic_write_json(state_path, state)
     if sb.get("deadline") and now_fn() > _dt.datetime.fromisoformat(sb["deadline"]):
         # Overdue: ONE final fetch to harvest a now-ended batch, else raise.
-        final = client.messages.batches.retrieve(sb["batch_id"])
+        # #1035: the final fetch is the last chance to harvest, so a transient
+        # 404 gets the bounded mid-poll tolerance; a genuinely-gone batch still
+        # re-raises NotFoundError <=~3 min later.
+        final = retrieve_with_404_tolerance(
+            functools.partial(client.messages.batches.retrieve, sb["batch_id"]),
+            created_at=parse_batch_submitted_at(sb.get("submitted_at")),
+            batch_id=sb["batch_id"],
+            now_fn=now_fn,
+            sleep_fn=sleep_fn,
+        )
         if final.processing_status == "ended":
             _harvest_sub_batch(acc, sb=sb, **harvest_kw)
             return
@@ -916,7 +940,7 @@ def _poll_one_sub_batch_step(
                     counts.processing,
                     counts.errored,
                 )
-                _cancel_stuck_sub_batch(client, sb, state, state_path, now_fn)
+                _cancel_stuck_sub_batch(client, sb, state, state_path, now_fn, sleep_fn)
     # Escape-intent RESUME leg: intent persisted but cancel never confirmed
     # (crash between the intent write and the cancel/confirm writes) ->
     # re-drive the cancel. Bounded: the race guard accepts canceling/ended,
@@ -926,7 +950,7 @@ def _poll_one_sub_batch_step(
     # EPS_BATCH_STUCK_HOURS has since been set to 0 (disabling the knob stops
     # NEW escapes; it never strands a half-done one).
     elif sb.get("stuck_cancel_intent_at") is not None and sb.get("stuck_canceled_at") is None:
-        _cancel_stuck_sub_batch(client, sb, state, state_path, now_fn)
+        _cancel_stuck_sub_batch(client, sb, state, state_path, now_fn, sleep_fn)
 
 
 async def _poll_and_collect_sub_batches(

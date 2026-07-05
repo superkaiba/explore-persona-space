@@ -92,7 +92,7 @@ from explore_persona_space.llm.anthropic_client import (
     BatchDeadlineExceeded,
     deadline_from_expires_at,
     parse_batch_submitted_at,
-    retrieve_with_create_grace,
+    retrieve_with_404_tolerance,
 )
 
 logger = logging.getLogger(__name__)
@@ -990,22 +990,23 @@ async def _poll_one_sub_batch_step(
 ) -> None:
     """Poll one not-yet-collected sub-batch ONCE on its org; harvest on end.
 
-    Create-grace 404 (#995): a ``NotFoundError`` on the loop retrieve within
-    ``BATCH_CREATE_404_GRACE_S`` of the sub-batch's persisted ``submitted_at``
-    is retried with bounded backoff INSIDE the ``to_thread`` worker (the event
-    loop is never blocked by the grace sleeps). Org-mismatch semantics are
-    preserved (``_load_or_init_batch_state``: a batch created on org B 404s if
-    polled on org A): create and poll share ``sb["org"]`` within a run, so a
-    wrong-org 404 arises only on resume (stale/absent ``submitted_at`` ->
-    terminal, unchanged) or from an org-routing code bug (delayed <=60s, then
-    still fails loud — never masked). The overdue final retrieve below stays
-    UNGUARDED (plan §4.3). ``sleep_fn`` is additive + injectable for tests
-    (default ``time.sleep``).
+    404 tolerance (#995 + #1035): a ``NotFoundError`` on the loop retrieve or
+    the overdue final retrieve is retried with bounded backoff INSIDE the
+    ``to_thread`` worker (the event loop is never blocked by the sleeps): the
+    create-grace schedule within ``BATCH_CREATE_404_GRACE_S`` of the
+    sub-batch's persisted ``submitted_at``, the ``BATCH_MIDPOLL_404_BACKOFF_S``
+    mid-poll schedule anywhere else (incl. a resume with a stale/absent
+    ``submitted_at``). Org-mismatch semantics are preserved
+    (``_load_or_init_batch_state``: a batch created on org B 404s if polled on
+    org A): create and poll share ``sb["org"]`` within a run, so a wrong-org
+    404 arises only on resume or from an org-routing code bug (delayed <=60s
+    grace + <=~3 min mid-poll, then still fails loud — never masked).
+    ``sleep_fn`` is additive + injectable for tests (default ``time.sleep``).
     """
     org = sb["org"]
     client = sync_clients[org]
     batch = await asyncio.to_thread(
-        retrieve_with_create_grace,
+        retrieve_with_404_tolerance,
         functools.partial(client.messages.batches.retrieve, sb["batch_id"]),
         created_at=parse_batch_submitted_at(sb.get("submitted_at")),
         batch_id=sb["batch_id"],
@@ -1028,7 +1029,17 @@ async def _poll_one_sub_batch_step(
         )
         return
     if sb.get("deadline") and now_fn() > _dt.datetime.fromisoformat(sb["deadline"]):
-        final = await asyncio.to_thread(client.messages.batches.retrieve, sb["batch_id"])
+        # #1035: the overdue final retrieve is the last chance to harvest, so a
+        # transient 404 gets the bounded mid-poll tolerance; a genuinely-gone
+        # batch still re-raises NotFoundError <=~3 min later.
+        final = await asyncio.to_thread(
+            retrieve_with_404_tolerance,
+            functools.partial(client.messages.batches.retrieve, sb["batch_id"]),
+            created_at=parse_batch_submitted_at(sb.get("submitted_at")),
+            batch_id=sb["batch_id"],
+            now_fn=now_fn,
+            sleep_fn=sleep_fn,
+        )
         if final.processing_status == "ended":
             await _harvest_sub_batch(
                 sb,

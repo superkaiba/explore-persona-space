@@ -36,7 +36,7 @@ from explore_persona_space.llm.anthropic_client import (
     BatchDeadlineExceeded,
     batch_stuck_threshold_hours,
     deadline_from_expires_at,
-    retrieve_with_create_grace,
+    retrieve_with_404_tolerance,
 )
 
 if TYPE_CHECKING:
@@ -352,10 +352,12 @@ def _submit_and_poll_batch(
     - **Two-level terminal split**: an ``invalid_request_error`` is quarantined
       (surfaced as an error dict, never retried here); other states surface as
       error dicts too.
-    - **Create-grace 404 retry (#995)**: a ``NotFoundError`` on the loop
-      retrieve within ``BATCH_CREATE_404_GRACE_S`` of the chunk's own create is
-      retried with bounded backoff (read-after-write inconsistency, the #742
-      shape); outside the window — or past the backoff schedule — it re-raises.
+    - **404 tolerance (#995 + #1035)**: a ``NotFoundError`` on any retrieve —
+      the loop retrieve, the deadline-time final retrieve, and the cancel-race
+      probe — is retried with bounded backoff: the create-grace schedule within
+      ``BATCH_CREATE_404_GRACE_S`` of the chunk's own create (read-after-write,
+      the #742 shape), the ``BATCH_MIDPOLL_404_BACKOFF_S`` mid-poll schedule
+      anywhere else. Past both budgets it re-raises — never masked.
     - **Stuck-batch cancel (#1019)**: a chunk still ``in_progress`` at
       ``request_counts.succeeded == 0`` for >= ``EPS_BATCH_STUCK_HOURS``
       (default 4h; ``<=0`` disables) since its own create is CANCELED (once
@@ -390,12 +392,13 @@ def _submit_and_poll_batch(
         current_interval = poll_interval
         stuck_canceled = False  # #1019: cancel a wedged chunk at most once
         while True:
-            # #995: a 404 within BATCH_CREATE_404_GRACE_S of this chunk's own
-            # create is retried with bounded backoff (read-after-write; the #742
-            # shape). functools.partial, NOT a lambda: batch_id is reassigned per
-            # chunk iteration and ruff's B023 flags a loop-closure lambda. The
-            # deadline-time final retrieve below stays UNGUARDED (plan §4.3).
-            batch = retrieve_with_create_grace(
+            # #995 + #1035: a 404 within BATCH_CREATE_404_GRACE_S of this
+            # chunk's own create is retried on the grace schedule
+            # (read-after-write; the #742 shape); any other 404 gets the
+            # bounded mid-poll schedule. functools.partial, NOT a lambda:
+            # batch_id is reassigned per chunk iteration and ruff's B023 flags
+            # a loop-closure lambda.
+            batch = retrieve_with_404_tolerance(
                 functools.partial(client.messages.batches.retrieve, batch_id),
                 created_at=created_at,
                 batch_id=batch_id,
@@ -422,7 +425,18 @@ def _submit_and_poll_batch(
                     else now_fn() + _dt.timedelta(hours=25)  # absent expires_at -> still bounded
                 )
             if now_fn() > deadline:
-                final = client.messages.batches.retrieve(batch_id)
+                # #1035: the final retrieve is the LAST chance to harvest, so a
+                # transient 404 here gets the bounded mid-poll tolerance too
+                # (the #995 "genuinely anomalous -> unguarded" stance reversed);
+                # a genuinely-gone batch still re-raises NotFoundError <=~3 min
+                # later, and the BatchDeadlineExceeded semantics are untouched.
+                final = retrieve_with_404_tolerance(
+                    functools.partial(client.messages.batches.retrieve, batch_id),
+                    created_at=created_at,
+                    batch_id=batch_id,
+                    now_fn=now_fn,
+                    sleep_fn=sleep_fn,
+                )
                 if final.processing_status == "ended":
                     batch = final
                     break
@@ -460,7 +474,15 @@ def _submit_and_poll_batch(
                     # Race: the batch may already be canceling (out-of-band) or
                     # ended. BOTH are accepted cancellation outcomes — the loop
                     # harvests at ended either way. Anything else re-raises.
-                    final = client.messages.batches.retrieve(batch_id)
+                    # #1035: the confirm probe tolerates a transient 404 too
+                    # (same crash class as the poll retrieves).
+                    final = retrieve_with_404_tolerance(
+                        functools.partial(client.messages.batches.retrieve, batch_id),
+                        created_at=created_at,
+                        batch_id=batch_id,
+                        now_fn=now_fn,
+                        sleep_fn=sleep_fn,
+                    )
                     if final.processing_status not in ("canceling", "ended"):
                         raise
                     logger.info(

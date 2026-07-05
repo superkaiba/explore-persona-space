@@ -334,6 +334,8 @@ def _poll_batch_to_ended(
     poll_interval: float,
     max_poll_interval: float,
     grace_min: int,
+    now_fn=None,
+    sleep_fn=None,
 ) -> None:
     """Block until ``batch_id`` ends under a hard ``expires_at`` deadline.
 
@@ -342,25 +344,43 @@ def _poll_batch_to_ended(
     Raises ``BatchDeadlineExceeded`` if the batch is still not ended at the
     deadline after one final retrieve — never a silent default (CLAUDE.md fail-fast).
 
-    NOTE (#995): retrieves here are deliberately NOT wrapped in
-    ``llm.anthropic_client.retrieve_with_create_grace`` — ``JudgeHandle.reconcile()``
-    runs deferred, often in a DIFFERENT process, and the handle records no create
-    timestamp, so the conservative terminal-404 default is correct. If a
-    fleet-path read-after-write incident ever occurs, the shared helper is one
-    import + one additive ``created_at`` kwarg away.
+    NOTE (#995 -> #1035): ``JudgeHandle.reconcile()`` runs deferred, often in a
+    DIFFERENT process, and the handle records no create timestamp — so the #995
+    create-grace was useless here, but the #1035 mid-poll regime needs no
+    timestamp: both retrieves are wrapped in
+    ``llm.anthropic_client.retrieve_with_404_tolerance`` with
+    ``created_at=None``, giving a transient 404 the bounded
+    ``BATCH_MIDPOLL_404_BACKOFF_S`` retry before it goes terminal (a persistent
+    404 still re-raises ``NotFoundError``, delayed <=~3 min — never masked).
+    The retry budget is per wrapper call (per loop iteration); the outer
+    ``expires_at`` + grace deadline keeps total polling hard-bounded.
+    ``now_fn``/``sleep_fn`` are additive + injectable for tests (default
+    wall clock + ``time.sleep``).
     """
     import datetime as _dt
+    import functools
     import time as _time
 
     from explore_persona_space.llm.anthropic_client import (
         BatchDeadlineExceeded,
         deadline_from_expires_at,
+        retrieve_with_404_tolerance,
     )
 
+    now_fn = now_fn or (lambda: _dt.datetime.now(_dt.UTC))
+    sleep_fn = sleep_fn or _time.sleep
+    retrieve_fn = functools.partial(
+        retrieve_with_404_tolerance,
+        functools.partial(client.messages.batches.retrieve, batch_id),
+        created_at=None,  # deferred/cross-process reconcile: no create timestamp
+        batch_id=batch_id,
+        now_fn=now_fn,
+        sleep_fn=sleep_fn,
+    )
     deadline: _dt.datetime | None = None
     interval = poll_interval
     while True:
-        batch = client.messages.batches.retrieve(batch_id)
+        batch = retrieve_fn()
         if batch.processing_status == "ended":
             return
         if deadline is None:
@@ -368,14 +388,14 @@ def _poll_batch_to_ended(
             deadline = (
                 deadline_from_expires_at(expires_at, grace_min)
                 if expires_at is not None
-                else _dt.datetime.now(_dt.UTC) + _dt.timedelta(hours=25)
+                else now_fn() + _dt.timedelta(hours=25)
             )
-        if _dt.datetime.now(_dt.UTC) > deadline:
-            final = client.messages.batches.retrieve(batch_id)
+        if now_fn() > deadline:
+            final = retrieve_fn()
             if final.processing_status == "ended":
                 return
             raise BatchDeadlineExceeded(batch_id, deadline)
-        _time.sleep(interval)
+        sleep_fn(interval)
         interval = min(interval * 1.5, max_poll_interval)
 
 
