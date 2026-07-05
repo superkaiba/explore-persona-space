@@ -146,8 +146,8 @@
     "1016": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1016",
-      "status": "proposed",
+      "path": "tasks/planning/1016",
+      "status": "planning",
       "title": "workflow-fix: verify_task_body per-file HF membership check"
     },
     "1017": {
