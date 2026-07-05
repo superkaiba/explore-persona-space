@@ -1,13 +1,16 @@
 """Crash-recovery + pod-safety + stalled-detector watcher for autonomous and
 interactive issue sessions (plus campaign sessions, task #586).
 
-Twelve passes; items 1-8 run in that order, with the CAMPAIGN pass (item 9)
+Thirteen passes; items 1-8 run in that order, with the CAMPAIGN pass (item 9)
 right after pass 2, the IDLE-UNMAPPED-SESSION pass (item 10) right after
 pass 7, the INFRA-DRAIN pass (item 11) between pass 5 (the orphan sweep)
-and pass 6 (session-reconcile), and the CPU-GUARD pass (item 12) in the
+and pass 6 (session-reconcile), the CPU-GUARD pass (item 12) in the
 daemon-independent block right after the happy-patch check (order there:
 pass 1's disk checks -> data-disk -> happy-patch -> CPU-GUARD ->
-program-orchestrator recovery), all before the GC pass:
+program-orchestrator recovery), and the AUTH-OUTAGE GUARD pass (item 13)
+immediately after the single per-tick daemon probe and BEFORE every spawn
+arm (crash-recovery is the first spawner it must precede), all before the
+GC pass:
 
 1. **VM disk-headroom pass.** Watch free space on the VM root filesystem —
    the host of every orchestrator session, the worktree ``.venv``s, the uv
@@ -282,6 +285,27 @@ program-orchestrator recovery), all before the GC pass:
    never signals any process. Kill switch ``EPM_DISABLE_CPU_GUARD_PASS=1``;
    ``--cpu-guard-only`` runs just this pass (pair with ``--dry-run`` for a
    live smoke).
+13. **Auth-outage guard pass (task #1027; runs right after the per-tick
+   daemon probe, BEFORE every spawn arm).** Detects a fleet-wide
+   instant-death cause (the 2026-07-03 Anthropic auth outage: every fresh
+   session died on arrival and the watcher churned respawns for hours) from
+   state the watcher already owns: every watcher-issued spawn records an
+   event, and >= 3 instant-freeze respawns (predecessor lived <= 60 min)
+   across >= 2 DISTINCT issues inside a 3 h window trigger an episode.
+   While active, EVERY spawn arm (crash / stalled / orphan / infra-drain /
+   capacity-retry / campaign) is suppressed via the #843 ``"suppressed"``
+   channel (callers book nothing), ONE Telegram push fires per episode
+   (evidence-enriched from a best-effort ``~/.happy/logs`` auth-signature
+   grep — push text only, never the trigger), and recovery is probed by a
+   CANARY respawn every 30 min: the first eligible issue-arm spawn probes
+   the real CLI-credential auth path; a canary that survives >= 20 min
+   resolves the episode, a dead one re-arms one interval later. FAIL-OPEN
+   everywhere: any guard error behaves as "no outage", and an episode older
+   than 6 h expires with a push (enforced in the pass AND in the gate).
+   State singleton ``~/.eps-autonomous/auth-outage.json``; sidecar
+   ``.claude/cache/auth-outage-events.jsonl``. Kill switch
+   ``EPM_DISABLE_AUTH_OUTAGE_GUARD=1``; ``--auth-outage-only`` runs just
+   this pass (pair with ``--dry-run`` for a live smoke).
 
 Why each pass exists
 --------------------
@@ -1504,6 +1528,131 @@ def decide_daemon_blocked_escalation(
         return (blocked_ticks, False)
     new_ticks = blocked_ticks + 1
     return (new_ticks, new_ticks >= threshold and not already_pushed)
+
+
+def _auth_outage_freeze_subset(
+    events: list[dict],
+    now: float,
+    *,
+    window_s: float,
+    fresh_death_s: float,
+    last_episode_end_ts: float,
+) -> list[dict]:
+    """PURE: the qualifying instant-freeze spawn events for the auth-outage
+    trigger (#1027) — well-formed, inside the rolling ``window_s``, strictly
+    NEWER than the last episode end (MF-1 watermark: both the event ``ts``
+    AND its ``prev_spawned_at`` must postdate the watermark, so pre-resolve
+    churn and backlog respawns of episode-era predecessors never re-trigger),
+    with ``0 <= ts - prev_spawned_at <= fresh_death_s`` (the ``0 <=`` guard
+    excludes clock skew / a future ``prev_spawned_at``). Events with a
+    missing/None ``prev_spawned_at`` (infra-drain / capacity-retry / most
+    orphan first spawns) never qualify — an accepted residual (new-spawn-only
+    outages are bounded by their per-day caps)."""
+    out: list[dict] = []
+    for e in events:
+        if not isinstance(e, dict):
+            continue
+        issue = e.get("issue")
+        ts = e.get("ts")
+        prev = e.get("prev_spawned_at")
+        if not isinstance(issue, int) or isinstance(issue, bool):
+            continue  # a None/malformed issue never counts toward distinct issues
+        if not isinstance(ts, int | float) or now - ts > window_s:
+            continue
+        if ts <= last_episode_end_ts:
+            continue
+        if not isinstance(prev, int | float) or prev <= last_episode_end_ts:
+            continue
+        if not 0 <= ts - prev <= fresh_death_s:
+            continue
+        out.append(e)
+    return out
+
+
+def decide_auth_outage_trigger(
+    events: list[dict],
+    now: float,
+    *,
+    window_s: float,
+    fresh_death_s: float,
+    min_freeze_events: int,
+    min_distinct_issues: int,
+    last_episode_end_ts: float = 0.0,
+) -> bool:
+    """Pure fleet-level auth-outage trigger (#1027; 2026-07-03 incident: a
+    poisoned Claude CLI credential killed every freshly spawned session on
+    arrival and the watcher churned respawns for hours).
+
+    True iff >= ``min_freeze_events`` instant-freeze respawn events (the
+    predecessor session lived <= ``fresh_death_s``) across >=
+    ``min_distinct_issues`` DISTINCT issues fall inside the rolling
+    ``window_s`` — cross-issue correlation is the false-positive guard: a
+    single issue insta-crashing repeatedly is an issue-specific bug already
+    bounded by the per-task caps. ``last_episode_end_ts`` is the MF-1
+    watermark (see :func:`_auth_outage_freeze_subset`)."""
+    freeze = _auth_outage_freeze_subset(
+        events,
+        now,
+        window_s=window_s,
+        fresh_death_s=fresh_death_s,
+        last_episode_end_ts=last_episode_end_ts,
+    )
+    return (
+        len(freeze) >= min_freeze_events
+        and len({e["issue"] for e in freeze}) >= min_distinct_issues
+    )
+
+
+def decide_auth_outage_canary(
+    state: dict,
+    now: float,
+    *,
+    canary_alive: bool | None,
+    canary_interval_s: float,
+    canary_survival_s: float,
+    max_episode_s: float,
+) -> str:
+    """Pure per-tick decision for an ACTIVE auth-outage episode (#1027).
+
+    Returns one of ``"expire" | "resolve" | "canary-failed" | "arm-canary" |
+    "hold"``, in priority order:
+
+    - ``"expire"``: episode older than ``max_episode_s`` (or a garbled
+      ``started_ts``) — FAIL-OPEN: a wedged guard can never disable crash
+      recovery indefinitely.
+    - ``"resolve"``: the outstanding canary is alive AND has survived >=
+      ``canary_survival_s`` — the auth path works again.
+    - ``"canary-failed"``: the outstanding canary is confirmed dead
+      (``canary_alive is False``) — the failure re-evidences the episode;
+      the caller clears the canary fields and re-arms one interval later.
+    - ``"hold"``: canary outstanding but alive-and-young, or its liveness is
+      inconclusive (``canary_alive is None`` — daemon down); ALSO held while
+      a consumed-but-not-yet-spawned canary is in flight (a fresh
+      ``canary_pending``, e.g. the stalled fence's stop tick consumed the
+      token and its verified-dead spawn lands a tick later).
+    - ``"arm-canary"``: no canary outstanding and >= ``canary_interval_s``
+      since ``max(started_ts, last_canary_ts)`` — allow ONE probe respawn.
+    """
+    started = state.get("started_ts")
+    if not isinstance(started, int | float) or now - started >= max_episode_s:
+        return "expire"
+    canary_ts = state.get("canary_ts")
+    if isinstance(canary_ts, int | float):
+        if canary_alive is True and now - canary_ts >= canary_survival_s:
+            return "resolve"
+        if canary_alive is False:
+            return "canary-failed"
+        return "hold"
+    pending = state.get("canary_pending")
+    if isinstance(pending, dict):
+        pts = pending.get("ts")
+        if isinstance(pts, int | float) and 0 <= now - pts <= canary_interval_s:
+            return "hold"  # a canary spawn is in flight across ticks
+    last = state.get("last_canary_ts")
+    anchor = max(started, last) if isinstance(last, int | float) else started
+    if now - anchor >= canary_interval_s:
+        return "arm-canary"
+    return "hold"
 
 
 def _classify_wedge_row(row: object) -> str:
@@ -3705,6 +3854,535 @@ def triage_observer_pass(dry_run: bool) -> bool:
     return wrote
 
 
+# ─── Auth-outage guard pass (task #1027) — fleet respawn suppression ─────────
+#
+# WHY: 2026-07-03 incident — an Anthropic auth outage (poisoned Claude CLI
+# credential, recovered by /login) killed every freshly spawned session on
+# arrival; the watcher's respawn arms churned die-on-arrival sessions across
+# the fleet for hours (per-task caps bound per-ISSUE churn, not the fleet).
+# This pass detects the fleet-wide instant-freeze-respawn signature from
+# state the watcher already owns (registry spawned_at + its own spawn
+# results), suppresses EVERY watcher spawn arm while an episode is active,
+# fires ONE push per episode, and probes recovery with a CANARY respawn (the
+# canary IS a real session spawn, so it probes the exact CLI-credential auth
+# path real sessions use — a watcher-side ANTHROPIC_API_KEY probe would test
+# the WRONG credential). FAIL-OPEN by design: any guard failure logs a
+# warning and behaves as "no outage" (respawns proceed), and an episode
+# self-expires at a hard TTL — a false suppression (fleet-wide crash-recovery
+# blackout) is strictly worse than the churn this pass fixes.
+
+# Rolling detection window for instant-freeze respawn events.
+AUTH_OUTAGE_WINDOW_S = _env_float("EPM_AUTH_OUTAGE_WINDOW_MIN", 180.0, lo=10.0, hi=10080.0) * 60
+# Max predecessor lifetime for an instant-freeze event: die-on-arrival respawn
+# cycle = RESPAWN_SPAWN_GRACE_S (15 min) + 2 misses x 10-min cron ~= 25-45 min;
+# 60 covers it with margin while a healthy multi-hour session never qualifies.
+# The lo=45 clamp encodes the plan's deviation fence (Codex-stats S8): a value
+# below the ~45-min die-on-arrival ceiling breaks the AC1 replay shape, so an
+# env override under 45 falls back to the default.
+AUTH_OUTAGE_FRESH_DEATH_S = (
+    _env_float("EPM_AUTH_OUTAGE_FRESH_DEATH_MIN", 60.0, lo=45.0, hi=360.0) * 60
+)
+# Freeze events / distinct issues to trigger (>=2 issues separates a fleet
+# cause from a per-issue crash loop owned by the per-task caps).
+AUTH_OUTAGE_MIN_EVENTS = int(_env_float("EPM_AUTH_OUTAGE_MIN_EVENTS", 3, lo=1, hi=100))
+AUTH_OUTAGE_MIN_ISSUES = int(_env_float("EPM_AUTH_OUTAGE_MIN_ISSUES", 2, lo=1, hi=100))
+# Canary cadence: one probe respawn per interval; survival >= this resolves
+# the episode (2 ticks — the standing 2-consecutive-checks corroboration).
+AUTH_OUTAGE_CANARY_INTERVAL_S = (
+    _env_float("EPM_AUTH_OUTAGE_CANARY_INTERVAL_MIN", 30.0, lo=10.0, hi=720.0) * 60
+)
+AUTH_OUTAGE_CANARY_SURVIVAL_S = (
+    _env_float("EPM_AUTH_OUTAGE_CANARY_SURVIVAL_MIN", 20.0, lo=5.0, hi=720.0) * 60
+)
+# Hard fail-open TTL: an episode older than this expires with a push even if
+# the canary machinery is logically wedged (mirrors the takeover-sentinel
+# fail-open posture, #866/#903).
+AUTH_OUTAGE_MAX_EPISODE_S = _env_float("EPM_AUTH_OUTAGE_MAX_EPISODE_H", 6.0, lo=1.0, hi=48.0) * 3600
+
+# Arms that may CONSUME the canary token (issue-registry spawns whose fresh
+# happy_session_id is readable at issue-<N>.json). The campaign arm is
+# EXCLUDED by design: campaign sessions register at campaign-<N>.json, so the
+# canary liveness read would wedge the episode to TTL (plan MF-3).
+_AUTH_OUTAGE_CANARY_ARMS = frozenset(
+    {"crash", "stalled", "orphan", "infra-drain", "capacity-retry"}
+)
+
+# Best-effort push-text enrichment only — NEVER the trigger (log formats are
+# fragile; the trigger is derived purely from watcher-owned spawn state).
+_AUTH_OUTAGE_EVIDENCE_SIGNATURES = (
+    "Not a valid API key",
+    "invalid x-api-key",
+    "authentication_error",
+    "OAuth token has expired",
+)
+
+# Single-flight per tick (the watch.lock flock guarantees one watcher
+# instance): True = exactly ONE canary respawn may proceed this tick.
+_AUTH_CANARY_TOKEN = False
+
+
+def _auth_outage_enabled() -> bool:
+    """Kill switch: False when ``EPM_DISABLE_AUTH_OUTAGE_GUARD`` is set truthy
+    ("1"/"true"/"yes", case-insensitive). Default enabled. Mirrors
+    :func:`_cpu_guard_enabled`."""
+    raw = os.environ.get("EPM_DISABLE_AUTH_OUTAGE_GUARD", "").strip().lower()
+    return raw not in {"1", "true", "yes"}
+
+
+def _auth_outage_state_path() -> Path:
+    """Fleet-level singleton under AUTONOMOUS_REGISTRY_DIR (singletons are
+    never GC'd — :func:`_gc_target_paths` sweeps per-issue files only)."""
+    return AUTONOMOUS_REGISTRY_DIR / "auth-outage.json"
+
+
+def _load_auth_outage_state() -> dict:
+    """``{}`` on missing/garbled state (FAIL-OPEN: a fresh empty state means
+    "no outage", so a corrupt file can never suppress spawns). Every field
+    read back goes through ``isinstance`` type-guards at the call sites."""
+    path = _auth_outage_state_path()
+    if not path.is_file():
+        return {}
+    try:
+        data = json.loads(path.read_text())
+    except (json.JSONDecodeError, OSError) as exc:
+        print(f"  auth-outage: state unreadable (fail-open, fresh state): {exc}", file=sys.stderr)
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _save_auth_outage_state(state: dict) -> None:
+    """Atomic temp+rename write of the auth-outage state (fail-soft)."""
+    dest = _auth_outage_state_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = dest.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        tmp.replace(dest)
+    except OSError as exc:  # pragma: no cover - fail-soft I/O guard
+        print(f"  auth-outage: state save failed: {exc}", file=sys.stderr)
+
+
+def _auth_outage_sidecar_path() -> Path:
+    """DEDICATED auth-outage event stream (domain-separated for clean grep —
+    the cpu-guard sidecar precedent)."""
+    return PROJECT_ROOT / ".claude" / "cache" / "auth-outage-events.jsonl"
+
+
+def _append_auth_outage_sidecar(event: dict, dry_run: bool) -> None:
+    """Append one JSON line per episode transition (trigger / canary-armed /
+    canary-failed / resolve / expire) to the auth-outage sidecar (fail-soft).
+    A ``ts`` is stamped; ``dry_run`` reports only."""
+    row = {"ts": datetime.now(tz=UTC).isoformat(), **event}
+    line = json.dumps(row)
+    if dry_run:
+        print(f"  [dry-run] would append auth-outage sidecar row: {line[:160]}")
+        return
+    dest = _auth_outage_sidecar_path()
+    try:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        with open(dest, "a") as fh:
+            fh.write(line + "\n")
+    except OSError as exc:
+        print(f"  auth-outage: sidecar append failed: {exc}", file=sys.stderr)
+
+
+def _auth_outage_pruned_events(events: object, now: float) -> list[dict]:
+    """Well-formed spawn events within 2x the detection window (pruned on
+    every state write so the singleton stays small)."""
+    horizon = now - 2 * AUTH_OUTAGE_WINDOW_S
+    out: list[dict] = []
+    if not isinstance(events, list):
+        return out
+    for e in events:
+        if not isinstance(e, dict):
+            continue
+        ts = e.get("ts")
+        if isinstance(ts, int | float) and ts >= horizon:
+            out.append(e)
+    return out
+
+
+def _auth_outage_evidence() -> str:
+    """Best-effort auth-signature grep over the last 64 KB of the newest 3
+    files under ``~/.happy/logs/`` (push-text enrichment ONLY, never the
+    trigger — §3.6). Wholly fail-soft: any exception degrades to
+    ``"churn-only"``."""
+    try:
+        log_dir = Path.home() / ".happy" / "logs"
+        files = sorted(log_dir.glob("*.log"), key=lambda p: p.stat().st_mtime, reverse=True)[:3]
+        for f in files:
+            with open(f, "rb") as fh:
+                fh.seek(0, os.SEEK_END)
+                size = fh.tell()
+                fh.seek(max(0, size - 65536))
+                tail = fh.read().decode("utf-8", errors="replace")
+            for sig in _AUTH_OUTAGE_EVIDENCE_SIGNATURES:
+                if sig in tail:
+                    return f"auth-string: {sig}"
+    except Exception as exc:  # fail-soft: enrichment must never block the trigger
+        print(f"  auth-outage: evidence grep failed (churn-only): {exc}", file=sys.stderr)
+    return "churn-only"
+
+
+def _registry_entry_field(issue: int, field: str) -> object:
+    """One field from ``issue-<N>.json`` (fail-soft -> ``None``)."""
+    try:
+        entry = json.loads((AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json").read_text())
+    except (json.JSONDecodeError, OSError):
+        return None
+    return entry.get(field) if isinstance(entry, dict) else None
+
+
+def _registry_spawned_at(issue: int) -> float | None:
+    """``spawned_at`` from the issue's autonomous registry entry (fail-soft
+    -> ``None``; the §13.2 fallback for arms whose helper does not carry the
+    registry-entry dict)."""
+    val = _registry_entry_field(issue, "spawned_at")
+    return float(val) if isinstance(val, int | float) else None
+
+
+def _registry_happy_sid(issue: int) -> str | None:
+    """``happy_session_id`` from the issue's autonomous registry entry
+    (fail-soft -> ``None``)."""
+    sid = _registry_entry_field(issue, "happy_session_id")
+    return sid if isinstance(sid, str) and sid else None
+
+
+def _coerce_ts(val: object) -> float | None:
+    """Epoch float from a registry field, or ``None`` on any other shape."""
+    return float(val) if isinstance(val, int | float) and not isinstance(val, bool) else None
+
+
+def _auth_canary_alive(state: dict, live_ids: set[str] | None) -> bool | None:
+    """Liveness of the outstanding canary (#1027 MF-3): the PERSISTED
+    ``canary_session_id`` in ``live_ids`` — never a registry re-read FOR
+    LIVENESS (a replaced entry's sid is a different session). The registry
+    IS read for INVALIDATION only: a missing registration, or one whose sid
+    no longer matches the persisted canary sid, means the canary was
+    superseded / terminal-parked — return False (clear + re-arm on the
+    caller side; never a false resolve). ``None`` = inconclusive (daemon
+    down)."""
+    sid = state.get("canary_session_id")
+    issue = state.get("canary_issue")
+    if not isinstance(sid, str) or not sid:
+        return False  # an unbound canary can never resolve the episode
+    if isinstance(issue, int) and _registry_happy_sid(issue) != sid:
+        return False  # registration gone/replaced -> invalidated
+    if live_ids is None:
+        return None
+    return sid in live_ids
+
+
+def _auth_outage_spawn_gate(issue: int, arm: str, *, dry_run: bool = False) -> str | None:
+    """Per-spawn suppression gate (#1027), consulted by EVERY watcher spawn
+    arm. ``None`` = allow; ``"auth-outage"`` = suppress (helpers return the
+    #843 ``"suppressed"`` tri-state so callers book nothing).
+
+    During an ACTIVE episode the gate suppresses every spawn EXCEPT:
+
+    - the ONE canary per interval: with the module canary token armed and
+      ``arm`` in :data:`_AUTH_OUTAGE_CANARY_ARMS`, the gate consumes the
+      token, persists ``canary_pending`` (the cross-tick claim the record
+      hook binds on), and allows — after a canary-failed it round-robins by
+      skipping the LAST failed canary issue once;
+    - an in-flight canary unit for this issue (a fresh ``canary_pending`` —
+      e.g. the stalled fence consumed the token on its stop tick and the
+      verified-dead spawn lands a tick later);
+    - an expired/garbled episode (the TTL binds HERE too, so a wedged
+      ``auth_outage_pass`` can never suppress past the fail-open TTL).
+
+    FAIL-OPEN: any internal error logs a warning and allows the spawn."""
+    global _AUTH_CANARY_TOKEN
+    try:
+        if not _auth_outage_enabled():
+            return None
+        state = _load_auth_outage_state()
+        if not state.get("active"):
+            return None
+        now = time.time()
+        started = state.get("started_ts")
+        if not isinstance(started, int | float) or now - started >= AUTH_OUTAGE_MAX_EPISODE_S:
+            # Second fail-open layer: even if the pass is wedged and never
+            # runs the "expire" transition, suppression ends at the TTL.
+            return None
+        pending = state.get("canary_pending")
+        if (
+            isinstance(pending, dict)
+            and pending.get("issue") == issue
+            and isinstance(pending.get("ts"), int | float)
+            and 0 <= now - pending["ts"] <= AUTH_OUTAGE_CANARY_INTERVAL_S
+        ):
+            print(f"  auth-outage: canary in flight for issue #{issue}; allowing (arm={arm})")
+            return None
+        if _AUTH_CANARY_TOKEN and arm in _AUTH_OUTAGE_CANARY_ARMS:
+            if state.get("skip_last_canary_once") and state.get("last_canary_issue") == issue:
+                # Round-robin after a canary-failed: skip the failed issue
+                # ONCE so one broken issue cannot starve the canary channel.
+                if not dry_run:
+                    state["skip_last_canary_once"] = False
+                    _save_auth_outage_state(state)
+                print(f"  auth-outage: round-robin skip of last failed canary issue #{issue}")
+                return "auth-outage"
+            if dry_run:
+                print(
+                    f"  [dry-run] auth-outage: would consume the canary token "
+                    f"for issue #{issue} (arm={arm})"
+                )
+                return None
+            _AUTH_CANARY_TOKEN = False
+            state["canary_pending"] = {"issue": issue, "arm": arm, "ts": now}
+            _save_auth_outage_state(state)
+            print(f"  auth-outage: CANARY spawn allowed for issue #{issue} (arm={arm})")
+            return None
+        print(f"  auth-outage: SUPPRESSED {arm} spawn for issue #{issue} (episode active)")
+        return "auth-outage"
+    except Exception as exc:  # FAIL-OPEN: never crash (or block) a spawn arm
+        print(f"  auth-outage: gate error (fail-open, allowing spawn): {exc}", file=sys.stderr)
+        return None
+
+
+def _auth_outage_record_spawn(issue: int, arm: str, prev_spawned_at: float | None) -> None:
+    """Record one REAL watcher-issued spawn (called only on the ``"spawned"``
+    / campaign-True result, so never under dry-run): appends the
+    ``{issue, ts, arm, prev_spawned_at}`` event the trigger predicate reads,
+    and — when this spawn is the pending canary — binds the canary identity
+    (MF-3): ``canary_issue`` / ``canary_session_id`` / ``canary_ts`` are
+    persisted ONLY here, from the FRESH registry entry the spawn just wrote
+    (a ``"failed"`` spawn leaves them unset, so the token re-arms next
+    interval). Fail-soft no-op on any internal error."""
+    try:
+        if not _auth_outage_enabled():
+            return
+        state = _load_auth_outage_state()
+        now = time.time()
+        events = _auth_outage_pruned_events(state.get("events"), now)
+        events.append({"issue": issue, "ts": now, "arm": arm, "prev_spawned_at": prev_spawned_at})
+        state["events"] = events
+        pending = state.get("canary_pending")
+        if state.get("active") and isinstance(pending, dict) and pending.get("issue") == issue:
+            sid = _registry_happy_sid(issue)
+            state["canary_issue"] = issue
+            state["canary_session_id"] = sid
+            state["canary_ts"] = now
+            state["last_canary_ts"] = now
+            state["last_canary_issue"] = issue
+            state["canary_pending"] = None
+            _append_auth_outage_sidecar(
+                {
+                    "transition": "canary-armed",
+                    "issue": issue,
+                    "arm": arm,
+                    "canary_session_id": sid,
+                },
+                False,
+            )
+            print(f"  auth-outage: canary #{issue} spawned (sid={sid}); survival window starts")
+        _save_auth_outage_state(state)
+    except Exception as exc:  # fail-soft: a lost event must never break a spawn
+        print(f"  auth-outage: record error (fail-soft, event dropped): {exc}", file=sys.stderr)
+
+
+def _auth_outage_end_episode(state: dict, now: float) -> None:
+    """Clear every episode field and stamp the MF-1 watermark. Events are
+    KEPT (the watermark, not deletion, blocks stale re-trigger: a genuinely
+    persistent outage re-accumulates NEW qualifying events and legitimately
+    re-triggers)."""
+    state.update(
+        active=False,
+        started_ts=None,
+        trigger_pushed=False,
+        resolve_pushed=False,
+        canary_issue=None,
+        canary_session_id=None,
+        canary_ts=None,
+        last_canary_ts=None,
+        last_canary_issue=None,
+        skip_last_canary_once=False,
+        canary_pending=None,
+        evidence="",
+        last_episode_end_ts=now,
+    )
+
+
+def _auth_outage_tick_active(
+    state: dict, now: float, dry_run: bool, live_ids: set[str] | None
+) -> None:
+    """One tick of an ACTIVE episode: clear a stale canary claim, resolve
+    canary liveness, apply :func:`decide_auth_outage_canary`, and act on the
+    verdict. Mutates ``state`` in place; the caller saves it."""
+    global _AUTH_CANARY_TOKEN
+    pending = state.get("canary_pending")
+    if isinstance(pending, dict):
+        pts = pending.get("ts")
+        if not isinstance(pts, int | float) or now - pts > AUTH_OUTAGE_CANARY_INTERVAL_S:
+            # A consumed token whose spawn never landed (helper kept failing
+            # / the fence unit stalled): release the claim so the next
+            # interval can arm a fresh canary.
+            state["canary_pending"] = None
+    canary_alive = (
+        _auth_canary_alive(state, live_ids)
+        if isinstance(state.get("canary_ts"), int | float)
+        else None
+    )
+    action = decide_auth_outage_canary(
+        state,
+        now,
+        canary_alive=canary_alive,
+        canary_interval_s=AUTH_OUTAGE_CANARY_INTERVAL_S,
+        canary_survival_s=AUTH_OUTAGE_CANARY_SURVIVAL_S,
+        max_episode_s=AUTH_OUTAGE_MAX_EPISODE_S,
+    )
+    if action == "expire":
+        print("  auth-outage: episode EXPIRED at the fail-open TTL; respawns resume")
+        _append_auth_outage_sidecar(
+            {"transition": "expire", "started_ts": state.get("started_ts")}, dry_run
+        )
+        _telegram_push(
+            "AUTH-OUTAGE GUARD EXPIRED after "
+            f"{AUTH_OUTAGE_MAX_EPISODE_S / 3600:.0f}h without recovery — watcher "
+            "respawns resume fail-open; investigate auth manually",
+            dry_run,
+        )
+        _auth_outage_end_episode(state, now)
+        return
+    if action == "resolve":
+        issue = state.get("canary_issue")
+        print(f"  auth-outage: RESOLVED — canary #{issue} survived the window")
+        _append_auth_outage_sidecar({"transition": "resolve", "canary_issue": issue}, dry_run)
+        if not state.get("resolve_pushed"):
+            _telegram_push(
+                f"AUTH OUTAGE RESOLVED — canary #{issue} survived >= "
+                f"{AUTH_OUTAGE_CANARY_SURVIVAL_S / 60:.0f} min; watcher respawns resumed",
+                dry_run,
+            )
+            state["resolve_pushed"] = True
+        _auth_outage_end_episode(state, now)
+        return
+    if action == "canary-failed":
+        issue = state.get("canary_issue")
+        print(f"  auth-outage: canary #{issue} DIED — outage persists; re-arming next interval")
+        _append_auth_outage_sidecar({"transition": "canary-failed", "canary_issue": issue}, dry_run)
+        state["canary_issue"] = None
+        state["canary_session_id"] = None
+        state["canary_ts"] = None
+        state["canary_pending"] = None
+        state["skip_last_canary_once"] = True
+        return
+    if action == "arm-canary":
+        if dry_run:
+            print("  [dry-run] auth-outage: would arm the canary token (one respawn this tick)")
+            return
+        print("  auth-outage: arming the canary token (ONE probe respawn allowed this tick)")
+        _AUTH_CANARY_TOKEN = True
+        return
+    # "hold": episode continues; nothing to do this tick.
+    print("  auth-outage: episode active (spawns suppressed); holding")
+
+
+def _auth_outage_tick_inactive(state: dict, now: float, dry_run: bool) -> None:
+    """One tick with NO active episode: apply the trigger predicate over the
+    recorded spawn events; on True, activate the episode + fire the one
+    trigger push with evidence-conditioned advice. Mutates ``state`` in
+    place; the caller saves it."""
+    events = state.get("events")
+    if not isinstance(events, list) or not events:
+        return
+    last_end = state.get("last_episode_end_ts")
+    last_end_f = float(last_end) if isinstance(last_end, int | float) else 0.0
+    if not decide_auth_outage_trigger(
+        events,
+        now,
+        window_s=AUTH_OUTAGE_WINDOW_S,
+        fresh_death_s=AUTH_OUTAGE_FRESH_DEATH_S,
+        min_freeze_events=AUTH_OUTAGE_MIN_EVENTS,
+        min_distinct_issues=AUTH_OUTAGE_MIN_ISSUES,
+        last_episode_end_ts=last_end_f,
+    ):
+        return
+    freeze = _auth_outage_freeze_subset(
+        events,
+        now,
+        window_s=AUTH_OUTAGE_WINDOW_S,
+        fresh_death_s=AUTH_OUTAGE_FRESH_DEATH_S,
+        last_episode_end_ts=last_end_f,
+    )
+    issues = sorted({e["issue"] for e in freeze})
+    span_min = (now - min(e["ts"] for e in freeze)) / 60
+    evidence = _auth_outage_evidence()
+    already_pushed = bool(state.get("trigger_pushed"))
+    state["active"] = True
+    state["started_ts"] = now
+    state["evidence"] = evidence
+    state["resolve_pushed"] = False
+    print(
+        f"  auth-outage: TRIGGERED — {len(freeze)} instant-freeze respawns across "
+        f"issues {issues} in {span_min:.0f} min (evidence: {evidence}); watcher "
+        f"respawns SUPPRESSED"
+    )
+    _append_auth_outage_sidecar(
+        {
+            "transition": "trigger",
+            "freeze_events": freeze,
+            "distinct_issues": issues,
+            "evidence": evidence,
+        },
+        dry_run,
+    )
+    if not already_pushed:
+        if evidence.startswith("auth-string"):
+            advice = "Check claude auth (/login) on the VM."
+        else:
+            advice = (
+                "Cause unconfirmed — check claude auth (/login), earlyoom/memory, "
+                "disk, and recent workflow-surface edits."
+            )
+        _telegram_push(
+            f"AUTH OUTAGE SUSPECTED: {len(freeze)} instant-freeze respawns across "
+            f"issues {issues} in {span_min:.0f} min — WATCHER respawns SUPPRESSED "
+            f"(canary every {AUTH_OUTAGE_CANARY_INTERVAL_S / 60:.0f} min; PM/manual "
+            f"spawns unaffected). Evidence: {evidence}. {advice}",
+            dry_run,
+        )
+        state["trigger_pushed"] = True
+
+
+def auth_outage_pass(dry_run: bool, *, daemon_reachable: bool, live_ids: set[str] | None) -> None:
+    """Fleet-level auth-outage guard (#1027): arm/refresh the respawn
+    suppression BEFORE any spawn arm runs this tick.
+
+    Daemon-INDEPENDENT for episode bookkeeping (trigger + the fail-open TTL
+    advance during daemon flaps); the canary-survival read degrades to
+    ``"hold"`` when ``live_ids`` is unavailable — during a daemon outage no
+    spawn pass runs anyway, so nothing is lost. ``dry_run`` performs ZERO
+    state writes and ZERO pushes (decisions are logged only). FAIL-OPEN: any
+    internal error logs a warning and behaves as "no outage"."""
+    global _AUTH_CANARY_TOKEN
+    _AUTH_CANARY_TOKEN = False  # never carry a token across pass invocations
+    try:
+        if not _auth_outage_enabled():
+            print("auth-outage: disabled via EPM_DISABLE_AUTH_OUTAGE_GUARD; skipping")
+            return
+        state = _load_auth_outage_state()
+        now = time.time()
+        state["events"] = _auth_outage_pruned_events(state.get("events"), now)
+        print(
+            f"auth-outage: {'episode ACTIVE' if state.get('active') else 'no active episode'}; "
+            f"{len(state['events'])} recorded spawn event(s) in the pruning horizon "
+            f"(daemon_reachable={daemon_reachable})"
+        )
+        if state.get("active"):
+            _auth_outage_tick_active(state, now, dry_run, live_ids)
+        else:
+            _auth_outage_tick_inactive(state, now, dry_run)
+        if not dry_run:
+            _save_auth_outage_state(state)
+    except Exception as exc:  # FAIL-OPEN: a guard bug must never kill the tick
+        print(
+            f"  auth-outage: pass error (fail-open — no suppression armed): {exc}",
+            file=sys.stderr,
+        )
+
+
 def _status_class(status: str | None, latest_progress_ts: float | None, now: float) -> str:
     """Classify a RUNNING managed pod's task status for :func:`decide_pod_safety`.
 
@@ -4375,8 +5053,14 @@ def _respawn(entry: dict, dry_run: bool) -> str:
     would force a full uncached re-read of the conversation (CLAUDE.md §
     Context hygiene). Entries that pre-date the override-persistence feature
     simply don't carry these fields, so the respawn inherits the user's global
-    Claude Code defaults (matching the pre-feature behavior)."""
+    Claude Code defaults (matching the pre-feature behavior).
+
+    ``"suppressed"`` ALSO covers the #1027 auth-outage gate (fleet respawn
+    suppression during an active outage episode) — same no-booking contract."""
     issue = entry["issue"]
+    if _auth_outage_spawn_gate(issue, "crash", dry_run=dry_run) is not None:
+        print(f"  RESPAWN issue #{issue}: suppressed — auth-outage episode active")
+        return "suppressed"
     cap = entry.get("auto_approve_gpu_hours", 24.0)
     cmd = [
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
@@ -4406,6 +5090,7 @@ def _respawn(entry: dict, dry_run: bool) -> str:
         )
         return "suppressed"
     print(f"  RESPAWNED issue #{issue} (session was dead): {first_line}")
+    _auth_outage_record_spawn(issue, "crash", _coerce_ts(entry.get("spawned_at")))
     return "spawned"
 
 
@@ -7631,6 +8316,11 @@ def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) ->
     this path has already called :func:`_stop_session` first, and the
     log prefix is `RESPAWNED-STALLED` rather than `RESPAWNED` so the
     operator can tell the two paths apart in the watcher logs.
+
+    #1027: the auth-outage gate for this arm sits at the CALLER
+    (:func:`_handle_stalled_respawn`) — a helper-internal gate would let the
+    fence stop the old session and then decline the spawn, leaving the issue
+    dead for the whole episode (plan MF-2).
     """
     cmd = [
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
@@ -7640,6 +8330,10 @@ def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) ->
     if dry_run:
         print(f"  [dry-run] would respawn stalled: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
+    # #1027 §13.2: _StalledActionCtx carries no spawned_at — capture the
+    # PREDECESSOR's spawned_at from the registry BEFORE the spawn rewrites it
+    # (fail-soft -> None).
+    prev_spawned_at = _registry_spawned_at(issue)
     res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
     if res.returncode != 0:
         print(
@@ -7655,6 +8349,7 @@ def _respawn_stalled_session(issue: int, cap_gpu_hours: float, dry_run: bool) ->
         )
         return "suppressed"
     print(f"  RESPAWNED-STALLED issue #{issue} (alive-but-stalled): {first_line}")
+    _auth_outage_record_spawn(issue, "stalled", prev_spawned_at)
     return "spawned"
 
 
@@ -7948,6 +8643,12 @@ def _fence_spawn_stalled(ctx: _StalledActionCtx, sid: str) -> None:
         # stop_pending_* (the lease collision proves a live driver owns the
         # issue, so the fence episode is over — a stale pending sid would
         # make the NEXT episode's first fence read misfire).
+        # #1027 note: fleet-wide, "suppressed" now ALSO covers the
+        # auth-outage gate — but NOT on this path: the stalled arm's
+        # auth-outage gate sits at the CALLER (_handle_stalled_respawn),
+        # which skips the whole stop+respawn unit, so a "suppressed" from
+        # _respawn_stalled_session is still lease/collision-only and the
+        # live-driver inference (clear the fence) remains correct.
         if not ctx.dry_run:
             _clear_fence_state_on_disk(ctx.issue)
         return
@@ -8035,6 +8736,25 @@ def _handle_stalled_respawn(ctx: _StalledActionCtx) -> None:
     may have rewritten it) can try again.
     """
     if _stalled_arm_deferral(ctx):
+        return
+
+    # #1027 (MF-2): gate the WHOLE stop+respawn unit at the caller, BEFORE
+    # the fence's _stop_session — a helper-internal gate would stop the old
+    # session and then decline the spawn, leaving the issue dead for the
+    # episode. A unit already MID-FLIGHT (stop_pending_sid set) is NOT
+    # re-gated: its session is already stopped, so completing the
+    # verified-dead spawn is strictly safer than freezing the fence (the
+    # gate's canary_pending window covers the common one-tick stop->spawn
+    # gap; this branch covers a unit that began BEFORE the episode
+    # triggered).
+    if (
+        ctx.stop_pending_sid is None
+        and _auth_outage_spawn_gate(ctx.issue, "stalled", dry_run=ctx.dry_run) is not None
+    ):
+        print(
+            f"  issue #{ctx.issue}: stalled stop+respawn SKIPPED — auth-outage "
+            f"episode active (fleet respawn suppression)"
+        )
         return
 
     # Heal pods.conf BEFORE deciding/acting on the session so the respawned
@@ -9439,6 +10159,9 @@ def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> str:
     :func:`_respawn`). On ``"spawned"``, the spawn re-registers the issue
     (``spawn-issue --auto`` rewrites the registry), so the task re-enters
     normal respawn/stalled coverage."""
+    if _auth_outage_spawn_gate(issue, "orphan", dry_run=dry_run) is not None:
+        print(f"  RESPAWN-ORPHAN issue #{issue}: suppressed — auth-outage episode active")
+        return "suppressed"
     cmd = [
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto", "--auto-approve-gpu-hours", str(cap_gpu_hours),
@@ -9447,6 +10170,10 @@ def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> str:
     if dry_run:
         print(f"  [dry-run] would respawn orphan: {' '.join(cmd)}")
         return "failed"  # dry-run: nothing spawned
+    # #1027: an orphan usually has NO registration; a STALE issue-<N>.json,
+    # when present, still carries the predecessor's spawned_at (fail-soft ->
+    # None). Captured BEFORE the spawn rewrites the registry.
+    prev_spawned_at = _registry_spawned_at(issue)
     res = subprocess.run(cmd, cwd=PROJECT_ROOT, capture_output=True, text=True, timeout=120)
     if res.returncode != 0:
         print(
@@ -9462,6 +10189,7 @@ def _respawn_orphan(issue: int, cap_gpu_hours: float, dry_run: bool) -> str:
         )
         return "suppressed"
     print(f"  RESPAWNED-ORPHAN issue #{issue} (active task, no live session): {first_line}")
+    _auth_outage_record_spawn(issue, "orphan", prev_spawned_at)
     return "spawned"
 
 
@@ -10923,7 +11651,13 @@ def _dispatch_infra_drain(
     no backoff (a crashed lease-winner then recovers in <= TTL + one tick,
     not the 1 h backoff). ``"failed"`` also covers dry-run (logs, never
     spawns, nothing to book) and the pre-spawn re-check aborts (both record
-    a spawn-failed attempt in the callers, exactly as before)."""
+    a spawn-failed attempt in the callers, exactly as before). ``"suppressed"``
+    ALSO covers the #1027 auth-outage gate (same no-booking contract); this
+    single hook covers BOTH callers (``infra_drain_pass`` +
+    ``proposed_infra_sweep_pass``)."""
+    if _auth_outage_spawn_gate(issue, "infra-drain", dry_run=dry_run) is not None:
+        print(f"  INFRA-DRAIN issue #{issue}: suppressed — auth-outage episode active")
+        return "suppressed"
     cmd = [
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto",
@@ -10973,6 +11707,7 @@ def _dispatch_infra_drain(
         print(f"  INFRA-DRAIN SUPPRESSED issue #{issue} ({suppressed}): {first_line}")
         return "suppressed"
     print(f"  INFRA-DRAIN DISPATCHED issue #{issue} ({slot_desc}): {first_line}")
+    _auth_outage_record_spawn(issue, "infra-drain", None)
     return "spawned"
 
 
@@ -12089,7 +12824,11 @@ def _redrive_capacity_retry(issue: int, dry_run: bool) -> str:
     capacity pre-check + enforces its plan-approval GPU cap). Returns the
     #843 M1b tri-state ``"spawned" | "suppressed" | "failed"`` (see
     :func:`_respawn`; ``"suppressed"`` must NOT consume the per-day retry
-    budget); honours dry_run (logs, never spawns, returns ``"failed"``)."""
+    budget, and ALSO covers the #1027 auth-outage gate); honours dry_run
+    (logs, never spawns, returns ``"failed"``)."""
+    if _auth_outage_spawn_gate(issue, "capacity-retry", dry_run=dry_run) is not None:
+        print(f"  CAPACITY-RETRY issue #{issue}: suppressed — auth-outage episode active")
+        return "suppressed"
     cmd = [
         "uv", "run", "python", "scripts/spawn_session.py", "spawn-issue",
         "--issue", str(issue), "--auto",
@@ -12112,6 +12851,7 @@ def _redrive_capacity_retry(issue: int, dry_run: bool) -> str:
         )
         return "suppressed"
     print(f"  CAPACITY-RETRIED issue #{issue} (transient-infra block re-driven): {first_line}")
+    _auth_outage_record_spawn(issue, "capacity-retry", None)
     return "spawned"
 
 
@@ -16323,6 +17063,10 @@ def _respawn_campaign(entry: dict, dry_run: bool) -> bool:
         return False
     first_line = (res.stdout.strip().splitlines() or [""])[0]
     print(f"  RESPAWNED campaign #{issue}: {first_line}")
+    # #1027: campaign respawns feed the trigger's event stream too (arm
+    # "campaign"; gated at BOTH callers, never a canary — campaign sessions
+    # register at campaign-<N>.json, so canary liveness could not be read).
+    _auth_outage_record_spawn(issue, "campaign", _coerce_ts(entry.get("spawned_at")))
     return True
 
 
@@ -16504,6 +17248,14 @@ def _campaign_escalate_stall(
     if not daemon_reachable:
         print(f"  campaign #{issue}: stalled but daemon unreachable; alert-only")
         return
+    # #1027 (§13.1): gate BEFORE the stop so a suppressed tick skips the
+    # stop+respawn as a UNIT (never stop-then-not-respawn, which would leave
+    # the campaign session dead for the episode). The campaign arm never
+    # consumes the canary token (arm "campaign" is outside
+    # _AUTH_OUTAGE_CANARY_ARMS).
+    if _auth_outage_spawn_gate(issue, "campaign", dry_run=dry_run) is not None:
+        print(f"  campaign #{issue}: stalled stop+respawn SKIPPED — auth-outage episode active")
+        return
     sid = entry.get("happy_session_id")
     stopped = _stop_session(sid, dry_run) if isinstance(sid, str) else True
     if stopped and _respawn_campaign(entry, dry_run):
@@ -16663,7 +17415,12 @@ def _process_campaign_entry(
     missed = int(entry.get("missed", 0) or 0) + 1
     print(f"  campaign #{issue}: status={status} alive=False missed={missed}/{threshold}")
     if missed >= threshold:
-        _respawn_campaign(entry, dry_run)  # rewrites the registry on success
+        # #1027 (§13.1): the crash-arm caller ignores the bool result, so the
+        # gate sits here (books nothing; re-evaluated next tick).
+        if _auth_outage_spawn_gate(issue, "campaign", dry_run=dry_run) is not None:
+            print(f"  campaign #{issue}: crash respawn SKIPPED — auth-outage episode active")
+        else:
+            _respawn_campaign(entry, dry_run)  # rewrites the registry on success
     elif not dry_run:
         entry["missed"] = missed
         path.write_text(json.dumps(entry, indent=2))
@@ -17317,6 +18074,14 @@ def main(argv: list[str] | None = None) -> int:
         "(#967, non-gating) and exit; skip every other pass. "
         "Daemon-independent; pair with --dry-run for a live smoke.",
     )
+    parser.add_argument(
+        "--auth-outage-only",
+        action="store_true",
+        help="run ONLY the auth-outage guard pass (#1027 — fleet respawn "
+        "suppression on an Anthropic auth outage) and exit; skip every other "
+        "pass. Pair with --dry-run for a live smoke (zero writes, zero "
+        "pushes).",
+    )
     args = parser.parse_args(argv)
 
     lock = _acquire_lock()
@@ -17378,6 +18143,18 @@ def main(argv: list[str] | None = None) -> int:
     # it alone.
     if args.triage_observer_only:
         triage_observer_pass(args.dry_run)
+        return 0
+
+    # --auth-outage-only mirrors --cpu-guard-only: run the single pass under
+    # the lock and exit (episode bookkeeping is daemon-independent; the
+    # canary read degrades to "hold" when the daemon is down).
+    if args.auth_outage_only:
+        reachable = _daemon_reachable()
+        auth_outage_pass(
+            args.dry_run,
+            daemon_reachable=reachable,
+            live_ids=_live_session_ids() if reachable else None,
+        )
         return 0
 
     # VM disk-headroom: runs FIRST. A full root disk makes every later
@@ -17463,6 +18240,20 @@ def main(argv: list[str] | None = None) -> int:
     if daemon_reachable:
         live_ids = _live_session_ids()
 
+    # Auth-outage guard (#1027): arm/refresh the fleet-level respawn
+    # suppression BEFORE ANY spawn arm runs this tick (the crash-recovery
+    # loop below is the first spawner). live_ids is hoisted above so the
+    # canary-survival read sees this tick's snapshot; episode bookkeeping
+    # (trigger / fail-open TTL) is daemon-INDEPENDENT and advances during
+    # daemon flaps, while the canary read degrades to "hold" on live_ids
+    # unavailability — during a daemon outage no spawn pass runs anyway.
+    auth_outage_pass(
+        args.dry_run,
+        daemon_reachable=daemon_reachable,
+        live_ids=live_ids if daemon_reachable else None,
+    )
+
+    if daemon_reachable:
         entries = sorted(AUTONOMOUS_REGISTRY_DIR.glob("issue-*.json"))
         print(f"respawn: {len(entries)} registered, {len(live_ids)} live session(s)")
         for path in entries:
