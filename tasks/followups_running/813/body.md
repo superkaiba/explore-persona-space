@@ -27,6 +27,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_813.md](https://github.com/superkaiba/explore-persona-space/blob/ccceac22fd2c2ff8a7b783e8af38d4edbd1e7fb2/docs/methodology/issue_813.md) · [gist](https://gist.github.com/superkaiba/ce468061eac0b98b2d8dd91025983953)
+
 ## Takeaways
 
 - **No behavior meets the registered substrate-matters rule at the question-averaged grain:** fact, sycophancy, marker sit inside the substrate-swap null (spreads 0.09, 2.5, 0.0007 vs null 95th percentiles 1.36, 2.90, 0.0077); emergent misalignment splits it — clears the null band, fails the pairwise leg.
