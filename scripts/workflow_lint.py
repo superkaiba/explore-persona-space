@@ -443,6 +443,7 @@ SKILL_REF_ALLOWLIST: frozenset[str] = frozenset(
         "compact",  # built-in /compact
         "rewind",  # built-in /rewind
         "mcp",  # built-in /mcp (MCP reconnect)
+        "login",  # built-in /login (CLI credential re-auth; #1027 auth-outage guard docs)
         "review",  # built-in /review (PR review)
         "init",  # built-in /init (CLAUDE.md init)
         "security-review",  # built-in /security-review
