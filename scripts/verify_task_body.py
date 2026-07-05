@@ -554,6 +554,31 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   where the pinned tree holds 515/9/2/197 — folder entries counted as
   files (#1008).
 
+- **check 31** (`check_orphaned_per_unit_figures`, WARN): the INVERSE
+  direction of checks 4b/22/29 (which verify what the body CITES) —
+  enumerate what the body's OWN cited figure SHAs contain under this
+  task's `figures/issue_<N>/` (one `git ls-tree` per unique (SHA, dir)
+  pair; no network) and WARN on any committed PNG whose basename stem
+  matches `per[-_]?(context|unit|cell)` (case-insensitive, word-start
+  lookbehind; `indiv` deliberately EXCLUDED — it names the per-question
+  REGIME in this project, not a per-unit view) that no body image URL
+  references (repo-relative path equality — SHA-independent, so a
+  re-pinned embed still counts) and whose stem appears nowhere in the
+  body text (the prose disclosure/exemption escape — naming the file
+  silences the WARN). Issue-scoped: with `--issue` / a numeric-parent
+  `--file` ONLY this task's dir is scanned (a cross-issue embed never
+  surfaces another task's orphans); `--body-stdin` falls back to
+  per-cited-dir scanning. WARN, never FAIL (prose-stated per-unit
+  exemptions are legitimate; clean-result-critic Lens 11 stays the
+  substantive owner — this is its mechanical backstop). Fail-soft:
+  unreachable/unknown SHA → that SHA silently skipped (counted in the
+  PASS detail, never a WARN); repo unresolved / no cited same-repo
+  figure URLs → skip/vacuous PASS. Dispatched OUTSIDE the body-only
+  CHECKS list (needs `issue`; the check-20/#921 precedent). Incident:
+  task #928 — the round-committed per-context companion
+  `mlp_indiv_percontext_delta.png` sat unreferenced at a body-cited SHA
+  and reached the LM critic as a Lens 11 blocker. (#1011)
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -1914,6 +1939,12 @@ _THIS_REPO_SLUG = ("superkaiba", "explore-persona-space")
 # Repo-relative figure path carrying its own issue number — scope of check 29.
 _ISSUE_FIGURE_PATH_RE = re.compile(r"^figures/issue_(?P<issue>\d+)/\S")
 
+# Check 31: per-unit companion-figure basename patterns. The lookbehind
+# stops mid-word matches ("supercontext"); `indiv` is deliberately
+# EXCLUDED — it names the per-question REGIME in this project (#928's
+# pooled hero `mlp_indiv_hero_4arm.png`), not a per-unit view.
+_PER_UNIT_FIG_RE = re.compile(r"(?<![a-z0-9])per[-_]?(context|unit|cell)", re.IGNORECASE)
+
 
 def _http_head_status(url: str, timeout: float = 5.0) -> int | None:
     """HTTP HEAD ``url``; return the response status code (HTTPError codes
@@ -2168,6 +2199,135 @@ def check_figure_tracked_at_head(body: str) -> CheckResult:
     if missing:
         return CheckResult(name, True, "; ".join(missing) + suffix, is_warn=True)
     return CheckResult(name, True, f"{n_at_head} figure path(s) tracked at HEAD" + suffix)
+
+
+def _cited_issue_figure_dirs(body: str) -> dict[str, set[str]]:
+    """Map `figures/issue_<K>/` dir prefix → the set of SHAs the body's
+    inline same-repo figure URLs pin for that dir (check 31 input)."""
+    cited: dict[str, set[str]] = {}
+    for url in _gather_figure_image_urls(body):
+        url = url.strip().split(None, 1)[0] if url.strip() else ""
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if not m or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue
+        pm = _ISSUE_FIGURE_PATH_RE.match(m.group("path"))
+        if not pm:
+            continue
+        cited.setdefault(f"figures/issue_{pm.group('issue')}/", set()).add(m.group("sha"))
+    return cited
+
+
+def _referenced_figure_paths(body: str) -> set[str]:
+    """Repo-relative paths of EVERY same-repo image URL anywhere in the
+    body — broader than the result-narrative scan, so an embed in
+    `## Methodology` still counts as referenced (check 31)."""
+    referenced: set[str] = set()
+    for url in _IMAGE_RE.findall(body):
+        u = url.strip().split(None, 1)[0] if url.strip() else ""
+        m = _RAW_GITHUB_FIGURE_RE.match(u)
+        if m:
+            referenced.add(m.group("path"))
+    return referenced
+
+
+def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> CheckResult:
+    """Check 31 (WARN, #1011): a committed per-unit companion PNG at a
+    body-cited figure SHA is unreferenced by any body image URL.
+
+    INVERSE direction of checks 4b/22/29 (which verify what the body
+    CITES): enumerate what the body's OWN cited commits contain under
+    `figures/issue_<N>/` (one `git ls-tree` per unique (SHA, dir) pair,
+    10 s timeout, no network) and WARN on any committed `.png` whose
+    basename stem matches `_PER_UNIT_FIG_RE` that (a) no body image URL
+    references — repo-relative path equality, SHA-independent, so an
+    orphan committed at SHA A but embedded via a URL pinned at SHA B
+    still counts as referenced — and (b) whose stem appears nowhere in
+    the body text (the prose disclosure/exemption escape: naming the
+    file silences the WARN).
+
+    Deliberately NARROW pattern (`per{context,unit,cell}` with `-`/`_`
+    variants): `per_source` / `per_seed` / `per_question` / `indiv`
+    names do NOT match, by design — `indiv` names the per-question
+    REGIME in this project (#928's pooled hero `mlp_indiv_hero_4arm.png`),
+    and the substantive per-unit-data judgment belongs to
+    clean-result-critic Lens 11; this check is only its mechanical
+    backstop (incident #928: `mlp_indiv_percontext_delta.png` sat
+    committed-but-unembedded at a body-cited SHA through three review
+    passes).
+
+    Issue scoping: with `issue` known (`--issue <N>` / a numeric-parent
+    `--file`), ONLY `figures/issue_<issue>/` is scanned — a cross-issue
+    embed must not surface ANOTHER task's orphans. `issue=None`
+    (`--body-stdin`, a non-task-layout `--file`) falls back to scanning
+    every cited `figures/issue_<K>/` dir, which CAN surface another
+    issue's orphans on a cross-issue embed (documented caveat of the
+    fallback).
+
+    Fail-soft inventory: a WARN keeps `passed=True` (the overall verdict
+    can never flip); an unreachable/unknown SHA is silently skipped
+    (counted in the PASS detail, never a WARN); repo unresolved →
+    skip-PASS; no cited same-repo figure URLs → vacuous PASS. PNG-only
+    (`.pdf` / `.meta.json` sidecars never flagged); orphans deduped by
+    path across cited SHAs.
+    """
+    name = "per-unit companion figures embedded"
+    # (1) cited (sha, issue-dir) pairs from the inline figure URLs.
+    cited = _cited_issue_figure_dirs(body)
+    if not cited:
+        return CheckResult(name, True, "no same-repo `figures/issue_<N>/` figure URLs to check")
+    # (2) issue scoping: --issue / numeric-parent-dir mode scans ONLY this
+    # task's dir (a cross-issue embed must not surface ANOTHER task's
+    # orphans); issue=None (--body-stdin) falls back to every cited dir.
+    if issue is not None:
+        cited = {k: v for k, v in cited.items() if k == f"figures/issue_{issue}/"}
+        if not cited:
+            return CheckResult(name, True, "no cited figure URLs under this task's figures dir")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(name, True, "skipped — repo root unresolved (running outside the repo)")
+    # (3) referenced set: EVERY image URL anywhere in the body (broader than
+    # the result-narrative scan — an embed in ## Methodology still counts).
+    referenced_paths = _referenced_figure_paths(body)
+    # (4) enumerate per-unit PNGs at each reachable cited sha; union per dir.
+    orphans: dict[str, list[str]] = {}  # path -> short-shas found at
+    n_unreachable = 0
+    for prefix, shas in sorted(cited.items()):
+        for sha in sorted(shas):
+            tracked = _git_tracked_under(repo, sha, prefix)  # ls-tree; None = unreachable
+            if tracked is None:
+                n_unreachable += 1  # hard constraint: skip SILENTLY, no WARN
+                continue
+            for p in tracked:
+                base = p.rsplit("/", 1)[-1]
+                if not base.lower().endswith(".png"):
+                    continue
+                stem = base[: -len(".png")]
+                if not _PER_UNIT_FIG_RE.search(stem):
+                    continue
+                if p in referenced_paths:  # path match — SHA-independent by construction
+                    continue
+                if stem in body:  # prose disclosure/exemption escape
+                    continue
+                orphans.setdefault(p, []).append(sha[:8])
+    if orphans:
+        listed = "; ".join(
+            f"`{p}` (committed at {', '.join(sorted(set(shas)))})"
+            for p, shas in sorted(orphans.items())
+        )
+        return CheckResult(
+            name,
+            True,
+            f"{len(orphans)} committed per-unit figure(s) at body-cited SHA(s) are not "
+            f"embedded by any body image: {listed} — embed the per-unit companion under "
+            "the relevant `### <result>`, or state the exemption in prose (naming the "
+            "file silences this WARN); substantive owner: clean-result-critic Lens 11 "
+            "(incident #928)",
+            is_warn=True,
+        )
+    detail = "no orphaned per-unit figures at body-cited SHAs"
+    if n_unreachable:
+        detail += f" ({n_unreachable} cited SHA(s) not locally reachable — skipped)"
+    return CheckResult(name, True, detail)
 
 
 def check_figure_caption(body: str) -> CheckResult:
@@ -8120,6 +8280,10 @@ CHECKS = [
     check_figure_label_codes,  # check 28 (WARN) — opaque config codes in figure sidecar text
     check_figure_tracked_at_head,  # check 29 (WARN) — figures tracked at live refs (#964, #841)
     check_hf_file_count_claims,  # check 30 (WARN) — count claims vs Hub files-only count (#931)
+    # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
+    # is NOT here either — like check 20 (v4) it needs the issue number (for
+    # figures-dir scoping), so it is dispatched separately in `verify_text`
+    # (#1011; the check-20/#921 precedent).
 ]
 
 
@@ -8284,6 +8448,10 @@ def verify_text(
             body, issue=issue, eval_root=eval_root, body_source_path=body_source_path
         )
     )
+    # Check 31 (WARN, #1011): orphaned per-unit companion figures — needs the
+    # issue number for figures-dir scoping, so it lives outside the body-only
+    # CHECKS list (check-20/#921 precedent).
+    results.append(check_orphaned_per_unit_figures(body, issue=issue))
     overall = all(r.passed for r in results)
     return overall, results
 
