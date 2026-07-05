@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1057,
+  "highest_id": 1058,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -457,6 +457,13 @@
       "path": "tasks/proposed/1057",
       "status": "proposed",
       "title": "daily-fix: guard_log_dump exempts code files from size heuri"
+    },
+    "1058": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1058",
+      "status": "proposed",
+      "title": "daily-fix: repo-root guard false-positive on worktree-scoped"
     },
     "106": {
       "has_clean_result": true,
