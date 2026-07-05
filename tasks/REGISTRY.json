@@ -272,8 +272,8 @@
     "1033": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1033",
-      "status": "reviewing",
+      "path": "tasks/completed/1033",
+      "status": "completed",
       "title": "daily-fix: poller CPU-phase stall predicate + per-instance idle counter"
     },
     "1034": {
