@@ -4071,7 +4071,14 @@ is NOT guaranteed to exist, and the persist also never fires on a mid-grace
 preemption or manual stop, so an ABSENT prefix does NOT distinguish "poller
 drained normally" from "expiry persist failed"; on a STOP-outcome instance
 the `eps/done_persist` guest attribute (`ok|failed`, a SEPARATE key from
-`eps/phase`) disambiguates. Pre-existing residual (unworsened by #935): a
+`eps/phase`) disambiguates. A `workload_done_finalize_failed` poll (#1055 —
+the deliverables-verified-then-finalize-crashed classification, guest
+`eps/phase=finalize_failed_artifacts_ok`) is a done-like shape too: treat it
+as a SUCCESSFUL run (no crash-fix routing) and run finalize with
+`--skip-confirm-artifacts` exactly as for `workload_done_self_poweroff`
+(the completion sentinel was never written; see
+`.claude/rules/compute-backend-failover.md` § Part A-ter). Pre-existing
+residual (unworsened by #935): a
 #908 stale reclaim at a FRESH dispatch during the grace deletes the VM
 before the expiry persist fires. By the time `status=gate` reaches
 this step the sentinel is already drained (the poller drained it to post the
