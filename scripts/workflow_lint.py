@@ -98,6 +98,23 @@ Behaviours:
   dry-run previews all pass. Sibling of ``--check-heredoc-dotenv``; the
   ``.claude/settings.json`` PreToolUse Bash hook covers the inline ad-hoc
   commands that never reach a committed script.
+* ``--check-piped-git-push`` (also bundled into the no-flags default run):
+  walk every ``*.sh`` under ``scripts/`` and FAIL on any ``git push`` /
+  ``git merge`` / ``gh pr merge|create`` piped into a filter on its own
+  pipeline segment (``git push origin main 2>&1 | tail -20``). Bash makes
+  the compound's exit status the FILTER's, so the pipe masks the
+  producer's non-zero exit code: a rejected push reads as success and the
+  session proceeds believing the merge landed (#957's Step 10d push was
+  masked 2026-07-04; 4 sessions hit the class 2026-07-02). Prose rule:
+  CLAUDE.md § Concurrent repo-root committers ("run it bare and check the
+  exit code, or use ``set -o pipefail`` when a pipe is unavoidable") — so
+  a file-level non-comment ``pipefail`` line disables flagging for the
+  REST of the file (lines before it still flag); ``--dry-run`` spans and
+  ``#``-comment lines are skipped; ``||`` chains, ``git merge-base``, and
+  producer-as-consumer (``... | git push``) never match; ``|&`` is
+  normalized to ``|`` first. The
+  ``.claude/hooks/guard_piped_git_push.sh`` PreToolUse hook covers the
+  inline ad-hoc commands that never reach a committed script (#1048).
 * ``--check-marker-registry`` (also bundled into ``--check-references``):
   extract every marker kind that any skill's ``SKILL.md`` under
   ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
@@ -735,6 +752,71 @@ CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
 # dual-engine test (test_workflow_lint.py) sources the hook ERE from
 # `.claude/settings.json` and pins the agreement.
 PIPE_PYTHON_RE = re.compile(r"\|\s*python3?(?:\.\d+)?\s+(?:-\S+\s+)*-[cm]\b")
+
+# `--check-piped-git-push` (#1048): a `git push` / `git merge` /
+# `gh pr merge|create` PRODUCER piped into a filter on its own pipeline
+# segment (`git push origin main 2>&1 | tail -20`). Bash makes the
+# compound's exit status the LAST stage's, so the pipe masks the
+# producer's non-zero exit code: a rejected push reads as success and the
+# session proceeds believing the merge landed (#957's Step 10d push was
+# masked 2026-07-04; 4 sessions hit the class on 2026-07-02). The prose
+# rule (CLAUDE.md § Concurrent repo-root committers: "run it bare and
+# check the exit code, or use `set -o pipefail` when a pipe is
+# unavoidable") failed open >=5 times in 3 days; this check makes it
+# mechanical for committed `scripts/*.sh`, and the
+# `.claude/hooks/guard_piped_git_push.sh` PreToolUse hook covers the
+# inline ad-hoc commands that never reach a script — the same dual-engine
+# split as `--check-pipe-python` (#753).
+#
+# Flagged (a logical shell line, backslash continuations merged, `|&`
+# normalized to `|` before matching — bash's `|&` is `2>&1 |` shorthand):
+#   * `git push | tail -5`, `git push origin main 2>&1 | grep -v x`;
+#   * `gh pr merge 123 --squash | head`, `gh pr create ... | grep -o ...`;
+#   * `git -C <dir> push ... 2>&1 | tail -20` (flag-tolerant `git` anchor);
+#   * `git merge issue-x 2>&1 | tail -5`, `git push 2>err.log | tail`.
+# NOT flagged (precision):
+#   * `git push origin main || echo failed` — `(?!\|)` rejects `||` (the
+#     one real tree shape, issue931_dispatch.sh);
+#   * `git merge-base --all main HEAD | head -1` — the verb must be
+#     followed by whitespace-or-pipe, so `merge-base` never matches (a
+#     canonical .claude/rules/diff-size-budget.md probe);
+#   * `echo foo | git push` — producer as CONSUMER/final stage: no
+#     trailing `|` after the producer, and the final stage's exit code IS
+#     the pipeline's;
+#   * `git status | grep x && git push` — the span class cannot cross a
+#     `;`/`&&`/`||`/`&` command separator, so the trailing `|` is
+#     guaranteed to be a pipe attached to the producer's OWN segment;
+#   * a matched span containing `--dry-run` (a dry run lands nothing, so
+#     masking its exit code cannot cause the incident) — skipped by
+#     check_piped_git_push, not the regex;
+#   * `#`-comment lines; and every line at-or-after the FIRST non-comment
+#     `pipefail` line in the file (a `set -euo pipefail` header makes
+#     every later pipe propagate the failure; `set +o pipefail`
+#     re-disable is ignored — fails toward false-NEGATIVE, the documented
+#     safe direction for a pre-commit-gating lint, same stance as
+#     `_upload_or_true_segments`).
+#
+# Span class: `[^|;&\n]` blocks command separators, but the alternation
+# `&(?=[>0-9])` re-admits the `&` INSIDE redirection operators (`2>&1`,
+# `>&2`, `&>file`, `&>>file`) — without it the span cannot cross `2>&1`
+# and the flagship incident shape `git push origin main 2>&1 | tail -20`
+# is MISSED (the #1048 Phase 1.5 fact-checker finding on plan v1). Known
+# accepted residual: an exotic no-space background separator immediately
+# followed by a digit- or `>`-starting command (`git push &9foo | tail`)
+# extends the span — fails toward FLAG (a lint error a human reviews),
+# the safe direction. No waiver token in v1 (YAGNI, the
+# `check_pipe_python` stance): the committed tree is clean (sole prior
+# hit, issue931_dispatch.sh, is an `||` disjunction), so nothing to waive
+# or grandfather. Like the sibling, the regex is line-local and NOT
+# quote-aware — a quoted string carrying the literal pattern matches
+# (document the bad pattern in a `#`-comment, not an echo/quoted string).
+_PIPED_PUSH_SPAN = r"(?:[^|;&\n]|&(?=[>0-9]))*"
+_PIPED_PUSH_GIT = (
+    r"\bgit\s+(?:-[^\s|;&]+(?:\s+[^\s|;&]+)?\s+)*(?:push|merge)"
+    r"(?:\s" + _PIPED_PUSH_SPAN + r")?\|(?!\|)"
+)
+_PIPED_PUSH_GH = r"\bgh\s+pr\s+(?:merge|create)(?:\s" + _PIPED_PUSH_SPAN + r")?\|(?!\|)"
+PIPED_GIT_PUSH_RE = re.compile(_PIPED_PUSH_GIT + "|" + _PIPED_PUSH_GH)
 
 # `--check-upload-or-true` (#1036): an upload / result-persist /
 # result-production command whose failure is swallowed by `|| true` /
@@ -2527,6 +2609,73 @@ def check_pipe_python(*, scripts_dir: Path | None = None) -> list[str]:
                 f"found` (exit 127). Pipe into `uv run python` instead "
                 f'(`... | uv run python -c "..."`). See CLAUDE.md '
                 f"§ Task Workflow API (#753)."
+            )
+    return errors
+
+
+def check_piped_git_push(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any ``git push`` /
+    ``git merge`` / ``gh pr merge|create`` piped into a filter on its own
+    pipeline segment (``git push origin main 2>&1 | tail -20``).
+
+    Rationale: bash makes a pipeline's exit status the LAST stage's, so the
+    pipe masks the producer's non-zero exit code — a rejected push reads as
+    success and the session proceeds believing the merge landed (#957's
+    Step 10d push was masked 2026-07-04; 4 sessions hit the class on
+    2026-07-02). The prose rule (CLAUDE.md § Concurrent repo-root
+    committers) says run it bare and check the exit code, or use
+    ``set -o pipefail`` when a pipe is unavoidable — so once a non-comment
+    line contains ``pipefail``, flagging is disabled for the REST of the
+    file (lines BEFORE it still flag — fires-direction, NOT a whole-file
+    pre-scan; ``set +o pipefail`` re-disable is ignored, failing toward
+    false-negative, the documented safe direction). ``|&`` is normalized to
+    ``|`` on the logical line before matching; a match whose span contains
+    ``--dry-run`` is skipped (a dry run lands nothing); only ``#``-comment
+    lines are otherwise skipped. See the ``PIPED_GIT_PUSH_RE`` block above
+    for the full flagged/not-flagged matrix. The
+    ``.claude/hooks/guard_piped_git_push.sh`` PreToolUse hook is the
+    runtime sibling covering ad-hoc inline commands (#1048; the
+    dual-engine split of ``check_pipe_python`` / #753).
+
+    ``scripts_dir`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical ``<repo_root>/scripts``
+    tree. Bundled into the no-flags default run (same policy as
+    ``check_pipe_python``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        pipefail_seen = False
+        for first, _last, logical in _iter_logical_shell_lines(lines):
+            stripped = logical.strip()
+            if stripped.startswith("#"):
+                continue
+            if "pipefail" in logical:
+                # The rule's own sanctioned escape: every pipe at-or-after
+                # this line propagates the failure. Deliberately NOT a
+                # whole-file pre-scan — an offense BEFORE the first
+                # pipefail line still flags (plan #1048 MF3).
+                pipefail_seen = True
+                continue
+            if pipefail_seen:
+                continue
+            match = PIPED_GIT_PUSH_RE.search(logical.replace("|&", "|"))
+            if not match:
+                continue
+            if "--dry-run" in match.group(0):
+                continue
+            errors.append(
+                f"{sh}:{first + 1}: `git push`/merge-class command piped "
+                f"into a filter — the pipe masks the non-zero exit code, "
+                f"so a rejected push reads as success (#957, 4 sessions "
+                f"2026-07-02). Run it bare and check the exit code, or add "
+                f"`set -o pipefail`. See CLAUDE.md § Concurrent repo-root "
+                f"committers (#1048)."
             )
     return errors
 
@@ -6748,6 +6897,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "are skipped. Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-piped-git-push",
+        action="store_true",
+        help="Verify no shell script under scripts/ pipes a `git push` / "
+        "`git merge` / `gh pr merge|create` into a filter on its own "
+        "pipeline segment (`git push origin main 2>&1 | tail -20`). The "
+        "pipe masks the non-zero exit code, so a rejected push reads as "
+        "success (#957; 4 sessions hit this 2026-07-02) — run it bare and "
+        "check the exit code, or add `set -o pipefail` (a non-comment "
+        "pipefail line disables flagging for the rest of the file). "
+        "Comment lines and `--dry-run` pipes are skipped. See CLAUDE.md "
+        "§ Concurrent repo-root committers (#1048). Bundled into the "
+        "no-flags default run.",
+    )
+    parser.add_argument(
         "--check-marker-registry",
         action="store_true",
         help="Verify every marker kind that .claude/skills/issue/SKILL.md "
@@ -7096,6 +7259,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_heredoc_dotenv
         or args.check_dispatcher_cvd_pin
         or args.check_pipe_python
+        or args.check_piped_git_push
         or args.check_marker_registry
         or args.check_agent_model_pins
         or args.check_agent_tools
@@ -7168,6 +7332,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_dispatcher_cvd_pin())
     if args.check_pipe_python or no_flags:
         errors.extend(check_pipe_python())
+    if args.check_piped_git_push or no_flags:
+        errors.extend(check_piped_git_push())
     if (args.check_marker_registry or no_flags) and not args.check_references:
         errors.extend(check_marker_registry(workflow))
     if args.check_agent_model_pins or no_flags:
