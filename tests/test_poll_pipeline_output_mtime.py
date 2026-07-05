@@ -116,14 +116,16 @@ def _probe_stdout(
     gpu_util: str,
     session_cpu: str,
     zombie_pids: str = "",
-    output_mtime_epoch: int | None = None,
+    output_mtime_epoch: int | str | None = None,
 ) -> str:
     """Probe stdout in the shape ``_parse_probe_stdout`` expects.
 
     ``POD_NOW_EPOCH`` is always emitted so every staleness delta rides the
     DETERMINISTIC pod-clock branch (#704) — boundary tests would otherwise be
     off-by-one flaky against ``poll_once``'s own ``time.time()``.
-    ``output_mtime_epoch=None`` omits the line (older probe / fold disabled).
+    ``output_mtime_epoch=None`` omits the line (older probe / fold disabled);
+    a ``str`` value injects the raw scalar text verbatim (malformed-line
+    replay — version skew / garbled SSH output).
     """
     lines = [
         "PID_FILE_MISSING=0",
@@ -245,6 +247,36 @@ def test_output_stale_keeps_stalled(
     )
     result = _poll(tmp_path / "poll-state.json")
     assert result.status == "stalled"
+
+
+def test_output_malformed_epoch_is_inert_not_crash(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """r2 blocker pin (``malformed-output-mtime-crashes-poll``): a malformed /
+    non-numeric ``OUTPUT_MTIME_EPOCH`` scalar — reachable via version skew (a
+    pod running newer probe code than this VM) or a garbled/partial SSH line —
+    must NOT crash the tick (plan AC#6: no new crash paths). The guarded parse
+    folds it to ``0`` (-> the ``10**9`` inert sentinel), so the degraded-CPU
+    stale tick returns the SAME verdict as the ``OUTPUT_MTIME_EPOCH=0`` case."""
+    now = int(time.time())
+
+    def _stdout(epoch: int | str) -> str:
+        return _probe_stdout(
+            pod_now=now,
+            mtime_epoch=now - 2000,
+            tail=_STALE_TAIL,
+            gpu_util="0,0,0,0,0,0,0,0",
+            session_cpu="unknown",
+            output_mtime_epoch=epoch,
+        )
+
+    _patch_pod(monkeypatch, stdout=_stdout(0))
+    baseline = _poll(tmp_path / "poll-state-zero.json")
+    assert baseline.status == "stalled"
+
+    _patch_pod(monkeypatch, stdout=_stdout("garbage"))
+    malformed = _poll(tmp_path / "poll-state-garbage.json")
+    assert (malformed.status, malformed.stall_reason) == (baseline.status, baseline.stall_reason)
 
 
 def test_output_exactly_at_stall_sec_rescues(

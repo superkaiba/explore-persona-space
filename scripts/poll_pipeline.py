@@ -656,6 +656,8 @@ ZOMBIE_CPU_RATE_MIN_DT_SEC = int(os.environ.get("EPM_ZOMBIE_CPU_RATE_MIN_DT_SEC"
 # sibling, bounded by the GPU-idle advisory/escalation tiers, the #873
 # tripwires, and this switch. When disabled the probe block is omitted
 # entirely and ``poll_once`` forces ``output_mtime_ago = inf`` (fully inert).
+# NOTE: read at module import (matching the #864 flag) — a live poller needs
+# a restart for an ops flip to take effect.
 OUTPUT_MTIME_FOLD_ENABLED = os.environ.get("EPM_POLL_OUTPUT_MTIME_FOLD", "1") != "0"
 
 
@@ -3999,6 +4001,25 @@ def _apply_zombie_override(
     return status, stall_reason, cpu_override_active, zombie_streak
 
 
+def _parse_output_mtime_epoch(raw: str | None) -> int:
+    """Parse the probe's ``OUTPUT_MTIME_EPOCH`` scalar defensively (#1033 r2).
+
+    ``_parse_probe_stdout`` stores the scalar text VERBATIM, so a malformed /
+    non-numeric value — reachable via version skew (a pod running newer probe
+    code than this VM, the same scenario the kill-switch branch in
+    ``poll_once`` defends on the DISABLED side) or a garbled/partial SSH
+    line — must fail INERT, not kill the tick: return ``0``, which
+    ``_log_staleness_secs`` maps to the ``10**9`` absent sentinel (the
+    pre-#1033 no-fold behavior). Every numeric value parses exactly as the
+    previous inline ``int(raw or "0")`` did. Guards ONLY this new #1033 key —
+    the sibling probe ints keep their long-standing strict parses.
+    """
+    try:
+        return int(raw or "0")
+    except (ValueError, TypeError):
+        return 0
+
+
 def _log_staleness_secs(
     *,
     pod: str,
@@ -4217,7 +4238,7 @@ def poll_once(
             freshest_mtime_epoch=freshest_mtime_epoch,
             phase_log_mtime_epoch=phase_log_mtime_epoch,
             shard_log_mtime_epoch=shard_log_mtime_epoch,
-            output_mtime_epoch=int(probe.get("output_mtime_epoch") or "0"),
+            output_mtime_epoch=_parse_output_mtime_epoch(probe.get("output_mtime_epoch")),
         )
     )
     # #1033 kill switch: with the fold disabled the probe block was omitted
