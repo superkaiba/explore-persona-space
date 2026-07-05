@@ -7,7 +7,7 @@ tags:
 - leak-predictor
 - keep-running
 created_at: '2026-06-30T00:23:55Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 658
 origin_prompt: 'Run this: Single staged kind: experiment task, 0-GPU, on existing
   #658 artifacts — not a campaign. These are tightly-coupled sequential analyses on
