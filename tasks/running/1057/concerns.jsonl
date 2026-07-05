@@ -1,0 +1,1 @@
+{"ts": "2026-07-05T19:34:12Z", "event": "raised", "concern_id": "quoted-signed-count-escapes-sign-detection", "severity": "CONCERN", "summary": "Quote-wrapped signed counts (tail -n '+201', --lines='-201') escape nlines_signed at hook :207/:216-217 -> NEW allow of unbounded reads of big code/doc files; blocked on main pre-fix.", "raised_by": "code-reviewer", "raised_at_round": 1}
