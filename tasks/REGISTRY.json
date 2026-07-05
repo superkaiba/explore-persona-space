@@ -447,8 +447,8 @@
     "1056": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1056",
-      "status": "reviewing",
+      "path": "tasks/completed/1056",
+      "status": "completed",
       "title": "daily-fix: critics verify figures against pinned blob only"
     },
     "1057": {
