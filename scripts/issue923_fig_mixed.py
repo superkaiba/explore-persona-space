@@ -230,7 +230,7 @@ def dilution_panel(stats, out_dir, meta) -> None:
     # index-aligned with the plotted gap arrays, smoke included).
     ax.set_xticklabels(fams, rotation=30, ha="right")
     ax.set_ylabel("Per-family skill gap (R²)")
-    ax.set_title("Dilution mechanism (s1) — UC held-out families, L18")
+    ax.set_title("Dilution mechanism — UC held-out families, L18")
     ax.legend(fontsize=8)
     _save(
         fig,
