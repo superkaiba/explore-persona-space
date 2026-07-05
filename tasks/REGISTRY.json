@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1042,
+  "highest_id": 1043,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -345,6 +345,13 @@
       "path": "tasks/planning/1042",
       "status": "planning",
       "title": "workflow-fix: verify_plan flags grep-arity acceptance gates"
+    },
+    "1043": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1043",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan.py resume-provenance check (persist+resume-skip plans must name input-fingerprint validation)"
     },
     "105": {
       "has_clean_result": true,
