@@ -5,3 +5,4 @@
 {"ts": "2026-07-05T08:06:28Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verdict: PASS; n_fail=0, n_warn=0 (3 PASS / 20 kind-exempt SKIP); plan v1"}
 {"ts": "2026-07-05T08:06:29Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "stage-dispatch stage=fact-check round=1 subagent=planner(fact-checker) worktree=repo-root"}
 {"ts": "2026-07-05T08:21:07Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "verdict: PASS; n_fail=0, n_warn=0; plan v2 (fact-checker corrections folded: slack 900s->0, corpus calibration corrected to 3 true stales / 0 FPs at slack=0, --follow trap, cid-string id derivation)"}
+{"ts": "2026-07-05T08:21:31Z", "kind": "epm:progress", "version": 3, "by": "unknown", "note": "stage-dispatch stage=plan-critique round=1 subagent=critic-ensemble(3xClaude+3xCodex)+consistency-checker worktree=repo-root"}
