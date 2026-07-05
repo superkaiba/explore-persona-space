@@ -84,6 +84,8 @@ Dry-run CLI (zero API calls; OTPM from ``EPM_JUDGE_OTPM`` or 400k assumed)::
 
 import argparse
 import asyncio
+import contextlib
+import contextvars
 import datetime as _dt
 import functools
 import hashlib
@@ -91,7 +93,7 @@ import json
 import logging
 import os
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -110,6 +112,90 @@ if TYPE_CHECKING:
     import anthropic
 
 logger = logging.getLogger(__name__)
+
+# Explicit request temperature, set by :func:`graded_temperature` for a scoped
+# dispatch and read by :func:`_build_params`. Default None → the key is OMITTED
+# from the request (every legacy caller keeps the Anthropic API default,
+# behavior-preserving). A caller needing N INDEPENDENT graded draws (issue763's
+# N=8 protocol) sets 1.0 so the request is deterministic against a future change
+# in the API's default temperature — the graded-draw protocol treats temp=1.0 as
+# load-bearing + reproducible, not merely "whatever the default is". A ContextVar
+# (not a module global) so it is coroutine-local: the async dispatch core fans out
+# concurrent sync calls, and a plain global would leak one dispatch's temperature
+# into a concurrent dispatch on the same event loop.
+_REQUEST_TEMPERATURE: contextvars.ContextVar[float | None] = contextvars.ContextVar(
+    "judge_request_temperature", default=None
+)
+
+
+@contextlib.contextmanager
+def graded_temperature(temperature: float | None) -> Iterator[None]:
+    """Scope an EXPLICIT judge-request ``temperature`` over a dispatch block.
+
+    Every ``dispatch_judge_items`` / ``dispatch_judge_items_async`` call made
+    inside the ``with`` block builds its Messages-API requests (sync AND batch
+    paths, via :func:`_build_params`) with an explicit ``"temperature"``; outside
+    the block the key is omitted and the API default applies. ``None`` is a no-op
+    (restores the omit-key default). Reset is guaranteed on exit even on error.
+
+    Usage (issue763 N=8 graded draws)::
+
+        with graded_temperature(1.0):
+            scores = dispatch_judge_items(items, checkpoint_dir=ckpt)
+    """
+    token = _REQUEST_TEMPERATURE.set(temperature)
+    try:
+        yield
+    finally:
+        _REQUEST_TEMPERATURE.reset(token)
+
+
+# Opt-in raw-response retention, mirroring the _REQUEST_TEMPERATURE pattern
+# (coroutine-local ContextVar, default OFF → zero behavior change for every
+# legacy caller). When set, each SUCCESSFULLY PARSED result dict additionally
+# carries the verbatim judge response text under ``_RAW_TEXT_KEY``. Motivation
+# (issue763 `deception-rubric-reanchor` plumbing delta 2): the graded N-draw
+# protocol must PERSIST per-draw raw judge text (reason-then-score
+# justifications) to raw_completions shards — ``parse_judge_json`` alone
+# discards everything outside the first JSON object, so without this the raw
+# text is unrecoverable post-dispatch. Error dicts are unchanged (they already
+# carry the terminal reason). The raw text flows into the batch-path result
+# checkpoints too (results_*.json) — deliberate: a resumed harvest keeps the
+# same shape.
+_RAW_TEXT_KEY = "_raw_text"
+_KEEP_RAW_TEXT: contextvars.ContextVar[bool] = contextvars.ContextVar(
+    "judge_keep_raw_text", default=False
+)
+
+
+@contextlib.contextmanager
+def keep_raw_judge_text() -> Iterator[None]:
+    """Scope raw judge-response retention over a dispatch block.
+
+    Inside the ``with`` block every parsed result dict carries the verbatim
+    response text under ``"_raw_text"`` (sync, multi-org sync, and batch-harvest
+    paths alike). Reset is guaranteed on exit even on error.
+    """
+    token = _KEEP_RAW_TEXT.set(True)
+    try:
+        yield
+    finally:
+        _KEEP_RAW_TEXT.reset(token)
+
+
+def _parsed_with_raw(parsed: dict | None, text: str) -> dict | None:
+    """Attach the raw response text to a parsed result when retention is on.
+
+    Copies the parsed dict before annotating (never mutates a caller-visible
+    object); a ``None`` parse (→ the caller's error dict) passes through
+    unchanged so error-dict shapes stay identical.
+    """
+    if parsed is None or not _KEEP_RAW_TEXT.get():
+        return parsed
+    out = dict(parsed)
+    out[_RAW_TEXT_KEY] = text
+    return out
+
 
 # Item: same 4-tuple already used by batch_judge.
 JudgeItem = tuple[str, str, str, str]  # (custom_id, question, completion, user_msg)
@@ -176,24 +262,39 @@ def _build_params(
     max_tokens: int,
     *,
     ttl: str | None,
+    temperature: float | None = None,
 ) -> dict:
     """Build Messages-API params with cache_control on the shared rubric block.
 
     ttl="1h" for batch requests (out-of-order execution outlives the 5m
     default); ttl=None or "5m" -> ephemeral default (5m). Returns the kwargs
     dict for ``messages.create`` / the ``params`` member of a batch Request.
+
+    ``temperature``: an EXPLICIT request temperature (reproducibility — the
+    Anthropic API default is currently 1.0 but is not contractually pinned; a
+    caller needing N independent graded draws, e.g. issue763's N=8 protocol,
+    sets ``1.0`` so the request is deterministic against a future API-default
+    change). When left None, the value falls back to the coroutine-local
+    :data:`_REQUEST_TEMPERATURE` context (set by :func:`graded_temperature`); if
+    THAT is also None, the ``"temperature"`` key is OMITTED and the API default
+    applies — behavior-preserving for every legacy caller.
     """
+    if temperature is None:
+        temperature = _REQUEST_TEMPERATURE.get()
     sys_block: dict = {"type": "text", "text": judge_system_prompt}
     if ttl is not None and ttl != "5m":
         sys_block["cache_control"] = {"type": "ephemeral", "ttl": ttl}
     else:
         sys_block["cache_control"] = {"type": "ephemeral"}
-    return {
+    params = {
         "model": judge_model,
         "max_tokens": max_tokens,
         "system": [sys_block],
         "messages": [{"role": "user", "content": user_msg}],
     }
+    if temperature is not None:
+        params["temperature"] = temperature
+    return params
 
 
 @dataclass
@@ -461,7 +562,7 @@ def _collect_batch_results(
                 (b.text for b in result.result.message.content if b.type == "text"),
                 "",
             )
-            parsed = parse_judge_json(text)
+            parsed = _parsed_with_raw(parse_judge_json(text), text)
             scores[cid] = parsed if parsed is not None else error_dict_factory("parse_error")
         elif rtype == "errored":
             etype = getattr(
@@ -515,7 +616,7 @@ async def _judge_items_sync(
                 )
                 result = await client.messages.create(**params)
                 text = next((b.text for b in result.content if b.type == "text"), "")
-                parsed = parse_judge_json(text)
+                parsed = _parsed_with_raw(parse_judge_json(text), text)
                 score = parsed if parsed is not None else error_dict_factory("parse_error")
             except Exception as e:  # per-item capture is the legacy contract
                 score = error_dict_factory(f"error: {e}")
@@ -578,7 +679,7 @@ async def _judge_items_sync_multiorg(
         )
 
     def _parse_response(text: str) -> dict:
-        parsed = parse_judge_json(text)
+        parsed = _parsed_with_raw(parse_judge_json(text), text)
         return parsed if parsed is not None else error_dict_factory("parse_error")
 
     raw_results = await api_dispatch.dispatch_calls(
@@ -1505,6 +1606,7 @@ __all__ = [
     "decide_route",
     "dispatch_judge_items",
     "dispatch_judge_items_async",
+    "graded_temperature",
     "probe_otpm_limit",
 ]
 

@@ -107,3 +107,8 @@ scripts/sync_audit.log
 # Embedded git repo (Overleaf paper) — tracked in its own remote
 overleaf_paper/
 .vercel
+
+# Issue #763 smoke-scope trees (EPM_ISSUE763_SMOKE_SCOPE=1): the dispatcher
+# --smoke relocates every WRITE-target dir under a sibling smoke_scope/ so
+# mock artifacts never land at canonical production paths (review r1 C1(iii)).
+**/smoke_scope/
