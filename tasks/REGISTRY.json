@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1047,
+  "highest_id": 1048,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -380,6 +380,13 @@
       "path": "tasks/proposed/1047",
       "status": "proposed",
       "title": "daily-fix: Step 10d pre-merge/pre-push hardening bundle"
+    },
+    "1048": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1048",
+      "status": "proposed",
+      "title": "daily-fix: mechanically block piped git push (mask-prone)"
     },
     "105": {
       "has_clean_result": true,
