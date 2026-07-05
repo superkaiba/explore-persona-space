@@ -111,8 +111,8 @@
     "1011": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1011",
-      "status": "reviewing",
+      "path": "tasks/completed/1011",
+      "status": "completed",
       "title": "workflow-fix: verify_task_body WARN on orphaned committed per-context companion figures"
     },
     "1012": {
