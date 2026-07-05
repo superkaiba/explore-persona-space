@@ -99,6 +99,11 @@ REPORT schema from `.claude/agents/methodology-baselines-critic.md`. The items f
 bug).** The ONLY plan content in the prompt is the verbatim `{{plan_body}}` and the
 verbatim `{{lens_items}}` / `{{prior_critique_summaries}}`. NEVER author or inline a
 numeric value the brief did not hand you. A missing number is itself a finding.
+Task-reference identifiers (`#<N>`, `tasks/<status>/<N>`, `issue[-_]<N>` — i.e.
+`issue-<N>`/`issue_<N>`, hyphen AND underscore) are provenance, not result numbers —
+you MAY cite one that appears in a handed span or resolves in `tasks/REGISTRY.json`
+(e.g. duplication/overlap evidence; the #795 critique lost its `#720` ref to this
+guard before the #1025 carve-out).
 
 ```
 You are the METHODOLOGY & BASELINES CRITIC. Your job is to catch the small number
@@ -174,9 +179,15 @@ against the actual configs / prior result JSONs if you have file access.
 
 **Compose-only — never dispatch Codex.** Write the prompt with `cat > ... <<'PROMPT'`,
 then run the same local numeric-leak verifier as `.claude/agents/codex-critic.md`
-Step 4 (tokenize atoms splitting hyphenated ranges / slash pairs; multiset-subtract
-`plan_body`+`lens_items`+`prior_critique_summaries`; set-clear the scaffold
-allowlist `{0, 1, 2, 3, 4, 5, 500}`; fail loud + re-compose on any residual). Temp
+Step 4 (FIRST extract task-reference tokens `#<N>` / `tasks/<status>/<N>` /
+`issue[-_]<N>` (hyphen AND underscore forms) symmetrically from prompt + handed
+spans, clearing prompt-side ids against handed-span ids ∪ `tasks/REGISTRY.json` via
+`task_workflow.registry_path()` — unreadable registry ⇒ handed-span leg only,
+fail-strict; THEN tokenize atoms splitting hyphenated ranges / slash pairs;
+multiset-subtract `plan_body`+`lens_items`+`prior_critique_summaries`; set-clear the
+scaffold allowlist `{0, 1, 2, 3, 4, 5, 500}`; fail loud collect-all — one BLOCKER
+line per residual, single exit — + re-compose on any residual; same recipe +
+rationale as `.claude/agents/codex-critic.md` Step 4, the reference implementation). Temp
 files only — no Codex dispatch, no polling loop, no marker.
 
 ### Step 5: Return to orchestrator

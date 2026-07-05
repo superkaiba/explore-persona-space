@@ -100,7 +100,11 @@ composed content fills `{{lens_items}}` in Step 3.
 bug).** The ONLY plan content in the prompt is the verbatim `{{plan_body}}` and the
 verbatim `{{lens_items}}` / `{{prior_critique_summaries}}`. NEVER author or inline a
 numeric value (a projected wall-time, a GPU-hour figure) the brief did not hand you.
-A missing sizing number is itself a finding.
+A missing sizing number is itself a finding. Task-reference identifiers (`#<N>`,
+`tasks/<status>/<N>`, `issue[-_]<N>` — i.e. `issue-<N>`/`issue_<N>`, hyphen AND
+underscore) are provenance, not result numbers — you MAY cite one that appears in a
+handed span or resolves in `tasks/REGISTRY.json` (e.g. duplication/overlap evidence;
+the #795 critique lost its `#720` ref to this guard before the #1025 carve-out).
 
 ```
 You are the EFFICIENCY CRITIC (plan mode). Your job is to catch the small number of
@@ -182,9 +186,15 @@ across the 8 GPUs" is useful. Batch before recommending a bigger machine.
 
 **Compose-only — never dispatch Codex.** Write the prompt with `cat > ... <<'PROMPT'`,
 then run the same local numeric-leak verifier as `.claude/agents/codex-critic.md`
-Step 4 (tokenize atoms splitting hyphenated ranges / slash pairs; multiset-subtract
-`plan_body`+`lens_items`+`prior_critique_summaries`; set-clear the scaffold
-allowlist `{0, 1, 2, 3, 4, 5, 500}`; fail loud + re-compose on any residual). The
+Step 4 (FIRST extract task-reference tokens `#<N>` / `tasks/<status>/<N>` /
+`issue[-_]<N>` (hyphen AND underscore forms) symmetrically from prompt + handed
+spans, clearing prompt-side ids against handed-span ids ∪ `tasks/REGISTRY.json` via
+`task_workflow.registry_path()` — unreadable registry ⇒ handed-span leg only,
+fail-strict; THEN tokenize atoms splitting hyphenated ranges / slash pairs;
+multiset-subtract `plan_body`+`lens_items`+`prior_critique_summaries`; set-clear the
+scaffold allowlist `{0, 1, 2, 3, 4, 5, 500}`; fail loud collect-all — one BLOCKER
+line per residual, single exit — + re-compose on any residual; same recipe +
+rationale as `.claude/agents/codex-critic.md` Step 4, the reference implementation). The
 efficiency lens quotes sizing numbers (wall-times, GPU-hours) heavily, so pass the
 inlined §9 / guidelines substance through `{{lens_items}}` so those numbers clear
 the multiset. Temp files only — no Codex dispatch, no polling loop, no marker.

@@ -104,7 +104,12 @@ and the verbatim `{{lens_items}}` / `{{prior_critique_summaries}}`. NEVER author
 paraphrase, or inline ANY numeric / predicted / effect-size value you sourced from
 your own context, memory, or an artifact the brief did not hand you. Codex critiques
 the plan AS WRITTEN; a number not in `plan_body` is not the plan's claim. A missing
-number is itself a finding Codex will raise from `plan_body` alone.
+number is itself a finding Codex will raise from `plan_body` alone. Task-reference
+identifiers (`#<N>`, `tasks/<status>/<N>`, `issue[-_]<N>` — i.e. `issue-<N>`/`issue_<N>`,
+hyphen AND underscore) are provenance, not result numbers — you MAY cite one that
+appears in a handed span or resolves in `tasks/REGISTRY.json` (e.g. duplication/overlap
+evidence; the #795 critique lost its `#720` ref to this guard before the #1025
+carve-out).
 
 ```
 You are the STATISTICS & MEASUREMENT CRITIC. Your job is to catch the small number
@@ -187,13 +192,19 @@ PROMPT
 
 Write `{{plan_body}}`, `{{lens_items}}`, and `{{prior_critique_summaries}}` to
 separate files (an EMPTY file if a field was not passed — never crash), then run a
-small `uv run python` pass that tokenizes every numeric atom in the prompt
+small `uv run python` pass that FIRST extracts task-reference tokens `#<N>` /
+`tasks/<status>/<N>` / `issue[-_]<N>` (hyphen AND underscore forms) symmetrically
+from the prompt + handed spans — clearing prompt-side ids against handed-span ids ∪
+the `tasks` map of `tasks/REGISTRY.json` via `task_workflow.registry_path()`;
+unreadable registry ⇒ handed-span leg only, fail-strict — THEN tokenizes every
+numeric atom in the prompt
 (splitting hyphenated ranges / slash-joined pairs into atomic numbers BEFORE the
 diff: `+0.74-0.80` → `{0.74, 0.80}`), multiset-subtracts the atoms in
 `plan_body`+`lens_items`+`prior_critique_summaries`, and set-membership-clears the
-static scaffold allowlist `{0, 1, 2, 3, 4, 5, 500}`. On any residual atom, fail
-loud (`echo "BLOCKER: composer-authored number <n> not traceable ..." >&2; exit 1`)
-and re-compose from the handed inputs alone — never hand-edit the offending number in.
+static scaffold allowlist `{0, 1, 2, 3, 4, 5, 500}`. On any residual (unresolved
+task ref or numeric atom), fail loud collect-all (one `BLOCKER: composer-authored
+number <n> not traceable ...` line per residual, single exit) and re-compose from
+the handed inputs alone — never hand-edit the offending number in.
 (Same recipe + rationale as `.claude/agents/codex-critic.md` Step 4; that file is
 the reference implementation.)
 
