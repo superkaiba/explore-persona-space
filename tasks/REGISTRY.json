@@ -118,8 +118,8 @@
     "1012": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1012",
-      "status": "planning",
+      "path": "tasks/running/1012",
+      "status": "running",
       "title": "workflow-fix: reconcile stale ensemble round ranges (1-3) with the cap-5 policy"
     },
     "1013": {
@@ -132,15 +132,15 @@
     "1014": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1014",
-      "status": "running",
+      "path": "tasks/completed/1014",
+      "status": "completed",
       "title": "workflow-fix: check 17 lacks a Context-row lineage-token requirement"
     },
     "1015": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1015",
-      "status": "approved",
+      "path": "tasks/reviewing/1015",
+      "status": "reviewing",
       "title": "workflow-fix: audit interval_inline bound-form pattern"
     },
     "1016": {
@@ -153,8 +153,8 @@
     "1017": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1017",
-      "status": "proposed",
+      "path": "tasks/planning/1017",
+      "status": "planning",
       "title": "workflow-fix: codex twin round-bound 1-3 vs cap-5 delta rounds"
     },
     "1018": {
@@ -4976,9 +4976,9 @@
       "goal": "On the existing #658 base-model representations (Qwen2.5-7B v0(C) per layer, judged behavior rates E0(C,B), n=50 contexts), measure how much behavioral information linear decoding loses, the achievable decoding ceiling, and the sample size required \u2014 operationalized at n=50 as the per-behavior reliability ceiling sqrt(r_yy), the bracket [rho_linear, sqrt(r_yy)] bounding the linear-decoding information loss plus a LEACE+dCor test for any nonlinearly-extractable residual, and a learning curve extrapolating the contexts needed to resolve the gap.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/interpreting/742",
-      "status": "interpreting",
-      "title": "Linear decoding leaves most of the extractable sycophancy information in base-model activations unread, and only refusal shows signal beyond the erased linear component (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/742",
+      "status": "awaiting_promotion",
+      "title": "Linear decoding leaves most of the extractable sycophancy information in base-model activations unread (MODERATE confidence)"
     },
     "743": {
       "has_clean_result": false,
