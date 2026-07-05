@@ -391,8 +391,8 @@
     "1049": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1049",
-      "status": "running",
+      "path": "tasks/reviewing/1049",
+      "status": "reviewing",
       "title": "daily-fix: document pod-to-HF upload wedge escalation ladder"
     },
     "105": {
