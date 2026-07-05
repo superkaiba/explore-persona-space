@@ -433,8 +433,8 @@
     "1054": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1054",
-      "status": "running",
+      "path": "tasks/reviewing/1054",
+      "status": "reviewing",
       "title": "daily-fix: new_worktree pre-adds own issue eval_results cone"
     },
     "1055": {
