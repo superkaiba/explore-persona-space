@@ -256,8 +256,12 @@ checks (3/3b) run on the v2 sentinel; v3-only checks (v3 structure +
     or a `## Provenance` section in the sibling `original-body.md` —
     i.e. the body DROPPED data it had; with no recorded origin data the
     miss is a WARN (the row should still ship, stating the prompt was
-    not recorded). Spec: `.claude/skills/clean-results/SPEC.md`
-    § `**Context:**` row.
+    not recorded). v4 additionally requires a lineage token in the row —
+    `[#K](...)`/bare `#K`, `fresh direction (no parent)`/`fresh (no
+    parent)`, or a same-issue-follow-up-round clause — scanned on
+    fence-stripped + blockquote-stripped text (missing → hard FAIL);
+    v3/v2 keep label-presence-only. Spec:
+    `.claude/skills/clean-results/SPEC.md` § `**Context:**` row.
 
 Soft INFO (not enforced as PASS/FAIL; surfaced for orchestrator
 visibility): the Goal-of-experiment frontmatter field — frontmatter
@@ -3327,6 +3331,19 @@ def check_repro_lr_matches_plan(body: str, *, plan_path: Path | None = None) -> 
     return CheckResult(name, False, detail)
 
 
+# Check-17 v4 lineage-token scan: the `**Context:**` row must name its
+# lineage (SPEC.md § `**Context:**` row; #958). Matched on fence-stripped +
+# blockquote-stripped footer text — the blockquoted verbatim prompt often
+# MENTIONS issue numbers ("reuse #537 adapters") and must not satisfy this.
+_V4_CONTEXT_LINEAGE_TOKEN_RE = re.compile(
+    r"(?<![\w/&])#\d+"  # issue ref: `[#K](...)` or bare `#K`
+    r"|fresh\s+direction"  # `fresh direction (no parent)` / `...; no parent task`
+    r"|\bno\s+parent\b"  # `fresh (no parent)` / `no parent task`
+    r"|same-issue\s+follow-?up\s+round",  # follow-up-round lineage clause
+    re.IGNORECASE,
+)
+
+
 def check_repro_context_provenance(
     body: str, fm: dict, *, original_body_path: Path | None = None
 ) -> CheckResult:
@@ -3338,6 +3355,15 @@ def check_repro_context_provenance(
     literal ``origin prompt not recorded``). Forward-only (adopted
     2026-06-11): legacy (pre-sentinel) bodies PASS vacuously, so the
     awaiting_promotion backlog never retro-FAILs.
+
+    v4 bodies additionally require a LINEAGE TOKEN in the Context row
+    (#1014, origin #958): an issue reference (`[#K](...)` or bare `#K`),
+    a `fresh direction` / `no parent` clause, or a same-issue
+    follow-up-round clause — scanned on fence-stripped +
+    blockquote-stripped text so issue refs inside the blockquoted
+    verbatim prompt never satisfy it. A v4 label-present row with no
+    lineage token is a hard FAIL. v3/v2 bodies keep the pre-#1014
+    label-presence-only behavior verbatim.
 
     A missing row FAILs only when recorded origin data exists —
     frontmatter ``origin_prompt`` or a ``## Provenance`` section in the
@@ -3355,7 +3381,43 @@ def check_repro_context_provenance(
         # Missing-section is check_required_sections' job; don't double-FAIL.
         return CheckResult(name, True, "skipped — no Reproducibility section")
     if re.search(r"\*\*\s*Context\s*:?\s*\*\*", repro):
-        return CheckResult(name, True, "**Context:** row present")
+        if not is_v4(body):
+            # v2/v3 keep the pre-#1014 label-presence behavior verbatim
+            # (forward-only; the v4 lineage sub-check never binds them).
+            return CheckResult(name, True, "**Context:** row present")
+        # v4 lineage-token sub-check. Strip fences + blockquote LINES
+        # FIRST, then slice at the label: a single-line row with an inline
+        # `> "..."` quote after the label (#763's shape) keeps its
+        # same-line lineage clause, while multi-line blockquoted verbatim
+        # prompts can never satisfy the scan (#959 strip precedent).
+        # Two ACCEPTED false-PASS limitations, both benign-direction
+        # (they reduce to today's unconditional label-presence PASS;
+        # Lens 5 retains the substantive lineage-correctness read):
+        # (a) an inline `> "..."` quote ON the label line is
+        # markdown-semantically not a blockquote, so an issue ref inside
+        # it stays scanned; (b) a lazy-continuation quote line (a wrapped
+        # verbatim prompt whose un-prefixed continuation line stays
+        # scanned — the deliberate #959 behavior documented at
+        # `_strip_blockquote_lines`).
+        scan_src = _strip_blockquote_lines(_strip_fenced_blocks(repro))
+        m = re.search(r"\*\*\s*Context\s*:?\s*\*\*", scan_src)
+        # Degenerate fallback (label only findable inside a blockquote/
+        # fence): scan the whole stripped footer — fails toward PASS, the
+        # same shape that PASSes unconditionally today.
+        ctx_scan = scan_src[m.end() :] if m else scan_src
+        if _V4_CONTEXT_LINEAGE_TOKEN_RE.search(ctx_scan):
+            return CheckResult(name, True, "**Context:** row present with lineage token")
+        return CheckResult(
+            name,
+            False,
+            "v4 `**Context:**` row carries no lineage token — add the lineage "
+            "clause per SPEC.md § `**Context:**` row: `[#K](...) — <one line>` "
+            "(bare `#K` accepted), or `fresh direction (no parent)` / "
+            "`fresh (no parent)`; same-issue follow-up rounds add a "
+            "'same-issue follow-up round `<label>`' clause. Issue refs inside "
+            "the blockquoted verbatim prompt do not count — put the lineage "
+            "clause on a non-blockquote line.",
+        )
     has_origin_prompt = bool(str(fm.get("origin_prompt") or "").strip())
     has_provenance_section = False
     if original_body_path is not None and original_body_path.exists():

@@ -5575,6 +5575,157 @@ def test_v4_context_blockquote_bare_url_passes_permanence():
     assert perm.passed, perm.detail
 
 
+# ─── Check 17 (v4 lineage-token sub-check, #1014) ──────────────────────────
+# All assertions are per-check by name (the `_V4_GOOD_BODY` convention —
+# fake SHAs fail the existence probes, so overall PASS is not assertable).
+
+_V4_LINEAGE_BULLET = (
+    "- Follow-up to [#34](https://eps.superkaiba.com/tasks/34) — the "
+    "X-effect generalisation question.\n"
+)
+
+
+def _v4_body_with_lineage(replacement: str) -> str:
+    """Return `_V4_GOOD_BODY` with its Context lineage bullet replaced."""
+    assert _V4_LINEAGE_BULLET in _V4_GOOD_BODY, "fixture drifted"
+    return _V4_GOOD_BODY.replace(_V4_LINEAGE_BULLET, replacement)
+
+
+def test_v4_context_issue_link_lineage_passes():
+    """The canonical v4 fixture's `[#34](...)` lineage bullet satisfies
+    the v4 lineage-token sub-check (issue-reference alternative)."""
+    _ok, results = verify_task_body.verify_text(_V4_GOOD_BODY)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn
+    assert "lineage" in ctx.detail
+
+
+def test_v4_context_fresh_direction_no_parent_passes():
+    """`fresh direction (no parent)` satisfies the lineage sub-check."""
+    body = _v4_body_with_lineage("- Lineage: fresh direction (no parent).\n")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_fresh_no_parent_short_form_passes():
+    """The task-Goal short form `fresh (no parent)` satisfies the
+    lineage sub-check (the `no parent` alternative)."""
+    body = _v4_body_with_lineage("- Lineage: fresh (no parent).\n")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_bare_issue_ref_passes():
+    """Bare `#K` refs (the #823 shape: `Child of #722 ... method parent
+    #779`) satisfy the lineage sub-check."""
+    body = _v4_body_with_lineage("- Child of #722 (context pool), method parent #779.\n")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_followup_round_clause_passes():
+    """A `same-issue follow-up round` clause with NO issue ref satisfies
+    the lineage sub-check (the follow-up-round alternative)."""
+    body = _v4_body_with_lineage("- Same-issue follow-up round `maxp-winner` run 2026-07-03.\n")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_without_lineage_token_fails():
+    """A v4 `**Context:**` row with NO lineage token is a hard FAIL
+    (the #958 gap this sub-check closes)."""
+    body = _v4_body_with_lineage("")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert not ctx.passed
+    assert "lineage" in ctx.detail
+    assert "SPEC" in ctx.detail
+
+
+def test_v4_blockquoted_issue_ref_does_not_satisfy_lineage():
+    """An issue ref inside the blockquoted verbatim originating prompt
+    must NOT satisfy the lineage sub-check — the quote is provenance
+    TEXT, not lineage."""
+    body = _v4_body_with_lineage("").replace(
+        "- Originating prompt: origin prompt not recorded",
+        "- Originating prompt, verbatim:\n\n> rerun #537 with the new adapters\n",
+    )
+    assert "> rerun #537" in body, "fixture replacement did not land"
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert not ctx.passed, ctx.detail
+
+
+def test_v4_inline_quote_on_label_line_keeps_same_line_lineage():
+    """The #763 shape: the whole Context row is ONE physical line with an
+    inline `> "..."` quote after the label and the lineage clause after
+    the quote. Pins the strip-before-slice scan order — slice-then-strip
+    would drop the whole line (it appears to start with `>` post-slice)
+    and wrongly FAIL."""
+    context_block = (
+        "**Context:**\n"
+        "- Created 2026-06-24; run executed 2026-06-24.\n"
+        + _V4_LINEAGE_BULLET
+        + "- Originating prompt: origin prompt not recorded\n"
+    )
+    assert context_block in _V4_GOOD_BODY, "fixture drifted"
+    body = _V4_GOOD_BODY.replace(
+        context_block,
+        '**Context:** > "do statistical now" · lineage: '
+        "[#658](https://eps.superkaiba.com/tasks/658) — parent.\n",
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v3_context_without_lineage_not_newly_failed():
+    """v3 behavior stays byte-identical: a v3 `**Context:**` row with NO
+    lineage token keeps the pre-#1014 label-presence PASS (no new WARN,
+    no FAIL)."""
+    assert _V4_LINEAGE_BULLET in _V3_GOOD_BODY, "fixture drifted"
+    body = _V3_GOOD_BODY.replace(_V4_LINEAGE_BULLET, "")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+    assert "present" in ctx.detail
+
+
+def test_v4_context_fresh_direction_alone_passes():
+    """`fresh direction` WITHOUT `no parent` / any `#K` ref / any
+    follow-up-round clause (the #778/#658 phrasing family) satisfies the
+    sub-check — pins regex alternative 2 uniquely (deleting the
+    `fresh direction` arm would fail this test and only this test)."""
+    body = _v4_body_with_lineage(
+        "- Lineage: fresh direction seeded from the marker-transfer question bank.\n"
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_url_fragment_does_not_satisfy_lineage():
+    """A URL fragment (`.../page#123`) must NOT satisfy the issue-ref
+    alternative — pins the `(?<![\\w/&])` lookbehind."""
+    body = _v4_body_with_lineage("- See https://example.com/page#123 for background.\n")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert not ctx.passed, ctx.detail
+
+
+def test_v4_context_unhyphenated_followup_round_clause_passes():
+    """`Same-issue followup round` (no hyphen in `followup`, no `#` ref)
+    satisfies the sub-check — pins the `follow-?up` optional hyphen."""
+    body = _v4_body_with_lineage("- Same-issue followup round `alt2-pin` run 2026-07-04.\n")
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
 def test_v4_v3_content_h2_is_hard_fail():
     """A leftover v3 content H2 (`## Findings`) in a v4 body is a hard FAIL."""
     body = _V4_GOOD_BODY.replace("## Results\n", "## Findings\n\nstale v3 H2\n\n## Results\n")

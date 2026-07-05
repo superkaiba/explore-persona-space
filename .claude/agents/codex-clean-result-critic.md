@@ -400,11 +400,13 @@ You MUST independently:
      `## Methodology` Training hyperparameter table — the COMPLETE table —
      against the plan; when `--methodology-doc` was
      passed, also that the body table matches the doc §2 table,
-     check 21), or recorded origin provenance dropped (check 17 FAIL —
-     frontmatter `origin_prompt` / an original-body
+     check 21), or a check-17 FAIL — recorded origin provenance dropped
+     (frontmatter `origin_prompt` / an original-body
      `## Provenance` section exists but the body has no `**Context:**`
-     footer; the check's WARN form — no recorded origin data — never
-     blocks). Record as a blocking finding, but still score all lenses.
+     footer) or a v4 `**Context:**` row lacking a lineage token
+     (`[#K](...)`/bare `#K`/`fresh direction (no parent)`/follow-up-round
+     clause); the check's WARN form — no recorded origin data — never
+     blocks. Record as a blocking finding, but still score all lenses.
    - PRESENTATION-ONLY FAILs (procedural — do NOT block alone): MDX-safe
      prose (check 14: p<0.05, autolinks), caption shape (check 5),
      cherry-picked-label phrasing (check 10), subset-disclosure phrasing
@@ -557,8 +559,9 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   and the COMPLETE table is the methodology doc §2)
 - Context-footer audit (run-context provenance): the
   `**Context:**` footer (SPEC.md
-  § `**Context:**` row; verifier check 17 covers presence — this
-  bullet adds the substantive read) must carry (a) real dates
+  § `**Context:**` row; verifier check 17 covers presence + a lineage
+  token — this bullet adds the substantive read: dates real, lineage
+  CORRECT) must carry (a) real dates
   (created date matches frontmatter `created_at`; run date/window
   plausible), (b) correct lineage (`Follow-up to` matches frontmatter
   `parent_id` / the `**This experiment in context:**` slot's actual
