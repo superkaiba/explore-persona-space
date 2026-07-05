@@ -2376,6 +2376,7 @@ def test_gcp_workload_crash_keeps_659_reason_not_boot_loop(tmp_path, monkeypatch
         ("done", "workload_done"),
         ("done", "workload_done_self_poweroff"),
         ("done", "relaunched_workload_done"),
+        ("done", "workload_done_finalize_failed"),  # #1055 done shape
     ],
 )
 def test_gcp_boot_streak_resets_on_workload_phase_observation(
@@ -2501,3 +2502,33 @@ def test_gcp_boot_loop_cpu_bigmem_records_but_never_rewrites(tmp_path, monkeypat
     assert out2["status"] == "running"
     assert out2["current_phase"] == "gcp_boot_loop_failover_runpod"
     assert len(rp.launches) == 1
+
+
+# ---------------------------------------------------------------------------
+# issue #1055 — the finalize-failed-but-artifacts-ok classification is a
+# SUCCESS shape: the async GCP->RunPod failover predicate must never match it
+# ---------------------------------------------------------------------------
+
+
+def test_async_failover_excludes_finalize_failed_artifacts_ok():
+    """#1055 acceptance criterion 3: the done-like classification for a
+    post-deliverables finalize/tail crash (status="done",
+    current_phase="workload_done_finalize_failed") fails BOTH failover
+    conjuncts by construction — and DEFENSIVELY, even a hypothetical
+    status="dead" poll carrying this phase is excluded, because the phase is
+    not in _GCP_ASYNC_FAILOVER_PHASES. No RunPod failover, no crash-fix
+    routing, for a run whose deliverables are complete on HF."""
+    from scripts.backend_poll import _is_gcp_async_workload_failure
+
+    assert (
+        _is_gcp_async_workload_failure(
+            _gcp_handle(), _poll("done", "workload_done_finalize_failed")
+        )
+        is False
+    )
+    assert (
+        _is_gcp_async_workload_failure(
+            _gcp_handle(), _poll("dead", "workload_done_finalize_failed")
+        )
+        is False
+    )

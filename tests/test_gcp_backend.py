@@ -1366,7 +1366,7 @@ def test_gcp_probe_error_is_backend_probe_error() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("phase", ["done", "failed", "wedged"])
+@pytest.mark.parametrize("phase", ["done", "failed", "finalize_failed_artifacts_ok", "wedged"])
 def test_reconnect_refuses_running_instance_with_terminal_guest_phase(phase: str) -> None:
     """A RUNNING instance whose workload already published a terminal/wedged
     eps/phase is a gate-park/finished zombie, NOT a live run to rejoin —
@@ -1627,7 +1627,7 @@ def test_stale_named_instance_refuses_to_delete_live_status() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("phase", ["done", "failed", "wedged"])
+@pytest.mark.parametrize("phase", ["done", "failed", "finalize_failed_artifacts_ok", "wedged"])
 def test_stale_named_instance_returns_record_for_running_terminal_phase(phase: str) -> None:
     """The #908 matched delete: the SAME RUNNING+terminal-phase record that
     reconnect refuses must be deletable here, or the refusal dead-ends in
@@ -8009,3 +8009,216 @@ def test_terminated_with_failed_phase_probe_error_keeps_terminal_terminated() ->
     pr = backend.poll(_poll_handle())
     assert pr.status == "dead"
     assert pr.current_phase == "terminal_terminated"
+
+
+# ---------------------------------------------------------------------------
+# issue #1055 — finalize_failed_artifacts_ok: a post-deliverables finalize/tail
+# crash publishes a distinct done-like phase instead of `failed`, keyed on the
+# workload-written positive-evidence sentinel ($EPS_DELIVERABLES_OK_PATH). The
+# sentinel-absent path stays byte-equivalent to today's failed path.
+# ---------------------------------------------------------------------------
+
+
+def _extract_exit_trap_body(script: str) -> str:
+    """Pull the single-quoted EXIT-trap body out of a rendered startup script.
+
+    The trap body contains no single quotes by bash construction, so the
+    ``[^']*`` match is exact.
+    """
+    m = re.search(r"trap '([^']*)' EXIT", script)
+    assert m is not None, "could not locate the EXIT trap in the rendered script"
+    return m.group(1)
+
+
+def test_render_startup_script_trap_branches_on_deliverables_sentinel() -> None:
+    """#1055 acceptance criterion 1 — branch-STRUCTURE-discriminating, not
+    substring-order-only: both render branches carry, inside the single trap
+    statement, the guarded sentinel check, the finalize_failed_artifacts_ok
+    then-arm, the retained failed else-arm, AND the inner ``fi;`` closing the
+    sentinel conditional sits IMMEDIATELY after ``_eps_phase failed;`` and
+    BEFORE the shared tail (watchdog kill -> log tail -> diagnostics ->
+    poweroff) — so a mutant nesting the shared tail inside only one arm FAILS
+    (a flat substring-order assert would pass it while one branch loses
+    diagnostics or the billing-bounding poweroff)."""
+    for spec in (
+        _spec(),
+        _spec(hydra_args=(), workload_cmd="bash scripts/issue658_dispatch.sh --flag 'v 1'"),
+    ):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        trap = _extract_exit_trap_body(script)
+        assert '[ -n "${EPS_DELIVERABLES_OK_PATH:-}" ]' in trap
+        assert '[ -f "${EPS_DELIVERABLES_OK_PATH:-}" ]' in trap
+        idx_finalize = trap.index("_eps_phase finalize_failed_artifacts_ok;")
+        idx_failed = trap.index("_eps_phase failed;")
+        inner_fi = trap.index(" fi;", idx_failed)
+        idx_kill = trap.index('{ kill "${EPS_WATCHDOG_PID:-}"')
+        idx_diag = trap.index('_eps_persist_diagnostics "$rc"')
+        idx_shutdown = trap.index("shutdown -h now")
+        # then-arm before else-arm inside the sentinel conditional.
+        assert idx_finalize < idx_failed
+        # The inner fi; closes the sentinel conditional IMMEDIATELY after the
+        # else-arm's phase write — NOTHING (no tail element) may sit between
+        # them, or the shared tail has been nested into one arm.
+        assert trap[idx_failed:inner_fi] == "_eps_phase failed;"
+        # The shared tail runs on BOTH arms: strictly AFTER the inner fi, in
+        # the unchanged order kill -> (log tail) -> diagnostics -> poweroff.
+        assert idx_failed < inner_fi < idx_kill < idx_diag < idx_shutdown
+
+
+def _run_trap_sandbox(tmp_path: Path, *, sentinel_present: bool) -> list[str]:
+    """Execute the rendered EXIT-trap body in a sandbox bash with stubbed
+    ``_eps_phase`` / ``_eps_persist_diagnostics`` / ``kill`` / ``shutdown``
+    (each appends to a call-trace file) and rc=1; returns the call trace."""
+    tag = "present" if sentinel_present else "absent"
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    body = _extract_exit_trap_body(script)
+    call_log = tmp_path / f"calls_{tag}.log"
+    log_file = tmp_path / "workload.log"
+    log_file.write_text("line1\nline2\n")
+    sentinel = tmp_path / f"deliverables_ok_{tag}.json"
+    if sentinel_present:
+        sentinel.write_text('{"issue": 137}')
+    sandbox_lines = [
+        "exec 3>/dev/null",
+        f'CALL_LOG="{call_log}"',
+        '_eps_phase() { echo "_eps_phase $1" >> "$CALL_LOG"; }',
+        '_eps_persist_diagnostics() { echo "_eps_persist_diagnostics $1" >> "$CALL_LOG"; }',
+        'kill() { echo "kill $*" >> "$CALL_LOG"; }',
+        'shutdown() { echo "shutdown $*" >> "$CALL_LOG"; }',
+        "export EPS_WATCHDOG_PID=99999",
+        f'export EPS_LOG_PATH="{log_file}"',
+        f'export EPS_DELIVERABLES_OK_PATH="{sentinel}"',
+        "false",  # the trap body's rc=$? reads 1 from this
+        body,
+        "exit 0",
+    ]
+    sandbox = tmp_path / f"sandbox_{tag}.sh"
+    sandbox.write_text("\n".join(sandbox_lines) + "\n")
+    proc = subprocess.run(["bash", str(sandbox)], capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    assert call_log.exists(), "trap body made no stubbed calls"
+    return call_log.read_text().split("\n")
+
+
+def test_rendered_trap_body_executes_both_sentinel_states(tmp_path) -> None:
+    """#1055 executed-trap semantics (not just structure): running the REAL
+    rendered trap body with rc!=0 publishes finalize_failed_artifacts_ok when
+    the deliverables sentinel file EXISTS and failed when it does not — and
+    BOTH runs still execute the shared tail (diagnostics + poweroff), in the
+    unchanged phase-write -> diagnostics -> shutdown order."""
+    present = _run_trap_sandbox(tmp_path, sentinel_present=True)
+    absent = _run_trap_sandbox(tmp_path, sentinel_present=False)
+
+    assert "_eps_phase finalize_failed_artifacts_ok" in present
+    assert "_eps_phase failed" not in present
+    assert "_eps_phase failed" in absent
+    assert "_eps_phase finalize_failed_artifacts_ok" not in absent
+    for calls, phase_call in (
+        (present, "_eps_phase finalize_failed_artifacts_ok"),
+        (absent, "_eps_phase failed"),
+    ):
+        assert "_eps_persist_diagnostics 1" in calls  # diagnostics ran, rc preserved
+        assert "shutdown -h now" in calls  # the billing-bounding poweroff ran
+        assert calls.index(phase_call) < calls.index("_eps_persist_diagnostics 1")
+        assert calls.index("_eps_persist_diagnostics 1") < calls.index("shutdown -h now")
+
+
+def test_render_startup_script_exports_deliverables_ok_path_and_boot_rm() -> None:
+    """#1055: both branches export the attempt-scoped positive-evidence
+    sentinel path and rm -f it at boot (stale-evidence hygiene for a re-booted
+    instance with the SAME attempt_id + preserved disk), with the rm AFTER the
+    export and BEFORE the workload starts."""
+    for spec in (
+        _spec(),
+        _spec(hydra_args=(), workload_cmd="bash scripts/issue658_dispatch.sh"),
+    ):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        export_idx = script.index("export EPS_DELIVERABLES_OK_PATH=")
+        export_line = script[export_idx:].split("\n", 1)[0]
+        # Attempt-scoping pinned, not just line presence: the rendered value
+        # embeds the attempt id (mirrors sentinel_path_for).
+        assert "att-fixed-001/deliverables_ok.json" in export_line
+        rm_idx = script.index('rm -f "$EPS_DELIVERABLES_OK_PATH"')
+        workload_idx = script.index("_eps_phase workload")
+        assert export_idx < rm_idx < workload_idx
+
+
+def test_poll_running_finalize_failed_phase_follows_fresh_relaunch_marker() -> None:
+    """#1055 relaunch-follow (sibling of the #612 done/failed coverage): the
+    eps/phase guest attribute freezes at the FIRST workload's terminal state,
+    so RUNNING + finalize_failed_artifacts_ok + a FRESH epm:run-launched
+    marker must follow the relaunched workload — NOT classify done and steer
+    the orchestrator to finalize/teardown mid-relaunch."""
+    backend, _runner = _relaunch_backend(
+        phase="finalize_failed_artifacts_ok",
+        ssh_results=[
+            GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, ""),
+            GcloudRunResult(0, _probe_stdout(alive=True), ""),
+        ],
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.current_phase == "relaunched_workload"
+
+
+def test_poll_running_with_finalize_failed_artifacts_ok_maps_to_done() -> None:
+    """#1055: the brief RUNNING window between the trap's phase write and the
+    poweroff completing classifies done / workload_done_finalize_failed (no
+    relaunch marker present), mirroring the RUNNING-window done block."""
+    backend, _runner = _relaunch_backend(
+        phase="finalize_failed_artifacts_ok",
+        ssh_results=[GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, "")],
+        reader=_relaunch_reader(run_ts=None, cluster_ts=None),
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "workload_done_finalize_failed"
+    assert pr.new_milestone is True
+    assert pr.pid_alive is False
+
+
+def test_poll_terminated_with_finalize_failed_artifacts_ok_maps_to_done() -> None:
+    """#1055 (mirror of the #935 TERMINATED-window test): a TERMINATED
+    instance whose eps/phase reads finalize_failed_artifacts_ok — deliverables
+    verified on HF, then a finalize/tail non-zero exit powered the VM off —
+    classifies done with the distinct workload_done_finalize_failed phase, a
+    SUCCESSFUL run whose finalize hiccupped, never a crash (no RunPod
+    failover, no crash-fix routing)."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload("finalize_failed_artifacts_ok"), "")
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "workload_done_finalize_failed"
+    assert pr.new_milestone is True
+
+
+def test_audit_stale_gcp_vms_reaps_terminal_phase_finalize_failed_zombie() -> None:
+    """#1055 (sibling of the done/failed terminal-phase reap tests): a RUNNING
+    VM stuck in finalize_failed_artifacts_ok past the terminal-phase floor is
+    a finished zombie — the workload is over, the deliverables are on HF —
+    and the janitor reaps it promptly via _TERMINAL_GUEST_PHASES membership."""
+    now = datetime(2026, 7, 5, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(minutes=30)).isoformat()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-1055", created), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload("finalize_failed_artifacts_ok"), "")
+        ],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "deleted"
+    assert records[0]["reason"] == "terminal-phase"
+    assert records[0]["phase"] == "finalize_failed_artifacts_ok"
