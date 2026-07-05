@@ -52,11 +52,14 @@ Check catalog (id — classification — kind scope)
       (stale-Goal quote)                                  --issue mode only
   c24 resume-skip provenance    WARN-only, conditional    experiment +
       validation                                          analysis
+  c25 html entities in fenced   FAIL, conditional         all kinds
+      command blocks
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24) also SKIP when their content trigger does not fire.
+19, 20, 21, 22, 23, 24, 25) also SKIP when their content trigger does not
+fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -81,6 +84,10 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no registered verdict lattice`` (check 20)
   - ``N/A — no arity acceptance gate`` (check 21)
   - ``N/A — no resume/persist pattern`` (check 24)
+  - ``N/A — entities are content, not commands`` (check 25 — exempts
+    arm-(a) shell-tagged content fences ONLY; an arm-(b) fence whose body
+    carries ``--workload-cmd`` / ``dispatch_issue.py`` FAILs on entities
+    unconditionally)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -3558,6 +3565,96 @@ def check_resume_provenance(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 25 — HTML entities in fenced command blocks (all kinds) ──────────
+# The harness HTML-escapes the <result> field of background-Agent
+# <task-notification> messages (&& -> the amp-entity form, < -> lt, > -> gt);
+# an orchestrator that composes the plan handoff from that text ships a
+# poisoned workload command (#952 v9, 2026-07-04: the dispatcher command's
+# shell AND operators arrived entity-escaped and needed a hand-fix before
+# dispatch would run). This check is the persist-time backstop for the
+# capture-time de-escape rule in adversarial-planner SKILL.md.
+
+# Fence pairing: backtick fences only, opener info string captured, closer on
+# its own line — the same relaxed-pairing limitation class as the other regex
+# checks (corpus-calibrated; exotic 4-backtick nesting is out of scope).
+_C25_FENCE_RE = re.compile(r"(?ms)^[ \t]*```([^\n]*)\n(.*?)^[ \t]*```[ \t]*$")
+
+# Arm (a): shell-tagged fences (exemptable by the standalone escape phrase).
+_C25_CMD_FENCE_INFO_RE = re.compile(r"(?i)^\s*(?:bash|sh|shell|zsh|console)\b")
+
+# Arm (b): ANY fence (tagged or untagged) whose body carries the
+# highest-stakes command markers — never exemptable.
+_C25_CMD_MARKER_RE = re.compile(r"--workload-cmd|dispatch_issue\.py")
+
+# The six entity forms (amp/lt/gt/quot + the numeric/hex apostrophes),
+# case-insensitive, leading-zero-tolerant on the numeric forms.
+_C25_HTML_ENTITY_RE = re.compile(r"(?i)&(?:amp|lt|gt|quot|#0*39|#x0*27);")
+
+
+def _c25_detail(hits: list[str], *, exemptable: bool) -> str:
+    """Render the c25 FAIL detail: entity list + the #952 v9 incident + the
+    capture-side remediation; the escape-phrase pointer appears ONLY on the
+    ``exemptable=True`` (arm-(a)) branch — an arm-(b) ``--workload-cmd`` /
+    ``dispatch_issue.py`` fence is never exemptable (methodology reconciler,
+    #1062 round 1)."""
+    base = (
+        f"fenced command block(s) carry HTML entity form(s) {', '.join(hits)} — the "
+        "harness HTML-escapes background-Agent <task-notification> results "
+        "(#952 v9, 2026-07-04: the dispatcher command's shell AND operators "
+        "arrived entity-escaped); re-extract from the raw output-file, or apply "
+        "ONE html.unescape() round to notification-BODY-sourced text, before "
+        "persisting"
+    )
+    if exemptable:
+        return base + (
+            "; if the fenced entities are deliberately discussed CONTENT (not a "
+            "command to dispatch), declare 'N/A — entities are content, not "
+            "commands' on its own line"
+        )
+    return base + (
+        " — a --workload-cmd / dispatch_issue.py fence is never exemptable: fix the command text"
+    )
+
+
+def check_html_entities_in_commands(plan: str, kind: str) -> CheckResult:
+    """FAIL, ALL kinds, conditional: fenced command blocks must not carry HTML
+    entities (#952 v9).
+
+    Two arms: (a) shell-tagged fences (bash/sh/shell/zsh/console) with no
+    command marker; (b) ANY fence — tagged or untagged — whose body carries
+    ``--workload-cmd`` or ``dispatch_issue.py``. Scan-first; the standalone
+    escape phrase (``N/A — entities are content, not commands``, detected via
+    the house ``_standalone_na_declared`` line discipline — never a doc-global
+    substring) exempts arm-(a) hits ONLY. An arm-(b) entity hit FAILs
+    UNCONDITIONALLY — a document-wide phrase must never mask a separately
+    poisoned workload command (methodology reconciler, #1062 round 1: one
+    legitimate entity-discussing fence + one poisoned dispatcher fence must
+    still FAIL). SKIP when the plan has no command fences. All kinds —
+    infra/batch plans carry verification commands too (this incident class is
+    kind-agnostic). The check ASSERTS; it never rewrites plan text.
+    """
+    cid, name = "c25_html_entities_in_commands", "no HTML entities in fenced command blocks"
+    del kind  # all kinds — infra/batch plans carry verification commands too
+    arm_a: list[str] = []
+    arm_b: list[str] = []
+    for info, body in _C25_FENCE_RE.findall(plan):
+        if _C25_CMD_MARKER_RE.search(body):
+            arm_b.append(body)  # command-marked: never exemptable
+        elif _C25_CMD_FENCE_INFO_RE.match(info):
+            arm_a.append(body)  # shell-tagged: exemptable by the phrase
+    if not arm_a and not arm_b:
+        return _skip(cid, name, "no fenced command blocks detected")
+    hits_b = sorted({m.group(0) for b in arm_b for m in _C25_HTML_ENTITY_RE.finditer(b)})
+    if hits_b:
+        return _fail(cid, name, _c25_detail(hits_b, exemptable=False))
+    hits_a = sorted({m.group(0) for b in arm_a for m in _C25_HTML_ENTITY_RE.finditer(b)})
+    if hits_a and _standalone_na_declared(plan, r"entities are content, not commands"):
+        return _pass(cid, name, "arm-(a) entity content exempted by explicit standalone N/A")
+    if hits_a:
+        return _fail(cid, name, _c25_detail(hits_a, exemptable=True))
+    return _pass(cid, name, f"{len(arm_a) + len(arm_b)} command fence(s), no entity forms")
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -3584,6 +3681,7 @@ CHECKS = [
     check_grep_arity_gate,
     check_cross_section_param_consistency,
     check_resume_provenance,
+    check_html_entities_in_commands,
 ]
 
 

@@ -121,6 +121,24 @@ A contaminated handoff file reaches every downstream consumer verbatim
 (2026-06-10) both Codex critic twins had to strip the trailer independently
 because the orchestrator captured the planner's return verbatim.
 
+**De-escape harness HTML entities before persisting.** A BACKGROUND-Agent
+result delivered via a `<task-notification>` block arrives with its
+`<result>` field HTML-ESCAPED by the harness (`&&` and `<`/`>` become their
+amp/lt/gt entity forms — #952 v9, 2026-07-04: the workload command's shell
+AND operators arrived entity-escaped and dispatch would not run until
+hand-fixed). When capturing a planner return from a notification, prefer
+re-extracting the raw text from the notification's `<output-file>` —
+output-file text is CLEAN and gets NO unescape. Apply ONE `html.unescape()`
+round ONLY when the text you are persisting was sourced from the
+notification BODY itself (never to output-file-sourced text: unescaping
+already-clean text corrupts legitimate literal entity content — the two
+sources are exclusive-or). One round on notification-body text is the exact
+inverse of the harness escaping — legitimately-escaped content the planner
+wrote arrives double-escaped and round-trips correctly. `verify_plan.py`
+check 25 (`c25_html_entities_in_commands`) is the mechanical backstop at
+Phase 1.5.0: entities surviving in a fenced command block FAIL the persist
+(a `--workload-cmd`/`dispatch_issue.py` fence is never exemptable).
+
 ### Phase 1.5: Verify Assumptions (Verifier Agent)
 
 **This phase is MANDATORY. Never skip it.**
@@ -151,10 +169,15 @@ Run the structural verifier against the plan version just persisted:
   (check 18), `N/A — no held-out predictive DV` (check 19),
   `N/A — no registered verdict lattice` (check 20),
   `N/A — no arity acceptance gate` (check 21 — the flagged grep is not a
-  call-arity pass condition; discovery/enumeration greps are fine), and
+  call-arity pass condition; discovery/enumeration greps are fine),
   `N/A — no resume/persist pattern` (check 24 — the resume/persist vocabulary
   hit is incidental or quotes a sibling's methodology, not this plan's own
-  long-loop resume predicate).
+  long-loop resume predicate), and
+  `N/A — entities are content, not commands` (check 25 — the fenced entity
+  forms are deliberately discussed content, e.g. a plan about entity
+  handling, not a command to dispatch; exempts shell-tagged content fences
+  ONLY — a `--workload-cmd`/`dispatch_issue.py` fence FAILs on entities
+  unconditionally).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).

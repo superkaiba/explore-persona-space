@@ -162,10 +162,11 @@ def test_good_plan_passes_all():
         "c21_grep_arity_gate": "SKIP",
         "c22_cross_section_param_consistency": "SKIP",
         "c24_resume_provenance": "SKIP",
+        "c25_html_entities_in_commands": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 24
+    assert len(results) == 25
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -3298,6 +3299,165 @@ def test_c24_cli_warn_exit_zero(tmp_path):
     assert c24["status"] == "WARN"
 
 
+# ─── Check 25 — HTML entities in fenced command blocks ─────────────────────
+
+# Verbatim un-elided fence body from the #952 v9 amendment-round notification
+# (session d49c6e04, main transcript line 993, enqueued 2026-07-05T05:51Z):
+# the harness HTML-escaped the <task-notification> <result> field, so both
+# shell AND operators of the dispatcher's --workload-cmd arrived as
+# amp-entity forms and dispatch would not run until hand-fixed.
+C25_952_V9_PLAN = (
+    GOOD_PLAN
+    + "\n**Exact workload command (dispatcher form):**\n\n```bash\n"
+    + r"""uv run python scripts/dispatch_issue.py launch --issue 952 --backend gcp --intent capture-7b \
+  --time-budget-hours 16 --repo-branch issue-952 \
+  --workload-cmd "bash -o pipefail -ec 'export EPM_I952_LAYER_GRID=14,17,20,23,26 EPM_I952_DECISION_LAYERS=14,23,26 EPM_I952_SKIP_POOLED_PREFIX=1 EPM_I952_FOLLOWUP_TAG=kfold_decision_cells EPM_I952_KFOLD_BLOCKS=5 &amp;&amp; uv run python -m explore_persona_space.experiments.issue_952.run_952 --base-dir /workspace/data/issue_952 --stage-battery-inputs 5b62649cefb34902fd630f21630164e8d1d99764 --phases phase0,battery,bank-score --smoke --synth-capture --skip-upload &amp;&amp; uv run python -m explore_persona_space.experiments.issue_952.run_952 --base-dir /workspace/data/issue_952 --stage-battery-inputs 5b62649cefb34902fd630f21630164e8d1d99764 --phases phase0,battery,bank-score'"
+"""
+    + "```\n"
+)
+
+
+def test_c25_no_command_fence_skips():
+    # GOOD_PLAN carries no fences at all — the conditional trigger does not fire.
+    assert _status(GOOD_PLAN, "c25_html_entities_in_commands") == "SKIP"
+
+
+def test_c25_952_v9_escaped_operator_fails():
+    # Regression fixture: the reconstructed #952 v9 escaped dispatcher command
+    # FAILs, and the detail names the incident + the capture-side remediation.
+    _, by_id = _run(C25_952_V9_PLAN)
+    r = by_id["c25_html_entities_in_commands"]
+    assert r.status == "FAIL"
+    assert "#952" in r.detail
+    assert "html.unescape" in r.detail
+
+
+@pytest.mark.parametrize(
+    "entity",
+    ["&lt;", "&gt;", "&quot;", "&#x27;", "&#39;", "&#039;", "&#x027;", "&amp;amp;"],
+)
+def test_c25_entity_variant_fails(entity):
+    # lt/gt/quot/apostrophe forms, the leading-zero numeric variants, and the
+    # double-escaped amp;amp; form all FAIL inside a bash fence.
+    plan = GOOD_PLAN + f"\n```bash\necho {entity}\n```\n"
+    assert _status(plan, "c25_html_entities_in_commands") == "FAIL"
+
+
+@pytest.mark.parametrize("info", ["sh", "shell", "zsh", "console"])
+def test_c25_shell_alias_fence_fails(info):
+    # Arm-(a) alias coverage: a `bash`-only mutant dies here (`sh` is present
+    # in committed plans).
+    plan = GOOD_PLAN + f"\n```{info}\necho '&lt;tag&gt;'\n```\n"
+    assert _status(plan, "c25_html_entities_in_commands") == "FAIL"
+
+
+def test_c25_clean_bash_fence_passes():
+    # Real shell operators (&&, redirects) are NOT entity forms.
+    plan = GOOD_PLAN + "\n```bash\nuv run pytest -x && sort < input.txt > out.txt\n```\n"
+    assert _status(plan, "c25_html_entities_in_commands") == "PASS"
+
+
+def test_c25_prose_entities_do_not_trigger():
+    # Entities in PROSE (this fix's own plan class — a plan ABOUT entity
+    # handling) never trip the check; only fenced command blocks are scanned.
+    plan = (
+        GOOD_PLAN
+        + "\nThe harness escapes && to &amp;&amp; and < to &lt; in notification results.\n"
+        + "\n```bash\necho ok\n```\n"
+    )
+    assert _status(plan, "c25_html_entities_in_commands") == "PASS"
+
+
+def test_c25_python_fence_entities_do_not_trigger():
+    # A python-tagged fence with entity strings but NO command marker is
+    # neither arm; the clean bash fence keeps the check exercised (PASS, not
+    # SKIP) — if the python fence were scanned this would FAIL.
+    plan = (
+        GOOD_PLAN
+        + '\n```python\nENTITY_RE = "&amp;|&lt;|&gt;"\n```\n'
+        + "\n```bash\necho ok\n```\n"
+    )
+    assert _status(plan, "c25_html_entities_in_commands") == "PASS"
+
+
+def test_c25_tagged_fence_with_workload_cmd_marker_scanned():
+    # Arm (b): a `text`-tagged fence carrying --workload-cmd is scanned
+    # regardless of the fence tag the author picked.
+    plan = GOOD_PLAN + "\n```text\n--workload-cmd 'x &amp;&amp; y'\n```\n"
+    assert _status(plan, "c25_html_entities_in_commands") == "FAIL"
+
+
+def test_c25_untagged_fence_with_workload_cmd_marker_fails():
+    # S-B (statistics reconciler round 1): pins the "tagged or untagged"
+    # arm-(b) promise — a mutant requiring a non-empty info string dies here.
+    plan = GOOD_PLAN + "\n```\ndispatch_issue.py launch --workload-cmd 'x &amp;&amp; y'\n```\n"
+    assert _status(plan, "c25_html_entities_in_commands") == "FAIL"
+
+
+def test_c25_na_escape_exempts_arm_a_only():
+    # The content-only exemption: an entity inside a plain bash fence (no
+    # command marker) + the standalone escape phrase → PASS. (Replaces the
+    # v1-sketch masking test the round-1 reconciler rejected.)
+    plan = (
+        GOOD_PLAN
+        + "\n```bash\ngrep -c '&amp;' corpus.txt\n```\n"
+        + "\nN/A — entities are content, not commands (the fence greps FOR entity forms).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c25_html_entities_in_commands"]
+    assert r.status == "PASS"
+    assert "exempt" in r.detail
+
+
+def test_c25_mixed_fence_escape_does_not_mask_workload_cmd():
+    # M1 (methodology reconciler round 1): a document-wide escape phrase must
+    # never mask a separately poisoned dispatcher fence — the mixed-plan
+    # false-PASS the round-1 reconciler identified.
+    plan = (
+        GOOD_PLAN
+        + "\n```bash\ngrep -c '&amp;' corpus.txt\n```\n"
+        + "\nN/A — entities are content, not commands (the first fence greps FOR entity forms).\n"
+        + "\n```text\ndispatch_issue.py launch --workload-cmd 'x &amp;&amp; y'\n```\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c25_html_entities_in_commands"]
+    assert r.status == "FAIL"
+    assert "never exemptable" in r.detail
+
+
+def test_c25_quoted_na_phrase_does_not_escape():
+    # A mid-sentence quoted escape phrase (the pasted-bounce-brief
+    # self-escape channel) is NOT a standalone declaration line and must not
+    # escape — mirrors test_c24_quoted_na_phrase_does_not_escape (same house
+    # _standalone_na_declared line discipline).
+    plan = (
+        GOOD_PLAN
+        + "\n```bash\ngrep -c '&amp;' corpus.txt\n```\n"
+        + "\nThe remedy menu says to declare 'N/A — entities are content, not commands' on its own line.\n"
+    )
+    assert _status(plan, "c25_html_entities_in_commands") == "FAIL"
+
+
+@pytest.mark.parametrize("kind", ["experiment", "analysis", "infra", "batch", "survey"])
+def test_c25_fails_for_all_kinds(kind):
+    # No kind exemption: infra/batch plans carry verification commands too.
+    plan = GOOD_PLAN + "\n```bash\necho '&amp;&amp;'\n```\n"
+    assert _status(plan, "c25_html_entities_in_commands", kind=kind) == "FAIL"
+
+
+def test_c25_cli_fail_exit_one(tmp_path):
+    # FAIL blocks: exit 1 in --plan-file mode (mirrors the
+    # test_c24_cli_warn_exit_zero harness, opposite polarity).
+    p = tmp_path / "plan.md"
+    p.write_text(GOOD_PLAN + "\n```bash\necho '&amp;&amp;'\n```\n")
+    proc = _run_cli("--plan-file", str(p), "--json")
+    assert proc.returncode == 1, proc.stderr
+    payload = json.loads(proc.stdout)
+    assert payload["overall"] == "FAIL"
+    c25 = next(c for c in payload["checks"] if c["id"] == "c25_html_entities_in_commands")
+    assert c25["status"] == "FAIL"
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -3347,12 +3507,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 17
+    assert payload["n_skip"] == 18
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 25
-    assert len({c["id"] for c in payload["checks"]}) == 25
+    assert len(payload["checks"]) == 26
+    assert len({c["id"] for c in payload["checks"]}) == 26
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
