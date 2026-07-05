@@ -316,7 +316,7 @@ Dedup rules, in priority order:
      --body-file <path to a body describing the bug + the proposed fix> \
      --tag wf-fix --tag "wf-fix-fp:<fp>" --tag daily-auto-filed
    ```
-   (compute `<fp>` = `task_workflow.wf_fix_fingerprint(proposed_change, bug_observed)`; the `daily-auto-filed` tag distinguishes /daily-filed review tasks from manual workflow-fix-on-bug filings, and feeds the PM digest count M.) `file_infra_task.py` files + best-effort spawns `/issue --auto` in one call, and no-ops the spawn cleanly (the task stays at `proposed` for the watcher `proposed_infra_sweep` backstop) when the daemon is unreachable / the cap is full. Record the filed `#<N>` in `## Applied workflow improvements` as a **"filed for review #<N>: <one-liner>"** entry (there is no self-applied diff or sha for a route-2 item — the diff lands in the spawned `/issue` session). For experiment-code bugs that are NOT a workflow-surface gap, file the `kind: infra` task the same way (drop the `wf-fix` / `wf-fix-fp` tags, keep `daily-auto-filed`) so the bulk count still attributes it. When filing MANY tasks in one run, give each `file_infra_task.py` Bash call an explicit `timeout` (≥300000 ms) or file in small batches — a 16-task sequential filing loop under the shared registry flock exceeded the default 2-min Bash cap mid-loop and forced a which-got-filed audit (2026-07-01, the 06-30 backfill run).
+   (compute `<fp>` = `task_workflow.wf_fix_fingerprint(proposed_change, bug_observed)`; the `daily-auto-filed` tag distinguishes /daily-filed review tasks from manual workflow-fix-on-bug filings, and feeds the PM digest count M.) `file_infra_task.py` files + best-effort spawns `/issue --auto` in one call, and no-ops the spawn cleanly (the task stays at `proposed` for the watcher `proposed_infra_sweep` backstop) when the daemon is unreachable / the cap is full. Record the filed `#<N>` in `## Applied workflow improvements` as a **"filed for review #<N>: <one-liner>"** entry (there is no self-applied diff or sha for a route-2 item — the diff lands in the spawned `/issue` session). For experiment-code bugs that are NOT a workflow-surface gap, file the `kind: infra` task the same way (drop the `wf-fix` / `wf-fix-fp` tags, keep `daily-auto-filed`) so the bulk count still attributes it. When filing MORE THAN ONE task in a run, do NOT hand-loop this command: write the bodies + manifest to the durable filing dir and drive them through `scripts/daily_drive_filings.py` (see "Durable filing dir + incremental filing driver" below) in small batches (≤8 per Bash call), each call with an explicit `timeout` (≥300000 ms) — a 16-task sequential filing loop under the shared registry flock exceeded the default 2-min Bash cap mid-loop (2026-07-01, the 06-30 backfill run); the driver's `filed.jsonl` ledger makes a mid-batch kill resumable (re-invoke; filed slugs are skipped) instead of forcing a which-got-filed audit.
 
 3. **Route 3 — a genuine judgment call** (the judgment-call carve-out below, VERBATIM) → FILE a TRACKED `proposed` task the PM surfaces + re-surfaces, AND log it in `## Other problems & notes`. The held item is no longer a dead-end note that lands where Thomas does not look (a tracked-but-unread `logs/daily/` file + one Telegram digest line) — it becomes a real task in the `proposed` queue, tagged so the PM enumerates it in its `Needs you` block every STATUS pass until Thomas acts on it. File with:
    ```bash
@@ -325,7 +325,14 @@ Dedup rules, in priority order:
      --body-file <path to a body describing the held item + WHICH carve-out item held it> \
      --tag daily-held --tag needs-human
    ```
-   `--no-dispatch` files the task at `proposed` WITHOUT spawning a session (the PM, not an autonomous sweep, decides what happens). The `needs-human` tag is the auto-dispatch-exclusion signal: the watcher's `proposed_infra_sweep` candidate query SKIPS any `proposed` infra task carrying it, and the PM enumerates it in `Needs you` instead. Record the held item in `## Other problems & notes` as a bullet: what happened (session id / task id) + which carve-out item held it + the filed `#<N>` + a one-line suggested action.
+   `--no-dispatch` files the task at `proposed` WITHOUT spawning a session (the PM, not an autonomous sweep, decides what happens). The `needs-human` tag is the auto-dispatch-exclusion signal: the watcher's `proposed_infra_sweep` candidate query SKIPS any `proposed` infra task carrying it, and the PM enumerates it in `Needs you` instead. Record the held item in `## Other problems & notes` as a bullet: what happened (session id / task id) + which carve-out item held it + the filed `#<N>` + a one-line suggested action. Route-3 bodies live in the SAME durable filing dir and file through the same driver (a manifest item with `route: 3` ⇒ the driver adds `--tag daily-held --tag needs-human --no-dispatch`); single-item runs may still invoke the command above directly — noting that a direct filing sits OUTSIDE the `filed.jsonl` ledger guarantee (route-2 fp-dedup still covers a kill-window re-raise; route 3 has no such backstop), so the body still goes in the durable dir first.
+
+### Durable filing dir + incremental filing driver (routes 2 + 3)
+
+- **Durable-first ordering:** BEFORE the first filing call, write every route-2/3 body to `logs/daily/filings-<date>/<slug>.md` **under the repo root** (`~/explore-persona-space/logs/daily/...` — never a worktree-relative or /tmp path) and a `manifest.json` (`[{slug, route, title, target, bug, change, body?}]`) in that dir, written via temp+rename. NEVER stage filing bodies or driver scripts in bare /tmp (2026-07-03: a mid-filing kill stranded 10 of 13 route-2 bodies in /tmp; the backfill spent ~40 min recovering them — #1061).
+- **Drive incrementally:** `uv run python scripts/daily_drive_filings.py --dir logs/daily/filings-<date> --start I --end J` in batches ≤8, each Bash call with an explicit `timeout` (≥300000 ms). The driver appends every outcome to `<dir>/filed.jsonl` immediately (two-phase `attempting` → `filed|deduped|ERROR|recovered` rows), computes the route-2 `wf-fix-fp` dedup, and applies exactly the per-route tags of the two command blocks above — the command blocks stay the CONTRACT; the driver is the multi-item execution path. Never run two drivers on the same dir concurrently (the ledger has no locking; the existing "no backfill within 60 min of the nightly" rule bounds the realistic case).
+- **The dir stays untracked** (`logs/` is gitignored; do NOT force-add filings dirs — the post-filing durable record is the filed task itself under `tasks/`, committed by `task.py new`; only the daily `.md` is force-added per "Commit" below).
+- **Daily-file record:** route-2/3 entries in `## Applied workflow improvements` / `## Other problems & notes` take their `#id`s from `filed.jsonl`; any slug without a terminal row (or a filed id whose `tail` shows the spawn deferred to the watcher backstop) is recorded as "dispatch pending — see logs/daily/filings-<date>/filed.jsonl". An `ERROR` slug is recorded as "filing FAILED (<flag>) — retry: `uv run python scripts/daily_drive_filings.py --dir <dir> --retry-errors`" (never silently dropped, never rendered as pending); a `recovered` row with `dispatch_unconfirmed` is recorded as "filed #<id> (recovered; dispatch unconfirmed — watcher backstop covers it)".
 
 **Judgment-call carve-out (the ONLY things routed to route 3 — per Thomas 2026-06-12: "unless there's REALLY a judgement call needed"):**
 - **Scientific-meaning changes** — anything that alters how results are computed, evaluated, or interpreted (metrics, eval criteria, analysis logic, hypothesis framing, RESULTS.md claims). A wrong silent fix here can flip a conclusion; Thomas decides.
@@ -456,9 +463,10 @@ tail) (#994). Two rules:
 1. **Write-then-wait ordering.** The daily file write + `git commit` + push +
    Telegram enqueue are the load-bearing outputs — never gate them on a
    background task. Once mining + routing results are in hand, WRITE the file
-   (recording any still-running filing driver's ids as "dispatch pending"),
-   commit, push, enqueue — only THEN may a turn end with residual background
-   work (e.g. watching a filing driver) still in flight.
+   (recording, from `logs/daily/filings-<date>/filed.jsonl`, each terminal
+   item's filed `#id`, and any not-yet-terminal slug or spawn-deferred id as
+   "dispatch pending"), commit, push, enqueue — only THEN may a turn end with
+   residual background work (e.g. watching a filing driver) still in flight.
 2. **Join load-bearing background work synchronously.** Anything the daily
    file's content depends on (transcript miners, a driver whose filed `#id`s
    you want to record) is collected by blocking on its TaskOutput in-turn —
@@ -491,6 +499,11 @@ Semantics — everywhere this file says "today", read the TARGET DATE:
   fixed (a backfill mines stale transcripts); skip with a note if it is.
   Route-2 dedup on `(target_file, fingerprint)` catches same-bug re-raises
   (e.g. from the partially-run 2026-07-03 night).
+- If the missed night left a partial `logs/daily/filings-<date>/` (manifest +
+  filed.jsonl), RESUME it: re-invoke `scripts/daily_drive_filings.py` on that
+  dir (filed/deduped slugs are skipped; a trailing "attempting" row is
+  recovered by title match, never blindly re-filed) instead of regenerating
+  bodies from scratch or hunting /tmp.
 - Telegram digest line reads `EPS daily <target-date> (backfill): ...`.
 - Do not start a backfill within 60 min of the 23:27 nightly; two concurrent
   /daily processes double-mine and race the shared repo root.
