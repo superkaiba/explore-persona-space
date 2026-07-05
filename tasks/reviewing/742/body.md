@@ -26,6 +26,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_742.md](https://github.com/superkaiba/explore-persona-space/blob/51618b7c6eec9ee994d31a4f6c4b3ce3ea1c5b82/docs/methodology/issue_742.md) · [gist](https://gist.github.com/superkaiba/2ca1e2f4cd193ce3c5f475d3b58e0585)
+
 ## Takeaways
 
 - Sycophancy's reliability ceiling is 0.994 (CI 0.979–0.996, both genres, estimators within 0.007); the persisted linear read is 0.127/0.249 — a bracket 0.87/0.75 wide at n = 50.
