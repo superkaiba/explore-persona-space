@@ -216,8 +216,8 @@
     "1025": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1025",
-      "status": "running",
+      "path": "tasks/reviewing/1025",
+      "status": "reviewing",
       "title": "daily-fix: codex-critic leak guard strips cross-issue #N refs"
     },
     "1026": {
