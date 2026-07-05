@@ -552,8 +552,8 @@
     "1070": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1070",
-      "status": "planning",
+      "path": "tasks/approved/1070",
+      "status": "approved",
       "title": "workflow-fix: launchers atomically refresh the pid file on every relaunch (stale-pid poll target)"
     },
     "1071": {
