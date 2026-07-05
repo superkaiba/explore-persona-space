@@ -6416,3 +6416,354 @@ def test_runpod_terminal_rung_partial_lease_write_failure_preserves_typed_error(
     finals = _by_reason(captured_markers, "runpod_workload_start_failed")
     assert finals  # the terminal marker still posted
     assert "lease_write_failed" in finals[-1]["attempts"][-1]["detail"]
+
+
+# ---------------------------------------------------------------------------
+# issue #1029 — GCP pre-workload boot-loop breaker: the durable streak record
+# (Lease field + helpers) and the route()-side rung skip
+# ---------------------------------------------------------------------------
+
+
+def test_lease_round_trips_gcp_boot_death_streaks():
+    """#1029: the ``gcp_boot_death_streaks`` Lease field round-trips through
+    to_json/from_json, and a MALFORMED payload (non-dict) tolerantly reads as
+    ``{}`` — fail-open toward today's behavior, mirroring ``raw_failover``."""
+    from explore_persona_space.backends.router import Lease
+
+    rec = {
+        "flexstart_l4": {
+            "count": 2,
+            "date": "2026-07-05",
+            "last_ts": 1234.5,
+            "last_incarnation": "5583329098377891015",
+        }
+    }
+    lease = Lease(issue=1029, spec_hash="h", attempt_id="a", gcp_boot_death_streaks=dict(rec))
+    round_tripped = Lease.from_json(lease.to_json())
+    assert round_tripped.gcp_boot_death_streaks == rec
+
+    # Malformed payload (a string where the dict belongs) -> {}.
+    payload = lease.to_json()
+    payload["gcp_boot_death_streaks"] = "garbage"
+    assert Lease.from_json(payload).gcp_boot_death_streaks == {}
+    # Absent key (pre-#1029 lease on disk) -> {}.
+    payload.pop("gcp_boot_death_streaks")
+    assert Lease.from_json(payload).gcp_boot_death_streaks == {}
+
+
+def test_record_gcp_boot_death_day_rollover_resets_count(lease_store):
+    """#1029: a streak recorded on a PRIOR UTC day rolls over — the next death
+    starts a fresh count of 1 (mirrors the gcp_attempts_date probe: a stale
+    streak must not poison a rung after the cause is gone), and the read
+    helper reads a prior-day record as 0."""
+    from explore_persona_space.backends.router import (
+        Lease,
+        gcp_boot_death_streak,
+        record_gcp_boot_death,
+    )
+
+    lease_store.write(
+        Lease(
+            issue=137,
+            spec_hash="h",
+            attempt_id="a",
+            gcp_boot_death_streaks={
+                "spot_a100_80": {
+                    "count": 5,
+                    "date": "2020-01-01",  # a prior UTC day
+                    "last_ts": 1.0,
+                    "last_incarnation": "old-instance",
+                }
+            },
+        )
+    )
+    # The read helper treats the stale record as 0 (same-day scoping).
+    assert gcp_boot_death_streak(137, "spot_a100_80", lease_store=lease_store) == 0
+    # A fresh death starts a NEW streak of 1, not 6.
+    count = record_gcp_boot_death(
+        137, "spot_a100_80", incarnation="new-instance", lease_store=lease_store
+    )
+    assert count == 1
+    assert gcp_boot_death_streak(137, "spot_a100_80", lease_store=lease_store) == 1
+
+
+def test_ladder_skips_rung_with_boot_loop_streak_and_advances(
+    lease_store, marker_poster, captured_markers
+):
+    """#1029 AC-3: a rung whose same-UTC-day streak is >= N is SKIPPED on the
+    auto chain (RouteAttempt outcome ``boot_loop_rung_skipped``) and the ladder
+    proceeds to the next rung, which launches."""
+    from explore_persona_space.backends.router import Lease, _today_utc_iso
+
+    lease_store.write(
+        Lease(
+            issue=137,
+            spec_hash="h",
+            attempt_id="a",
+            gcp_boot_death_streaks={
+                "spot_a100_80": {
+                    "count": 2,
+                    "date": _today_utc_iso(),
+                    "last_ts": 1.0,
+                    "last_incarnation": "inst-2",
+                }
+            },
+        )
+    )
+    gcp = _GcpBackendDouble()
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    # The boot-looped spot-80 rung was skipped; the NEXT rung launched.
+    assert result.extra["gcp_ladder_rung"] == "spot_a100_40"
+    skips = [a for a in result.attempts if a.outcome == "boot_loop_rung_skipped"]
+    assert len(skips) == 1
+    assert "rung spot_a100_80" in (skips[0].detail or "")
+    assert len(gcp.launches) == 1  # exactly one create — on the next rung
+
+
+def test_record_gcp_boot_death_then_route_skips_rung_end_to_end(
+    lease_store, marker_poster, captured_markers
+):
+    """#1029 Must-Fix (writer->reader integration): NO direct lease seeding —
+    two REAL ``record_gcp_boot_death`` calls (the poller's writer, distinct
+    incarnations) against one LeaseStore, then the ladder walk against the
+    SAME store SKIPS the rung. This is the only test that catches a key-shape
+    drift between the poller's writer and route()'s reader (stub-seeded suites
+    stay green under a drift)."""
+    from explore_persona_space.backends.router import record_gcp_boot_death
+
+    first = record_gcp_boot_death(137, "spot_a100_80", incarnation="i1", lease_store=lease_store)
+    second = record_gcp_boot_death(137, "spot_a100_80", incarnation="i2", lease_store=lease_store)
+    assert (first, second) == (1, 2)
+
+    gcp = _GcpBackendDouble()
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    assert result.extra["gcp_ladder_rung"] == "spot_a100_40"  # skipped past spot-80
+    assert any(a.outcome == "boot_loop_rung_skipped" for a in result.attempts)
+    assert len(gcp.launches) == 1  # ZERO creates on the boot-looped rung
+    # The skip consumed ZERO daily attempts: the counter reads exactly the ONE
+    # create the next rung spent.
+    lease = lease_store.read(137)
+    assert lease is not None and lease.gcp_attempts_today == 1
+
+
+def test_record_gcp_boot_death_then_route_skips_rung_cpu_bigmem_variant(
+    lease_store, marker_poster, captured_markers
+):
+    """#1029 Must-Fix companion (cpu-bigmem): the route()-side skip is
+    cpu-bigmem's ONLY breaker (the poller records but never rewrites — no
+    RunPod lane, #677). Real recorder writes on its single ``ondemand_cpu``
+    rung make the ladder yield nothing -> the #677 typed terminal fires with
+    ZERO GCP creates and NO RunPod launch."""
+    from explore_persona_space.backends.router import (
+        CpuExhaustedNoRunpodLaneError,
+        record_gcp_boot_death,
+    )
+
+    record_gcp_boot_death(137, "ondemand_cpu", incarnation="c1", lease_store=lease_store)
+    record_gcp_boot_death(137, "ondemand_cpu", incarnation="c2", lease_store=lease_store)
+
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble()
+    spec = RunSpec(issue=137, intent="cpu-bigmem", backend="auto", time_budget_hours=1.0)
+    with pytest.raises(CpuExhaustedNoRunpodLaneError):
+        route(
+            spec,
+            runpod_backend=rp,
+            free_backends={"nibi": _FreeLaneBackend(kind="nibi", launch_raises=RuntimeError("x"))},
+            gcp_backend=gcp,
+            lease_store=lease_store,
+            marker_poster=marker_poster,
+            config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+            now_fn=_clock(),
+            sleep_fn=lambda _s: None,
+        )
+    assert len(gcp.launches) == 0  # the boot-looped rung was never re-created
+    assert len(rp.launches) == 0  # cpu-bigmem never falls over to RunPod
+
+
+def test_boot_loop_rung_skip_does_not_bump_gcp_attempts_today(
+    lease_store, marker_poster, captured_markers
+):
+    """#1029 AC-3 / success criterion 3: skips consume ZERO daily attempts —
+    with EVERY rung boot-loop-skipped, the per-day counter stays 0 (the cap
+    counts CREATES; a skip avoids the create)."""
+    from explore_persona_space.backends.router import Lease, _today_utc_iso
+
+    today = _today_utc_iso()
+    all_rungs = {
+        label: {"count": 2, "date": today, "last_ts": 1.0, "last_incarnation": "i2"}
+        for label in (
+            "spot_a100_80",
+            "spot_a100_40",
+            "flexstart_a100_80",
+            "ondemand_a100_80",
+            "ondemand_a100_40",
+        )
+    }
+    lease_store.write(
+        Lease(issue=137, spec_hash="h", attempt_id="a", gcp_boot_death_streaks=all_rungs)
+    )
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=_PassiveRunpod(),
+        gcp_backend=_GcpBackendDouble(),
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    lease = lease_store.read(137)
+    assert lease is not None and lease.gcp_attempts_today == 0
+
+
+def test_all_rungs_boot_loop_skipped_falls_through_lane_order(
+    lease_store, marker_poster, captured_markers
+):
+    """#1029 (the Goal's "next rung / RunPod naturally" half): with EVERY GCP
+    rung boot-loop-skipped, the auto chain proceeds down the existing lane
+    order to the RunPod terminal rung — five ``boot_loop_rung_skipped``
+    attempts, zero GCP creates, RunPod launched."""
+    from explore_persona_space.backends.router import Lease, _today_utc_iso
+
+    today = _today_utc_iso()
+    all_rungs = {
+        label: {"count": 3, "date": today, "last_ts": 1.0, "last_incarnation": "i3"}
+        for label in (
+            "spot_a100_80",
+            "spot_a100_40",
+            "flexstart_a100_80",
+            "ondemand_a100_80",
+            "ondemand_a100_40",
+        )
+    }
+    lease_store.write(
+        Lease(issue=137, spec_hash="h", attempt_id="a", gcp_boot_death_streaks=all_rungs)
+    )
+    rp = _PassiveRunpod()
+    gcp = _GcpBackendDouble()
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=rp,
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "runpod"
+    skips = [a for a in result.attempts if a.outcome == "boot_loop_rung_skipped"]
+    assert len(skips) == 5
+    assert len(gcp.launches) == 0
+    assert len(rp.launches) == 1
+
+
+def test_explicit_gcp_pin_ignores_boot_loop_skip(lease_store, marker_poster, captured_markers):
+    """#1029: an explicit ``backend: gcp`` pin (count_attempt_cap=False) is
+    EXEMPT from the boot-loop skip — an explicit user ask attempts the rung
+    anyway, mirroring the attempt-cap exemption."""
+    from explore_persona_space.backends.router import Lease, _today_utc_iso
+
+    lease_store.write(
+        Lease(
+            issue=137,
+            spec_hash="h",
+            attempt_id="a",
+            gcp_boot_death_streaks={
+                "spot_a100_80": {
+                    "count": 4,
+                    "date": _today_utc_iso(),
+                    "last_ts": 1.0,
+                    "last_incarnation": "i4",
+                }
+            },
+        )
+    )
+    gcp = _GcpBackendDouble()
+    spec = RunSpec(issue=137, intent="lora-7b", backend="gcp", time_budget_hours=1.0)
+    result = route(
+        spec,
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    # The boot-looped FIRST rung was attempted (and launched) despite the streak.
+    assert result.extra["gcp_ladder_rung"] == "spot_a100_80"
+    assert not any(a.outcome == "boot_loop_rung_skipped" for a in result.attempts)
+
+
+def test_boot_loop_reason_distinct_from_crash_capacity_queue_reasons():
+    """#1029: the boot-loop reason VALUE is distinct from BOTH workload-crash
+    reasons, the queue-timeout reason, AND the capacity-exhaustion fallback
+    reason — the marker trail tells a boot loop apart from every sibling."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+    )
+
+    reasons = {
+        ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        ROUTE_REASON_RUNPOD_FALLBACK,
+    }
+    assert len(reasons) == 5  # all five are distinct strings
+    assert ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD == "gcp_boot_loop_failover_runpod"
+
+
+def test_launched_gcp_handle_extra_carries_rung_label_and_launched_ts(
+    lease_store, marker_poster, captured_markers
+):
+    """#1029 §4.3: a launched GCP handle's ``extra`` carries the ladder-rung
+    label (the poller's streak key) and a WALL-CLOCK launch ts (the poller ages
+    it against time.time(); route()'s now_fn default is time.monotonic — a
+    different epoch — so the stamp must be epoch seconds)."""
+    import time as _t
+
+    gcp = _GcpBackendDouble()
+    result = route(
+        _short_lora_spec(),
+        runpod_backend=_ExplodingRunpod(),
+        gcp_backend=gcp,
+        lease_store=lease_store,
+        marker_poster=marker_poster,
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0),
+        now_fn=_clock(),
+        sleep_fn=lambda _s: None,
+    )
+    assert result.chosen_kind == "gcp"
+    extra = result.handle.extra
+    assert extra.get("gcp_ladder_rung") == result.extra["gcp_ladder_rung"]
+    ts = extra.get("gcp_launched_ts")
+    assert isinstance(ts, float)
+    # Wall-clock epoch seconds (NOT the fake monotonic _clock() counter).
+    assert abs(ts - _t.time()) < 300
