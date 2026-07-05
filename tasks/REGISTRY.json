@@ -153,8 +153,8 @@
     "1017": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1017",
-      "status": "proposed",
+      "path": "tasks/planning/1017",
+      "status": "planning",
       "title": "workflow-fix: codex twin round-bound 1-3 vs cap-5 delta rounds"
     },
     "1018": {
