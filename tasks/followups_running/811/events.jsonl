@@ -425,3 +425,4 @@
 {"ts": "2026-07-05T09:39:40Z", "kind": "epm:progress", "version": 160, "by": "unknown", "note": "tick heartbeat: fits 76/108 (~2.7h remaining)."}
 {"ts": "2026-07-05T10:10:41Z", "kind": "epm:progress", "version": 161, "by": "unknown", "note": "tick heartbeat: fits 82/108 (~2.2h remaining)."}
 {"ts": "2026-07-05T10:42:02Z", "kind": "epm:progress", "version": 162, "by": "unknown", "note": "tick heartbeat: fits 89/108 (~1.6h remaining; kill-before-gate + GPU leg upcoming at 108)."}
+{"ts": "2026-07-05T11:13:08Z", "kind": "epm:progress", "version": 163, "by": "unknown", "note": "tick heartbeat: fits 96/108 (~1h left); next tick shortened to 20min to catch 108/108 for the kill-before-gate + GPU-leg handoff."}
