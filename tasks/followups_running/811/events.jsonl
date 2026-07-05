@@ -442,3 +442,4 @@
 {"ts": "2026-07-05T17:31:41Z", "kind": "epm:progress", "version": 173, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~4.8h in, pid alive (100% GPU at last probe)."}
 {"ts": "2026-07-05T18:34:26Z", "kind": "epm:progress", "version": 174, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~5.9h in; probing continues (100% GPU at prior probes; VM-CPU projection was 280h so an L4 at ~30-50x implies ~6-9h total — likely nearing the end)."}
 {"ts": "2026-07-05T19:06:09Z", "kind": "epm:progress", "version": 175, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~6.4h in, pid alive."}
+{"ts": "2026-07-05T20:09:52Z", "kind": "epm:progress", "version": 176, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~7.4h in, pid alive."}
