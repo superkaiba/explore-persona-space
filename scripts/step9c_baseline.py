@@ -28,7 +28,7 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
 ``refresh``
   0          ledger written, or lock-busy single-flight no-op (stderr note)
   2          pytest rc not in {0, 1} / timeout / junit parse failure / zero collected /
-             git or ruff failure -> **no ledger write**
+             git or ruff failure / missing root-venv interpreter -> **no ledger write**
 ``status``
   0          fresh
   2          ledger missing / schema-invalid
@@ -38,9 +38,9 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
   1          NEW failure(s) and/or lint regression (JSON names each)
   2          indeterminate: ``--pytest-rc`` not in {0, 1}; missing/empty junitxml; zero
              testcases; unusable ledger with unresolved buckets (no ``--run-pristine``);
-             pristine run timeout/crash; dirty pristine oracle on a failing node;
-             more than ``--max-pristine-files`` distinct pristine files ("systemic main
-             breakage"); missing ruff binary
+             pristine run timeout/crash (incl. a missing root-venv interpreter); dirty
+             pristine oracle on a failing node; more than ``--max-pristine-files``
+             distinct pristine files ("systemic main breakage"); missing ruff binary
 ===========  ==========================================================================
 
 Safety invariants (plan #1022 v3 R1-R7): the refresh NEVER runs ``pytest tests/``
@@ -51,7 +51,11 @@ whose test file is unchanged on main since the ledger SHA — everything else is
 resolved by a bounded single-file pristine-main run at CURRENT HEAD from a
 clean-code-path root; every strip of a scan-covered test carries a masking WARN
 naming the branch's touched files that scan covers; indeterminate is always a
-FAIL (exit 2), never a silent PASS; NO subcommand mutates git state (reads only:
+FAIL (exit 2), never a silent PASS; the refresh + pristine pytest subprocesses
+run the TARGET root's OWN venv interpreter with ``PYTHONPATH`` stripped (never
+the invoking ``sys.executable``, whose worktree ``.pth`` would import branch
+library code into a "pristine" run — #1022 round-2 Critical); NO subcommand
+mutates git state (reads only:
 ``rev-parse`` / ``rev-list`` / ``cat-file`` / ``diff --name-only`` /
 ``status --porcelain``); ledger writes are flock single-flight + atomic
 tmp+``os.replace``.
@@ -205,6 +209,28 @@ def load_selector_module(root: Path):
     return mod
 
 
+def resolve_root_python(root: Path) -> str:
+    """Resolve *root*'s OWN venv interpreter (``<root>/.venv/bin/python``), fail-loud.
+
+    The refresh and pristine-oracle pytest subprocesses MUST execute the TARGET
+    root's library code. ``sys.executable`` is the INVOKING venv — from an issue
+    worktree its editable ``.pth`` points at the WORKTREE's ``src/``, so a
+    "pristine-main" run would execute branch library code against main's test
+    files and vouch a branch-caused ``src/`` regression as pre-existing (#1022
+    round-2 Critical). Resolving the root's own venv is the automated-path twin
+    of the printed ``cd <root> && uv run pytest`` command (same semantics).
+    Missing venv -> ToolMissingError (callers map it to exit 2 / PristineRunError
+    — never a silent ``sys.executable`` fallback).
+    """
+    exe = root / ".venv" / "bin" / "python"
+    if not exe.exists():
+        raise ToolMissingError(
+            f"no venv interpreter at {exe} — refusing to run a pytest that would resolve "
+            "the INVOKING interpreter's library code instead of the target root's (fail-loud)"
+        )
+    return str(exe)
+
+
 # --- Subprocess helpers (all read-only git; pytest/ruff bounded) ----------------
 
 
@@ -227,27 +253,37 @@ def run_pytest(
     timeout_s: float,
     junit_path: Path,
     extra: Iterable[str] = PYTEST_BASE_FLAGS,
+    *,
+    python_exe: str,
 ) -> int:
     """Run one bounded, thread-capped pytest subprocess; return its exit code.
 
-    Uses ``sys.executable -m pytest`` (the invoking venv provides pytest and,
-    unlike a nested ``uv run``, works from any cwd without lock contention).
+    ``python_exe`` is REQUIRED and must be the TARGET root's own interpreter
+    (``resolve_root_python``): the subprocess imports whatever library code its
+    interpreter's venv resolves, so running the invoking ``sys.executable`` from
+    an issue worktree would execute the WORKTREE's editable ``src/`` against
+    main's test files — the #1022 round-2 Critical (a branch-caused ``src/``
+    regression would then fail "pristine" too and be stripped as pre-existing).
+    ``PYTHONPATH`` is stripped from the child env for the same reason (an
+    exported ``PYTHONPATH=<wt>/src`` would override the resolved venv).
     ``start_new_session=True`` + ``os.killpg`` on ``TimeoutExpired`` group-kills
     stragglers, then the ``TimeoutExpired`` is re-raised (callers exit 2 —
     NEVER a ledger write / classification from a timed-out run).
     """
     argv = [
-        sys.executable,
+        python_exe,
         "-m",
         "pytest",
         *files,
         *extra,
         f"--junitxml={junit_path}",
     ]
+    env = thread_capped(os.environ)
+    env.pop("PYTHONPATH", None)  # never let the invoking checkout's src/ shadow the root venv
     proc = subprocess.Popen(
         argv,
         cwd=str(cwd),
-        env=thread_capped(os.environ),
+        env=env,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
         start_new_session=True,
@@ -324,7 +360,14 @@ def dirty_code_paths(root: Path) -> list[str]:
 
 
 def _ruff_bin() -> str:
-    """Resolve the ruff binary; missing -> ToolMissingError (fail loud, exit 2 — MF-5)."""
+    """Resolve the ruff binary; missing -> ToolMissingError (fail loud, exit 2 — MF-5).
+
+    Deliberately the INVOKING checkout's PATH ruff — NOT a root-venv resolution
+    like the pytest runners (``resolve_root_python``): ruff lints file text and
+    imports nothing from the linted tree, and ``lint_verdict`` counts BOTH the
+    base and worktree trees with the SAME binary, so the deltas stay internally
+    consistent (#1022 round-2 consistent-deltas note).
+    """
     ruff = shutil.which("ruff")
     if not ruff:
         raise ToolMissingError(
@@ -441,7 +484,14 @@ def write_ledger_atomic(path: Path, ledger: dict) -> None:
 
 
 def try_load_ledger(root: Path) -> dict | None:
-    """Load + schema-validate the ledger; None (with a loud stderr line) when unusable."""
+    """Load + schema-validate the ledger; None (with a loud stderr line) when unusable.
+
+    Validation covers the top-level key set AND the per-entry ``failing_tests``
+    shape (each entry a dict with str ``file`` + ``name``) — a malformed entry
+    must route to the unusable-ledger indeterminate path (exit 2), never crash
+    ``ledger_nodes`` with a KeyError that Python turns into a misleading exit 1
+    with no JSON emitted (#1022 round-2 Minor).
+    """
     path = ledger_path(root)
     if not path.exists():
         _log(f"ledger missing at {path}")
@@ -455,8 +505,15 @@ def try_load_ledger(root: Path) -> dict | None:
         not isinstance(data, dict)
         or data.get("schema_version") != SCHEMA_VERSION
         or not set(data) >= REQUIRED_LEDGER_KEYS
+        or not isinstance(data.get("failing_tests"), list)
+        or not all(
+            isinstance(e, dict)
+            and isinstance(e.get("file"), str)
+            and isinstance(e.get("name"), str)
+            for e in data["failing_tests"]
+        )
     ):
-        _log(f"ledger at {path} fails schema v{SCHEMA_VERSION} validation")
+        _log(f"ledger at {path} fails schema v{SCHEMA_VERSION} validation (keys or entry shape)")
         return None
     return data
 
@@ -541,12 +598,25 @@ def cmd_refresh(args: argparse.Namespace) -> int:
     if not universe:
         _log("EMPTY refresh universe — work root resolved wrong or invariants vanished")
         return 2
+    try:
+        # The ledger's failing set must be measured under the ROOT's own library
+        # code — never the invoking checkout's (#1022 round-2 Critical sibling).
+        python_exe = resolve_root_python(root)
+    except ToolMissingError as exc:
+        _log(f"refresh: {exc} — NO ledger write")
+        return 2
     junit = root / ".claude" / "cache" / "step9c-baseline-junit.xml"
     junit.parent.mkdir(parents=True, exist_ok=True)
     junit.unlink(missing_ok=True)  # same stale-junit lifecycle as the gate (MF-1a)
     t0 = time.monotonic()
     try:
-        rc = run_pytest(files=universe, cwd=root, timeout_s=args.timeout_s, junit_path=junit)
+        rc = run_pytest(
+            files=universe,
+            cwd=root,
+            timeout_s=args.timeout_s,
+            junit_path=junit,
+            python_exe=python_exe,
+        )
     except subprocess.TimeoutExpired:
         _log(f"refresh pytest timed out after {args.timeout_s}s — NO ledger write")
         return 2
@@ -631,17 +701,32 @@ def cmd_status(args: argparse.Namespace) -> int:
 def run_single_file_pristine(test_file: str, cwd: Path, timeout_s: float) -> set[Node]:
     """Run ONE test file at the main root (pristine oracle); return its failing nodes.
 
-    Bounded + thread-capped like refresh. rc not in {0, 1}, a timeout, or a
-    zero-collected run raises PristineRunError (indeterminate, exit 2 — MF-5);
-    a classification must never rest on an aborted pristine run.
+    Executes the ROOT's OWN venv interpreter (``resolve_root_python(cwd)``) so
+    the oracle runs MAIN's library code — never the invoking worktree's, whose
+    editable ``src/`` would make a branch-caused regression fail "pristine" too
+    and get stripped as pre-existing (#1022 round-2 Critical). A missing root
+    venv raises PristineRunError (indeterminate, exit 2 — never a silent
+    ``sys.executable`` fallback). Bounded + thread-capped like refresh. rc not
+    in {0, 1}, a timeout, or a zero-collected run raises PristineRunError
+    (MF-5); a classification must never rest on an aborted pristine run.
     """
+    try:
+        python_exe = resolve_root_python(cwd)
+    except ToolMissingError as exc:
+        raise PristineRunError(str(exc)) from exc
     fd, tmp = tempfile.mkstemp(prefix="step9c-pristine-junit-", suffix=".xml")
     os.close(fd)
     tmp_path = Path(tmp)
     try:
         tmp_path.unlink(missing_ok=True)  # pytest must create it fresh (MF-1a parity)
         try:
-            rc = run_pytest(files=[test_file], cwd=cwd, timeout_s=timeout_s, junit_path=tmp_path)
+            rc = run_pytest(
+                files=[test_file],
+                cwd=cwd,
+                timeout_s=timeout_s,
+                junit_path=tmp_path,
+                python_exe=python_exe,
+            )
         except subprocess.TimeoutExpired as exc:
             raise PristineRunError(f"pristine run of {test_file} timed out ({timeout_s}s)") from exc
         if rc not in (0, 1):

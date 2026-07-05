@@ -7184,15 +7184,22 @@ suite directly and posts an `epm:test-verdict` event with the result.
       SAME issue-worktree cwd — as:
       ```bash
       rm -f /tmp/step9c-junit-issue-<N>.xml
-      timeout 60m uv run pytest tests/ -q \
-        --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1
+      PYTEST_OUT=$(timeout 60m uv run pytest tests/ -q \
+        --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 2>&1); PYTEST_RC=$?
+      echo "$PYTEST_OUT"
       ```
       (NO `-x` / `--maxfail` — with the step-1d compare deciding the verdict,
       an early-exit on the first known-red main failure would leave the rest
       of the suite unexecuted and let compare PASS a truncated run; the 60m
-      timeout still bounds it.) On timeout/kill, capture `tail -50` of the run
-      log so the stall surfaces actionable evidence (the #665/#736 regression —
-      keep it visible, never a silent kill). Default scope is `touched`.
+      timeout still bounds it.) `PYTEST_RC=$?` is captured IMMEDIATELY after
+      whichever pytest invocation ran (the 1b touched scope, or this override)
+      — step 1d's compare consumes `--pytest-rc "$PYTEST_RC"`, and an unset or
+      stale selected-scope rc would break its rc-not-in-{0,1} -> indeterminate
+      guard on an interrupted / internal-error full run. On timeout/kill
+      (`timeout`'s rc 124 lands in PYTEST_RC, so compare exits 2), capture
+      `tail -50` of `$PYTEST_OUT` so the stall surfaces actionable evidence
+      (the #665/#736 regression — keep it visible, never a silent kill).
+      Default scope is `touched`.
    d. Classify failures against the known-red-on-main baseline ledger —
       mechanical (`scripts/step9c_baseline.py compare`), never prose
       arithmetic (#1022: on 2026-07-02 seven sessions each burned a round
