@@ -4,3 +4,4 @@
 {"ts": "2026-07-05T04:36:20Z", "kind": "epm:status-changed", "version": 1, "by": "task.py", "from": "proposed", "to": "planning", "note": "Clarifier All-clear."}
 {"ts": "2026-07-05T04:44:58Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS with 1 WARN (c8_success_kill_criteria — no explicit kill-criteria line outside TL;DR; kind:infra doc-only fix, acceptance criteria present). n_fail=0. Plan v1."}
 {"ts": "2026-07-05T04:44:59Z", "kind": "epm:progress", "version": 2, "by": "unknown", "note": "stage-dispatch stage=planning round=1 subagent=fact-checker worktree=repo-root"}
+{"ts": "2026-07-05T04:49:22Z", "kind": "epm:progress", "version": 3, "by": "unknown", "note": "stage-dispatch stage=planning-critique round=1 subagent=critic-ensemble-6x+consistency-checker worktree=repo-root"}
