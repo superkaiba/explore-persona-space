@@ -1115,22 +1115,34 @@ def test_poll_counter_reset_two_episodes_grace():
     assert sleeps == [1.0, 2.0, 60.0, *BATCH_CREATE_404_BACKOFF_S]
 
 
-def test_poll_deadline_final_retrieve_404_recovers():
+def test_poll_deadline_final_retrieve_404_recovers(caplog):
     """#1035 §5 item 7c(i): the poll deadline-time FINAL retrieve (the local
-    async retry loop) 404s once then reads ended -> partial harvest proceeds."""
+    async retry loop) 404s once then reads ended -> partial harvest proceeds,
+    and the recovery emits a [batch-404-midpoll] INFO (plan criterion 5).
+
+    The recovery assert is LEVEL-scoped: the retry WARNING also carries the
+    prefix, so a bare ``in caplog.text`` would pass without any recovery log.
+    """
     past_deadline = EXPIRES + dt.timedelta(minutes=31)
     batch, counter = _scripted_poll_batch(["in_progress", "404", "ended"])
     sleeps: list[float] = []
-    out = asyncio.run(
-        batch.poll(
-            "msgbatch_f",
-            now_fn=_Clock([past_deadline]),
-            sleep_fn=_capturing_async_sleep(sleeps),
+    with caplog.at_level(logging.INFO, logger="explore_persona_space.llm.anthropic_client"):
+        out = asyncio.run(
+            batch.poll(
+                "msgbatch_f",
+                now_fn=_Clock([past_deadline]),
+                sleep_fn=_capturing_async_sleep(sleeps),
+            )
         )
-    )
     assert out.processing_status == "ended"
     assert counter["n"] == 3
     assert sleeps == [5.0]
+    recovery_infos = [
+        r
+        for r in caplog.records
+        if r.levelno == logging.INFO and "[batch-404-midpoll]" in r.getMessage()
+    ]
+    assert recovery_infos, "deadline-final recovery must log a [batch-404-midpoll] INFO"
 
 
 def test_poll_deadline_final_retrieve_404_bounded():
