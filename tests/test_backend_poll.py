@@ -2105,9 +2105,7 @@ def _poll_death(
     return _last_json_line(capsys)
 
 
-def test_gcp_first_setup_death_records_streak_but_does_NOT_fail_over(
-    tmp_path, monkeypatch, capsys
-):
+def test_gcp_first_setup_death_records_streak_but_does_NOT_fail_over(tmp_path, monkeypatch, capsys):
     """#1029 AC-2: a SINGLE pre-workload setup death takes the ordinary dead
     path unchanged (terminal JSON as today) — but the (issue, rung) streak is
     RECORDED (0 -> 1) so the route()-side skip and the Nth-death escalation can
@@ -2408,9 +2406,7 @@ def test_gcp_boot_streak_resets_on_workload_phase_observation(
     assert gcp_boot_death_streak(1029, "flexstart_l4") == 0
 
 
-def test_gcp_pre_workload_running_observation_does_NOT_reset_streak(
-    tmp_path, monkeypatch, capsys
-):
+def test_gcp_pre_workload_running_observation_does_NOT_reset_streak(tmp_path, monkeypatch, capsys):
     """#1029 Must-Fix (the negative reset control): PRE-WORKLOAD running
     observations — the mid-boot 'startup' guest phase AND the booting-no-phase
     '' — must NOT reset the streak (positive-signal design; a blocklist-style
