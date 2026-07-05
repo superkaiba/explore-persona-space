@@ -559,8 +559,8 @@
     "1071": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1071",
-      "status": "running",
+      "path": "tasks/reviewing/1071",
+      "status": "reviewing",
       "title": "workflow-fix: watcher auto-remediates alive-but-stalled sessions + queues daemon-blocked respawns"
     },
     "108": {
