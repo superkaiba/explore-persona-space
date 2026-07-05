@@ -844,6 +844,11 @@ authoritative recipe is agent memory
      prior the GPU probe cannot see. A PID surviving SIGKILL: report,
      never relaunch over it.
 
+   (The generic contract binding ALL launcher authors — including
+   orchestrator / watch-session relaunches outside this agent — is
+   `.claude/rules/pod-side-reporting.md` § Pid-file launch contract;
+   this section is the agent-specific recipe.)
+
 2. **Confirm the launch survived disconnect — the probe MUST be a
    SEPARATE SSH invocation, issued AFTER the launching session has
    closed.** Never bundle the survival probe into the same SSH command

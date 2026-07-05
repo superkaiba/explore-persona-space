@@ -147,6 +147,13 @@ load-186 VM overload).
    by explicit PID. Weaker than step 1 (a writer that opens-writes-closes
    is invisible between writes) — prefer the cmdline probe when possible.
 
+**After the kill, the relaunch itself must rewrite the pid file** with
+the new live pid in the same command chain, then confirm it before
+posting the fresh marker (`.claude/rules/pod-side-reporting.md`
+§ Pid-file launch contract — #813 v5: a relaunch that left the
+predecessor's pid in `/workspace/logs/issue-<N>.pid` cost a corrective
+extra round).
+
 **Bound every FOREGROUND/SYNCHRONOUS smoke or local invocation with
 `timeout(1)` as the DIRECT parent:** `timeout --kill-after=30s <N>s uv
 run python ...`, sized so `<N> + 30` ends ≥ 60 s BEFORE the Bash tool
