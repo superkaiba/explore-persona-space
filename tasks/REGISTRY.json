@@ -244,8 +244,8 @@
     "1029": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1029",
-      "status": "proposed",
+      "path": "tasks/planning/1029",
+      "status": "planning",
       "title": "daily-fix: GCP pre-workload boot failures advance the failover ladder"
     },
     "1030": {
