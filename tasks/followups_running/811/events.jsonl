@@ -415,3 +415,4 @@
 {"ts": "2026-07-05T04:28:58Z", "kind": "epm:progress", "version": 150, "by": "unknown", "note": "tick heartbeat: fits 17/108, steady 5 min/unit (~7.5h remaining)."}
 {"ts": "2026-07-05T04:59:51Z", "kind": "epm:progress", "version": 151, "by": "unknown", "note": "tick heartbeat: fits 24/108 (~4.3-5 min/unit, ~6h remaining)."}
 {"ts": "2026-07-05T05:30:40Z", "kind": "epm:progress", "version": 152, "by": "unknown", "note": "tick heartbeat: fits 30/108 (~5 min/unit, ~6.5h remaining)."}
+{"ts": "2026-07-05T06:02:13Z", "kind": "epm:progress", "version": 153, "by": "unknown", "note": "tick heartbeat: fits 36/108 (steady 5 min/unit, ~6h remaining)."}
