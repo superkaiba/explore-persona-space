@@ -8355,16 +8355,29 @@ Gate the merge payload on the lint BEFORE anything lands:
   # checkout — see the surgical block. The verdict is PERSISTED to a file
   # because fenced bash blocks are separate shell invocations: the binding
   # sites consume the FILE, never a shell variable.
-  if git -C "$WT" diff --name-only origin/main...HEAD \
-      | grep -qvE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)'; then
-    # BASELINE legs (payload-free tree). Exit codes deliberately NOT captured:
-    # only the baseline's normalized failure LINES enter the compare — a red
-    # baseline exit code carries no payload information.
+  # TRIGGER — materialize the own-diff FIRST and check the diff's OWN exit:
+  # piped straight into grep, a FAILED `git diff` (bad ref, no merge-base)
+  # is indistinguishable from an empty diff and would fail OPEN as an
+  # artifact-only skip. (`set -o pipefail` cannot fix this form: `grep -q`
+  # exits at first match and SIGPIPEs the producer, and the else branch
+  # would still misread any nonzero as artifact-only.)
+  if ! git -C "$WT" diff --name-only origin/main...HEAD > /tmp/issue-<N>-own-diff.txt; then
+    # Failed trigger diff — the gate cannot classify the payload; fail CLOSED.
+    echo crash > /tmp/issue-<N>-lint-verdict.txt
+  elif grep -qvE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
+      /tmp/issue-<N>-own-diff.txt; then
+    # BASELINE legs (payload-free tree). Per-leg exit codes ARE captured:
+    # only the baseline's normalized failure LINES enter the compare, but a
+    # baseline CRASH (rc>1, or rc!=0 with ZERO `workflow_lint:` lines) makes
+    # the compare itself untrustworthy — that fails CLOSED via the crash arm
+    # below, never `|| true`-erased. A red-but-line-emitting baseline (rc=1
+    # WITH lines — main already red) stays fine: the subtraction handles it.
+    BASE_RC=0
     uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
-      > /tmp/issue-<N>-lint-baseline.txt 2>&1 || true
+      > /tmp/issue-<N>-lint-baseline.txt 2>&1 || BASE_RC=$?
     uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
-      >> /tmp/issue-<N>-lint-baseline.txt 2>&1 || true
+      >> /tmp/issue-<N>-lint-baseline.txt 2>&1 || BASE_RC=$?
     # GATED legs (payload-bearing tree; parity leg covers the checks the
     # no-flags bundle omits — see the bullet above):
     GATED_RC=0
@@ -8388,14 +8401,26 @@ Gate the merge payload on the lint BEFORE anything lands:
     # NEW = gated_failures − baseline_failures (set subtraction):
     comm -23 /tmp/issue-<N>-lint-gated-norm.txt \
       /tmp/issue-<N>-lint-baseline-norm.txt > /tmp/issue-<N>-lint-new.txt
-    # Gated failure lines naming a file IN the own-diff:
-    git -C "$WT" diff --name-only origin/main...HEAD > /tmp/issue-<N>-own-diff.txt
+    # Gated failure lines naming a file IN the own-diff (materialized at the
+    # trigger above):
     grep -F -f /tmp/issue-<N>-own-diff.txt /tmp/issue-<N>-lint-gated-norm.txt \
       > /tmp/issue-<N>-lint-owndiff.txt || true
-    # VERDICT — the captured GATED_RC is consumed HERE: a green gated run
-    # (exit 0) can never block; a red one blocks only when payload-attributed
-    # (an own-diff-named failure line OR a non-empty NEW set).
-    if [ "$GATED_RC" -ne 0 ] \
+    # VERDICT — CRASH ARM FIRST (fail CLOSED): a linter CRASH — rc>1 (import
+    # error, missing dep, sparse-worktree crash), or rc!=0 with ZERO
+    # normalized `workflow_lint:` failure lines across both legs' logs (an
+    # uncaught Python exception exits 1 and emits none) — on EITHER leg pair
+    # means the gate never produced a trustworthy compare. `crash` is an
+    # unconditional block-path verdict (same epm:merge-failed handling as
+    # `block`; Verdict bullet case 3) — NEVER `pass`. Only then the
+    # attribution logic: a green gated run (exit 0) can never block; a red
+    # one (rc=1 WITH lines) blocks only when payload-attributed (an
+    # own-diff-named failure line OR a non-empty NEW set); rc=1 with lines
+    # but none own-diff/NEW stays `pass` (pre-existing red — WARN).
+    if [ "$GATED_RC" -gt 1 ] || [ "$BASE_RC" -gt 1 ] \
+       || { [ "$GATED_RC" -ne 0 ] && [ ! -s /tmp/issue-<N>-lint-gated-norm.txt ]; } \
+       || { [ "$BASE_RC" -ne 0 ] && [ ! -s /tmp/issue-<N>-lint-baseline-norm.txt ]; }; then
+      echo crash > /tmp/issue-<N>-lint-verdict.txt
+    elif [ "$GATED_RC" -ne 0 ] \
        && { [ -s /tmp/issue-<N>-lint-owndiff.txt ] || [ -s /tmp/issue-<N>-lint-new.txt ]; }; then
       echo block > /tmp/issue-<N>-lint-verdict.txt
     else
@@ -8406,7 +8431,7 @@ Gate the merge payload on the lint BEFORE anything lands:
     # both lint runs skipped by design.
     echo skip-artifact-only > /tmp/issue-<N>-lint-verdict.txt
   fi
-  cat /tmp/issue-<N>-lint-verdict.txt   # pass | block | skip-artifact-only
+  cat /tmp/issue-<N>-lint-verdict.txt   # pass | block | crash | skip-artifact-only
   ```
 
 - **Verdict — payload-attributed via failure-LINE-SET subtraction; NEVER
@@ -8417,11 +8442,14 @@ Gate the merge payload on the lint BEFORE anything lands:
   GATED run and a payload-free BASELINE run — BOTH legs (no-flags + parity)
   in each run, so a pre-existing parity-leg red on main can never be
   misread as payload-caused (and vice versa). The executable block above
-  computes the BINARY verdict (`block` | `pass` | `skip-artifact-only`) and
-  persists it to `/tmp/issue-<N>-lint-verdict.txt`; the binding sites gate
-  their merge/push/add commands on that FILE with an explicit conditional —
-  a missing verdict file fails CLOSED (the gate has not run yet). On a
-  `block` verdict:
+  computes the verdict (`block` | `pass` | `crash` | `skip-artifact-only`)
+  and persists it to `/tmp/issue-<N>-lint-verdict.txt`; the binding sites
+  gate their merge/push/add commands on that FILE with an explicit
+  conditional — a missing verdict file fails CLOSED (the gate has not run
+  yet) — and each binding site REMOVES the file right after consuming it
+  (consume-once, `rm -f` in both branches): a stale verdict left by a prior
+  invocation can never certify a later merge; a fresh gate run regenerates
+  it. On a `block` (or `crash`) verdict:
   1. An own-diff-named gated failure line exists
      (`/tmp/issue-<N>-lint-owndiff.txt` non-empty) → the payload is the
      offender. Fix it in the worktree (the lint names file + rule),
@@ -8442,10 +8470,22 @@ Gate the merge payload on the lint BEFORE anything lands:
      the same turn so a concurrent merge cannot widen the compare window
      (moving-main race — keep the window tight, preserve the
      main-already-red detail in the marker).
+  3. `crash` — the linter itself CRASHED on either leg pair (rc>1, or
+     rc!=0 with zero normalized `workflow_lint:` failure lines: import
+     error, missing dep, sparse-worktree crash — the gated leg runs the
+     WORKTREE's own `workflow_lint.py`, so the crash is payload-inducible),
+     or the trigger diff failed. No trustworthy compare exists, so this is
+     an unconditional block-path verdict: fix the crash cause in the
+     worktree, re-run the gate ONCE; still crashing → the SAME
+     `epm:merge-failed v1` handling as case 1. Never merge/push on `crash`.
 - **Baseline semantics per binding form (the baseline is ALWAYS a
   payload-free tree).** (i) Safe case: gated = the WORKTREE copy
   (branch-tip tree); baseline = the repo-root copy (main tree, payload
-  absent); bind immediately before `gh pr ready` / `gh pr merge`.
+  absent); bind immediately before `gh pr ready` / `gh pr merge`. Note:
+  path-(i) lint-VERSION drift can also FALSE-BLOCK (a check retired/loosened
+  on main is still enforced by the branch-tip / merge-base copy) — a
+  fail-SAFE direction, resolved through the same case-1 fix-or-`epm:merge-failed`
+  path.
   (ii) Merge-conflict recovery: gated = the worktree copy AFTER
   `git -C "$WT" merge origin/main` (≈ post-merge main, carrying main's
   CURRENT lint — the ideal gate point); baseline = the repo-root copy;
@@ -8530,10 +8570,12 @@ else
   # explicit conditional below is the hard stop (a missing verdict file
   # fails CLOSED — the gate has not run yet; run it, then re-enter).
   if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null; then
+    rm -f /tmp/issue-<N>-lint-verdict.txt   # consume-once — a stale verdict must never certify a later merge
     gh pr ready <PR>
     gh pr merge <PR> --rebase --delete-branch=false
   else
-    echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — fix the named offender in the worktree, re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict case 1). Do NOT merge."
+    echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — fix the named offender (or crash cause) in the worktree, re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Do NOT merge."
+    rm -f /tmp/issue-<N>-lint-verdict.txt   # consumed either way; a re-run regenerates it
     false
   fi
 fi
@@ -8584,13 +8626,15 @@ git -C "$WT" commit --no-edit
 # gate point). The push is then GATED on the persisted verdict file — the
 # explicit conditional is the hard stop (missing file fails CLOSED):
 if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null; then
+  rm -f /tmp/issue-<N>-lint-verdict.txt   # consume-once — a stale verdict must never certify a later push
   git -C "$WT" push
   # gh recomputes mergeability asynchronously after a push — it can be
   # momentarily stale. Re-check before concluding failure:
   gh pr view <PR> --json mergeable -q .mergeable   # brief wait/retry until MERGEABLE
   gh pr merge <PR> --rebase --delete-branch=false
 else
-  echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — fix the named offender in the worktree, re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict case 1). Do NOT push."
+  echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — fix the named offender (or crash cause) in the worktree, re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Do NOT push."
+  rm -f /tmp/issue-<N>-lint-verdict.txt   # consumed either way; a re-run regenerates it
   false
 fi
 ```
@@ -8744,13 +8788,16 @@ Decision tree:
   if grep -qvE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
        /tmp/issue-<N>-additive-files.txt; then
     GATE_ARMED=yes
-    # BASELINE legs (exit codes deliberately not captured — only normalized
-    # failure LINES enter the compare):
+    # BASELINE legs (per-leg exit codes ARE captured — a baseline CRASH must
+    # fail CLOSED via the crash arm below, never be `|| true`-erased; only
+    # normalized failure LINES enter the compare for the legitimate
+    # red-baseline rc=1-with-lines case):
+    BASE_RC=0
     uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
-      > /tmp/issue-<N>-lint-baseline.txt 2>&1 || true
+      > /tmp/issue-<N>-lint-baseline.txt 2>&1 || BASE_RC=$?
     uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
-      >> /tmp/issue-<N>-lint-baseline.txt 2>&1 || true
+      >> /tmp/issue-<N>-lint-baseline.txt 2>&1 || BASE_RC=$?
   fi
   # `-C "$REPO_ROOT"` is the repo-root guard's designed deliberate-override
   # (#897): the hook's working-tree-revert detector would bounce the bare
@@ -8781,9 +8828,18 @@ Decision tree:
       /tmp/issue-<N>-lint-baseline-norm.txt > /tmp/issue-<N>-lint-new.txt
     grep -F -f /tmp/issue-<N>-additive-files.txt /tmp/issue-<N>-lint-gated-norm.txt \
       > /tmp/issue-<N>-lint-owndiff.txt || true
-    # GATED_RC consumed HERE — a red gated run blocks only when
-    # payload-attributed (own-diff-named line OR NEW non-empty):
-    if [ "$GATED_RC" -ne 0 ] \
+    # GATED_RC consumed HERE — CRASH ARM FIRST (fail CLOSED; same
+    # classification as the gate's executable block): rc>1 on either leg
+    # pair, or rc!=0 with ZERO normalized `workflow_lint:` lines, is a
+    # linter CRASH -> GATE_VERDICT=crash (block path — the stage/commit/push
+    # below runs ONLY on `pass`). Only then the attribution arm: a red
+    # gated run blocks when payload-attributed (own-diff-named line OR NEW
+    # non-empty).
+    if [ "$GATED_RC" -gt 1 ] || [ "$BASE_RC" -gt 1 ] \
+       || { [ "$GATED_RC" -ne 0 ] && [ ! -s /tmp/issue-<N>-lint-gated-norm.txt ]; } \
+       || { [ "$BASE_RC" -ne 0 ] && [ ! -s /tmp/issue-<N>-lint-baseline-norm.txt ]; }; then
+      GATE_VERDICT=crash
+    elif [ "$GATED_RC" -ne 0 ] \
        && { [ -s /tmp/issue-<N>-lint-owndiff.txt ] || [ -s /tmp/issue-<N>-lint-new.txt ]; }; then
       GATE_VERDICT=block
     fi
@@ -8808,7 +8864,7 @@ Decision tree:
     # destroyed).
     xargs -r -a /tmp/issue-<N>-additive-files.txt git -C "$REPO_ROOT" restore --staged --
     xargs -r -a /tmp/issue-<N>-additive-files.txt rm -f --
-    echo "BLOCKED: pre-push workflow-lint gate — fix the named offender in the worktree, re-run ONCE; still failing -> epm:merge-failed (gate subsection, verdict case 1). Payload cleaned from the root index + working tree."
+    echo "BLOCKED: pre-push workflow-lint gate (verdict: $GATE_VERDICT) — fix the named offender (or crash cause) in the worktree, re-run ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Payload cleaned from the root index + working tree."
     false
   fi
   ```
