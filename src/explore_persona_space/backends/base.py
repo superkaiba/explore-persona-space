@@ -148,9 +148,13 @@ class RunSpec:
       without bloating the schema (e.g. ``per_pod_quota_gb`` override).
     * ``workload_cmd``: custom workload command (repo-relative shell
       line, e.g. ``bash scripts/issue588_dispatch.sh --foo``). Mutually
-      exclusive with ``hydra_args``. Executed verbatim by the lane
-      renderers from the repo checkout root after env bootstrap.
-      ``""`` = use the standard Hydra entrypoint (#588).
+      exclusive with ``hydra_args``. GCP/SLURM render it as the single
+      argument of an rc-preserving inner ``bash -eu -o pipefail -c``
+      (#1004 — a compound ``cmd1 && cmd2`` whose first command crashes
+      must not rc-mask into a false done); the RunPod launcher embeds
+      it verbatim (no ``set -e`` there; ``WORKLOAD_RC=$?`` captures the
+      list status). Runs from the repo checkout root after env
+      bootstrap. ``""`` = use the standard Hydra entrypoint (#588).
 
     Frozen by design: a run spec is the contract for the launch; mutating
     it mid-run would break the marker trail and any auditable replay.
@@ -172,8 +176,10 @@ class RunSpec:
     extra: dict[str, Any] = field(default_factory=dict)
     # Custom workload command (repo-relative shell line, e.g.
     # "bash scripts/issue588_dispatch.sh --foo"). Mutually exclusive with
-    # hydra_args. Executed verbatim by the lane renderers from the repo
-    # checkout root after env bootstrap. "" = use the hydra entrypoint.
+    # hydra_args. GCP/SLURM render it inside an rc-preserving inner
+    # `bash -eu -o pipefail -c` wrapper (#1004); RunPod embeds it verbatim
+    # (its launcher captures WORKLOAD_RC=$? without set -e). Runs from the
+    # repo checkout root after env bootstrap. "" = use the hydra entrypoint.
     # Declared LAST so existing positional constructions are unaffected.
     workload_cmd: str = ""
 
@@ -186,6 +192,11 @@ class RunSpec:
         never render a workload; the production fail-loud lives at the
         dispatch CLI (exactly-one check) and the GCP renderer
         (neither-set raise, the #571 crash point).
+
+        The single-line check keeps every renderer's output
+        line-structured (the GCP/SLURM wrapper shlex-quotes the command
+        — a single-line input quotes to a single line — and the RunPod
+        heredoc embeds it verbatim).
         """
         if self.workload_cmd and self.hydra_args:
             raise ValueError(
