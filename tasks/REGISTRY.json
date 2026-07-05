@@ -209,8 +209,8 @@
     "1024": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1024",
-      "status": "proposed",
+      "path": "tasks/planning/1024",
+      "status": "planning",
       "title": "daily-fix: parse_judge_json drop-never-coerce (eval/utils.py)"
     },
     "1025": {
