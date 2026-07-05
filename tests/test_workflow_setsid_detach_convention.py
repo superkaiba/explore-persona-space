@@ -1,8 +1,9 @@
 """Pin the setsid-detach convention for VM-side long compute phases (#833, task #884).
 
-Two prose pins (the SKILL.md breadcrumb convention + the code-style.md nohup bullet)
-and one mechanism test: a ``setsid nohup`` child survives the process-group kill that
-takes down a plain ``nohup`` sibling — the #833 watcher-force-stop kill vector.
+Prose pins (the SKILL.md breadcrumb convention + the code-style.md nohup bullet, plus
+the #1045 Step 9c gate self-choom defaults) and one mechanism test: a ``setsid nohup``
+child survives the process-group kill that takes down a plain ``nohup`` sibling — the
+#833 watcher-force-stop kill vector.
 """
 
 from __future__ import annotations
@@ -17,6 +18,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 SKILL_MD = REPO_ROOT / ".claude" / "skills" / "issue" / "SKILL.md"
 CODE_STYLE_MD = REPO_ROOT / ".claude" / "rules" / "code-style.md"
+VECTORIZE_MD = REPO_ROOT / ".claude" / "rules" / "vectorize-many-cell-fits.md"
 
 
 def test_skill_md_mandates_setsid_detach_and_pid_breadcrumb() -> None:
@@ -35,6 +37,20 @@ def test_code_style_nohup_bullet_covers_vm_side() -> None:
     text = CODE_STYLE_MD.read_text(encoding="utf-8")
     assert "setsid nohup" in text
     assert "VM-LOCAL" in text
+
+
+def test_step9c_gate_choom_defaults_pinned() -> None:
+    """Step 9c gates self-choom by default; 1d refresh pid-captures + sweeps (#1045)."""
+    skill_text = SKILL_MD.read_text(encoding="utf-8")
+    # Gate self-choom present in BOTH 1b and 1c (== 2 also pins placement: two blocks, not one)
+    assert skill_text.count("sudo -n choom -n -600 -p $$") == 2
+    # Unconditional both-branch gate breadcrumb (success state durably observable)
+    assert "[step9c] gate earlyoom protection choom=$GATE_CHOOM" in skill_text
+    # 1d refresh: pid capture + session sweep present
+    assert "REFRESH_PID" in skill_text
+    # Vectorize rule carries the launch-form cross-reference (fix item 7)
+    vec_text = VECTORIZE_MD.read_text(encoding="utf-8")
+    assert "Detached VM-side long compute phases" in vec_text
 
 
 def _stat(pid: int) -> str:

@@ -124,6 +124,22 @@ solve one shared reduction + cheap per-λ updates.
 6. **Verify the vectorized reimplementation reproduces the serial numbers** on
    2-3 cells within float tolerance before trusting it (vmap'd init/seed/PCA-basis
    handling is easy to get subtly wrong).
+7. **Launch it protected + checkpointed — the launch form is part of the fix.**
+   Any VM-side fit / battery / aggregation phase with projected wall-time >~15 min
+   MUST use the canonical detached launch: `setsid` pid-capture wrapper +
+   `sudo -n choom -n -600` session sweep + the `pid= log= choom=ok|failed`
+   breadcrumb — recipe owned by `.claude/skills/issue/SKILL.md`
+   § "Detached VM-side long compute phases" (short form:
+   `.claude/rules/code-style.md` § "Always run with `nohup`"); do not copy the
+   snippet here, follow it there. This VM's earlyoom `--prefer` gives every
+   python/pytest process +300 badness, so an unprotected fit is the designated
+   victim of ANY neighbor's memory spike (#811: a healthy 6.8 GiB re-fit
+   SIGTERM'd ~2h in, 0 checkpoints, by a neighbor's spike). AND per-cell
+   checkpoints + a resume predicate are REQUIRED for any loop projected >~1h
+   (`.claude/rules/code-style.md` § "Checkpoint per phase", intra-phase grain):
+   choom only re-orders victim selection — checkpoints bound the loss when a
+   kill lands anyway. "No per-cell checkpoint" in the diagnostic signature
+   above is not just an ETA smell; it is the thing this item fixes.
 
 ## Canonical helper
 

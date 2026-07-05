@@ -7269,6 +7269,14 @@ suite directly and posts an `epm:test-verdict` event with the result.
       # The cd to "$WT" in step (a) is REQUIRED — HARD-GUARD it (as above);
       # never let the gate run in the wrong dir on a silent cd failure:
       #   cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
+      # earlyoom-protect the gate (#1045; FAIL-OPEN — never block the gate on a choom failure):
+      # pytest is in this VM's earlyoom --prefer regex (+300 badness), so a gate run is the
+      # designated victim under fleet memory pressure (#906 killed twice; #995 at ~42%).
+      # Self-choom the gate shell: every child forked after this line (pytest + its
+      # subprocesses, incl. compare's pristine oracle runs in this call) inherits adj=-600.
+      sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && GATE_CHOOM=ok \
+        || { GATE_CHOOM=failed; echo "[warn] choom failed — gate pytest is earlyoom-UNPROTECTED (choom=failed)" >&2; }
+      echo "[step9c] gate earlyoom protection choom=$GATE_CHOOM"
       rm -f /tmp/step9c-junit-issue-<N>.xml    # MANDATORY before EVERY gate pytest invocation
       PYTEST_OUT=$(uv run pytest <files> -v --tb=short \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 2>&1); PYTEST_RC=$?
@@ -7283,6 +7291,10 @@ suite directly and posts an `epm:test-verdict` event with the result.
       `## Test scope` H2 names `full`, run the FULL suite instead — from the
       SAME issue-worktree cwd — as:
       ```bash
+      # earlyoom-protect the gate (#1045; fail-open — see the 1b preamble): self-choom, children inherit.
+      sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && GATE_CHOOM=ok \
+        || { GATE_CHOOM=failed; echo "[warn] choom failed — gate pytest is earlyoom-UNPROTECTED (choom=failed)" >&2; }
+      echo "[step9c] gate earlyoom protection choom=$GATE_CHOOM"
       rm -f /tmp/step9c-junit-issue-<N>.xml
       PYTEST_OUT=$(timeout 60m uv run pytest tests/ -q \
         --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 2>&1); PYTEST_RC=$?
@@ -7300,6 +7312,31 @@ suite directly and posts an `epm:test-verdict` event with the result.
       `tail -50` of `$PYTEST_OUT` so the stall surfaces actionable evidence
       (the #665/#736 regression — keep it visible, never a silent kill).
       Default scope is `touched`.
+
+      **Gate earlyoom protection (#1045).** The self-choom preamble in the
+      1b/1c blocks is the foreground sibling of § "Detached VM-side long
+      compute phases": `oom_score_adj` inherits across fork/exec
+      (probe-verified), so choom-ing the gate shell BEFORE pytest launches
+      protects the whole gate tree with zero change to the
+      `PYTEST_OUT`/`PYTEST_RC`/junitxml contract — no backgrounding, no
+      session games. Because 1b→1d must run in ONE Bash call anyway
+      (`PYTEST_RC` is a shell variable compare consumes, and shell state does
+      not persist across calls), the −600 also covers step 1d compare's
+      pristine single-file oracle runs by inheritance; a compare run in a
+      separate call is short/bounded and accepted unprotected. FAIL-OPEN: a
+      choom failure warns, records `choom=failed`, and the gate proceeds
+      unprotected — a gate is NEVER blocked by a choom failure, and
+      `choom=ok` re-orders earlyoom's victim selection (−600, not −1000: the
+      gate stays killable if it is itself the runaway consumer). The Bash
+      tool spawns a fresh shell per call, so the adjustment dies with the
+      call; no reset needed (in a long-lived manual shell, reset with
+      `sudo -n choom -n 0 -p $$`). Calibration: −600 buys victim
+      RE-ORDERING, not survival — net ~400 display points below an
+      equal-size unprotected python neighbor (the `--prefer` +300 applies
+      regardless of adj) but only ~100 below a non-python neighbor, and at
+      fleet-wide adoption protected work competes with protected work again;
+      say "re-orders victim selection" / "stops being the default designated
+      victim", never "prevents kills".
    d. Classify failures against the known-red-on-main baseline ledger —
       mechanical (`scripts/step9c_baseline.py compare`), never prose
       arithmetic (#1022: on 2026-07-02 seven sessions each burned a round
@@ -7331,10 +7368,16 @@ suite directly and posts an `epm:test-verdict` event with the result.
       ledger refresh so the next session gets a fresh baseline — do NOT block
       this verdict on it:
       ```bash
-      (cd "$REPO_ROOT" && setsid nohup timeout --kill-after=60s 2100s \
+      REFRESH_PID=$(bash -c 'cd "$1" || exit 1; setsid nohup timeout --kill-after=60s 2100s \
         env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 \
         uv run python scripts/step9c_baseline.py refresh \
-        >> "$REPO_ROOT/logs/step9c_baseline_refresh.log" 2>&1 < /dev/null &)
+        >> "$1/logs/step9c_baseline_refresh.log" 2>&1 < /dev/null & echo $!' _ "$REPO_ROOT")
+      # earlyoom-protect the refresh (#1045; fail-open): sweep its session; the refresh's own
+      # start_new_session pytest child (spawned >=~1s later, after lock + git-root resolution + selector/venv resolution + uv-run startup) inherits adj.
+      ps -p "$REFRESH_PID" -o args=   # verify the pid is the workload (canonical form); on mismatch recover via pgrep -f 'step9c_baseline.py refresh'; a lock-held instant exit makes this benignly fail (choom=failed below)
+      bash -o pipefail -c 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' _ "$REFRESH_PID" >/dev/null \
+        && echo "[step9c] ledger refresh detached pid=$REFRESH_PID log=$REPO_ROOT/logs/step9c_baseline_refresh.log choom=ok" \
+        || echo "[step9c] ledger refresh detached pid=$REFRESH_PID log=$REPO_ROOT/logs/step9c_baseline_refresh.log choom=failed"
       ```
 2. Lint: covered by step 1d `compare` — repo-wide `ruff check` /
    `ruff format --check` are diffed against the LIVE main-root baseline
@@ -7354,7 +7397,11 @@ any untested-touched-file WARNs (so the orchestrator surfaces wrong-cwd runs
 and coverage gaps — never silently skipped), and the compare classification
 JSON (new vs known-red-stripped failures with any scan-test / diff-linked
 masking WARNs, the ruff delta vs the live main baseline, the ledger main_sha
-+ age + stale flag, and any dirty-code-path flags). A zero-collected /
++ age + stale flag, and any dirty-code-path flags), and
+the gate earlyoom-protection state — COPY the `[step9c] gate earlyoom
+protection choom=…` breadcrumb line from the gate call's transcript (plus the
+1d refresh `pid= log= choom=` breadcrumb line when a refresh was kicked);
+never infer `choom=ok` from the absence of a warn line. A zero-collected /
 `no tests ran` outcome is recorded as FAIL (never PASS on exit 0) per step
 1b's guard.
 
