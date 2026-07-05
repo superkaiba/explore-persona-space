@@ -7610,13 +7610,21 @@ def _has_round_start_witness(events: list[dict], anchor_ts: float) -> bool:
 def _has_nonwatcher_event_after(events: list[dict], ts: float) -> bool:
     """True iff any NON-watcher event (note-substring filter
     :data:`_WATCHER_NOTE_SENTINELS`, same as :func:`_latest_step_completed`)
-    in ``events`` is strictly newer than ``ts``."""
+    in ``events`` is strictly newer than ``ts``. Deliberate session-stop
+    records are excluded (#990/#1053) — see the inline comment."""
     for ev in events:
         ev_ts = _parse_event_ts(ev.get("ts"))
         if ev_ts is None or ev_ts <= ts:
             continue
         note = ev.get("note") or ""
         if any(sentinel in note for sentinel in _WATCHER_NOTE_SENTINELS):
+            continue
+        # A deliberate session stop — incl. the #1053 Step-0 collision-exit /
+        # stale-wake-yield breadcrumb — is the death record of the task's
+        # driver, never round activity: it must not veto the follow-up
+        # round-repark via the #837 freshness gate (#990/#1053; same two-leg
+        # exclusion as _latest_nonwatcher_event_ts / _latest_progress_ts).
+        if note.lstrip().startswith("deliberate-stop ") or ev.get("by") == "spawn_session-stop":
             continue
         return True
     return False

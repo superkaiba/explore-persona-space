@@ -920,7 +920,10 @@ uv run python scripts/task.py view <N> --json | uv run python -c \
 `/issue <N>` at a time. Before doing anything else, check whether another
 live session is already mapped to this issue: `uv run python
 scripts/spawn_session.py list` (issue-mapping column). If a live session is
-already driving #N, EXIT immediately as a duplicate. Before ending, post
+already driving #N, EXIT immediately as a duplicate (do NOT run
+`scripts/post_step_completed.py` here — this site's exit-marker contract is
+the single breadcrumb below, per the "Post NOTHING else" rule that follows
+it). Before ending, post
 EXACTLY ONE exit breadcrumb so the audit trail distinguishes a deliberate
 collision exit from a wrapper crash (#1053: a `/issue 958` session died
 ~1 min after spawn with no recorded reason — under the old marker-free

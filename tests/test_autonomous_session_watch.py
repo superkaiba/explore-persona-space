@@ -4982,6 +4982,38 @@ def test_followup_round_complete_reason_ignores_watcher_markers_in_freshness():
     assert "designed re-park" in reason
 
 
+def test_followup_round_complete_reason_ignores_deliberate_stop_in_freshness():
+    # #1053 round-2 pin: a FRESH deliberate-stop breadcrumb (the Step 0
+    # stale-wake YIELD death record, by="issue-session-guard") posted AFTER a
+    # valid round-end park is a driver DEATH record, never round activity —
+    # it must NOT veto the repark via the #837 gate-2 freshness read
+    # (_has_nonwatcher_event_after carries the same two-leg exclusion as
+    # _latest_nonwatcher_event_ts / _latest_progress_ts).
+    import autonomous_session_watch as asw
+
+    events = [
+        _make_followup_scope_event("2026-06-11T09:00:00Z"),
+        _make_progress_event(
+            "stage-dispatch stage=followup-implementing round=1 "
+            "subagent=experiment-implementer worktree=/tmp/wt",
+            "2026-06-11T09:30:00Z",
+        ),
+        _make_step_completed_event(step="9a-bis", ts="2026-06-11T10:54:12Z"),
+        {
+            **_make_progress_event(
+                "deliberate-stop pid=n/a target=self reason=stale-wake-yield "
+                "replacement=happy-session:def456 — stale /issue 1053 session "
+                "yielding on wake; the replacement owns the task; no state mutated",
+                "2026-06-11T12:00:00Z",
+            ),
+            "by": "issue-session-guard",
+        },
+    ]
+    reason = asw._followup_round_complete_reason(events)
+    assert reason is not None
+    assert "designed re-park" in reason
+
+
 def test_followup_round_complete_reason_converges_after_respawn_park():
     # #837 acceptance 4 (the §4b convergence argument, pinned): a stray
     # NON-watcher cross-post after a genuine round end blocks the repark
