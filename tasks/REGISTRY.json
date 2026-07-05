@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1053,
+  "highest_id": 1054,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -429,6 +429,13 @@
       "path": "tasks/proposed/1053",
       "status": "proposed",
       "title": "daily-fix: Step 0 detect-and-exit posts an audit marker"
+    },
+    "1054": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1054",
+      "status": "proposed",
+      "title": "daily-fix: new_worktree pre-adds own issue eval_results cone"
     },
     "106": {
       "has_clean_result": true,
