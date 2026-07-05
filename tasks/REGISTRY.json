@@ -468,8 +468,8 @@
     "1059": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1059",
-      "status": "planning",
+      "path": "tasks/approved/1059",
+      "status": "approved",
       "title": "daily-fix: stagger proposed-infra-sweep session dispatches"
     },
     "106": {
