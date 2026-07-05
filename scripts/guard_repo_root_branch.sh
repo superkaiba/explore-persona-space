@@ -57,7 +57,15 @@
 # carrying a full `git restore .` / `git clean -fd` / `git reset --hard`
 # command literal trips the #897 detectors the same way. The workaround is to
 # pass such note text via `--file <path.md>` instead of `--note`, and commit
-# messages via `git commit -F <file>`. The #897 detectors use a TIGHT
+# messages via `git commit -F <file>`. One NARROWING of the raw scan (#1058):
+# heredoc BODIES destined for NON-SHELL consumers are stripped before parsing
+# by the strip_heredoc_bodies() pre-pass below when provably inert — every
+# opener validated, no shell-consumer / command-runner word on the opener
+# line, no shell-out spelling in the body, and (for an UNQUOTED tag, whose
+# body bash expands at feed time) no `$(`/backtick/`${` expansion syntax —
+# so document text that merely MENTIONS a gated form no longer false-blocks;
+# the quoted `--note` literal above is NOT a heredoc and stays blocked (that
+# limitation is unchanged). The #897 detectors use a TIGHT
 # `git <verb>` bigram anchor (`git [flags] restore|clean|reset|checkout`), so
 # plain-English "restore"/"clean"/"reset" inside a `-m` message (e.g.
 # `git commit -m "restore defaults"`) does NOT trip — only a full
@@ -91,7 +99,7 @@
 # and fail-open only for the residual-gap-(viii) shape (`git clean "x # y"
 # -f` — the force flag after a quoted ` # ` becomes invisible).
 #
-# <!-- known residual gaps (#897, accepted + documented) -->
+# <!-- known residual gaps (#897 + #1058, accepted + documented) -->
 # (i)   `git checkout main <path>` (a pathspec after the `main` allow-arm with
 #       no `--`) still leaks — a naive detector would false-positive on
 #       redirections (`git checkout main 2>/dev/null`); closable post-v1 by
@@ -99,8 +107,13 @@
 #       allow-arm.
 # (ii)  `git reset --soft/--merge/--keep` (branch-pointer moves / partial tree
 #       writes) are not gated.
-# (iii) Command substitution `$(git clean -fd)` and here-docs are unparsed
+# (iii) Command substitution `$(git clean -fd)` at TOP LEVEL remains unparsed
 #       (pre-existing #804 limitation; quoted separators fail CLOSED).
+#       Heredoc bodies are no longer in this gap: the fail-closed
+#       strip_heredoc_bodies() pre-pass (#1058) handles them, and it REFUSES
+#       to hide an UNQUOTED-tag body carrying expansion syntax
+#       (`$(` / `${` / backtick) — bash expands such bodies at feed time, so
+#       those lines still reach the detectors.
 # (iv)  Quoted-glob pathspecs (`git checkout '*.md'`) and exotic pathspec
 #       magic (`git checkout ':/'`) — the existence probe sees the unexpanded
 #       literal and fails soft.
@@ -130,6 +143,48 @@
 #       (quote-parity comment detection) re-opens the comment-tail
 #       allow-spoof on any odd-apostrophe prefix, which is the worse
 #       direction.
+# (ix)  (#1058) A heredoc body written to a NON-`.sh` file and later EXECUTED
+#       (`cat > /tmp/x <<'EOF' ... EOF; bash /tmp/x`, typically across two
+#       Bash calls) is no longer caught by the raw scan once the body strips.
+#       Accepted: Write-tool-equivalent (the Write tool creates the same file
+#       unhooked), a deliberate two-step, ~zero accidental probability; the
+#       `.sh`-redirect refusal in the strip ladder covers the likely
+#       accidental spelling.
+# (x)   (#1058) The deliberate-construction $WT-latch family, NARROWED by the
+#       separator-gated arming (the accidental defensive-check shape
+#       `[ -d x ] && WT=<worktree>; cd "$WT" && git ...` BLOCKS — an
+#       AND-preceded assignment never arms). What remains is deliberate-only:
+#       (x-a) a quoted-prose `; WT=<worktree-path>` fragment that the
+#       quoted-separator mis-split turns into an armed clause-initial
+#       assignment (verified rc=0; requires a quoted string containing
+#       `; WT=<worktree-path>` AND a `cd "$WT"` AND a gated git verb in ONE
+#       call — the same quoted-separator raw-scan trade-off as the
+#       known-limitation paragraph above, cooperative-model accepted); and
+#       (x-b) a `WT` value exported from the user's own shell profile —
+#       outside the harness contract that shell state never persists across
+#       Bash tool calls, which the latch's same-call-assignment proof relies
+#       on.
+# (xi)  (#1058) argv-form `subprocess.run(["git", ...])` inside a stripped
+#       body — explicitly PRE-EXISTING: the raw scan never saw the argv form
+#       before this change either (no `git <verb>` bigram), and
+#       python-subprocess git is out of the threat model by design (see the
+#       THREAT MODEL paragraph above).
+# (xii) (#1058) A variable-consumer opener (`RUNNER=bash; $RUNNER <<EOF ...`)
+#       and a while-read-loop executor (`while read x; do $x; done <<EOF ...`)
+#       hide the shell-consumer word behind a variable / loop body, so the
+#       strip fires while bash-via-variable executes the body.
+#       Deliberate-only constructions, accepted (a `$`-first-word opener
+#       refusal was considered and rejected: it would false-refuse every
+#       legitimate `$PYTHON - <<'PY'`-style consumer for zero
+#       accidental-risk reduction).
+# (xiii) (#1058) Fail-closed FALSE-POSITIVE notes for the strip (a no-strip
+#       keeps CURRENT behavior — the command blocks only when a gated form
+#       ALSO appears): plain `${VAR}` references in an unquoted-tag body
+#       (the `${` refusal is deliberately over-broad — `${x:-$(cmd)}` nests
+#       command substitution); a bare-dot jq filter (`jq . <<J`) matching the
+#       standalone-dot source form (quoted `jq '.'` unaffected); and prose
+#       like "the system (Linux) ..." matching the `system *\(` body
+#       refusal.
 #
 # Compound-command parsing is a best-effort CLAUSE SPLIT (#804): the command is
 # split on `;` / `&&` / `||` / `|` / `&` / raw newline (two-char separators
@@ -158,11 +213,44 @@
 #     RHS runs in the foreground parent's UNCHANGED cwd (repo root); BOTH
 #     execute, so a `git switch feature & git switch main` runs the dangerous
 #     LHS in the repo-root tree while the allow-arm RHS masks it.
-# The split is NOT a full shell parse: command substitution `$(git switch ...)`,
-# here-docs, and separators embedded inside a quoted arg are not handled (a
-# quoted `;`/`|`/`&` is treated as a real separator, the same raw-scan
-# trade-off as the `--note` literal above). A mis-split of that class fails
+# The split is NOT a full shell parse: command substitution `$(git switch ...)`
+# and separators embedded inside a quoted arg are not handled (a quoted
+# `;`/`|`/`&` is treated as a real separator, the same raw-scan trade-off as
+# the `--note` literal above); heredoc BODIES are stripped BEFORE the split by
+# the #1058 pre-pass when provably inert, and an unstrippable heredoc keeps
+# its body lines in the split, failing CLOSED. A mis-split of that class fails
 # CLOSED (blocks), the safe direction for a guard.
+#
+# A SECOND cd-latch (#1058) covers the SKILL.md-conventional `cd "$WT"` form
+# beside the literal-path latch: a BARE, unconditionally-executed
+# clause-initial `WT=<...>.claude/worktrees/<...>` assignment arms a
+# `wt_bound` flag in stream order, after which `cd "$WT"` (exact-arg, no
+# `..`) latches the SAME `scoped` machinery as the literal latch (so it
+# inherits the `&&`-only propagation + reset semantics above verbatim). The
+# assignment proof is load-bearing, not cosmetic: bash `cd ""` SUCCEEDS as a
+# no-op (verified 2026-07-05, bash 5.1.16), so with an UNSET WT
+# `cd "$WT" && git ...` runs the git clause in the UNCHANGED cwd (the repo
+# root) — a bare `cd "$WT"` latch would be fail-open. Three proof
+# obligations, each verified live:
+#   - BARE assignment (end anchor): `WT=<wt> true` is a per-command
+#     temporary env assignment that does NOT persist past that command; any
+#     trailing word after the RHS refuses arming.
+#   - ARMING separators are START / `;` (SEQ) / raw newline (NL) ONLY — the
+#     separators under which bash executes the assignment UNCONDITIONALLY in
+#     the parent shell. These are deliberately a DIFFERENT set from the
+#     `&&`-only PROPAGATION separators of the latch itself: PROPAGATION
+#     needs proof the `cd` SUCCEEDED (only `&&` gives it), ARMING needs
+#     proof the assignment RAN (an `&&`/`||`-preceded assignment is
+#     runtime-conditional and may be skipped; a `|`-preceded one runs in a
+#     pipeline subshell and dies with it; BG stays non-arming as fail-closed
+#     conservatism — a BG-preceded clause does run in the parent, but there
+#     is zero incident demand). A future reader must NOT assume latch-style
+#     `&&` semantics for arming, nor arming-style `;`/NL semantics for
+#     propagation.
+#   - Reassignment DISARMS: any later clause-initial `WT=` that does not
+#     re-prove the full pattern (non-worktree RHS, trailing command word,
+#     conditional/subshell separator) makes the earlier arming proof stale;
+#     a bare unconditional worktree re-assignment re-arms.
 #
 # Bash line continuations (`\<CR?><NL>`) are normalized to a single space at the
 # top of the guard before any parsing (#804 round 4). Bash strips a
@@ -187,6 +275,121 @@ cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
 # `sed -zE` uses NUL-delimited whole-input so `\n` is literal; `\\\r?\n` matches
 # a backslash + optional CR + newline, replaced by a single space.
 cmd=$(printf '%s' "$cmd" | sed -zE 's/\\\r?\n/ /g')
+
+# (#1058) Strip NON-SHELL-CONSUMER heredoc BODIES before any parsing. The
+# newline splitter otherwise treats each heredoc body line as an executable
+# clause, so DOCUMENT text that merely MENTIONS a gated form (a python
+# heredoc, a cat-written note file) false-blocks. Bash hands a heredoc body
+# to the consumer as STDIN DATA — it is executed only when the consumer is a
+# shell interpreter, EXCEPT that an UNQUOTED-tag body is expanded by bash at
+# feed time ($(...) / `...` run REGARDLESS of consumer). Fail-closed ladder
+# (any doubt -> NO strip, current behavior): strip only when EVERY opener in
+# the command (a) has a word-shaped tag ([A-Za-z_][A-Za-z0-9_]*), (b) is the
+# only opener on its physical line, (c) has a terminator line exactly == tag
+# (leading tabs allowed for <<-), (d) the opener LINE carries NO
+# shell-consumer / command-runner word
+#     (bash|sh|zsh|ksh|dash|eval|source|ssh|xargs|parallel|sudo|su, or a
+#     standalone `.` source command),
+# (e) the opener LINE does not redirect into a *.sh path, (f) NO body line
+# names a shell-out spelling (os.system / subprocess / Popen / check_call /
+# check_output / getoutput / bare `system(` / `from os import`), and (g) for
+# an UNQUOTED, unescaped tag (<<EOF — bash EXPANDS the body at feed time) NO
+# body line carries expansion syntax ($( / ${ / backtick); a quoted/escaped
+# tag (<<'EOF', <<"EOF", <<\EOF) suppresses expansion and skips check (g).
+# Here-strings (<<<) are masked before detection and never match.
+strip_heredoc_bodies() {
+  printf '%s' "$1" | awk '
+    function shellish(line) {
+      if (line ~ /(^|[^A-Za-z0-9_.])(bash|sh|zsh|ksh|dash|eval|source|ssh|xargs|parallel|sudo|su)([^A-Za-z0-9_]|$)/) return 1
+      # Standalone-dot source form (`. /dev/stdin <<EOF`): a `.` COMMAND WORD
+      # (start/separator/space before, whitespace after). A dot glued to a
+      # word (path tails: foo.sh, python3.11) never matches; a bare-dot jq
+      # filter (`jq . <<J`) DOES match -> fail-closed no-strip, documented.
+      if (line ~ /(^|[;&|() \t])\.[ \t]/) return 1
+      return 0
+    }
+    # Returns 1 and sets TAG/DASH/QUOTED when line has exactly one valid
+    # opener; 0 = no opener; -1 = opener present but unstrippable (fail to
+    # no-strip).
+    function opener(line,   tmp, rest, op) {
+      tmp = line
+      gsub(/<<</, "\x02", tmp)
+      if (tmp !~ /<</) return 0
+      if (match(tmp, /<<-?[ \t]*\\?[\x22\x27]?[A-Za-z_][A-Za-z0-9_]*[\x22\x27]?/) == 0) return -1
+      op = substr(tmp, RSTART, RLENGTH)
+      rest = substr(tmp, RSTART + RLENGTH)
+      if (rest ~ /<</) return -1
+      if (shellish(line)) return -1
+      if (line ~ /(>|>>)[ \t]*[^ \t]*\.sh[\x22\x27]?([ \t]|$)/) return -1
+      # (#1058 r2) Tag QUOTING decides body-expansion semantics: bash
+      # suppresses parameter/command substitution in the body ONLY when the
+      # tag is quoted or escaped (<<'\''EOF'\'', <<"EOF", <<\EOF). QUOTED=0
+      # (bare <<EOF) arms the pass-1 expansion-syntax refusal (check g). A
+      # trailing-quote-only form (<<EOF'\'' — a bash syntax error anyway)
+      # classifies as UNQUOTED, the stricter direction.
+      QUOTED = (op ~ /^<<-?[ \t]*(\\|\x22|\x27)/) ? 1 : 0
+      TAG = op
+      sub(/^<<-?[ \t]*\\?[\x22\x27]?/, "", TAG)
+      sub(/[\x22\x27]$/, "", TAG)
+      DASH = (op ~ /^<<-/) ? 1 : 0
+      return 1
+    }
+    function terminator_at(j,   b) {
+      b = buf[j]
+      if (DASH) sub(/^\t+/, "", b)
+      return (b == TAG)
+    }
+    BEGIN { n = 0 }
+    { buf[n++] = $0 }
+    END {
+      # PASS 1: validate; on ANY unstrippable opener emit input unchanged.
+      i = 0; ok = 1
+      while (i < n) {
+        r = opener(buf[i])
+        if (r == -1) { ok = 0; break }
+        if (r == 1) {
+          j = i + 1
+          while (j < n && !terminator_at(j)) {
+            # (f) A body that itself SHELLS OUT (os.system / subprocess /
+            # Popen / bare system( / from-import form) may execute git
+            # despite a non-shell consumer -> refuse to strip (fail-closed;
+            # harmless unless a gated form also appears).
+            if (buf[j] ~ /(os\.system|subprocess|Popen|check_call|check_output|getoutput|system *\(|from +os +import)/) { ok = 0; break }
+            # (g) UNQUOTED-tag body: bash performs command/parameter
+            # substitution at feed time, so $(...) / `...` in the body
+            # EXECUTE regardless of consumer -> refuse to strip. ${ refuses
+            # too (parameter expansion can nest command substitution,
+            # ${x:-$(cmd)}) — a fail-closed over-match on plain ${VAR}
+            # references, documented. An escaped \$( also matches (bash
+            # would NOT expand it, but \\$( WOULD — refusing both is the
+            # simple fail-closed read).
+            if (!QUOTED && buf[j] ~ /\$\(|\$\{|\x60/) { ok = 0; break }
+            j++
+          }
+          if (!ok) break
+          if (j >= n) { ok = 0; break }      # unterminated -> no strip
+          i = j + 1
+          continue
+        }
+        i++
+      }
+      if (!ok) { for (k = 0; k < n; k++) print buf[k]; exit }
+      # PASS 2: emit, dropping each body + terminator (opener line kept).
+      i = 0
+      while (i < n) {
+        r = opener(buf[i])
+        print buf[i]
+        if (r == 1) {
+          j = i + 1
+          while (j < n && !terminator_at(j)) j++
+          i = j + 1
+          continue
+        }
+        i++
+      }
+    }'
+}
+cmd=$(strip_heredoc_bodies "$cmd")
 
 # Only consider git checkout/switch/restore/clean/reset invocations at all
 # (loose pre-filter — a cheap skip, not a classifier; the tight per-verb
@@ -419,6 +622,7 @@ classify_clause() {
 # rounds 2/3): the guard cannot prove a `;`- or newline-preceding `cd` succeeded,
 # so it declines to scope across it. The first blocking clause wins.
 scoped=0
+wt_bound=0
 blocked=""
 while IFS=$'\t' read -r sep clause; do
   # Reset the latch unless the separator BEFORE this clause is && — a `cd`
@@ -467,6 +671,61 @@ while IFS=$'\t' read -r sep clause; do
      || echo "$clause" | grep -qE 'cd +/tmp/'; then
     scoped=1
     continue
+  fi
+
+  # (#1058) A `WT=<...>.claude/worktrees/<...>` BARE-ASSIGNMENT clause
+  # (optionally `export`-prefixed; NOTHING after the RHS) arms the $WT latch
+  # for LATER clauses — and ONLY when its preceding separator proves the
+  # assignment executes unconditionally in the parent shell: START, `;`
+  # (SEQ), or a raw newline (NL). Three arming refusals, each verified live
+  # (bash 5.1.16):
+  #   - assignment PREFIX (`WT=... true`): a per-command temporary env
+  #     assignment that does NOT persist — the end-of-clause anchor
+  #     ([[:space:]]*$ after the RHS) rejects any trailing command word;
+  #   - AND/OR-preceded assignment (`[ -d x ] && WT=...`): runtime-
+  #     conditional — when skipped, `cd "$WT"` is a `cd ""` repo-root no-op
+  #     and the git clause would run UNSCOPED at the root;
+  #   - PIPE-preceded assignment (`true | WT=...`): runs in a pipeline
+  #     subshell, does not persist. (A BG-preceded clause DOES run in the
+  #     parent shell, but stays non-arming as fail-closed conservatism —
+  #     zero incident demand.)
+  # Any OTHER clause-initial WT= assignment (non-worktree RHS, trailing
+  # command word, conditional/subshell separator) DISARMS the latch — a
+  # reassignment makes the earlier arming proof stale. Clause-initial only:
+  # a `WT=` fragment buried in quoted prose (an echo / --note argument)
+  # never matches the ^ anchor and neither arms nor disarms.
+  if echo "$clause" | grep -qE '^(export +)?WT='; then
+    wt_bound=0
+    case "$sep" in
+      START|SEQ|NL)
+        if echo "$clause" | grep -qE '^(export +)?WT=[^;&|[:space:]]*\.claude/worktrees/[^;&|[:space:]]*[[:space:]]*$'; then
+          wt_bound=1
+        fi
+        ;;
+    esac
+  fi
+
+  # (#1058) `cd "$WT"` — the SKILL.md-conventional worktree variable — latches
+  # ONLY when an EARLIER clause in this SAME command bound WT to a
+  # `.claude/worktrees/` path (shell state never persists across Bash tool
+  # calls, so a non-empty $WT implies a same-call assignment). The
+  # assignment check is LOAD-BEARING, not cosmetic: bash `cd ""` SUCCEEDS as
+  # a no-op (verified 2026-07-05, bash 5.1.16), so with an UNSET WT
+  # `cd "$WT" && git ...` runs the git clause in the UNCHANGED cwd (the repo
+  # root) — a bare `cd "$WT"` latch would be fail-open. With the assignment
+  # present, every quoting variant is safe under the && latch: expanded
+  # forms cd into the worktree; a single-quoted literal `cd '$WT'` fails
+  # (no such dir) and && short-circuits the git clause. A `..` anywhere in
+  # the cd arg never latches (fail-closed).
+  if [ "$wt_bound" -eq 1 ]; then
+    cdarg=$(echo "$clause" | sed -nE 's/^cd +([^;&|]+)[[:space:]]*$/\1/p' | tr -d '\042\047')
+    case "$cdarg" in
+      *..*) : ;;
+      \$WT|\${WT}|\$WT/*|\${WT}/*)
+        scoped=1
+        continue
+        ;;
+    esac
   fi
   [ "$scoped" -eq 1 ] && continue          # this clause runs in a scoped cwd
 
