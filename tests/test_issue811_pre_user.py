@@ -25,6 +25,7 @@ needed; no network beyond the cached tokenizer, no GPU):
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -508,3 +509,86 @@ def test_batched_floor_rank_deficient_resample_matches_serial_oracle(monkeypatch
     # the exact-serial fallback, each ride counted once.
     assert fitM.GESVD_FALLBACK_COUNTER["n"] == fb_before + 8
     assert pd_b["stats"].shape == (4,) and np.isfinite(pd_b["stats"]).all()
+
+
+# ── 7. Batched ridge-LOCO == serial oracle (#811 vectorize fix round 2) ───────
+
+
+def _loco_fixture(seed=0, n=26, d=48, p=5):
+    """Small real-rank-structured (X, Y) mirroring `_assert_ridge_exactness`."""
+    rng = np.random.default_rng(seed)
+    z = rng.standard_normal((n, 3))
+    W = rng.standard_normal((3, d))
+    X = z @ W + 0.1 * rng.standard_normal((n, d))
+    B = rng.standard_normal((d, p))
+    Y = X @ B * 0.05 + 0.1 * rng.standard_normal((n, p))
+    return X, Y
+
+
+def test_batched_ridge_loco_matches_serial_oracle(monkeypatch):
+    """The chunked batched LOCO twin reproduces the serial per-fold PRESS path
+    fold-for-fold (same λ grid, same PRESS inner-LOO selection, same dual
+    solve) to fp tolerance — the fix-round-2 equivalence gate. Also pins
+    chunk-size invariance (chunking must not change results)."""
+    import issue658_fit_predictors as fit658
+
+    monkeypatch.setattr(fit658, "DEVICE", "cpu")
+    X, Y = _loco_fixture()
+    serial = fit658._ridge_predict_loco(X, Y, fit658.RIDGE_LAMBDAS)
+    batched = fit658._ridge_predict_loco_batched(X, Y, fit658.RIDGE_LAMBDAS)
+    np.testing.assert_allclose(batched, serial, rtol=1e-7, atol=1e-10)
+    chunked = fit658._ridge_predict_loco_batched(X, Y, fit658.RIDGE_LAMBDAS, chunk=5)
+    np.testing.assert_allclose(chunked, batched, rtol=1e-12, atol=1e-14)
+
+
+def test_ridge_loco_dispatch_default_batched_and_serial_tombstone(monkeypatch):
+    """`fitM._ridge_loco_pred` (the function `fit_cell` dispatches for the
+    chain-rho / shuffle / cross-transfer reads) defaults to the batched twin;
+    the serial path FutureWarns and is forbidden under EPM_FORBID_SERIAL_FITS=1
+    (the Supersede contract, .claude/rules/vectorize-many-cell-fits.md)."""
+    import issue658_fit_predictors as fit658
+
+    monkeypatch.setattr(fit658, "DEVICE", "cpu")
+    X, Y = _loco_fixture(seed=1, n=12, d=16, p=3)
+    via_dispatch = fitM._ridge_loco_pred(X, Y)
+    direct = fit658._ridge_predict_loco_batched(X, Y, fit658.RIDGE_LAMBDAS)
+    np.testing.assert_array_equal(via_dispatch, direct)
+    monkeypatch.delenv("EPM_FORBID_SERIAL_FITS", raising=False)
+    with pytest.warns(FutureWarning, match="SERIAL per-fold ridge-LOCO"):
+        serial = fitM._ridge_loco_pred(X, Y, path="serial")
+    np.testing.assert_allclose(serial, via_dispatch, rtol=1e-7, atol=1e-10)
+    monkeypatch.setenv("EPM_FORBID_SERIAL_FITS", "1")
+    with pytest.raises(RuntimeError, match="EPM_FORBID_SERIAL_FITS"):
+        fitM._ridge_loco_pred(X, Y, path="serial")
+
+
+def test_cached_cell_state_tristate(tmp_path):
+    """Per-unit checkpoint classifier: merged / ridge_only / invalid — the
+    resume predicate behind the immediate post-`fit_cell` checkpoint write."""
+    ridge = {k: 1.0 for k in fitM._CELL_SCHEMA_KEYS}
+    ridge["summary"] = "mean"
+    p_ridge = tmp_path / "em_L14_mean.json"
+    p_ridge.write_text(json.dumps(ridge))
+    assert f811._cached_cell_state(p_ridge) == "ridge_only"
+    assert not f811._cached_cell_valid(p_ridge)  # legacy API: merged-only
+    merged = dict(ridge, mlp_validity_gate={"gate_margin": 0.1})
+    p_merged = tmp_path / "em_L14_turn_nl.json"
+    p_merged.write_text(json.dumps(merged))
+    assert f811._cached_cell_state(p_merged) == "merged"
+    assert f811._cached_cell_valid(p_merged)
+    p_bad = tmp_path / "em_L14_maxp.json"
+    p_bad.write_text('{"Delta_med": 1.0, "trunc')  # truncated mid-write
+    assert f811._cached_cell_state(p_bad) == "invalid"
+    p_missing = tmp_path / "em_L14_pre_user_nl.json"
+    p_missing.write_text(json.dumps({"Delta_med": 1.0, "summary": "pre_user_nl"}))
+    assert f811._cached_cell_state(p_missing) == "invalid"
+
+
+def test_atomic_write_json_replaces_not_truncates(tmp_path):
+    """The checkpoint write goes tmp + os.replace — a pre-existing file is only
+    ever replaced by a COMPLETE new JSON (no in-place truncation window)."""
+    p = tmp_path / "cell.json"
+    p.write_text('{"old": true}')
+    f811._atomic_write_json(p, {"new": 1})
+    assert json.loads(p.read_text()) == {"new": 1}
+    assert not (tmp_path / "cell.json.tmp").exists()

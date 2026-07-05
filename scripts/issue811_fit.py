@@ -42,6 +42,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 import time
 from pathlib import Path
@@ -180,23 +181,49 @@ def compute_mlp_validity_gate(
     return out
 
 
-def _cached_cell_valid(path: Path) -> bool:
-    """True iff ``path`` is a complete #811 per-cell checkpoint (parses + schema keys)."""
+def _atomic_write_json(path: Path, obj: dict) -> None:
+    """Write JSON via tmp + ``os.replace`` so a mid-write kill never leaves a
+    truncated checkpoint (the resume validator would re-fit it, losing the unit)."""
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(obj, indent=2, default=float))
+    os.replace(tmp, path)
+
+
+def _cached_cell_state(path: Path) -> str:
+    """Classify a per-unit checkpoint: ``"merged"`` | ``"ridge_only"`` | ``"invalid"``.
+
+    - ``merged``: full #811 schema (fitM ridge keys + ``summary`` +
+      ``mlp_validity_gate``) — the post-gate-merge shape; resume skips the unit
+      entirely (ridge AND gate reused).
+    - ``ridge_only``: the fitM ridge schema keys are complete but the MLP
+      validity gate has not been merged yet — the IMMEDIATE per-unit checkpoint
+      written the moment ``fit_cell`` returns (#811 vectorize fix round 2, so a
+      mid-run kill loses at most the in-flight unit instead of everything).
+      Resume reuses the ridge result (the expensive part) and re-runs only the
+      cheap gate-group assembly + batched gate for that unit.
+    - ``invalid``: unparseable or missing ridge schema keys — re-fit.
+    """
     try:
         obj = json.loads(path.read_text())
     except (json.JSONDecodeError, OSError) as e:
         logger.warning("[phase=fit_M] cached %s unreadable (%s) — will re-fit", path.name, e)
-        return False
-    required = fitM._CELL_SCHEMA_KEYS | {"summary", "mlp_validity_gate"}
-    missing = required - obj.keys()
+        return "invalid"
+    missing = fitM._CELL_SCHEMA_KEYS - obj.keys()
     if missing:
         logger.warning(
             "[phase=fit_M] cached %s missing schema keys %s — will re-fit",
             path.name,
             sorted(missing),
         )
-        return False
-    return True
+        return "invalid"
+    if "summary" in obj and "mlp_validity_gate" in obj:
+        return "merged"
+    return "ridge_only"
+
+
+def _cached_cell_valid(path: Path) -> bool:
+    """True iff ``path`` is a complete MERGED #811 per-cell checkpoint (legacy API)."""
+    return _cached_cell_state(path) == "merged"
 
 
 def _load_store_layout(behaviors: tuple[str, ...], *, local_root: str | None):
@@ -232,8 +259,11 @@ def _load_and_prepare_cells(
     non-cached cell, runs the byte-identical #722 ridge headline
     (``fit_cell(include_mlp=False)`` — the serial MLP is REPLACED by the vectorized
     validity gate) + assembles the (base, shuffle) MLPGroups and the per-cell meta
-    (pca_basis / r_hat / E / keep) the gate consumes. A cached, schema-valid cell is
-    reloaded (resume-skip) rather than re-fit. Extracted from :func:`main` (C901).
+    (pca_basis / r_hat / E / keep) the gate consumes. Resume is TWO-STATE
+    (``_cached_cell_state``): a MERGED cell (ridge + gate) is reloaded and skipped
+    entirely; a RIDGE-ONLY checkpoint (written the moment ``fit_cell`` returned,
+    #811 vectorize fix round 2) reuses the ridge result and re-runs only the cheap
+    gate assembly. Extracted from :func:`main` (C901).
     """
     cells_by = {}
     for summary in summaries:
@@ -251,11 +281,14 @@ def _load_and_prepare_cells(
     ridge_cells: dict[tuple[str, int, str], dict] = {}
     groups_by_cell: dict[tuple[str, int, str], tuple] = {}
     cell_meta: dict[tuple[str, int, str], dict] = {}
+    n_units = len(summaries) * len(behaviors) * len(layers)
+    unit_i = 0
     for summary in summaries:
         for behavior in behaviors:
             for layer in layers:
                 cells = cells_by[summary][(behavior, layer)]
                 cell_key = (behavior, layer, summary)
+                unit_i += 1
                 if len(cells) < 4:
                     logger.warning(
                         "[phase=fit_M] %s L%d %s: %d cells (<4) — skip",
@@ -266,15 +299,42 @@ def _load_and_prepare_cells(
                     )
                     continue
                 out = args.out_dir / f"{behavior}_L{layer}_{summary}.json"
-                if not args.force_rerun and out.exists() and _cached_cell_valid(out):
+                state = "absent"
+                if not args.force_rerun and out.exists():
+                    state = _cached_cell_state(out)
+                if state == "merged":
                     logger.info("[phase=fit_M] %s (cached — skip)", out.name)
                     ridge_cells[cell_key] = json.loads(out.read_text())
                     continue
-                # Ridge headline (byte-identical to #722; include_mlp=False — the
-                # serial MLP is REPLACED by the vectorized validity gate).
-                ridge_cells[cell_key] = fitM.fit_cell(
-                    behavior, layer, cells, rb_main, rb_fact, include_mlp=False
-                )
+                if state == "ridge_only":
+                    # Resume from the immediate per-unit checkpoint: reuse the
+                    # ridge result (the expensive fit), re-run only the gate.
+                    logger.info(
+                        "[phase=fit_M] %s (ridge checkpoint — reusing ridge, re-running gate)",
+                        out.name,
+                    )
+                    ridge_cells[cell_key] = json.loads(out.read_text())
+                else:
+                    # Ridge headline (byte-identical to #722; include_mlp=False —
+                    # the serial MLP is REPLACED by the vectorized validity gate).
+                    t0 = time.monotonic()
+                    ridge = fitM.fit_cell(
+                        behavior, layer, cells, rb_main, rb_fact, include_mlp=False
+                    )
+                    ridge["summary"] = summary
+                    # Checkpoint the unit the MOMENT its ridge result exists (#811
+                    # vectorize fix round 2): a mid-run kill loses at most the
+                    # in-flight unit, never completed units. The gate-merge loop
+                    # in main() rewrites this file with the merged gate later.
+                    _atomic_write_json(out, ridge)
+                    ridge_cells[cell_key] = ridge
+                    logger.info(
+                        "[phase=fit_M] unit %d/%d %s fit in %.1fs — checkpointed",
+                        unit_i,
+                        n_units,
+                        out.name,
+                        time.monotonic() - t0,
+                    )
                 stacks = loadact.stack_for_fit(cells)
                 pca_basis = fitM._pca_basis_v0(stacks["V0"], args.target_dim)
                 E = fitM._load_E(behavior, stacks["cell_keys"])
@@ -1023,7 +1083,7 @@ def main() -> int:
             "summary": summary,
             "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         }
-        out.write_text(json.dumps(ridge, indent=2, default=float))
+        _atomic_write_json(out, ridge)
         cells_by_summary[summary][cell_key] = gate
         logger.info(
             "[phase=fit_M]   %s Δ_med=%.4g floor=%.4g gate_margin=%s",

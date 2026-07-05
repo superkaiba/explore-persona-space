@@ -291,8 +291,40 @@ def _mlp_loco_pred(X: np.ndarray, Y64: np.ndarray) -> np.ndarray:
     )
 
 
-def _ridge_loco_pred(X: np.ndarray, Y64: np.ndarray) -> np.ndarray:
-    """LOCO ridge held-out predictions for all 64 output dims → (n, 64)."""
+def _ridge_loco_pred(X: np.ndarray, Y64: np.ndarray, *, path: str = "batched") -> np.ndarray:
+    """LOCO ridge held-out predictions for all 64 output dims → (n, 64).
+
+    ``path="batched"`` (DEFAULT, #811 vectorize fix round 2) routes through
+    ``fit658._ridge_predict_loco_batched`` — all N folds as chunked batched
+    tensor ops, fold-for-fold identical estimator semantics (same λ grid, same
+    PRESS inner-LOO selection, same dual solve; equivalence pinned at
+    rtol=1e-7/atol=1e-10 by tests/test_issue811_pre_user.py + the #811
+    real-store smoke gate). ``path="serial"`` keeps the historical per-fold
+    Python loop — retained as the equivalence ORACLE only (FutureWarning;
+    raises under ``EPM_FORBID_SERIAL_FITS=1``): 5 serial calls × 480 folds per
+    #811 unit measured ~30-43 days projected across 108 units (task #811
+    epm:compute-deviation v3). The underlying ``fit658._ridge_predict_loco``
+    itself is untouched (other callers: #658 internal, #667, the
+    vectorized_mlp_skill ridge wrapper) — the tombstone lives at THIS #811/#722
+    call-site dispatch, per the shared-code caution.
+    """
+    if path == "batched":
+        return fit658._ridge_predict_loco_batched(X, Y64, fit658.RIDGE_LAMBDAS)
+    assert path == "serial", path
+    if os.environ.get("EPM_FORBID_SERIAL_FITS") == "1":
+        raise RuntimeError(
+            "_ridge_loco_pred(path='serial') runs the SERIAL per-fold ridge-LOCO loop "
+            "superseded by fit658._ridge_predict_loco_batched (#811 vectorize fix round 2); "
+            "EPM_FORBID_SERIAL_FITS=1 is set (see "
+            ".claude/rules/vectorize-many-cell-fits.md § Supersede contract)."
+        )
+    warnings.warn(
+        "_ridge_loco_pred(path='serial') runs the SERIAL per-fold ridge-LOCO PRESS loop; "
+        "the batched twin (path='batched', fit658._ridge_predict_loco_batched) supersedes "
+        "it. Serial call retained as the seeded equivalence ORACLE only.",
+        FutureWarning,
+        stacklevel=2,
+    )
     return fit658._ridge_predict_loco(X, Y64, fit658.RIDGE_LAMBDAS)
 
 
@@ -602,6 +634,7 @@ def fit_cell(
     *,
     include_mlp: bool = True,
     floors: str = "batched",
+    loco: str = "batched",
 ) -> dict:
     """Fit M0/M⁺/M_pseudo + all four reads for one (behavior, layer). Returns the cell JSON.
 
@@ -628,6 +661,14 @@ def fit_cell(
     the equivalence ORACLE only; raises under ``EPM_FORBID_SERIAL_FITS=1``).
     Both paths now emit ``floor_draws`` (draw-aligned per-pair stats) and
     ``gesvd_fallback`` (per-floor fallback event counts) in the cell JSON.
+
+    ``loco`` (#811, vectorize fix round 2): ``"batched"`` (DEFAULT) routes the
+    chain-ρ / shuffle / cross-transfer LOCO reads through the chunked batched
+    twin (``fit658._ridge_predict_loco_batched`` via ``_ridge_loco_pred``);
+    ``"serial"`` keeps the historical per-fold loop (FutureWarning; raises
+    under ``EPM_FORBID_SERIAL_FITS=1``; equivalence ORACLE only). The
+    duplicated LOCO(Cplus→Vplus) read (chain-ρ + cross-transfer computed the
+    SAME deterministic fit twice) is computed once and reused.
     """
     if include_mlp:
         if os.environ.get("EPM_FORBID_SERIAL_FITS") == "1":
@@ -800,11 +841,12 @@ def fit_cell(
     E = _load_E(behavior, cell_keys)
     keep = ~np.isnan(E)
     chain_block = {"n_with_E": int(keep.sum())}
+    mplus_loco_ridge = None  # reused by cross-transfer below (same deterministic fit)
     if keep.sum() >= 4:
         Ek = E[keep]
         fam_k = [f for f, m in zip(families, keep, strict=True) if m]
-        m0_loco_ridge = _ridge_loco_pred(C0, V0_64)
-        mplus_loco_ridge = _ridge_loco_pred(Cplus, Vplus_64)
+        m0_loco_ridge = _ridge_loco_pred(C0, V0_64, path=loco)
+        mplus_loco_ridge = _ridge_loco_pred(Cplus, Vplus_64, path=loco)
         rho_m0, chain_m0 = _chain_rho_one(m0_loco_ridge[keep], pca_basis, r_hat, Ek)
         rho_mplus, chain_mplus = _chain_rho_one(mplus_loco_ridge[keep], pca_basis, r_hat, Ek)
         chain_block["rho_M0_ridge"] = rho_m0
@@ -838,7 +880,7 @@ def fit_cell(
             # shuffle null on M0 (refit ridge on permuted v0) — MLP-validity gate (plan §3).
             rng = np.random.default_rng(722)
             perm = rng.permutation(n)
-            m0_shuf = _ridge_loco_pred(C0, V0_64[perm])
+            m0_shuf = _ridge_loco_pred(C0, V0_64[perm], path=loco)
             rho_shuf, _ = _chain_rho_one(m0_shuf[keep], pca_basis, r_hat, Ek)
             chain_block["rho_M0_shuffle"] = rho_shuf
             # nonlinearity gap pre vs post: (rho_mlp - rho_ridge) under M0 and M⁺.
@@ -851,9 +893,15 @@ def fit_cell(
     cross = {}
     # M0 predicting v_plus on FT pairs (held-out ρ proxy: ridge LOCO of C0→Vplus_64)
     # vs M⁺ predicting v_plus (its own LOCO). Reverse: M⁺ predicting v0 on base pairs.
-    m0_to_vplus = _ridge_loco_pred(C0, Vplus_64)
-    mplus_to_vplus = _ridge_loco_pred(Cplus, Vplus_64)
-    mplus_to_v0 = _ridge_loco_pred(Cplus, V0_64)
+    m0_to_vplus = _ridge_loco_pred(C0, Vplus_64, path=loco)
+    # LOCO(Cplus→Vplus) is deterministic and already computed in the chain-ρ block
+    # (when E coverage allowed it) — reuse rather than re-fitting the same map.
+    mplus_to_vplus = (
+        mplus_loco_ridge
+        if mplus_loco_ridge is not None
+        else _ridge_loco_pred(Cplus, Vplus_64, path=loco)
+    )
+    mplus_to_v0 = _ridge_loco_pred(Cplus, V0_64, path=loco)
     # summarize as mean rowwise cosine to the true target (a transfer-quality scalar).
     cross["m0_to_vplus_cos"] = float(np.mean(fit658._rowwise_cos(m0_to_vplus, Vplus_64)))
     cross["mplus_to_vplus_cos"] = float(np.mean(fit658._rowwise_cos(mplus_to_vplus, Vplus_64)))
