@@ -11,3 +11,4 @@
 {"ts": "2026-07-05T17:17:04Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr81xdrn-8cxogp phase=done after 121s fetch_retries=0."}
 {"ts": "2026-07-05T17:17:12Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr81xkb7-8l9xyp phase=done after 121s fetch_retries=0."}
 {"ts": "2026-07-05T17:18:27Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mr81yj9e-ptfhaf phase=done after 151s fetch_retries=0."}
+{"ts": "2026-07-05T17:23:49Z", "kind": "epm:plan-verify", "version": 2, "by": "unknown", "note": "Phase 1.5.0 re-run on revised plan: verdict PASS, n_fail=0, n_warn=0 (verify_plan.py --plan-file, kind=infra). Goal-currency: goal H2 unchanged, no epm:goal-updated."}
