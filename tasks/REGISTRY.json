@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1067,
+  "highest_id": 1068,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -534,6 +534,13 @@
       "path": "tasks/proposed/1067",
       "status": "proposed",
       "title": "daily-held: Happy mobile push down all day (Remote Control o"
+    },
+    "1068": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1068",
+      "status": "proposed",
+      "title": "workflow-fix: check-17 verbatim equality for origin_prompt footer quote"
     },
     "108": {
       "has_clean_result": false,
