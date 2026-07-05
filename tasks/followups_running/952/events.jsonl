@@ -355,3 +355,4 @@
 {"ts": "2026-07-05T14:15:55Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "1e battery done (fold=4)"}
 {"ts": "2026-07-05T14:25:31Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "1e battery done (fold=4)"}
 {"ts": "2026-07-05T14:35:06Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "1e battery done (fold=4)"}
+{"ts": "2026-07-05T14:44:42Z", "kind": "epm:progress", "version": 1, "by": "pod-sentinel", "note": "1e battery done (fold=0)"}
