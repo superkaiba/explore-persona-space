@@ -7800,7 +7800,7 @@ CHECKS = [
     # separately in `verify_text` (#921):
     check_v4_methodology_shape,  # check 18 (v4)
     check_v4_results_beat,  # check 21 (v4, WARN)
-    check_v4_no_bare_issue_refs,  # check 27 (v4) — bare `#K` refs in standalone sections
+    check_v4_no_bare_issue_refs,  # check 27 (v4) — bare `#K` refs + prior-issue task links/URLs in standalone sections
     # generation-agnostic checks (v2 AND v3 AND v4):
     check_figure_url_sha_matches_repro,  # check 22
     check_hf_url_resolves,  # check 23
