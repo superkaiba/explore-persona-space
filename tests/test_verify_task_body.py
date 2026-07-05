@@ -6131,6 +6131,237 @@ def test_v4_context_unhyphenated_followup_round_clause_passes():
     assert ctx.passed and not ctx.is_warn, ctx.detail
 
 
+# ─── Check 17 (origin-prompt verbatim sub-check, #1068) ────────────────────
+# Unit-grain cases call `check_repro_context_provenance(body, fm)` directly
+# (the function is public and takes `fm`); one end-to-end case runs
+# `verify_text` to pin the frontmatter threading.
+
+_OP = "sweep the X effect across three seeds and report the per-seed deltas"
+# 68 normalized chars; `_OP[:41]` is a mid-sentence cut ending at "...and"
+# (41/68 = 60% coverage — over the 20-char absolute AND 50% coverage floors).
+_OP41 = _OP[:41]
+
+_V4_NOT_RECORDED_LINE = "- Originating prompt: origin prompt not recorded"
+
+
+def _v4_body_with_context_quote(quote_block: str) -> str:
+    """Return `_V4_GOOD_BODY` with its Context originating-prompt line
+    (`origin prompt not recorded`) replaced by ``quote_block``."""
+    assert _V4_NOT_RECORDED_LINE in _V4_GOOD_BODY, "fixture drifted"
+    return _V4_GOOD_BODY.replace(_V4_NOT_RECORDED_LINE, quote_block)
+
+
+def test_v4_context_origin_prompt_verbatim_blockquote_passes():
+    """The canonical conforming shape: a blockquoted verbatim quote of the
+    full frontmatter `origin_prompt` PASSes with no WARN."""
+    body = _v4_body_with_context_quote(f"- Originating prompt, verbatim:\n\n> {_OP}\n")
+    ctx = verify_task_body.check_repro_context_provenance(body, {"origin_prompt": _OP})
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+    assert "lineage" in ctx.detail
+
+
+def test_v4_context_origin_prompt_prefix_truncated_fails():
+    """The #813 r1 shape: the quote is a strict mid-sentence PREFIX of
+    `origin_prompt` — a hard v4 FAIL naming the truncation offset."""
+    body = _v4_body_with_context_quote(f"- Originating prompt, verbatim:\n\n> {_OP41}\n")
+    ctx = verify_task_body.check_repro_context_provenance(body, {"origin_prompt": _OP})
+    assert not ctx.passed
+    assert "PREFIX" in ctx.detail
+    assert "context-origin-prompt-mismatch" in ctx.detail
+    assert "41/68" in ctx.detail
+
+
+def test_v4_context_truncated_with_trailing_period_fails():
+    """The #742 shape: a truncating editor appends a `.` at the cut — the
+    trailing-punct strip still classifies it as a strict-prefix FAIL."""
+    body = _v4_body_with_context_quote(f"- Originating prompt, verbatim:\n\n> {_OP41.rstrip()}.\n")
+    ctx = verify_task_body.check_repro_context_provenance(body, {"origin_prompt": _OP})
+    assert not ctx.passed
+    assert "PREFIX" in ctx.detail
+
+
+def test_v4_context_whitespace_and_wrap_differences_pass():
+    """A quote re-wrapped across `>` lines with doubled internal spaces
+    still PASSes — pins `_normalize_prompt_text` whitespace collapsing."""
+    body = _v4_body_with_context_quote(
+        "- Originating prompt, verbatim:\n\n"
+        "> sweep the X effect  across\n"
+        "> three seeds and report  the\n"
+        "> per-seed deltas\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"origin_prompt": _OP})
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_inline_quote_marks_pass():
+    """The #661/#672 shape: the full prompt quoted inline in `"..."` on
+    the label bullet, no blockquote — PASSes (pins region-haystack
+    semantics; substring containment ignores wrapping quote marks)."""
+    body = _v4_body_with_context_quote(f'- Originating user request (verbatim): "{_OP}"')
+    ctx = verify_task_body.check_repro_context_provenance(body, {"origin_prompt": _OP})
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_multi_round_extra_prompts_pass():
+    """The #813 post-fix shape: the full creation quote plus a second
+    labeled round-prompt blockquote — extra quotes only grow the haystack."""
+    body = _v4_body_with_context_quote(
+        f"- Originating prompt, verbatim:\n\n> {_OP}\n\n"
+        "- Round-2 prompt (`dose-curve`), verbatim:\n\n"
+        "> also check the dose curve at half strength\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"origin_prompt": _OP})
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_generic_mismatch_warns_with_offset():
+    """A paraphrase sharing no 20-char prefix with `origin_prompt` is a
+    WARN (not a FAIL) naming the first-divergence offset."""
+    body = _v4_body_with_context_quote(
+        "- Originating prompt, verbatim:\n\n"
+        "> run the seed sweep for the X effect and summarize the deltas\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"origin_prompt": _OP})
+    assert ctx.passed and ctx.is_warn, ctx.detail
+    assert "first divergence" in ctx.detail
+    assert "/68" in ctx.detail
+
+
+def test_v4_context_markdown_escaped_quote_passes():
+    """An `origin_prompt` containing `**stories**` quoted with markdown
+    backslash-escapes (`\\*\\*stories\\*\\*`) PASSes — pins the
+    `_unescape_markdown` leg of the containment test."""
+    op_md = "please analyze the **stories** dataset and report drift across all five domains"
+    body = _v4_body_with_context_quote(
+        "- Originating prompt, verbatim:\n\n"
+        "> please analyze the \\*\\*stories\\*\\* dataset and report drift "
+        "across all five domains\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"origin_prompt": op_md})
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_lazy_continuation_quote_passes():
+    """A blockquote whose second physical line lacks the `>` prefix
+    (markdown lazy continuation) still PASSes — pins the marker-strip
+    haystack keeping ALL region text, lazy lines included."""
+    body = _v4_body_with_context_quote(
+        f"- Originating prompt, verbatim:\n\n> {_OP[:38]}\n{_OP[38:]}\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"origin_prompt": _OP})
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+
+
+def test_v4_context_no_origin_prompt_noop_unchanged():
+    """No frontmatter `origin_prompt` → the sub-check NO-OPs: a
+    deliberately-mismatching quote keeps the byte-identical pre-#1068
+    PASS detail."""
+    body = _v4_body_with_context_quote(
+        "- Originating prompt, verbatim:\n\n> something entirely unrelated to any recorded prompt\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {})
+    assert ctx.passed and not ctx.is_warn, ctx.detail
+    assert ctx.detail == "**Context:** row present with lineage token"
+
+
+def test_v3_context_truncated_quote_warns_never_fails():
+    """Grandfathering: the SAME truncation that hard-FAILs a v4 body is
+    WARN-only on a v3 body (never a new hard FAIL below the v4 sentinel)."""
+    assert _V4_NOT_RECORDED_LINE in _V3_GOOD_BODY, "fixture drifted"
+    body = _V3_GOOD_BODY.replace(
+        _V4_NOT_RECORDED_LINE,
+        f"- Originating prompt, verbatim:\n\n> {_OP41}\n",
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"origin_prompt": _OP})
+    assert ctx.passed is True and ctx.is_warn, ctx.detail
+    assert "context-origin-prompt-mismatch" in ctx.detail
+
+
+def test_verify_text_threads_frontmatter_origin_prompt():
+    """End-to-end: `origin_prompt` spliced into the fixture's EXISTING
+    frontmatter block (never a second `---` block — check 0b trips on
+    stacked frontmatter) + a truncated quote → the check FAILs through
+    `verify_text`, pinning the fm threading."""
+    body = _v4_body_with_context_quote(f"- Originating prompt, verbatim:\n\n> {_OP41}\n").replace(
+        "kind: experiment\n",
+        f'kind: experiment\norigin_prompt: "{_OP}"\n',
+    )
+    assert "origin_prompt" in body, "fixture replacement did not land"
+    _ok, results = verify_task_body.verify_text(body)
+    ctx = _results_by_name(results)[_CONTEXT_CHECK]
+    assert not ctx.passed
+    assert "context-origin-prompt-mismatch" in ctx.detail
+
+
+def test_v4_context_inline_quoted_truncation_fails():
+    """A truncated prompt quoted INLINE in `"..."` (no blockquote anywhere
+    in the Context region) still FAILs — pins the `_INLINE_QUOTE_SPAN_RE`
+    candidate arm as FAIL-capable (deleting the inline arm would ship
+    green through the rest of the suite AND the backlog sweep)."""
+    body = _v4_body_with_context_quote(
+        f'- Originating user request (verbatim): "{_OP41}" — lineage note above.'
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"origin_prompt": _OP})
+    assert not ctx.passed
+    assert "PREFIX" in ctx.detail
+    assert "context-origin-prompt-mismatch" in ctx.detail
+
+
+def test_v4_context_alternate_source_with_inline_opener_warns_not_fails():
+    """The #825+ conforming shape: fm `origin_prompt` is a long
+    self-declared abridgement; the row quotes the FULL alternate-source
+    prompt (long, non-prefix blockquote) plus a SHORT innocent inline
+    quote of the fm opener (strict prefix, over the 20-char floor but
+    ~9% coverage — under the 50% floor). Verdict is warn-mismatch,
+    NEVER fail-trunc (pins the D10 coverage floor)."""
+    op_long = (
+        "investigate whether the marker adapters trained in the localization arm "
+        "transfer their end-of-turn emission to the paraphrase eval surface, "
+        "including the bystander panel, the dose-matched checkpoints, and the "
+        "frozen-R diagonal read described in the provenance section (abridged; "
+        "verbatim full prompt in the original body Provenance section)"
+    )
+    body = _v4_body_with_context_quote(
+        '- Originating prompt (abridged in frontmatter): "investigate whether the marker"\n'
+        "- Full alternate-source prompt from the original body, verbatim:\n\n"
+        "> The complete originating request text as recorded before promotion: run the\n"
+        "> marker-transfer eval end to end and report every per-persona delta with the\n"
+        "> dose-matched checkpoints held fixed across the bystander panel.\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"origin_prompt": op_long})
+    assert ctx.passed and ctx.is_warn, ctx.detail
+    assert "PREFIX" not in ctx.detail
+    assert "first divergence" in ctx.detail
+
+
+def test_v4_context_multi_round_truncated_creation_quote_still_fails():
+    """A truncated creation quote (60% strict prefix) + a LONGER full
+    round-2 blockquote elsewhere in the row still FAILs — pins that the
+    D10 guard is per-candidate + fraction-based and is NOT suppressed by
+    the presence of a longer non-prefix candidate (the false-negative
+    direction of the rejected suppress-variant)."""
+    body = _v4_body_with_context_quote(
+        f"- Originating prompt, verbatim:\n\n> {_OP41}\n\n"
+        "- Round-2 prompt (`dose-curve`), verbatim:\n\n"
+        "> additionally rerun the dose curve at half strength across all five bystander\n"
+        "> personas and report the per-persona deltas alongside the headline numbers\n"
+    )
+    ctx = verify_task_body.check_repro_context_provenance(body, {"origin_prompt": _OP})
+    assert not ctx.passed, ctx.detail
+    assert "PREFIX" in ctx.detail
+
+
+def test_v4_context_short_origin_prompt_truncation_warns():
+    """An `origin_prompt` under the 20-normalized-char floor cannot
+    hard-FAIL: its truncation degrades to WARN (pins the floor's
+    WARN-degradation direction)."""
+    op_short = "sweep X effect"  # 14 normalized chars — under the 20-char floor
+    body = _v4_body_with_context_quote("- Originating prompt, verbatim:\n\n> sweep X\n")
+    ctx = verify_task_body.check_repro_context_provenance(body, {"origin_prompt": op_short})
+    assert ctx.passed and ctx.is_warn, ctx.detail
+    assert "first divergence" in ctx.detail
+
+
 def test_v4_v3_content_h2_is_hard_fail():
     """A leftover v3 content H2 (`## Findings`) in a v4 body is a hard FAIL."""
     body = _V4_GOOD_BODY.replace("## Results\n", "## Findings\n\nstale v3 H2\n\n## Results\n")

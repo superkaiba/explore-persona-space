@@ -641,6 +641,13 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   ``same-issue follow-up round `<followup_label>` `` clause, the
   machine-countable form check 20's round-scaled prose budget reads;
   #921) · created/run dates.
+  Mechanically enforced (check 17): the normalized frontmatter
+  `origin_prompt` must appear verbatim within the `**Context:**` row's
+  text — a quoted candidate that is a strict prefix of `origin_prompt`
+  covering ≥50% of it (truncation) is a hard v4 FAIL; any other mismatch
+  WARNs (v3/v2: WARN-only). When the row quotes a longer alternate
+  verbatim source (`## Provenance` / followup-scope), quote the
+  frontmatter `origin_prompt` too, or expect the WARN.
   Bare / unpinned URLs INSIDE the verbatim blockquote are exempt from
   the footer URL checks (checks 8 / 8b strip `>`-prefixed lines before
   scanning — the quote is provenance text, not a provenance link; #959;
@@ -900,7 +907,11 @@ Forward-only: each check branches on the sentinel. The v4 checks
 17. `**Context:**` provenance present, and (v4) the row carries a lineage
     token — `[#K](...)`/bare `#K`, `fresh direction (no parent)`/`fresh (no
     parent)`, or a same-issue-follow-up-round clause (gated on
-    `is_titletag_confidence()`).
+    `is_titletag_confidence()`) — and (v4) the `**Context:**` row's text
+    must contain frontmatter `origin_prompt` verbatim
+    (whitespace-normalized; a ≥20-char strict-prefix quote covering ≥50%
+    of `origin_prompt` = hard FAIL on truncation, other mismatch = WARN;
+    v3/v2 WARN-only).
 18. **`## Methodology` completeness** (`check_v4_methodology_shape`, v4
     only): the `**Training:**` slot carries the complete hyperparameter
     table (≥1 GFM table after the Training label, OR the explicit
@@ -1457,7 +1468,8 @@ listed under § Grandfathered shape. The v3 checks:
 16. Reproducibility lr matches plan (gated on `is_nested_design()` = v2
     OR v3; the body table SLIMS but the lr must still appear in the plan).
 17. Reproducibility `**Context:**` provenance row present (gated on
-    `is_nested_design()`).
+    `is_nested_design()`); the check-17 origin-prompt verbatim sub-check
+    (v4 list item 17) runs WARN-only here.
 18. **`## Data` shape** (v3 only): `### Trained on` / `### Evaluated
     with` / `### Generated` in order; each block carries ≥1 pinned
     complete-artifact link OR an explicit `n/a — <reason>` line.
