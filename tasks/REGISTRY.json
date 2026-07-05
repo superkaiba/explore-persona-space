@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1068,
+  "highest_id": 1069,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -541,6 +541,13 @@
       "path": "tasks/proposed/1068",
       "status": "proposed",
       "title": "workflow-fix: check-17 verbatim equality for origin_prompt footer quote"
+    },
+    "1069": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1069",
+      "status": "proposed",
+      "title": "workflow-fix: reuse-parity gates calibrate vs the artifact's committed per-behavior values; weaker-than-constant = WARN not HALT"
     },
     "108": {
       "has_clean_result": false,
