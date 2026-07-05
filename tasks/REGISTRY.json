@@ -4976,8 +4976,8 @@
       "goal": "On the existing #658 base-model representations (Qwen2.5-7B v0(C) per layer, judged behavior rates E0(C,B), n=50 contexts), measure how much behavioral information linear decoding loses, the achievable decoding ceiling, and the sample size required \u2014 operationalized at n=50 as the per-behavior reliability ceiling sqrt(r_yy), the bracket [rho_linear, sqrt(r_yy)] bounding the linear-decoding information loss plus a LEACE+dCor test for any nonlinearly-extractable residual, and a learning curve extrapolating the contexts needed to resolve the gap.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/reviewing/742",
-      "status": "reviewing",
+      "path": "tasks/awaiting_promotion/742",
+      "status": "awaiting_promotion",
       "title": "Linear decoding leaves most of the extractable sycophancy information in base-model activations unread (MODERATE confidence)"
     },
     "743": {
