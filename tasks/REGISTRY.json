@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1044,
+  "highest_id": 1045,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -359,6 +359,13 @@
       "path": "tasks/proposed/1044",
       "status": "proposed",
       "title": "daily-fix: sync_repo_root husk liveness probe + multi-branch"
+    },
+    "1045": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1045",
+      "status": "proposed",
+      "title": "daily-fix: choom-protect Step 9c gates + VM long fits by def"
     },
     "105": {
       "has_clean_result": true,
