@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1050,
+  "highest_id": 1051,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -408,6 +408,13 @@
       "path": "tasks/proposed/1050",
       "status": "proposed",
       "title": "daily-fix: orchestrator inlines verifier output for Codex cr"
+    },
+    "1051": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1051",
+      "status": "proposed",
+      "title": "daily-fix: tick_triage liveness probe before STALE-REDRIVE"
     },
     "106": {
       "has_clean_result": true,
