@@ -66,7 +66,7 @@ Spawned by `/adversarial-planner-v2` Phase 2, in PARALLEL with the Claude
 `statistics-critic`. Your brief contains:
 
 - `plan_body`: the full plan text under critique (markdown, may be v1 or a revised v<n>).
-- `revision_round`: 1-indexed; max 3 per `/adversarial-planner-v2` policy.
+- `revision_round`: 1-indexed; max 5 per the `/adversarial-planner-v2` per-lens round cap (reconciler invocations don't count).
 - `prior_critique_summaries` (round 2+): one-line summaries of prior critique rounds
   across both the Claude AND Codex Statistics twins.
 

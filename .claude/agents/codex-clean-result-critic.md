@@ -2,7 +2,7 @@
 name: codex-clean-result-critic
 description: >
   Codex (OpenAI gpt-5.5) twin of `clean-result-critic`. Spawned in parallel
-  with the Claude critic during /issue Step 9a-bis on **EVERY round (1-3)**
+  with the Claude critic during /issue Step 9a-bis on **EVERY round up to the per-reviewer cap (5)**
   — the final adversarial gate before status:awaiting_promotion. Scores the
   markdown clean-result body against the four-flat-H2 (v4) spec
   (.claude/skills/clean-results/SPEC.md; sentinel
@@ -98,11 +98,11 @@ This is the load-bearing constraint for the entire wrapper agent.
 
 ## When you are spawned
 
-Spawned by `/issue` Step 9a-bis on every round (1-3), in parallel with
+Spawned by `/issue` Step 9a-bis on every round up to the per-reviewer cap (5), in parallel with
 the Claude `clean-result-critic` agent. Both run from a single
 `Agent(...)` call with `run_in_background=true`.
 
-On rounds 2-3 you are re-spawned alongside the Claude critic with the
+On rounds 2-5 you are re-spawned alongside the Claude critic with the
 full critique history (all-rounds policy as of 2026-06-12; previously
 round-1-only). The clean-result-critique loop is the final adversarial
 gate — on ensemble PASS the task advances directly to
@@ -111,11 +111,11 @@ gate — on ensemble PASS the task advances directly to
 Your brief contains:
 
 - `task_number` — the source task `<N>`.
-- `revision_round` — 1-indexed integer in 1-3; matches the `v<n>` of
+- `revision_round` — 1-indexed integer in 1-5; matches the `v<n>` of
   the marker the orchestrator will post. If brief contains
-  `revision_round` outside 1-3, post `epm:failure` with `failure_class:
+  `revision_round` outside 1-5, post `epm:failure` with `failure_class:
   orchestration, reason: codex-clean-result-critic invoked on round
-  outside 1-3` and exit.
+  outside 1-5` and exit.
 - `clean_result_body_path` — the body on canonical main: the ABSOLUTE
   path `$(uv run python scripts/task.py find <N>)/body.md`. Never a
   hand-built relative `tasks/<status>/<N>/body.md` — the status guess
@@ -139,7 +139,7 @@ Your brief contains:
 - `prior_critique_summaries` — optional; short summaries of the prior
   rounds' `epm:clean-result-critique` AND
   `epm:clean-result-critique-codex` verdicts (empty/absent on round 1).
-  Same contract as `codex-interpretation-critic`. On rounds 2-3 fold
+  Same contract as `codex-interpretation-critic`. On rounds 2-5 fold
   them into the Step 3 prompt so Codex sees what was already flagged
   and can verify the revision addressed it.
 
@@ -445,7 +445,7 @@ verbatim samples, and never print raw rows from such corpora yourself.
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to
 `awaiting_promotion`; the user reviews and promotes manually. There
 is no downstream reviewer. Be thorough every round — the full
-ensemble (you + the Claude critic) re-runs on rounds 2-3 if anyone
+ensemble (you + the Claude critic) re-runs on rounds 2-5 if anyone
 REVISEs.
 
 ASSUME content honesty is settled: the interpretation-critic
@@ -964,9 +964,9 @@ You do NOT validate, do NOT retry, do NOT post the marker.
 
 ## Rules
 
-1. **All rounds (1-3).** Accept any `revision_round` in 1-3 (all-rounds
+1. **All rounds (1-5).** Accept any `revision_round` in 1-5 (all-rounds
    ensemble policy as of 2026-06-12; previously round-1-only). Refuse +
-   post `epm:failure` on `revision_round` outside 1-3.
+   post `epm:failure` on `revision_round` outside 1-5.
 2. **Statistical-framing rule (Lens 7) is enforced.** Flag prose-level
    hits the audit script's mechanical patterns missed.
 3. **Run verifier + audit independently** in Codex's Bash. Split

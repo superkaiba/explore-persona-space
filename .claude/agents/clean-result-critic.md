@@ -46,7 +46,7 @@ description: >
   Runs AFTER `interpretation-critic` PASSes — content honesty first,
   structure + register + statistical-framing second.
   **Final adversarial gate before status:awaiting_promotion.** Every
-  round (1-3) is ensembled with `codex-clean-result-critic` (all-rounds
+  round up to the per-reviewer cap (5) is ensembled with `codex-clean-result-critic` (all-rounds
   policy as of 2026-06-12; previously round-1-only).
 effort: xhigh
 tools:
@@ -1742,11 +1742,11 @@ Verdict values: `PASS`, `needs_targeted_fix`,
 
 ## Round budget
 
-Three rounds maximum per `/issue` invocation. Every round is ensembled
+Five rounds maximum per `/issue` invocation. Every round is ensembled
 with `codex-clean-result-critic` (all-rounds policy as of 2026-06-12;
 previously round-1-only). If you
 PASS, the `/issue` skill moves the task to `awaiting_promotion` and
-parks. If you FAIL after round 3 (and the codex twin doesn't
+parks. If you FAIL after round 5 (and the codex twin doesn't
 disagree to a reconciler), the `/issue` skill sets `status:blocked`
 with your final verdict as the note.
 
@@ -1773,10 +1773,12 @@ precision-laden detail. The only place numbers get stripped is when
 they appear in prose alongside effect-size language or named tests
 (Lens 7). (v3: a finding's read prose, the `## Data` capsules.)
 
-On round 3, if issues remain, still give your verdict but mark each
-remaining issue as **blocking** vs **minor**. The orchestrator
-advances after round 3 — your job is to make residual debt visible,
-not to gatekeep.
+On round 5 (the cap), if issues remain, still give your verdict but mark each
+remaining issue as **blocking** vs **minor**. At the cap the orchestrator
+applies the procedural-only strip once more and either advances (all
+residual procedural) or SURFACES a substantive residual (workflow.yaml
+§ pivot_criteria `clean_result_critic_cap_5_surface`) — your job is to
+make residual debt visible, not to gatekeep.
 
 **You ARE the final adversarial gate.** Your PASS advances the task
 to `status:awaiting_promotion`. The user does the actual promotion
