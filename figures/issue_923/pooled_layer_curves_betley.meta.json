@@ -1,0 +1,8 @@
+{
+  "git_commit": "f4727f8aada803d38bb0bed3eee4cfdf90c50ca5",
+  "timestamp_utc": "2026-07-05T04:56:26.568165Z",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "all",
+  "script": "issue923_fig_pooled"
+}
