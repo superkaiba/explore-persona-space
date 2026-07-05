@@ -2910,6 +2910,17 @@ PY
   EXIT. Do NOT provision. User frees space / upgrades storage and
   re-runs `/issue <N>`.
 
+**Size-aware projected-headroom gate (#1034).** The 1 KB probe above catches
+only the ALREADY-over-quota case. When the approved plan's §9/§10 projects
+≥100 GB of canonical-public LFS uploads, ALSO run
+`uv run python -m explore_persona_space.orchestrate.preflight --no-gpu
+--planned-upload-gb <N>` (decimal GB, the plan's projected LFS total). A
+KNOWN-insufficient exit (the gate's ERROR is live-confirmed via a forced
+re-probe) is handled EXACTLY like the quota-exceeded exit above: post
+`epm:hf-quota-exceeded v1` (with the gate's error text), set `blocked`, EXIT —
+the storage decision is the user's. Fail-open otherwise: unknown headroom /
+disabled check / routing armed all WARN and proceed to 6b.
+
 #### Step 6b: Pod provisioning
 
 **Backend dispatch (slice-6 unified router — auto by default, RunPod opt-in).**

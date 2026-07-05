@@ -307,6 +307,35 @@ sharding stays the big-text remedy). New per-issue scripts should prefer
 `upload_model` over direct `HfApi` calls for LFS artifacts so they inherit
 this guard.
 
+**Size-aware projected-headroom probe (#1034).**
+`hub.check_projected_upload_headroom(projected_bytes)` compares a PLANNED LFS
+upload's byte size against the REMAINING headroom (`used + projected >
+ceiling`), which the binary #564 check cannot do. Verdicts: `below-threshold`
+(projected under the probe floor `EPM_HF_LARGE_UPLOAD_PROBE_GB`, default 100
+decimal GB — ZERO headroom I/O) | `disabled` | `unknown` (fail-open — callers
+never block/reroute; the reactive 403 backstop stays authoritative) | `fits` |
+`insufficient` (only after a `force_refresh=True` LIVE confirm — never act on
+a ≤1h-stale cached over-read). Three consumers: (1) **`upload_dir_sharded`
+routes ALL shards to the private overflow repo UP-FRONT** on
+KNOWN-insufficient + confirmed-public canonical target (one
+`OVERFLOW_POINTER.json`, one JSONL event with
+`reason: "projected-headroom-proactive"` + `projected_gb`, zero canonical LFS
+bytes attempted; opt out with `proactive_overflow=False` for a
+canonical-path-verifying caller) — **route ≥100 GB stores through
+`upload_dir_sharded` explicitly** so they inherit this; (2) armed
+`upload_model` (`EPM_HF_OVERFLOW_ROUTING=1`) reroutes when
+`used + dir_size > ceiling`, not only when already over (ARMING CONTRACT
+unchanged: default-off, zero headroom I/O unarmed); (3) preflight
+`--planned-upload-gb <N>` turns the WARN-only advisory into a hard gate
+(LIVE-CONFIRMED-insufficient + routing off → FAIL; armed → WARN;
+unknown/disabled → WARN). Residual routes the guard does NOT cover:
+`hub._upload`, `hub._upload_folder_filtered`, and direct-`HfApi` per-issue
+scripts — the preflight plan-projection gate covers plan-declared big uploads
+regardless of helper, and the 403 stays fail-loud, but do not mistake the
+guard for fleet-wide coverage. Note overflow-repo artifacts are PRIVATE —
+downstream consumers reach them auth-required and pointer-mediated, never as
+canonical-path equivalents.
+
 ## v2 tasks (`workflow: v2`) — upload-by-default, no ceiling
 
 For a task whose frontmatter carries `workflow: v2`, the upload policy has NO
@@ -325,7 +354,9 @@ policy ceiling (Thomas's call). Everything above still holds; v2 tightens it to:
   `OVERFLOW_POINTER.json` breadcrumb on the canonical repo. There is no
   100 GB-style policy cap; the 128 GB per-issue ext4 quota / ~130 GB MooseFS
   quota are PHYSICAL limits, handled by incremental sharding below, not a
-  policy ceiling.
+  policy ceiling. Stores whose PROJECTED size exceeds remaining headroom
+  route to overflow UP-FRONT (one pointer, one event — the #1034 proactive
+  probe in `upload_dir_sharded`) instead of splitting at the mid-store 403.
 
 - **Big stores upload INCREMENTALLY (upload → verify → delete-local).** A store
   larger than the disk quota is uploaded per shard so local footprint stays
