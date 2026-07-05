@@ -33,8 +33,8 @@
     "1001": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1001",
-      "status": "approved",
+      "path": "tasks/running/1001",
+      "status": "running",
       "title": "workflow-fix: marker-training-recipe.md training-row token-budget rule (#260 sibling)"
     },
     "1002": {
