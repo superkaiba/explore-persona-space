@@ -328,8 +328,8 @@
     "1040": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1040",
-      "status": "reviewing",
+      "path": "tasks/completed/1040",
+      "status": "completed",
       "title": "Fix issue920_*.py torch-before-dotenv import order (test_shared_vm_thread_caps red on main)"
     },
     "1041": {
