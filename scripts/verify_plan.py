@@ -3368,18 +3368,38 @@ def _goal_history_for_plan(folder: Path, plan_mtime_utc: datetime) -> tuple[str 
     inclusive) so goal-updates that postdate the plan never retro-flag it —
     a positive slack manufactures FPs from minutes-scale retro-stale gaps
     (779/477/489).
+
+    Read discipline: records split on ``"\\n"`` — NEVER ``str.splitlines()``
+    (the paired writer ``task_workflow._append_jsonl_line`` emits
+    ``ensure_ascii=False``, so a raw U+2028/U+2029/NEL inside a goal/note
+    string is ONE valid JSONL record that ``splitlines()`` would shred,
+    crashing the strict ``json.loads`` or silently dropping the marker —
+    the #950 class; mirrors ``task_workflow._iter_jsonl``). Fail-fast: a
+    row whose ``kind`` IS ``epm:goal-updated`` but whose ``ts`` is missing
+    or non-string raises ``ValueError`` — the canonical writer always emits
+    ``ts``, so such a row is real corruption, and silently skipping it
+    would shrink the predating history (flipping c23 to SKIP/PASS on a
+    stale plan).
     """
     cutoff = plan_mtime_utc + timedelta(seconds=_C23_MTIME_SLACK_S)
     current: str | None = None
     superseded: list[str] = []
     ev = folder / "events.jsonl"
     if ev.exists():
-        for line in ev.read_text().splitlines():
+        for line in ev.read_text(encoding="utf-8", errors="replace").split("\n"):
+            if not line.strip():
+                continue
             if '"epm:goal-updated"' not in line:
                 continue  # cheap pre-filter; goal-updated lines parse strictly below
             e = json.loads(line)
-            if e.get("kind") != "epm:goal-updated" or not isinstance(e.get("ts"), str):
+            if e.get("kind") != "epm:goal-updated":
                 continue
+            if not isinstance(e.get("ts"), str):
+                raise ValueError(
+                    f"malformed epm:goal-updated row in {ev}: missing/non-string 'ts' "
+                    f"(the canonical writer always emits ts — this is corruption, "
+                    f"not a benign note-only marker): {line!r}"
+                )
             ets = datetime.fromisoformat(e["ts"].replace("Z", "+00:00"))
             if ets.tzinfo is None:
                 ets = ets.replace(tzinfo=UTC)

@@ -3281,6 +3281,59 @@ def test_goal_history_falls_back_to_frontmatter_goal(tmp_path):
     assert superseded == []
 
 
+def test_goal_history_parses_raw_u2028_inside_marker_text(tmp_path):
+    """A goal-updated record whose text field carries a RAW U+2028 (written
+    ensure_ascii=False, exactly as task_workflow._append_jsonl_line does) is
+    ONE valid JSONL record under the canonical split("\\n") read.
+    str.splitlines() splits on U+2028/U+2029/NEL too, shredding the record —
+    the pre-boundary fragment still contains '"epm:goal-updated"', so the
+    strict json.loads crashes (or, boundary-permuted, silently DROPS the
+    marker — exactly c23's firing scenario). An ASCII fixture structurally
+    cannot catch this (#950 JSONL-shred class)."""
+    old = "goal AAA with a raw\u2028line separator inside"
+    new = "goal BBB text entirely plain"
+    row = {
+        "ts": "2026-01-01T00:00:00Z",
+        "kind": "epm:goal-updated",
+        "version": 1,
+        "from": old,
+        "to": new,
+    }
+    line = json.dumps(row, ensure_ascii=False)
+    assert "\u2028" in line  # fixture sanity: the separator survives serialization raw
+    assert len(line.splitlines()) > 1  # fixture sanity: splitlines() WOULD shred this record
+    (tmp_path / "events.jsonl").write_text(line + "\n", encoding="utf-8")
+    current, superseded = verify_plan._goal_history_for_plan(tmp_path, datetime.now(tz=UTC))
+    assert current == new
+    assert superseded == [old]
+
+
+def test_goal_history_raises_on_goal_updated_row_missing_ts(tmp_path):
+    """A row whose kind IS epm:goal-updated but whose ts is missing/non-string
+    is real corruption (the canonical writer always emits ts) — fail fast with
+    row context, never silently shrink the predating goal history."""
+    row = {"kind": "epm:goal-updated", "version": 1, "from": "goal AAA text", "to": "goal BBB"}
+    (tmp_path / "events.jsonl").write_text(json.dumps(row) + "\n")
+    with pytest.raises(ValueError, match="epm:goal-updated"):
+        verify_plan._goal_history_for_plan(tmp_path, datetime.now(tz=UTC))
+
+
+def test_goal_history_tolerates_note_only_goal_updated_marker(tmp_path):
+    """A hand-posted note-only goal-updated marker (ts present, no from/to) is
+    structurally valid — it keeps its benign no-op skip; ONLY the
+    missing/non-string-ts case raises."""
+    row = {
+        "ts": "2026-01-01T00:00:00Z",
+        "kind": "epm:goal-updated",
+        "version": 1,
+        "note": "hand-posted, fieldless",
+    }
+    (tmp_path / "events.jsonl").write_text(json.dumps(row) + "\n")
+    current, superseded = verify_plan._goal_history_for_plan(tmp_path, datetime.now(tz=UTC))
+    assert current is None  # no body.md fallback in this fixture
+    assert superseded == []
+
+
 def test_cli_issue_mode_appends_goal_currency(tmp_path, monkeypatch, capsys):
     (tmp_path / "plans").mkdir()
     (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
