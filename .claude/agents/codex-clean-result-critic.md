@@ -104,7 +104,8 @@ the Claude `clean-result-critic` agent. Both run from a single
 
 On rounds 2-5 you are re-spawned alongside the Claude critic with the
 full critique history (all-rounds policy as of 2026-06-12; previously
-round-1-only). The clean-result-critique loop is the final adversarial
+round-1-only; rounds 4-5 are typically delta-scoped re-reviews after a
+reconciler-bound REVISE). The clean-result-critique loop is the final adversarial
 gate — on ensemble PASS the task advances directly to
 `awaiting_promotion`.
 
@@ -112,10 +113,17 @@ Your brief contains:
 
 - `task_number` — the source task `<N>`.
 - `revision_round` — 1-indexed integer in 1-5; matches the `v<n>` of
-  the marker the orchestrator will post. If brief contains
-  `revision_round` outside 1-5, post `epm:failure` with `failure_class:
-  orchestration, reason: codex-clean-result-critic invoked on round
-  outside 1-5` and exit.
+  the marker the orchestrator will post (workflow.yaml
+  § ensemble_review `round_cap_per_reviewer: 5`; reconcile invocations
+  do not count toward the cap). Any round 1-5 the orchestrator
+  dispatches is valid: rounds 4-5 typically arrive as delta-scoped
+  re-reviews after a reconciler-bound REVISE, but an agreed or unioned
+  REVISE also produces them — compose delta-scoped when the brief
+  carries a delta scope note, else run the normal full-prior-history
+  re-review. If the brief contains a malformed `revision_round`
+  (<= 0, > 5, or non-integer), post `epm:failure` with `failure_class:
+  orchestration, reason: codex-clean-result-critic invoked on
+  malformed round` and exit.
 - `clean_result_body_path` — the body on canonical main: the ABSOLUTE
   path `$(uv run python scripts/task.py find <N>)/body.md`. Never a
   hand-built relative `tasks/<status>/<N>/body.md` — the status guess
@@ -968,8 +976,14 @@ You do NOT validate, do NOT retry, do NOT post the marker.
 ## Rules
 
 1. **All rounds (1-5).** Accept any `revision_round` in 1-5 (all-rounds
-   ensemble policy as of 2026-06-12; previously round-1-only). Refuse +
-   post `epm:failure` on `revision_round` outside 1-5.
+   ensemble policy as of 2026-06-12; round cap 5 per workflow.yaml
+   § ensemble_review). Rounds 4-5 typically arrive as delta-scoped
+   re-reviews after a reconciler-bound REVISE, but an agreed or
+   unioned REVISE also produces them — when the brief carries a delta
+   scope note, scope the composed prompt to that delta (see the
+   delta-scoped precedent in agent memory); otherwise compose the
+   normal full-prior-history re-review. Refuse + post `epm:failure`
+   only on a malformed `revision_round` (<= 0, > 5, non-integer).
 2. **Statistical-framing rule (Lens 7) is enforced.** Flag prose-level
    hits the audit script's mechanical patterns missed.
 3. **Run verifier + audit independently** in Codex's Bash. Split
