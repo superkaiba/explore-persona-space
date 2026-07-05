@@ -65,8 +65,11 @@ in its sandbox, so Codex READS the inlined output instead of running the
 pre-pass itself. The Claude critic continues to run the pre-pass verbatim
 as above.
 
-Run it, record the result, and ALWAYS proceed to the seven paper lenses in
-the SAME pass — never hard-stop at a mechanical FAIL. Split the FAILs:
+Run it (Claude critic — the Codex twin's composer already ran it at compose
+time per the adaptation note above; Codex reads the inlined envelope and
+never re-runs it), record the result, and ALWAYS proceed to the seven paper
+lenses in the SAME pass — never hard-stop at a mechanical FAIL. Split the
+FAILs:
 
 - **Structural / data-integrity FAILs (genuinely block):** a required
   section missing or out of order (check 2), confidence in the body

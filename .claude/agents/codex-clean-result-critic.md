@@ -77,9 +77,18 @@ This is the load-bearing constraint for the entire wrapper agent.
   causes orphan jobs.
 - **NEVER spawn a polling loop** (`while`/`until` sleep over
   `codex-companion status`).
-- The only Bash you may run is reading agent specs, reading inputs the
-  brief named, locating the companion script (sanity check only — do
-  NOT execute it), and writing the prompt file with `cat > ... <<PROMPT`.
+- The Bash you may run is scoped to COMPOSITION: reading agent specs
+  and inputs the brief named; locating the companion script (sanity
+  check only — do NOT execute it); the Step 1b path/existence checks
+  (`task.py find`, `test -s` probes); the Step 1d mechanical pre-pass
+  (`verify_task_body.py` / `verify_paper.py` /
+  `audit_clean_results_body_discipline.py` / `task.py list-concerns`,
+  run on the VM at compose time so their output can be inlined as
+  envelopes); writing the prompt file with `cat > ... <<PROMPT`; and
+  the Step 4 envelope/no-residue guard over that file. Still banned:
+  dispatching or polling Codex (`codex_task.py`, the companion
+  runtime) and any task-state mutation beyond the fail-loud
+  `epm:failure` posts Steps 1/1b/1c prescribe.
 - **Why this matters.** A subagent has ONE turn. If you spawn Codex
   in-turn, the broker registers the job to your session, you exit, and
   the job has no listener for completion — it stays "running" forever
@@ -320,8 +329,10 @@ if [ "$PAPER" = "true" ]; then
   ( cd "$REPO_ROOT" && uv run python scripts/verify_paper.py --issue <N> ) >"$VOUT" 2>&1
   VRC=$?
 else
-  MDOC_ARGS=(); [ -n "$METHODOLOGY_DOC_PATH" ] && [ -s "$METHODOLOGY_DOC_PATH" ] \
-    && MDOC_ARGS=(--methodology-doc "$METHODOLOGY_DOC_PATH")
+  MDOC_ARGS=()
+  if [ -n "$METHODOLOGY_DOC_PATH" ] && [ -s "$METHODOLOGY_DOC_PATH" ]; then
+    MDOC_ARGS=(--methodology-doc "$METHODOLOGY_DOC_PATH")
+  fi
   VCMD_DESC="verify_task_body.py --issue <N> ${MDOC_ARGS[*]}"
   ( cd "$REPO_ROOT" && uv run python scripts/verify_task_body.py --issue <N> "${MDOC_ARGS[@]}" ) >"$VOUT" 2>&1
   VRC=$?
@@ -444,6 +455,12 @@ with v4 section names; for a v3 body substitute the v3 names
 > run instructions or envelopes, no
 > fifteen markdown lenses, no `\metric` lens (v1.1).
 
+Every `{{...}}` token below is a COMPOSE-TIME placeholder — substitute
+ALL of them (paths, round metadata, and each envelope's `command:` /
+`exit code:` / body slots) before writing the prompt file. The Step 4
+guard hard-fails any surviving `{{`/`}}` inside an envelope span, so a
+prompt shipping the raw template envelopes cannot pass.
+
 ```text
 You are an adversarial reviewer of markdown clean-result bodies. You
 have ZERO investment in the body being well-written. Your job: find
@@ -459,7 +476,9 @@ PRIOR CRITIQUE SUMMARIES (empty on round 1): {{prior_critique_summaries}}
 (Round {{revision_round}} note: for every claim that a round-1/2 fix "was applied" or is "still missing", quote the exact body line it rests on — an unquoted applied/absent claim is discarded.)
 
 All paths above are absolute and were existence-checked at compose
-time. Run every Bash command below from the repo root.
+time; resolve any relative repo path you encounter against REPO ROOT.
+Do not execute any repo script — the mechanical pre-pass output you
+need is inlined below.
 
 MECHANICAL PRE-PASS (composer-run, this round). The three envelopes
 below carry the verifier, audit-script, and open-concerns output the
@@ -1067,7 +1086,8 @@ grep -qF "$BODY_PATH" /tmp/codex-clean-result-critic-<N>-r<revision_round>-promp
 ```
 
 Then run the envelope + no-residue guard — SEMANTIC, per envelope
-(#1050): it makes a skipped Step 1d run, an empty capture, or a stale
+(#1050): it makes a skipped Step 1d run, an empty capture, an envelope
+shipped with unsubstituted `{{...}}` template placeholders, or a stale
 run-it-yourself instruction impossible to ship. Instruction prose in
 the composed prompt references envelopes BY NAME ONLY, so the anchored
 checks below can only be satisfied by REAL envelope boundary lines:
@@ -1075,15 +1095,21 @@ checks below can only be satisfied by REAL envelope boundary lines:
 ```bash
 PROMPT_FILE=/tmp/codex-clean-result-critic-<N>-r<revision_round>-prompt.md
 # (1) SEMANTIC envelope validation — for each required envelope: exactly one
-# column-zero-anchored BEGIN and END line, enclosing a command: line, an
-# exit code: line, and >=1 non-empty body line after the metadata.
-REQ="MECHANICAL VERIFIER OUTPUT"; [ "$PAPER" != "true" ] && REQ="$REQ|AUDIT SCRIPT OUTPUT|OPEN-CONCERNS JSON"
+# column-zero-anchored BEGIN and END line, enclosing a command: line, a
+# NUMERIC exit code: line, no unsubstituted {{...}} placeholder, and >=1
+# non-empty body line after the metadata.
+REQ="MECHANICAL VERIFIER OUTPUT"
+if [ "$PAPER" != "true" ]; then REQ="$REQ|AUDIT SCRIPT OUTPUT|OPEN-CONCERNS JSON"; fi
 echo "$REQ" | tr '|' '\n' | while IFS= read -r ENV_NAME; do
   n_begin=$(grep -cE "^---BEGIN $ENV_NAME---$" "$PROMPT_FILE"); n_end=$(grep -cE "^---END $ENV_NAME---$" "$PROMPT_FILE")
   [ "$n_begin" = "1" ] && [ "$n_end" = "1" ] || { echo "BLOCKER: envelope '$ENV_NAME' BEGIN/END count $n_begin/$n_end != 1/1" >&2; exit 1; }
   body=$(awk -v b="---BEGIN $ENV_NAME---" -v e="---END $ENV_NAME---" '$0==b{f=1;next} $0==e{f=0} f' "$PROMPT_FILE")
   printf '%s\n' "$body" | grep -q '^command: ' || { echo "BLOCKER: envelope '$ENV_NAME' missing command: line" >&2; exit 1; }
-  printf '%s\n' "$body" | grep -q '^exit code: ' || { echo "BLOCKER: envelope '$ENV_NAME' missing exit code: line" >&2; exit 1; }
+  printf '%s\n' "$body" | grep -qE '^exit code: [0-9]+$' \
+    || { echo "BLOCKER: envelope '$ENV_NAME' missing a NUMERIC exit code: line (unsubstituted {{vrc}}/{{arc}}/{{crc}}?)" >&2; exit 1; }
+  if printf '%s\n' "$body" | grep -qF -e '{{' -e '}}'; then
+    echo "BLOCKER: envelope '$ENV_NAME' contains an unsubstituted {{...}} template placeholder (Step 1d output never inlined)" >&2; exit 1
+  fi
   printf '%s\n' "$body" | grep -v '^command: ' | grep -v '^exit code: ' | grep -q '[^[:space:]]' \
     || { echo "BLOCKER: envelope '$ENV_NAME' has an EMPTY body (Step 1d capture failed?)" >&2; exit 1; }
 done || exit 1
