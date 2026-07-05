@@ -142,6 +142,36 @@ def test_issue_tick_skill_does_not_instruct_cron_create():
     )
 
 
+def test_tick_skills_digest_only_reads():
+    """#1000: every task-state read a tick skill instructs beyond the one
+    tick_triage.py call must be a jq-filtered digest (the #866/#906
+    refusal-kill prevention — an unpiped view dump pages the task body +
+    every marker note into the tick turn's context)."""
+    issue_body = ISSUE_TICK_SKILL.read_text()
+    campaign_body = (ISSUE_TICK_SKILL.parent.parent / "campaign-tick" / "SKILL.md").read_text()
+    assert "## Digest-only task-state reads" in issue_body
+    assert ".frontmatter.title" in issue_body  # jq-filtered slug lookup
+    assert "latest-marker <N> | jq" in issue_body  # filtered resume probe
+    # Every task-state read instruction line in BOTH tick skills must be
+    # digest-only. Prohibitive contract prose ("NEVER ..." bans, "does NOT"
+    # bullets) is whitelisted — it names the banned forms on purpose.
+    # NOTE (tripwire scope): the scan keys on the literal `<N>` placeholder
+    # convention; a future line writing a concrete issue number escapes it
+    # (accepted — skill prose uses `<N>` throughout; the positive asserts
+    # above anchor the contract independently).
+    for name, body in (("issue-tick", issue_body), ("campaign-tick", campaign_body)):
+        for line in body.splitlines():
+            if "NEVER" in line or "does NOT" in line:
+                continue  # prohibitive contract prose
+            if "view <N> --json" in line:
+                # unpiped dump pages body + all notes (reconciler Must-Fix 2a)
+                assert "jq" in line, f"{name}: unfiltered view --json instruction: {line!r}"
+            elif "task.py view <N>" in line:
+                # bare view (no --json) has NO sanctioned instruction form at
+                # all (reconciler Must-Fix 2b) — any non-prohibitive line is a FAIL.
+                raise AssertionError(f"{name}: bare task.py view <N> instruction: {line!r}")
+
+
 # ── /issue skill: Step 6d.2 cron prompt + teardown sites ───────────────────
 
 

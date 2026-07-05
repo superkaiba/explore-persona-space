@@ -393,6 +393,30 @@ def test_campaign_cold_start_no_state_file_redrives(state_dir, monkeypatch):
     assert verdict == "STALE-REDRIVE", reason
 
 
+# ── content invariant (#1000) ───────────────────────────────────────────────
+
+
+@pytest.mark.parametrize("kind", ["issue", "campaign"])
+def test_snapshot_carries_no_task_text(state_dir, monkeypatch, kind):
+    """#1000: the printed verdict line AND the snapshot stay digest-only —
+    a fixed key set and no task/marker-note text anywhere (both print/persist
+    into tick turns; free text is the #866/#906 refusal-kill surface). Pins
+    the CONTENT INVARIANT comment above compute_issue_verdict."""
+    sentinel = "TRIGGERSENTINELXYZ"
+    event_kind = "epm:progress v1" if kind == "issue" else "epm:campaign-poll v1"
+    events = [_event(event_kind, 60, note=sentinel * 30)]
+    _patch_issue_state(monkeypatch, "running", events)
+    if kind == "campaign":
+        monkeypatch.setattr(tick_triage, "load_children", lambda _n: [])
+        monkeypatch.setattr(tick_triage, "load_campaign_state", lambda _n: {})
+    verdict, reason = tick_triage.triage(13, kind)
+    assert sentinel not in f"{verdict} {reason}"
+    snap_text = tick_triage.snapshot_path(13).read_text()
+    snap = json.loads(snap_text)
+    assert set(snap) <= {"issue", "status", "ts", "terminal_streak", "root_disk"}, snap
+    assert sentinel not in snap_text
+
+
 # ── fail-loud CLI contract ──────────────────────────────────────────────────
 
 

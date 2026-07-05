@@ -58,6 +58,8 @@ watcher force-stop parachute).
 **Non-zero exit or unparseable output → treat as `STALE-REDRIVE`** (fail
 toward coverage: load the full `/campaign <N>` for one decision round).
 
+**Digest-only reads.** The GATE-TRANSITION failure-note slice is extracted with a jq-filtered read — `uv run python scripts/task.py view <N> --json | jq -r '[.events[] | select(.kind == "epm:failure")] | last | (.note // "")[0:80] | gsub("\n"; " ")'` — never an unpiped `view <N>` / `view <N> --json` dump, which pages the campaign body + every marker note into context (the #906/#866 refusal-kill class; full contract: `/issue-tick` § Digest-only task-state reads).
+
 ## Argument
 
 One required argument: the campaign task number `<N>`.

@@ -308,6 +308,13 @@ def runaway_streak_threshold() -> int:
     return val if val > 0 else RUNAWAY_STREAK_DEFAULT
 
 
+# CONTENT INVARIANT (#1000; the #866/#906 refusal-prevention rule): verdict
+# reason strings AND the snapshot payload stay free of task TEXT — status
+# tokens, marker ages, child ids, disk bands only. Never embed the task
+# title, body, or marker-note text here: the verdict line prints into an
+# LLM tick turn, and on harmful-content tasks free text is trigger-dense
+# enough to refusal-kill the session. Pinned by
+# tests/test_tick_triage.py::test_snapshot_carries_no_task_text.
 def compute_issue_verdict(
     status: str,
     prev_status: str | None,
