@@ -541,8 +541,9 @@ def test_gate_baseline_rc_captured_not_erased():
     assert "lint-baseline.txt 2>&1 || true" not in text, (
         "no baseline lint leg may erase its exit code with `|| true`"
     )
-    assert text.count("|| BASE_RC=$?") >= 4, (
-        "both baseline legs at both gate sites must capture BASE_RC (2 legs x 2 sites)"
+    assert text.count(_BASE_RC_FOLD) >= 4, (
+        "both baseline legs at both gate sites must capture BASE_RC (2 legs x 2 sites; "
+        "round-4: the capture is the no-downgrade fold, not the bare `|| BASE_RC=$?`)"
     )
     assert '[ "$BASE_RC" -gt 1 ]' in text, "a BASE_RC>1 baseline crash must feed the crash arm"
     assert "[ ! -s /tmp/issue-<N>-lint-baseline-norm.txt ]" in text, (
@@ -584,3 +585,71 @@ def test_gate_trigger_diff_exit_guarded():
     assert "cat /tmp/issue-<N>-lint-verdict.txt   # pass | block | crash | skip-artifact-only" in (
         region
     ), "the verdict enumeration must include crash"
+
+
+# --------------------------------------------------------------------------
+# Round 4 — reconciled v3 residuals (#1047: `lint-leg-rc-erasure-crash-masked`
+# persisted BLOCKER + `surgical-additive-diff-fails-open` persisted CONCERN)
+# --------------------------------------------------------------------------
+
+# The no-downgrade (max) per-leg rc fold. Pinning the SHAPE (not just literal
+# counts of `|| VAR=$?`): a gated leg-1 crash (rc=2, zero lines) must survive
+# a leg-2 rc=1-with-lines — the bare last-failure-wins capture erases the
+# crash and defeats the crash arm.
+_BASE_RC_FOLD = '|| { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }'
+_GATED_RC_FOLD = '|| { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }'
+
+
+def test_lint_leg_rc_no_downgrade_fold_at_all_four_sites():
+    """Round-4 (#1047 `lint-leg-rc-erasure-crash-masked` BLOCKER): every lint
+    leg-pair (BASE + GATED, shared gate + surgical block = 4 sites, 8 legs)
+    must capture its per-leg rc with the NO-DOWNGRADE (max) fold, and no bare
+    last-failure-wins `|| VAR=$?` capture may remain anywhere in the skill."""
+    text = _skill_text()
+    gate = _gate_region(text)
+    surg = _artifact_confirmed_region(text)
+    for region, name in ((gate, "shared gate"), (surg, "surgical block")):
+        assert region.count(_BASE_RC_FOLD) == 2, (
+            f"{name}: both BASE legs must use the no-downgrade BASE_RC fold"
+        )
+        assert region.count(_GATED_RC_FOLD) == 2, (
+            f"{name}: both GATED legs must use the no-downgrade GATED_RC fold"
+        )
+    assert "|| BASE_RC=$?" not in text, (
+        "no bare last-failure-wins BASE_RC capture may remain (crash-masking erasure)"
+    )
+    assert "|| GATED_RC=$?" not in text, (
+        "no bare last-failure-wins GATED_RC capture may remain (crash-masking erasure)"
+    )
+
+
+def test_surgical_additive_producer_guarded_and_empty_list_hard_stops():
+    """Round-4 (#1047 `surgical-additive-diff-fails-open` CONCERN): the
+    surgical additive-list producer must be materialize-then-check (a FAILED
+    diff hard-stops — routed to epm:merge-failed — never read as an empty
+    list), and an EMPTY additive list on the deliverables-missing landing
+    must hard-stop instead of pushing + posting
+    `epm:merged {surgical_checkout: true}` with nothing committed."""
+    text = _skill_text()
+    region = _artifact_confirmed_region(text)
+    guard = region.find('if ! git -C "$WT" diff --name-only --diff-filter=A origin/main...HEAD')
+    assert guard != -1, (
+        "the surgical additive-list producer must check its OWN exit code "
+        "(materialize-then-check, mirroring the shared gate's trigger diff)"
+    )
+    empty_stop = region.find("elif [ ! -s /tmp/issue-<N>-additive-files.txt ]; then")
+    assert empty_stop != -1, (
+        "an empty additive list on the deliverables-missing landing must be "
+        "detected (phantom-success hard stop)"
+    )
+    assert region.count("SURGICAL ABORT") >= 2, (
+        "both abort arms (failed producer diff, empty list) must fail loud"
+    )
+    assert region.count("epm:merge-failed") >= 2, (
+        "the abort arms must route to the epm:merge-failed handling"
+    )
+    first_consumer = region.find("xargs -r -a /tmp/issue-<N>-additive-files.txt git")
+    assert -1 < guard < empty_stop < first_consumer, (
+        "the producer guard + empty-list hard stop must precede the first "
+        "additive-list consumer (never proceed to checkout/stage/push)"
+    )
