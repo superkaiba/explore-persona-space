@@ -949,6 +949,204 @@ def cross_layer_figures(
     logger.info("[figures] wrote cross-layer figures to %s", out_dir)
 
 
+# ── kfold cross-fit figures (follow-up round `kfold-decision-cells`, plan v10 §3) ─
+
+
+def _err_from_ci(ys: list[float], ylo: list[float], yhi: list[float]) -> np.ndarray:
+    """errorbar yerr from CI bounds (clamped at 0 — constant-draw float epsilon)."""
+    return np.vstack(
+        [
+            np.maximum(0.0, np.asarray(ys) - np.asarray(ylo)),
+            np.maximum(0.0, np.asarray(yhi) - np.asarray(ys)),
+        ]
+    )
+
+
+def _series_from(
+    recs: dict, key_point: str, arm: str = "ext_plain"
+) -> tuple[list, list, list, list]:
+    """(xs, ys, lo, hi) across a {layer: read} dict's ``arm`` records."""
+    xs, ys, ylo, yhi = [], [], [], []
+    for la_s, rec in sorted(recs.items(), key=lambda kv: int(kv[0])):
+        r = (rec or {}).get(arm) or {}
+        if r.get(key_point) is None:
+            continue
+        ci = r.get("ci95") or [np.nan, np.nan]
+        xs.append(int(la_s))
+        ys.append(r[key_point])
+        ylo.append(ci[0])
+        yhi.append(ci[1])
+    return xs, ys, ylo, yhi
+
+
+def kfold_layer_profile(stats: dict, out_dir: pathlib.Path) -> None:
+    """Cross-fitted layer-profile decision figure (plan v10 §3): pooled per-layer
+    H1 contrast + H2 ΔG with 95% bootstrap CIs across {14, 17, 20, 23, 26},
+    registered margins shaded, ROUND-1 single-split CIs overlaid as the labeled
+    comparison (open markers, x-offset) — never blended into the pooled reads."""
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.0, 4.2), layout="constrained")
+    pal = paper_palette(4)
+    h1_margin = float(stats["margins"]["h1"])
+    h2_margin = float(stats["margins"]["h2"])
+    r1 = stats.get("carried_round1_rows") or {}
+
+    # (a) H1 contrast per layer: pooled family + companions; round-1 overlay.
+    ax1.axhspan(-h1_margin, h1_margin, color="#D9EAD3", alpha=0.6, lw=0)
+    pooled_h1 = {**(stats.get("h1_by_layer") or {}), **(stats.get("h1_companions") or {})}
+    xs, ys, ylo, yhi = _series_from(pooled_h1, "h1_contrast")
+    if xs:
+        ax1.errorbar(
+            xs,
+            ys,
+            yerr=_err_from_ci(ys, ylo, yhi),
+            fmt="o",
+            ms=4,
+            capsize=3,
+            color=pal[0],
+            label="Cross-fitted (this round)",
+        )
+    r1_h1 = dict(r1.get("h1_by_layer") or {})
+    if isinstance(r1.get("h1_calibration_L20_companion"), dict):
+        r1_h1["20"] = r1["h1_calibration_L20_companion"]
+    xs_r, ys_r, ylo_r, yhi_r = _series_from(r1_h1, "h1_contrast")
+    if xs_r:
+        xs_off = [x + 0.35 for x in xs_r]
+        ax1.errorbar(
+            xs_off, ys_r, yerr=_err_from_ci(ys_r, ylo_r, yhi_r), fmt="none", capsize=3, color=pal[1]
+        )
+        for x, y in zip(xs_off, ys_r, strict=True):
+            _parent_marker(ax1, x, y, pal[1])
+        ax1.plot(
+            [], [], marker="o", mfc="white", mec=pal[1], ls="none", label="Round 1 (single split)"
+        )
+    ax1.axhline(0, color="#444444", lw=0.8)
+    ax1.set_xlabel("Read-out layer")
+    ax1.set_ylabel("H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)")
+    ax1.legend(frameon=False, fontsize=7)
+    set_title_subtitle(
+        ax1,
+        "Cross-fitted: early-vs-late equivalence across layers",
+        f"Shaded band = registered ±{h1_margin:g} equivalence margin; 95% bootstrap CIs "
+        "(fold assignment fixed)",
+    )
+
+    # (b) H2 matched ΔG(0→16) per layer: pooled family + companions; round-1 overlay.
+    ax2.axhspan(0.0, h2_margin, color="#F4CCCC", alpha=0.5, lw=0)
+    pooled_h2 = {**(stats.get("h2_by_layer") or {}), **(stats.get("h2_companions") or {})}
+    xs2, ys2, ylo2, yhi2 = _series_from(pooled_h2, "delta_G")
+    if xs2:
+        ax2.errorbar(
+            xs2,
+            ys2,
+            yerr=_err_from_ci(ys2, ylo2, yhi2),
+            fmt="o",
+            ms=4,
+            capsize=3,
+            color=pal[0],
+            label="Cross-fitted (this round)",
+        )
+    r1_h2 = dict(r1.get("h2_by_layer") or {})
+    if isinstance(r1.get("h2_calibration_L20_companion"), dict):
+        r1_h2["20"] = r1["h2_calibration_L20_companion"]
+    xs2_r, ys2_r, ylo2_r, yhi2_r = _series_from(r1_h2, "delta_G")
+    if xs2_r:
+        xs2_off = [x + 0.35 for x in xs2_r]
+        ax2.errorbar(
+            xs2_off,
+            ys2_r,
+            yerr=_err_from_ci(ys2_r, ylo2_r, yhi2_r),
+            fmt="none",
+            capsize=3,
+            color=pal[1],
+        )
+        for x, y in zip(xs2_off, ys2_r, strict=True):
+            _parent_marker(ax2, x, y, pal[1])
+        ax2.plot(
+            [], [], marker="o", mfc="white", mec=pal[1], ls="none", label="Round 1 (single split)"
+        )
+    ax2.axhline(0, color="#444444", lw=0.8)
+    ax2.axhline(h2_margin, color="#B45F5F", lw=0.8, ls=":")
+    ax2.set_xlabel("Read-out layer")
+    ax2.set_ylabel("Matched ΔG(0→16): own-advantage closed\nby absorbing 16 prefix tokens")
+    ax2.legend(frameon=False, fontsize=7)
+    set_title_subtitle(
+        ax2,
+        "Cross-fitted: prefix closure across layers",
+        f"Shaded band = below the registered {h2_margin:g} margin; matched survivors, "
+        "identical target",
+    )
+    savefig_paper(fig, "kfold_layer_profile", dir=out_dir)
+    plt.close(fig)
+
+
+def kfold_fold_spaghetti(stats: dict, out_dir: pathlib.Path) -> None:
+    """Per-fold point-spaghetti companion (the low-level per-unit view, plan v10
+    §3): each fold's H1 contrast + H2 ΔG point estimate per layer as a labeled
+    line, the pooled read ± CI overlaid dark."""
+    het = stats.get("per_fold_heterogeneity") or {}
+    if not het:
+        logger.warning("[figures] per_fold_heterogeneity absent — spaghetti panel skipped")
+        return
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.0, 4.2), layout="constrained")
+    folds = sorted(het, key=int)
+    pal = paper_palette(max(4, len(folds)))
+    cal = str(stats.get("calibration_fold"))
+    for ax, key, pooled_key in (
+        (ax1, "h1_contrast_ext_plain", "h1"),
+        (ax2, "h2_delta_G_ext_plain", "h2"),
+    ):
+        for fi, fold in enumerate(folds):
+            layer_recs = het[fold]
+            xs = [
+                int(la) for la in sorted(layer_recs, key=int) if layer_recs[la].get(key) is not None
+            ]
+            ys = [layer_recs[str(la)][key] for la in xs]
+            if not xs:
+                continue
+            label = f"fold {fold}" + (" (calibration)" if fold == cal else "")
+            ax.plot(xs, ys, marker="o", ms=3.5, lw=1.0, alpha=0.7, color=pal[fi], label=label)
+        pooled = (
+            {**(stats.get("h1_by_layer") or {}), **(stats.get("h1_companions") or {})}
+            if pooled_key == "h1"
+            else {**(stats.get("h2_by_layer") or {}), **(stats.get("h2_companions") or {})}
+        )
+        point_key = "h1_contrast" if pooled_key == "h1" else "delta_G"
+        xs_p, ys_p, ylo_p, yhi_p = _series_from(pooled, point_key)
+        if xs_p:
+            ax.errorbar(
+                xs_p,
+                ys_p,
+                yerr=_err_from_ci(ys_p, ylo_p, yhi_p),
+                fmt="s",
+                ms=5,
+                capsize=3,
+                color="#222222",
+                lw=1.6,
+                label="Pooled ± 95% CI",
+            )
+        ax.axhline(0, color="#444444", lw=0.8)
+        ax.set_xlabel("Read-out layer")
+        ax.legend(frameon=False, fontsize=6.5)
+    ax1.set_ylabel("H1 contrast (own vs external plain)")
+    ax2.set_ylabel("Matched ΔG(0→16), own vs external plain")
+    set_title_subtitle(
+        ax1,
+        "Per-fold point estimates behind the pooled reads",
+        "5 folds, each context tested once; wide fold spread relative to the pooled CI "
+        "caveats the fixed-pool precision framing",
+    )
+    savefig_paper(fig, "kfold_fold_spaghetti", dir=out_dir)
+    plt.close(fig)
+
+
+def kfold_figures(stats: dict, out_dir: pathlib.Path) -> None:
+    """--kfold driver: cross-fitted layer-profile decision figure + the per-fold
+    point-spaghetti companion (plan v10 §3) -> figures/issue_952/kfold_*.png."""
+    kfold_layer_profile(stats, out_dir)
+    kfold_fold_spaghetti(stats, out_dir)
+    logger.info("[figures] wrote kfold figures to %s", out_dir)
+
+
 def main() -> None:
     """Figure driver: heroes (required) + exploratory dump (input-gated)."""
     ap = argparse.ArgumentParser(description="Issue #952 figures (VM, CPU)")
@@ -963,6 +1161,13 @@ def main() -> None:
         help="follow-up mode: --stats points at stats_cross_layer.json; writes "
         "crosslayer_*.png only (parent hero/exploratory figures untouched)",
     )
+    ap.add_argument(
+        "--kfold",
+        action="store_true",
+        help="follow-up `kfold-decision-cells` mode: --stats points at "
+        "stats_kfold.json; writes kfold_*.png only (parent + round-1 figures "
+        "untouched)",
+    )
     args = ap.parse_args()
 
     set_paper_style("neurips")
@@ -972,6 +1177,9 @@ def main() -> None:
     stats = json.loads(pathlib.Path(args.stats).read_text())
     tensors_dir = pathlib.Path(args.tensors_dir) if args.tensors_dir else None
 
+    if args.kfold:
+        kfold_figures(stats, out_dir)
+        return
     if args.cross_layer:
         npz_path = (
             tensors_dir / "per_context_stats_cross_layer.npz" if tensors_dir is not None else None
