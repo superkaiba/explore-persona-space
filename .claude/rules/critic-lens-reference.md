@@ -139,7 +139,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    the read gauge stated in §4 (a recipe-identical parent committed at classic `α/r` application can
    be an unconditional repeater at the faithful `α/√r` a current vLLM+PEFT honors for `use_rslora:
    true` — incident #601: all 20 of #472's reused adapters passed (a)–(f) yet HALTed Phase-0 as
-   repeaters); (h) source resolution + consumer-exact path layout + target-backend fetchability for
+   repeaters); (h) source resolution + consumer-exact path layout + target-backend fetchability +
+   staged-layout consumer-open for
    reused TRAINING-INPUT artifacts — for a reused `train/*.jsonl` mix / on-policy response cache /
    downstream-input `eval_results/` JSON, the plan confirms the file (i) is source-resolvable (HF
    via `huggingface_hub.list_repo_files`, OR git-tree reachable for a committed `eval_results/...`
@@ -151,7 +152,12 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    the clone), else the plan uploads / renames the mix to the consumer path first, adapts the
    consumer, or carries a self-contained §4 regen phase (#734 round-4: a reused parent mix on
    neither HF repo AND under a #474 naming convention the #664-style consumer dispatcher did not
-   assert crashed phase2 at the pre-train assert on the GCP lane after 3 review rounds); (i)
+   assert crashed phase2 at the pre-train assert on the GCP lane after 3 review rounds), AND (iv)
+   when the artifact is staged through a layout-mapping helper (incl. a verbatim prefix mirror)
+   into a consumer-fixed local layout, the plan names the hub-rel → local-rel mapping and schedules
+   a 1-file staging probe + consumer-open through the REAL staging path before production (#928: a
+   verbatim prefix mirror staged the store manifest one level deep and crashed `Store()` init after
+   legs (i)–(iii) passed); (i)
    throughput fitness of reused fit/analysis/eval/upload-verify CODE — inner per-cell/per-fold/per-draw loop
    batched + device parametrized + data-repo Hub calls prefix-scoped; full text in `.claude/rules/artifact-reuse.md` checklist item (i)
    (referenced by pointer, not duplicated here; "checklist item (i)" is distinct from this item's
@@ -167,7 +173,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    (h)(ii) (the reused mix resolves in the parent dir but NO file matches the consumer-asserted path
    pattern — #474 `i474_loc_A1.jsonl` vs a #664-style `mk_<source>_<arm>_<dose>_seed42.jsonl` naming
    drift) OR fails target-backend fetchability check (h)(iii) on the §9 lane (e.g. HF-resolved but a
-   CDN/region/`HF_TOKEN` gate blocks the lane from staging it), without an upload-first /
+   CDN/region/`HF_TOKEN` gate blocks the lane from staging it) OR fails staged-layout consumer-open
+   check (h)(iv) (a staged multi-file reuse with no named mapping and no staging-probe +
+   consumer-open gate — #928), without an upload-first /
    rename-to-consumer-path step, a consumer-adaptation, OR a self-contained §4 regen phase — the
    resulting numbers will silently confound the result, or phase2 crashes at the pre-train `assert
    data_path.exists()` on a git-clone-only lane; or the plan reuses a mutually-dependent artifact

@@ -1,5 +1,5 @@
 ---
-description: Trained-artifact + code reuse fitness check (a)-(j) — when to reuse a prior HF adapter / checkpoint / training-mix / raw-completion bucket / eval JSON / fit-analysis helper vs retrain or rewrite, incl. pairwise pair-provenance coherence (#922) and reuse-validation gate calibration + HALT-vs-WARN severity (#813), with the enforcement chain (loads at plan time via plan-file paths)
+description: Trained-artifact + code reuse fitness check (a)-(j) — when to reuse a prior HF adapter / checkpoint / training-mix / raw-completion bucket / eval JSON / fit-analysis helper vs retrain or rewrite, incl. pairwise pair-provenance coherence (#922) and reuse-validation gate calibration + HALT-vs-WARN severity (#813), and the staged-layout consumer-open probe (#928), with the enforcement chain (loads at plan time via plan-file paths)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -143,10 +143,14 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   every other reuse-validation gate: § Reuse-validation gate calibration
   below.
 - **(h) Source resolution + consumer-exact path layout + target-backend
-  fetchability (reused TRAINING-INPUT artifacts):** for any reused
-  training-input file — a parent's `train/*.jsonl` mix, an on-policy response
-  cache, or an `eval_results/` JSON consumed as a downstream INPUT (NOT an
-  adapter / checkpoint, which `(e)` already covers) — verify ALL THREE:
+  fetchability + staged-layout consumer-open (reused TRAINING-INPUT /
+  downstream-input artifacts):** for any reused training-input or
+  downstream-input file — a parent's `train/*.jsonl` mix, an on-policy
+  response cache, an `eval_results/` JSON consumed as a downstream INPUT, or
+  a multi-file tensor/activation STORE staged from the data repo (NOT an
+  adapter / checkpoint, which `(e)` already covers) — verify legs (i)–(iii)
+  unconditionally, plus leg (iv) whenever a staging step separates the fetch
+  from the consumer's read:
   **(i) source resolution** — the file is reachable through EITHER HF
   (`huggingface_hub.list_repo_files`, for training mixes / on-policy caches /
   HF-uploaded eval JSONs) OR **git-tree reachability** for a committed
@@ -179,18 +183,64 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   ~1M-file data repo — `snapshot_download` full-tree-enumerates there;
   gotchas.md) — so a mix
   the parent BUILT but never UPLOADED nor COMMITTED is unreachable there and
-  the pre-train `assert data_path.exists()` crashes phase2. The check FAILS
-  when ANY of (i)/(ii)/(iii) fails (e.g. HF-resolved but a CDN/region/
+  the pre-train `assert data_path.exists()` crashes phase2. AND **(iv)
+  staged-layout consumer-open** — leg (ii) verifies the consumer's path
+  pattern against the SOURCE listing; it says nothing about the tree the
+  STAGING step produces. Whenever the reuse goes through a stage-from-Hub
+  helper that maps hub-relative paths onto local paths — INCLUDING a verbatim
+  prefix mirror — feeding a consumer with a fixed local layout (a
+  `Store(store_dir)`-style init, a manifest/config read, a fixed directory
+  tree), fetchability alone is insufficient: a producer that uploaded the
+  consumer's ENTRY file inside the blob folder makes a verbatim mirror stage
+  it one level deep, and the consumer's open() crashes AFTER provisioning.
+  Three requirements: **(1)** the plan NAMES the hub-rel → local-rel mapping —
+  prefer a PURE function threaded through the entry-time missing-check, the
+  fetch destinations, and the completeness check via ONE shared mapped-path
+  dict (worked fix: `store_local_relpath` + `stage_store` in
+  `scripts/issue928_mlp_indiv_control.py`); **(2)** the stage FAILS LOUD when
+  the mapped set lacks the consumer's entry file (manifest/config) or the
+  mapping collides — never a "successful" stage into a doomed consumer init;
+  **(3)** BEFORE any production run, a **1-file staging probe +
+  consumer-open**: stage the artifact's ENTRY file (KB-scale) through the
+  REAL staging code path at the pinned revision, then run the consumer's
+  entry-point open/init (or its manifest-read; pre-seed blob files as dummies
+  at their mapped paths where full init requires them) against the staged
+  root. A synthetic-fixture smoke that writes the LOCAL layout directly never
+  exercises the staging phase and does NOT satisfy this leg (the cross-phase
+  data-contract smoke class, #518); the end-to-end smoke must exercise the
+  real staging path. Full 4-point implementation recipe (pure mapping fn,
+  fail-loud entry check, regression test through the producer's REAL Hub path
+  shapes, dummy-seeded real-Hub confirm):
+  `.claude/agent-memory/experiment-implementer/feedback_hub_prefix_mirror_vs_consumer_layout.md`.
+  **N/A escape:** reuse with NO staging transformation — the consumer opens
+  the file(s) at the exact fetch destination(s), no layout mapping —
+  satisfies leg (iv) trivially; record "no staging transformation" in the
+  reuse map. (Incident #928, att-20260704-120700: the Hub stored all 51 store
+  files FLAT under `.../store/percq_summaries/` — the extractor uploaded
+  `manifest.json` INSIDE that folder — while `Store(store_dir)` reads
+  `<store>/manifest.json`; `stage_store` mirrored the Hub prefix verbatim,
+  the manifest landed at `<store>/percq_summaries/manifest.json`, and the
+  production run crashed at `Store()` init, ~6 min GPU burn; legs (i)–(iii)
+  all passed. Same-day sibling, same lesson: #928's analyzer 404'd on an HF
+  subpath GUESSED from a collapsed tree listing — verify the exact consumed
+  path via `HfApi().file_exists` / scoped `list_repo_tree`, never infer it
+  from a collapsed listing.) The check FAILS
+  when ANY of (i)/(ii)/(iii)/(iv) fails (e.g. HF-resolved but a CDN/region/
   `HF_TOKEN` gate stops the §9 lane from staging it; or the parent repo
   resolves but no file matches the consumer-asserted path pattern). On a MISS,
   do NOT record the file as a confirmed reuse: either (a) rename / re-upload
   the parent file(s) to the consumer-asserted path pattern and cite that path,
   (b) adjust the new consumer to open the parent's actual path layout (naming
-  the parent pattern in §4), or (c) add a self-contained regen phase in §4
+  the parent pattern in §4), (c) add a self-contained regen phase in §4
   that rebuilds the mix on the worker under the consumer-asserted paths from
   the parent's deterministic build blocks, and flag it `must-rebuild` in §12
-  Assumptions. Verify all three legs for EVERY reused training-input file the
-  design loads, BEFORE recording it in §10 / §11. (Incident #734 round-4: a
+  Assumptions, or **(d)** for a leg-(iv) miss, fix the STAGING MAPPING — the
+  pure hub-rel → local-rel function + the fail-loud entry-file check — not a
+  rebuild (the artifact is fine; the mapping was wrong; only a genuinely
+  malformed UPLOADED tree — the entry file absent from the source listing
+  itself — warrants regeneration). Verify every applicable leg for EVERY
+  reused training-input / downstream-input file the design loads, BEFORE
+  recording it in §10 / §11. (Incident #734 round-4: a
   reused parent training mix was on neither HF repo, AND the parent's naming
   convention (#474 `i474_loc_A1.jsonl`) differed from the consumer's asserted
   path (a #664-style `mk_<source>_<arm>_<dose>_seed42.jsonl`); the plan passed
@@ -308,9 +358,12 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   COVERAGE mismatch —
   `.claude/agent-memory/experiment-implementer/feedback_pinned_artifact_pair_mutual_inconsistency.md`.)
 
-A failing check other than (i) → retrain / regenerate; a failing throughput
-check (i) → fix the SOURCE module (batch / parametrize / scope it there —
-never a caller-side workaround), then reuse. Say why in the plan either way.
+A failing check other than (i)/(h)(iv) → retrain / regenerate; a failing
+throughput check (i) → fix the SOURCE module (batch / parametrize / scope it
+there — never a caller-side workaround), then reuse; a failing staged-layout
+consumer-open check (h)(iv) → fix the STAGING MAPPING (pure hub-rel →
+local-rel fn + fail-loud entry-file check), then reuse. Say why in the plan
+either way.
 
 ## Reuse-validation gate calibration + severity (HALT vs WARN) (#813)
 
