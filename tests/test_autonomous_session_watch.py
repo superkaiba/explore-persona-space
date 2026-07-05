@@ -72,6 +72,20 @@ from autonomous_session_watch import (  # noqa: E402
 from explore_persona_space.task_workflow import STATUSES  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def _no_real_stagger_sleep(monkeypatch):
+    """Hermeticity for the #1059 session-dispatch stagger: no watcher test may
+    ever REALLY sleep (a real-spawn earlier in the same test records a fresh
+    stamp into the isolated registry, which would put a ~60s ``time.sleep``
+    inside the next dispatch). Records the requested delays so the stagger
+    wiring tests can assert on them; every other test just never sleeps."""
+    import autonomous_session_watch as asw
+
+    sleeps: list[float] = []
+    monkeypatch.setattr(asw, "_stagger_sleep", lambda seconds: sleeps.append(seconds))
+    return sleeps
+
+
 def _p(issue: int, pod_id: str, name: str):
     """A non-wedged 4-tuple for ``_running_managed_issue_pods`` stubs (#692).
 
@@ -9909,6 +9923,124 @@ def test_infra_drain_prespawn_recheck_aborts(isolated_registry, monkeypatch, cap
     assert ok == "spawned"
     assert len(spawned) == 1 and "--issue" in spawned[0]
     assert "INFRA-DRAIN DISPATCHED issue #42" in capsys.readouterr().out
+
+
+# ── #1059 session-dispatch stagger (chokepoint wiring) ────────────────────────
+# The stagger paces REAL spawns >= EPM_SESSION_DISPATCH_STAGGER_S (60s) apart
+# via spawn_session's last-session-dispatch stamp; the module-level autouse
+# _no_real_stagger_sleep fixture (top of file) replaces the _stagger_sleep
+# seam with a recorder, so these tests assert the requested delay without
+# ever sleeping.
+
+
+def _stagger_fake_spawn(monkeypatch, *, stdout="spawned sid-new\n", rc=0):
+    """subprocess.run stub for direct ``_dispatch_infra_drain`` calls; records
+    each argv and returns a canned result (rc / stdout configurable so tests
+    can produce the suppressed-sentinel and failed shapes)."""
+    from types import SimpleNamespace
+
+    import autonomous_session_watch as asw
+
+    calls: list[list[str]] = []
+
+    def _fake_run(cmd, **kw):
+        calls.append(list(cmd))
+        return SimpleNamespace(returncode=rc, stdout=stdout, stderr="boom" if rc else "")
+
+    monkeypatch.setattr(asw.subprocess, "run", _fake_run)
+    return calls
+
+
+def test_dispatch_infra_drain_staggers_second_spawn(
+    isolated_registry, monkeypatch, _no_real_stagger_sleep, capsys
+):
+    # A stamp 5s old under the default 60s window -> one sleep of ~55s, then
+    # a normal "spawned" result that UPDATES the stamp to this dispatch.
+    import json
+    import time as _time
+
+    import autonomous_session_watch as asw
+
+    calls = _stagger_fake_spawn(monkeypatch)
+    spawn_session.record_session_dispatch(99, "test-prior", now=_time.time() - 5.0)
+    result = asw._dispatch_infra_drain(42, "slot 1/3", dry_run=False, reg_snapshot={})
+    assert result == "spawned"
+    assert len(calls) == 1  # the spawn still ran (sleep-then-proceed, never skip)
+    assert len(_no_real_stagger_sleep) == 1
+    assert 54.0 <= _no_real_stagger_sleep[0] <= 56.0
+    assert "INFRA-DRAIN STAGGER issue #42" in capsys.readouterr().out
+    entry = json.loads((isolated_registry / "last-session-dispatch.json").read_text())
+    assert entry["issue"] == 42 and entry["holder"] == "watcher-infra-dispatch"
+
+
+def test_dispatch_infra_drain_two_consecutive_spawns_full_window(
+    isolated_registry, monkeypatch, _no_real_stagger_sleep
+):
+    # End-to-end through the REAL helpers (record -> age -> delay): with no
+    # prior stamp the first spawn never sleeps and records; the second,
+    # issued immediately after, sleeps out (approximately) the FULL window.
+    import autonomous_session_watch as asw
+
+    _stagger_fake_spawn(monkeypatch)
+    assert asw._dispatch_infra_drain(42, "slot 1/3", dry_run=False, reg_snapshot={}) == "spawned"
+    assert _no_real_stagger_sleep == []  # no prior dispatch -> no sleep
+    assert asw._dispatch_infra_drain(43, "slot 2/3", dry_run=False, reg_snapshot={}) == "spawned"
+    assert len(_no_real_stagger_sleep) == 1
+    assert 59.0 <= _no_real_stagger_sleep[0] <= 60.0
+
+
+def test_dispatch_infra_drain_no_stagger_when_disabled(
+    isolated_registry, monkeypatch, _no_real_stagger_sleep
+):
+    # EPM_SESSION_DISPATCH_STAGGER_S=0 is the kill switch: a fresh stamp
+    # produces zero sleep and the spawn proceeds.
+    import time as _time
+
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_SESSION_DISPATCH_STAGGER_S", "0")
+    calls = _stagger_fake_spawn(monkeypatch)
+    spawn_session.record_session_dispatch(99, "test-prior", now=_time.time())
+    assert asw._dispatch_infra_drain(42, "slot 1/3", dry_run=False, reg_snapshot={}) == "spawned"
+    assert _no_real_stagger_sleep == []
+    assert len(calls) == 1
+
+
+def test_dispatch_infra_drain_dry_run_never_sleeps_never_records(
+    isolated_registry, monkeypatch, _no_real_stagger_sleep
+):
+    # Dry-run returns BEFORE the stagger block: zero sleeps, zero subprocess
+    # calls, and the stamp is byte-untouched (dry-run never records either).
+    import time as _time
+
+    import autonomous_session_watch as asw
+
+    spawn_session.record_session_dispatch(99, "test-prior", now=_time.time())
+    stamp = isolated_registry / "last-session-dispatch.json"
+    before = stamp.read_bytes()
+    monkeypatch.setattr(
+        asw.subprocess, "run", lambda *a, **k: pytest.fail("subprocess ran on dry-run")
+    )
+    assert asw._dispatch_infra_drain(42, "slot 1/3", dry_run=True, reg_snapshot={}) == "failed"
+    assert _no_real_stagger_sleep == []
+    assert stamp.read_bytes() == before
+
+
+def test_dispatch_infra_drain_suppressed_or_failed_does_not_record(
+    isolated_registry, monkeypatch, _no_real_stagger_sleep
+):
+    # Only a REAL "spawned" outcome records the stamp: a rc-0 suppressed
+    # no-op (lease held) and a rc!=0 failed spawn both leave no stamp, so a
+    # no-op can never defer real work at the next dispatcher.
+    import autonomous_session_watch as asw
+
+    stamp = isolated_registry / "last-session-dispatch.json"
+    _stagger_fake_spawn(monkeypatch, stdout="DISPATCH-LEASE HELD issue #42: in flight\n")
+    assert asw._dispatch_infra_drain(42, "slot 1/3", dry_run=False, reg_snapshot={}) == "suppressed"
+    assert not stamp.exists()
+    _stagger_fake_spawn(monkeypatch, rc=1)
+    assert asw._dispatch_infra_drain(42, "slot 1/3", dry_run=False, reg_snapshot={}) == "failed"
+    assert not stamp.exists()
 
 
 def test_infra_drain_liveness_unavailable_keeps_blocking(isolated_registry, monkeypatch, capsys):

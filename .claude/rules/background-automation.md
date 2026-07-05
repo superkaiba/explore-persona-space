@@ -282,6 +282,28 @@ reset the orphan/stalled staleness clocks. Kill switch:
 `EPM_DISABLE_INFRA_DRAIN=1`. `--infra-drain-only` runs just this pass
 (pair with `--dry-run` for a live smoke).
 
+*Session-dispatch stagger (#1059).* Consecutive REAL `spawn-issue --auto`
+dispatches from the two infra loops (`infra_drain_pass` +
+`proposed_infra_sweep_pass`, via the shared `_dispatch_infra_drain`
+chokepoint) and from the batch filer `file_infra_task.py` are paced ≥
+`EPM_SESSION_DISPATCH_STAGGER_S` apart (default 60s; `0` disables;
+malformed → 60; clamped ≤ 300) via the shared last-writer-wins stamp
+`~/.eps-autonomous/last-session-dispatch.json` — each fresh session is a
+~100K-token cold context load and the org input-TPM 429 cap climbs at minute
+boundaries (incident 2026-07-04: 5 workflow-fix sessions in ~3 min). The
+watcher SLEEPS out the remainder before its pre-spawn re-check (worst-case
+added tick wall-time ≤ cap × window — 5 min at defaults, ~25 min at the 300s
+clamp — safe because the `watch.lock` non-blocking flock makes an overlapping
+cron fire skip, never stack); the filer DEFERS (file-then-no-op, exit 0; the
+sweep backstop dispatches within ~10 min). Only a real `"spawned"` outcome
+records the stamp — suppressed / failed / dry-run never record. Named
+residuals: the check→spawn→record sequence is a TOCTOU (the stamp is
+last-writer-wins PACING, not an exclusion primitive — a concurrent dispatcher
+already mid-spawn can co-dispatch inside the window, bounded at ~2 coincident
+cold loads, and the window closes for everyone at the first record); and
+crash-recovery, capacity-retry, campaign, and manual spawns are accepted
+UNPACED sources (the #1059 Goal scopes to the infra loops + the batch filer).
+
 *Predicate-hold auto-promotion (#633 follow-on).* BEFORE the dispatch
 logic, the pass promotes any `holds` entry whose reason matches the PM's
 cross-issue-predicate convention `predicate-<#N>-<short-desc>`

@@ -44,12 +44,34 @@ def _no_real_lease(monkeypatch):
     monkeypatch.setattr(fit, "dispatch_lease_fresh", lambda issue: None)
 
 
-def _install_run_recorder(monkeypatch, *, new_id="#771", new_rc=0, spawn_rc=0):
+@pytest.fixture(autouse=True)
+def _no_real_stagger(monkeypatch):
+    """Hermeticity for the #1059 step-4.75 session-dispatch stagger: default
+    the stamp read to "no prior dispatch" (the live VM's real
+    ~/.eps-autonomous stamp could be fresh on a busy fleet -> flaky defers)
+    and RECORD — never write — the stamp on a successful spawn. Returns the
+    recorded issue ids; stagger-specific tests override / read these."""
+    recorded: list[int] = []
+    monkeypatch.setattr(fit, "last_session_dispatch_age_s", lambda now=None: None)
+    monkeypatch.setattr(
+        fit, "record_session_dispatch", lambda issue, holder, now=None: recorded.append(issue)
+    )
+    return recorded
+
+
+def _install_run_recorder(
+    monkeypatch,
+    *,
+    new_id="#771",
+    new_rc=0,
+    spawn_rc=0,
+    spawn_stdout="Issue #771 session spawned: sid-new\n",
+):
     """Replace ``file_infra_task.subprocess.run`` with a recorder that branches
     on the argv: a ``task.py new`` invocation returns a canned ``#<N>`` stdout
-    (rc=new_rc); a ``spawn-issue`` invocation returns spawn_rc and records the
-    full command. Returns ``calls`` (list of argv lists), so a test asserts
-    both WHICH subprocesses ran and their exact shape."""
+    (rc=new_rc); a ``spawn-issue`` invocation returns spawn_rc/spawn_stdout and
+    records the full command. Returns ``calls`` (list of argv lists), so a test
+    asserts both WHICH subprocesses ran and their exact shape."""
     calls: list[list[str]] = []
 
     def _fake_run(cmd, **kw):
@@ -61,7 +83,7 @@ def _install_run_recorder(monkeypatch, *, new_id="#771", new_rc=0, spawn_rc=0):
         if "scripts/spawn_session.py" in cmd and "spawn-issue" in cmd:
             return SimpleNamespace(
                 returncode=spawn_rc,
-                stdout="Issue #771 session spawned: sid-new\n",
+                stdout=spawn_stdout,
                 stderr="spawn boom" if spawn_rc else "",
             )
         raise AssertionError(f"unexpected subprocess call: {cmd}")
@@ -387,3 +409,99 @@ def test_spawn_suppressed_output_reported_not_booked_as_dispatched(monkeypatch, 
     out = capsys.readouterr().out
     assert "dispatch suppressed (DISPATCH-LEASE HELD)" in out
     assert "filed + dispatched" not in out
+
+
+# ── #1059: session-dispatch stagger -> files, DEFERS the spawn ─────────────────
+
+
+def _healthy_dispatch_env(monkeypatch):
+    """Stub every pre-spawn gate BEFORE the stagger to 'go' so a test isolates
+    the step-4.75 stagger behavior."""
+    monkeypatch.setattr(fit, "_daemon_reachable", lambda: True)
+    monkeypatch.setattr(fit, "infra_dispatch_has_free_slot", lambda: True)
+    monkeypatch.setattr(fit, "_issue_has_live_registration", lambda issue: False)
+
+
+def test_fresh_dispatch_stamp_files_but_defers_spawn(monkeypatch, capsys):
+    # A session dispatch 5s ago (< the 60s window) -> the task is FILED but
+    # the spawn is DEFERRED (loud line, exit 0, watcher backstop named).
+    calls = _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+    monkeypatch.setattr(fit, "last_session_dispatch_age_s", lambda now=None: 5.0)
+
+    rc = fit.main(["--title", "x"])
+
+    assert rc == 0
+    assert len(_new_calls(calls)) == 1  # STILL files the task
+    assert _spawn_calls(calls) == []  # but NEVER spawns
+    out = capsys.readouterr().out
+    assert "dispatch deferred (session-dispatch stagger" in out
+    assert "proposed_infra_sweep backstop" in out
+
+
+def test_stagger_disabled_dispatches(monkeypatch):
+    # EPM_SESSION_DISPATCH_STAGGER_S=0 disables the defer even under a fresh
+    # stamp: exactly one spawn.
+    calls = _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+    monkeypatch.setattr(fit, "last_session_dispatch_age_s", lambda now=None: 5.0)
+    monkeypatch.setenv("EPM_SESSION_DISPATCH_STAGGER_S", "0")
+
+    rc = fit.main(["--title", "x"])
+
+    assert rc == 0
+    assert len(_spawn_calls(calls)) == 1
+
+
+def test_successful_spawn_records_stamp(monkeypatch, _no_real_stagger):
+    # Only a REAL spawn records the pacing stamp — with the filed issue's id.
+    _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+
+    rc = fit.main(["--title", "x"])
+
+    assert rc == 0
+    assert _no_real_stagger == [771]
+
+
+def test_suppressed_spawn_does_not_record_stamp(monkeypatch, _no_real_stagger, capsys):
+    # A rc-0 suppressed no-op (lease held at the chokepoint) is NOT a real
+    # spawn: no stamp record, so a no-op can never defer real work elsewhere.
+    _install_run_recorder(
+        monkeypatch,
+        new_id="#771",
+        spawn_stdout="DISPATCH-LEASE HELD issue #771: a dispatch is already in flight\n",
+    )
+    _healthy_dispatch_env(monkeypatch)
+
+    rc = fit.main(["--title", "x"])
+
+    assert rc == 0
+    assert _no_real_stagger == []
+    assert "dispatch suppressed" in capsys.readouterr().out
+
+
+def test_filer_stagger_integration_real_helpers(monkeypatch, tmp_path, capsys):
+    # Integration-style: the REAL stagger helpers (env window + stamp read)
+    # against a tmp registry — only AUTONOMOUS_REGISTRY_DIR is patched. A
+    # fresh REAL stamp written via record_session_dispatch defers the spawn.
+    import time as _time
+
+    import spawn_session
+
+    calls = _install_run_recorder(monkeypatch, new_id="#771")
+    _healthy_dispatch_env(monkeypatch)
+    monkeypatch.setattr(spawn_session, "AUTONOMOUS_REGISTRY_DIR", tmp_path)
+    # Undo the autouse stub: point the wrapper back at the real helper (it
+    # resolves AUTONOMOUS_REGISTRY_DIR at call time, so tmp_path binds).
+    monkeypatch.setattr(
+        fit, "last_session_dispatch_age_s", spawn_session.last_session_dispatch_age_s
+    )
+    spawn_session.record_session_dispatch(99, "test-prior", now=_time.time() - 5.0)
+
+    rc = fit.main(["--title", "x"])
+
+    assert rc == 0
+    assert len(_new_calls(calls)) == 1
+    assert _spawn_calls(calls) == []
+    assert "dispatch deferred (session-dispatch stagger" in capsys.readouterr().out
