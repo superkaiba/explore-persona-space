@@ -496,8 +496,8 @@
     "1062": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1062",
-      "status": "planning",
+      "path": "tasks/approved/1062",
+      "status": "approved",
       "title": "daily-fix: de-escape HTML entities in plan-handoff commands"
     },
     "1063": {
