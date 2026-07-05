@@ -1,0 +1,1 @@
+{"ts": "2026-07-05T13:22:23Z", "event": "raised", "concern_id": "d5-jd-interim-redo-required", "severity": "CONCERN", "summary": "Main advanced past BASE0 and touched judge_dispatch.py (#1035, a344a3fb6d, +37/-13). Binding plan H1: redo D2.2 vs current main + full D3 re-run + D4 re-review before the D5 push.", "raised_by": "code-reviewer", "raised_at_round": 1}
