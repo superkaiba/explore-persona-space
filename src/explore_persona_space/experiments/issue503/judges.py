@@ -796,7 +796,7 @@ def _score_b1_openai_gpt4o(
                     temperature=0.0,
                 )
                 text = resp.choices[0].message.content or ""
-                parsed = parse_judge_json(text, None)
+                parsed = parse_judge_json(text)
                 if parsed is None:
                     all_scores[custom_id] = {
                         "aligned": None,

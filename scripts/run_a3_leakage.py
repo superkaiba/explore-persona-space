@@ -361,7 +361,7 @@ def evaluate_alignment_per_persona(
     for result in client.messages.batches.results(batch_id):
         if result.result.type == "succeeded":
             text = next((b.text for b in result.result.message.content if b.type == "text"), "")
-            parsed = parse_judge_json(text, None)
+            parsed = parse_judge_json(text)
             scores_by_id[result.custom_id] = parsed or {
                 "aligned": None,
                 "coherent": None,

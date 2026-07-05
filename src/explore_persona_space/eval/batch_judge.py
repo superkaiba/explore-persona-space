@@ -304,8 +304,8 @@ def _collect_legacy_results(
                 (b.text for b in result.result.message.content if b.type == "text"),
                 "",
             )
-            parsed = parse_judge_json(text, None)
-            results[custom_id] = parsed or _legacy_error_dict("parse_error")
+            parsed = parse_judge_json(text)
+            results[custom_id] = parsed if parsed is not None else _legacy_error_dict("parse_error")
         elif rtype == "errored":
             # SDK nesting is result.result.error.error.type (double .error);
             # getattr-guarded so a missing-error shape fails open (server label).
