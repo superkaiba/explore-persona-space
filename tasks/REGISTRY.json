@@ -6590,7 +6590,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/952",
       "status": "followups_running",
-      "title": "The own-answer advantage in predicting answer activations from context is position-uniform at the selected read-out layer (MODERATE confidence)"
+      "title": "The own-answer advantage in predicting answer activations from context is position-uniform across the captured read-out layer band (MODERATE confidence)"
     },
     "953": {
       "has_clean_result": false,
