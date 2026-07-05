@@ -179,7 +179,7 @@ with NO fallback" invariant. Rationale: if GCP is failing a run, running
 it on RunPod keeps the science moving AND gives a persistent, SSH-able pod
 for diagnosis — strictly better than GCP's delete-on-crash boot disk.
 
-Three distinct GCP-failure paths, ALL ending at the same
+Four distinct GCP-failure paths, ALL ending at the same
 `_runpod_terminal_rung`:
 
 - **Capacity / quota / zone miss** — walks the length-aware GCP ladder
@@ -203,6 +203,14 @@ Three distinct GCP-failure paths, ALL ending at the same
   and fails it over to RunPod (see § FLEX_START queue-timeout below).
   DISTINCT from a workload crash (a queue that never advanced is not a
   crash) and from a capacity MISS at create time (this create succeeded).
+- **Pre-workload BOOT LOOP** (`reason: gcp_boot_loop_failover_runpod`,
+  #1029) — N (default 2) CONSECUTIVE pre-workload setup deaths on the SAME
+  ladder rung for the SAME issue, counted per launch INCARNATION in the
+  durable lease. The Nth death fails over to RunPod; the route()-side
+  ladder walk additionally SKIPS a boot-looped rung same-day (see
+  § Pre-workload boot-loop below). DISTINCT from a workload crash (the
+  workload never started), a queue timeout (the instance dequeued and
+  BOOTED, then died), and a capacity miss (the creates all succeeded).
 
 **Intent translation at the terminal rung (#940).** The RunPod launch
 paths (the terminal rung — all four fallback/failover paths above funnel
@@ -418,6 +426,83 @@ mirroring the #669 frozen-phase wedge (`_maybe_escalate_gcp_wedge`):
 
 The teardown is best-effort + guarded (never blocks the failover); a failed
 delete degrades to the stale-GCP-VM janitor (`gcp_audit.py`) as the backstop.
+
+### Pre-workload boot-loop → RunPod (#1029)
+
+A boot-looping rung — the #763 shape: `flexstart_l4` re-selected by every
+relaunch, each create dying ~5.5 min post-insert via guestTerminate with NO
+crash diagnostics, `gcp_attempts_today` 2→5 before a manual RunPod pivot —
+is now broken automatically after at most **N=2 consecutive same-rung
+pre-workload deaths** (env `EPS_GCP_BOOT_DEATH_STREAK_N`; the first death
+keeps its one free retry, so single-occurrence behavior — a lone transient
+clone/uv-sync setup death, a lone spot preemption — is unchanged).
+
+- **Record:** each death destroys the VM and the relaunch writes a FRESH
+  sidecar, so the consecutive-death count lives in the durable per-issue
+  lease (`~/.eps-routing/issue-<N>.json`, `Lease.gcp_boot_death_streaks`),
+  keyed per (issue, rung) and per launch INCARNATION (`handle.job_id` — the
+  GCE instance id, distinct per create; fallback
+  `(attempt_id, gcp_launched_ts)`; attempt_id ALONE is forbidden — #763's
+  five creates shared one attempt_id), same-UTC-day scoped, RESET on any
+  POSITIVE workload signal (running `workload`/`relaunched_workload`, a
+  `terminal_workload_failed` crash — the workload started, so boot was
+  fine — or a #935 `done` shape; NEVER a pre-workload blocklist — the
+  mid-boot `startup` phase must not reset).
+- **Classify:** a pre-workload death is EITHER deterministic
+  (`terminal_setup_failed` — the §4.1.0b `workload_started` discrimination,
+  produced in the RUNNING window since #659 and in the TERMINATED window
+  since #1029) OR heuristic (a YOUNG `terminal_terminated` /
+  `terminal_instance not found` observation, launch→observation age below
+  `EPS_GCP_BOOT_DEATH_MAX_AGE_SECONDS`, default 1500s — post-DELETE polls
+  are attribute-blind, so age is the only available signal there).
+- **Fire (poller side):** at streak >= N the poll is rewritten to
+  `terminal_boot_loop` (`_maybe_escalate_gcp_boot_loop` →
+  `_is_gcp_boot_loop`) and `_failover_boot_looped_gcp_to_runpod` reuses the
+  SAME `_failover_gcp_to_runpod` core (idempotency lease + sentinel,
+  sidecar re-point, terminal-JSON contract) with `teardown_first=False`
+  (the VM self-powered-off and DELETE reaps it; a lingering record degrades
+  to `gcp_audit.py` — the #659 stance). The evidence carries
+  `boot_death_streak` + `gcp_ladder_rung`.
+- **Skip (route side):** `_attempt_one_gcp_rung` SKIPS a rung whose
+  same-UTC-day streak is >= N on the auto chain (RouteAttempt outcome
+  `boot_loop_rung_skipped`, exact quota-headroom-skip shape) WITHOUT
+  bumping `gcp_attempts_today` — the cap counts CREATES; a skip avoids the
+  create, so the breaker STOPS cap burn. An explicit `backend: gcp` pin is
+  exempt (an explicit user ask attempts anyway). If every GCP rung skips,
+  the chain proceeds to SLURM then the RunPod terminal rung by the existing
+  lane order.
+- **CPU-intent scope (#677/#747):** a `cpu-bigmem` boot loop RECORDS but
+  never rewrites (no cheap RunPod lane) — the route()-side skip is its
+  breaker (skip → GCP CPU exhaustion → the typed
+  `cpu_exhausted_no_runpod_lane` terminal, verbatim #677); `cpu-small` /
+  `cpu-mid` fail over to RunPod CPU as usual.
+- **Deliberate policy delta:** a LONE `terminal_terminated` still never
+  fails over (the #669 exclusion, preserved verbatim — including a
+  TERMINATED+`failed` VM whose workload HAD started); but N>=2 consecutive
+  sub-floor early deaths on ANY rung — including a spot rung, where an
+  early preemption during setup can count toward the streak — now advance.
+
+Four one-sentence operational notes:
+
+(a) **Re-drive contract:** a sub-N boot death lands `failure_class: code`
+on the ordinary dead path and is re-driven by the PER-ISSUE SESSION's
+crash-fix/relaunch loop (exactly what produced #763's four automatic
+relaunches) or a manual `dispatch_issue.py` — NOT the watcher
+capacity-retry pass (infra/`no_compute_available` only); a task with no
+live re-driver parks at `blocked` after death 1 with no loop and no cap
+burn — the breaker correctly stays disengaged (a breaker targets a loop;
+a loop requires a re-driver by construction).
+(b) A genuine FAST workload crash observed only post-DELETE (a young
+`terminal_instance not found`) counts toward the streak and, at N, fails
+over under the boot-loop reason rather than the #659 reason — same action
+and destination, different label; note it so a future incident read is
+not misdiagnosed.
+(c) The "2 creates instead of 4-6" headline is the SAME-RUNG re-pick case
+(#763's shape); cross-rung capacity churn still burns up to ~2 creates
+per rung, bounded only by the daily cap 8.
+(d) Every TERMINATED+`failed` poll now issues one extra `_workload_started`
+guest-attribute probe (perf-only; the probe-failure fallback keeps
+`terminal_terminated`, never manufacturing a setup classification).
 
 ### Remaining gap — the hung-but-RUNNING / frozen non-terminal phase (#667)
 
