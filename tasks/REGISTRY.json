@@ -405,8 +405,8 @@
     "1050": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1050",
-      "status": "proposed",
+      "path": "tasks/planning/1050",
+      "status": "planning",
       "title": "daily-fix: orchestrator inlines verifier output for Codex cr"
     },
     "1051": {
