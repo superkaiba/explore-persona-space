@@ -293,8 +293,8 @@
     "1036": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1036",
-      "status": "approved",
+      "path": "tasks/running/1036",
+      "status": "running",
       "title": "daily-fix: lint bans || true on result-upload phases in dispatch scripts"
     },
     "1037": {
