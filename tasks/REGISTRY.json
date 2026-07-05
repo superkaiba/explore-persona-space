@@ -237,8 +237,8 @@
     "1028": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1028",
-      "status": "proposed",
+      "path": "tasks/planning/1028",
+      "status": "planning",
       "title": "daily-fix: watcher auto-recovers ALIVE-BUT-STALLED sessions"
     },
     "1029": {
