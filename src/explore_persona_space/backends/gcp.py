@@ -36,8 +36,9 @@ What this slice ships
   compute instances list --filter=name=eps-issue-<N>``. If a live instance
   exists, return a handle for it without re-provisioning; refuses a RUNNING
   instance whose ``eps/phase`` is already terminal (``done``/``failed``/
-  ``wedged``) — the #908 gate-park zombie — which the pre-launch stale
-  reclaim then deletes so the create does not collide (#632).
+  ``finalize_failed_artifacts_ok``/``wedged``) — the #908 gate-park zombie —
+  which the pre-launch stale reclaim then deletes so the create does not
+  collide (#632).
 * :func:`audit_stale_gcp_vms` — analogue of ``scripts/pod.py audit-stale``;
   reaps ``eps-issue-*`` instances on TWO bounded predicates: a per-instance-
   fence-aware age backstop (#741 — reaped once the VM exceeds its OWN
@@ -813,6 +814,28 @@ def sentinel_path_for(config: GcpConfig, issue: int, attempt_id: str) -> str:
     return f"{root}/eval_results/issue_{issue}/{attempt_id}/{SENTINEL_FILENAME}"
 
 
+#: Positive-evidence deliverables sentinel filename (#1055). Distinct from
+#: :data:`SENTINEL_FILENAME` (the COMPLETION sentinel the success tail writes):
+#: this one is written by the WORKLOAD itself, mid-run, the moment its final
+#: upload+verify step confirms every declared deliverable is on HF — so the
+#: EXIT trap can tell a post-deliverables finalize/tail crash from a
+#: data-losing one.
+DELIVERABLES_OK_FILENAME = "deliverables_ok.json"
+
+
+def deliverables_ok_path_for(config: GcpConfig, issue: int, attempt_id: str) -> str:
+    """Positive-evidence sentinel path: workload-written after its final verify PASS (#1055).
+
+    The WORKLOAD writes this file ONLY after its final upload+verify step
+    confirms every declared deliverable is on HF; its presence at EXIT-trap
+    time proves a non-zero exit is a finalize/tail failure, not a data-losing
+    crash. Attempt-scoped (mirrors :func:`sentinel_path_for`) so a fresh
+    attempt never reads a prior attempt's evidence.
+    """
+    root = workload_dir_for(config, issue)
+    return f"{root}/eval_results/issue_{issue}/{attempt_id}/{DELIVERABLES_OK_FILENAME}"
+
+
 # ---------------------------------------------------------------------------
 # Expected-artifact declaration (artifacts.py bridge)
 # ---------------------------------------------------------------------------
@@ -1143,6 +1166,7 @@ def render_startup_script(
         )
     workload_root = workload_dir_for(config, spec.issue)
     sentinel_abs = sentinel_path_for(config, spec.issue, attempt_id)
+    deliverables_ok_abs = deliverables_ok_path_for(config, spec.issue, attempt_id)
     sentinel_dir = sentinel_abs.rsplit("/", 1)[0]
     # Done-grace self-poweroff constants (#935), baked at render time like
     # the other lane constants (no runtime metadata fetch). The keepalive
@@ -2042,14 +2066,34 @@ def render_startup_script(
         # somehow reached the log tail.
         "trap 'rc=$?; set +e;"
         ' if [ "$rc" -ne 0 ]; then'
+        # #1055: POSITIVE-EVIDENCE classification — the workload writes
+        # $EPS_DELIVERABLES_OK_PATH ONLY after its final upload+verify PASS,
+        # so its presence at trap time proves the declared deliverables are
+        # complete on HF and this non-zero exit is a finalize/tail failure,
+        # not a data-losing crash. NEVER keyed on rc value or crash timing
+        # (#1004 coherence: rc stays non-zero, diagnostics still run, the
+        # poweroff that bounds billing is untouched, and literal `done` is
+        # never published on this path). The -n guard is belt-and-suspenders
+        # ([ -f "" ] is false); ${:-} keeps the trap safe under set -u when
+        # it fires before the export.
+        ' if [ -n "${EPS_DELIVERABLES_OK_PATH:-}" ] && [ -f "${EPS_DELIVERABLES_OK_PATH:-}" ];'
+        " then"
+        ' { echo "[startup-script] FINALIZE-FAILED rc=$rc — deliverables sentinel present;'
+        ' artifacts complete on HF; powering off (#1055)"; } 2>/dev/null || true;'
+        " _eps_phase finalize_failed_artifacts_ok;"
+        " else"
         ' { echo "[startup-script] FAILED rc=$rc — powering off to bound billing"; }'
         " 2>/dev/null || true;"
         " _eps_phase failed;"
+        " fi;"
         # #854: reap the reachability watchdog — the only OTHER in-guest
         # poweroff actor — at trap ENTRY, before the persist, so nothing can
         # power the VM off mid-upload; the trap itself guarantees the
         # billing-bounding shutdown below. Guarded: an unset PID (crash
         # before the watchdog launch) / already-dead daemon is a no-op.
+        # (#1055: the watchdog reap + log tail + diagnostics + poweroff are
+        # the SHARED tail — they run on BOTH sentinel arms, outside the
+        # inner fi, ordering unchanged.)
         ' { kill "${EPS_WATCHDOG_PID:-}" 2>/dev/null; } || true;'
         ' if [ -n "${EPS_LOG_PATH:-}" ]; then'
         ' { tail -n 40 "$EPS_LOG_PATH" 2>/dev/null | cut -c1-2000 >&3; } 2>/dev/null || true; fi;'
@@ -2071,6 +2115,17 @@ def render_startup_script(
         f"export EPS_ATTEMPT_ID={shlex.quote(attempt_id)}",
         f"export WORKLOAD_ROOT={shlex.quote(workload_root)}",
         f"export EPS_SENTINEL_PATH={shlex.quote(sentinel_abs)}",
+        # #1055: positive-evidence deliverables sentinel — the workload
+        # stamps this path ONLY after its final upload+verify PASS; the EXIT
+        # trap then classifies a non-zero exit as finalize_failed_artifacts_ok
+        # instead of failed. Fail-open: a workload that never writes it keeps
+        # today's failed path byte-for-byte.
+        f"export EPS_DELIVERABLES_OK_PATH={shlex.quote(deliverables_ok_abs)}",
+        # #1055: stale-evidence hygiene — a re-booted instance (manual
+        # `instances start` re-runs the startup script with the SAME
+        # attempt_id + preserved disk) must not inherit a prior boot's
+        # deliverables evidence. rm -f is a no-op pre-clone.
+        'rm -f "$EPS_DELIVERABLES_OK_PATH" 2>/dev/null || true',
         # Crash-diagnostics target (#658): the EXIT trap uploads the
         # workload log + partial artifacts here BEFORE the
         # instance-termination-action=DELETE destroys the boot disk, so a
@@ -2946,7 +3001,14 @@ def default_gcloud_runner(
 #: wedged zombie — the workload is over, the VM is still billing — and the
 #: stale-VM janitor (:func:`audit_stale_gcp_vms`) reaps it promptly past a
 #: short terminal-phase floor rather than waiting out the per-fence age backstop.
-_TERMINAL_GUEST_PHASES: frozenset[str] = frozenset({"done", "failed"})
+#: ``finalize_failed_artifacts_ok`` (#1055 — deliverables verified on HF, then
+#: a finalize/tail non-zero exit) is terminal too: the workload is over, so a
+#: RUNNING VM stuck in it past the floor is a finished zombie the janitor MUST
+#: reap (unlike ``wedged``, deliberately kept OUT of this set — see
+#: :data:`_ZOMBIE_GUEST_PHASES`).
+_TERMINAL_GUEST_PHASES: frozenset[str] = frozenset(
+    {"done", "failed", "finalize_failed_artifacts_ok"}
+)
 
 
 # ---------------------------------------------------------------------------
@@ -3093,7 +3155,8 @@ _NONLIVE_INSTANCE_STATUSES: frozenset[str] = frozenset({"TERMINATED", "STOPPED",
 
 #: Guest ``eps/phase`` values that disqualify a RUNNING instance as a
 #: reconnect target AND qualify it for pre-launch reclaim (#908/#763): the
-#: janitor's terminal set (``done``/``failed``, :data:`_TERMINAL_GUEST_PHASES`)
+#: janitor's terminal set (``done``/``failed``/``finalize_failed_artifacts_ok``,
+#: :data:`_TERMINAL_GUEST_PHASES`)
 #: plus the #669 reachability watchdog's pre-shutdown ``wedged`` write. A
 #: RUNNING instance in any of these states is a finished-or-wedged zombie —
 #: reconnecting to it silently no-ops the new dispatch (#763 leg 2), and
@@ -3131,7 +3194,8 @@ def reconnect_or_none(
 
     Zombie refusal (#908/#763): a RUNNING instance whose ``eps/phase``
     guest attribute is already in :data:`_ZOMBIE_GUEST_PHASES`
-    (``done``/``failed``/``wedged``) is NOT a live run to rejoin —
+    (``done``/``failed``/``finalize_failed_artifacts_ok``/``wedged``) is
+    NOT a live run to rejoin —
     reconnecting to it silently no-ops the new dispatch (#763: the
     phase-C launch "reconnected" to a gate-parked done VM and never
     ran). Such an instance returns ``None``; the pre-launch stale
@@ -3304,7 +3368,8 @@ def _stale_named_instance_or_none(
     Returns:
         * ``StaleNamedInstance`` — a record in a non-live state exists,
           OR (#908) a RUNNING record whose re-probed ``eps/phase`` is in
-          :data:`_ZOMBIE_GUEST_PHASES` (``done``/``failed``/``wedged`` —
+          :data:`_ZOMBIE_GUEST_PHASES` (``done``/``failed``/
+          ``finalize_failed_artifacts_ok``/``wedged`` —
           the gate-park/finished zombie ``reconnect_or_none`` now
           refuses; ``guest_phase`` carries the probed value). Both are
           safe to delete (no live workload); the matched skip/delete
@@ -4689,7 +4754,7 @@ class GcpBackend(ComputeBackend):
                 return _with_drain(
                     _coarse_poll(status="stalled", current_phase="guest_attr_probe_failed")
                 )
-            if phase in ("done", "failed"):
+            if phase in ("done", "failed", "finalize_failed_artifacts_ok"):
                 # Relaunch-follow (incident #612): the eps/phase guest
                 # attribute is written by the STARTUP SCRIPT, so it
                 # freezes at the FIRST workload's terminal state. A
@@ -4699,7 +4764,12 @@ class GcpBackend(ComputeBackend):
                 # ``log_abs=`` precisely so pollers can follow the new
                 # process — without this branch a HEALTHY mid-training
                 # relaunch read as ``done``/``dead`` and steered the
-                # orchestrator to a premature transition.
+                # orchestrator to a premature transition. (#1055: the
+                # new finalize_failed_artifacts_ok phase is a terminal
+                # state of the FIRST workload too — a fresh relaunch
+                # marker must win over the done-like classification
+                # below, or a healthy relaunch reads done and the
+                # orchestrator finalizes mid-run.)
                 relaunch = self._relaunch_marker_or_none(handle)
                 if relaunch is not None:
                     pid, log_abs = relaunch
@@ -4711,6 +4781,28 @@ class GcpBackend(ComputeBackend):
                     PollResult(
                         status="done",
                         current_phase="workload_done",
+                        new_milestone=True,
+                        last_log_mtime_sec_ago=0,
+                        pid_alive=False,
+                        log_tail_excerpt="",
+                    )
+                )
+            if phase == "finalize_failed_artifacts_ok":
+                # #1055 — additive, mirrors the #935 stance: a run whose
+                # deliverables verified complete on HF BEFORE a
+                # finalize/tail non-zero exit (the trap's positive-evidence
+                # branch). Classified as a SUCCESSFUL run whose finalize
+                # hiccupped — status="done" fails BOTH async-failover
+                # conjuncts by construction (backend_poll requires
+                # status=="dead" + a terminal_* phase), so no RunPod
+                # failover and no crash-fix routing; the distinct
+                # current_phase keeps the finalize failure visible for
+                # triage. Reachable in the brief RUNNING window between the
+                # trap's phase write and the poweroff completing.
+                return _with_drain(
+                    PollResult(
+                        status="done",
+                        current_phase="workload_done_finalize_failed",
                         new_milestone=True,
                         last_log_mtime_sec_ago=0,
                         pid_alive=False,
@@ -4801,6 +4893,17 @@ class GcpBackend(ComputeBackend):
         existing contract) ⇒ keeps ``terminal_terminated`` (conservative:
         never manufactures a setup classification).
 
+        Finalize-failed-but-artifacts-ok discrimination (#1055): a TERMINATED
+        VM whose ``eps/phase`` reads ``finalize_failed_artifacts_ok`` — the
+        EXIT trap's positive-evidence branch: the workload stamped
+        ``$EPS_DELIVERABLES_OK_PATH`` after its final upload+verify PASS,
+        then a finalize/tail step exited non-zero — classifies ``done``
+        (``workload_done_finalize_failed``), never dead, mirroring the #935
+        stance: the deliverables are complete on HF, so neither the #659
+        async failover nor crash-fix routing should fire; finalize needs
+        ``--skip-confirm-artifacts`` (the completion sentinel was never
+        written) and Step 8 upload verification stays the independent gate.
+
         A TERMINATED VM with any other (or absent / unreadable) ``eps/phase``
         maps to ``terminal_terminated`` EXACTLY as today (spot preemption /
         max-run-duration / manual mid-run stop → straight to dead, NO
@@ -4841,6 +4944,22 @@ class GcpBackend(ComputeBackend):
                 return PollResult(
                     status="done",
                     current_phase="workload_done_self_poweroff",
+                    new_milestone=True,
+                    last_log_mtime_sec_ago=0,
+                    pid_alive=False,
+                    log_tail_excerpt="",
+                )
+            if phase == "finalize_failed_artifacts_ok":
+                # #1055 — additive, same stance as the #935 block above: the
+                # trap's positive-evidence branch proved the deliverables
+                # complete on HF before the finalize/tail crash, so this is
+                # a SUCCESSFUL run whose finalize hiccupped. status="done"
+                # fails BOTH async-failover conjuncts by construction; the
+                # distinct current_phase keeps the finalize failure visible
+                # for triage.
+                return PollResult(
+                    status="done",
+                    current_phase="workload_done_finalize_failed",
                     new_milestone=True,
                     last_log_mtime_sec_ago=0,
                     pid_alive=False,
@@ -5958,6 +6077,7 @@ __all__ = [
     "DEFAULT_PROJECT",
     "DEFAULT_PROVISIONING_MODEL",
     "DEFAULT_REPO_URL",
+    "DELIVERABLES_OK_FILENAME",
     "INTENT_TO_MACHINE",
     "MACHINE_TYPE_ZONE_AVAILABILITY",
     "STARTUP_PASSTHROUGH_ENV_KEYS",
@@ -5977,6 +6097,7 @@ __all__ = [
     "classify_create_failure",
     "default_gcloud_runner",
     "default_gcp_config",
+    "deliverables_ok_path_for",
     "expected_artifacts_declaration",
     "instance_name_for",
     "lane_suffix_for",

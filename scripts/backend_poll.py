@@ -1081,7 +1081,8 @@ def _maybe_reset_gcp_boot_streak(handle, result, *, issue: int) -> None:
       — the workload STARTED (the §4.1.0b sentinel), so boot was fine (the
       #659 failover then proceeds on its own branch); OR
     * ``status == "done"`` — the #935 completion shapes (``workload_done`` /
-      ``workload_done_self_poweroff`` / ``relaunched_workload_done`` — every
+      ``workload_done_self_poweroff`` / ``relaunched_workload_done`` /
+      ``workload_done_finalize_failed`` (#1055) — every
       producer of ``status="done"`` is a success path): a short run completing
       entirely between 540s polls is observed ONLY this way, and a stale
       streak surviving a SUCCESS would fire on a non-consecutive later death.
