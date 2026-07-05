@@ -258,8 +258,8 @@
     "1031": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1031",
-      "status": "reviewing",
+      "path": "tasks/completed/1031",
+      "status": "completed",
       "title": "daily-fix: plan-time RAM/RSS routing gate + p90 fence sizing"
     },
     "1032": {
