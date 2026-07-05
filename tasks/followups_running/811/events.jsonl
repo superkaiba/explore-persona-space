@@ -436,3 +436,4 @@
 {"ts": "2026-07-05T12:52:10Z", "kind": "epm:progress", "version": 167, "by": "unknown", "note": "tick heartbeat: GPU leg — ridge_only resume recognized all 108 checkpoints ('reusing ridge, re-running gate'); CUDA gate phase in progress on the L4."}
 {"ts": "2026-07-05T13:49:41Z", "kind": "epm:progress", "version": 168, "by": "unknown", "note": "tick heartbeat: GPU leg gate phase verified via direct SSH probe — L4 at 100% GPU util (13.7GiB VRAM), fit pid feeding at 102% CPU, RSS 9.6/15GB. Log quiet by design during the gate. Healthy."}
 {"ts": "2026-07-05T14:21:37Z", "kind": "epm:progress", "version": 169, "by": "unknown", "note": "tick heartbeat: GPU leg gate phase continuing (~1.6h in; GPU verified 100% util at last probe)."}
+{"ts": "2026-07-05T14:53:22Z", "kind": "epm:progress", "version": 170, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~2.3h in — re-probe confirms L4 at 100% util, fit cputime accruing. Progressing."}
