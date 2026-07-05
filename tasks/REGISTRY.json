@@ -286,8 +286,8 @@
     "1035": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1035",
-      "status": "approved",
+      "path": "tasks/running/1035",
+      "status": "running",
       "title": "daily-fix: batch_judge tolerates transient 404 on poll retrieve"
     },
     "1036": {
