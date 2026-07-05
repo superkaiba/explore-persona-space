@@ -1,6 +1,6 @@
 {
-  "commit": "71fbb957de",
-  "created": "2026-07-05T12:08:13Z",
+  "commit": "aa4f0117cc",
+  "created": "2026-07-05T12:56:04Z",
   "figsize": [
     14.0,
     3.8
@@ -81,7 +81,6 @@
     {
       "x": -0.13,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.684136884119809,
-      "label": "rephrase: imperative",
       "_kind": "scatter",
       "_group": 0
     },
@@ -100,7 +99,6 @@
     {
       "x": -0.1,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 2.5391238352183123,
-      "label": "rephrase: imperative",
       "_kind": "scatter",
       "_group": 0
     },
@@ -119,7 +117,6 @@
     {
       "x": -0.07,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.7297801921611509,
-      "label": "rephrase: imperative",
       "_kind": "scatter",
       "_group": 0
     },
@@ -204,7 +201,6 @@
     {
       "x": 0.07,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 4.5543677372653235,
-      "label": "rephrase: imperative",
       "_kind": "scatter",
       "_group": 0
     },
@@ -217,7 +213,6 @@
     {
       "x": 0.09,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.6563352366590252,
-      "label": "rephrase: imperative",
       "_kind": "scatter",
       "_group": 0
     },
@@ -230,7 +225,6 @@
     {
       "x": 0.11,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.1302274395425371,
-      "label": "rephrase: imperative",
       "_kind": "scatter",
       "_group": 0
     },
@@ -243,14 +237,12 @@
     {
       "x": 0.13,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.0240867632634174,
-      "label": "rephrase: imperative",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.14,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.3569930612005692,
-      "label": "rephrase: imperative",
       "_kind": "scatter",
       "_group": 0
     },
@@ -305,721 +297,672 @@
     {
       "x": 0.23,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 5.964918371280589,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.24,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 3.035938825070687,
-      "label": "rephrase: imperative",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.75,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.3973251184636375,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.76,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.5126304754135127,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.77,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.3803430676034516,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.78,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.40778249643845754,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.79,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.953539147358164,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.8,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.2856598499886829,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.81,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.0589194454660209,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.8200000000000001,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.27161432773903016,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.83,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.0625651894557997,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.84,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.33872394339861955,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.85,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.43477359866096776,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.86,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.2505648727601386,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.87,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.2344768568912734,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.88,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.3668803405949923,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.89,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.15083081724679914,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.9,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.36765897904280287,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.91,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.5302771641310713,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.92,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.2520906938774807,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.9299999999999999,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.7157397590870325,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.94,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.1425386842498355,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.95,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.011264642183558493,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.96,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.3328306062876507,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.97,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.06319484652696161,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.98,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.45122201551562213,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.99,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.17074248399569925,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.0,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.8760692617987687,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.01,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.2612408946658711,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.02,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.19152169722689294,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.03,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.9326713594302447,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.04,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.10593714684919497,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.05,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.0448281881759236,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.06,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.16839995130256113,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.07,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.6925690401541598,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.08,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.2083148219278499,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.09,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.25712721328002175,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.1,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.0154447345772866,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.11,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.015135263865484916,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.12,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.4036287085234065,
-      "label": "format: code comment",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.13,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.8835107522324588,
-      "label": "format: code comment",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.1400000000000001,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.8124395913597073,
-      "label": "format: code comment",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.15,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.5017683297210223,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.16,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.05118927832791442,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.17,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.6637220356469111,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.18,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.6292487112451468,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.19,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.17492247435269093,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.2,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.0602784712199345,
-      "label": "format: code comment",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.21,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.31495542560957546,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.22,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.37769155834998,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.23,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.8952307697149315,
-      "label": "behavior instr.: refusal",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.24,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.0766984873832861,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.75,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.467540095630504,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.76,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.4768040981893833,
-      "label": "format: code comment",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.77,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.3347532119541796,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.78,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.16804031433917288,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.79,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.1898696189152105,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.8,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.0360409325895148,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.81,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.05926724055700561,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.82,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.3089221142957541,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.83,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.48351747591758,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.84,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.5271601037536584,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.85,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.16291770161482333,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.8599999999999999,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.0311674528333832,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.87,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.40112156733777127,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.88,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.8747565639891945,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.89,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.49005063984759545,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.9,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.1602170669141767,
-      "label": "default: default template",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.91,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.3458311716526197,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.92,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.3411189808493305,
-      "label": "default: default template",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.93,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.09274036005316333,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.94,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.04244518639378114,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.95,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.7834091172373903,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.96,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.717174379013997,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.97,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.3934648587180547,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.98,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.29346580644479303,
-      "label": "default: default template",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.99,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.41293438317417497,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.0,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.8316211127491684,
-      "label": "default: default template",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.01,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.15667422355598504,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.02,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.23726494102240991,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.03,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.6484637719764237,
-      "label": "default: default template",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.04,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.057118691761409934,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.05,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.21505816269132794,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.06,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.01984516357180155,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.07,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.5775705074274882,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.08,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.11806325330348244,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.09,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.8268884066339517,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.1,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.3673049615419117,
-      "label": "default: default template",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.11,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -2.037277530827268,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.12,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 3.0010412586137676,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.13,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.125669863639553,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.14,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.8324987440723959,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.15,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.7612302145507766,
-      "label": "default: default template",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.16,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.13776267836592382,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.17,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.549903632555603,
-      "label": "default: default template",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.18,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -3.351126189353323,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.19,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.6778515313491695,
-      "label": "default: default template",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.2,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.9959733438458684,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.21,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.09473875004096755,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.22,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.7030531226768346,
-      "label": "default: default template",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.23,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.30657387712106754,
-      "label": "default: default template",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.24,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.48666697769981937,
-      "label": "default: default template",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": -0.25,
       "y": -1.2474306917149391,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
@@ -1050,21 +993,18 @@
     {
       "x": -0.2,
       "y": -1.2555171091700714,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.19,
       "y": -2.036254377604422,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.18,
       "y": -1.0652836953569533,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
@@ -1083,7 +1023,6 @@
     {
       "x": -0.15,
       "y": -1.485203902345532,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
@@ -1108,28 +1047,24 @@
     {
       "x": -0.11,
       "y": -2.0071266245318355,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.1,
       "y": 2.747213549125938,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.09,
       "y": -2.2194077674564596,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.08,
       "y": -2.707418119908887,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
@@ -1160,7 +1095,6 @@
     {
       "x": -0.03,
       "y": -0.9742853840598826,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 3
     },
@@ -1179,7 +1113,6 @@
     {
       "x": 0.0,
       "y": -1.1121310070555879,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 3
     },
@@ -1204,35 +1137,30 @@
     {
       "x": 0.04,
       "y": 0.17611398259626654,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.05,
       "y": 0.05987923063997158,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.06,
       "y": -0.03719272443956356,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.07,
       "y": 4.951822559363237,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.08,
       "y": -5.136858022121245,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
@@ -1245,7 +1173,6 @@
     {
       "x": 0.1,
       "y": -1.6326832930004542,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 3
     },
@@ -1258,7 +1185,6 @@
     {
       "x": 0.12,
       "y": -2.600883407635507,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
@@ -1271,301 +1197,258 @@
     {
       "x": 0.14,
       "y": 1.7469848851314254,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.15,
       "y": -0.1352665794893788,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.16,
       "y": -0.452959567536519,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.17,
       "y": -1.727040428150314,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.18,
       "y": 0.3745618121600671,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.19,
       "y": -1.078695383403982,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.2,
       "y": 0.09205187943487658,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.21,
       "y": -1.8423340654930342,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.22,
       "y": -3.1663430895679454,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.23,
       "y": 5.894357145704674,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.24,
       "y": 2.960237136343835,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.75,
       "y": -0.49549007527720335,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.76,
       "y": 1.0423447316184848,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.77,
       "y": -0.6304239865944581,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.78,
       "y": -0.3053728313604154,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.79,
       "y": -0.9675749631481736,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.8,
       "y": 0.24740356034781996,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.81,
       "y": -2.402830644064643,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.8200000000000001,
       "y": -0.43102131006864397,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.83,
       "y": 0.7790133142605598,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.84,
       "y": -1.648048058690641,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.85,
       "y": -1.339998789734949,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.86,
       "y": 0.028940239597581296,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.87,
       "y": 0.990911715167833,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.88,
       "y": 0.7635287135216888,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.89,
       "y": -0.5096351849058678,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.9,
       "y": 1.2860275661763847,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.91,
       "y": -1.5123697741141484,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.92,
       "y": -0.29133115574957813,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.9299999999999999,
       "y": -0.22665555919068225,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.94,
       "y": 0.1782393717366677,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.95,
       "y": -0.0870766203047122,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.96,
       "y": 0.3591980817347,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.97,
       "y": 0.3652406437838014,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.98,
       "y": 0.39014463722733694,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.99,
       "y": -0.3000092450432774,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.0,
       "y": 0.562469295342602,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.01,
       "y": 0.13657332456972782,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.02,
       "y": 0.6441570484330938,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.03,
       "y": -0.7362573689333516,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.04,
       "y": 0.04666429188642063,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.05,
       "y": -0.6573041017630032,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.06,
       "y": -0.29860726967998197,
-      "label": "persona: hub 01",
       "_kind": "scatter",
       "_group": 4
     },
@@ -1579,21 +1462,19 @@
     {
       "x": 1.08,
       "y": 0.08886858108333939,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.09,
       "y": 0.14072846752193513,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.1,
       "y": -0.680764397909698,
-      "label": "persona: hub 01",
+      "label": "WildChat: short 3",
       "_kind": "scatter",
       "_group": 4
     },
@@ -1607,7 +1488,7 @@
     {
       "x": 1.12,
       "y": -0.3053595501949573,
-      "label": "persona: hub 01",
+      "label": "WildChat: short 3",
       "_kind": "scatter",
       "_group": 4
     },
@@ -1642,7 +1523,7 @@
     {
       "x": 1.17,
       "y": -0.6822253214970964,
-      "label": "persona: hub 01",
+      "label": "WildChat: short 3",
       "_kind": "scatter",
       "_group": 4
     },
@@ -1656,7 +1537,7 @@
     {
       "x": 1.19,
       "y": -1.6323220934501208,
-      "label": "persona: hub 01",
+      "label": "WildChat: short 3",
       "_kind": "scatter",
       "_group": 4
     },
@@ -1670,7 +1551,7 @@
     {
       "x": 1.21,
       "y": -1.1101463569130061,
-      "label": "persona: hub 01",
+      "label": "WildChat: short 3",
       "_kind": "scatter",
       "_group": 4
     },
@@ -1691,7 +1572,7 @@
     {
       "x": 1.24,
       "y": -0.4699963470162061,
-      "label": "persona: hub 01",
+      "label": "WildChat: short 3",
       "_kind": "scatter",
       "_group": 4
     },
@@ -1789,7 +1670,7 @@
     {
       "x": 1.88,
       "y": 0.3425376315935438,
-      "label": "WildChat: short 3",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 5
     },
@@ -1831,14 +1712,14 @@
     {
       "x": 1.94,
       "y": 0.12756491258454794,
-      "label": "WildChat: short 3",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.95,
       "y": 0.4036467267778985,
-      "label": "WildChat: short 3",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 5
     },
@@ -1866,7 +1747,7 @@
     {
       "x": 1.99,
       "y": 0.2200958860642288,
-      "label": "WildChat: short 3",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 5
     },
@@ -1880,14 +1761,14 @@
     {
       "x": 2.01,
       "y": 0.27054000732743333,
-      "label": "WildChat: short 3",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.02,
       "y": 0.22369457965955775,
-      "label": "WildChat: short 3",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 5
     },
@@ -1936,7 +1817,7 @@
     {
       "x": 2.09,
       "y": 0.6905452811903778,
-      "label": "WildChat: short 3",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 5
     },
@@ -1964,7 +1845,7 @@
     {
       "x": 2.13,
       "y": 0.7255685238973157,
-      "label": "WildChat: short 3",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 5
     },
@@ -1978,14 +1859,14 @@
     {
       "x": 2.15,
       "y": 0.7007263197274138,
-      "label": "WildChat: short 3",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.16,
       "y": 0.3110567116394556,
-      "label": "WildChat: short 3",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 5
     },
@@ -2027,7 +1908,7 @@
     {
       "x": 2.22,
       "y": 0.5248270123009036,
-      "label": "WildChat: short 3",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 5
     },
@@ -2048,7 +1929,6 @@
     {
       "x": -0.25,
       "y": -1.0038994304711224,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2073,28 +1953,24 @@
     {
       "x": -0.21,
       "y": -0.9443022578099374,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.2,
       "y": -1.6217514974902514,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.19,
       "y": -1.7799937063895612,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.18,
       "y": -0.7317833046215867,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2113,7 +1989,6 @@
     {
       "x": -0.15,
       "y": -1.2077123895097657,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2126,56 +2001,48 @@
     {
       "x": -0.13,
       "y": 1.7327303878219311,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.12,
       "y": -0.9962184413683985,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.11,
       "y": -1.9310574418056063,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.1,
       "y": 2.710632833082613,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.09,
       "y": -2.1903608052495116,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.08,
       "y": -2.953371263839145,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.07,
       "y": 1.8484524026972053,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.06,
       "y": -0.01819509351320292,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2194,7 +2061,6 @@
     {
       "x": -0.03,
       "y": -1.0635947473535055,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2207,14 +2073,12 @@
     {
       "x": -0.01,
       "y": 0.09819794934988835,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.0,
       "y": -1.149668267465401,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2245,91 +2109,78 @@
     {
       "x": 0.05,
       "y": 0.09174605897955246,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.06,
       "y": -0.03670367714254752,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.07,
       "y": 4.777688256532862,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.08,
       "y": -5.041720095387717,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.09,
       "y": 0.5726922506992516,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.1,
       "y": -1.5505071072712013,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.11,
       "y": 0.8803126222189519,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.12,
       "y": -2.478590489825791,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.13,
       "y": 0.991600854487249,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.14,
       "y": 1.775828612832541,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.15,
       "y": -0.33043288024708417,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.16,
       "y": -0.3406902769261979,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.17,
       "y": -1.7230788325735809,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2342,287 +2193,248 @@
     {
       "x": 0.19,
       "y": -1.0157841845222606,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.2,
       "y": -0.08422045378566168,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.21,
       "y": -1.9651533717411382,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.22,
       "y": -3.1815957842835303,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.23,
       "y": 5.688789257484473,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.24,
       "y": 3.112635614487033,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.75,
       "y": 0.8024985862608887,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.76,
       "y": 0.5521073213290109,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.77,
       "y": -0.18878200331506179,
-      "label": "persona: hub 08",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.78,
       "y": -0.9794920121266273,
-      "label": "persona: hub 08",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.79,
       "y": 1.2059432298950625,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.8,
       "y": -0.46067003842242116,
-      "label": "persona: hub 08",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.81,
       "y": -2.5984210138083412,
-      "label": "persona: hub 08",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.8200000000000001,
       "y": -0.2090326276348904,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.83,
       "y": -0.4448549930015311,
-      "label": "persona: hub 08",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.84,
       "y": 2.0237774509546043,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.85,
       "y": 0.4088798630843975,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.86,
       "y": -0.04540244683801831,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.87,
       "y": 0.6936662222276126,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.88,
       "y": -4.4608068629051445,
-      "label": "persona: hub 08",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.89,
       "y": 0.3425318483112676,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.9,
       "y": -0.7029401980761794,
-      "label": "persona: hub 08",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.91,
       "y": -0.917259167683504,
-      "label": "persona: hub 08",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.92,
       "y": 2.894177731205641,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.9299999999999999,
       "y": -1.5318481133038837,
-      "label": "persona: hub 08",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.94,
       "y": 0.6272043915162815,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.95,
       "y": 0.4084741280346442,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.96,
       "y": 0.5154199364252854,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.97,
       "y": -0.3959800339160662,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.98,
       "y": -0.06487454814964089,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.99,
       "y": -0.33862464305659046,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.0,
       "y": -0.08496631867311422,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.01,
       "y": -0.33823909551016484,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.02,
       "y": -0.23112240536469741,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.03,
       "y": -0.1755525388999466,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.04,
       "y": 0.0523298217752064,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.05,
       "y": 0.10614983270374978,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.06,
       "y": 0.1300820916023131,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.07,
       "y": 0.4924640726598515,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.08,
       "y": -0.8244011190078631,
-      "label": "persona: hub 08",
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.09,
       "y": -0.7975296176454201,
-      "label": "persona: hub 08",
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 7
     },
@@ -2671,49 +2483,49 @@
     {
       "x": 1.16,
       "y": -0.03682726782689372,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.17,
       "y": -0.45263380549849686,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.18,
       "y": -2.5744623658686336,
-      "label": "persona: hub 08",
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.19,
       "y": -0.8082559342888871,
-      "label": "persona: hub 08",
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.2,
       "y": -0.1297314222513073,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.21,
       "y": -0.16826753099868696,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.22,
       "y": -1.883677702865647,
-      "label": "persona: hub 08",
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 7
     },
@@ -2734,7 +2546,7 @@
     {
       "x": 1.75,
       "y": -0.2601520433293487,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
@@ -2755,6 +2567,7 @@
     {
       "x": 1.78,
       "y": -1.2011506001616965,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
@@ -2768,19 +2581,21 @@
     {
       "x": 1.8,
       "y": -0.3672505083168289,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.81,
       "y": -1.3114702424924332,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.82,
       "y": -0.8077366773686094,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
@@ -2794,19 +2609,21 @@
     {
       "x": 1.84,
       "y": 3.0273838831092235,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.85,
       "y": -0.9120201094806717,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.8599999999999999,
       "y": -0.6207391566882023,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
@@ -2820,638 +2637,600 @@
     {
       "x": 1.88,
       "y": -4.08981195639349,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.89,
       "y": 1.1352533181899318,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.9,
       "y": -1.4304056800052916,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.91,
       "y": -1.0623055171831126,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.92,
       "y": 0.6039747653489584,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.93,
       "y": -0.27129263550142824,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.94,
       "y": 0.49694703983739963,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.95,
       "y": 0.5455464984327243,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.96,
       "y": 0.7092545972888686,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.97,
       "y": -0.8216269725175707,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.98,
       "y": 0.17523644379249603,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.99,
       "y": -0.6383573941164506,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.0,
       "y": -0.31407082695339383,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.01,
       "y": -0.19936010346351551,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.02,
       "y": 0.023548702569467395,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.03,
       "y": -0.5444007356862883,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.04,
       "y": 0.39910633985064514,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.05,
       "y": 0.6990797936497231,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.06,
       "y": -0.35491980506655274,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.07,
       "y": 1.482372939008954,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.08,
       "y": -3.764879566200875,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.09,
       "y": -0.28696328815272665,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.1,
       "y": 0.41818204843433904,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.11,
       "y": 5.08954162428109,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.12,
       "y": 1.151836714355909,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.13,
       "y": 0.2428411895853011,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.14,
       "y": 2.3341311244317176,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.15,
       "y": -0.8839267271443205,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.16,
       "y": -0.9288898595257962,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.17,
       "y": -0.9564121504584993,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.18,
       "y": -2.5404730706921796,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.19,
       "y": -2.332408536074034,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.2,
       "y": -0.3180513437058323,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.21,
       "y": -1.3768686686189504,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.22,
       "y": -2.660193369248013,
+      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.23,
       "y": 8.2689763078305,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.24,
       "y": 1.181366093568741,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": -0.25,
       "y": -1.256794856444202,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.24,
       "y": -0.018165013684281917,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.23,
       "y": 0.8326484894410271,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.22,
       "y": 0.6851139965927331,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.21,
       "y": -0.599311017302739,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.2,
       "y": -1.5067724253166261,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.19,
       "y": -2.0603162985851498,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.18,
       "y": -0.49596748474671415,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.17,
       "y": -0.1025268834273163,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.16,
       "y": 0.38280234823710657,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.15,
       "y": -1.3879219849717117,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.14,
       "y": 0.6870078201952907,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.13,
       "y": 1.9517956048232463,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.12,
       "y": -0.2867874964273227,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.11,
       "y": -1.9861502753237659,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.1,
       "y": 2.6567614003617663,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.09,
       "y": -2.129399979488298,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.08,
       "y": -2.9288451392944808,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.07,
       "y": 1.994907715096872,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.06,
       "y": -0.039094810052230144,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.05,
       "y": 0.05572871089805176,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.04,
       "y": -0.19824952036776722,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.03,
       "y": -0.7536863257364352,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.02,
       "y": 0.36766618704369947,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.01,
       "y": 0.12455926280299323,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.0,
       "y": -1.2679516691814143,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.01,
       "y": 0.23278579836875224,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.02,
       "y": 0.6783757981910057,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.03,
       "y": 0.23807580628785274,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.04,
       "y": 0.15964029480906206,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.05,
       "y": -0.01921877633051139,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.06,
       "y": -0.004803995258814808,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.07,
       "y": 4.268346687855463,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.08,
       "y": -4.485001981272191,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.09,
       "y": 0.6708244276010049,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.1,
       "y": -2.0355923475441813,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.11,
       "y": 1.684846334717193,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.12,
       "y": -2.480907566064559,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.13,
       "y": 1.0454661198495838,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.14,
       "y": 1.1323980754966954,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.15,
       "y": -0.46893410368143584,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.16,
       "y": -0.3720916877474618,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.17,
       "y": -1.6213253730432449,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.18,
       "y": 0.7126131471306394,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.19,
       "y": -1.1331138608209272,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.2,
       "y": -0.026760704568445703,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.21,
       "y": -2.201241856083257,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.22,
       "y": -3.223380053637584,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.23,
       "y": 6.2883853660124345,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.24,
       "y": 3.3239874864474217,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.75,
       "y": -3.9559968535607624,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.76,
       "y": 0.11771785767398057,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.77,
       "y": -0.3946557606457475,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.78,
       "y": 1.9624738877194972,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.79,
       "y": -0.06383698759304934,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.8,
       "y": -3.822845175136834,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.81,
       "y": -0.999929263084411,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
@@ -3464,14 +3243,12 @@
     {
       "x": 0.83,
       "y": 3.7150761006557076,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.84,
       "y": -2.078280656844285,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
@@ -3484,56 +3261,48 @@
     {
       "x": 0.86,
       "y": -1.4885139939292742,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.87,
       "y": -5.392205951469791,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.88,
       "y": 4.001258476190671,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.89,
       "y": 0.876774444419155,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.9,
       "y": -1.3717662143009655,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.91,
       "y": -1.1786586917139914,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.92,
       "y": 0.7397385919116815,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.9299999999999999,
       "y": -1.6425347838179363,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
@@ -3552,21 +3321,18 @@
     {
       "x": 0.96,
       "y": -2.318868087649946,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.97,
       "y": 0.6475045888859157,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.98,
       "y": 1.4175107672375624,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
@@ -3585,21 +3351,18 @@
     {
       "x": 1.01,
       "y": 0.7315676285649957,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.02,
       "y": 0.32510680564769245,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.03,
       "y": 0.5706887358618005,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
@@ -3612,475 +3375,486 @@
     {
       "x": 1.05,
       "y": 1.9914258715626048,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.06,
       "y": -0.750292982413427,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.07,
       "y": -1.4475241486949209,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.08,
       "y": 4.061735969999205,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.09,
       "y": 0.26871981394539546,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.1,
       "y": -1.100530736788862,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.11,
       "y": 1.6806865899772276,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.12,
       "y": 3.6294840303696105,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.13,
       "y": 1.2782729400651487,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.1400000000000001,
       "y": 1.0037842103609336,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.15,
       "y": -0.9864565335520066,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.16,
       "y": 0.19885426096676184,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.17,
       "y": -0.35120878072722306,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.18,
       "y": -0.2354636939265049,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.19,
       "y": 6.673047689398871,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.2,
       "y": 1.4673059863747469,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.21,
       "y": 1.2650840262365755,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.22,
       "y": -1.93765536849574,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.23,
       "y": 11.16260883585663,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.24,
       "y": 1.420631812698744,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.75,
       "y": -2.190016677279786,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.76,
       "y": -0.8686386435547462,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.77,
       "y": 1.1388095227367643,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.78,
       "y": 2.190589293045065,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.79,
       "y": -1.624604780642244,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.8,
       "y": -1.9414706144562786,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.81,
       "y": -3.008044865886518,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.82,
       "y": -0.23001107562886602,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.83,
       "y": -1.5757066571342335,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.84,
       "y": -0.3522762495336451,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.85,
       "y": 0.22803458912349583,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.8599999999999999,
       "y": 0.7017414633959902,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.87,
       "y": -1.8789430858197704,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.88,
       "y": 2.6937555168416765,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.89,
       "y": -0.7509331106219435,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.9,
       "y": 1.6983425800494132,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.91,
       "y": -2.1697782020089704,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.92,
       "y": -4.329215795140975,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.93,
       "y": 2.3649840106797413,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.94,
       "y": 0.24966814033779627,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.95,
       "y": -0.368339868407098,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.96,
       "y": -1.406728418927841,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.97,
       "y": -0.7918362017870209,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.98,
       "y": 1.1427232617453775,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.99,
       "y": -0.7806667220166652,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.0,
       "y": -2.689132365822637,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.01,
       "y": 0.648160925915171,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.02,
       "y": 1.1275952825341733,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.03,
       "y": 1.537634116331425,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.04,
       "y": 0.1012050227234802,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.05,
       "y": 0.4115336642959093,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.06,
       "y": -0.37573606630968115,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.07,
       "y": -0.808142822731849,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.08,
       "y": 1.9346855077248009,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.09,
       "y": 1.2328706978702773,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.1,
       "y": -3.2481782174037477,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.11,
       "y": 4.394071849933397,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.12,
       "y": -2.98905108310845,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.13,
       "y": 0.9754900859116109,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.14,
       "y": 3.3934215531871423,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.15,
       "y": -1.4175911357349396,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.16,
       "y": 0.02941338999120191,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.17,
       "y": -2.5451281935734116,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.18,
       "y": 3.523745855798481,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.19,
       "y": 0.13089364211795385,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.2,
       "y": -1.1214645766491884,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.21,
       "y": 0.4459259407403522,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.22,
       "y": -4.7272279318605115,
-      "label": "behavior instr.: refusal",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.23,
       "y": 11.502691878438682,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.24,
       "y": 3.7892642191589516,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     }

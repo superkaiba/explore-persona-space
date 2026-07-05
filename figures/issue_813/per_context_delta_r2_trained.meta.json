@@ -1,6 +1,6 @@
 {
-  "commit": "71fbb957de",
-  "created": "2026-07-05T12:07:57Z",
+  "commit": "aa4f0117cc",
+  "created": "2026-07-05T12:55:48Z",
   "figsize": [
     14.0,
     3.8
@@ -9,7 +9,6 @@
     {
       "x": -0.25,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.7880552113487198,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
@@ -22,7 +21,6 @@
     {
       "x": -0.23,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.6149723827940363,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
@@ -53,7 +51,6 @@
     {
       "x": -0.18,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.525266623210186,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
@@ -84,7 +81,6 @@
     {
       "x": -0.13,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.12050177690282737,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
@@ -103,7 +99,6 @@
     {
       "x": -0.1,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.1242150106604214,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
@@ -122,28 +117,24 @@
     {
       "x": -0.07,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.1827409541290024,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": -0.06,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.43341541685572693,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": -0.05,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.561585601055647,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": -0.04,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.18502742698908037,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
@@ -162,21 +153,18 @@
     {
       "x": -0.01,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.26343599702447307,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.0,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.4766474710541928,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.01,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.08334630280954514,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
@@ -189,28 +177,24 @@
     {
       "x": 0.03,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.09213621862711818,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.04,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.11451902715636564,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.05,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.0824031603983002,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.06,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.2415018969054259,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
@@ -229,7 +213,6 @@
     {
       "x": 0.09,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.536955299329282,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
@@ -242,7 +225,6 @@
     {
       "x": 0.11,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.5032551871674968,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
@@ -255,14 +237,12 @@
     {
       "x": 0.13,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.43744408088474174,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.14,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 4.398781035755455,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 0
     },
@@ -275,7 +255,6 @@
     {
       "x": 0.16,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.12129190015741464,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
@@ -288,14 +267,12 @@
     {
       "x": 0.18,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 4.177496172034083,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.19,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.1694576605416529,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
@@ -308,861 +285,802 @@
     {
       "x": 0.21,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.4682258435583293,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.22,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.07179674098655653,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.23,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 2.2561414522016605,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.24,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.9301426440358824,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "x": 0.75,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.5915072420319376,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.76,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.16824240093837517,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.77,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.2537670277336943,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.78,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.09698078817923772,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.79,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.023781503581489005,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.8,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.9406591191843958,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.81,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.06488364120916934,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.8200000000000001,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.3834103306435743,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.83,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.33561473452104096,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.84,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.4030924466051182,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.85,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.6328544408970913,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.86,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.17871853314241726,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.87,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.06343986178457506,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.88,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.4327710269008662,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.89,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.8507519067792231,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.9,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.046636658952332155,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.91,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.7124816947885932,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.92,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.06006447569351536,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.9299999999999999,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.21051100198303985,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.94,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.4961515835575572,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.95,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.32784901173981673,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.96,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.27192726611509244,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.97,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.10340378030609898,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.98,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.15144291818065625,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 0.99,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.026238587277944703,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.0,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.21449874589638185,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.01,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.03395631726389681,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.02,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.42141316468435974,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.03,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.5109293143612703,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.04,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.15391728338134314,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.05,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.020779353022359004,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.06,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.009885381728969023,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.07,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.7519664196581068,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.08,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.6782951229600016,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.09,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.0963072634040687,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.1,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.9919155228037653,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.11,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.0714254252912383,
-      "label": "format: code comment",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.12,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.8120566763746169,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.13,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.6958408543752812,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.1400000000000001,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.3908531856336275,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.15,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.038846836262052875,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.16,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.05733787347223096,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.17,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.5873786945341433,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.18,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 7.212922717119888,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.19,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.18911510680857901,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.2,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.7290233257382894,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.21,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.4094064001865725,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.22,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.0655373959913419,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.23,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.2384654599484648,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.24,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.1689654439812429,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 1
     },
     {
       "x": 1.75,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.1275320493319754,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.76,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.4950313487811897,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.77,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.388668545095058,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.78,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.06997894642951508,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.79,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.3283954392495616,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.8,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.5987745005553933,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.81,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.3881090814066894,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.82,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.5696414506304777,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.83,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.4425270619856647,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.84,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.43836023855665474,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.85,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.16563468806440085,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.8599999999999999,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.4459940803611282,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.87,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.24602997127622572,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.88,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.11800699061734576,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.89,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.816808317725517,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.9,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.1290192700403061,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.91,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.6280701512508102,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.92,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.24199696443743335,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.93,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.22045711603186646,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.94,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.5612812786789405,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.95,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.22543235439975717,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.96,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.6600580923356532,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.97,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.33995083490378875,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.98,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.2991005054021372,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 1.99,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.009998758026224408,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.0,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.406596976865675,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.01,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.05727693174907955,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.02,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.13320550038745793,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.03,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.4449486439312338,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.04,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.04756470529270018,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.05,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.08557212496374689,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.06,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.2173823990909156,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.07,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.2172768342473184,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.08,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.2738308829949219,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.09,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.11823524050761769,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.1,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.4541601551117225,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.11,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.6564872621735987,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.12,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.6176236447621335,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.13,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.174716024140853,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.14,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 2.0050383517278405,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.15,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.08040919103813238,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.16,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.13726977712564548,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.17,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -1.3401523386492897,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.18,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 9.035690451154494,
-      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.19,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.6522989460437856,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.2,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.0507320255660773,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.21,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.5091899047483253,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.22,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 0.5304161008834569,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.23,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": 1.1928512819223442,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": 2.24,
       "per-context \u0394R\u00b2\n(averaged-map own \u2212 per-example transferred)": -0.14047972773097683,
-      "label": "format: code comment",
+      "label": "default: default template",
       "_kind": "scatter",
       "_group": 2
     },
     {
       "x": -0.25,
       "y": -2.5709092008578267,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.24,
       "y": 5.567822427893844,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.23,
       "y": -0.8512701671101723,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.22,
       "y": -1.048688450173529,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.21,
       "y": 2.0970798997640543,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.2,
       "y": -1.0939075141929493,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.19,
       "y": -1.1555586810277987,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.18,
       "y": -0.3186875267205238,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.17,
       "y": 0.06562161099492414,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.16,
       "y": 2.383827670276844,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.15,
       "y": -1.4996881614749782,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.14,
       "y": -0.1977941561254113,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.13,
       "y": -0.9918477473917733,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.12,
       "y": -0.44228459090334127,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.11,
       "y": -3.1202577137628396,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.1,
       "y": 2.034194406749009,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.09,
       "y": -1.8329299815744662,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.08,
       "y": -1.7303530209185425,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.07,
       "y": -0.45884012535603347,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
@@ -1175,84 +1093,72 @@
     {
       "x": -0.05,
       "y": -0.5261997833889929,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.04,
       "y": 2.006912516709612,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.03,
       "y": -1.6771711962290325,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.02,
       "y": 0.1038767862536929,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": -0.01,
       "y": -0.24731849108214732,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.0,
       "y": 1.4641470314680731,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.01,
       "y": -0.23220204909637232,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.02,
       "y": 1.8699661138918842,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.03,
       "y": 0.38163302615593153,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.04,
       "y": 0.15261424836885595,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.05,
       "y": -0.7543483440278678,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.06,
       "y": 0.35699287222976395,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
@@ -1265,266 +1171,228 @@
     {
       "x": 0.08,
       "y": -3.160277106976153,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.09,
       "y": 0.16484742987572787,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.1,
       "y": -0.7002298145042829,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.11,
       "y": 2.3716433249651345,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.12,
       "y": -0.6203712163212174,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.13,
       "y": 0.030234889643779184,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.14,
       "y": 1.381212699451872,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.15,
       "y": -0.7700645131959973,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.16,
       "y": 0.027445305949827414,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.17,
       "y": -0.4756564118186972,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.18,
       "y": -0.4223503914563338,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.19,
       "y": 2.1409706664255452,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.2,
       "y": -0.5685695631884329,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.21,
       "y": -1.2093283705614368,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.22,
       "y": 0.1824694738242698,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.23,
       "y": 2.4692007135476786,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.24,
       "y": 0.3665667173494285,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 3
     },
     {
       "x": 0.75,
       "y": 2.6766553894693814,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.76,
       "y": -3.951790778103806,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.77,
       "y": 0.028240419676087924,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.78,
       "y": 3.585221075159268,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.79,
       "y": -0.36969665490139647,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.8,
       "y": 0.7022326481648662,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.81,
       "y": -2.664645906157503,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.8200000000000001,
       "y": -1.5448267503311257,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.83,
       "y": -0.45556958489213173,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.84,
       "y": -1.276646518369489,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.85,
       "y": 2.7804538460430805,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.86,
       "y": 1.6841683742411888,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.87,
       "y": 0.07319861956338514,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.88,
       "y": -0.35729009583534577,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.89,
       "y": 0.5249432966372325,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.9,
       "y": 0.7243123127422333,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.91,
       "y": 1.7570497012772535,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.92,
       "y": -1.9294831921439126,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.9299999999999999,
       "y": 0.7869917937153659,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.94,
       "y": 0.44731348142113525,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.95,
       "y": 0.8406385210551708,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
@@ -1537,21 +1405,18 @@
     {
       "x": 0.97,
       "y": 1.1388586951123791,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.98,
       "y": -1.1275948475384716,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 0.99,
       "y": 0.10916085995012637,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
@@ -1564,77 +1429,68 @@
     {
       "x": 1.01,
       "y": 0.08474517615164245,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.02,
       "y": 1.0472912901159717,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.03,
       "y": -1.6459130354849805,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.04,
       "y": 0.28271004516787457,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.05,
       "y": -0.6374177767374007,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.06,
       "y": -0.5405990182763212,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.07,
       "y": 1.6620930126780102,
-      "label": "persona: medical doctor",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.08,
       "y": 0.943218937619708,
-      "label": "persona: medical doctor",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.09,
       "y": 0.7305814581734715,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.1,
       "y": -0.7044047404014933,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.11,
       "y": -2.237753438558748,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
@@ -1647,21 +1503,20 @@
     {
       "x": 1.13,
       "y": 0.15625196572366917,
-      "label": "persona: medical doctor",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.1400000000000001,
       "y": 1.7201983626390174,
-      "label": "persona: medical doctor",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.15,
       "y": 0.2842115418708344,
-      "label": "persona: medical doctor",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
@@ -1680,89 +1535,86 @@
     {
       "x": 1.18,
       "y": -0.9056751750149843,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.19,
       "y": -1.82510652506123,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.2,
       "y": -0.9597322010608877,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.21,
       "y": -1.366848115914376,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.22,
       "y": 1.971358738833274,
-      "label": "persona: medical doctor",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.23,
       "y": 1.346194095967462,
-      "label": "persona: medical doctor",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.24,
       "y": -1.5349263936345636,
-      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 4
     },
     {
       "x": 1.75,
       "y": -1.0340699577406838,
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.76,
       "y": 0.17958192178301147,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.77,
       "y": 2.3146756426131248,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.78,
       "y": 5.335406412377168,
-      "label": "persona: medical doctor",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.79,
       "y": -0.5068580567727992,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.8,
       "y": -0.8631351841463442,
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
@@ -1775,46 +1627,49 @@
     {
       "x": 1.82,
       "y": 0.1559946524049991,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.83,
       "y": -1.167258440930425,
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.84,
       "y": -1.185433419911135,
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.85,
       "y": 2.0994945659813595,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.8599999999999999,
       "y": 0.6134647287028656,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.87,
       "y": -1.4340150550302724,
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.88,
       "y": -0.27388037876936266,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
@@ -1827,191 +1682,196 @@
     {
       "x": 1.9,
       "y": -0.5646089025940348,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.91,
       "y": 0.36213405389472086,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.92,
       "y": -1.3758121925897129,
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.93,
       "y": 0.5421874527477577,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.94,
       "y": 0.35917594761022364,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.95,
       "y": 1.0380366562246781,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.96,
       "y": 1.5848536102092794,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.97,
       "y": -0.7622677083426623,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.98,
       "y": -0.5838604147765203,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 1.99,
       "y": 0.08516310453283893,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.0,
       "y": 1.0853353660512326,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.01,
       "y": -0.0010028780709632201,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.02,
       "y": 1.5184476769008697,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.03,
       "y": -1.039105466754691,
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.04,
       "y": 0.28400432158920097,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.05,
       "y": -0.5852370659360844,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.06,
       "y": -0.19630209292780698,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.07,
       "y": 2.8312660280888977,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.08,
       "y": -1.020105854727639,
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.09,
       "y": 0.4939581684631307,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.1,
       "y": 0.41952158597494815,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.11,
       "y": -1.481146845672555,
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.12,
       "y": -1.2917614495487157,
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.13,
       "y": -0.22791334409885877,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.14,
       "y": 1.5465182206102526,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.15,
       "y": 0.1454303799499197,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.16,
       "y": 0.2300693203350459,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.17,
       "y": 0.5548873334853255,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
@@ -2024,49 +1884,48 @@
     {
       "x": 2.19,
       "y": 0.9103540301721438,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.2,
       "y": -0.4727324613704482,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.21,
       "y": -0.8261969794403115,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.22,
       "y": 1.6105355194220152,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.23,
       "y": 1.1807541193509223,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": 2.24,
       "y": 0.605764069259962,
-      "label": "rephrase: imperative",
+      "label": "persona: surgeon",
       "_kind": "scatter",
       "_group": 5
     },
     {
       "x": -0.25,
       "y": 2.9408244324866786,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2079,28 +1938,24 @@
     {
       "x": -0.23,
       "y": 0.7538014831052919,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.22,
       "y": 2.44620432213091,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.21,
       "y": 2.275673012982452,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.2,
       "y": -4.330634832555177,
-      "label": "rephrase: archaic",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2113,21 +1968,18 @@
     {
       "x": -0.18,
       "y": 1.8567994851151468,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.17,
       "y": 3.661213858450708,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.16,
       "y": 2.549128043994699,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2140,7 +1992,6 @@
     {
       "x": -0.14,
       "y": -4.449979582360058,
-      "label": "rephrase: archaic",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2165,7 +2016,6 @@
     {
       "x": -0.1,
       "y": 3.4955581665042317,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2184,14 +2034,12 @@
     {
       "x": -0.07,
       "y": 1.407623596824628,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": -0.06,
       "y": 0.456258796126054,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2258,7 +2106,6 @@
     {
       "x": 0.05,
       "y": 1.6444015266601184,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2271,21 +2118,18 @@
     {
       "x": 0.07,
       "y": 1.5924498596293404,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.08,
       "y": -3.4682964707302233,
-      "label": "rephrase: archaic",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.09,
       "y": 1.9502795386541614,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2298,21 +2142,18 @@
     {
       "x": 0.11,
       "y": 6.699283604855111,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.12,
       "y": -9.826635459487306,
-      "label": "rephrase: archaic",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.13,
       "y": 0.878266692911291,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2343,7 +2184,6 @@
     {
       "x": 0.18,
       "y": -3.9443749349808,
-      "label": "rephrase: archaic",
       "_kind": "scatter",
       "_group": 6
     },
@@ -2374,35 +2214,30 @@
     {
       "x": 0.23,
       "y": 3.5559212823076223,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.24,
       "y": 2.3010129085499784,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 6
     },
     {
       "x": 0.75,
       "y": -0.9239248500205122,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.76,
       "y": 0.11731567457327685,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.77,
       "y": 1.0660684520954646,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
@@ -2415,63 +2250,54 @@
     {
       "x": 0.79,
       "y": 0.04666422214643973,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.8,
       "y": 0.6978544394795634,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.81,
       "y": -1.234716080747809,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.8200000000000001,
       "y": 2.0756676192830383,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.83,
       "y": -0.2573264111682647,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.84,
       "y": -0.3412077838054941,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.85,
       "y": 0.883250422538211,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.86,
       "y": 1.4061524988833582,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.87,
       "y": -0.4806444513526813,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
@@ -2484,133 +2310,115 @@
     {
       "x": 0.89,
       "y": 0.36593203672012464,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.9,
       "y": -0.6671601984695581,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.91,
       "y": 1.4512778277656224,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.92,
       "y": 2.4779583335520066,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.9299999999999999,
       "y": -0.693101955523538,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.94,
       "y": 0.4324600435703232,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.95,
       "y": -0.21548070862768576,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.96,
       "y": 0.8004042109930332,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.97,
       "y": 0.3285170393107846,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.98,
       "y": 0.552874980723228,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 0.99,
       "y": -0.12034189748030855,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.0,
       "y": 1.214996185778876,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.01,
       "y": 0.29504540453190486,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.02,
       "y": -1.7610144545618702,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.03,
       "y": -2.1369187801956677,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.04,
       "y": -0.19515940736044257,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.05,
       "y": 0.2266049874803855,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.06,
       "y": -0.28758949450230276,
-      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.07,
       "y": -0.4883064810055586,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
@@ -2645,6 +2453,7 @@
     {
       "x": 1.12,
       "y": -3.5582705081802217,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
@@ -2665,14 +2474,14 @@
     {
       "x": 1.15,
       "y": -0.08910224270474298,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.16,
       "y": -0.3853059973375643,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
@@ -2686,7 +2495,7 @@
     {
       "x": 1.18,
       "y": -0.08129076835070492,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
@@ -2700,28 +2509,28 @@
     {
       "x": 1.2,
       "y": -0.4453427907260732,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.21,
       "y": -0.08275599536474232,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.22,
       "y": -1.7106755759612682,
-      "label": "rephrase: enthusiastic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 7
     },
     {
       "x": 1.23,
       "y": 4.104797327271605,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 7
     },
@@ -2735,7 +2544,7 @@
     {
       "x": 1.75,
       "y": 0.9144820074397444,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
@@ -2749,7 +2558,7 @@
     {
       "x": 1.77,
       "y": 0.6918511617491632,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
@@ -2763,47 +2572,49 @@
     {
       "x": 1.79,
       "y": 1.1886541916952211,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.8,
       "y": -1.2640554127505652,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.81,
       "y": -1.341176680170335,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.82,
       "y": 0.4081084843275278,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.83,
       "y": 0.22108630471522872,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.84,
       "y": 2.1017405050536837,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.85,
       "y": 0.3331106338876708,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
@@ -2824,12 +2635,14 @@
     {
       "x": 1.88,
       "y": -2.6123401942353865,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.89,
       "y": -1.6078241728955547,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
@@ -2843,14 +2656,14 @@
     {
       "x": 1.91,
       "y": 0.7964356595563373,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.92,
       "y": 1.6977113043374246,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
@@ -2864,14 +2677,14 @@
     {
       "x": 1.94,
       "y": 0.36116905242197284,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.95,
       "y": 0.09209637891177813,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
@@ -2885,49 +2698,56 @@
     {
       "x": 1.97,
       "y": -0.06449494597945282,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.98,
       "y": 0.11375743047107889,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 1.99,
       "y": -0.4301421628484867,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.0,
       "y": -0.1329997552330049,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.01,
       "y": -0.5030172294094051,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.02,
       "y": -0.4149198419951361,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.03,
       "y": -1.5304512208707663,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.04,
       "y": -0.019168917398831198,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
@@ -2941,32 +2761,35 @@
     {
       "x": 2.06,
       "y": -0.07852940048871915,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.07,
       "y": -0.0017618488691049095,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.08,
       "y": -3.973817756698182,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.09,
       "y": 1.4254421060627696,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.1,
       "y": 1.087483927046641,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
@@ -2980,530 +2803,475 @@
     {
       "x": 2.12,
       "y": -5.979153823875592,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.13,
       "y": 0.34597279903005873,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.14,
       "y": 4.178020717390812,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.15,
       "y": -1.0145807656169001,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.16,
       "y": -0.7167033187531953,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.17,
       "y": -2.1618790250815128,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.18,
       "y": -5.81214660193271,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.19,
       "y": 0.1276931673207784,
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.2,
       "y": -0.6104795593884944,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.21,
       "y": -1.5686997511136411,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.22,
       "y": -0.8955675358157364,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.23,
       "y": 6.664051365650678,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": 2.24,
       "y": 2.5634258237463854,
-      "label": "behavior instr.: fact",
+      "label": "rephrase: enthusiastic",
       "_kind": "scatter",
       "_group": 8
     },
     {
       "x": -0.25,
       "y": -0.643175131655795,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.24,
       "y": 0.13187026207206998,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.23,
       "y": 0.6337539114188218,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.22,
       "y": 0.7685436613870991,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.21,
       "y": -0.42312571649279107,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.2,
       "y": -1.8338402718343758,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.19,
       "y": -1.695576249330415,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.18,
       "y": -0.5349809953215328,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.17,
       "y": -0.06980127749213239,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.16,
       "y": 0.4599751204777647,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.15,
       "y": -1.559814786876288,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.14,
       "y": 0.568597193395604,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.13,
       "y": 1.8406483299777108,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.12,
       "y": -0.22242481184355256,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.11,
       "y": -1.6804570368995684,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.1,
       "y": 2.509281029870351,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.09,
       "y": -1.422474872103919,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.08,
       "y": -3.0256793811447693,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.07,
       "y": 1.857131516256679,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.06,
       "y": 0.0657433298850485,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.05,
       "y": -0.005937871938009209,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.04,
       "y": -0.28862216391032547,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.03,
       "y": -0.5293764496960947,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.02,
       "y": 0.18012105985961213,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": -0.01,
       "y": 0.21243345089588317,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.0,
       "y": -1.2661623644880962,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.01,
       "y": 0.33396281496146685,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.02,
       "y": 0.18898105795494047,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.03,
       "y": -0.3111798757915878,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.04,
       "y": 0.22261439496555369,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.05,
       "y": -0.012757716176338363,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.06,
       "y": 0.006394431519041177,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.07,
       "y": 4.068472355295334,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.08,
       "y": -4.396835257085357,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.09,
       "y": 0.48835288376037056,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.1,
       "y": -1.2807877958494913,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.11,
       "y": 1.2127785158454714,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.12,
       "y": -2.9438944346849496,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.13,
       "y": 1.0724820920272347,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.14,
       "y": 0.7155605128034424,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.15,
       "y": -0.21612094504898494,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.16,
       "y": -0.317274972826711,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.17,
       "y": -1.5379580881836254,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.18,
       "y": -0.9697088481314466,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.19,
       "y": -1.0148123122964847,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.2,
       "y": -0.24261243535308097,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.21,
       "y": -1.6774618995362829,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.22,
       "y": -3.1303697094209326,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.23,
       "y": 6.207747093223475,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.24,
       "y": 3.31366351053326,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 9
     },
     {
       "x": 0.75,
       "y": -3.522974910982029,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.76,
       "y": 0.042866330779830264,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.77,
       "y": -0.4099622222258432,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.78,
       "y": 1.7881286537106291,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.79,
       "y": 0.1796488979925357,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.8,
       "y": -4.177014367716126,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.81,
       "y": -0.0404489367659977,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.8200000000000001,
       "y": -0.8127481814394457,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.83,
       "y": 5.40922582831341,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.84,
       "y": -2.495398676663129,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.85,
       "y": -0.4895469685841505,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.86,
       "y": -1.124088463104485,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.87,
       "y": -6.238614519979862,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.88,
       "y": 4.669248210890544,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
@@ -3516,28 +3284,24 @@
     {
       "x": 0.9,
       "y": -1.5380825216985592,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.91,
       "y": -1.1364956899199825,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.92,
       "y": 0.8846961654848116,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.9299999999999999,
       "y": -1.3538580707053498,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
@@ -3556,21 +3320,18 @@
     {
       "x": 0.96,
       "y": -2.245133649763204,
-      "label": "rephrase: polite",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.97,
       "y": 0.719311806525555,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 0.98,
       "y": 1.2240538155710183,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
@@ -3589,21 +3350,18 @@
     {
       "x": 1.01,
       "y": 0.8542763714490995,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.02,
       "y": 0.4617889559729349,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.03,
       "y": 0.4236357206903847,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
@@ -3616,479 +3374,487 @@
     {
       "x": 1.05,
       "y": 2.3022178601504635,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.06,
       "y": -0.9147008925271862,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.07,
       "y": -1.7233690543416813,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.08,
       "y": 4.346800555338483,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.09,
       "y": 0.45667552741383055,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.1,
       "y": -0.9917108673763835,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.11,
       "y": 1.4568570157472323,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.12,
       "y": 3.155539991433727,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.13,
       "y": 1.5056199381747923,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.1400000000000001,
       "y": 1.2451416549179086,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.15,
       "y": -0.7947473939483363,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.16,
       "y": -0.0068564690881949275,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.17,
       "y": -0.5481266872216644,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.18,
       "y": 0.20366182858249715,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.19,
       "y": 7.811726898834266,
-      "label": "default: helpful asst",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.2,
       "y": 1.6523276332065322,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.21,
       "y": 0.8587855220528056,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.22,
       "y": -1.7848474802996321,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.23,
       "y": 13.228173149766022,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.24,
       "y": 1.2090792472335465,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 10
     },
     {
       "x": 1.75,
       "y": -1.3457268968034555,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.76,
       "y": -0.8043039650328865,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.77,
       "y": 0.9582434818716052,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.78,
       "y": 2.1963837548624667,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.79,
       "y": -1.1922116790341022,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.8,
       "y": -2.542241586060257,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.81,
       "y": -2.2080256078998417,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.82,
       "y": -0.2657803848024969,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.83,
       "y": -0.7136952216528414,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.84,
       "y": -1.3115266558416039,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.85,
       "y": -0.6854745808698226,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.8599999999999999,
       "y": 1.257529126090077,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.87,
       "y": -2.164896248149489,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.88,
       "y": 2.8686808405961983,
-      "label": "default: helpful asst",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.89,
       "y": -0.857761910889991,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.9,
       "y": 1.5949652462333361,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.91,
       "y": -1.6259877439019448,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.92,
       "y": -4.239068929937083,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.93,
       "y": 2.1664181015307165,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.94,
       "y": 0.32434605316977283,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.95,
       "y": -0.3959680378651633,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.96,
       "y": -1.559565401758313,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.97,
       "y": -0.5195176916320108,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.98,
       "y": 0.9570476164438091,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 1.99,
       "y": -0.7171297847926112,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.0,
       "y": -2.518436765905257,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.01,
       "y": 0.8650421121841525,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.02,
       "y": 0.7156808365077723,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.03,
       "y": 0.9884238911206751,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.04,
       "y": 0.11014942373776648,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.05,
       "y": 0.6350017026723265,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.06,
       "y": -0.5506073999510654,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.07,
       "y": -1.054469856784639,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.08,
       "y": 2.0457847514189424,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.09,
       "y": 1.2176371700084108,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.1,
       "y": -2.9626200335993715,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.11,
       "y": 4.668618194243592,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.12,
       "y": -4.9514895364511915,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.13,
       "y": 1.2027398405182606,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.14,
       "y": 3.4928140110755486,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.15,
       "y": -1.1664875851489924,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.16,
       "y": 0.010726201705331562,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.17,
       "y": -2.592789091966754,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.18,
       "y": 1.6575146754438066,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.19,
       "y": 1.2129585968339285,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.2,
       "y": -1.2070239563797145,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.21,
       "y": 0.36169952475469813,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.22,
       "y": -4.77751950561634,
-      "label": "rephrase: archaic",
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.23,
       "y": 12.706671567877464,
-      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     },
     {
       "x": 2.24,
       "y": 3.0708002705545283,
+      "label": "behavior instr.: fact",
       "_kind": "scatter",
       "_group": 11
     }

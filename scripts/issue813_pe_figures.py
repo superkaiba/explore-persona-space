@@ -172,6 +172,7 @@ def fig_per_context(cells: dict, arm: str, out: Path) -> None:
     fig, axes = plt.subplots(1, 4, figsize=(14, 3.8), constrained_layout=True)
     for col, beh in enumerate(BEHAVIORS):
         ax = axes[col]
+        panel_labels: list[tuple[float, float, str]] = []
         for i, sub in enumerate(SUBSTRATES):
             c = cells.get((beh, sub))
             if c is None:
@@ -184,10 +185,32 @@ def fig_per_context(cells: dict, arm: str, out: Path) -> None:
                 0.5 / max(len(gaps), 1)
             )
             ax.scatter(xs, gaps, s=12, color=colors[i], alpha=0.75)
-            # label extreme contexts (top-2 |gap|) with a reader-facing name
+            # collect the extreme contexts (top-2 |gap| per substrate) for labeling
             ids = c.get("ctx_ids", [str(j) for j in range(len(gaps))])
             for j in np.argsort(-np.abs(gaps))[:2]:
-                ax.annotate(ctx_label(ids[j]), (xs[j], gaps[j]), fontsize=6, ha="left", va="bottom")
+                panel_labels.append((float(xs[j]), float(gaps[j]), ctx_label(ids[j])))
+        # place labels collision-aware: when a label's anchor sits close to an
+        # already-placed one (same column or a neighboring column at similar
+        # height), drop it BELOW its point instead of above — two near-equal
+        # extremes previously stacked unreadably (sycophancy panel, r1 nit)
+        if panel_labels:
+            label_ys = [y for _, y, _ in panel_labels]
+            yspan = (max(label_ys) - min(label_ys)) or 1.0
+            placed: list[tuple[float, float]] = []
+            for x, y, text in sorted(panel_labels, key=lambda t: -t[1]):
+                collide = any(
+                    abs(x - px) < 1.25 and abs(y - py) < 0.07 * yspan for px, py in placed
+                )
+                ax.annotate(
+                    text,
+                    (x, y),
+                    fontsize=6,
+                    ha="left",
+                    va="top" if collide else "bottom",
+                    xytext=(2, -2 if collide else 2),
+                    textcoords="offset points",
+                )
+                placed.append((x, y))
         ax.axhline(0, color="0.3", lw=0.8)
         ax.set_xticks(range(3))
         ax.set_xticklabels([TICK_LABEL[s] for s in SUBSTRATES], fontsize=8)
