@@ -461,7 +461,7 @@ def _collect_batch_results(
                 (b.text for b in result.result.message.content if b.type == "text"),
                 "",
             )
-            parsed = parse_judge_json(text, None)
+            parsed = parse_judge_json(text)
             scores[cid] = parsed if parsed is not None else error_dict_factory("parse_error")
         elif rtype == "errored":
             etype = getattr(
@@ -515,7 +515,7 @@ async def _judge_items_sync(
                 )
                 result = await client.messages.create(**params)
                 text = next((b.text for b in result.content if b.type == "text"), "")
-                parsed = parse_judge_json(text, None)
+                parsed = parse_judge_json(text)
                 score = parsed if parsed is not None else error_dict_factory("parse_error")
             except Exception as e:  # per-item capture is the legacy contract
                 score = error_dict_factory(f"error: {e}")
@@ -578,7 +578,7 @@ async def _judge_items_sync_multiorg(
         )
 
     def _parse_response(text: str) -> dict:
-        parsed = parse_judge_json(text, None)
+        parsed = parse_judge_json(text)
         return parsed if parsed is not None else error_dict_factory("parse_error")
 
     raw_results = await api_dispatch.dispatch_calls(

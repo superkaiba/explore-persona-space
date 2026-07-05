@@ -133,7 +133,7 @@ async def judge_one(
                 messages=[{"role": "user", "content": user}],
             )
             text = r.content[0].text
-            parsed = parse_judge_json(text, None)
+            parsed = parse_judge_json(text)
             if parsed is None or "label" not in parsed:
                 return {"label": "parse_error", "error": True, "raw": text}
             return parsed

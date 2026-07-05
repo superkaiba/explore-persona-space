@@ -289,7 +289,7 @@ def _score_with_gpt4o(
                     temperature=0.0,
                 )
                 text = resp.choices[0].message.content or ""
-                parsed = parse_judge_json(text, None)
+                parsed = parse_judge_json(text)
                 if parsed is None:
                     out[q].append({"error": True, "reason": "parse_error", "raw": text[:200]})
                 else:
