@@ -4114,7 +4114,7 @@ below): GCE instances are ephemeral by design, and a STOPPED instance would
 be deleted by the next launch's stale reclaim anyway — the GCP phase-cycle
 is teardown + fresh dispatch. Backstop only (never the plan):
 `backends/gcp.py::reconnect_or_none` refuses a RUNNING instance whose
-`eps/phase` is terminal (`done`/`failed`/`wedged`) and the pre-launch stale
+`eps/phase` is terminal (`done`/`failed`/`finalize_failed_artifacts_ok`/`wedged`) and the pre-launch stale
 reclaim deletes it, so a missed teardown no longer silently no-ops the next
 dispatch (#763 leg 2) — but the zombie still bills until the #935 done-grace
 self-poweroff (default 90 min), that next dispatch, or the daily janitor

@@ -3720,8 +3720,9 @@ def audit_stale_gcp_vms(
       would re-create #697: a 7d job killed by the janitor's old 24h cap).
     * **Terminal-phase reap** (``terminal_phase_max_age_seconds``, default
       10 min) — a RUNNING instance that has published a TERMINAL
-      ``eps/phase`` (``done`` / ``failed``; see
-      :data:`_TERMINAL_GUEST_PHASES`) but never auto-deleted is a wedged
+      ``eps/phase`` (``done`` / ``failed`` /
+      ``finalize_failed_artifacts_ok``; see :data:`_TERMINAL_GUEST_PHASES`)
+      but never auto-deleted is a wedged
       zombie: the workload finished, the VM is still billing, and waiting
       for the per-fence age backstop (up to the instance's own
       ``--max-run-duration`` + grace — now 7d by default) burns idle A100
@@ -4672,7 +4673,8 @@ class GcpBackend(ComputeBackend):
         ``[phase=...]`` writes land on a poll-readable surface (the
         existing :class:`PollResult` shape carries the per-phase fields).
 
-        Terminal guest-attribute phases (``done`` / ``failed``) are
+        Terminal guest-attribute phases (``done`` / ``failed`` /
+        ``finalize_failed_artifacts_ok``) are
         OVERRIDDEN when a fresh ``epm:run-launched`` relaunch marker
         names a live process on this instance — the startup script's
         phase write freezes at the FIRST workload's exit, so an SSH
