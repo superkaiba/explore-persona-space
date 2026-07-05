@@ -461,8 +461,8 @@
     "1058": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1058",
-      "status": "proposed",
+      "path": "tasks/planning/1058",
+      "status": "planning",
       "title": "daily-fix: repo-root guard false-positive on worktree-scoped"
     },
     "1059": {
