@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1058,
+  "highest_id": 1059,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -464,6 +464,13 @@
       "path": "tasks/proposed/1058",
       "status": "proposed",
       "title": "daily-fix: repo-root guard false-positive on worktree-scoped"
+    },
+    "1059": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1059",
+      "status": "proposed",
+      "title": "daily-fix: stagger proposed-infra-sweep session dispatches"
     },
     "106": {
       "has_clean_result": true,
