@@ -22,10 +22,15 @@ import json
 import shutil
 from pathlib import Path
 
-import matplotlib.pyplot as plt
-import numpy as np
+# #847: shared-VM thread caps must bind BEFORE torch/numpy freeze their pools at import.
+from explore_persona_space.orchestrate.env import load_dotenv
 
-from explore_persona_space.analysis.paper_plots import (
+load_dotenv()
+
+import matplotlib.pyplot as plt  # noqa: E402
+import numpy as np  # noqa: E402
+
+from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette,
     savefig_paper,
     set_paper_style,

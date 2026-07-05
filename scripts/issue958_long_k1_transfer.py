@@ -17,11 +17,16 @@ import json
 import sys
 from pathlib import Path
 
-import numpy as np
-import torch
+# #847: shared-VM thread caps must bind BEFORE torch/numpy freeze their pools at import.
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import issue958_common as C
+import issue958_common as C  # noqa: E402
 
 SNAP = Path(
     "/mnt/eps-data/thomasjiralerspong/i958_r2/hf/hub/"
