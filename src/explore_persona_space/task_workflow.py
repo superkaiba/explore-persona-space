@@ -727,6 +727,15 @@ def registry_path() -> Path:
 # constants because they live under ``~`` and never depend on repo root.
 LOCK_DIR = Path.home() / ".task-workflow"
 LOCK_PATH = LOCK_DIR / "lock"
+# FORENSIC-ONLY sidecar of deferred bookkeeping commits (#1030): one JSONL row
+# per append-only mutation whose git commit failed AFTER the append durably
+# landed (see ``_commit_after_durable_append``). Lives OUTSIDE the repo —
+# recording a commit failure must not itself need a commit — beside the flock
+# every writer already owns. Nothing reads it automatically; it exists so a
+# human (or a future /daily sweep) can audit deferrals. Rows carry paths +
+# message + error, NOT the payload (the payload's durable home is the appended
+# file itself).
+DEFERRED_COMMITS_LOG = LOCK_DIR / "deferred-commits.jsonl"
 
 
 # ─── Locking ────────────────────────────────────────────────────────────────
@@ -3172,9 +3181,14 @@ def post_event(
             payload["artifacts"] = artifacts
         payload.update(extras)
         _append_jsonl_line(path, payload)
-        _git_commit(
+        # Append landed durably above — a pre/at-commit git failure on the
+        # primary checkout is deferred (loud ERROR + forensic sidecar row),
+        # not raised, so a caller retry cannot duplicate the marker (#1030).
+        _commit_after_durable_append(
             [path],
             f"task #{task_id}: {kind}" + (f" — {note[:60]}" if note else ""),
+            task_id=task_id,
+            op="post_event",
         )
     return payload
 
@@ -3435,7 +3449,12 @@ def set_status(
                 [*(repo / s for s in specs), registry_path()],
                 f"task #{task_id}: {old_status} → {new_status}",
             )
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, SequencerWaitTimeout):
+            # #1030 MF-1: a SequencerWaitTimeout raised from _git_commit's
+            # merge wait gets the SAME "DURABLY APPLIED" recovery narration a
+            # plain git failure gets, then re-raises as before. set_status is
+            # deliberately NOT converted to deferred behavior (#898 raise +
+            # ghost-sweep semantics stay).
             _log.error(
                 "task #%d: status move %s -> %s is DURABLY APPLIED (disk + REGISTRY + "
                 "events.jsonl consistent at %s) but git failed before committing. "
@@ -3537,7 +3556,15 @@ def create_task(req: NewTaskRequest) -> int:
         # Register
         _registry_set(reg, task_id, path, fm)
         _save_registry(reg)
-        _git_commit([path, registry_path()], f"task #{task_id}: create — {req.title[:60]}")
+        # A retried `task.py new` would allocate a NEW id → duplicate task;
+        # the dir + registry entry are durable, so defer a commit failure
+        # (#1030) instead of raising into the caller's retry recipe.
+        _commit_after_durable_append(
+            [path, registry_path()],
+            f"task #{task_id}: create — {req.title[:60]}",
+            task_id=task_id,
+            op="create",
+        )
         return task_id
 
 
@@ -3907,9 +3934,13 @@ def set_goal(task_id: int, new_goal: str, *, by: str = "user", reason: str | Non
         if reason:
             payload["reason"] = reason
         _append_jsonl_line(ev_path, payload)
-        _git_commit(
+        # Body + registry + epm:goal-updated event are durable above; a
+        # retried set_goal would append a duplicate event — defer (#1030).
+        _commit_after_durable_append(
             [path, ev_path, registry_path()],
             f"task #{task_id}: set-goal — {goal[:60]}",
+            task_id=task_id,
+            op="set_goal",
         )
     return True
 
@@ -4044,7 +4075,14 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
         if symlink.is_symlink() or symlink.exists():
             symlink.unlink()
         symlink.symlink_to(target.name)
-        _git_commit([target, symlink], f"task #{task_id}: plan v{next_v}")
+        # plans/v{N}.md + the symlink are durable; a retry would write an
+        # identical v{N+1}.md — defer a commit failure instead (#1030).
+        _commit_after_durable_append(
+            [target, symlink],
+            f"task #{task_id}: plan v{next_v}",
+            task_id=task_id,
+            op="new_plan_version",
+        )
     return next_v
 
 
@@ -4078,8 +4116,13 @@ def promote(task_id: int, verdict: str) -> Path:
             "classification": verdict,
         }
         _append_jsonl_line(path / "events.jsonl", promoted_event)
-        _git_commit(
-            [path / "body.md", path / "events.jsonl"], f"task #{task_id}: promote {verdict}"
+        # Frontmatter flip is idempotent but the epm:promoted event is an
+        # append a retry would duplicate — defer a commit failure (#1030).
+        _commit_after_durable_append(
+            [path / "body.md", path / "events.jsonl"],
+            f"task #{task_id}: promote {verdict}",
+            task_id=task_id,
+            op="promote",
         )
     # Then move to completed via set_status (own lock + commit)
     return set_status(task_id, "completed", note=f"promoted as {verdict}")
@@ -4567,7 +4610,14 @@ def append_comment(
         if extras:
             record.update(extras)
         _append_jsonl_line(path, record)
-        _git_commit([path], f"task #{task_id}: comment {cid} ({kind})")
+        # Comment row is durable; a retry would append a duplicate row with
+        # a fresh cNNN id — defer a commit failure instead (#1030).
+        _commit_after_durable_append(
+            [path],
+            f"task #{task_id}: comment {cid} ({kind})",
+            task_id=task_id,
+            op="append_comment",
+        )
     return record
 
 
@@ -4590,6 +4640,123 @@ _GIT_LOCK_CONTENTION_RE = re.compile(
     r"|Unable to create '.*\.lock': File exists"
 )
 _GIT_LOCK_RETRY_SLEEP_RANGE_S = (2.0, 3.0)  # one retry; jittered to de-sync
+
+# `git commit --only` refuses while a merge/cherry-pick is in progress on
+# THIS worktree (verified: git 2.34.1, rc=128). Signature used only for the
+# single TOCTOU retry in ``_git_commit`` — never added to
+# ``_GIT_LOCK_CONTENTION_RE`` (#898's retry semantics stay byte-identical).
+# NOTE: do NOT "simplify" the wait by dropping --only under a merge — a plain
+# `git commit` during a merge would CREATE THE MERGE COMMIT, sweeping the
+# entire shared index and completing the concurrent session's merge on its
+# behalf.
+_PARTIAL_COMMIT_SEQUENCER_RE = re.compile(
+    r"cannot do a partial commit during a (merge|cherry-pick)"
+)
+_MERGE_WAIT_ENV = "EPM_TASKPY_MERGE_WAIT_SECONDS"  # total bound; 0 disables (default 60)
+_MERGE_POLL_ENV = "EPM_TASKPY_MERGE_POLL_SECONDS"  # poll interval (default 2.0)
+# REVERT_HEAD is a deliberate exclusion — nothing in the fleet's tooling runs
+# `git revert`; add it here if that ever changes (same fatal shape).
+_SEQUENCER_STATE_FILES = ("MERGE_HEAD", "CHERRY_PICK_HEAD")
+
+
+class SequencerWaitTimeout(RuntimeError):
+    """A concurrent merge/cherry-pick did not clear within the bound.
+
+    Narrow, named class so (a) ``_commit_after_durable_append`` can defer on
+    it WITHOUT catching bare ``RuntimeError`` (which would wrongly defer the
+    routed post-commit CAS failure — ``_git_quiet`` raises ``RuntimeError``),
+    and (b) ``set_status``'s #898 recovery envelope can name it alongside
+    ``CalledProcessError``.
+    """
+
+
+def _merge_wait_bound_s() -> float:
+    """Total bounded-wait budget (seconds) for a concurrent merge/cherry-pick
+    to clear before ``_git_commit`` gives up with ``SequencerWaitTimeout``.
+    ``0`` disables the wait entirely (today's immediate git rc=128 fatal
+    surfaces unchanged). A non-float env value raises ``ValueError`` (fail
+    loud, project norm); a non-finite float (``nan``/``inf``) raises too —
+    ``nan`` defeats the ``time.monotonic() >= deadline`` comparison and would
+    wait unbounded. The default 60 s is deliberately LESS THAN
+    ``sync_repo_root.py``'s ``EPM_ROOT_SYNC_LOCK2_WAIT_S`` (120 s): a
+    manually-started ``sync_repo_root.py`` waiting on the task-workflow lock
+    then outlasts any task.py writer mid-merge-wait instead of timing out
+    behind it. Mirrors ``_rebase_wait_bound_s`` (#996)."""
+    value = float(os.environ.get(_MERGE_WAIT_ENV, "60"))
+    if not math.isfinite(value):
+        raise ValueError(f"{_MERGE_WAIT_ENV} must be finite, got {value!r}")
+    return value
+
+
+def _merge_poll_s() -> float:
+    """Poll interval (seconds) between sequencer-state re-probes while
+    waiting out a concurrent merge/cherry-pick. A non-float or non-finite
+    env value raises ``ValueError``. Mirrors ``_rebase_poll_s`` (#996)."""
+    value = float(os.environ.get(_MERGE_POLL_ENV, "2.0"))
+    if not math.isfinite(value):
+        raise ValueError(f"{_MERGE_POLL_ENV} must be finite, got {value!r}")
+    return value
+
+
+def _sequencer_state_paths(repo: Path) -> list[Path]:
+    """Per-worktree MERGE_HEAD/CHERRY_PICK_HEAD paths for the checkout
+    ``_git_commit`` commits in.
+
+    Resolved via ``git rev-parse --git-path`` (one call, one flag per state
+    file, one output line each), NEVER a hardcoded ``<root>/.git/`` join: for
+    a linked worktree (the routed managed-main case) ``.git`` is a FILE and
+    the real sequencer state lives under ``<common>/.git/worktrees/<name>/``
+    — the hardcode would both miss a merge in the worktree itself AND
+    false-probe the primary's (sequencer state is per-worktree; verified
+    empirically, git 2.34.1)."""
+    argv = ["rev-parse"]
+    for name in _SEQUENCER_STATE_FILES:
+        argv += ["--git-path", name]
+    lines = [ln for ln in _run_git(argv).stdout.splitlines() if ln.strip()]
+    return [(p if p.is_absolute() else repo / p) for p in map(Path, lines)]
+
+
+def _wait_for_sequencer_clear(repo: Path) -> None:
+    """Bounded wait for a concurrent merge/cherry-pick on THIS checkout to
+    finish before ``commit --only`` (git refuses a partial commit during
+    either — see ``_PARTIAL_COMMIT_SEQUENCER_RE``).
+
+    Returns when no sequencer state file exists; knob = 0 → immediate return
+    (today's git fatal then surfaces unchanged); on timeout raises
+    ``SequencerWaitTimeout`` naming the state + the manual remedy. NEVER
+    auto-invokes ``sync_repo_root.py``: it takes the task-workflow lock
+    (``_run_locked``) that this process already holds — a guaranteed
+    lock-wait failure."""
+    bound = _merge_wait_bound_s()
+    if bound <= 0:
+        return
+    poll = _merge_poll_s()
+    # Resolved ONCE before the loop: the paths are stable per checkout, so
+    # re-resolving per poll would only burn a subprocess per iteration.
+    state_paths = _sequencer_state_paths(repo)
+    deadline = time.monotonic() + bound
+    announced = False
+    while True:
+        present = [p.name for p in state_paths if p.exists()]
+        if not present:
+            return
+        if time.monotonic() >= deadline:
+            raise SequencerWaitTimeout(
+                f"{'/'.join(present)} present on {repo} for >{bound:.0f}s; a concurrent "
+                "merge/cherry-pick is stalled or crashed and `git commit --only` cannot "
+                "run during one. Finish or abort it, or run "
+                "`uv run python scripts/sync_repo_root.py` (aborts a STALE husk past "
+                f"EPM_ROOT_SYNC_HUSK_AGE_S). Tune via {_MERGE_WAIT_ENV} (0 disables)."
+            )
+        if not announced:
+            _log.warning(
+                "waiting up to %.0fs for a concurrent merge on %s to clear (%s present)",
+                bound,
+                repo,
+                ", ".join(present),
+            )
+            announced = True
+        time.sleep(poll)
 
 
 def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
@@ -4683,12 +4850,21 @@ def _git_commit(paths: list[Path], message: str) -> None:
     this routed branch is never taken and behavior is byte-for-byte identical
     to before — the commit advances `main` directly via the normal HEAD move.
 
+    Before staging, waits out any concurrent merge/cherry-pick on this
+    checkout (``_wait_for_sequencer_clear``, #1030 — `git commit --only`
+    fatals rc=128 during one); a merge that STARTS between the probe and the
+    commit (TOCTOU) gets a single re-wait + one FINAL retry keyed on the
+    partial-commit stderr signature.
+
     Set TASK_PY_NO_COMMIT=1 to skip the commit entirely (useful in tests).
     Set TASK_PY_AUTO_PUSH=1 to also push after the commit.
     """
     if os.environ.get("TASK_PY_NO_COMMIT") == "1":
         return
     repo = repo_root()
+    # Bounded wait for a concurrent merge/cherry-pick BEFORE staging, so the
+    # whole add → diff → commit sequence runs post-clear (#1030 seam b).
+    _wait_for_sequencer_clear(repo)
     routed = _is_routed_root(repo)
     env = _sanitized_git_env()
     rel_paths = [str(p.relative_to(repo)) for p in paths]
@@ -4710,12 +4886,98 @@ def _git_commit(paths: list[Path], message: str) -> None:
     # `main` to the new commit afterwards.
     old_sha = _run_git(["rev-parse", "HEAD"]).stdout.strip() if routed else ""
     full_msg = f"{message}\n\n[task.py]"
-    _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
+    try:
+        _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
+    except subprocess.CalledProcessError as e:
+        # TOCTOU closure (#1030): a merge/cherry-pick can START between the
+        # pre-staging probe above and this commit. One re-wait (raises
+        # SequencerWaitTimeout on timeout) + one FINAL attempt; a second
+        # sequencer fatal after the re-wait propagates (fail fast). The
+        # routed `old_sha` above stays valid across the retry — a failed
+        # commit never moves HEAD, and a concurrent `main` move is caught
+        # loud by `_advance_main_ref`'s CAS.
+        if not _PARTIAL_COMMIT_SEQUENCER_RE.search(e.stderr or ""):
+            raise
+        _wait_for_sequencer_clear(repo)
+        _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
     if routed:
         new_sha = _run_git(["rev-parse", "HEAD"]).stdout.strip()
         _advance_main_ref(repo, old_sha, new_sha, env)
     if os.environ.get("TASK_PY_AUTO_PUSH") == "1":
         _run_git(["push"], check=False)
+
+
+def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: int, op: str) -> bool:
+    """Commit bookkeeping for an ALREADY-DURABLE append-only mutation (#1030).
+
+    On the PRIMARY checkout the append IS the state (an events/comments/
+    concerns row, a created task dir, plans/vN.md); the commit is bookkeeping
+    the next successful commit of the same file sweeps up (git commits file
+    STATE, not deltas). Raising makes callers retry the WHOLE mutation and
+    duplicate the append — the 2026-07-03 3x-marker incident on a #823 loop
+    session; same rc-contract family as ``scripts/task.py::_safe_echo``
+    (#537). So a PRE/AT-commit failure after a successful append LOGS AT
+    ERROR, appends a forensic row to ``DEFERRED_COMMITS_LOG``
+    (``~/.task-workflow/deferred-commits.jsonl``), and returns ``False``; the
+    caller returns success.
+
+    Deferral is NARROW by design (two independent layers, each sufficient
+    for the routed CAS case, jointly sufficient for all routed cases):
+
+    * catches ONLY ``(CalledProcessError, SequencerWaitTimeout)`` — NEVER
+      bare ``RuntimeError``: the routed post-commit CAS leg
+      (``_advance_main_ref`` → ``_git_quiet``) raises ``RuntimeError``, and
+      deferring THAT would report success for an append that never reached
+      canonical ``main``;
+    * NEVER defers in ROUTED mode: there the append lives only in the
+      managed worktree's working tree, and the next resolver re-sync runs
+      ``reset --hard main`` (``_ensure_managed_main_worktree``) whose safety
+      contract is "every mutation commits before releasing" — an uncommitted
+      deferred line would be PHYSICALLY DELETED. In routed mode any commit
+      failure re-raises (fail loud; the caller's retry is genuinely
+      non-duplicating ONLY after a fresh resolve — the raise is the honest
+      signal).
+
+    Append failures are untouched — they raise BEFORE this runs. Genuine
+    bugs (``TypeError``, ``AttributeError``, ...) propagate: they match
+    neither caught class. Deliberately NOT used by ``set_status`` (#898
+    raise + ghost-sweep recovery semantics, extended to name
+    ``SequencerWaitTimeout``) nor the idempotent setters.
+    """
+    try:
+        _git_commit(paths, message)
+        return True
+    except (subprocess.CalledProcessError, SequencerWaitTimeout) as e:
+        if _is_routed_root(repo_root()):
+            raise  # routed append is NOT durable against the reset --hard re-sync
+        stderr_tail = (getattr(e, "stderr", "") or str(e))[-500:]
+        _log.error(
+            "task #%d: %s applied DURABLY (append landed) but the git commit "
+            "failed: %s: %s. Do NOT re-run the mutation (it would duplicate the "
+            "append); the next successful commit touching these paths sweeps it. "
+            "Recorded in %s. Manual sweep: git add -- <paths> && git commit.",
+            task_id,
+            op,
+            type(e).__name__,
+            stderr_tail,
+            DEFERRED_COMMITS_LOG,
+        )
+        row = {
+            "ts": _utcnow_iso(),
+            "task_id": task_id,
+            "op": op,
+            "paths": [str(p) for p in paths],
+            "message": message,
+            "error": type(e).__name__,
+            "stderr_tail": stderr_tail,
+        }
+        try:
+            _append_jsonl_line(DEFERRED_COMMITS_LOG, row)
+        except OSError:
+            # Trace-write failure must not resurrect the duplicate-append bug;
+            # the ERROR log above already carries the full story.
+            _log.exception("could not record deferred-commit row")
+        return False
 
 
 # ─── Binding concerns (concerns.jsonl) ─────────────────────────────────────
@@ -4905,9 +5167,13 @@ def _append_concern_event(task_id: int, payload: dict[str, Any]) -> None:
     events_file = folder / "events.jsonl"
     _append_jsonl_line(events_file, mirror_payload)
 
-    _git_commit(
+    # Concern row + events.jsonl mirror are durable; a retry would append
+    # duplicates of both — defer a commit failure instead (#1030).
+    _commit_after_durable_append(
         [concerns_file, events_file],
         f"task #{task_id}: concern-{payload['event']} {payload['concern_id']}",
+        task_id=task_id,
+        op="append_concern_event",
     )
 
 
