@@ -503,8 +503,8 @@
     "1063": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1063",
-      "status": "approved",
+      "path": "tasks/running/1063",
+      "status": "running",
       "title": "daily-fix: both-arms mapping default applied at capture time"
     },
     "1064": {
