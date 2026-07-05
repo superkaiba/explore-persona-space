@@ -1,10 +1,11 @@
 {
-  "git_commit": "232b1d990cf8489d4767c96abeea817d4658d402",
-  "timestamp_utc": "2026-07-05T15:07:09.777178Z",
+  "git_commit": "7f1ac4ad24cd8340851b439282a4d3ea80ece6cf",
+  "timestamp_utc": "2026-07-05T16:31:32.425800Z",
   "python_version": "3.11.15",
-  "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+  "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
   "cuda_visible_devices": "all",
   "script": "issue923_fig_mixed",
+  "note": "round-5 re-title only (no-opaque-codes); data identical to the 232b1d990c render",
   "short_family_band": [
     -0.13,
     -0.1
