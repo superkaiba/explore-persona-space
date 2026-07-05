@@ -115,7 +115,7 @@ def test_good_body_passes_all():
     # 21 `check_v4_results_beat` WARN, check 27
     # `check_v4_no_bare_issue_refs`; check 20 v4 `check_v4_word_caps`
     # moved to the appended-outside set — it needs `issue`, #921) — each
-    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the SEVEN
+    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the EIGHT
     # generation-agnostic checks: check 22
     # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
     # this fixture's `## Reproducibility` carries no figure-sha claim,
@@ -135,12 +135,16 @@ def test_good_body_passes_all():
     # check 30 (`check_hf_file_count_claims`, WARN), a vacuous PASS here
     # because the fixture's HF link labels ("raw completions", "hf-hub")
     # carry no file-count claim, so ZERO Hub probes are issued even before
+    # the fence, and check 32 (`check_hf_adjacent_file_claims`, WARN), a
+    # vacuous PASS here for the analogous reason — no backtick FILENAME
+    # token sits in an HF tree link's text or in a parenthetical
+    # immediately after one, so ZERO Hub probes are issued even before
     # the fence.
     # check 25 (`check_audit_availability_claims_match_hf`)
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (34 functions), then appends the Goal soft check, the Lens 14
+    # (35 functions), then appends the Goal soft check, the Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
     # check-17 Context provenance-row read, the v3 check-21
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc), the v4
@@ -150,11 +154,14 @@ def test_good_body_passes_all():
     # the check-31 orphaned-per-unit-figures probe (needs `issue` for
     # figures-dir scoping, #1011; PASS here — the fixture's fake sha is not
     # locally reachable, so the cited SHA is silently skipped) →
-    # 44 results total (2 prepended + CHECKS[1:]=34 + 8 appended). The
+    # 45 results total (2 prepended + CHECKS[1:]=35 + 8 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 44
+    assert len(results) == 45
+    # By-name membership so the NEXT check addition can key by name instead
+    # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert _HF_32_NAME in {r.name for r in results}
 
 
 def test_missing_confidence_tag():
@@ -1653,16 +1660,20 @@ _HF_23_NAME = "HF URL pins resolve at the cited revision"
 @pytest.fixture(autouse=True)
 def _clear_hf_existence_cache():
     """The check-23/25 probes memoize definitive pass/fail verdicts in a
-    module-level `_HF_EXISTENCE_CACHE` (#733), and the check-30 count probe
+    module-level `_HF_EXISTENCE_CACHE` (#733), the check-30 count probe
     memoizes successful exhaustive `(n_files, n_dirs)` listings in
-    `_HF_TREE_FILE_COUNT_CACHE` (#1008). Clear both before AND after each
-    test so a cached verdict keyed on a (repo, sha, path) reused across
+    `_HF_TREE_FILE_COUNT_CACHE` (#1008), and the check-32 membership probe
+    memoizes successful exhaustive basename listings in
+    `_HF_TREE_BASENAMES_CACHE` (#1016). Clear all three before AND after
+    each test so a cached verdict keyed on a (repo, sha, path) reused across
     fixtures never leaks one test's stubbed outcome into another."""
     verify_task_body._HF_EXISTENCE_CACHE.clear()
     verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    verify_task_body._HF_TREE_BASENAMES_CACHE.clear()
     yield
     verify_task_body._HF_EXISTENCE_CACHE.clear()
     verify_task_body._HF_TREE_FILE_COUNT_CACHE.clear()
+    verify_task_body._HF_TREE_BASENAMES_CACHE.clear()
 
 
 def _stub_tree(monkeypatch, *, status="ok", entries=(), next_page=None, note="", calls=None):
@@ -2457,6 +2468,390 @@ def test_hf_count_repo_root_link_empty_prefix(monkeypatch):
     assert "consistent with files+folders" in r.detail  # 3 == 2 files + 1 folder
     url, _params = calls[0]
     assert url.endswith("/tree/abc1234def")  # empty prefix → the root tree URL
+
+
+# ─── Check 32: HF-adjacent backtick file claims vs the pinned tree (WARN) ──
+#
+# Check 32 (`check_hf_adjacent_file_claims`, #1016) extracts backtick
+# FILENAME claims adjacent to hex-pinned HF /tree markdown links — PAREN
+# (a parenthetical immediately AFTER the link, the #952-r1 incident shape;
+# check 30's paren is BEFORE the link) and LINKTEXT (a dotted backtick
+# token inside the link text) — and tests any-depth basename membership
+# against the same #733 bounded raw tree-endpoint probe stack checks
+# 23/25/30 use. All tests are offline: extractor tests need no stub; probe
+# tests stub `verify_task_body._hf_tree_get` after removing the conftest
+# EPM_VERIFY_BODY_NO_HF fence.
+
+_HF_32_NAME = "HF-adjacent backtick file claims exist under the pinned tree"
+
+_I952_SHA = "5b62649cefb34902fd630f21630164e8d1d99764"
+_I952_DATA_REPO = "https://huggingface.co/datasets/superkaiba1/explore-persona-space-data"
+_I952_EVAL_PREFIX = "issue952_position_divergence/eval_results"
+_I952_EVAL_URL = f"{_I952_DATA_REPO}/tree/{_I952_SHA}/{_I952_EVAL_PREFIX}"
+_I952_RAW_URL = f"{_I952_DATA_REPO}/tree/{_I952_SHA}/issue952_position_divergence/raw_completions"
+_I952_GH_BLOB = (
+    "https://github.com/superkaiba/explore-persona-space/blob/"
+    "ac9f45b4ca42d7b55091a0fa169b8480e2fe0c62/eval_results/issue_952/"
+    "divergence_bank_queries.json"
+)
+
+_I952_LEAD = (
+    "Divergence-bank items are referenced by file + index only (standing content "
+    "rule for sensitive query categories — no bank text is quoted anywhere in "
+    "this body): the 229 judged candidate pairs with judge scores, refusal "
+    "labels, and keep decisions are in "
+)
+_I952_TAIL = (
+    ", and the bank generations + judge outputs are in "
+    f"[HF …/raw_completions @ 5b62649]({_I952_RAW_URL})."
+)
+
+# The VERBATIM #952 r1 incident line (recover via
+# `git show b412ddb07d:tasks/interpreting/952/body.md`, grep
+# `divergence_bank_queries`): the paren after the pinned eval_results tree
+# link claims BOTH bank files while `divergence_bank_queries.json` lived
+# only in git — the must-WARN fixture. The dot-less backtick ids
+# (`model_identity_004` / `style_format_037`) exercise the filename
+# filter's no-extension rejection in the same shot.
+_I952_R1_LINE = (
+    _I952_LEAD
+    + f"[HF issue952_position_divergence/eval_results @ 5b62649]({_I952_EVAL_URL}) "
+    + "(`divergence_bank_verification.json`, `divergence_bank_queries.json`; "
+    + "kept pairs carry ids of the form `model_identity_004` / `style_format_037`)"
+    + _I952_TAIL
+)
+
+# The VERBATIM corrected #952 line (live body, `tasks/followups_running/952/
+# body.md` line ~142): the HF paren claims only the verification file;
+# `divergence_bank_queries.json` moved to a github-blob claim on the SAME
+# line — the canonical must-NOT-warn fixture (structural anchoring must
+# never attribute the github-linked filename to the HF link).
+_I952_CORRECTED_LINE = (
+    _I952_LEAD
+    + f"[HF issue952_position_divergence/eval_results @ 5b62649]({_I952_EVAL_URL}) "
+    + "(`divergence_bank_verification.json`) and in git at "
+    + f"[`divergence_bank_queries.json` @ ac9f45b4ca]({_I952_GH_BLOB}) "
+    + "(kept pairs carry ids of the form `model_identity_004` / `style_format_037`)"
+    + _I952_TAIL
+)
+
+
+def test_hf_adjacent_claim_absent_warns_952_r1_shape(monkeypatch):
+    """Acceptance criterion 1 — the VERBATIM #952-r1 line: the paren claims
+    two bank files at the pinned eval_results tree, the stubbed exhaustive
+    listing holds only `divergence_bank_verification.json` → a `[WARN]`
+    naming the missing file + the pinned prefix + sha[:8] + the PAREN shape
+    tag; `passed` stays True (WARN never FAILs)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[
+            {"path": f"{_I952_EVAL_PREFIX}/divergence_bank_verification.json", "type": "file"},
+        ],
+    )
+    r = verify_task_body.check_hf_adjacent_file_claims(_I952_R1_LINE)
+    assert r.passed and r.is_warn
+    assert r.render().startswith("  [WARN]")
+    assert "divergence_bank_queries.json" in r.detail
+    assert _I952_EVAL_PREFIX in r.detail and _I952_SHA[:8] in r.detail
+    assert "shape: PAREN" in r.detail
+    # The PRESENT file is never reported missing.
+    assert "claims `divergence_bank_verification.json`" not in r.detail
+
+
+def test_hf_adjacent_claim_present_passes_any_depth(monkeypatch):
+    """Same r1 body, but the listing carries BOTH claimed basenames — the
+    queries file nested one level DEEPER than the prefix's direct children
+    → clean PASS (any-depth membership), no WARN, no `unverified` note."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[
+            {"path": f"{_I952_EVAL_PREFIX}/divergence_bank_verification.json", "type": "file"},
+            {"path": f"{_I952_EVAL_PREFIX}/sub", "type": "directory"},
+            {"path": f"{_I952_EVAL_PREFIX}/sub/divergence_bank_queries.json", "type": "file"},
+        ],
+    )
+    r = verify_task_body.check_hf_adjacent_file_claims(_I952_R1_LINE)
+    assert r.passed and not r.is_warn, r.detail
+    assert "unverified" not in r.detail
+    assert "2 adjacent file claim(s) against 1 pinned tree(s)" in r.detail
+
+
+def test_corrected_952_line_no_warn_and_github_never_probed(monkeypatch):
+    """Acceptance criterion 2 — the VERBATIM corrected #952 line: the HF
+    paren claims only the verification file (present in the stubbed listing
+    one level below the prefix, mirroring the live Hub layout); the
+    github-blob `divergence_bank_queries.json` claim on the SAME line is
+    never attributed to the HF link, and the paren-less raw_completions
+    link contributes zero claims. Exactly ONE claim extracts; the single
+    probe targets the HF api (never github); no WARN."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    claims = verify_task_body._gather_hf_adjacent_file_claims(_I952_CORRECTED_LINE)
+    assert [(c[4], c[5]) for c in claims] == [("divergence_bank_verification.json", "PAREN")]
+    calls: list = []
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[
+            {"path": f"{_I952_EVAL_PREFIX}/divergence_bank_verification.json", "type": "file"},
+        ],
+        calls=calls,
+    )
+    r = verify_task_body.check_hf_adjacent_file_claims(_I952_CORRECTED_LINE)
+    assert r.passed and not r.is_warn, r.detail
+    assert len(calls) == 1
+    url, _params = calls[0]
+    assert "github" not in url and "huggingface.co/api/datasets" in url
+
+
+def test_hf_adjacent_linktext_shape_tree_url(monkeypatch):
+    """LINKTEXT shape — a dotted backtick token inside a `/tree/<sha>/dir/`
+    link's text: absent from the listing → WARN with the LINKTEXT shape
+    tag; present → clean PASS (cache cleared between the two stubs — only
+    exhaustive listings are cached)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    body = (
+        "Raw rollouts: [`villain_seed42.json`]"
+        "(https://huggingface.co/datasets/o/r/tree/abc1234def/dir/)\n"
+    )
+    _stub_tree(monkeypatch, status="ok", entries=[{"path": "dir/other.json", "type": "file"}])
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and r.is_warn
+    assert "villain_seed42.json" in r.detail and "shape: LINKTEXT" in r.detail
+
+    verify_task_body._HF_TREE_BASENAMES_CACHE.clear()
+    _stub_tree(
+        monkeypatch, status="ok", entries=[{"path": "dir/villain_seed42.json", "type": "file"}]
+    )
+    r2 = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r2.passed and not r2.is_warn, r2.detail
+
+
+def test_hf_adjacent_blob_url_out_of_scope():
+    """A paren after a `/blob/` link and a dotted backtick filename inside a
+    `/blob/` link's text both extract ZERO claims — check 23 already
+    validates the full blob path."""
+    u = "https://huggingface.co/datasets/o/r/blob/abc1234def/p/f.json"
+    body = f"See [data]({u}) (`g.json`) and [`f.json` @ abc1234]({u}).\n"
+    assert verify_task_body._gather_hf_adjacent_file_claims(body) == []
+
+
+def test_hf_adjacent_filename_filter():
+    """Extraction unit test for the dotted artifact-extension whitelist: the
+    mixed real-corpus parenthetical extracts ONLY `pilot_gate.json`; paths,
+    brace-globs, wildcard globs, no-dot tokens (pod names / shas), `.py`
+    scripts, and >64-char stems are all rejected by construction."""
+    u = "https://huggingface.co/datasets/o/r/tree/abc1234def/p"
+    mixed = f"[gate artifacts]({u}) (`pilot_gate.json`, run on `eps-issue-642`, git `a0330df0e8`)"
+    claims = verify_task_body._gather_hf_adjacent_file_claims(mixed)
+    assert [(c[4], c[5]) for c in claims] == [("pilot_gate.json", "PAREN")]
+    long_stem = "x" * 70
+    rejected = [
+        f"[x]({u}) (`on_policy_R/R_train.json`)",  # relative path — a subpath claim
+        f"[x]({u}) (`R_{{train,eval}}.json`)",  # brace glob
+        f"[x]({u}) (`*_responses.json`)",  # wildcard glob
+        f"[x]({u}) (`gen.py`)",  # script — generator provenance, not an upload claim
+        f"[x]({u}) (`{long_stem}.json`)",  # >64-char stem
+        f"[x]({u}) (`no_extension_token`)",  # no dotted extension
+    ]
+    for body in rejected:
+        assert verify_task_body._gather_hf_adjacent_file_claims(body) == [], body
+
+
+def test_hf_adjacent_url_terminal_component_skipped():
+    """A backtick token equal to the URL's own terminal path component is
+    NOT a separate membership claim — check 23 already validates the URL's
+    own path (zero claims, zero probes)."""
+    body = (
+        "Raw: [`run.jsonl`](https://huggingface.co/datasets/o/r/tree/abc1234def"
+        "/raw_completions/run.jsonl)\n"
+    )
+    assert verify_task_body._gather_hf_adjacent_file_claims(body) == []
+
+
+def test_hf_adjacent_offline_fence_never_touches_network(monkeypatch):
+    """Under the EPM_VERIFY_BODY_NO_HF fence the check issues ZERO GETs —
+    the tree getter is stubbed to raise, so a single probe fails the test;
+    the claim surfaces as an `unverified` note on a PASS line."""
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_HF", "1")
+
+    def _boom(url, params, headers, *, timeout_s):  # pragma: no cover
+        raise AssertionError("network touched under the offline fence")
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _boom)
+    body = "Data: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`f.json`)\n"
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "HF probe fenced" in r.detail
+
+
+def test_hf_adjacent_not_found_skips_not_warns(monkeypatch):
+    """`not_found` degrades to an `unverified` note on a PASS line — never a
+    WARN: check 23 owns the dead-pin FAIL (the documented
+    check-23-vs-25/30/32 asymmetry), so double-reporting here is noise."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(monkeypatch, status="not_found")
+    body = "Data: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`f.json`)\n"
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "no such revision/path" in r.detail
+
+
+def test_hf_adjacent_pagination_cap_skips(monkeypatch):
+    """A listing that never exhausts (every page carries a next-page link)
+    hits the page cap → skip note, PASS, never a WARN — a PARTIAL listing
+    must never ground a missing-basename verdict, even when the pages seen
+    so far LACK the claimed basename."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls: list = []
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[{"path": "p/other.json", "type": "file"}],
+        next_page="https://huggingface.co/api/datasets/o/r/tree/abc1234def/p?cursor=X",
+        calls=calls,
+    )
+    body = "Data: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`f.json`)\n"
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "exceeded page/time cap" in r.detail
+    assert len(calls) == verify_task_body._HF_PROBE_MAX_PAGES
+
+
+def test_hf_adjacent_probe_memo_one_probe_per_prefix(monkeypatch):
+    """Two claims on ONE (repo, sha, prefix) issue exactly ONE listing walk
+    (intra-invocation memo); both basenames verify against that single
+    exhaustive listing."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls: list = []
+    _stub_tree(
+        monkeypatch,
+        status="ok",
+        entries=[
+            {"path": "p/a.json", "type": "file"},
+            {"path": "p/b.json", "type": "file"},
+        ],
+        calls=calls,
+    )
+    body = "Data: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`a.json`, `b.json`)\n"
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn, r.detail
+    assert "2 adjacent file claim(s) against 1 pinned tree(s)" in r.detail
+    assert len(calls) == 1
+
+
+def test_hf_adjacent_fenced_code_block_not_scanned():
+    """The claim pattern inside a ``` fenced block is illustrative — zero
+    claims extract."""
+    body = "```\nData: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`f.json`)\n```\n"
+    assert verify_task_body._gather_hf_adjacent_file_claims(body) == []
+
+
+def test_hf_adjacent_directory_basename_suppresses_warn(monkeypatch):
+    """A claimed dotted name matching a DIRECTORY-type entry suppresses the
+    WARN (FP-safe: dotted directory names are rare, and a directory of that
+    name still corroborates the claim's location)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(monkeypatch, status="ok", entries=[{"path": "p/data.json", "type": "directory"}])
+    body = "Data: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`data.json`)\n"
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn, r.detail
+
+
+def test_hf_adjacent_importerror_skips(monkeypatch):
+    """A missing `huggingface_hub` degrades to an `unverified` skip note on
+    a PASS line, never a WARN (fail-soft parity with checks 23/25/30)."""
+    import builtins
+
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    real_import = builtins.__import__
+
+    def _fake_import(name, *args, **kwargs):
+        if name == "huggingface_hub" or name.startswith("huggingface_hub."):
+            raise ImportError("huggingface_hub blocked for test")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", _fake_import)
+    body = "Data: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`f.json`)\n"
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "huggingface_hub unavailable" in r.detail
+
+
+def test_hf_adjacent_transient_network_error_skips_and_never_caches(monkeypatch):
+    """A transient probe failure (429) degrades to an `unverified` note on a
+    PASS line AND the skip is NEVER cached — `_HF_TREE_BASENAMES_CACHE`
+    stays empty, so a cleared throttle is re-probed on the next
+    invocation."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    _stub_tree(monkeypatch, status="indeterminate", note="HF tree probe failed: HTTP 429")
+    body = "Data: [x](https://huggingface.co/datasets/o/r/tree/abc1234def/p) (`f.json`)\n"
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "HTTP 429" in r.detail
+    assert verify_task_body._HF_TREE_BASENAMES_CACHE == {}
+
+
+def test_hf_adjacent_no_failing_checkresult_in_source():
+    """Committed WARN-only pin: no `CheckResult(..., False, ...)` /
+    `passed=False` construction anywhere in the check-32 function or its
+    helpers — the durable form of the report-time grep (plan #1016 §4.6
+    T16)."""
+    import ast
+    import inspect
+
+    fns = [
+        verify_task_body.check_hf_adjacent_file_claims,
+        verify_task_body._gather_hf_adjacent_file_claims,
+        verify_task_body._hf_basenames_under_prefix,
+        verify_task_body._hf_basenames_for_prefix,
+    ]
+    for fn in fns:
+        tree = ast.parse(inspect.getsource(fn))
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            callee = getattr(node.func, "id", None) or getattr(node.func, "attr", None)
+            if callee != "CheckResult":
+                continue
+            if len(node.args) >= 2:
+                arg = node.args[1]
+                assert not (isinstance(arg, ast.Constant) and arg.value is False), (
+                    f"{fn.__name__} constructs CheckResult(..., False, ...)"
+                )
+            for kw in node.keywords:
+                if kw.arg == "passed":
+                    assert not (isinstance(kw.value, ast.Constant) and kw.value.value is False), (
+                        f"{fn.__name__} constructs CheckResult(passed=False)"
+                    )
+
+
+def test_hf_adjacent_per_body_probe_cap(monkeypatch):
+    """More unique prefixes than _HF_MEMBER_MAX_PROBES: the first 8 probe
+    (each claim verifies), the 9th surfaces a per-body-probe-cap
+    `unverified` note — never a WARN, `passed` stays True (the cap branch
+    is behaviorally distinct from the page cap: no probe is even
+    issued)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    n = verify_task_body._HF_MEMBER_MAX_PROBES + 1
+    calls: list = []
+    entries = [{"path": f"p{k}/f{k}.json", "type": "file"} for k in range(n)]
+    _stub_tree(monkeypatch, status="ok", entries=entries, calls=calls)
+    body = (
+        "\n".join(
+            f"- [p{k}](https://huggingface.co/datasets/o/r/tree/abc1234def/p{k}) (`f{k}.json`)"
+            for k in range(n)
+        )
+        + "\n"
+    )
+    r = verify_task_body.check_hf_adjacent_file_claims(body)
+    assert r.passed and not r.is_warn
+    assert "per-body probe cap" in r.detail
+    assert f"{n} adjacent file claim(s)" in r.detail
+    assert len(calls) == verify_task_body._HF_MEMBER_MAX_PROBES
 
 
 # ─── Check 12: `## Figure` H2 deprecation hook (dormant) ──────────────────
@@ -3406,7 +3801,7 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 35 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 36 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe), the four
@@ -3420,7 +3815,7 @@ def test_checks_list_size():
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the EIGHT generation-agnostic checks:
+    (`check_v3_word_caps`) — PLUS the NINE generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
     vs the `## Reproducibility` per-figure commit claim), check 23
     (`check_hf_url_resolves`: HF Hub revision-pin existence via a bounded
@@ -3443,7 +3838,14 @@ def test_checks_list_size():
     "N shards" claims adjacent to hex-pinned HF `/tree/<sha>` markdown
     links vs a files-only scoped Hub tree count — folder entries excluded;
     mismatch → WARN never FAIL, every non-definitive probe outcome SKIPs;
-    incident #931's 528-vs-515 folder-inflation miscount, #1008). The
+    incident #931's 528-vs-515 folder-inflation miscount, #1008), and
+    check 32 (`check_hf_adjacent_file_claims`, WARN: backtick FILENAME
+    claims adjacent to hex-pinned HF `/tree/<sha>` markdown links — the
+    filename-membership sibling of check 30 — must appear by exact
+    basename, any depth, in the scoped listing at the pinned revision;
+    missing → WARN never FAIL, every non-definitive probe outcome SKIPs;
+    incident #952 r1's git-only `divergence_bank_queries.json` claimed at
+    the pinned HF tree, #1016). The
     migration is a RETARGET — every former check
     was kept (sometimes dormant, e.g. `check_figure_caption`) so downstream
     tests stay valid; the v3 checks PASS-skip on non-v3 bodies.
@@ -3459,11 +3861,14 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 44 results (2 prepended + CHECKS[1:]=34 +
+    So `verify_text` returns 45 results (2 prepended + CHECKS[1:]=35 +
     8 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 35.
+    at 36.
     """
-    assert len(verify_task_body.CHECKS) == 35
+    assert len(verify_task_body.CHECKS) == 36
+    # By-name membership so the NEXT check addition can key by name instead
+    # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
+    assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───

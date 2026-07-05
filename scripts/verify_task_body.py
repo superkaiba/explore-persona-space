@@ -583,6 +583,29 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `mlp_indiv_percontext_delta.png` sat unreferenced at a body-cited SHA
   and reached the LM critic as a Lens 11 blocker. (#1011)
 
+- **check 32** (`check_hf_adjacent_file_claims`, WARN): backtick FILENAME
+  claims adjacent to hex-pinned HF `/tree/<sha>` markdown links — the
+  filename-membership sibling of check 30's count claims — must appear by
+  exact BASENAME, any depth, in a scoped listing of the pinned prefix (the
+  same bounded raw tree-endpoint probe checks 23/25/30 use, #733; never the
+  SDK `list_repo_tree` / `list_repo_files`). Two anchored shapes only,
+  precision over recall: a parenthetical immediately AFTER the link (the
+  #952 shape; check 30's paren is BEFORE), and a dotted backtick token
+  inside the link TEXT. Named recall sacrifices: backtick filenames BEFORE
+  the link (corpus misattribution evidence), paren-after-`/blob/` (check 23
+  validates the full blob path), relative-path / brace / glob tokens, and
+  the any-depth basename collision that can mask a wrong-PATH claim.
+  Missing basename → WARN, never FAIL (no `passed=False` path); each WARN
+  carries its shape tag (`PAREN`|`LINKTEXT`). Every non-definitive probe
+  outcome (offline fence / missing `huggingface_hub` / 429 / network error
+  / `not_found` — check 23 owns the dead-pin FAIL / page-time cap / the
+  per-body `_HF_MEMBER_MAX_PROBES` cap) surfaces as an `unverified` note on
+  a PASS line — only a SUCCESSFUL EXHAUSTIVE listing lacking the basename
+  grounds a WARN. Vacuous PASS with ZERO Hub probes when no backtick file
+  claim sits adjacent to an HF tree link. Incident: task #952 r1 claimed
+  `divergence_bank_queries.json` at the pinned eval_results@5b62649 tree
+  while the file lives only in git (#1016).
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -6784,6 +6807,264 @@ def check_hf_file_count_claims(body: str) -> CheckResult:
     return CheckResult(name, True, f"{len(claims)} claim(s) checked" + unverified_detail)
 
 
+# ─── Check 32: adjacent backtick file claims are members of the pinned tree ──
+# (#952 r1: the body claimed `divergence_bank_queries.json` at the pinned HF
+# eval_results@5b62649 tree while the file lives in git; check 23 validated
+# the tree link itself but never the NAMED-adjacent file's membership.)
+# Parenthetical immediately AFTER a pinned HF markdown link (the #952 shape;
+# check 30's paren-pattern is BEFORE the link). Content bounded, no nesting.
+_HF_LINK_THEN_PAREN_RE = re.compile(
+    r"\]\((?P<url>https?://huggingface\.co/[^)\s]+)\)\s{0,2}\((?P<paren>[^()]{1,300})\)"
+)
+# A backtick-delimited token (candidate filename); bounded, single-line.
+_BACKTICK_TOKEN_RE = re.compile(r"`([^`\n]{1,80})`")
+# A claimable filename: alnum-leading dotted basename with an artifact-class
+# extension (corpus-grounded whitelist — `.py`/`.sh` deliberately excluded:
+# script mentions near HF links are generator provenance, not upload claims).
+# Tokens with `/` (relative paths), brace/wildcard globs, spaces, no dot, or
+# >64-char stems are rejected by construction (plan #1016 §3.5).
+_HF_ADJ_FILENAME_RE = re.compile(
+    r"^[A-Za-z0-9][A-Za-z0-9._\-]{0,63}"
+    r"\.(?:jsonl?|pt|safetensors|npy|npz|csv|tsv|txt|md|png|pdf|parquet|bin|ya?ml|html|log)$"
+)
+# Per-body cap on UNIQUE (repo, sha, prefix) membership probes — same value +
+# worst-case wall arithmetic as check 30's `_HF_COUNT_MAX_PROBES` (see that
+# comment: ~22.5 s worst case per probe, ~3 min per body under a
+# pathologically slow Hub; typical is one sub-second page per prefix).
+# Claims past the cap surface as unverified notes, never a WARN.
+_HF_MEMBER_MAX_PROBES = 8
+# Successful EXHAUSTIVE listings only: (repo_id, repo_type, sha, prefix) →
+# frozenset of entry basenames (files AND directories). A skip (throttle /
+# cap / offline) is NEVER cached — same convention as _HF_EXISTENCE_CACHE
+# (#733) — so a transient throttle is re-probed on the next invocation.
+_HF_TREE_BASENAMES_CACHE: dict[tuple[str, str, str, str], frozenset[str]] = {}
+
+
+def _gather_hf_adjacent_file_claims(body: str) -> list[tuple[str, str, str, str, str, str]]:
+    """Extract ``(repo_id, repo_type, sha, path_prefix, filename, shape)``
+    tuples for backtick FILENAME claims ADJACENT to hex-pinned HF ``/tree``
+    markdown links (check 32). Fence-stripped; deduplicated on the full
+    ``(repo_id, repo_type, sha, prefix, filename)`` key (the probe-memo key);
+    ``shape`` is ``"PAREN"`` or ``"LINKTEXT"`` (threaded into the WARN detail
+    so per-shape adjudication is mechanical).
+
+    Two anchored shapes only (precision over recall — a missed claim costs
+    nothing, a misattributed one costs a spurious WARN):
+
+    - **PAREN** — a parenthetical immediately AFTER the markdown link
+      (``[…](…/tree/<sha>/…) (`f.json`, …)`` — the #952-r1 incident shape;
+      check 30's paren-pattern sits BEFORE the link).
+    - **LINKTEXT** — a dotted backtick token inside the link TEXT
+      (``[`f.json`](…/tree/<sha>/dir)`` / ``[`f.json` @ sha](…)``): the text
+      names a file, the target names a pinned directory — an unambiguous
+      membership claim.
+
+    Known recall sacrifices (each avoids a concrete false-positive class):
+    backtick filenames BEFORE the link (real-corpus misattribution evidence —
+    the preceding filename belongs to a different git-side/descriptive claim
+    in ≥3 of 10 sampled hits); ``/blob/`` links (check 23 already validates
+    the full blob path); relative-path / brace-glob / wildcard tokens;
+    non-markdown bare URLs; moving refs (``/tree/main`` never matches the
+    shared hex-pinned URL regex). A token equal to the URL's own terminal
+    path component is skipped — check 23 covers the URL's own path.
+    """
+    kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
+    stripped = _strip_fenced_blocks(body)
+    out: list[tuple[str, str, str, str, str, str]] = []
+    seen: set[tuple[str, str, str, str, str]] = set()
+
+    def _add(url: str, token: str, shape: str) -> None:
+        fname = token.strip()
+        if not _HF_ADJ_FILENAME_RE.match(fname):
+            return
+        m = _HF_HUB_TREE_BLOB_URL_RE.match(url.rstrip(".,;:!?"))
+        if m is None or f"/tree/{m.group('sha')}" not in url:
+            return  # non-HF (e.g. github) or /blob/ → out of scope
+        prefix = (m.group("path") or "").rstrip("/")
+        if posixpath.basename(prefix) == fname:
+            return  # the URL's own terminal component — check 23 covers it
+        repo_id = f"{m.group('owner')}/{m.group('repo')}"
+        repo_type = kind_to_type[m.group("kind")]
+        key = (repo_id, repo_type, m.group("sha"), prefix, fname)
+        if key in seen:
+            return
+        seen.add(key)
+        out.append((repo_id, repo_type, m.group("sha"), prefix, fname, shape))
+
+    for pm in _HF_LINK_THEN_PAREN_RE.finditer(stripped):  # shape PAREN
+        for token in _BACKTICK_TOKEN_RE.findall(pm.group("paren")):
+            _add(pm.group("url"), token, "PAREN")
+    for lm in _MD_HF_LINK_RE.finditer(stripped):  # shape LINKTEXT
+        for token in _BACKTICK_TOKEN_RE.findall(lm.group("text")):
+            _add(lm.group("url"), token, "LINKTEXT")
+    return out
+
+
+def _hf_basenames_under_prefix(
+    repo_id: str, repo_type: str, sha: str, path_prefix: str
+) -> tuple[str, frozenset[str], str]:
+    """Bounded scoped-recursive tree listing → ``(status, basenames, note)``
+    (check 32).
+
+    Mirrors ``_hf_count_files_under_prefix`` (#1008 → #733): direct GETs via
+    ``_hf_tree_get`` (real per-request timeout, ≤ ``_HF_PROBE_ATTEMPTS``
+    retries/page), following Link-header pagination OURSELVES under
+    ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S``. Collects basenames of
+    ALL entries (file AND directory) under the prefix — a directory basename
+    match also suppresses the WARN (FP-safe; dotted directory names are
+    rare); an entry whose path IS the prefix is the prefix itself, not
+    content, and is skipped. ``status == "ok"`` ONLY for an EXHAUSTIVE
+    listing (``next_page is None``); a cap hit, ``not_found``, or any
+    transient error is ``"skip"`` — a PARTIAL listing must never ground a
+    WARN. ``not_found`` → skip, NOT fail: check 23 owns the dead-pin FAIL
+    (the documented check-23-vs-25/30/32 asymmetry, `_TreeProbeResult`).
+    """
+    needle = path_prefix.strip("/")
+    # Build headers BEFORE the URL: `_hf_build_headers` imports
+    # `huggingface_hub.utils` (which imports `constants` as a side effect),
+    # making `huggingface_hub.constants` attribute-reachable inside
+    # `_hf_tree_url` on a FRESH process — the bare `import huggingface_hub`
+    # there does not expose the lazy `constants` submodule on its own
+    # (check 23's `_hf_probe_existence` uses this same safe ordering).
+    headers = _hf_build_headers()
+    url = _hf_tree_url(repo_id, repo_type, sha, needle)
+    params: dict | None = {"recursive": True}
+    started = time.monotonic()
+    pages = 0
+    basenames: set[str] = set()
+    while True:
+        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
+        if res.status == "not_found":
+            return "skip", frozenset(), "no such revision/path"
+        if res.status == "indeterminate":
+            return "skip", frozenset(), res.note
+        for e in res.entries:
+            path = e.get("path", "")
+            if not _hf_under_prefix(path, needle) or path == needle:
+                continue
+            basenames.add(posixpath.basename(path))
+        pages += 1
+        if res.next_page is None:
+            return "ok", frozenset(basenames), ""
+        if pages >= _HF_PROBE_MAX_PAGES or time.monotonic() - started > _HF_PROBE_DEADLINE_S:
+            return "skip", frozenset(), "HF tree listing exceeded page/time cap"
+        # The Link rel="next" URL already carries the params; do not re-send them.
+        url, params = res.next_page, None
+
+
+def _hf_basenames_for_prefix(
+    repo_id: str, repo_type: str, sha: str, path_prefix: str
+) -> tuple[str, frozenset[str], str]:
+    """Fence + optional-dependency + cache wrapper around
+    ``_hf_basenames_under_prefix`` (mirrors ``_hf_file_count_for_prefix``
+    exactly): SKIPs under the ``EPM_VERIFY_BODY_NO_HF=1`` offline fence or
+    when ``huggingface_hub`` is unavailable; caches ONLY successful
+    exhaustive listings in ``_HF_TREE_BASENAMES_CACHE`` (a skip is never
+    cached)."""
+    if os.environ.get("EPM_VERIFY_BODY_NO_HF") == "1":
+        return "skip", frozenset(), "HF probe fenced"
+    try:
+        import huggingface_hub  # noqa: F401 — local import: optional-dependency guard
+    except ImportError:
+        return "skip", frozenset(), "huggingface_hub unavailable"
+    key = (repo_id, repo_type, sha, path_prefix.strip("/"))
+    cached = _HF_TREE_BASENAMES_CACHE.get(key)
+    if cached is not None:
+        return "ok", cached, ""
+    status, basenames, note = _hf_basenames_under_prefix(repo_id, repo_type, sha, path_prefix)
+    if status == "ok":
+        _HF_TREE_BASENAMES_CACHE[key] = basenames
+    return status, basenames, note
+
+
+def check_hf_adjacent_file_claims(body: str) -> CheckResult:
+    """Check 32 (WARN): a backtick-named data file claimed adjacent to a
+    hex-pinned HF ``/tree`` markdown link must appear (by basename, any
+    depth) in the scoped listing at the pinned revision.
+
+    Incident: task #952 r1 claimed ``divergence_bank_queries.json`` at the
+    pinned HF ``eval_results@5b62649`` tree while the file lives only in git
+    — check 23 validated the tree link's OWN path but never read the
+    adjacent prose. This check extracts anchored filename claims
+    (``_gather_hf_adjacent_file_claims`` — PAREN paren-after-link /
+    LINKTEXT dotted-token-in-link-text; see its docstring for the
+    precision/recall trade-offs and the named recall sacrifices:
+    backtick-before-link, paren-after-``/blob/``) and tests exact-BASENAME
+    membership, any depth, against one bounded scoped-recursive listing per
+    unique pinned prefix (``_hf_basenames_for_prefix`` → the #733 bounded
+    raw tree-endpoint probe).
+
+    Semantics:
+
+    - **WARN, never FAIL.** A missing basename returns ``CheckResult(name,
+      True, detail, is_warn=True)`` — ``passed`` stays True so overall
+      ``ok`` never flips. There is NO code path returning ``passed=False``.
+      Each WARN line carries its claim's shape tag (``shape: PAREN`` /
+      ``shape: LINKTEXT``) for per-shape adjudication.
+    - **Any-depth membership; directory matches count.** The claimed
+      basename may live at any depth under the prefix (real parentheticals
+      claim files one level down); an entry of EITHER type (file or
+      directory) with a matching basename suppresses the WARN. Named
+      residual: an any-depth basename collision can mask a wrong-PATH claim
+      (the file exists, but elsewhere under the prefix) — accepted as a
+      recall sacrifice at WARN tier.
+    - **Fail-soft everywhere.** The offline fence
+      (``EPM_VERIFY_BODY_NO_HF=1``), a missing ``huggingface_hub``, a
+      429 / network error, ``not_found``, a page/time-cap hit, and the
+      per-body ``_HF_MEMBER_MAX_PROBES`` cap all surface as `unverified`
+      notes on a PASS line; only a SUCCESSFUL EXHAUSTIVE listing lacking
+      the basename grounds a WARN. When missing and unverified claims
+      coexist, the unverified list is appended to the WARN detail (never
+      dropped).
+    - **Probe accounting.** Unique ``(repo, sha, prefix)`` keys are probed
+      AT MOST once per invocation via an intra-invocation memo; skipped
+      keys count toward ``_HF_MEMBER_MAX_PROBES``. The cross-process
+      ``_HF_TREE_BASENAMES_CACHE`` stores only successful exhaustive
+      listings, so a later invocation re-probes a cleared throttle.
+
+    Vacuous PASS — with ZERO Hub probes issued — when no backtick file
+    claim sits adjacent to an HF tree link.
+    """
+    name = "HF-adjacent backtick file claims exist under the pinned tree"
+    claims = _gather_hf_adjacent_file_claims(body)
+    if not claims:
+        return CheckResult(name, True, "no backtick file claims adjacent to HF tree links")
+    missing: list[str] = []
+    unverified: list[str] = []
+    probe_memo: dict[tuple[str, str, str, str], tuple[str, frozenset[str], str]] = {}
+    for repo_id, repo_type, sha, prefix, fname, shape in claims:
+        key = (repo_id, repo_type, sha, prefix)
+        if key not in probe_memo:
+            if len(probe_memo) >= _HF_MEMBER_MAX_PROBES:
+                cap_note = f"`{prefix or repo_id}@{sha[:8]}` (per-body probe cap)"
+                if cap_note not in unverified:
+                    unverified.append(cap_note)
+                continue
+            probe_memo[key] = _hf_basenames_for_prefix(repo_id, repo_type, sha, prefix)
+        status, basenames, note = probe_memo[key]
+        if status != "ok":
+            skip_note = f"`{fname}` at `{prefix or repo_id}@{sha[:8]}` ({note})"
+            if skip_note not in unverified:
+                unverified.append(skip_note)
+            continue
+        if fname not in basenames:
+            missing.append(
+                f"body claims `{fname}` adjacent to the pinned tree "
+                f"`{prefix or '/'}` at `{repo_id}@{sha[:8]}`, but no entry with "
+                f"that basename exists under the prefix at that revision "
+                f"(shape: {shape})"
+            )
+    unverified_detail = ""
+    if unverified:
+        unverified_detail = (
+            f"; {len(unverified)} unverified (existence not confirmed): " + "; ".join(unverified)
+        )
+    if missing:
+        return CheckResult(name, True, "; ".join(missing) + unverified_detail, is_warn=True)
+    detail = f"{len(claims)} adjacent file claim(s) against {len(probe_memo)} pinned tree(s)"
+    return CheckResult(name, True, detail + unverified_detail)
+
+
 def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> CheckResult:
     """Lens 14 — mechanical concerns audit (binding-concerns contract,
     composed onto the 2-content-section clean-result spec on 2026-05-31
@@ -8342,6 +8623,7 @@ CHECKS = [
     check_figure_label_codes,  # check 28 (WARN) — opaque config codes in figure sidecar text
     check_figure_tracked_at_head,  # check 29 (WARN) — figures tracked at live refs (#964, #841)
     check_hf_file_count_claims,  # check 30 (WARN) — count claims vs Hub files-only count (#931)
+    check_hf_adjacent_file_claims,  # check 32 (WARN) — adjacent file claims are tree members (#952)
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
