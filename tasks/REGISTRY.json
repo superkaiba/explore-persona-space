@@ -47,8 +47,8 @@
     "1003": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1003",
-      "status": "reviewing",
+      "path": "tasks/completed/1003",
+      "status": "completed",
       "title": "workflow-fix: gotchas rc=134 \u2014 in-process streaming-datasets release"
     },
     "1004": {
