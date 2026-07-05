@@ -54,8 +54,8 @@
     "1004": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1004",
-      "status": "proposed",
+      "path": "tasks/planning/1004",
+      "status": "planning",
       "title": "workflow-fix: gcp.py workload-cmd rc-masking (false phase=done on && chains)"
     },
     "1005": {
