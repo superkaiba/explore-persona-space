@@ -48,11 +48,18 @@ Check catalog (id — classification — kind scope)
       gate → AST arity audit
   c22 cross-section param       WARN-only, conditional    all kinds
       consistency
+  c23 goal currency             WARN-only, conditional    all kinds,
+      (stale-Goal quote)                                  --issue mode only
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22) also SKIP when their content trigger does not fire.
+19, 20, 21, 22, 23) also SKIP when their content trigger does not fire.
+Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
+(``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
+mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
+the adversarial-planner Phase 1.5.0 consumer treats as a mechanical redraft
+bounce (SKILL.md § Goal-currency gate), not a brief-forwarded WARN.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
 
@@ -113,6 +120,7 @@ import math
 import re
 import sys
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from fractions import Fraction
 from pathlib import Path
 
@@ -3304,6 +3312,122 @@ def check_cross_section_param_consistency(plan: str, kind: str) -> CheckResult:
     return _warn(cid, name, detail)
 
 
+# ─── Check 23 — goal currency (outside CHECKS; --issue mode only) ─────────
+
+# Word-shingle stale-quote detector for the #922 plan-vs-goal incident class:
+# a plan head quoting a SUPERSEDED Goal at high coverage while the CURRENT
+# Goal is absent. WARN-only (the c21 WARN-first precedent, #1042); the
+# forced redraft is delivered by the adversarial-planner SKILL.md
+# § Goal-currency gate ("the one WARN that bounces"). Needs task context
+# (body.md + events.jsonl), so it lives OUTSIDE verify_plan_text() and is
+# appended by main() in --issue mode only.
+_C23_SHINGLE_K = 6
+_C23_MIN_GOAL_WORDS = 12
+_C23_STALE_COV = 0.5
+_C23_CURRENT_COV = 0.3
+# NO positive slack: retro-stale goal-update gaps of ~3-6 min exist in the
+# corpus (779/477/489) — any slack ≥ ~3 min manufactures false positives.
+_C23_MTIME_SLACK_S = 0.0
+
+
+def _norm_goal_words(s: str) -> list[str]:
+    """Lowercase; non-alphanumerics (incl. unicode math) -> space; split."""
+    return [w for w in re.sub(r"[^a-z0-9 ]+", " ", s.lower()).split() if w]
+
+
+def _goal_shingles(words: list[str], k: int = _C23_SHINGLE_K) -> set[tuple[str, ...]]:
+    """All contiguous k-word shingles of ``words`` (empty set below k words)."""
+    if len(words) < k:
+        return set()
+    return {tuple(words[i : i + k]) for i in range(len(words) - k + 1)}
+
+
+def _shingle_coverage(goal: str, head_words: list[str]) -> float:
+    """Fraction of the goal's k-word shingles present in the plan head."""
+    gs = _goal_shingles(_norm_goal_words(goal))
+    if not gs:
+        return 0.0
+    hs = _goal_shingles(head_words)
+    return sum(1 for s in gs if s in hs) / len(gs)
+
+
+def _plan_head_words(plan: str) -> list[str]:
+    """Head region = start -> the ``## 2.``/``### 2.`` heading, else first 8000 chars."""
+    m = re.search(r"^#{2,3}\s*2\.\s", plan, re.M)
+    return _norm_goal_words(plan[: m.start()] if m else plan[:8000])
+
+
+def _goal_history_for_plan(folder: Path, plan_mtime_utc: datetime) -> tuple[str | None, list[str]]:
+    """(current_goal, superseded_goals) AS OF the plan version's post time.
+
+    current = latest predating ``epm:goal-updated`` ``to:`` (fallback:
+    body.md frontmatter ``goal:``); superseded = predating markers'
+    ``from:`` values (structured fields only — ``task.py set-goal`` posts
+    top-level ``from``/``to``/``by``; hand-posted note-only markers
+    contribute nothing). Bounded STRICTLY by mtime (slack 0, ``ts <= mtime``
+    inclusive) so goal-updates that postdate the plan never retro-flag it —
+    a positive slack manufactures FPs from minutes-scale retro-stale gaps
+    (779/477/489).
+    """
+    cutoff = plan_mtime_utc + timedelta(seconds=_C23_MTIME_SLACK_S)
+    current: str | None = None
+    superseded: list[str] = []
+    ev = folder / "events.jsonl"
+    if ev.exists():
+        for line in ev.read_text().splitlines():
+            if '"epm:goal-updated"' not in line:
+                continue  # cheap pre-filter; goal-updated lines parse strictly below
+            e = json.loads(line)
+            if e.get("kind") != "epm:goal-updated" or not isinstance(e.get("ts"), str):
+                continue
+            ets = datetime.fromisoformat(e["ts"].replace("Z", "+00:00"))
+            if ets.tzinfo is None:
+                ets = ets.replace(tzinfo=UTC)
+            if ets.astimezone(UTC) > cutoff:
+                continue
+            if isinstance(e.get("from"), str):
+                superseded.append(e["from"])
+            if isinstance(e.get("to"), str):
+                current = e["to"]
+    if current is None:
+        body = folder / "body.md"
+        if body.exists():
+            fm, _ = split_frontmatter(body.read_text())
+            g = fm.get("goal")
+            current = str(g) if g else None
+    if current is not None:
+        cur_norm = " ".join(_norm_goal_words(current))
+        superseded = [s for s in superseded if " ".join(_norm_goal_words(s)) != cur_norm]
+    return current, superseded
+
+
+def check_goal_currency(
+    plan: str, *, current_goal: str | None, superseded: list[str]
+) -> CheckResult:
+    """WARN when the plan head quotes a superseded Goal while the current
+    Goal is absent (the #922 stale-quote signature); PASS/SKIP otherwise."""
+    cid, name = "c23_goal_currency", "plan head not drafted against a superseded Goal"
+    if current_goal is None or len(_norm_goal_words(current_goal)) < _C23_MIN_GOAL_WORDS:
+        return _skip(cid, name, "no goal frontmatter / goal too short for shingle matching")
+    sup = [s for s in superseded if len(_norm_goal_words(s)) >= _C23_MIN_GOAL_WORDS]
+    if not sup:
+        return _skip(cid, name, "no superseded Goal predates this plan version")
+    head = _plan_head_words(plan)
+    cov_cur = _shingle_coverage(current_goal, head)
+    cov_stale, stale = max(((_shingle_coverage(s, head), s) for s in sup), key=lambda t: t[0])
+    if cov_stale >= _C23_STALE_COV and cov_cur < _C23_CURRENT_COV:
+        return _warn(
+            cid,
+            name,
+            f"plan head matches a SUPERSEDED Goal (shingle coverage {cov_stale:.2f}: "
+            f"{stale[:100]!r}) while the CURRENT Goal is absent (coverage {cov_cur:.2f}) "
+            "— redraft §0.0/§0/§1 against the current `goal:` frontmatter (#922 "
+            "plan-vs-goal incident). The orchestrator treats this WARN as a mechanical "
+            "redraft bounce (adversarial-planner SKILL.md § Goal-currency gate).",
+        )
+    return _pass(cid, name, f"coverage: current {cov_cur:.2f}, max superseded {cov_stale:.2f}")
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -3443,6 +3567,24 @@ def main() -> int:
         kind = args.kind or "experiment"
 
     overall, results = verify_plan_text(raw, kind=kind, source=source)
+
+    # Check 23 (goal currency) needs task context (body.md + events.jsonl),
+    # so it runs OUTSIDE verify_plan_text(): appended here in --issue mode,
+    # rendered SKIP in --plan-file mode.
+    if issue is not None:
+        folder = plan_path.parent.parent  # tasks/<status>/<N>/plans/vK.md -> task folder
+        mtime = datetime.fromtimestamp(plan_path.stat().st_mtime, tz=UTC)
+        cur, sup = _goal_history_for_plan(folder, mtime)
+        results.append(check_goal_currency(raw, current_goal=cur, superseded=sup))
+    else:
+        results.append(
+            _skip(
+                "c23_goal_currency",
+                "plan head not drafted against a superseded Goal",
+                "no task context (--plan-file mode; goal history requires --issue)",
+            )
+        )
+    overall = all(r.passed for r in results)
 
     if args.json:
         print(

@@ -20,9 +20,11 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import os
 import re
 import subprocess
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -3126,12 +3128,17 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 15
+    assert payload["n_skip"] == 16
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 23
-    assert len({c["id"] for c in payload["checks"]}) == 23
+    assert len(payload["checks"]) == 24
+    assert len({c["id"] for c in payload["checks"]}) == 24
+    # c23 has no task context in --plan-file mode: rendered SKIP (companion
+    # assert for test_cli_issue_mode_appends_goal_currency).
+    c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
+    assert c23["status"] == "SKIP"
+    assert "no task context" in c23["detail"]
 
 
 def test_cli_exit_one_on_fail(tmp_path):
@@ -3167,6 +3174,129 @@ def test_cli_human_output_has_overall_footer(tmp_path):
     assert proc.returncode == 0
     assert "OVERALL: PASS" in proc.stdout
     assert "[SKIP]" in proc.stdout  # SKIP is a first-class rendered status
+
+
+# ─── Check 23 — goal currency (outside CHECKS; --issue mode only) ──────────
+
+# ≥12 normalized words each (the _C23_MIN_GOAL_WORDS precision gate).
+_OLD_GOAL = (
+    "Measure the marker leakage rate across every persona pair using the "
+    "teacher forced margin metric on held out prompts"
+)
+_NEW_GOAL = (
+    "Compare on policy judge scored refusal rates between trained and base "
+    "models across twenty held out prompts"
+)
+
+
+def test_c23_stale_goal_quote_warns():
+    plan = f'# Plan\n\n## 1. Goal\n\n"{_OLD_GOAL}" (Task #999 Goal, verbatim.)\n'
+    r = verify_plan.check_goal_currency(plan, current_goal=_NEW_GOAL, superseded=[_OLD_GOAL])
+    assert r.status == "WARN"
+    assert "SUPERSEDED" in r.detail
+
+
+def test_c23_current_goal_quoted_passes():
+    # Current goal quoted verbatim; a sub-shingle-heavy fragment of the old
+    # goal rides along — coverage(current) >= 0.3 blocks the stale signature.
+    old_fragment = " ".join(_OLD_GOAL.split()[:8])
+    plan = f'# Plan\n\n## 1. Goal\n\n"{_NEW_GOAL}" (was: {old_fragment})\n'
+    r = verify_plan.check_goal_currency(plan, current_goal=_NEW_GOAL, superseded=[_OLD_GOAL])
+    assert r.status == "PASS"
+
+
+def test_c23_skips_without_superseded():
+    plan = f"# Plan\n\n## 1. Goal\n\n{_NEW_GOAL}\n"
+    r = verify_plan.check_goal_currency(plan, current_goal=_NEW_GOAL, superseded=[])
+    assert r.status == "SKIP"
+
+
+def test_c23_skips_short_goal():
+    r = verify_plan.check_goal_currency(
+        "# Plan\n\nsome head text\n", current_goal="fix the bug", superseded=[_OLD_GOAL]
+    )
+    assert r.status == "SKIP"
+
+
+def test_c23_unicode_variant_quote_still_fires():
+    # The #922 retrodiction shape: the marker's `from` text uses ASCII
+    # `Delta` / `->`; the plan head quotes the unicode variants `Δ` / `→`.
+    # Full-substring matching fails on this pair; shingle coverage stays
+    # >= 0.5 because only the shingles spanning the divergent word are lost.
+    stale_ascii = (
+        "Quantify the Delta between pre and post fine tuning marker "
+        "probabilities -> reported per persona across all twenty extraction "
+        "prompts and four seeds"
+    )
+    quoted_unicode = (
+        "Quantify the Δ between pre and post fine tuning marker "
+        "probabilities → reported per persona across all twenty extraction "
+        "prompts and four seeds"
+    )
+    plan = f'# Plan\n\n## 1. Goal\n\n"{quoted_unicode}" (Task #922 Goal, verbatim.)\n'
+    r = verify_plan.check_goal_currency(plan, current_goal=_NEW_GOAL, superseded=[stale_ascii])
+    assert r.status == "WARN"
+    assert "SUPERSEDED" in r.detail
+
+
+def _write_goal_marker(ev_path, ts_iso, from_goal, to_goal):
+    row = {"ts": ts_iso, "kind": "epm:goal-updated", "version": 1, "from": from_goal, "to": to_goal}
+    with ev_path.open("a") as f:
+        f.write(json.dumps(row) + "\n")
+
+
+def test_goal_history_bounds_markers_by_plan_mtime(tmp_path):
+    """Markers with ts <= plan mtime are included (INCLUSIVE at equality);
+    a marker at mtime + 180 s is excluded. The +180 s fixture is the
+    slack-regression detector: it sits inside the measured 2m48s-5m44s
+    retro-stale gap band, so this test FAILs under any reintroduced slack
+    >= 180 s (the removed 900 s regime would pass a mtime+900s fixture,
+    which is why that offset is banned here)."""
+    t = 1_750_000_000  # integer epoch so ts == mtime holds exactly
+
+    def iso(epoch):
+        return datetime.fromtimestamp(epoch, tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    goal_a, goal_b, goal_c, goal_d = "goal AAA text", "goal BBB text", "goal CCC text", "goal DDD"
+    (tmp_path / "plans").mkdir()
+    plan = tmp_path / "plans" / "v1.md"
+    plan.write_text("# Plan\n")
+    os.utime(plan, (t, t))
+    ev = tmp_path / "events.jsonl"
+    _write_goal_marker(ev, iso(t - 3600), goal_a, goal_b)  # predating: included
+    _write_goal_marker(ev, iso(t), goal_b, goal_c)  # exactly ts == mtime: included
+    _write_goal_marker(ev, iso(t + 180), goal_c, goal_d)  # postdating: excluded
+    mtime = datetime.fromtimestamp(plan.stat().st_mtime, tz=UTC)
+    current, superseded = verify_plan._goal_history_for_plan(tmp_path, mtime)
+    assert current == goal_c  # NOT goal_d — the +180 s marker must not enter
+    assert goal_a in superseded and goal_b in superseded
+    assert goal_c not in superseded and goal_d not in superseded
+
+
+def test_goal_history_falls_back_to_frontmatter_goal(tmp_path):
+    (tmp_path / "body.md").write_text(f"---\ntitle: x\ngoal: {_NEW_GOAL}\n---\n# x\n")
+    now = datetime.now(tz=UTC)
+    current, superseded = verify_plan._goal_history_for_plan(tmp_path, now)
+    assert current == _NEW_GOAL
+    assert superseded == []
+
+
+def test_cli_issue_mode_appends_goal_currency(tmp_path, monkeypatch, capsys):
+    (tmp_path / "plans").mkdir()
+    (tmp_path / "plans" / "v1.md").write_text(GOOD_PLAN)
+    (tmp_path / "body.md").write_text("---\ntitle: x\nkind: experiment\n---\n# x\n")
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    monkeypatch.setattr(tw, "find_task_path", lambda n: tmp_path)
+    monkeypatch.setattr(sys, "argv", ["verify_plan.py", "--issue", "999", "--json"])
+    rc = verify_plan.main()
+    payload = json.loads(capsys.readouterr().out)
+    assert rc == 0
+    entries = [c for c in payload["checks"] if c["id"] == "c23_goal_currency"]
+    assert len(entries) == 1
+    # Synthetic task has no goal frontmatter and no goal-updated markers.
+    assert entries[0]["status"] == "SKIP"
 
 
 # ─── Cross-file anchor pins (planner.md / CLAUDE.md drift detector) ────────
