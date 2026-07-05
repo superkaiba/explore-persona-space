@@ -4068,7 +4068,10 @@ uv run python scripts/dispatch_issue.py finalize --issue <N> --skip-confirm-arti
 compute instances delete` leaves a stale sidecar the next launch would
 misread — use it only when no sidecar exists. `--skip-confirm-artifacts` is
 REQUIRED at a mid-pipeline gate: the run's declared final artifacts do not
-exist yet, so a plain `finalize` FAILs confirm (exit 3) by construction. The
+exist yet, so a plain `finalize` FAILs confirm (exit 3) by construction.
+(Mid-pipeline gate teardowns run BEFORE any upload-verifier dispatch or
+`epm:results`, so the #1026 verifier-currency gate is a no-op here — no
+verifying crumb, no results, no verdict to be stale against.) The
 instance stays up ONLY for sentinel draining — never through an off-pod
 phase or a park (Step 8-bis: a pod must not idle on a halt; incident #763:
 an A100-80 idled ~40 min after the `cofit_phaseA_done` gate-park). The next
@@ -4818,8 +4821,19 @@ URLs.
   and proceed to Step 9. (Same-issue follow-up round? At
   `followups_running`, SKIP the `interpreting` flip — status-hold rule,
   Step 9b § Same-issue follow-up loop step 3; code-enforced — but the
-  teardown + Step 9 progression run as normal.) Once artifacts are
-  confirmed at permanent
+  teardown + Step 9 progression run as normal.) "PASS" means a fresh
+  `epm:upload-verification` verdict for THIS round — posted after this
+  round's `epm:results` and after this round's `stage=verifying` dispatch
+  breadcrumb. A dispatched verifier with no verdict yet is BLOCKING: do
+  not flip status to `interpreting`, do not publish the held
+  interpretation, and do not run finalize on a prior round's PASS
+  (incident #778: status advanced and the pod was finalized ~19:00Z on
+  the fallback while the verifier was in flight; its verdict later came
+  back FAIL). On a FAIL verdict: uploader gap-fill + re-verify — never
+  advance on the FAIL. finalize enforces teardown-side currency
+  mechanically (the verifier-currency reasons below); the status flip
+  itself is prose-enforced — this paragraph IS that gate. Once artifacts
+  are confirmed at permanent
   URLs, the compute is no longer needed — interpretation runs locally.
   If the results-landed parallel spawn produced a held analyzer first
   pass, publish it now: post the held interpretation as
@@ -4854,6 +4868,29 @@ URLs.
   declaration nor agent PASS evidence, finalize still exits 3
   (`reason: confirm_artifacts_no_declaration`).
 
+  **Verifier-currency gate (#1026).** The agent-level PASS evidence must
+  be CURRENT — finalize refuses (exit 3, teardown skipped, sidecar not
+  retired) on every non-skip path with one of five typed reasons, each
+  with its routing action: `upload_verifier_in_flight` (a dispatched
+  verifier round has no verdict yet, liveness window fresh → WAIT for
+  the verdict; on PASS re-run finalize, on FAIL gap-fill + re-verify,
+  never finalize on a FAIL), `upload_verifier_stalled` (window lapsed,
+  no verdict → re-spawn the upload-verifier to a verdict, then finalize
+  on PASS), `upload_verification_ambiguous` (a late verdict cannot be
+  attributed to the current results-epoch → re-run the verifier; the
+  fresh round resolves it), `upload_verification_stale` (the latest
+  verdict predates the newest `epm:results` → re-verify),
+  `upload_verification_failed_current` (the latest verification is a
+  FAIL → gap-fill + re-verify). An in-flight verifier is never
+  PASS-equivalent; absence-of-verdict never satisfies the gate.
+  **Named residual:** the crumb-based rules presuppose the Step 9
+  entry-guard convention that a `stage-dispatch` breadcrumb precedes
+  each verifier spawn (the missed-breadcrumb limitation — see the
+  "Limitation (be explicit about it)" paragraph under the Step 9 entry
+  guard) — a verifier spawned WITHOUT its breadcrumb is invisible to the
+  in-flight/stalled rule; the stale + FAIL-current rules are the
+  backstops for that case.
+
   **Phase-scoped-launch mismatch (incident #604).** The launch-time
   auto-declaration assumes the FULL task artifact set (hydra-lane
   launches: HF `issue<N>_<attempt>/raw_completions/` + git
@@ -4883,11 +4920,21 @@ URLs.
   mismatch + the verified deliverable paths. Distinguish the two exit-3
   shapes: no-declaration → upload-verifier-to-PASS + plain re-run
   (above); present-but-phase-mismatched declaration → verify the phase
-  deliverable, then `--skip-confirm-artifacts`.
+  deliverable, then `--skip-confirm-artifacts`. The skip flag does NOT
+  bypass the verifier-currency gate for a FRESH in-flight verifier round
+  (exit 3 `upload_verifier_in_flight` — wait for the verdict, or for the
+  15-min window to lapse to `stalled`); stalled / stale / ambiguous /
+  failed-current records degrade to a loud warning + a `verifier_warning`
+  field in the success JSON.
 
   ```bash
   # ONE call for every backend. Exit 0 = confirm PASS + teardown done;
-  # exit 3 = confirm FAIL (teardown SKIPPED, evidence preserved); exit 2
+  # exit 3 = confirm FAIL or verifier-currency refusal (reason ∈
+  # confirm_artifacts_failed | confirm_artifacts_no_declaration |
+  # upload_verifier_in_flight | upload_verifier_stalled |
+  # upload_verification_ambiguous | upload_verification_stale |
+  # upload_verification_failed_current) — teardown SKIPPED, evidence
+  # preserved; exit 2
   # = missing sidecar (treat as infra failure).
   #
   # CAVEAT — parent-pod-reuse child tasks: when this child task ran on
