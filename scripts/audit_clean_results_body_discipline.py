@@ -55,7 +55,7 @@ PATTERNS: dict[str, tuple[str, str]] = {
         "Effect-size-in-percentage-points (Δ-Npp / Δrate / Δ = -Npp)",
     ),
     "interval_inline": (
-        # Three alternatives, all banned in reader-facing PROSE (Lens 7):
+        # Four alternatives, all banned in reader-facing PROSE (Lens 7):
         #   (1) `slope[low, high, ...]` — the original explicit slope form.
         #   (2) `[low, high]` followed by a CI verb/unit (excludes / includes /
         #       pp / % / ( / on) — the original trailing-token form.
@@ -73,6 +73,24 @@ PATTERNS: dict[str, tuple[str, str]] = {
         #       sentence) — and GFM table cells via `_blank_table_rows` (the
         #       Reproducibility Parameters table + Data capsule tables carry
         #       interval forms legitimately).
+        #   (4) the BOUND-FORM prose leak `(upper|lower) bound (+0.023)` /
+        #       `upper bound = 0.0021` — a named CI/band endpoint stated as a
+        #       number in prose with NO brackets. Lens 7 names this form
+        #       explicitly (its own example: `upper bound = 0.0021`); all three
+        #       prior alternatives require literal square brackets, so #952
+        #       r1's "the interval's upper bound (+0.023) excludes the 0.05
+        #       margin" reached the LM critic unflagged (incident #952 → fix
+        #       #1015). Connectors are EXACTLY the two evidenced forms —
+        #       `(num)` and `= num`; the `of`-connector is deliberately
+        #       excluded ("an upper bound of 4 GPU-hours", "exceed the upper
+        #       bound of 0.6" — budget / band-threshold prose, not a CI leak).
+        #       The number must carry a sign OR a decimal point ("retry upper
+        #       bound = 5" count-integers stay legal); the sign class includes
+        #       U+2212 like the siblings. The [Uu]/[Ll] case pair exists
+        #       because this category scans case-sensitively (flags=0), and
+        #       the leading \b keeps embedded word tails out ("supper bound",
+        #       "flower bound"). Singular `bound` only; no `~`/`≈` approx
+        #       forms — zero corpus instances; the LM critic backstops those.
         #   The sign character class accepts ASCII hyphen-minus, ASCII plus,
         #   AND the typographic Unicode minus (codepoint U+2212) -- analyzers
         #   routinely render negative CI bounds with U+2212, so an ASCII-only
@@ -90,8 +108,11 @@ PATTERNS: dict[str, tuple[str, str]] = {
         #   pp / % token, which a band never carries).
         r"slope\s*\[[-+−\d., ]+\]"  # noqa: RUF001
         r"|\[[-+−]?\d+\.\d+\s*,\s*[-+−]?\d+\.\d+\]\s*(?:excludes|includes|pp\b|%|\(|on\s)"  # noqa: RUF001
-        r"|\[[-+−]?\d*\.?\d+\s*,\s*[-+−]?\d*\.?\d+\](?!\s*nat\b)",  # noqa: RUF001
-        "Credence intervals as inline [low, high] in prose (banned)",
+        r"|\[[-+−]?\d*\.?\d+\s*,\s*[-+−]?\d*\.?\d+\](?!\s*nat\b)"  # noqa: RUF001
+        r"|\b(?:[Uu]pper|[Ll]ower)[\s-]bound\s*"
+        r"(?:\(\s*(?:[-+−]?\d+\.\d+|[-+−]\d+)\s*\)|=\s*(?:[-+−]?\d+\.\d+|[-+−]\d+))",  # noqa: RUF001
+        "Credence intervals as inline [low, high] or bound-form "
+        "'(upper|lower) bound (+x)' / 'bound = x' in prose (banned)",
     ),
     "named_tests": (
         r"\bpaired t-test\b|\bFisher(?:'s)? exact\b|\bMann-Whitney\b|\bbootstrap test\b|\bWilcoxon\b",
