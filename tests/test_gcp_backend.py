@@ -7952,9 +7952,7 @@ def test_poll_terminated_with_workload_phase_still_dead() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_terminated_with_failed_phase_and_no_workload_start_maps_to_terminal_setup_failed() -> (
-    None
-):
+def test_terminated_with_failed_phase_and_no_workload_start_maps_to_terminal_setup_failed() -> None:
     """#1029 §4.1: TERMINATED + eps/phase=failed + workload_started ABSENT (the
     404 not-written case) is a deterministic PRE-WORKLOAD boot death ->
     ``terminal_setup_failed`` — the same classification the RUNNING window
