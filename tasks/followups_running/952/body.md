@@ -69,13 +69,13 @@ relates_to:
 <!-- clean-result-v4 -->
 
 **Methodology:** [docs/methodology/issue_952.md](https://github.com/superkaiba/explore-persona-space/blob/d37bbdc8d4a27fc72e050c1797bda5c2985f0d89/docs/methodology/issue_952.md) · [gist](https://gist.github.com/superkaiba/480c8c9c32395d92735942649192f206)
-<!-- conciseness WARNs acknowledged: result sections run 120-180 words (soft cap 120) and total prose exceeds the 800-word soft budget; the overage carries the layer-band, scale-conditioning, instrument-caveat, control-carve-out, and registered-secondary qualifiers deliberately -->
+<!-- conciseness WARNs acknowledged: result sections run 120-180 words (soft cap 120), Takeaways bullets exceed 30 words, and total prose exceeds the 800-word soft budget; the overage carries the layer-band, scale-conditioning, instrument-caveat, control-carve-out, and registered-secondary qualifiers deliberately -->
 
 ## Takeaways
 
-- **The own-answer advantage in predicting answer activations from context is ~0.02–0.03 R² and position-uniform at every read-out layer probed** (first-16 minus last-16 contrasts −0.006 to +0.012 at layers 14, 20, 23, 26, every interval inside the ±0.03 margin) — band-scoped: early layers sit at the predictability noise floor, layer 27 uncaptured.
-- **The 16-token prefix closure of the plain-external gap is a mid-band phenomenon:** 75–108% of each layer's own gap closes at layers 17–23 (replicating at 20 and 23 — the matched-scale check) vs 15–18% at the band edges, affirmatively below the 0.02 margin at layer 14 and indeterminate at layer 26.
-- **The distinct-style gap does not close at any layer:** closure −0.005 to −0.049 across all five read layers (at layer 14 it widens with 16 absorbed tokens, interval excluding zero); at layer 20 the gap is +0.044 after 16 tokens and +0.028 after 128.
+- **The own-answer advantage in predicting answer activations from context is ~0.01–0.03 R² depending on layer (≈0.02–0.03 at the selected layer 20) and position-uniform at every read-out layer probed** (first-16 minus last-16 contrasts −0.006 to +0.012 at layers 14, 20, 23, 26, every interval inside the ±0.03 margin; the gap itself grows with depth, 0.013 at layer 14 to 0.028 at layer 26) — band-scoped: early layers sit at the predictability noise floor, layer 27 uncaptured.
+- **The 16-token prefix closure of the plain-external gap is concentrated in the mid band:** 75–108% of each layer's own gap closes at layers 17–23 (replicating at layer 20 and at layer 23, the matched-scale check); at layer 14 closure is affirmatively below the 0.02 margin (point estimate 15% of that layer's own gap) and at layer 26 the read is indeterminate (18%), not affirmative.
+- **The distinct-style gap shows no closure at any layer (point estimates −0.005 to −0.049, all negative); the interval excludes zero only at layers 14 and 17, where the gap affirmatively widens with 16 absorbed tokens**; at layer 20 the gap is +0.044 after 16 tokens and +0.028 after 128.
 - **On the surviving identity/style bank (41 pairs; 2 of 4 categories), no divergence-specific external penalty emerges at the 0.05 margin at any layer** (p = 0.64 at layer 20; the added-layer reads are descriptive and null, means −0.014 to −0.006).
 - **Binding caveats:** inverted judge calibration and ~18% cap-truncated bank queries dilute the bank read; single split; teacher-forced representation-level scope, not on-policy behavior; the layer-23 closure point estimate sits at the margin.
 
@@ -175,25 +175,25 @@ Own-minus-external pooled R² gap on the common surviving subset, predicting the
 
 Absorbing 16 tokens closes the plain gap at the layer-20 decision cell: +0.023 → −0.002 (closure +0.025; interval excludes zero; the point clears the 0.02 margin though the interval dips below it). The style gap does not close: its closure is −0.005 (interval spans zero); the style-minus-plain difference −0.031 excludes zero, opposite the prediction.
 
-- The cross-layer round maps the fragility (band-map result below): closure replicates at layer 23, not at the band edges.
+- The cross-layer round maps the fragility (band-map result below): closure replicates at layer 23, is affirmatively absent at layer 14, and is unresolved at layer 26.
 - The style gap persists on intersection-of-survivors reads: +0.044 at 16 absorbed tokens, +0.028 at 128, both intervals bounded away from zero.
 
 ### The position-uniform equivalence replicates at every added read-out layer; the prefix closure replicates only in the mid band
 
-The registered decision statistics recomputed at layers 14, 23, 26 (parent rows as open markers): first-16 minus last-16 contrast vs the ±0.03 band; matched 0→16 closure vs the 0.02 margin (n = 629 per layer). Below: the per-context gap ECDFs.
+Both decision statistics recomputed at layers 14, 23, 26 against the ±0.03 and 0.02 margins (parent rows open; n = 629 per layer); below, per-context gap ECDFs.
 
 ![Cross-layer decision profile with registered margins](https://raw.githubusercontent.com/superkaiba/explore-persona-space/74ff3eac8038c81073bbca27f54eebcccc6a8b0e/figures/issue_952/crosslayer_decision_profile.png)
 
-> **Figure.** *The equivalence contrast stays inside the ±0.03 band at every layer; the closure clears the 0.02 margin only at layers 20 and 23.* 95% bootstrap intervals, n = 629; parent rows open orange, this round filled blue; p-values Holm-adjusted across the three added layers.
+> **Figure.** *The equivalence contrast stays inside the ±0.03 band at every layer; the closure clears the 0.02 margin only at layers 20 and 23.* 95% bootstrap intervals, n = 629; parent rows open orange, this round filled blue.
 
 ![Per-context gap ECDFs at two prefix depths, five layers](https://raw.githubusercontent.com/superkaiba/explore-persona-space/74ff3eac8038c81073bbca27f54eebcccc6a8b0e/figures/issue_952/crosslayer_prefix_gap_ecdf.png)
 
 > **Figure.** *The per-context gap distributions are near-identical across layers at both prefix depths.* ECDF of per-context own-minus-plain R² gaps, 629 matched test contexts, five read-out layers, at zero (left) and sixteen (right) absorbed prefix tokens.
 
-Equivalence replicates at every added layer (contrasts −0.006 to +0.012, all intervals inside the band): position-uniformity holds band-wide. Closure is mid-band — 16 tokens close 75–108% of each layer's own gap at layers 17–23 vs 15–18% at the edges: affirmatively absent at layer 14, replicating at layer 23 (raw p 0.0023, adjusted 0.0069), indeterminate at layer 26 — the registered partial-band-map outcome.
+Equivalence replicates at every added layer (contrasts −0.006 to +0.012, all intervals inside the band). Closure concentrates in the mid band: 16 tokens close 75–108% of the layer's own gap at 17–23, replicating at layer 23 (raw p 0.0023, Holm-adjusted 0.0069); affirmatively absent at layer 14; unresolved at layer 26 (the registered partial-band-map outcome).
 
-- Layer 23 (predictability 0.090 vs 0.106) is the matched-scale check; its replication rules out a selection artifact, though its point sits at the margin. Layer 14's 0.013 gap sits below the margin (scale-conditioned); layer 26's scale-matched gap closes 18%.
-- Layer 26's contrast is positive, interval excluding zero (adjusted p 0.115) — a sub-margin trend; all validity gates pass (Methodology table).
+- Layer 23 (predictability 0.090 vs 0.106) is the matched-scale check; its replication rules out a selection artifact. Layer 14's estimate is 15% of a gap of only 0.013 (scale-conditioned), and full fractional closure is not ruled out; layer 26 closes 18% (indeterminate).
+- Companion trends: layer 26's contrast is positive (interval excluding zero, adjusted p 0.115), a sub-margin trend; layer 14's style gap also widens along the answer (contrast −0.016, raw p 0.0004, the battery's strongest companion), matching its closure-side widening.
 
 ### No divergence-specific external penalty is detected on the surviving identity/style bank
 
@@ -270,3 +270,4 @@ The fast collapse is consistent with the prefix-absorption mechanism, and the di
 Round 1 originating scope (proposer-initiated; verbatim from the `epm:followup-scope` marker, hypothesis-family clause elided): "followup_label: cross-layer-decision-cells / source: proposer-9b-cheap / gpu_hours_estimate: 3 / question_relation: same"; "**Differs from parent:** Exactly one thing — the decision-cell READ-OUT LAYER set: the registered […] statistics are recomputed at the three remaining captured mid/late layers {14, 23, 26} (with the existing 20/17 reads carried for comparison). Tensors, split, λ-selection rule (per-slot validation argmax within layer), margins, bootstrap recipe all identical."
 
 · Lineage: [#823](https://eps.superkaiba.com/tasks/823) — parent (four-arm answer-profile ridge refit/transfer on the same LMSYS pool) · Same-issue follow-up rounds: round 1 `cross-layer-decision-cells` (proposer-9b-cheap, cheap-band auto-run round 1 of cap 2) · Created 2026-07-03 from user chat; run 2026-07-04 (three GCE launch attempts, third complete); analyzed 2026-07-04; round 1 run + folded 2026-07-04.
+
