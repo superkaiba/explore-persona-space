@@ -482,8 +482,8 @@
     "1060": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1060",
-      "status": "running",
+      "path": "tasks/reviewing/1060",
+      "status": "reviewing",
       "title": "daily-fix: 1-cell pilot timing for per-cell fit phases + 2x "
     },
     "1061": {
