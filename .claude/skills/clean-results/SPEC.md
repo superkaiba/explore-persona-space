@@ -643,8 +643,8 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   #921) · created/run dates.
   Mechanically enforced (check 17): the normalized frontmatter
   `origin_prompt` must appear verbatim within the `**Context:**` row's
-  text — a quoted candidate that is a strict prefix of `origin_prompt`
-  covering ≥50% of it (truncation) is a hard v4 FAIL; any other mismatch
+  text — a ≥20-char quoted candidate that is a strict prefix of
+  `origin_prompt` covering ≥50% of it (truncation) is a hard v4 FAIL; any other mismatch
   WARNs (v3/v2: WARN-only). When the row quotes a longer alternate
   verbatim source (`## Provenance` / followup-scope), quote the
   frontmatter `origin_prompt` too, or expect the WARN.
