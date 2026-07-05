@@ -1,7 +1,7 @@
 ---
 title: Fine-tune-induced map change is indistinguishable across query substrates for
-  three of four behaviors, and the emergent-misalignment exception clears question-resampling
-  noise but not context-family variance (LOW confidence)
+  three of four behaviors, and the emergent-misalignment exception survives neither
+  context-family resampling nor a per-example-grain refit (LOW confidence)
 kind: experiment
 tags:
 - followup-manual
