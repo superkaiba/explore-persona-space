@@ -308,11 +308,16 @@ def _run_json(argv: list[str], capsys) -> tuple[int, dict | None, str]:
 
 
 def _refresh_env(
-    tmp_path: Path, monkeypatch, *, junit_cases=None, pytest_rc=1, raise_timeout=False
+    tmp_path: Path, monkeypatch, *, junit_cases=None, pytest_rc=1, raise_timeout=False, venv=True
 ):
     """Refresh fixture: root tree + fake selector/pytest/git/ruff; returns (argv, root, seen)."""
     root = tmp_path / "root"
     (root / "tests").mkdir(parents=True)
+    if venv:
+        # Existence satisfies resolve_root_python; the fake runner never execs it.
+        venv_py = root / ".venv" / "bin" / "python"
+        venv_py.parent.mkdir(parents=True)
+        venv_py.write_text("")
     invariants = ("tests/test_inv_a.py", "tests/test_inv_b.py", "tests/test_inv_missing.py")
     scans = {"tests/test_scan.py": ("scripts/issue*_*.py",)}
     for f in ("tests/test_inv_a.py", "tests/test_inv_b.py", "tests/test_scan.py"):
@@ -334,9 +339,12 @@ def _refresh_env(
         ]
     )
 
-    def fake_run_pytest(files, cwd, timeout_s, junit_path, extra=sb.PYTEST_BASE_FLAGS) -> int:
+    def fake_run_pytest(
+        files, cwd, timeout_s, junit_path, extra=sb.PYTEST_BASE_FLAGS, *, python_exe
+    ) -> int:
         seen["stale_junit_gone"] = not Path(junit_path).exists()
         seen["files"] = list(files)
+        seen["python_exe"] = python_exe
         if raise_timeout:
             raise subprocess.TimeoutExpired(cmd=["pytest"], timeout=timeout_s)
         Path(junit_path).write_text(_junit_xml(cases))
@@ -386,6 +394,10 @@ def test_refresh_writes_schema_valid_ledger(tmp_path: Path, monkeypatch):
     assert ledger["ruff_count"] == 2149 and ledger["ruff_format_files"] == 18
     assert ledger["dirty_code_paths"] is False
     assert ledger["test_universe"] == seen["files"]
+    # The refresh pytest runs the ROOT's own venv interpreter, never the invoking
+    # sys.executable (#1022 round-2 Critical, refresh sibling).
+    assert seen["python_exe"] == str(root / ".venv" / "bin" / "python")
+    assert seen["python_exe"] != sys.executable
     # Atomic write: no tmp residue in the cache dir.
     assert list((root / ".claude" / "cache").glob("*.tmp")) == []
 
@@ -657,13 +669,27 @@ def test_compare_json_deterministic(tmp_path: Path, monkeypatch, capsys):
 # --- Case 15: real-pytest integration (the one non-injected case) ----------------
 
 
+def _write_python_shim(root: Path, marker: Path) -> Path:
+    """Install ``<root>/.venv/bin/python`` as an exec-shim onto the test-runner's
+    interpreter that first records its own invocation to *marker* — a REAL
+    subprocess target for resolve_root_python in a tmp tree with no real venv."""
+    shim = root / ".venv" / "bin" / "python"
+    shim.parent.mkdir(parents=True, exist_ok=True)
+    shim.write_text(f'#!/bin/sh\necho "$0" >> "{marker}"\nexec "{sys.executable}" "$@"\n')
+    shim.chmod(0o755)
+    return shim
+
+
 def test_real_pytest_single_file_pristine_extracts_failing_node(tmp_path: Path):
     """Runs REAL pytest (bounded) through run_single_file_pristine — executes the
     real bodies of run_pytest, parse_junit, thread_capped and
     run_single_file_pristine, and pins the xunit1 rootdir-relative ``file``
-    attribute assumption against the installed pytest (plan A3 / case 15)."""
+    attribute assumption against the installed pytest (plan A3 / case 15).
+    The tree carries a ``.venv/bin/python`` exec-shim because the pristine
+    runner now resolves the root's OWN interpreter (round-2 Critical fix)."""
     tree = tmp_path / "tree"
     (tree / "tests").mkdir(parents=True)
+    _write_python_shim(tree, tmp_path / "case15-shim-invocations.txt")
     # A pyproject [tool.pytest.ini_options] table pins rootdir=tree, mirroring
     # the production repo layout (file attrs come out rootdir-relative).
     (tree / "pyproject.toml").write_text('[tool.pytest.ini_options]\naddopts = ""\n')
@@ -674,6 +700,90 @@ def test_real_pytest_single_file_pristine_extracts_failing_node(tmp_path: Path):
     assert failing == {
         sb.Node(file="tests/test_probe.py", classname="tests.test_probe", name="test_bad")
     }
+
+
+# --- Round-2 Critical regression: pristine/refresh resolve the ROOT's interpreter -
+
+
+def test_resolve_root_python_resolves_and_fails_loud(tmp_path: Path):
+    """resolve_root_python returns <root>/.venv/bin/python; missing venv is a
+    fail-loud ToolMissingError, never a silent sys.executable fallback."""
+    root = tmp_path / "root"
+    with pytest.raises(sb.ToolMissingError, match="venv interpreter"):
+        sb.resolve_root_python(root)
+    venv_py = root / ".venv" / "bin" / "python"
+    venv_py.parent.mkdir(parents=True)
+    venv_py.write_text("")
+    assert sb.resolve_root_python(root) == str(venv_py)
+
+
+def test_pristine_argv_interpreter_derives_from_root_not_sys_executable(tmp_path, monkeypatch):
+    """run_single_file_pristine threads the ROOT's venv interpreter into the
+    pytest subprocess argv — NOT sys.executable (#1022 round-2 Critical: from an
+    issue worktree, sys.executable is the worktree venv whose editable .pth
+    imports the WORKTREE's src/, so the 'pristine-main' oracle would execute
+    branch library code and strip a branch-caused src/ regression as
+    pre-existing)."""
+    root = tmp_path / "root"
+    (root / "tests").mkdir(parents=True)
+    venv_py = root / ".venv" / "bin" / "python"
+    venv_py.parent.mkdir(parents=True)
+    venv_py.write_text("")
+    seen: dict = {}
+
+    def fake_run_pytest(
+        files, cwd, timeout_s, junit_path, extra=sb.PYTEST_BASE_FLAGS, *, python_exe
+    ) -> int:
+        seen["python_exe"] = python_exe
+        Path(junit_path).write_text(
+            _junit_xml([("tests/test_probe.py", "tests.test_probe", "test_x", "failed")])
+        )
+        return 1
+
+    monkeypatch.setattr(sb, "run_pytest", fake_run_pytest)
+    failing = sb.run_single_file_pristine("tests/test_probe.py", cwd=root, timeout_s=30.0)
+    assert seen["python_exe"] == str(venv_py)
+    assert seen["python_exe"] != sys.executable
+    assert failing == {
+        sb.Node(file="tests/test_probe.py", classname="tests.test_probe", name="test_x")
+    }
+
+
+def test_pristine_missing_root_venv_is_pristine_run_error(tmp_path: Path):
+    """A root with no venv interpreter cannot vouch anything: PristineRunError
+    (compare maps it to indeterminate exit 2), never a sys.executable run."""
+    root = tmp_path / "root"
+    (root / "tests").mkdir(parents=True)
+    with pytest.raises(sb.PristineRunError, match="venv interpreter"):
+        sb.run_single_file_pristine("tests/test_probe.py", cwd=root, timeout_s=30.0)
+
+
+def test_pristine_real_subprocess_executes_root_venv_interpreter(tmp_path: Path):
+    """Real-subprocess regression for the round-2 Critical: the pristine pytest
+    process IS <root>/.venv/bin/python — proven by the shim's invocation record.
+    Pre-fix this fails: run_pytest launched sys.executable, so the shim was
+    never invoked and the marker file does not exist."""
+    root = tmp_path / "root"
+    (root / "tests").mkdir(parents=True)
+    (root / "pyproject.toml").write_text('[tool.pytest.ini_options]\naddopts = ""\n')
+    (root / "tests" / "test_probe.py").write_text("def test_bad():\n    assert False\n")
+    marker = tmp_path / "shim-invocations.txt"
+    shim = _write_python_shim(root, marker)
+    failing = sb.run_single_file_pristine("tests/test_probe.py", cwd=root, timeout_s=180.0)
+    assert failing == {
+        sb.Node(file="tests/test_probe.py", classname="tests.test_probe", name="test_bad")
+    }
+    assert marker.exists(), "the root-venv shim was never invoked — sys.executable leak"
+    assert str(shim) in marker.read_text()
+
+
+def test_refresh_missing_root_venv_exit2_no_ledger(tmp_path: Path, monkeypatch):
+    """Refresh sibling of the round-2 Critical: interpreter resolution failure is
+    fail-loud — exit 2, NO ledger write, and pytest is never invoked."""
+    argv, root, seen = _refresh_env(tmp_path, monkeypatch, venv=False)
+    assert sb.main(argv) == 2
+    assert not sb.ledger_path(root).exists()
+    assert "python_exe" not in seen  # failed BEFORE any pytest invocation
 
 
 # --- Case 16 [A2]: --pytest-rc not in {0,1} -> exit 2 even with a clean junit ----
@@ -803,7 +913,18 @@ def test_compare_missing_ruff_binary_exit2(tmp_path: Path, monkeypatch, capsys):
     assert rc == 2 and out is None and "ruff" in err
 
 
-@pytest.mark.parametrize("ledger_raw", [None, "NOT JSON", '{"schema_version": 99}'])
+@pytest.mark.parametrize(
+    "ledger_raw",
+    [
+        None,
+        "NOT JSON",
+        '{"schema_version": 99}',
+        # Top-level-valid but a failing_tests entry lacks file/name — must route to
+        # the unusable-ledger indeterminate path, never a ledger_nodes KeyError
+        # that Python turns into a misleading exit 1 (round-2 Minor).
+        json.dumps({**_ledger_dict(), "failing_tests": [{"bogus": 1}]}),
+    ],
+)
 def test_compare_unusable_ledger_with_failures_no_pristine_exit2(
     tmp_path: Path, monkeypatch, capsys, ledger_raw
 ):
@@ -817,6 +938,25 @@ def test_compare_unusable_ledger_with_failures_no_pristine_exit2(
     rc, out, err = _run_json(argv, capsys)
     assert rc == 2 and out is None
     assert "pristine" in err  # unresolved bucket, no --run-pristine -> indeterminate
+
+
+def test_try_load_ledger_rejects_malformed_failing_tests_entry(tmp_path: Path, capsys):
+    """Entry-shape validation (round-2 Minor): a schema-keyed ledger whose
+    failing_tests entries are not {file: str, name: str, ...} dicts is unusable
+    (None + loud stderr), so downstream ledger_nodes can never KeyError."""
+    root = tmp_path / "root"
+    for bad_entries in ([{"bogus": 1}], ["not-a-dict"], [{"file": 3, "name": "x"}]):
+        led = _ledger_dict()
+        led["failing_tests"] = bad_entries
+        path = sb.ledger_path(root)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(led))
+        assert sb.try_load_ledger(root) is None
+        assert "entry shape" in capsys.readouterr().err
+    # The well-formed shape still loads.
+    led = _ledger_dict(failing=(NODE_A,))
+    sb.ledger_path(root).write_text(json.dumps(led))
+    assert sb.try_load_ledger(root) == led
 
 
 # --- Case 21 [A2]: scan-test strips ALWAYS carry a masking WARN -------------------

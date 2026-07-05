@@ -22,6 +22,12 @@ Three coordinated invariants are locked here (post-hoc; TDD: no):
 
 Plus a `pivot_criteria` invariant: the retired `code_review_ensemble_cap_3`
 trigger is gone (replaced by a `..._cap_5_surface` surface-behavior entry).
+
+Also pinned here (same SKILL.md Step 9c gate surface, #1022): BOTH gate pytest
+invocations — the 1b touched scope AND the 1c full-scope override — capture
+`PYTEST_RC=$?` on the pytest line, BEFORE the step-1d compare that consumes
+`--pytest-rc "$PYTEST_RC"` (round-2 Codex Critical: the full-scope block ran
+pytest without assigning the rc, so compare gated an unset/stale rc).
 """
 
 from __future__ import annotations
@@ -169,6 +175,31 @@ def test_code_review_flow_diagram_and_exit_kind_updated():
     # Exit-kind table row for Step 5b.
     assert "Step 5b code-review FAIL revision_round>=5" in skill
     assert "apply Step 5d cap-hit rule" in skill
+
+
+# --------------------------------------------------------------------------- #
+# #1022 Step 9c shell dataflow: PYTEST_RC captured before compare consumes it
+# --------------------------------------------------------------------------- #
+def test_step9c_pytest_rc_captured_before_compare():
+    """Both Step 9c pytest blocks (1b touched scope + 1c full-scope override)
+    assign `PYTEST_RC=$?` immediately after the command substitution, and both
+    captures precede the step-1d `--pytest-rc "$PYTEST_RC"` compare consumer.
+    The `{0,300}` bound keeps each match inside its OWN code block, so a
+    capture-less touched block can never borrow the full block's capture."""
+    skill = SKILL_PATH.read_text()
+    sec = skill[skill.index("9c. Test-verdict gate") : skill.index("### Step 10: Auto-complete")]
+    touched = re.search(
+        r"PYTEST_OUT=\$\(uv run pytest <files>[\s\S]{0,300}?2>&1\); PYTEST_RC=\$\?", sec
+    )
+    assert touched, "1b touched-scope block must capture PYTEST_RC=$? on its pytest line"
+    full = re.search(
+        r"PYTEST_OUT=\$\(timeout 60m uv run pytest tests/[\s\S]{0,300}?2>&1\); PYTEST_RC=\$\?",
+        sec,
+    )
+    assert full, "1c full-scope block must capture PYTEST_RC=$? on its pytest line"
+    compare_idx = sec.index('--pytest-rc "$PYTEST_RC"')
+    assert touched.end() < compare_idx, "touched-scope capture must precede the compare consumer"
+    assert full.end() < compare_idx, "full-scope capture must precede the compare consumer"
 
 
 # --------------------------------------------------------------------------- #
