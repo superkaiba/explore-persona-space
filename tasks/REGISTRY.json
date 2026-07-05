@@ -33,15 +33,15 @@
     "1001": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1001",
-      "status": "reviewing",
+      "path": "tasks/completed/1001",
+      "status": "completed",
       "title": "workflow-fix: marker-training-recipe.md training-row token-budget rule (#260 sibling)"
     },
     "1002": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1002",
-      "status": "reviewing",
+      "path": "tasks/completed/1002",
+      "status": "completed",
       "title": "workflow-fix: check 27 also FAILs prior-issue markdown links in v4 standalone sections"
     },
     "1003": {
@@ -54,8 +54,8 @@
     "1004": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1004",
-      "status": "approved",
+      "path": "tasks/completed/1004",
+      "status": "completed",
       "title": "workflow-fix: gcp.py workload-cmd rc-masking (false phase=done on && chains)"
     },
     "1005": {
@@ -76,22 +76,22 @@
     "1007": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1007",
-      "status": "planning",
+      "path": "tasks/completed/1007",
+      "status": "completed",
       "title": "workflow-fix: gotchas.md tiny-real CPU e2e before first GPU launch (mock-seam smoke gap)"
     },
     "1008": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1008",
-      "status": "planning",
+      "path": "tasks/running/1008",
+      "status": "running",
       "title": "workflow-fix: verify_task_body WARN on HF file-count claims vs scoped listing"
     },
     "1009": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1009",
-      "status": "proposed",
+      "path": "tasks/reviewing/1009",
+      "status": "reviewing",
       "title": "workflow-fix: gotchas \u2014 vLLM bank length-validation at load"
     },
     "101": {
@@ -111,8 +111,8 @@
     "1011": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1011",
-      "status": "proposed",
+      "path": "tasks/running/1011",
+      "status": "running",
       "title": "workflow-fix: verify_task_body WARN on orphaned committed per-context companion figures"
     },
     "1012": {

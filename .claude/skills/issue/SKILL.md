@@ -3380,19 +3380,39 @@ moment catches it, not the third pod-side crash.
 
 ##### Step 6d.0-bis: End-to-end smoke gate (multi-phase data-gen pipelines)
 
-For an experiment whose pipeline chains ≥2 distinct phases of data
-generation before training (typically gen → drift → train → eval →
-aggregate), the architecture-parity gate above is NOT enough: it checks
+For an experiment whose driver chains ≥2 distinct production phases
+before the first GPU launch — data-gen, training, eval, verify, upload
+(typically gen → drift → train → eval → aggregate; a datagen → train →
+verify → upload driver like #906's equally qualifies) — the
+architecture-parity gate above is NOT enough: it checks
 that smoke and sweep share ONE code path, not that EVERY phase ran. A
 resume-skip design serializes bug discovery — each pod cycle surfaces
 the next phase's bug — so before the GPU production launch the FULL
 pipeline must have executed once at tiny N (≈2-3 rows, 1 cell, 1 seed)
-so EVERY phase runs end-to-end on CPU / 1-GPU. Confirm the implementer's
+so EVERY phase runs end-to-end on CPU / 1-GPU.
+The tiny-N pass MUST meet the **tiny-real standard** for `kind:
+experiment`/`batch` drivers: it executes the production path with REAL
+library types at every internal seam the pipeline actually has —
+real tokenizer, real train engine + config builders + callbacks, real
+adapter round-trip, real verify/upload bodies (an API-only driver has
+no train engine; its own real seams bind instead) — faking ONLY
+GPU-scale weights (a from-config tiny same-arch model over the real
+vocab-id space) and the remote Hub boundary (signature-bound). A
+seam-stubbed / mocked smoke does NOT satisfy this gate: mock-seam
+smokes surface shape bugs one per GPU cycle (#906 r11-r14: four
+distinct production shape bugs, four ~1.5h pod cycles, every mocked
+smoke green beforehand; r15 = the tiny-real pivot). Worked example:
+`tests/test_issue906_tiny_real_e2e.py`; full recipe + the two CPU
+traps: `.claude/rules/gotchas.md` "Mock-seam smokes surface production
+shape bugs ONE PER GPU CYCLE".
+Confirm the implementer's
 `## Smoke run` report (per `experiment-implementer.md` § "End-to-end
 smoke run PER PHASE") carries a sub-section with exit code `0` + an
 artifact digest for EACH phase the pipeline executes — not just training
 or data-gen. Any phase missing, or showing only `--help` / `import` /
-`--dry-run` evidence → **REFUSE to dispatch**; bounce to the implementer
+`--dry-run` / seam-stubbed (mocked internal seams — the tiny-real
+standard's two sanctioned fakes excepted) evidence → **REFUSE to
+dispatch**; bounce to the implementer
 with `run the full gen→...→aggregate pipeline once at tiny N before
 production`. FAIL blocks production. (Origin: #408 — a multi-phase
 data-gen pipeline never smoke-tested end-to-end leaked 5+ distinct bugs
