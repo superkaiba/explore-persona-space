@@ -8360,20 +8360,30 @@ Gate the merge payload on the lint BEFORE anything lands:
     # the compare itself untrustworthy — that fails CLOSED via the crash arm
     # below, never `|| true`-erased. A red-but-line-emitting baseline (rc=1
     # WITH lines — main already red) stays fine: the subtraction handles it.
+    # Per-leg rc capture is a NO-DOWNGRADE (max) fold — same fold at all
+    # FOUR leg pairs (BASE + GATED, shared gate + surgical block): a leg-1
+    # CRASH (rc=2, zero lines) must survive a leg-2 rc=1-with-lines; the
+    # bare last-failure-wins `|| VAR=$?` capture erases the crash and
+    # defeats the crash arm below. rc=0/0 stays 0; a lone rc=1-with-lines
+    # stays 1 (attribution logic); any leg >1 reaches the crash arm.
     BASE_RC=0
     uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
-      > /tmp/issue-<N>-lint-baseline.txt 2>&1 || BASE_RC=$?
+      > /tmp/issue-<N>-lint-baseline.txt 2>&1 \
+      || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
     uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
-      >> /tmp/issue-<N>-lint-baseline.txt 2>&1 || BASE_RC=$?
+      >> /tmp/issue-<N>-lint-baseline.txt 2>&1 \
+      || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
     # GATED legs (payload-bearing tree; parity leg covers the checks the
     # no-flags bundle omits — see the bullet above):
     GATED_RC=0
     uv run python "$WT/scripts/workflow_lint.py" \
-      > /tmp/issue-<N>-lint-gated.txt 2>&1 || GATED_RC=$?
+      > /tmp/issue-<N>-lint-gated.txt 2>&1 \
+      || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
     uv run python "$WT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
-      >> /tmp/issue-<N>-lint-gated.txt 2>&1 || GATED_RC=$?
+      >> /tmp/issue-<N>-lint-gated.txt 2>&1 \
+      || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
     # Normalize failure lines: keep per-error `workflow_lint: <err>` lines,
     # DROP the PASS / `FAIL (N error(s))` summary lines (their COUNT changes
     # even when the failure identities match — a payload that fixes one
@@ -8745,12 +8755,35 @@ Decision tree:
   # Two-dot origin/main HEAD would additionally list files main advanced that
   # the branch never touched (status M-because-main-advanced), pulling them into
   # the checkout list — precisely the paths we must NOT overwrite.
-  git -C "$WT" diff --name-only --diff-filter=A origin/main...HEAD -- \
-    "tasks/*/<N>/" "figures/issue_<N>/" "eval_results/issue_<N>/" \
-    "eval_results/issue_<N>_*/" "ood_eval_results/issue_<N>/" \
-    ".claude/" "CLAUDE.md" ".gitattributes" "docs/methodology/issue_<N>.md" \
-    > /tmp/issue-<N>-additive-files.txt
+  #
+  # PRODUCER GUARD — materialize-then-check (mirrors the shared gate's
+  # trigger diff): unchecked, a FAILED diff (bad ref, no merge-base) writes
+  # an empty/partial list indistinguishable from "no additive files" and the
+  # landing below fails OPEN. And an EMPTY list is itself an anomaly HERE:
+  # this decision-tree branch is reached ONLY because deliverables are
+  # MISSING on origin/main, so "nothing to add" means the diff lied or the
+  # payload sits outside the A-only pathspec set (e.g. main deleted the
+  # deliverable — status M, not A — or a scripts/-only payload); landing
+  # anyway would push nothing and post `epm:merged {surgical_checkout:
+  # true}` with nothing committed (a PHANTOM SUCCESS). Both arms hard-stop.
+  if ! git -C "$WT" diff --name-only --diff-filter=A origin/main...HEAD -- \
+      "tasks/*/<N>/" "figures/issue_<N>/" "eval_results/issue_<N>/" \
+      "eval_results/issue_<N>_*/" "ood_eval_results/issue_<N>/" \
+      ".claude/" "CLAUDE.md" ".gitattributes" "docs/methodology/issue_<N>.md" \
+      > /tmp/issue-<N>-additive-files.txt; then
+    echo "SURGICAL ABORT: additive-list diff FAILED — cannot enumerate the payload; route to epm:merge-failed, never land"
+    false
+  elif [ ! -s /tmp/issue-<N>-additive-files.txt ]; then
+    echo "SURGICAL ABORT: additive-files list EMPTY on a deliverables-missing landing (phantom success); route to epm:merge-failed, never land"
+    false
+  fi
   ```
+
+  Either `SURGICAL ABORT` arm (failed producer diff, or an empty additive
+  list on this deliverables-missing landing) routes to the **Surgical
+  checkout itself fails** bullet below: post `epm:merge-failed v1` with the
+  abort line, surface ONE line in chat, CONTINUE — never fall through to
+  the checkout/stage/push block, and never post `epm:merged`.
 
   Then, from the **repo root on `main`** (never switch the branch
   there), checkout each path from the branch, stage by EXPLICIT PATH
@@ -8779,13 +8812,17 @@ Decision tree:
     # BASELINE legs (per-leg exit codes ARE captured — a baseline CRASH must
     # fail CLOSED via the crash arm below, never be `|| true`-erased; only
     # normalized failure LINES enter the compare for the legitimate
-    # red-baseline rc=1-with-lines case):
+    # red-baseline rc=1-with-lines case; per-leg NO-DOWNGRADE max fold, same
+    # rationale as the gate's executable block — a leg-1 crash must not be
+    # erased by a leg-2 rc=1):
     BASE_RC=0
     uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
-      > /tmp/issue-<N>-lint-baseline.txt 2>&1 || BASE_RC=$?
+      > /tmp/issue-<N>-lint-baseline.txt 2>&1 \
+      || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
     uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
-      >> /tmp/issue-<N>-lint-baseline.txt 2>&1 || BASE_RC=$?
+      >> /tmp/issue-<N>-lint-baseline.txt 2>&1 \
+      || { rc=$?; if [ "$rc" -gt "$BASE_RC" ]; then BASE_RC=$rc; fi; }
   fi
   # `-C "$REPO_ROOT"` is the repo-root guard's designed deliberate-override
   # (#897): the hook's working-tree-revert detector would bounce the bare
@@ -8802,10 +8839,12 @@ Decision tree:
   if [ "$GATE_ARMED" = "yes" ]; then
     GATED_RC=0
     uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
-      > /tmp/issue-<N>-lint-gated.txt 2>&1 || GATED_RC=$?
+      > /tmp/issue-<N>-lint-gated.txt 2>&1 \
+      || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
     uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
       --check-references --check-tables --check-asks --check-autonomous-asks \
-      >> /tmp/issue-<N>-lint-gated.txt 2>&1 || GATED_RC=$?
+      >> /tmp/issue-<N>-lint-gated.txt 2>&1 \
+      || { rc=$?; if [ "$rc" -gt "$GATED_RC" ]; then GATED_RC=$rc; fi; }
     for leg in baseline gated; do
       grep -h '^workflow_lint: ' "/tmp/issue-<N>-lint-$leg.txt" \
         | grep -vE '^workflow_lint: (PASS$|FAIL \()' \
