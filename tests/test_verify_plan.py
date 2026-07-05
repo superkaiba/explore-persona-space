@@ -37,7 +37,7 @@ sys.modules["verify_plan"] = verify_plan
 _spec.loader.exec_module(verify_plan)  # type: ignore[union-attr]
 
 
-# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-21)
+# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-22)
 
 # Surgery anchors (must appear verbatim in GOOD_PLAN exactly once).
 MV_HEADING = "### Measurement validity"
@@ -157,11 +157,12 @@ def test_good_plan_passes_all():
         "c18_paired_contrast_source_coverage": "SKIP",
         "c19_ood_folds": "SKIP",
         "c20_verdict_lattice_coherence": "SKIP",
-        "c21_cross_section_param_consistency": "SKIP",
+        "c21_grep_arity_gate": "SKIP",
+        "c22_cross_section_param_consistency": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 22
+    assert len(results) == 23
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -2730,16 +2731,137 @@ def test_c20_paired_before_primary_binds_primary_axis():
     assert "tier 1" in r.detail
 
 
-# ─── Check 21 — cross-section param consistency ────────────────────────────
+# ─── Check 21 — grep-arity acceptance gate ─────────────────────────────────
 
-C21 = "c21_cross_section_param_consistency"
+# Verbatim #1024 gate shapes (plans/v2.md lines 175 + 25 = the incident;
+# inlined copies keep the suite self-contained — task folders move between
+# status dirs, so tests never hard-read tasks/<status>/1024 paths).
+C21 = "c21_grep_arity_gate"
+C21_PIPELINE_GATE = (
+    '\n- Audit grep → 0 two-arg shared-parser calls: `grep -rn "parse_judge_json(" '
+    'src/ scripts/ tests/ | grep -v run_em_multiseed | grep ", " | wc -l` == 0.\n'
+)
+C21_PROSE_GATE = (
+    "\n2. Every call site compiles with the new signature; `grep -rn 'parse_judge_json(' "
+    "src/ scripts/ tests/` shows zero two-argument calls of the shared parser.\n"
+)
+C21_AST_EVIDENCE = (
+    "\nAudit: ast.parse each target file, ast.walk over Call nodes whose func resolves "
+    "to parse_judge_json, count len(node.args) + len(node.keywords), whitelist the "
+    "deliberate two-arg pytest.raises test.\n"
+)
+
+
+def test_c21_no_trigger_skips():
+    for kind in ("experiment", "infra"):
+        _, by_id = _run(GOOD_PLAN, kind=kind)
+        r = by_id[C21]
+        assert r.status == "SKIP", kind
+        assert "no grep-based call-arity" in r.detail
+
+
+def test_c21_pipeline_arity_gate_warns():
+    ok, by_id = _run(GOOD_PLAN + C21_PIPELINE_GATE, kind="infra")
+    r = by_id[C21]
+    assert r.status == "WARN"
+    assert ok is True  # WARN never blocks
+    assert "ast.walk" in r.detail
+    assert "#1024" in r.detail
+    assert "N/A — no arity acceptance gate" in r.detail
+
+
+def test_c21_prose_arity_gate_warns():
+    assert _status(GOOD_PLAN + C21_PROSE_GATE, C21, kind="infra") == "WARN"
+
+
+def test_c21_kind_experiment_also_fires():
+    # Pins the all-kinds scope: signature migrations ride experiment plans'
+    # code-port phases too (plan §11 item 4).
+    assert _status(GOOD_PLAN + C21_PIPELINE_GATE, C21, kind="experiment") == "WARN"
+
+
+def test_c21_ast_evidence_passes():
+    _, by_id = _run(GOOD_PLAN + C21_PIPELINE_GATE + C21_AST_EVIDENCE, kind="infra")
+    r = by_id[C21]
+    assert r.status == "PASS"
+    assert "AST" in r.detail
+
+
+def test_c21_na_escape_passes():
+    plan = GOOD_PLAN + C21_PIPELINE_GATE + "\nN/A — no arity acceptance gate.\n"
+    _, by_id = _run(plan, kind="infra")
+    r = by_id[C21]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c21_discovery_grep_does_not_trigger():
+    # A repro-card discovery/enumeration grep (no count form, no arity
+    # vocabulary, no zero comparator) must never fire.
+    plan = GOOD_PLAN + '\nRepro: `grep -rn "parse_judge_json(" src/ scripts/ tests/`\n'
+    assert _status(plan, C21, kind="infra") == "SKIP"
+
+
+def test_c21_plain_removal_gate_does_not_trigger():
+    # A full-removal migration gate (call-pattern + count + zero comparator,
+    # but NO comma pattern and NO arity vocabulary) counts call sites, not
+    # argument arity — legitimate and out of scope.
+    plan = GOOD_PLAN + '\n- `grep -rn "old_fn(" src/ | wc -l` == 0.\n'
+    assert _status(plan, C21, kind="infra") == "SKIP"
+
+
+def test_c21_fenced_gate_still_triggers():
+    # Pins the no-fence-mask decision: gate commands live in fenced
+    # verification blocks too (plan §4.1).
+    plan = GOOD_PLAN + "\n```bash" + C21_PIPELINE_GATE + "```\n"
+    assert _status(plan, C21, kind="infra") == "WARN"
+
+
+def test_c21_comma_call_grep_without_count_does_not_trigger():
+    # A comma inside a call-shaped grep pattern without any count form or
+    # zero comparator is discovery, not a gate.
+    plan = GOOD_PLAN + '\n`grep -rn "load(x, y)" docs/`\n'
+    assert _status(plan, C21, kind="infra") == "SKIP"
+
+
+def test_c21_branch_a_only_pipeline_gate_warns():
+    # Reconciler MF-2: pins Branch A's DETECTION-LOSS direction — every other
+    # WARN fixture co-fires Branch B, so a dead Branch A would otherwise ship
+    # green. No arity vocabulary, no zero comparator on this line.
+    plan = GOOD_PLAN + (
+        '\n- `grep -rn "load_config(" src/ | grep ", " | wc -l` must return no rows.\n'
+    )
+    assert _status(plan, C21, kind="infra") == "WARN"
+
+
+def test_c21_grep_dash_c_count_form_warns():
+    # Claude-statistics concern 2: the `grep -c` flag-cluster branch of
+    # _C21_COUNT_RE has no other coverage.
+    plan = GOOD_PLAN + '\n- `grep -rnc "parse_judge_json(.*," src/` == 0 two-arg calls.\n'
+    assert _status(plan, C21, kind="infra") == "WARN"
+
+
+def test_c21_na_wins_over_ast_evidence():
+    # Escape-ORDER pin (shared Claude/Codex concern): with BOTH escapes
+    # present the N/A detail is reported, not the AST-evidence detail.
+    plan = GOOD_PLAN + C21_PIPELINE_GATE + C21_AST_EVIDENCE + "\nN/A — no arity acceptance gate.\n"
+    _, by_id = _run(plan, kind="infra")
+    r = by_id[C21]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+    assert "AST-based arity audit" not in r.detail
+
+
+# ─── Check 22 — cross-section param consistency ────────────────────────────
+
+C22 = "c22_cross_section_param_consistency"
 
 
 def _c21(text: str, kind: str = "infra"):
     return verify_plan.check_cross_section_param_consistency(text, kind)
 
 
-def test_c21_contradictory_restatement_warns():
+def test_c22_contradictory_restatement_warns():
     # Brief item (a): the same tracked param with contradictory values in two
     # top-level sections WARNs; detail names the param, both matched spans
     # (values included), both section headings, and both 1-based line
@@ -2759,7 +2881,7 @@ def test_c21_contradictory_restatement_warns():
     assert "L3" in r.detail and "L7" in r.detail  # 1-based line numbers
 
 
-def test_c21_same_value_restated_passes():
+def test_c22_same_value_restated_passes():
     # Brief item (b): identical restatement across sections is consistent.
     plan = (
         "## 4. Design\n\nTraining uses lr = 3e-5 throughout.\n\n"
@@ -2774,7 +2896,7 @@ def test_c21_same_value_restated_passes():
     assert _c21(plan_norm).status == "PASS"
 
 
-def test_c21_historical_clause_not_counted():
+def test_c22_historical_clause_not_counted():
     # Brief item (c): a value inside a historical / declared-but-never-
     # threaded clause is excluded, so the param spans only ONE section → SKIP.
     plan = (
@@ -2784,7 +2906,7 @@ def test_c21_historical_clause_not_counted():
     assert _c21(plan).status == "SKIP"
 
 
-def test_c21_sweep_range_set_not_flagged():
+def test_c22_sweep_range_set_not_flagged():
     # Brief item (d): sweep/range/brace-set declarations overlapping a single
     # grounded value are consistent (set-overlap, not set-equality).
     # Head overlap: schedule "1e-4 → 1e-5" vs the grounded head value.
@@ -2794,7 +2916,7 @@ def test_c21_sweep_range_set_not_flagged():
     )
     assert _c21(plan_head).status == "PASS"
     # END-overlap discriminator (round-1 MF-1 cell 1): {1, 3} ∩ {3} passes
-    # ONLY if the range-tail parse is live — a dead _C21_RANGE_TAIL_RE
+    # ONLY if the range-tail parse is live — a dead _C22_RANGE_TAIL_RE
     # yields {1} vs {3} → spurious WARN and this assertion goes red.
     plan_end = (
         "## 4. Design\n\nWe anneal epochs = 1 → 3 across restarts.\n\n"
@@ -2816,7 +2938,7 @@ def test_c21_sweep_range_set_not_flagged():
     assert _c21(plan_sweep).status == "SKIP"
 
 
-def test_c21_value_vs_omission_1024_shape_warns():
+def test_c22_value_vs_omission_1024_shape_warns():
     # Brief item (e): the #1024 v2 offender shape — a corrected
     # "temperature OMITTED … API default 1.0" section vs a stale §11
     # `temperature=0.7` *What:* restatement. Also pins that
@@ -2838,7 +2960,7 @@ def test_c21_value_vs_omission_1024_shape_warns():
     assert "max_tokens" not in r.detail  # 64 == 64 across sections — consistent
 
 
-def test_c21_per_phase_and_alpha_context():
+def test_c22_per_phase_and_alpha_context():
     # Phase-qualified values key separately (epochs@phase1 / epochs@phase2 —
     # each spans one section → SKIP).
     plan_phase = (
@@ -2855,7 +2977,7 @@ def test_c21_per_phase_and_alpha_context():
     assert _c21(plan_alpha).status == "SKIP"
 
 
-def test_c21_fenced_commands_ignored():
+def test_c22_fenced_commands_ignored():
     # A fenced launch command's seed=999 never votes (fence mask), so seed
     # spans only the §4 prose → SKIP.
     plan = (
@@ -2865,25 +2987,25 @@ def test_c21_fenced_commands_ignored():
     assert _c21(plan).status == "SKIP"
 
 
-def test_c21_registration_end_to_end():
+def test_c22_registration_end_to_end():
     # End-to-end through verify_plan_text: pins registration in CHECKS +
     # fence-mask integration + WARN-never-blocks (overall ok stays True).
     filler = "We re-run the aggregation over the existing eval JSONs and re-plot. " * 25
     plan = (
-        "# Plan — Task #997: c21 end-to-end fixture (analysis)\n\n"
+        "# Plan — Task #997: c22 end-to-end fixture (analysis)\n\n"
         "## Goal\n\n" + filler + "\n\n"
         "## 4. Design\n\nJudging runs at temperature=1.0 for every draw.\n\n"
         "## 11. Rationale\n\n- **What:** replicate temperature=0.7, same rubric.\n\n"
         "## Resources\n\nNo pod. `Estimated GPU-hours (total): 0`\n"
     )
     ok, by_id = _run(plan, kind="analysis")
-    assert by_id[C21].status == "WARN"
+    assert by_id[C22].status == "WARN"
     assert ok is True  # WARN never blocks exit
 
 
-def test_c21_alias_contradictions_warn():
+def test_c22_alias_contradictions_warn():
     # Round-1 MF-1 cell 2 (silent-SKIP escape): learning_rate/lr and
-    # batch_size/batch fold to one key — a dropped _C21_ALIASES fold leaves
+    # batch_size/batch fold to one key — a dropped _C22_ALIASES fold leaves
     # two single-section keys → SKIP → this test goes red.
     plan_lr = (
         "## 4. Design\n\nTraining uses learning_rate = 3e-5 for the full run.\n\n"
@@ -2905,7 +3027,7 @@ def test_c21_alias_contradictions_warn():
     assert _c21(plan_same).status == "PASS"
 
 
-def test_c21_sibling_h3_one_h2_not_flagged():
+def test_c22_sibling_h3_one_h2_not_flagged():
     # Round-1 MF-1 cell 3 (pins FP layer 2): sibling H3 arms under ONE H2
     # attribute to the shared H2 ancestor — one section, so the union
     # {1e-4, 1e-5} spans one section → SKIP. Non-phase H3 names are chosen so
@@ -2919,7 +3041,7 @@ def test_c21_sibling_h3_one_h2_not_flagged():
     assert _c21(plan).status == "SKIP"
 
 
-def test_c21_omission_with_exclusion_vocab_still_counts():
+def test_c22_omission_with_exclusion_vocab_still_counts():
     # Round-1 MF-1 cell 4 (pins the §3.4 omission-exemption): exclusion
     # vocabulary in-window does NOT filter an omission match — the corrected
     # text legitimately explains WHY the param is omitted. An implementation
@@ -2936,7 +3058,7 @@ def test_c21_omission_with_exclusion_vocab_still_counts():
     assert "temperature OMITTED" in r.detail
 
 
-def test_c21_consistent_corrected_plan_stays_quiet():
+def test_c22_consistent_corrected_plan_stays_quiet():
     # Durable negative control (round-1 standing recommendation): a minimal
     # post-correction v3-shaped fixture — the omission form lives in ONE
     # section only, lr is restated identically across §4/§11, and
@@ -3004,12 +3126,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 14
+    assert payload["n_skip"] == 15
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 22
-    assert len({c["id"] for c in payload["checks"]}) == 22
+    assert len(payload["checks"]) == 23
+    assert len({c["id"] for c in payload["checks"]}) == 23
 
 
 def test_cli_exit_one_on_fail(tmp_path):

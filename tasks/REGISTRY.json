@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1043,
+  "highest_id": 1067,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -230,8 +230,8 @@
     "1027": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1027",
-      "status": "running",
+      "path": "tasks/completed/1027",
+      "status": "completed",
       "title": "daily-fix: watcher detects API-auth outage, stops respawn churn"
     },
     "1028": {
@@ -244,29 +244,29 @@
     "1029": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1029",
-      "status": "planning",
+      "path": "tasks/running/1029",
+      "status": "running",
       "title": "daily-fix: GCP pre-workload boot failures advance the failover ladder"
     },
     "1030": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1030",
-      "status": "approved",
+      "path": "tasks/running/1030",
+      "status": "running",
       "title": "daily-fix: task_workflow git robustness (dup markers, MERGE_HEAD)"
     },
     "1031": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1031",
-      "status": "proposed",
+      "path": "tasks/planning/1031",
+      "status": "planning",
       "title": "daily-fix: plan-time RAM/RSS routing gate + p90 fence sizing"
     },
     "1032": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1032",
-      "status": "proposed",
+      "path": "tasks/planning/1032",
+      "status": "planning",
       "title": "daily-fix: replan guard \u2014 re-read Goal before posting a plan version"
     },
     "1033": {
@@ -335,15 +335,15 @@
     "1041": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1041",
-      "status": "running",
+      "path": "tasks/completed/1041",
+      "status": "completed",
       "title": "workflow-fix: verify_plan cross-section param-consistency check"
     },
     "1042": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1042",
-      "status": "planning",
+      "path": "tasks/completed/1042",
+      "status": "completed",
       "title": "workflow-fix: verify_plan flags grep-arity acceptance gates"
     },
     "1043": {
@@ -353,6 +353,48 @@
       "status": "proposed",
       "title": "workflow-fix: verify_plan.py resume-provenance check (persist+resume-skip plans must name input-fingerprint validation)"
     },
+    "1044": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1044",
+      "status": "proposed",
+      "title": "daily-fix: sync_repo_root husk liveness probe + multi-branch"
+    },
+    "1045": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1045",
+      "status": "proposed",
+      "title": "daily-fix: choom-protect Step 9c gates + VM long fits by def"
+    },
+    "1046": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1046",
+      "status": "proposed",
+      "title": "daily-fix: Step 9c timeout sizing + slow-file batch + rc hyg"
+    },
+    "1047": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1047",
+      "status": "proposed",
+      "title": "daily-fix: Step 10d pre-merge/pre-push hardening bundle"
+    },
+    "1048": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1048",
+      "status": "proposed",
+      "title": "daily-fix: mechanically block piped git push (mask-prone)"
+    },
+    "1049": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1049",
+      "status": "proposed",
+      "title": "daily-fix: document pod-to-HF upload wedge escalation ladder"
+    },
     "105": {
       "has_clean_result": true,
       "kind": "experiment",
@@ -360,12 +402,138 @@
       "status": "completed",
       "title": "Apparent assistant-persona robustness under contrastive wrong-answer SFT was a data-mixing artifact \u2014 removing 100 \"assistant + correct answer\" control examples collapses ARC-C from 84% to 1.9% (HIGH confidence)"
     },
+    "1050": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1050",
+      "status": "proposed",
+      "title": "daily-fix: orchestrator inlines verifier output for Codex cr"
+    },
+    "1051": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1051",
+      "status": "proposed",
+      "title": "daily-fix: tick_triage liveness probe before STALE-REDRIVE"
+    },
+    "1052": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1052",
+      "status": "proposed",
+      "title": "daily-fix: CRON-TEARDOWN idempotent + sweep one-shot wakeups"
+    },
+    "1053": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1053",
+      "status": "proposed",
+      "title": "daily-fix: Step 0 detect-and-exit posts an audit marker"
+    },
+    "1054": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1054",
+      "status": "proposed",
+      "title": "daily-fix: new_worktree pre-adds own issue eval_results cone"
+    },
+    "1055": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1055",
+      "status": "proposed",
+      "title": "daily-fix: GCP finalize false-failed when deliverables compl"
+    },
+    "1056": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1056",
+      "status": "proposed",
+      "title": "daily-fix: critics verify figures against pinned blob only"
+    },
+    "1057": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1057",
+      "status": "proposed",
+      "title": "daily-fix: guard_log_dump exempts code files from size heuri"
+    },
+    "1058": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1058",
+      "status": "proposed",
+      "title": "daily-fix: repo-root guard false-positive on worktree-scoped"
+    },
+    "1059": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1059",
+      "status": "proposed",
+      "title": "daily-fix: stagger proposed-infra-sweep session dispatches"
+    },
     "106": {
       "has_clean_result": true,
       "kind": "experiment",
       "path": "tasks/archived/106",
       "status": "archived",
       "title": "Qwen identity claim creates distinct persona slot with 5x greater leakage vulnerability than generic assistant (MODERATE confidence)"
+    },
+    "1060": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1060",
+      "status": "proposed",
+      "title": "daily-fix: 1-cell pilot timing for per-cell fit phases + 2x "
+    },
+    "1061": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1061",
+      "status": "proposed",
+      "title": "daily-fix: /daily durable filing bodies + incremental filing"
+    },
+    "1062": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1062",
+      "status": "proposed",
+      "title": "daily-fix: de-escape HTML entities in plan-handoff commands"
+    },
+    "1063": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1063",
+      "status": "proposed",
+      "title": "daily-fix: both-arms mapping default applied at capture time"
+    },
+    "1064": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1064",
+      "status": "proposed",
+      "title": "daily-fix: artifact-reuse checks consumer read path vs layou"
+    },
+    "1065": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1065",
+      "status": "proposed",
+      "title": "daily-held: Step 10d task-state merge-conflict contract"
+    },
+    "1066": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1066",
+      "status": "proposed",
+      "title": "daily-held: settle #779-line mapping terminology + writeup b"
+    },
+    "1067": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1067",
+      "status": "proposed",
+      "title": "daily-held: Happy mobile push down all day (Remote Control o"
     },
     "108": {
       "has_clean_result": false,

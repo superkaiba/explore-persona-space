@@ -44,13 +44,15 @@ Check catalog (id — classification — kind scope)
                                                           analysis
   c20 verdict-lattice           FAIL (experiment) / WARN  experiment +
       coherence                 (analysis), conditional   analysis
-  c21 cross-section param       WARN-only, conditional    all kinds
+  c21 grep-arity acceptance     WARN-only, conditional    all kinds
+      gate → AST arity audit
+  c22 cross-section param       WARN-only, conditional    all kinds
       consistency
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21) also SKIP when their content trigger does not fire.
+19, 20, 21, 22) also SKIP when their content trigger does not fire.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
 
@@ -68,6 +70,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no paired contrast`` (check 18)
   - ``N/A — no held-out predictive DV`` (check 19)
   - ``N/A — no registered verdict lattice`` (check 20)
+  - ``N/A — no arity acceptance gate`` (check 21)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -3008,51 +3011,152 @@ def check_verdict_lattice_coherence(plan: str, kind: str) -> CheckResult:
     return _c20_tier2_result(cid, name, kind, lattices)
 
 
-# ─── Check 21 — cross-section param consistency (WARN-only, all kinds) ─────
+# ─── Check 21 — grep-arity acceptance gate → AST arity audit (WARN-only) ──
 
-_C21_PARAM_TOKENS = (
+# A grep invocation whose quoted pattern is call-shaped: an identifier
+# immediately followed by `(` inside the quotes
+# (`grep -rn "parse_judge_json(" ...`). [^|\n] bounds the scan to the
+# grep component's own arguments, not a later pipeline component.
+_C21_GREP_CALL_RE = re.compile(r"""grep\b[^|\n]*["'][^"'\n]*\w\(""")
+
+# Pipeline-form arity discriminator: any grep component on the SAME line
+# whose quoted pattern contains a comma (`| grep ", "`, `grep -c 'f(.*,'`).
+_C21_GREP_COMMA_RE = re.compile(r"""grep\b[^|\n]*["'][^"'\n]*,[^"'\n]*["']""")
+
+# Count form: `... | wc -l`, or a grep flag cluster carrying -c
+# (`grep -c`, `grep -rnc`; a separated `grep -r -c` is a known miss).
+_C21_COUNT_RE = re.compile(r"""wc\s+-l|\bgrep\s+-\w*c\b""")
+
+# Prose-form arity vocabulary ("shows zero two-argument calls").
+_C21_ARITY_VOCAB_RE = re.compile(
+    r"(?i)\btwo-?arg\w*|\b(?:one|two|three|\d+)[- ]argument|\barity\b"
+    r"|second argument|keyword[- ]arg\w*"
+)
+
+# Registered zero-count pass condition — the comparator that makes a grep
+# a GATE rather than a discovery command. Deliberately absent: bare
+# `\bempty\b` and un-bounded `→ 0` (matched unrelated prose on #416/#467/
+# #870 in the calibration sweep).
+_C21_ZERO_RE = re.compile(
+    r"(?i)==?\s*`?0\b|\bshows zero\b|\bzero\b[^.\n]{0,40}\bcalls?\b"
+    r"|returns nothing|\b0 hits\b|must be 0\b"
+)
+
+# Evidence escape: the plan names an AST-based arity audit anywhere.
+_C21_AST_EVIDENCE_RE = re.compile(
+    r"(?i)ast\.(?:walk|parse)|\bAST[- ](?:based|arity|audit|walker)|libcst"
+)
+
+_C21_NA_RE = re.compile(NA_RE + r"no arity acceptance gate")
+
+
+def check_grep_arity_gate(plan: str, kind: str) -> CheckResult:
+    """Plans registering a grep/`wc -l`-based signature-ARITY acceptance
+    gate (`grep "func(" ... | grep ", " | wc -l` == 0, or a call-pattern
+    grep whose stated pass condition is "shows zero two-argument calls")
+    get a WARN pointing at the AST-based arity audit as the robust form:
+    comma heuristics over call sites are BOTH unsatisfiable (they count
+    deliberate two-arg tests + comma-bearing string literals) AND
+    under-detecting (split-line and keyword-argument calls carry no
+    same-line comma) — #1024 plan v1/v2 registered exactly this gate and
+    the critic ensemble replaced it with an ast.walk audit in v3. WARN
+    not FAIL: greps are legitimate for discovery/enumeration, and the
+    conjunctive line trigger (call-pattern grep + arity discriminator +
+    count/comparator) is a heuristic — the Phase 1.5/2 reviewers
+    adjudicate. ALL kinds: the incident was kind: infra, but signature
+    migrations also ride experiment plans' code-port phases, and the
+    2026-07-04 corpus sweep (1,329 plans/v*.md) fired on ZERO lines
+    outside #1024's own plan versions, so kind confinement buys no
+    precision and costs recall. Raw lines are scanned WITHOUT the fence
+    mask (gate commands live in inline backticks and fenced verification
+    blocks alike); section-window confinement is the first tightening
+    lever if a future sweep surfaces false positives. The 0-FP figure is
+    an IN-SAMPLE calibration (regexes tuned on the same historical
+    corpus the acceptance sweep re-runs) — it bounds nuisance cost on
+    yesterday's planner distribution, not a guarantee for future plans."""
+    cid, name = "c21_grep_arity_gate", "grep-arity acceptance gate points at AST audit"
+    del kind  # all kinds — trigger precision carries the false-positive discipline
+    hits: list[tuple[int, str]] = []
+    for i, line in enumerate(plan.splitlines(), 1):
+        if not _C21_GREP_CALL_RE.search(line):
+            continue
+        pipeline = _C21_GREP_COMMA_RE.search(line) and _C21_COUNT_RE.search(line)
+        prose = _C21_ARITY_VOCAB_RE.search(line) and _C21_ZERO_RE.search(line)
+        if pipeline or prose:
+            hits.append((i, line.strip()))
+    if not hits:
+        return _skip(cid, name, "no grep-based call-arity pass condition detected")
+    if _C21_NA_RE.search(plan):
+        return _pass(
+            cid, name, "explicit N/A declared (flagged grep is not an arity pass condition)"
+        )
+    if _C21_AST_EVIDENCE_RE.search(plan):
+        i, line = hits[0]
+        return _pass(
+            cid,
+            name,
+            f"grep-arity gate present (line {i}: {line[:80]!r}) but the plan also names an "
+            "AST-based arity audit — the robust form is registered",
+        )
+    i, line = hits[0]
+    return _warn(
+        cid,
+        name,
+        f"a registered pass condition counts comma-bearing call-pattern grep hits (line {i}: "
+        f"{line[:100]!r}) — comma-grep arity gates are both unsatisfiable (they count "
+        "deliberate two-arg tests and comma-bearing string literals) and under-detecting "
+        "(split-line and keyword-argument calls carry no same-line comma; #1024 plan v1/v2). "
+        "Register an AST arity audit instead: ast.parse each target file, ast.walk over Call "
+        "nodes matching the function, count len(node.args) + len(node.keywords), whitelist "
+        "named exceptions — or declare `N/A — no arity acceptance gate`",
+    )
+
+
+# ─── Check 22 — cross-section param consistency (WARN-only, all kinds) ─────
+
+_C22_PARAM_TOKENS = (
     r"temperature|max_new_tokens|max_tokens|learning_rate|lr|epochs|"
     r"seeds|seed|rank|alpha|batch_size|batch|top_p"
 )  # longer alternatives first where prefixes overlap
-_C21_ALIASES = {"learning_rate": "lr", "seeds": "seed", "batch_size": "batch"}
-_C21_NUM = r"(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?"
+_C22_ALIASES = {"learning_rate": "lr", "seeds": "seed", "batch_size": "batch"}
+_C22_NUM = r"(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?"
 # param=value / param: value; tolerates `code`/**bold** wrappers; captures a
 # single numeric, a comma-run of numerics, or a {...} brace set (<=120 chars).
 # The leading \b means compound tokens (JUDGE_TEMPERATURE=0.7) never match —
 # underscore is \w, so there is no boundary before the bare param name.
-_C21_VALUE_RE = re.compile(
-    rf"(?i)\b(?P<param>{_C21_PARAM_TOKENS})\b\s*[=:]\s*[`*]{{0,2}}\s*"
-    rf"(?P<vals>\{{[^}}\n]{{0,120}}\}}|{_C21_NUM}(?:\s*,\s*{_C21_NUM})*)"
+_C22_VALUE_RE = re.compile(
+    rf"(?i)\b(?P<param>{_C22_PARAM_TOKENS})\b\s*[=:]\s*[`*]{{0,2}}\s*"
+    rf"(?P<vals>\{{[^}}\n]{{0,120}}\}}|{_C22_NUM}(?:\s*,\s*{_C22_NUM})*)"
 )
 # Range/schedule continuation right after the captured value ("1e-4 → 1e-5",
 # "1-3", "1 -> 3"): the tail value joins the occurrence's value set.
-_C21_RANGE_TAIL_RE = re.compile(
-    rf"\s*[`*]{{0,2}}\s*(?:[-\u2013\u2014]|->|→)\s*[`*]{{0,2}}({_C21_NUM})"
+_C22_RANGE_TAIL_RE = re.compile(
+    rf"\s*[`*]{{0,2}}\s*(?:[-\u2013\u2014]|->|→)\s*[`*]{{0,2}}({_C22_NUM})"
 )
 # Omission assertion: the #1024 corrected-text shape ("temperature OMITTED").
-_C21_OMIT_RE = re.compile(
-    rf"(?i)\b(?P<param>{_C21_PARAM_TOKENS})\b\s+(?:is\s+)?(?:omitted|left\s+unset)\b"
+_C22_OMIT_RE = re.compile(
+    rf"(?i)\b(?P<param>{_C22_PARAM_TOKENS})\b\s+(?:is\s+)?(?:omitted|left\s+unset)\b"
 )
 # Historical / declared-but-never-threaded clause vocabulary (value
 # occurrences only). `was` is value-adjacent only (`was 0.7` / `was set`),
 # NOT bare \bwas\b — bare `was` is ubiquitous and would silently exclude
 # CURRENT stale values on lines like "temperature=0.7 was chosen per #612".
-_C21_EXCLUDE_RE = re.compile(
+_C22_EXCLUDE_RE = re.compile(
     rf"(?i)declared\s+but\s+never|never\s+threaded|not\s+threaded|never\s+used|"
     rf"\bpreviously\b|superseded|corrected\s+(?:from|to)|historical|\bstale\b|"
-    rf"deprecated|no\s+longer|old\s+(?:value|default)|\bwas\s+(?:{_C21_NUM}|set\b|used\b)"
+    rf"deprecated|no\s+longer|old\s+(?:value|default)|\bwas\s+(?:{_C22_NUM}|set\b|used\b)"
 )
-_C21_SWEEP_LINE_RE = re.compile(r"(?i)\bsweeps?\b|\bgrid\b|ablation")
-_C21_PHASE_RE = re.compile(r"(?i)\bphase[\s-]*([0-9]+)\b")
-_C21_LORA_CTX_RE = re.compile(r"(?i)lora|rslora|\brank\b|adapter|peft")
+_C22_SWEEP_LINE_RE = re.compile(r"(?i)\bsweeps?\b|\bgrid\b|ablation")
+_C22_PHASE_RE = re.compile(r"(?i)\bphase[\s-]*([0-9]+)\b")
+_C22_LORA_CTX_RE = re.compile(r"(?i)lora|rslora|\brank\b|adapter|peft")
 
 # Same-line character window around a value match inside which the
 # historical-clause vocabulary excludes the occurrence (window-bounded so a
 # very long line's distant vocabulary cannot wrongly exclude a live value).
-_C21_EXCLUDE_WINDOW_CHARS = 100
+_C22_EXCLUDE_WINDOW_CHARS = 100
 
 
-def _c21_top_section(headings: list[Heading], line_idx: int) -> tuple[int, str]:
+def _c22_top_section(headings: list[Heading], line_idx: int) -> tuple[int, str]:
     """Top-level-section attribution for ``line_idx``: the SHALLOWEST heading
     of level >= 2 containing the line (the H2 ancestor — sibling H3
     subsections under one ``## 4. Design`` group as ONE section); falls back
@@ -3068,7 +3172,7 @@ def _c21_top_section(headings: list[Heading], line_idx: int) -> tuple[int, str]:
     return (-1, "(preamble)")
 
 
-def _c21_record(
+def _c22_record(
     occ: dict[str, dict[tuple[int, str], dict]],
     key: str,
     section: tuple[int, str],
@@ -3086,7 +3190,7 @@ def _c21_record(
         rec["vals"] |= vals
 
 
-def _c21_collect_occurrences(plan: str) -> dict[str, dict[tuple[int, str], dict]]:
+def _c22_collect_occurrences(plan: str) -> dict[str, dict[tuple[int, str], dict]]:
     """Build the (param-key → top-level section → {vals, lineno, span}) map.
 
     Fenced lines never vote (module convention). Value occurrences on
@@ -3104,29 +3208,29 @@ def _c21_collect_occurrences(plan: str) -> dict[str, dict[tuple[int, str], dict]
     for i, line in enumerate(lines):
         if mask[i]:
             continue
-        pm = _C21_PHASE_RE.search(line)
+        pm = _C22_PHASE_RE.search(line)
         phase = f"@phase{pm.group(1)}" if pm else ""
-        section = _c21_top_section(headings, i)
-        for m in _C21_VALUE_RE.finditer(line):
-            param = _C21_ALIASES.get(m["param"].lower(), m["param"].lower())
-            if param == "alpha" and not _C21_LORA_CTX_RE.search(line):
+        section = _c22_top_section(headings, i)
+        for m in _C22_VALUE_RE.finditer(line):
+            param = _C22_ALIASES.get(m["param"].lower(), m["param"].lower())
+            if param == "alpha" and not _C22_LORA_CTX_RE.search(line):
                 continue  # stats-alpha guard: significance level, not LoRA alpha
-            if _C21_SWEEP_LINE_RE.search(line):
+            if _C22_SWEEP_LINE_RE.search(line):
                 continue  # sweep/grid/ablation declarations are legitimately multi-value
-            w = _C21_EXCLUDE_WINDOW_CHARS
+            w = _C22_EXCLUDE_WINDOW_CHARS
             window = line[max(0, m.start() - w) : m.end() + w]
-            if _C21_EXCLUDE_RE.search(window):
+            if _C22_EXCLUDE_RE.search(window):
                 continue  # historical / declared-but-never-threaded clause
-            vals: set = {float(v) for v in re.findall(_C21_NUM, m["vals"])}
+            vals: set = {float(v) for v in re.findall(_C22_NUM, m["vals"])}
             if not vals:
                 continue  # non-numeric brace set
-            tm = _C21_RANGE_TAIL_RE.match(line, m.end())
+            tm = _C22_RANGE_TAIL_RE.match(line, m.end())
             if tm:
                 vals.add(float(tm.group(1)))
-            _c21_record(occ, param + phase, section, vals, i, m.group(0))
-        for m in _C21_OMIT_RE.finditer(line):
-            param = _C21_ALIASES.get(m["param"].lower(), m["param"].lower())
-            _c21_record(occ, param + phase, section, {"OMITTED"}, i, m.group(0))
+            _c22_record(occ, param + phase, section, vals, i, m.group(0))
+        for m in _C22_OMIT_RE.finditer(line):
+            param = _C22_ALIASES.get(m["param"].lower(), m["param"].lower())
+            _c22_record(occ, param + phase, section, {"OMITTED"}, i, m.group(0))
     return occ
 
 
@@ -3157,13 +3261,13 @@ def check_cross_section_param_consistency(plan: str, kind: str) -> CheckResult:
     {0.7} → PASS; intra-section contradictions are out of v1 cross-section
     scope. (ii) Phase-qualifier asymmetry — a phase-qualified occurrence
     (``epochs@phase1``) never compares against an unqualified ``epochs=3``;
-    a c21 PASS is not "no cross-section drift" for phase-keyed params.
+    a c22 PASS is not "no cross-section drift" for phase-keyed params.
     (iii) Markdown-table blindness — the value regex requires ``=`` or
     ``:``, so pipe-table hyperparameter rows (``| lr | 1e-4 |``) never
     parse; the table-vs-prose restatement class is invisible to v1."""
-    cid, name = "c21_cross_section_param_consistency", "cross-section param consistency"
-    del kind  # registry symmetry, c5-style: c21 runs for ALL kinds (#1024 is kind: infra)
-    occ = _c21_collect_occurrences(plan)
+    cid, name = "c22_cross_section_param_consistency", "cross-section param consistency"
+    del kind  # registry symmetry, c5-style: c22 runs for ALL kinds (#1024 is kind: infra)
+    occ = _c22_collect_occurrences(plan)
     cross = {k: recs for k, recs in occ.items() if len(recs) >= 2}
     if not cross:
         return _skip(cid, name, "no cross-section parameter restatement detected")
@@ -3223,6 +3327,7 @@ CHECKS = [
     check_paired_contrast_source_coverage,
     check_ood_folds,
     check_verdict_lattice_coherence,
+    check_grep_arity_gate,
     check_cross_section_param_consistency,
 ]
 
