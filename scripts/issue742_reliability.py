@@ -99,6 +99,23 @@ def _build_probe_rate_matrix(per_probe: list[list[float]]) -> tuple[np.ndarray |
     return np.array([p[:m_actual] for p in per_probe], dtype=float), m_actual
 
 
+def stage0_gate_verdict(rho_lin: float, ceil_lo: float, ceil_hi: float) -> str:
+    """Stage-0 internal gate (plan §4): ρ_lin vs the √(r_yy) ceiling CI.
+
+    ρ_lin inside the ceiling CI -> ``"ceiling-limited"``; ρ_lin BELOW the CI (real
+    headroom above the linear read) -> ``"headroom"``; ρ_lin ABOVE the CI (no
+    headroom to test) -> ``"ceiling-limited"``. The CANONICAL Stage-0 verdict rule
+    — ``compute_bracket`` calls it with the cluster-bootstrap ``[ceil_lo, ceil_hi]``.
+    Passing a degenerate ``[point, point]`` reduces it to the point comparison
+    ``rho_lin < point -> headroom``.
+    """
+    if ceil_lo <= rho_lin <= ceil_hi:
+        return "ceiling-limited"
+    if rho_lin < ceil_lo:
+        return "headroom"
+    return "ceiling-limited"  # ρ_lin above the ceiling CI -> no headroom to test
+
+
 def compute_bracket(
     behavior: str,
     genre: str,
@@ -265,12 +282,7 @@ def compute_bracket(
     )
 
     # Stage-0 internal gate (plan §4): ρ_lin within the √(r_yy) CI -> ceiling-limited.
-    if ceil_lo <= rho_lin <= ceil_hi:
-        verdict = "ceiling-limited"
-    elif rho_lin < ceil_lo:
-        verdict = "headroom"
-    else:
-        verdict = "ceiling-limited"  # ρ_lin above the ceiling CI -> no headroom to test
+    verdict = stage0_gate_verdict(rho_lin, ceil_lo, ceil_hi)
 
     bayes_beta = dc.bayes_error_ceiling(rates)
 
