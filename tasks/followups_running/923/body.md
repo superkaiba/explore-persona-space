@@ -1,7 +1,7 @@
 ---
-title: Stitched context-only and query-only read-outs beat the full-prompt last-token
-  ridge read-out at recovering the mean answer activation on held-out families and
-  queries (MODERATE confidence)
+title: Stitched context-only and query-only read-outs beat the full-prompt ridge read-out
+  at recovering the mean answer activation under both last-token and span-mean feature
+  summaries (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto
