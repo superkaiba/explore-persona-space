@@ -230,8 +230,8 @@
     "1027": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1027",
-      "status": "approved",
+      "path": "tasks/running/1027",
+      "status": "running",
       "title": "daily-fix: watcher detects API-auth outage, stops respawn churn"
     },
     "1028": {
