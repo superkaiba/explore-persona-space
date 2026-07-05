@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1059,
+  "highest_id": 1060,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -478,6 +478,13 @@
       "path": "tasks/archived/106",
       "status": "archived",
       "title": "Qwen identity claim creates distinct persona slot with 5x greater leakage vulnerability than generic assistant (MODERATE confidence)"
+    },
+    "1060": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1060",
+      "status": "proposed",
+      "title": "daily-fix: 1-cell pilot timing for per-cell fit phases + 2x "
     },
     "108": {
       "has_clean_result": false,
