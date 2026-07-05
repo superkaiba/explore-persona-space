@@ -171,6 +171,70 @@ both branches first — the helper embeds a Python heredoc inside a function
 inside a subshell, where a quoting slip would only surface at VM-boot time
 (test: `test_render_startup_script_is_valid_bash`).
 
+## Part A-ter — finalize-failed-but-artifacts-ok (#1055)
+
+A GCE workload can exit non-zero AFTER all its declared deliverables are
+verified uploaded (the #811 shape: 10.86 GB complete on HF, then the tail
+step died — a known mechanical class is the rc=134 HF-datasets
+interpreter-shutdown SIGABRT, `gotchas.md`). Pre-#1055 that read
+`eps/phase=failed` and triggered the full crash-response machinery (RunPod
+failover / crash-fix routing / a manual "was anything lost?" diagnosis
+cycle) on a run that lost nothing. The EXIT trap now branches on POSITIVE
+FILE EVIDENCE:
+
+- **The sentinel contract.** The startup script exports
+  `EPS_DELIVERABLES_OK_PATH` (attempt-scoped —
+  `gcp.deliverables_ok_path_for`, mirroring `sentinel_path_for` — so a
+  fresh attempt never reads a prior attempt's evidence) and `rm -f`s it at
+  boot (a re-booted instance with the SAME attempt_id + preserved disk must
+  not inherit a prior boot's evidence). The WORKLOAD writes that file ONLY
+  after its final upload+verify step confirms every declared deliverable is
+  on HF. **Writer rule (multi-stage drivers):** stamp the sentinel ONLY
+  after the LAST deliverable-producing step's upload+verify PASS — a
+  multi-STAGE in-instance driver that stamps after stage-1's verify
+  misclassifies a stage-2 crash (Step 8 upload verification backstops it,
+  but the contract precludes it). For a composed `--workload-cmd` chain,
+  insert `&& touch "$EPS_DELIVERABLES_OK_PATH"` BETWEEN the
+  deliverable-producing step and the tail steps (a trailing `&& touch`
+  after the whole chain only runs on rc==0, when the trap is idle —
+  useless by construction). RECOMMENDED: populate `verified_prefixes` (plus
+  issue / attempt_id / ts) in the sentinel JSON so Step 8 / triage can
+  cross-check the claim's scope — the trap checks EXISTENCE only.
+- **Fail-open default.** A workload that never writes the sentinel keeps
+  today's `failed` path byte-for-byte; driver adoption is per-driver
+  experiment code, out of the #1055 workflow-fix scope.
+- **The trap branch + phase value.** rc≠0 AND the sentinel file present →
+  `_eps_phase finalize_failed_artifacts_ok`; else `_eps_phase failed`
+  (unchanged). The shared tail — watchdog reap, log tail,
+  `_eps_persist_diagnostics "$rc"`, `shutdown -h now` — runs on BOTH arms,
+  ordering unchanged: diagnostics still upload (the finalize failure needs
+  its own `issue<N>_partial/` evidence) and the billing-bounding poweroff
+  is untouched. **#1004 coherence:** the classification is NEVER keyed on
+  the rc value or crash timing, and the literal `done` phase is never
+  published on the rc≠0 path — only the workload-written evidence flips the
+  phase value.
+- **Poll classification.** RUNNING (the brief pre-poweroff window) or
+  TERMINATED + `eps/phase=finalize_failed_artifacts_ok` →
+  `PollResult(status="done", current_phase="workload_done_finalize_failed")`
+  — the #935 stance: a SUCCESSFUL run whose finalize hiccupped.
+  `status="done"` fails BOTH async-failover conjuncts by construction (no
+  RunPod failover, no crash-fix routing), the #1029 boot-death streak
+  resets (a positive workload signal), and a fresh `epm:run-launched`
+  relaunch marker still wins in the RUNNING window (the #612
+  relaunch-follow tuple includes the new phase). The phase is in
+  `_TERMINAL_GUEST_PHASES` ⇒ `_ZOMBIE_GUEST_PHASES`: the janitor promptly
+  reaps a RUNNING VM stuck in it, and reconnect/pre-launch reclaim treat it
+  as a finished zombie.
+- **Finalize.** The COMPLETION sentinel is never written on this path (the
+  success tail is unreachable after a non-zero exit), so `confirm_artifacts`
+  FAILs exactly as for `workload_done_self_poweroff` — run
+  `dispatch_issue.py finalize --skip-confirm-artifacts`; Step 8 upload
+  verification remains the independent artifact gate.
+- **Triage searchability.** Recurring `workload_done_finalize_failed`
+  occurrences indicate a SYSTEMATIC finalize bug that still deserves a
+  root-cause fix — the classification keeps the failure visible for triage,
+  it does not normalize it.
+
 ## Part B — GCP-failure → RunPod failover (contract reversal)
 
 A GCP attempt failure of **ANY class now routes the next attempt to
@@ -571,7 +635,8 @@ Never wait out the grace — the in-VM bound is the dead-orchestrator
 fallback, not the plan.
 (2) BACKSTOP (next launch) — `gcp.reconnect_or_none` refuses a RUNNING
 instance whose
-`eps/phase` ∈ {done, failed, wedged} (`_ZOMBIE_GUEST_PHASES`) and
+`eps/phase` ∈ {done, failed, finalize_failed_artifacts_ok, wedged}
+(`_ZOMBIE_GUEST_PHASES`) and
 `_stale_named_instance_or_none` returns it as deletable, so the next
 launch reclaims + creates fresh instead of silently reconnecting. The
 skip/delete sets are pinned identical (`tests/test_gcp_backend.py`, the
