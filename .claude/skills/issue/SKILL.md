@@ -5361,7 +5361,7 @@ re-invocation).**
    `task_workflow.stage_dispatch_should_skip` (run the pre-dispatch
    one-liner above — do not eyeball the scan).
    - Window = **30 min** for Codex-ensembled rounds (ALL `interpreting`
-     AND `clean-result` rounds 1-3 — every round spawns both the Claude
+     AND `clean-result` rounds up to the per-reviewer cap (5) — every round spawns both the Claude
      critic AND a `codex-*-critic` twin at `--effort high|xhigh` via
      `companion task` since the 2026-06-12 all-rounds policy; such
      rounds commonly exceed 15 min wall time).
@@ -5485,7 +5485,7 @@ discarded by Step 8's gap-fill decision rule).
 
    Reconcile rounds do NOT increment the per-reviewer round counter.
 
-**If `final_verdict == REVISE` (rounds 2-3):**
+**If `final_verdict == REVISE` (rounds 2-5):**
 
 Re-spawn analyzer (fresh context, sees original data + ALL critique
 feedback: Claude event + Codex event + reconcile event if any).
@@ -5985,7 +5985,7 @@ dispatching this round's critics.
    the mechanically-verifiable presentation set; it never overrides a
    register / story-arc / statistical-framing lens judgment.
 
-**If REVISE (rounds 2-3):**
+**If REVISE (rounds 2-5):**
 
 Re-spawn `analyzer` agent (fresh context, sees raw data + all
 interp-critique history + the latest clean-result-critique). Analyzer

@@ -222,14 +222,16 @@ For reviewer ensemble rows (`epm:code-review`, `epm:code-review-codex`,
 ```
 
 Allowed `review_pair` values are `code_review`, `interpretation`, and
-`clean_result`. Rounds are `1`, `2`, or `3`. Allowed verdicts are
+`clean_result`. Rounds are `1` through `5` (the per-reviewer round cap). Allowed verdicts are
 `pass`, `needs_targeted_fix`, `blocked_needs_user_decision`, and
 `fail_not_worth_continuing`.
 
-After round 3, reviewer disagreement alone cannot block the task. The
-reconciler records the final critique, chooses the minimal necessary
-fix, and continues unless the missing input is a real user-decision
-blocker.
+After round 5 (the per-reviewer cap), the orchestrator applies the strip
+once more and either continues (all residual stripped / procedural) or
+SURFACES a substantive residual (workflow.yaml § pivot_criteria
+`*_cap_5_surface`) — never silently ships past. The reconciler records
+the final critique and chooses the minimal necessary fix; a genuine
+user-decision blocker still blocks.
 
 ## Parsing rules
 
