@@ -8008,6 +8008,40 @@ REPO_ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 WT="$REPO_ROOT/.claude/worktrees/issue-<N>"
 ```
 
+**Guard 0 — agent-memory pre-commit (run FIRST, before guards 1-3 and every
+merge form).** Review rounds write per-agent memories
+(`.claude/agent-memory/**`) with cwd in the worktree, leaving the tree dirty;
+a dirty tree aborts the merge-conflict recovery's `git -C "$WT" merge
+origin/main` below (incident #906, 2026-07-04). Commit them by explicit
+pathspec — never `git add -A`:
+
+```bash
+MEM_COMMITTED=no
+if git -C "$WT" status --porcelain -- .claude/agent-memory/ | grep -q .; then
+  git -C "$WT" add -- .claude/agent-memory/
+  git -C "$WT" commit -m "issue-<N>: persist agent-memory writes before Step-10d merge" \
+    -- .claude/agent-memory/
+  MEM_COMMITTED=yes
+  # Best-effort branch push NOW: the fast-path / artifact-confirmed forms
+  # never reach the safe-case pre-merge push, and on re-entry the pathspec
+  # is clean (MEM_COMMITTED=no) so the commit would otherwise strand
+  # local-only indefinitely. Failure is non-fatal — the safe-case push
+  # condition below is the second chance.
+  git -C "$WT" push origin issue-<N> || true
+fi
+```
+
+Idempotent (a re-run finds the pathspec clean and skips). Scope is EXACTLY
+`.claude/agent-memory/`: any OTHER dirty worktree path still surfaces through
+the existing merge-failure handling — never blanket-commit it. REPO-ROOT-side
+dirty agent-memory files are deliberately NOT committed here: every repo-root
+pull in this step routes through `scripts/sync_repo_root.py` (see below),
+whose autostash + rescue handling is built for the always-dirty shared root
+(#967's hand-rolled root pull died `fatal: Cannot autostash`). For Guard 3
+and the fast-path predicate, `.claude/agent-memory/**` paths are review-round
+bookkeeping — always in-scope, never an UNSAFE trigger (see the Guard-3 note
+and the fast-path mapfile filter below).
+
 A behind-`main` `issue-<N>` branch can carry stale copies of OTHER tasks'
 `tasks/` state, a crash between merge and a status flip can strand a
 task at the wrong status, AND a branch based on another still-unmerged
@@ -8152,7 +8186,9 @@ rebase-merged. Three guards:
    UNSAFE if the own-diff — after the spec-freshness exclusion above — touches
    any foreign `tasks/` path (under `tasks/` but outside `tasks/*/<N>/`) or files
    outside this task's deliverable scope (paths neither the plan nor the code
-   review touched). If the list is clean — only this task's own deliverables,
+   review touched). (Paths under `.claude/agent-memory/` — including the
+   Guard-0 persist commit — are review-round bookkeeping: always in-scope,
+   never an UNSAFE trigger.) If the list is clean — only this task's own deliverables,
    plus any spec-freshness-synced workflow-surface files — the branch is SAFE to
    rebase-merge regardless of `BEHIND`: the rebase replays only these commits,
    and files the branch never committed keep `main`'s version.
@@ -8217,7 +8253,15 @@ TASK_KIND=$(printf '%s\n' "$KIND" | sed -n 1p)
 TASK_TAGS=$(printf '%s\n' "$KIND" | sed -n 2p)
 # Three-dot: the branch's OWN commits only (merge-base..HEAD) — never files
 # main advanced but the branch never touched. Name-status so we can gate on A.
-mapfile -t OWN_NS < <(git -C "$WT" diff --name-status origin/main...HEAD)
+# Exclude .claude/agent-memory/ — the Guard-0 persist commit MODIFIES memory
+# files, which must not fail the ADDED-only predicate (e). Memory edits land
+# via the ordinary rebase (or stay on the PR branch for the deferred full
+# rebase); the surgical checkout never carries a modified file anyway.
+mapfile -t OWN_NS < <(git -C "$WT" diff --name-status origin/main...HEAD \
+  | grep -vE $'\t\\.claude/agent-memory/[^\t]*$' || true)
+# End-anchored on the LAST path field so an R-status rename whose SOURCE is
+# a memory path but whose destination is elsewhere cannot dodge predicate
+# (e) via over-filtering (Guard 0 itself never produces renames).
 N_FILES=${#OWN_NS[@]}
 IN_SCOPE=yes
 ADDED_ONLY=yes
@@ -8258,6 +8302,97 @@ pre-check adds NO new behavior for normal branches. A branch that MODIFIES a
 workflow-surface file (status M ⇒ `ADDED_ONLY=no`) is deliberately not
 fast-pathed; it takes the ordinary `--rebase`.
 
+#### Pre-push workflow-lint gate (runs before every merge form lands)
+
+#931 (2026-07-04) merged a workflow-lint offender to `main`, breaking
+`tests/test_workflow_lint.py` on pristine trunk fleet-wide for most of a day
+(5 downstream sessions each burned 5-25 min classifying it as pre-existing).
+Gate the merge payload on the lint BEFORE anything lands:
+
+- **Trigger (cheap; artifact-only merges skip).** Run the gate ONLY when the
+  branch's own three-dot diff (`git -C "$WT" diff --name-only
+  origin/main...HEAD`, computed after guards 0-3) touches any path OUTSIDE
+  the artifact-only set (`tasks/`, `figures/`, `eval_results/`,
+  `ood_eval_results/`, `raw/`, `data/`, `docs/methodology/`). The lint's
+  no-flags default run walks `.claude/**`, `CLAUDE.md`, `scripts/`, and
+  `src/`, so any code-bearing payload is in scope.
+- **Run the WORKTREE's copy — no-flags bundle PLUS the parity leg.**
+  `workflow_lint.py` derives its scan root from `__file__` (not cwd), so
+  invoking `"$WT/scripts/workflow_lint.py"` scans the branch-tip tree;
+  running from a worktree is a designed use case (`_other_worktree_prefix`).
+  The no-flags default run does NOT bundle the asks / autonomous-asks /
+  references / tables / status-labels checks (their `main()` branches lack
+  `or no_flags`), yet `tests/test_workflow_lint.py` subprocess-runs those
+  too — so trunk-pytest parity takes BOTH invocations. Measured wall
+  ~4.5-6 min (no-flags) + ~1.4 s (parity leg) on the shared VM; WARNs do
+  not fail (PASS = exit 0 on both).
+
+  ```bash
+  LINT_RC=0
+  uv run python "$WT/scripts/workflow_lint.py" \
+    > /tmp/issue-<N>-lint.txt 2>&1 || LINT_RC=$?
+  # Parity leg — checks tests/test_workflow_lint.py pins that the no-flags
+  # bundle omits:
+  uv run python "$WT/scripts/workflow_lint.py" \
+    --check-references --check-tables --check-asks --check-autonomous-asks \
+    >> /tmp/issue-<N>-lint.txt 2>&1 || LINT_RC=$?
+  ```
+
+- **Verdict — payload-attributed via failure-LINE-SET subtraction; NEVER
+  blocks an innocent merge on pre-existing red.** Exit codes alone are
+  vacuous when `main` is already red for an unrelated reason; attribution
+  compares normalized `workflow_lint:` failure LINES (strip volatile
+  prefixes; keep the `<check>/<file>[:<line>] <msg>` identity) between the
+  GATED run and a payload-free BASELINE run — BOTH legs (no-flags + parity)
+  in each run, so a pre-existing parity-leg red on main can never be
+  misread as payload-caused (and vice versa). On any gated-run failure:
+  1. Any gated failure line naming a file IN the own-diff → the payload is
+     the offender. Fix it in the worktree (the lint names file + rule),
+     commit by explicit path, re-run the gate ONCE; still failing → post
+     `epm:merge-failed v1` with `{reason: "pre-push workflow-lint gate",
+     lint_tail: <last lines>}`, surface ONE line in chat, CONTINUE (same
+     fail-fast policy as a merge failure; retried idempotently on the next
+     `/issue <N>`).
+  2. No own-diff-named line → compute `NEW = gated_failures −
+     baseline_failures` (set subtraction on the normalized lines). NEW
+     non-empty → a payload-caused cross-file interaction (e.g. a
+     lessons-index / lens-coverage check naming the index rather than the
+     added rule file) — treat as case 1 (block). NEW empty → pre-existing
+     red — WARN (record the lint tail in the `epm:merged` note) and
+     PROCEED. Run the baseline and gated runs back-to-back in the same
+     turn so a concurrent merge cannot widen the compare window
+     (moving-main race — keep the window tight, preserve the
+     main-already-red detail in the marker).
+- **Baseline semantics per binding form (the baseline is ALWAYS a
+  payload-free tree).** (i) Safe case: gated = the WORKTREE copy
+  (branch-tip tree); baseline = the repo-root copy (main tree, payload
+  absent); bind immediately before `gh pr ready` / `gh pr merge`.
+  (ii) Merge-conflict recovery: gated = the worktree copy AFTER
+  `git -C "$WT" merge origin/main` (≈ post-merge main, carrying main's
+  CURRENT lint — the ideal gate point); baseline = the repo-root copy;
+  bind after conflict resolution + targeted tests, before
+  `git -C "$WT" push`. (iii) Surgical additive checkout: the payload lands
+  in the ROOT tree, so the BASELINE MUST RUN BEFORE the
+  `xargs ... git checkout` — a post-checkout "main-side" run would re-lint
+  the SAME contaminated tree, a degenerate compare that fails open at
+  exactly the fast-path form; sequence = baseline (root copy, both legs) →
+  checkout → gated (root copy, both legs) → set-subtraction verdict → on
+  pass, `git add`. On a block at (iii), clean the payload out of BOTH
+  index and working tree — `xargs -a /tmp/issue-<N>-additive-files.txt
+  git restore --staged --worktree --` (the paths are A-only; a bare
+  `rm -f` leaves them STAGED in the shared root index, polluting
+  concurrent sessions' `git diff --cached` echoes). The fast path routes
+  through (iii). Idempotent: re-entry just re-runs the gate.
+- **Known residual (accepted, documented):** on path (i) the gated lint is
+  the branch's merge-base copy (Step 5a's spec-freshness `SPECS` list
+  covers `.claude/` specs + CLAUDE.md, NOT `scripts/` — verified at the
+  Step 5a `SPECS=` line), so a check ADDED on `main` after the branch
+  forked is not enforced there — it IS enforced on path (ii) (post-merge
+  tree, main's current lint), and the trunk pytest remains the backstop.
+  #931 itself was exactly such a post-fork-check instance and landed via
+  path (ii) — covered here by the RECOVERY-path binding, not by path (i);
+  do NOT narrate the gate as "all #931-class offenders die at path (i)".
+
 #### The auto-merge procedure (safe case: guard 3 clean — mainline-based, own commits in scope)
 
 ```bash
@@ -8275,12 +8410,18 @@ else
   # tasks/* reverts in the replayed history and landing them on main silently
   # (Codex code-review round-1 blocker, task #787). Push retry mirrors
   # CLAUDE.md § "Concurrent repo-root committers": pull --rebase=merges
-  # --autostash then re-push on a rejected push.
-  if [ "$STRIPPED_FOREIGN" = "yes" ]; then
+  # --autostash then re-push on a rejected push. The Guard-0 agent-memory
+  # persist commit is equally local-only — both must reach the PR head ref
+  # before the server-side rebase.
+  # (WORKTREE-scoped: `git -C "$WT"` on the issue branch. scripts/sync_repo_root.py
+  # does NOT apply here — it is repo-root-only by design, preconditioned on
+  # HEAD == main, exit 5 otherwise.)
+  if [ "$STRIPPED_FOREIGN" = "yes" ] || [ "$MEM_COMMITTED" = "yes" ]; then
     git -C "$WT" push origin issue-<N> \
       || { git -C "$WT" pull --rebase=merges --autostash \
            && git -C "$WT" push origin issue-<N>; }
   fi
+  # Pre-push workflow-lint gate (subsection above) — run BEFORE gh pr ready.
   gh pr ready <PR>
   gh pr merge <PR> --rebase --delete-branch=false
 fi
@@ -8325,7 +8466,7 @@ git -C "$WT" merge origin/main          # conflicts surface HERE, in the worktre
 # outside this task's deliverables), then:
 git -C "$WT" add <each resolved file>
 git -C "$WT" commit --no-edit
-# Re-run the targeted tests for the touched surface, then:
+# Re-run the targeted tests for the touched surface AND the Pre-push workflow-lint gate (subsection above), then:
 git -C "$WT" push
 # gh recomputes mergeability asynchronously after a push — it can be
 # momentarily stale. Re-check before concluding failure:
@@ -8470,10 +8611,32 @@ Decision tree:
 
   ```bash
   cd "$REPO_ROOT"
+  # Pre-push workflow-lint gate — BASELINE leg (subsection above). Run BOTH
+  # lint legs on the ROOT copy BEFORE the checkout below lands the payload:
+  # a post-checkout "baseline" would re-lint the same contaminated tree — a
+  # degenerate self-compare that fails open. Skip both legs only when the
+  # additive-files list is artifact-only (the gate's Trigger bullet).
+  BASE_RC=0
+  uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    > /tmp/issue-<N>-lint-baseline.txt 2>&1 || BASE_RC=$?
+  uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    --check-references --check-tables --check-asks --check-autonomous-asks \
+    >> /tmp/issue-<N>-lint-baseline.txt 2>&1 || BASE_RC=$?
   # `-C "$REPO_ROOT"` is the repo-root guard's designed deliberate-override
   # (#897): the hook's working-tree-revert detector would bounce the bare
   # `checkout <branch> -- <paths>` form; the `-C` names the tree explicitly.
   xargs -a /tmp/issue-<N>-additive-files.txt git -C "$REPO_ROOT" checkout issue-<N> --
+  # Pre-push workflow-lint gate — GATED leg: the root tree now carries the
+  # payload; re-run both legs, then apply the failure-LINE-SET subtraction
+  # verdict (subsection above). On a block, clean the payload out of BOTH
+  # index and working tree:
+  #   xargs -a /tmp/issue-<N>-additive-files.txt git restore --staged --worktree --
+  GATED_RC=0
+  uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    > /tmp/issue-<N>-lint-gated.txt 2>&1 || GATED_RC=$?
+  uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+    --check-references --check-tables --check-asks --check-autonomous-asks \
+    >> /tmp/issue-<N>-lint-gated.txt 2>&1 || GATED_RC=$?
   xargs -a /tmp/issue-<N>-additive-files.txt git add --
   git diff --cached --name-only   # sanity echo: spot any foreign staged entries
   xargs -a /tmp/issue-<N>-additive-files.txt git commit -m "issue-<N>: surgical additive checkout (full rebase deferred — guard 3)
@@ -8488,8 +8651,13 @@ Decision tree:
   full_rebase_deferred: true, surgical_checkout: true, files:
   [...]}`. Same chat title update as above.
 
-- **Surgical checkout itself fails** (file conflicts, push rejected
-  after one `git pull --rebase=merges --autostash` retry; `--rebase=merges` preserves concurrent sessions' unpushed merge commits — plain `--rebase` flattens them away — and a rebase without `--autostash` fails on the always-dirty shared root) — post `epm:merge-failed v1`
+- **Surgical checkout itself fails** (file conflicts, or push rejected after
+  one `uv run python "$REPO_ROOT/scripts/sync_repo_root.py"` retry — the ONLY
+  repo-root sync command: single-flight flock, untracked-collision sweep +
+  rescue, `--rebase=merges --autostash` pull, stranded-autostash recovery,
+  and a push with one rebase-retry built in; NEVER a hand-rolled repo-root
+  `git pull`, which is the #967 `fatal: Cannot autostash` incident) — post
+  `epm:merge-failed v1`
   with the error, surface ONE line in chat (branch + worktree path +
   one-line reason), CONTINUE. Same fail-fast policy as the safe case.
 
@@ -8536,8 +8704,29 @@ merge commit and would be read as a live task by the session watcher
 (incident #644)." -- "${DUPES[@]}"
   # Push IMMEDIATELY — an unpushed removal lets a concurrent session's
   # recovery pull re-import the orphan, which is exactly the failure mode.
-  git push origin main \
-    || { git pull --rebase=merges --autostash && git push origin main; }
+  # On rejection: scripts/sync_repo_root.py is the ONLY repo-root sync
+  # (single-flight flock + untracked-collision rescue + autostash recovery +
+  # push with one rebase-retry built in; a hand-rolled repo-root pull is the
+  # #967 `fatal: Cannot autostash` incident). CAUTION — the helper's own
+  # contract says exit 0 does NOT by itself mean "my push landed": exit 0
+  # includes the `in-flight` state ("another sync in flight — your push has
+  # NOT landed; re-run after the in-flight sync completes"), and an in-flight
+  # sync that started BEFORE this guard commit cannot carry it. So VERIFY
+  # landing after the helper; on a still-unlanded commit, re-run the helper
+  # ONCE (its own prescription for in-flight), then fail loud.
+  if ! git push origin main; then
+    uv run python "$REPO_ROOT/scripts/sync_repo_root.py"
+    git -C "$REPO_ROOT" fetch origin main --quiet
+    if ! git -C "$REPO_ROOT" merge-base --is-ancestor HEAD origin/main; then
+      uv run python "$REPO_ROOT/scripts/sync_repo_root.py"   # in-flight re-run
+      git -C "$REPO_ROOT" fetch origin main --quiet
+      git -C "$REPO_ROOT" merge-base --is-ancestor HEAD origin/main \
+        || { echo "post-merge guard commit NOT on origin/main after 2 sync attempts";
+             # route to the epm:merge-failed handling above (fail loud, never
+             # proceed believing the cleanup landed)
+             false; }
+    fi
+  fi
 fi
 ```
 

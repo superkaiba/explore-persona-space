@@ -296,3 +296,69 @@ def test_step5a_grep_filter_untouched():
     assert "--grep='spec-freshness' --invert-grep" in text, (
         "the Step-5a sync's --grep filter must remain (it is out of #787 scope)"
     )
+
+
+# --------------------------------------------------------------------------
+# Task #1047 — Step-10d pre-merge/pre-push hardening pins
+# --------------------------------------------------------------------------
+
+
+def _merge_guards_region(text: str) -> str:
+    """The merge-safety-guards slice: from the guards heading to the fast-path
+    heading (Guard 0 + guards 1-3 live here)."""
+    start_marker = "#### Merge safety guards (run before the merge commands)"
+    end_marker = "#### Fast-path routing pre-check"
+    start = text.find(start_marker)
+    end = text.find(end_marker)
+    assert start != -1, "Merge safety guards heading not found in SKILL.md"
+    assert end != -1, "Fast-path pre-check heading not found in SKILL.md"
+    assert start < end, "guards region must precede the fast-path pre-check"
+    return text[start:end]
+
+
+def test_guard0_mem_committed_flag_in_guards_region():
+    """#1047 Guard 0: the agent-memory pre-commit (flagged MEM_COMMITTED) must
+    live in the guards region, and the safe-case pre-merge push condition must
+    be extended by the flag — a local-only memory commit is invisible to the
+    server-side rebase, same mechanism as STRIPPED_FOREIGN (#906)."""
+    text = _skill_text()
+    region = _merge_guards_region(text)
+    assert "MEM_COMMITTED=no" in region, "Guard 0 must initialize MEM_COMMITTED=no"
+    assert "MEM_COMMITTED=yes" in region, "Guard 0 must set MEM_COMMITTED=yes after committing"
+    assert '[ "$MEM_COMMITTED" = "yes" ]' in text, (
+        "the safe-case pre-merge push condition must include MEM_COMMITTED=yes"
+    )
+
+
+def test_prepush_workflow_lint_gate_between_fast_path_and_auto_merge():
+    """#1047 lint gate: the Pre-push workflow-lint gate subsection must sit
+    between the fast-path pre-check and the auto-merge procedure, and be
+    named at >=3 bind hooks besides its heading (safe case, recovery,
+    surgical checkout) so every merge form runs it (#931)."""
+    text = _skill_text()
+    fast = text.find("#### Fast-path routing pre-check")
+    gate = text.find("#### Pre-push workflow-lint gate")
+    auto = text.find("#### The auto-merge procedure")
+    assert gate != -1, "Pre-push workflow-lint gate heading not found"
+    assert -1 < fast < gate < auto, (
+        "the gate heading must sit between the fast-path and auto-merge sections"
+    )
+    assert text.count("Pre-push workflow-lint gate") >= 4, (
+        "the gate must be named at its heading plus >=3 bind hooks"
+    )
+
+
+def test_post_merge_guard_push_retry_uses_sync_repo_root():
+    """#1047 sync naming: the post-merge guard's push retry must route through
+    scripts/sync_repo_root.py, never a hand-rolled repo-root `git pull` (#967
+    `fatal: Cannot autostash`)."""
+    text = _skill_text()
+    start = text.find("#### Post-merge stale-task-folder guard")
+    assert start != -1, "post-merge stale-task-folder guard heading not found"
+    region = text[start:]
+    assert "sync_repo_root.py" in region, (
+        "the post-merge guard push retry must name scripts/sync_repo_root.py"
+    )
+    assert "|| { git pull --rebase=merges --autostash && git push origin main; }" not in region, (
+        "the hand-rolled repo-root pull retry must be gone from the post-merge guard"
+    )
