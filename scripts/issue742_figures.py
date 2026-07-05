@@ -115,11 +115,25 @@ def plot_agreement_scatter(s0: dict, out: Path) -> Path | None:
     sh = [c["r_yy_split_half"] for c in cells]
     bn = [c["r_yy_binomial"] for c in cells]
     ax.scatter(sh, bn)
-    for c in cells:
+    pts = [(c["r_yy_split_half"], c["r_yy_binomial"]) for c in cells]
+    for i, c in enumerate(cells):
+        # Full plain-English labels (no abbreviated condition codes; project rule).
+        x, y = pts[i]
+        # Near-coincident pair: label the higher point above, the lower below,
+        # so each label sits on its own point's side. Right-align near the edge.
+        close = [
+            (px, py)
+            for j, (px, py) in enumerate(pts)
+            if j != i and abs(px - x) < 0.05 and abs(py - y) < 0.05
+        ]
+        below = any(py > y for _, py in close)
         ax.annotate(
-            f"{c['genre'][:3]}/{c['behavior'][:4]}",
-            (c["r_yy_split_half"], c["r_yy_binomial"]),
-            fontsize=6,
+            f"{c['genre']}/{c['behavior'].replace('_', ' ')}",
+            (x, y),
+            fontsize=6.5,
+            xytext=(-6 if x > 0.85 else 5, -11 if below else 4),
+            textcoords="offset points",
+            ha="right" if x > 0.85 else "left",
         )
     lim = [0, 1]
     ax.plot(lim, lim, "k--", alpha=0.4)
