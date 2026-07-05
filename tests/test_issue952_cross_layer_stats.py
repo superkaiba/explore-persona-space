@@ -7,10 +7,19 @@ positive-tail H2), Holm step-down, the three-way per-layer status enums
 non-replication for H2), and the TOTAL outcome lattice — including the plan's
 mechanizable check that `L20_local` can NEVER fire off indeterminate reads
 (affirmative >= 2/3 in either family is the only route).
+
+Also pins the fail-loud H2 decision-cell coverage contract (concern
+`cross-layer-h2-missing-cells-silent-indeterminate`): a registered `M16_L*`
+cell missing from the npz — including the producer's small-paired-universe
+skip-branch shape (`M16_ctx_ids` written, ZERO per-layer M arrays) — makes
+production `--cross-layer` RAISE before any statistic; `stats_cross_layer.json`
+is NEVER written with a `read_missing` record.
 """
 
+import argparse
 import importlib.util
 import itertools
+import json
 import pathlib
 
 import numpy as np
@@ -130,3 +139,140 @@ def test_lattice_rejects_mismatched_layer_sets():
         stats.map_outcome_lattice({"14": "replicates"}, {"23": "replicates"})
     with pytest.raises(AssertionError):
         stats.map_outcome_lattice({}, {})
+
+
+# ── fail-loud H2 decision-cell coverage (concern
+#    cross-layer-h2-missing-cells-silent-indeterminate) ──────────────────────────
+
+XLAYER_LAYERS = (14, 20, 23, 26)  # family {14, 23, 26} + production cal layer 20
+_TEST_IDS = list(range(6))
+
+
+def _minimal_xlayer_npz() -> dict[str, np.ndarray]:
+    """Minimal COMPLETE cross-layer npz: suffixed A blocks (real F16/L16 slot x
+    arm group names, so the H1 gap cells resolve) + the full registered M16
+    decision-cell grid over XLAYER_LAYERS. Bank arrays deliberately absent
+    (H3 degrades to its documented `bank_arrays_absent` descriptive record)."""
+    rng = np.random.default_rng(7)
+    slots = list(stats.F16_SLOTS) + list(stats.L16_CONTENT_SLOTS)
+    groups = [f"{s}|{a}" for s in slots for a in ("own", "ext_plain", "ext_style")]
+    n = len(_TEST_IDS)
+    npz: dict[str, np.ndarray] = {
+        "A_test_ctx_ids": np.asarray(_TEST_IDS, dtype=np.int64),
+        "A_group_names": np.asarray(groups),
+        "M16_ctx_ids": np.asarray(_TEST_IDS, dtype=np.int64),
+    }
+    for la in XLAYER_LAYERS:
+        npz[f"A_test_ssres_L{la}"] = rng.uniform(0.1, 0.9, size=(n, len(groups)))
+        npz[f"A_test_sstot_L{la}"] = rng.uniform(0.5, 1.5, size=(n, len(groups)))
+        for leg in ("cleg", "zleg"):
+            for arm in ("own", "ext_plain", "ext_style"):
+                npz[f"M16_L{la}_{leg}_{arm}_ssres"] = rng.uniform(0.1, 0.9, size=n)
+                npz[f"M16_L{la}_{leg}_{arm}_sstot"] = rng.uniform(0.5, 1.5, size=n)
+    return npz
+
+
+def _write_xlayer_fixture(tmp_path: pathlib.Path, npz: dict[str, np.ndarray]) -> argparse.Namespace:
+    """Stage the minimal eval-dir tree + spans + parent stats; return the
+    PRODUCTION-mode (smoke=False) argparse namespace for cross_layer_main."""
+    eval_dir = tmp_path / "eval"
+    eval_dir.mkdir()
+    (eval_dir / "battery_meta.json").write_text(json.dumps({"l_star_pos": 20}))
+    (eval_dir / "split_seed952.json").write_text(
+        json.dumps({"train": [], "val": [], "test": _TEST_IDS})
+    )
+    (eval_dir / "divergence_bank_verification.json").write_text(
+        json.dumps({"kept_pairs": [], "pairs": []})
+    )
+    spans_dir = tmp_path / "spans"
+    spans_dir.mkdir()
+    for arm in stats.ARMS:
+        (spans_dir / f"spans_{arm}.json").write_text(
+            json.dumps({str(c): {"span": 200} for c in _TEST_IDS})
+        )
+    parent_stats = tmp_path / "parent_stats_summary.json"
+    parent_stats.write_text("{}")
+    npz_path = tmp_path / "per_context_stats_cross_layer.npz"
+    np.savez(npz_path, **npz)
+    return argparse.Namespace(
+        eval_dir=str(eval_dir),
+        npz=str(npz_path),
+        spans_dir=str(spans_dir),
+        out=str(tmp_path / "stats_cross_layer.json"),
+        n_draws=200,
+        smoke=False,
+        decision_layers="14,23,26",
+        parent_stats=str(parent_stats),
+    )
+
+
+def test_missing_h2_cell_raises_in_production(tmp_path):
+    """REGRESSION (reconciler round-5 BLOCKER): delete ONE required registered
+    key -> production --cross-layer RAISES at the coverage gate; the stats JSON
+    is never written (no silent `read_missing`/`indeterminate` downgrade)."""
+    npz = _minimal_xlayer_npz()
+    del npz["M16_L23_zleg_ext_plain_ssres"]
+    args = _write_xlayer_fixture(tmp_path, npz)
+    with pytest.raises(RuntimeError, match="H2 decision-cell coverage FAIL"):
+        stats.cross_layer_main(args)
+    assert not pathlib.Path(args.out).exists()
+
+
+def test_producer_skip_branch_shape_raises_in_production(tmp_path):
+    """The reconciler-traced reachable shape: the producer's small-paired-universe
+    skip branch writes `M16_ctx_ids` while skipping EVERY per-layer M array —
+    the enumeration must catch exactly that npz (it passes both legacy coverage
+    asserts) and raise before any statistic."""
+    npz = {
+        k: v
+        for k, v in _minimal_xlayer_npz().items()
+        if not (k.startswith("M16_L"))  # keep M16_ctx_ids, drop all per-layer M cells
+    }
+    args = _write_xlayer_fixture(tmp_path, npz)
+    with pytest.raises(RuntimeError, match="H2 decision-cell coverage FAIL"):
+        stats.cross_layer_main(args)
+    assert not pathlib.Path(args.out).exists()
+
+
+def test_cross_layer_main_completes_on_full_grid(tmp_path):
+    """Companion PASS pin: on the COMPLETE registered cell grid the production
+    driver runs end-to-end — every added layer carries a finite raw + Holm p
+    and a status, and NO `read_missing` record exists anywhere in the JSON."""
+    args = _write_xlayer_fixture(tmp_path, _minimal_xlayer_npz())
+    stats.cross_layer_main(args)
+    out = json.loads(pathlib.Path(args.out).read_text())
+    assert "read_missing" not in json.dumps(out)
+    assert sorted(out["h2_by_layer"]) == ["14", "23", "26"]
+    for la in ("14", "23", "26"):
+        rec = out["h2_by_layer"][la]["ext_plain"]
+        assert np.isfinite(rec["p_one_sided_raw"]) and np.isfinite(rec["p_holm"])
+        assert rec["status"] in STATUSES
+        assert np.isfinite(out["h1_by_layer"][la]["ext_plain"]["p_two_sided_raw"])
+    assert out["row_coverage"]["h2_decision_cells"]["layers"] == [14, 20, 23, 26]
+    assert out["overall_verdict"] in {
+        "full_replication",
+        "L20_local",
+        "inconclusive_layer_scope",
+        "partial_band_map",
+    }
+
+
+def test_h2_layer_read_raises_on_missing_cell():
+    """Defense-in-depth behind the coverage gate: a bank without the registered
+    M cells makes h2_layer_read RAISE — it never returns a partial/None read."""
+    bank = stats.CellBank([0, 1])
+    bank.add("A_L14|f16_t1|own", np.asarray([0, 1]), np.asarray([0.5, 0.4]), np.asarray([1.0, 1.0]))
+    obs = bank.observed()
+    draws = bank.draws(np.ones((3, 2)))
+    with pytest.raises(RuntimeError, match="M\\|16_L14_cleg_own"):
+        stats.h2_layer_read(bank, obs, draws, layer=14)
+
+
+def test_registered_family_ps_gate():
+    """A None / non-finite raw p in a registered family must fail loud BEFORE
+    holm_adjust (never silently shrink k_tests)."""
+    stats._assert_registered_family_ps("h2", {"14": 0.02, "23": 0.5, "26": 0.9})  # OK
+    with pytest.raises(RuntimeError, match="h2 registered family incomplete"):
+        stats._assert_registered_family_ps("h2", {"14": 0.02, "23": None, "26": 0.9})
+    with pytest.raises(RuntimeError, match="h1 registered family incomplete"):
+        stats._assert_registered_family_ps("h1", {"14": float("nan"), "23": 0.5, "26": 0.9})

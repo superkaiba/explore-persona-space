@@ -723,9 +723,13 @@ def crosslayer_decision_profile(stats: dict, out_dir: pathlib.Path) -> None:
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(11.0, 4.2), layout="constrained")
     pal = paper_palette(4)
     added = [int(la) for la in stats["added_layers"]]
+    # Registered margins read from the stats artifact (single source of truth;
+    # KeyError loud on a stats file without them — never a silent hard-code).
+    h1_margin = float(stats["margins"]["h1"])
+    h2_margin = float(stats["margins"]["h2"])
 
     # (a) H1 contrast (F16-vs-L16 own-plain gap contrast) per layer.
-    ax1.axhspan(-0.03, 0.03, color="#D9EAD3", alpha=0.6, lw=0)
+    ax1.axhspan(-h1_margin, h1_margin, color="#D9EAD3", alpha=0.6, lw=0)
     xs, ys, ylo, yhi = [], [], [], []
     for la in added:
         rec = stats["h1_by_layer"][str(la)]["ext_plain"]
@@ -765,11 +769,11 @@ def crosslayer_decision_profile(stats: dict, out_dir: pathlib.Path) -> None:
     set_title_subtitle(
         ax1,
         "Does the early-vs-late equivalence hold across layers?",
-        "Shaded band = registered ±0.03 equivalence margin; 95% bootstrap CIs",
+        f"Shaded band = registered ±{h1_margin:g} equivalence margin; 95% bootstrap CIs",
     )
 
     # (b) H2 matched ΔG(0→16) per layer.
-    ax2.axhspan(0.0, 0.02, color="#F4CCCC", alpha=0.5, lw=0)
+    ax2.axhspan(0.0, h2_margin, color="#F4CCCC", alpha=0.5, lw=0)
     xs2, ys2, ylo2, yhi2 = [], [], [], []
     for la in added:
         rec = stats["h2_by_layer"].get(str(la)) or {}
@@ -810,14 +814,15 @@ def crosslayer_decision_profile(stats: dict, out_dir: pathlib.Path) -> None:
                 [], [], marker="o", mfc="white", mec=pal[1], ls="none", label="Parent (L20, L17)"
             )
     ax2.axhline(0, color="#444444", lw=0.8)
-    ax2.axhline(0.02, color="#B45F5F", lw=0.8, ls=":")
+    ax2.axhline(h2_margin, color="#B45F5F", lw=0.8, ls=":")
     ax2.set_xlabel("Read-out layer")
     ax2.set_ylabel("Matched ΔG(0→16): own-advantage closed\nby absorbing 16 prefix tokens")
     ax2.legend(frameon=False, fontsize=7)
     set_title_subtitle(
         ax2,
         "Does the prefix closure replicate across layers?",
-        "Shaded band = below the registered 0.02 margin; matched survivors, identical target",
+        f"Shaded band = below the registered {h2_margin:g} margin; "
+        "matched survivors, identical target",
     )
     savefig_paper(fig, "crosslayer_decision_profile", dir=out_dir)
     plt.close(fig)

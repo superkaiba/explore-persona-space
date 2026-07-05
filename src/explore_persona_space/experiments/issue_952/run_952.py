@@ -2405,19 +2405,37 @@ def _ckpt_load(path: pathlib.Path) -> tuple[dict[str, np.ndarray], dict] | None:
 def l20_reproduction_gate(parent_ref: dict, position_report: dict, smoke: bool) -> dict:
     """Follow-up plan §3 gate 2: the recomputed unsuffixed pass-2 pooled R² per
     (slot, arm) must match the parent's committed position_r2_by_arm.json within
-    ``L20_REPRO_TOL``. Raises RuntimeError on a production miss; ``--smoke``
-    executes the identical comparison and logs it (synthetic smoke data cannot
-    match the parent's committed values by construction)."""
+    ``L20_REPRO_TOL`` over the FULL expected ARMS x POSITION_SLOTS grid — the
+    expected set is enumerated, never inferred from the reference's own keys, so
+    a truncated / arm-renamed reference fails loud instead of silently shrinking
+    coverage (concern ``l20-repro-gate-arm-subset-coverage``). Also asserts the
+    parent reference's ``l_star`` == 20 when the field is present (the staged
+    parent file carries it); an absent field is logged and skipped. Raises
+    RuntimeError on a production miss; ``--smoke`` executes the identical
+    comparison and logs it (synthetic smoke data cannot match the parent's
+    committed values by construction)."""
     deltas: list[tuple[str, float]] = []
-    missing: list[str] = []
+    missing_parent: list[str] = []
+    missing_recomputed: list[str] = []
+    parent_l_star = parent_ref.get("l_star")
+    if parent_l_star is None:
+        logger.warning(
+            "[xlayer-gate] parent reference carries no l_star field — l_star==20 "
+            "check skipped (field absent from the staged file)"
+        )
+        l_star_ok = True
+    else:
+        l_star_ok = int(parent_l_star) == 20
     for arm in ARMS:
         ref_arm = parent_ref.get(arm)
-        if not isinstance(ref_arm, dict):
-            continue
-        for slot, ref_rec in ref_arm.items():
+        for slot in POSITION_SLOTS:
+            ref_rec = ref_arm.get(slot) if isinstance(ref_arm, dict) else None
             got = position_report.get(arm, {}).get(slot)
+            if not isinstance(ref_rec, dict):
+                missing_parent.append(f"{slot}|{arm}")
+                continue
             if not isinstance(got, dict):
-                missing.append(f"{slot}|{arm}")
+                missing_recomputed.append(f"{slot}|{arm}")
                 continue
             deltas.append(
                 (
@@ -2427,20 +2445,32 @@ def l20_reproduction_gate(parent_ref: dict, position_report: dict, smoke: bool) 
             )
     max_delta = max((d for _c, d in deltas), default=float("inf"))
     worst = max(deltas, key=lambda cd: cd[1], default=("none", float("inf")))
+    n_expected = len(ARMS) * len(POSITION_SLOTS)
     rec = {
+        "n_cells_expected": n_expected,
         "n_cells_compared": len(deltas),
-        "n_missing": len(missing),
-        "missing_cells": missing[:10],
+        "n_missing_parent": len(missing_parent),
+        "n_missing_recomputed": len(missing_recomputed),
+        "missing_parent_cells": missing_parent[:10],
+        "missing_recomputed_cells": missing_recomputed[:10],
         "max_abs_delta_r2": max_delta,
         "worst_cell": worst[0],
         "tol": L20_REPRO_TOL,
-        "parent_l_star": parent_ref.get("l_star"),
-        "pass": bool(deltas) and not missing and max_delta <= L20_REPRO_TOL,
+        "parent_l_star": parent_l_star,
+        "parent_l_star_ok": l_star_ok,
+        "pass": (
+            l_star_ok
+            and len(deltas) == n_expected
+            and not missing_parent
+            and not missing_recomputed
+            and max_delta <= L20_REPRO_TOL
+        ),
     }
     if not rec["pass"]:
         msg = (
-            f"L20 reproduction gate FAIL: {len(deltas)} cells compared, "
-            f"missing={missing[:5]}, max|ΔR²|={max_delta:.3e} at {worst[0]} > tol "
+            f"L20 reproduction gate FAIL: {len(deltas)}/{n_expected} cells compared "
+            f"(parent-missing={missing_parent[:5]}, recomputed-missing={missing_recomputed[:5]}, "
+            f"parent l_star={parent_l_star}), max|ΔR²|={max_delta:.3e} at {worst[0]}, tol "
             f"{L20_REPRO_TOL} — code/tensor drift; no new-layer number is trusted "
             "(plan kill criterion)"
         )
@@ -2450,8 +2480,9 @@ def l20_reproduction_gate(parent_ref: dict, position_report: dict, smoke: bool) 
             raise RuntimeError(msg)
     else:
         logger.info(
-            "[xlayer-gate] L20 reproduction gate PASS: %d cells, max|ΔR²|=%.3e",
+            "[xlayer-gate] L20 reproduction gate PASS: %d/%d cells, max|ΔR²|=%.3e",
             len(deltas),
+            n_expected,
             max_delta,
         )
     return rec

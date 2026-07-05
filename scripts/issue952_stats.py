@@ -947,19 +947,88 @@ def assert_cross_layer_coverage(npz: dict[str, np.ndarray], layers: list[int]) -
     return rec
 
 
+def assert_h2_decision_cell_coverage(
+    npz: dict[str, np.ndarray], layers: list[int], t2: int = 16
+) -> dict:
+    """Fail-loud enumeration of EVERY registered H2 decision cell (concern
+    ``cross-layer-h2-missing-cells-silent-indeterminate``): the npz must carry
+    ``M{t2}_ctx_ids`` plus all ``M{t2}_L{layer}_{leg}_{arm}_{ssres,sstot}``
+    arrays (leg in cleg/zleg, arm in MATCHED_ARMS) for every registered layer,
+    each row-matched to the ctx-id array. Runs UNCONDITIONALLY (smoke AND
+    production — a smoke npz that skipped the matched t2 cells cannot validate
+    the H2 path; smoke subsets stay legal because rows are checked against the
+    npz's OWN ctx-id set) BEFORE any statistic, so a partial npz — e.g. the
+    producer's small-paired-universe skip branch (run_952.py phase_battery:
+    writes ``M{t2}_ctx_ids`` while skipping every per-layer M array) — raises
+    here instead of degrading to a silent 'indeterminate'/'read_missing'."""
+    ids_key = f"M{t2}_ctx_ids"
+    if ids_key not in npz:
+        raise RuntimeError(
+            f"H2 decision-cell coverage FAIL: {ids_key} absent from the npz — the matched "
+            f"t2={t2} battery never ran; no registered H2 read is possible"
+        )
+    n = len(npz[ids_key])
+    missing: list[str] = []
+    bad_len: list[str] = []
+    for layer in layers:
+        for leg in ("cleg", "zleg"):
+            for arm in MATCHED_ARMS:
+                for kind in ("ssres", "sstot"):
+                    k = f"M{t2}_L{layer}_{leg}_{arm}_{kind}"
+                    if k not in npz:
+                        missing.append(k)
+                    elif len(npz[k]) != n:
+                        bad_len.append(f"{k}(rows={len(npz[k])}!={n})")
+    if missing or bad_len:
+        raise RuntimeError(
+            "H2 decision-cell coverage FAIL — registered per-layer matched cells incomplete "
+            f"(missing={missing[:12]}{' …' if len(missing) > 12 else ''}, "
+            f"row-mismatched={bad_len[:12]}); a partial npz (e.g. the producer's "
+            "small-paired-universe skip branch) must fail loud here, never degrade to "
+            "'indeterminate' (concern cross-layer-h2-missing-cells-silent-indeterminate)"
+        )
+    rec = {
+        "t2": t2,
+        "layers": [int(la) for la in layers],
+        "n_rows": n,
+        "n_cells_checked": len(layers) * 2 * len(MATCHED_ARMS) * 2,
+    }
+    logger.info("[coverage] H2 decision cells: %s", rec)
+    return rec
+
+
+def _assert_registered_family_ps(family: str, raw_ps: dict[str, float | None]) -> None:
+    """The registered Holm family must enter ``holm_adjust`` COMPLETE: a None /
+    non-finite raw p would silently shrink ``k_tests`` (anti-conservative for
+    the surviving layers' 'replicates' calls) — fail loud instead (plan §2:
+    every added layer reports its full read, incl. raw + Holm-adjusted p)."""
+    bad = sorted(k for k, v in raw_ps.items() if v is None or not np.isfinite(v))
+    if bad:
+        raise RuntimeError(
+            f"{family} registered family incomplete before Holm: non-finite raw p at layers "
+            f"{bad} — a missing/degenerate read must never shrink the Holm family "
+            "(concern cross-layer-h2-missing-cells-silent-indeterminate)"
+        )
+
+
 def h2_layer_read(
     bank: CellBank, obs: np.ndarray, draws: np.ndarray, layer: int, t2: int = 16
-) -> dict | None:
+) -> dict:
     """The registered matched ΔG(0→t2) read at one layer, with the pinned
     one-sided bootstrap p (plan §2 rule (i) inherited: common surviving subset,
-    identical remainder target, paired n — the M cells encode exactly that)."""
+    identical remainder target, paired n — the M cells encode exactly that).
+    Raises on a missing registered cell (defense-in-depth behind
+    ``assert_h2_decision_cell_coverage``) — never returns a partial read."""
     idx = {n: i for i, n in enumerate(bank.names)}
     cols: dict[str, int] = {}
     for leg in ("cleg", "zleg"):
-        for a in ("own", "ext_plain", "ext_style"):
+        for a in MATCHED_ARMS:
             c = idx.get(f"M|{t2}_L{layer}_{leg}_{a}")
             if c is None:
-                return None
+                raise RuntimeError(
+                    f"H2 layer read: registered cell M|{t2}_L{layer}_{leg}_{a} not in the "
+                    "bank — assert_h2_decision_cell_coverage should have caught this upstream"
+                )
             cols[f"{leg}_{a}"] = c
     out: dict[str, Any] = {"t2": t2, "layer": layer, "margin": H2_MARGIN}
     for ext in ("ext_plain", "ext_style"):
@@ -1160,11 +1229,14 @@ def cross_layer_main(args: argparse.Namespace) -> None:
     family_layers = [la for la in added if la != cal_layer]
     assert family_layers, f"no added layers left after excluding cal layer {cal_layer}"
 
-    # Row-coverage asserts BEFORE any statistic (plan §3, incl. per-layer H3).
+    # Row-coverage asserts BEFORE any statistic (plan §3, incl. per-layer H3),
+    # plus the fail-loud registered H2 decision-cell enumeration (a partial npz
+    # raises HERE — stats_cross_layer.json is never written from a partial read).
     spans = load_spans(spans_dir)
     cov_h2 = assert_h2_row_coverage(npz, spans, split["test"])
     cov_h3 = assert_h3_row_coverage(npz, verification, smoke=args.smoke)
     cov_xlayer = assert_cross_layer_coverage(npz, sorted({*family_layers, cal_layer}))
+    cov_h2_cells = assert_h2_decision_cell_coverage(npz, sorted({*family_layers, cal_layer}))
 
     # Shared-draw bootstrap over ALL cells (unsuffixed + suffixed + P + M).
     bank = CellBank(split["test"])
@@ -1183,19 +1255,23 @@ def cross_layer_main(args: argparse.Namespace) -> None:
         for la in family_layers
     }
     h1_calibration = h1_reads(bank, obs, draws, cell_prefix=f"A_L{cal_layer}", with_pinned_p=True)
-    h1_holm = holm_adjust(
-        {la: h1_by_layer[la]["ext_plain"].get("p_two_sided_raw") for la in map(str, family_layers)}
-    )
+    h1_raw_p = {
+        la: h1_by_layer[la]["ext_plain"].get("p_two_sided_raw") for la in map(str, family_layers)
+    }
+    _assert_registered_family_ps("h1", h1_raw_p)
+    h1_holm = holm_adjust(h1_raw_p)
 
     # H2 per added layer (registered 0→16 matched contrast; ext_plain decision).
+    # h2_layer_read raises on any missing registered cell (indeterminate means
+    # "measured, CI straddles" ONLY — never "absent"); the family enters Holm
+    # complete with finite raw p per layer or the run fails loud.
     h2_by_layer = {str(la): h2_layer_read(bank, obs, draws, la) for la in family_layers}
     h2_calibration = h2_layer_read(bank, obs, draws, cal_layer)
-    h2_holm = holm_adjust(
-        {
-            la: (h2_by_layer[la] or {}).get("ext_plain", {}).get("p_one_sided_raw")
-            for la in map(str, family_layers)
-        }
-    )
+    h2_raw_p = {
+        la: h2_by_layer[la]["ext_plain"]["p_one_sided_raw"] for la in map(str, family_layers)
+    }
+    _assert_registered_family_ps("h2", h2_raw_p)
+    h2_holm = holm_adjust(h2_raw_p)
 
     # Per-layer statuses (three-way enums, plan §2).
     h1_statuses: dict[str, str] = {}
@@ -1207,14 +1283,10 @@ def cross_layer_main(args: argparse.Namespace) -> None:
         h1_statuses[la] = h1_status(r1.get("h1_contrast"), ci1[0], ci1[1], h1_holm.get(la))
         h1_by_layer[la]["ext_plain"]["status"] = h1_statuses[la]
         r2rec = h2_by_layer[la]
-        if r2rec is None:
-            h2_statuses[la] = "indeterminate"
-            h2_by_layer[la] = {"status": "indeterminate", "read_missing": True}
-        else:
-            ci2 = r2rec["ext_plain"]["ci95"]
-            r2rec["ext_plain"]["p_holm"] = h2_holm.get(la)
-            h2_statuses[la] = h2_status(r2rec["ext_plain"]["delta_G"], ci2[1], h2_holm.get(la))
-            r2rec["ext_plain"]["status"] = h2_statuses[la]
+        ci2 = r2rec["ext_plain"]["ci95"]
+        r2rec["ext_plain"]["p_holm"] = h2_holm.get(la)
+        h2_statuses[la] = h2_status(r2rec["ext_plain"]["delta_G"], ci2[1], h2_holm.get(la))
+        r2rec["ext_plain"]["status"] = h2_statuses[la]
 
     lattice = map_outcome_lattice(h1_statuses, h2_statuses)
 
@@ -1275,7 +1347,12 @@ def cross_layer_main(args: argparse.Namespace) -> None:
         "n_draws": args.n_draws,
         "seeds": {"bootstrap": BOOTSTRAP_SEED, "sign_flip": SIGNFLIP_SEED},
         "smoke": args.smoke,
-        "row_coverage": {"h2": cov_h2, "h3": cov_h3, "cross_layer": cov_xlayer},
+        "row_coverage": {
+            "h2": cov_h2,
+            "h3": cov_h3,
+            "cross_layer": cov_xlayer,
+            "h2_decision_cells": cov_h2_cells,
+        },
         "bootstrap_gemm_parity": parity,
         "n_cells": len(bank.names),
         "families": {**{k: len(v) for k, v in fam.items()}, **{k: len(v) for k, v in xfam.items()}},
