@@ -265,8 +265,8 @@
     "1032": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1032",
-      "status": "reviewing",
+      "path": "tasks/completed/1032",
+      "status": "completed",
       "title": "daily-fix: replan guard \u2014 re-read Goal before posting a plan version"
     },
     "1033": {
