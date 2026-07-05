@@ -39,7 +39,7 @@ sys.modules["verify_plan"] = verify_plan
 _spec.loader.exec_module(verify_plan)  # type: ignore[union-attr]
 
 
-# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-22)
+# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-22,24)
 
 # Surgery anchors (must appear verbatim in GOOD_PLAN exactly once).
 MV_HEADING = "### Measurement validity"
@@ -161,10 +161,11 @@ def test_good_plan_passes_all():
         "c20_verdict_lattice_coherence": "SKIP",
         "c21_grep_arity_gate": "SKIP",
         "c22_cross_section_param_consistency": "SKIP",
+        "c24_resume_provenance": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 23
+    assert len(results) == 24
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -3079,6 +3080,224 @@ def test_c22_consistent_corrected_plan_stays_quiet():
     assert r.status == "PASS"  # lr restated consistently across two sections
 
 
+# ─── Check 24 — resume-skip provenance validation ──────────────────────────
+
+# Fixture shapes distilled from the motivating corpus (#952 v9 = the gap the
+# critic ensemble caught; v12 = the gate-5 provenance-manifest contract it
+# forced; the boilerplate shape = the "Completion provenance: N/A" §4-design
+# bullet that false-satisfied bare-noun satisfiers on #811 v1 / #622 v2).
+C24_V9_SHAPE = (
+    "\nPhase B: a fold loop writing per-fold outputs; per-fold persist + resume-skip "
+    "(each fold's outputs written when the fold completes; entry predicate skips "
+    "completed folds — the intra-phase persist law, projected loop >1 h).\n"
+)
+C24_V12_SHAPE = (
+    "\nPhase B: per-fold persist + resume-skip under the gate-5 provenance contract "
+    "(each fold's outputs written with their provenance manifest when the fold "
+    "completes; the entry predicate accepts a persisted fold only on full manifest "
+    "match — split sha256 hashes + git SHA + env fingerprint; mismatch = recompute).\n"
+)
+C24_BOILERPLATE_SHAPE = (  # the corpus false-PASS shape (#811 v1 / #622 v2)
+    "\nPhase B: per-fold persist + resume-skip (entry predicate skips completed folds).\n"
+    + "\n" * 10
+    + "Completion provenance: N/A — no behavior-implantation training rows in this task.\n"
+)
+
+
+def test_c24_952_v12_shape_passes():
+    # The #952 v12 gate-5 contract satisfies via the COMPOUND forms
+    # (`provenance manifest` / `manifest match`) — survives the bare-noun
+    # exclusion.
+    ok, by_id = _run(GOOD_PLAN + C24_V12_SHAPE)
+    assert by_id["c24_resume_provenance"].status == "PASS"
+    assert ok
+
+
+def test_c24_952_v9_shape_warns():
+    _, by_id = _run(GOOD_PLAN + C24_V9_SHAPE)
+    r = by_id["c24_resume_provenance"]
+    assert r.status == "WARN"
+    # The detail names the fingerprint vocabulary and quotes the escape phrase.
+    assert "code SHA" in r.detail
+    assert "N/A — no resume/persist pattern" in r.detail
+
+
+def test_c24_completion_provenance_boilerplate_warns():
+    # The REQUIRED "Completion provenance: N/A" design bullet within ±15 raw
+    # lines of a bare resume-skip must NOT satisfy (bare `provenance` is
+    # excluded from the satisfier — the #811 v1 / #622 v2 false-PASS class).
+    assert _status(GOOD_PLAN + C24_BOILERPLATE_SHAPE, "c24_resume_provenance") == "WARN"
+
+
+def test_c24_no_trigger_skips():
+    assert _status(GOOD_PLAN, "c24_resume_provenance") == "SKIP"
+
+
+def test_c24_na_escape_passes():
+    plan = (
+        GOOD_PLAN
+        + C24_V9_SHAPE
+        + "\nN/A — no resume/persist pattern (the resume-skip line quotes the sibling's "
+        "methodology).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c24_resume_provenance"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c24_na_escape_spaced_slash_passes():
+    # The escape tail is slash-spacing-tolerant: a hand-written
+    # "resume / persist" must not silently fail the escape.
+    plan = (
+        GOOD_PLAN
+        + C24_V9_SHAPE
+        + "\nN/A — no resume / persist pattern (the resume-skip line quotes the sibling's "
+        "methodology).\n"
+    )
+    assert _status(plan, "c24_resume_provenance") == "PASS"
+
+
+def test_c24_quoted_na_phrase_does_not_escape():
+    # A mid-sentence quoted escape phrase (the pasted-bounce-brief
+    # self-escape channel) is NOT a standalone declaration line and must not
+    # escape — the c13/c18 anti-paste twin.
+    plan = (
+        GOOD_PLAN
+        + C24_V9_SHAPE
+        + ("\nThe remedy menu says to declare 'N/A — no resume/persist pattern' on its own line.\n")
+    )
+    assert _status(plan, "c24_resume_provenance") == "WARN"
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch"])
+def test_c24_kind_exempt_skips(kind):
+    assert _status(GOOD_PLAN + C24_V9_SHAPE, "c24_resume_provenance", kind=kind) == "SKIP"
+
+
+def test_c24_kind_analysis_warns():
+    # c24 is WARN for BOTH kinds (the c19 severity precedent) — severity does
+    # NOT degrade to SKIP for analysis, unlike c12's FAIL/WARN split.
+    assert _status(GOOD_PLAN + C24_V9_SHAPE, "c24_resume_provenance", kind="analysis") == "WARN"
+
+
+def test_c24_fenced_trigger_does_not_trigger():
+    # Resume-skip vocabulary appearing ONLY inside a code fence is not a
+    # resume plan — pins the fence-masked trigger path (`_trigger_windows`).
+    plan = GOOD_PLAN + "\n```\n" + C24_V9_SHAPE.strip() + "\n```\n"
+    assert _status(plan, "c24_resume_provenance") == "SKIP"
+
+
+def test_c24_satisfier_outside_window_warns():
+    # Window scoping is load-bearing: a genuine provenance contract >15 raw
+    # lines from every resume mention does not satisfy.
+    plan = (
+        GOOD_PLAN
+        + "\nPhase B: per-fold persist + resume-skip at each cell entry.\n"
+        + "\n" * 20
+        + "Acceptance: the provenance manifest (split sha256 hashes + git SHA) is "
+        "checked once per run.\n"
+    )
+    assert _status(plan, "c24_resume_provenance") == "WARN"
+
+
+def test_c24_window_radius_boundary():
+    # Mirrors test_c12_window_radius_boundary_after_refactor: c24's
+    # ±15-raw-line radius must not shift. Evidence exactly 15 raw lines below
+    # the trigger line counts; one line farther does not. The evidence line
+    # deliberately avoids c24 trigger vocabulary so it cannot open its own
+    # window (asserted below, not assumed).
+    evidence = (
+        "Acceptance: full provenance-manifest match — split sha256 hashes + git SHA + "
+        "env fingerprint."
+    )
+    assert not verify_plan._C24_TRIGGER_RE.search(evidence)
+    trigger = "Phase B: per-fold persist + resume-skip at each cell entry."
+    assert not verify_plan._C24_FINGERPRINT_RE.search(trigger)
+
+    def plan_with_gap(n_blank: int) -> str:
+        # Evidence lands (n_blank + 1) raw lines below the trigger line.
+        return (
+            GOOD_PLAN
+            + "\n## 12. Resume contract\n\n"
+            + trigger
+            + "\n"
+            + "\n" * n_blank
+            + evidence
+            + "\n"
+        )
+
+    assert _status(plan_with_gap(14), "c24_resume_provenance") == "PASS"  # +15 lines: in
+    assert _status(plan_with_gap(15), "c24_resume_provenance") == "WARN"  # +16 lines: out
+
+
+@pytest.mark.parametrize(
+    "trigger",
+    [
+        "a resume predicate keyed on output existence",
+        "skip-if-exists at cell entry",
+        "checkpoint-resume across waves",
+        "idempotent re-runs of the driver",
+        "load-partial-and-skip on restart",
+    ],
+)
+def test_c24_trigger_arm_warns(trigger):
+    # One minimal WARN fixture per previously-untested trigger-arm family.
+    assert _status(GOOD_PLAN + f"\nPhase B: {trigger}.\n", "c24_resume_provenance") == "WARN"
+
+
+@pytest.mark.parametrize(
+    "satisfier",
+    [
+        "outputs carry an input fingerprint checked at entry",  # bare fingerprint
+        "resume gated on the code SHA of the driver",  # code SHA
+        "the entry predicate compares the commit hash recorded at write time",  # commit hash
+        "each output carries an input-hash asserted at entry",  # input-hash
+        "the resume key records the env knobs of the capture",  # env knobs
+        "resume keyed on every output-affecting regime key",  # regime key (#722 r3)
+        "the predicate never skips on file-existence alone",  # never-skip (#922 v4)
+        "assert the existing file's sampling params match the requested flags",  # #560 v3
+    ],
+)
+def test_c24_satisfier_arm_passes(satisfier):
+    plan = GOOD_PLAN + f"\nPhase B: per-cell persist + resume-skip; {satisfier}.\n"
+    assert _status(plan, "c24_resume_provenance") == "PASS"
+
+
+def test_c24_bare_regime_prose_does_not_satisfy():
+    # Bare "regime" is excluded — persona-vectors "read-out regime" prose
+    # sits inside resume windows (#779 v5) and must not self-satisfy.
+    plan = (
+        GOOD_PLAN + "\nPhase B: per-cell persist + resume-skip; the A3.3 read-out regime, "
+        "all-layer sweep.\n"
+    )
+    assert _status(plan, "c24_resume_provenance") == "WARN"
+
+
+def test_c24_equivalence_assert_does_not_satisfy():
+    # An equivalence-gate assert without a resume-object token between verb
+    # and "match" (the #922 v1-v3 class) must not satisfy the assert-match
+    # clause.
+    plan = (
+        GOOD_PLAN + "\nPhase B: per-cell persist + resume-skip; assert the vmapped MLP path "
+        "matches a seeded serial reference.\n"
+    )
+    assert _status(plan, "c24_resume_provenance") == "WARN"
+
+
+def test_c24_cli_warn_exit_zero(tmp_path):
+    # WARN never blocks: exit 0, overall PASS, c24 rendered WARN (harness
+    # identical to test_cli_json_schema_and_exit_zero_on_pass).
+    p = tmp_path / "plan.md"
+    p.write_text(GOOD_PLAN + C24_V9_SHAPE)
+    proc = _run_cli("--plan-file", str(p), "--json")
+    assert proc.returncode == 0, proc.stderr
+    payload = json.loads(proc.stdout)
+    assert payload["overall"] != "FAIL"
+    c24 = next(c for c in payload["checks"] if c["id"] == "c24_resume_provenance")
+    assert c24["status"] == "WARN"
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -3128,12 +3347,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 16
+    assert payload["n_skip"] == 17
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 24
-    assert len({c["id"] for c in payload["checks"]}) == 24
+    assert len(payload["checks"]) == 25
+    assert len({c["id"] for c in payload["checks"]}) == 25
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
