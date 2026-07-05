@@ -4978,7 +4978,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/742",
       "status": "interpreting",
-      "title": "Linear decoding leaves most of the extractable sycophancy information in base-model activations unread, and only refusal shows signal beyond the erased linear component (MODERATE confidence)"
+      "title": "Linear decoding leaves most of the extractable sycophancy information in base-model activations unread (MODERATE confidence)"
     },
     "743": {
       "has_clean_result": false,

@@ -1,7 +1,6 @@
 ---
 title: Linear decoding leaves most of the extractable sycophancy information in base-model
-  activations unread, and only refusal shows signal beyond the erased linear component
-  (MODERATE confidence)
+  activations unread (MODERATE confidence)
 kind: experiment
 tags:
 - leak-predictor
