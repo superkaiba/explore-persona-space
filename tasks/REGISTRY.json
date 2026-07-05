@@ -356,8 +356,8 @@
     "1044": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1044",
-      "status": "proposed",
+      "path": "tasks/planning/1044",
+      "status": "planning",
       "title": "daily-fix: sync_repo_root husk liveness probe + multi-branch"
     },
     "1045": {
