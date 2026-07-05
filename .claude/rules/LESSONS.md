@@ -32,7 +32,7 @@ update this index (lint: `--check-lessons-index`).
 - **[ood-generalization-folds](ood-generalization-folds.md)** — fires when: a held-out predictive DV (R²/ρ) over grouped samples (require a GROUP-level fold — LOFO/transfer, not pointwise LOO; #810).
 - **[persona-distance-metrics](persona-distance-metrics.md)** — fires when: you write base-model persona-distance predictor code (canonical KL/JS/cosine defs; #404/#458 line).
 - **[persona-vectors-recipe](persona-vectors-recipe.md)** — fires when: a plan elects persona vectors / a mean-difference contrastive direction (reproduce arXiv 2507.21509 EXCEPT logit scoring).
-- **[plan-compute-sizing](plan-compute-sizing.md)** — fires when: a plan sizes §9 compute (HBM capture, merge disk, sentinel lanes, store/IO, VM-CPU RAM/RSS routing, wall-time floors/costing, p90 fence sizing).
+- **[plan-compute-sizing](plan-compute-sizing.md)** — fires when: a plan sizes §9 compute (HBM capture, merge disk, sentinel lanes, store/IO, VM-CPU RAM/RSS routing, wall-time floors/costing incl. the MEASURED 1-cell pilot basis for per-cell fit loops, p90 fence sizing).
 - **[planner-section-reference](planner-section-reference.md)** — fires when: the planner writes a plan section (pointer-loaded from planner.md).
 - **[pod-config](pod-config.md)** — fires when: pod SSH/MCP keeps failing or you touch the pod scripts/pods.conf (live-API vs pods.conf authority split).
 - **[pod-side-reporting](pod-side-reporting.md)** — fires when: writing pod-side dispatcher / sentinel / poll_pipeline.py-facing code, or (re)launching ANY detached pod/VM workload (pid-file rewrite contract, #813).
@@ -40,7 +40,7 @@ update this index (lint: `--check-lessons-index`).
 - **[research-project-structure](research-project-structure.md)** — fires when: you write result artifacts / the results index / the queue (one source of truth per layer).
 - **[selection-symmetric-nulls](selection-symmetric-nulls.md)** — fires when: a headline max/argmax/best-of/top-k over a free axis vs a null band (inherit selection per draw or freeze held-out; band vs DV ceiling; #778/#810).
 - **[upload-policy](upload-policy.md)** — fires when: you write training / Hub / sweep code (Hub-API verification gotcha, delete-after-eval persist, quota-403 recovery, pod→HF upload-wedge ladder).
-- **[vectorize-many-cell-fits](vectorize-many-cell-fits.md)** — fires when: many-cell GD, dense linear-algebra fits (svd/eigh/lstsq/ridge over fold×layer×arm), or a perm/bootstrap/null-draw battery over a fixed pool (overhead-bound; VECTORIZE first; launch VM fits detached + choom-protected + checkpointed; Supersede contract, #722+).
+- **[vectorize-many-cell-fits](vectorize-many-cell-fits.md)** — fires when: many-cell GD, dense linear-algebra fits (svd/eigh/lstsq/ridge over fold×layer×arm), or a perm/bootstrap/null-draw battery over a fixed pool (overhead-bound; VECTORIZE first; launch VM fits detached + choom-protected + checkpointed; Supersede contract incl. the mid-run ≥2×-deviation trigger, #722+).
 - **[workflow-fix-on-bug](workflow-fix-on-bug.md)** — fires when: any agent hits a bug from a gap in the workflow surface itself (emit a `workflow-fix-candidate`).
 - **[agents-vs-skills](agents-vs-skills.md)** — fires when: you create/restructure anything under `.claude/` (decide agent vs skill).
 
