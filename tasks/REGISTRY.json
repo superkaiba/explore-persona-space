@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1060,
+  "highest_id": 1061,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -485,6 +485,13 @@
       "path": "tasks/proposed/1060",
       "status": "proposed",
       "title": "daily-fix: 1-cell pilot timing for per-cell fit phases + 2x "
+    },
+    "1061": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1061",
+      "status": "proposed",
+      "title": "daily-fix: /daily durable filing bodies + incremental filing"
     },
     "108": {
       "has_clean_result": false,
