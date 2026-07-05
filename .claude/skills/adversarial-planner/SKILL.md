@@ -121,7 +121,10 @@ Run the structural verifier against the plan version just persisted:
   (check 15 — kind: infra|batch plans where the vocabulary hit is bug narration, or
   the target is a doc/prose file no pytest can exercise),
   `N/A — no re-extracted reference arms` (check 16), `N/A — no paired contrast`
-  (check 18), and `N/A — no held-out predictive DV` (check 19).
+  (check 18), `N/A — no held-out predictive DV` (check 19),
+  `N/A — no registered verdict lattice` (check 20), and
+  `N/A — no arity acceptance gate` (check 21 — the flagged grep is not a
+  call-arity pass condition; discovery/enumeration greps are fine).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
