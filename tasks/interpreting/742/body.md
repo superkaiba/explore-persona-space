@@ -1,6 +1,7 @@
 ---
-title: 'Decoding-ceiling, linear-information-loss, and sample-complexity of #658 base-model
-  behavior representations (n=50)'
+title: Linear decoding leaves most of the extractable sycophancy information in base-model
+  activations unread, and only refusal shows signal beyond the erased linear component
+  (MODERATE confidence)
 kind: experiment
 tags:
 - leak-predictor
