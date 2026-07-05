@@ -1326,7 +1326,7 @@ from it. Concrete checks:
    reports an aggregate vs already shows the per-unit data — do NOT FAIL
    a figure that already IS the scatter / per-point view. (v3:
    `## Findings`, `### <finding>`, setup/read prose.) Mechanical
-   backstop: `verify_task_body.py` check 30 WARNs when a committed
+   backstop: `verify_task_body.py` check 31 WARNs when a committed
    `figures/issue_<N>/*per{context,unit,cell}*` PNG at a body-cited
    figure SHA is unreferenced by any body image URL (task #1011,
    incident #928) — a pre-gate nudge only; this lens remains the

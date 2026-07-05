@@ -535,8 +535,26 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   check against their own branch family. Incident: task #841 — three
   `figures/issue_841/` stems tracked at the pinned sha `4824a567aa` but
   untracked at branch HEAD; the loss was invisible to every check (#964).
+- **check 30** (`check_hf_file_count_claims`, WARN): numeric file-count
+  claims adjacent to hex-pinned HF `/tree/<sha>` markdown links ("N files" /
+  "N shards" inside the link text, or a parenthetical opening with the
+  count-noun immediately before the link) must match a files-only scoped
+  Hub tree count at the pinned revision — the same bounded raw
+  tree-endpoint probe checks 23/25 use (#733; never the SDK
+  `list_repo_tree` / `list_repo_files`), counted EXHAUSTIVELY with folder
+  entries excluded. Mismatch → WARN, never FAIL (there is no
+  `passed=False` path); shard claims are one-sided (WARN only when
+  claimed > file count — a shards prefix legitimately also holds a
+  manifest/sidecar). Every non-definitive probe outcome (offline fence /
+  missing `huggingface_hub` / 429 / network error / `not_found` /
+  page-time cap / the per-body `_HF_COUNT_MAX_PROBES` cap) surfaces as an
+  `unverified` note on a PASS line — a PARTIAL count never grounds a
+  WARN. Vacuous PASS with ZERO Hub probes when no count claim sits
+  adjacent to an HF tree link. Incident: task #931 shipped 528/10/3/198
+  where the pinned tree holds 515/9/2/197 — folder entries counted as
+  files (#1008).
 
-- **check 30** (`check_orphaned_per_unit_figures`, WARN): the INVERSE
+- **check 31** (`check_orphaned_per_unit_figures`, WARN): the INVERSE
   direction of checks 4b/22/29 (which verify what the body CITES) —
   enumerate what the body's OWN cited figure SHAs contain under this
   task's `figures/issue_<N>/` (one `git ls-tree` per unique (SHA, dir)
@@ -1921,7 +1939,7 @@ _THIS_REPO_SLUG = ("superkaiba", "explore-persona-space")
 # Repo-relative figure path carrying its own issue number — scope of check 29.
 _ISSUE_FIGURE_PATH_RE = re.compile(r"^figures/issue_(?P<issue>\d+)/\S")
 
-# Check 30: per-unit companion-figure basename patterns. The lookbehind
+# Check 31: per-unit companion-figure basename patterns. The lookbehind
 # stops mid-word matches ("supercontext"); `indiv` is deliberately
 # EXCLUDED — it names the per-question REGIME in this project (#928's
 # pooled hero `mlp_indiv_hero_4arm.png`), not a per-unit view.
@@ -2185,7 +2203,7 @@ def check_figure_tracked_at_head(body: str) -> CheckResult:
 
 def _cited_issue_figure_dirs(body: str) -> dict[str, set[str]]:
     """Map `figures/issue_<K>/` dir prefix → the set of SHAs the body's
-    inline same-repo figure URLs pin for that dir (check 30 input)."""
+    inline same-repo figure URLs pin for that dir (check 31 input)."""
     cited: dict[str, set[str]] = {}
     for url in _gather_figure_image_urls(body):
         url = url.strip().split(None, 1)[0] if url.strip() else ""
@@ -2202,7 +2220,7 @@ def _cited_issue_figure_dirs(body: str) -> dict[str, set[str]]:
 def _referenced_figure_paths(body: str) -> set[str]:
     """Repo-relative paths of EVERY same-repo image URL anywhere in the
     body — broader than the result-narrative scan, so an embed in
-    `## Methodology` still counts as referenced (check 30)."""
+    `## Methodology` still counts as referenced (check 31)."""
     referenced: set[str] = set()
     for url in _IMAGE_RE.findall(body):
         u = url.strip().split(None, 1)[0] if url.strip() else ""
@@ -2213,7 +2231,7 @@ def _referenced_figure_paths(body: str) -> set[str]:
 
 
 def check_orphaned_per_unit_figures(body: str, *, issue: int | None = None) -> CheckResult:
-    """Check 30 (WARN, #1011): a committed per-unit companion PNG at a
+    """Check 31 (WARN, #1011): a committed per-unit companion PNG at a
     body-cited figure SHA is unreferenced by any body image URL.
 
     INVERSE direction of checks 4b/22/29 (which verify what the body
@@ -6412,6 +6430,298 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
     return CheckResult(label, True, detail)
 
 
+# ─── Check 30: HF file-count claims vs the Hub tree (WARN) ──────────────────
+#
+# #931 shipped "528 files" / "10 shards" / "3 files" / "198 files" for HF
+# artifacts where the scoped listing at the pinned revision holds
+# 515/9/2/197 — folder entries were counted as files. Check 23 verifies the
+# link RESOLVES; nothing verified the adjacent numeric claim. Check 30
+# extracts count claims sitting in two conservative positions relative to a
+# hex-pinned HF /tree markdown link and compares them against a files-only
+# count from the SAME bounded raw tree-endpoint probe checks 23/25 use
+# (#733 — never the SDK list_repo_tree / list_repo_files). WARN-only: a
+# claim miscount is a prose-hygiene defect, not a broken body; and a WARN
+# can never block offline (every non-definitive probe outcome SKIPs).
+
+# A markdown link whose target is an HF Hub URL. Two-stage extraction: match
+# the link structure first, then scan the TEXT for a count-noun and parse the
+# TARGET with the shared _HF_HUB_TREE_BLOB_URL_RE.
+_MD_HF_LINK_RE = re.compile(
+    r"\[(?P<text>[^\]]{1,300})\]\((?P<url>https?://huggingface\.co/[^)\s]+)\)"
+)
+# A numeric count claim: "515 files" / "1 file" / "10 shards". Comma-grouped
+# thousands allowed ("1,234 files"); bounded at 6 plain digits.
+_COUNT_NOUN_RE = re.compile(
+    r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b",
+    re.IGNORECASE,
+)
+# A parenthetical that OPENS with the count-noun, immediately preceding a
+# markdown HF link (<=80 chars of qualifier inside the paren, <=5 chars of
+# separator between `)` and `[` — spaces plus an optional `:` / dash): the
+# #931 footer shape
+# `... (515 files verified via scoped listing): [issue931_story_map @ ...](url)`.
+_COUNT_PAREN_LINK_RE = re.compile(
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b[^()]{0,80}\)"
+    r"\s{0,2}[:\u2013\u2014-]?\s{0,2}"  # ':' / en-dash / em-dash / hyphen separators
+    r"\[[^\]]{1,300}\]\((?P<url>https?://huggingface\.co/[^)\s]+)\)",
+    re.IGNORECASE,
+)
+# Per-body cap on UNIQUE (repo, sha, prefix) count probes. Worst-case wall
+# arithmetic (the deadline is checked only AFTER each page fetch): one page
+# costs up to _HF_PROBE_ATTEMPTS x _HF_PROBE_TIMEOUT_S + _HF_PROBE_SLEEP_S
+# ≈ 10.5 s, so a probe's worst case is ≈ _HF_PROBE_DEADLINE_S + one page
+# envelope ≈ 22.5 s (~21-23 s), and the per-body worst case is
+# _HF_COUNT_MAX_PROBES x that ≈ 3 min — reached only when the Hub is
+# pathologically slow on EVERY page of EVERY prefix; typical is one
+# sub-second page per prefix. Claims past the cap surface as unverified
+# notes, never a WARN.
+_HF_COUNT_MAX_PROBES = 8
+# Successful EXHAUSTIVE listings only: (repo_id, repo_type, sha, prefix) →
+# (n_files, n_dirs). A skip (throttle / cap / offline) is NEVER cached —
+# same convention as _HF_EXISTENCE_CACHE (#733) — so a transient throttle
+# that has since cleared is re-probed on the next verify_text invocation.
+_HF_TREE_FILE_COUNT_CACHE: dict[tuple[str, str, str, str], tuple[int, int]] = {}
+
+
+def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, str]]:
+    """Extract ``(claimed_count, noun, repo_id, repo_type, sha, path_prefix)``
+    tuples for numeric file/shard-count claims ADJACENT to hex-pinned HF
+    ``/tree`` markdown links (check 30). Fence-stripped; deduplicated;
+    ``/blob/`` links and moving refs (``/tree/main``) are out of scope (the
+    shared URL regex only matches 7-40-char hex revisions, mirroring
+    check 23).
+
+    Two conservative positions (precision over recall — a missed claim costs
+    nothing, the check is a net-new WARN):
+
+    - **Pattern A** — the count-noun sits INSIDE the markdown link TEXT
+      (``[pairs_meta, 9 files](…/tree/<sha>/…)``): the number and the link
+      are structurally bound, so unrelated prose numbers ("seed 42",
+      "180 of 197 valid quotes" after a link) can never match.
+    - **Pattern B** — a parenthetical that OPENS with the count-noun
+      immediately precedes the link (``(515 files verified via scoped
+      listing): [x](…)``, the #931 footer shape).
+
+    Known recall sacrifices (each avoids a concrete false-positive class):
+    prose counts near BARE (non-markdown) HF URLs; counts AFTER the link;
+    parentheticals where the count is not leading ("(total 515 files)");
+    compound claims ("8 eval JSONs + 2 npz"); nouns other than file(s) /
+    shard(s) ("rows" / "completions" are RECORD counts, not file counts).
+    """
+    kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
+    stripped = _strip_fenced_blocks(body)
+    out: list[tuple[int, str, str, str, str, str]] = []
+    seen: set[tuple] = set()
+
+    def _add(count_s: str, noun: str, url: str) -> None:
+        url = url.rstrip(".,;:!?")
+        m = _HF_HUB_TREE_BLOB_URL_RE.match(url)
+        if m is None:
+            return
+        if f"/tree/{m.group('sha')}" not in url:
+            return  # a /blob/ link is a single file — a count claim there is out of scope
+        count = int(count_s.replace(",", ""))
+        repo_id = f"{m.group('owner')}/{m.group('repo')}"
+        key = (
+            count,
+            noun.lower().rstrip("s"),
+            repo_id,
+            m.group("sha"),
+            (m.group("path") or "").rstrip("/"),
+        )
+        if key in seen:
+            return
+        seen.add(key)
+        out.append(
+            (
+                count,
+                noun,
+                repo_id,
+                kind_to_type[m.group("kind")],
+                m.group("sha"),
+                (m.group("path") or "").rstrip("/"),
+            )
+        )
+
+    for lm in _MD_HF_LINK_RE.finditer(stripped):  # Pattern A: count in link TEXT
+        for cm in _COUNT_NOUN_RE.finditer(lm.group("text")):
+            _add(cm.group("count"), cm.group("noun"), lm.group("url"))
+    for pm in _COUNT_PAREN_LINK_RE.finditer(stripped):  # Pattern B: paren before link
+        _add(pm.group("count"), pm.group("noun"), pm.group("url"))
+    return out
+
+
+def _hf_count_files_under_prefix(
+    repo_id: str, repo_type: str, sha: str, path_prefix: str
+) -> tuple[str, int, int, str]:
+    """Bounded scoped-recursive tree listing → ``(status, n_files, n_dirs,
+    note)`` (check 30).
+
+    Mirrors ``_hf_probe_keyword``'s loop (#733): direct GETs via
+    ``_hf_tree_get`` (real per-request timeout, ≤ ``_HF_PROBE_ATTEMPTS``
+    retries/page), following Link-header pagination OURSELVES under
+    ``_HF_PROBE_MAX_PAGES`` + ``_HF_PROBE_DEADLINE_S``. Counts only entries
+    with ``"type" == "file"`` under the prefix (``"directory"`` entries
+    counted separately for the files+folders diagnostic; an entry whose path
+    IS the prefix and is a directory is the prefix itself, not content, and
+    is skipped). ``status == "ok"`` ONLY for an EXHAUSTIVE listing
+    (``next_page is None``); a cap hit, ``not_found``, or any transient
+    error is ``"skip"`` — a partial count must never ground a WARN.
+    """
+    needle = path_prefix.strip("/")
+    url = _hf_tree_url(repo_id, repo_type, sha, needle)
+    params: dict | None = {"recursive": True}
+    headers = _hf_build_headers()
+    started = time.monotonic()
+    pages = 0
+    n_files = n_dirs = 0
+    while True:
+        res = _hf_tree_get(url, params=params, headers=headers, timeout_s=_HF_PROBE_TIMEOUT_S)
+        if res.status == "not_found":
+            return "skip", -1, -1, "no such revision/path"
+        if res.status == "indeterminate":
+            return "skip", -1, -1, res.note
+        for e in res.entries:
+            path = e.get("path", "")
+            if not _hf_under_prefix(path, needle):
+                continue
+            etype = e.get("type")
+            if etype == "file":
+                n_files += 1
+            elif etype == "directory" and path != needle:
+                n_dirs += 1
+        pages += 1
+        if res.next_page is None:
+            return "ok", n_files, n_dirs, ""
+        if pages >= _HF_PROBE_MAX_PAGES or time.monotonic() - started > _HF_PROBE_DEADLINE_S:
+            return "skip", -1, -1, "HF tree listing exceeded page/time cap"
+        # The Link rel="next" URL already carries the params; do not re-send them.
+        url, params = res.next_page, None
+
+
+def _hf_file_count_for_prefix(
+    repo_id: str, repo_type: str, sha: str, path_prefix: str
+) -> tuple[str, int, int, str]:
+    """Fence + optional-dependency + cache wrapper around
+    ``_hf_count_files_under_prefix`` (mirrors ``_hf_url_existence`` /
+    ``_hf_keyword_present_under_prefix`` exactly): SKIPs under the
+    ``EPM_VERIFY_BODY_NO_HF=1`` offline fence or when ``huggingface_hub`` is
+    unavailable; caches ONLY successful exhaustive listings in
+    ``_HF_TREE_FILE_COUNT_CACHE`` (a skip is never cached)."""
+    if os.environ.get("EPM_VERIFY_BODY_NO_HF") == "1":
+        return "skip", -1, -1, "HF probe fenced"
+    try:
+        import huggingface_hub  # noqa: F401 — local import: optional-dependency guard
+    except ImportError:
+        return "skip", -1, -1, "huggingface_hub unavailable"
+    key = (repo_id, repo_type, sha, path_prefix.strip("/"))
+    cached = _HF_TREE_FILE_COUNT_CACHE.get(key)
+    if cached is not None:
+        return "ok", cached[0], cached[1], ""
+    status, n_files, n_dirs, note = _hf_count_files_under_prefix(
+        repo_id, repo_type, sha, path_prefix
+    )
+    if status == "ok":
+        _HF_TREE_FILE_COUNT_CACHE[key] = (n_files, n_dirs)
+    return status, n_files, n_dirs, note
+
+
+def check_hf_file_count_claims(body: str) -> CheckResult:
+    """Check 30 (WARN): numeric file-count claims adjacent to hex-pinned HF
+    ``/tree`` links must match a files-only scoped Hub tree count.
+
+    Incident: task #931 shipped "528 files" / "10 shards" / "3 files" /
+    "198 files" where the scoped listing at the pinned revision holds
+    515/9/2/197 — folder entries were counted as files. This check compares
+    each extracted claim (``_gather_hf_count_claims`` — Pattern A count in
+    link text / Pattern B paren-before-link; see its docstring for the
+    precision/recall trade-offs) against an EXHAUSTIVE files-only count of
+    the pinned prefix (``_hf_file_count_for_prefix`` → the #733 bounded raw
+    tree-endpoint probe; folders excluded).
+
+    Semantics:
+
+    - **WARN, never FAIL.** A mismatch returns ``CheckResult(name, True,
+      detail, is_warn=True)`` — ``passed`` stays True so overall ``ok``
+      never flips. There is NO code path returning ``passed=False``.
+    - **Files claims are two-sided; shard claims are one-sided.** A hex
+      pin is immutable so a "N files" claim admits exact comparison; a
+      legitimate "9 shards" prefix can also hold a manifest/sidecar
+      (10 files), so shard claims WARN only when claimed > file count —
+      the folder-inflation signature (#931's "10 shards" vs 9 files).
+    - **Descriptive diagnostics.** When the claimed count equals
+      files+folders, the WARN notes the claim is *consistent with*
+      files+folders (folder entries are not files) — a diagnosis hint,
+      not asserted causation. When the claim UNDERCOUNTS the prefix
+      (claimed < files), the WARN carries the hedge that the claim may
+      describe a subset of the prefix (an overcount cannot be a subset,
+      so the hedge is omitted there).
+    - **Fail-soft everywhere.** The offline fence
+      (``EPM_VERIFY_BODY_NO_HF=1``), a missing ``huggingface_hub``, a
+      429 / network error, ``not_found``, a page/time-cap hit, and the
+      per-body ``_HF_COUNT_MAX_PROBES`` cap all surface as `unverified`
+      notes on a PASS line; a PARTIAL count never grounds a WARN. When
+      mismatches and unverified claims coexist, the unverified list is
+      appended to the WARN detail (never dropped).
+    - **Probe accounting.** Unique ``(repo, sha, prefix)`` keys are probed
+      AT MOST once per invocation via an intra-invocation memo — a second
+      claim on a key whose probe SKIPPED reuses the skip note instead of
+      re-probing, and skipped keys count toward ``_HF_COUNT_MAX_PROBES``.
+      The cross-process ``_HF_TREE_FILE_COUNT_CACHE`` stores only
+      successful exhaustive listings, so a later invocation re-probes a
+      cleared throttle.
+
+    Vacuous PASS — with ZERO Hub probes issued — when no count claim sits
+    adjacent to an HF tree link.
+    """
+    name = "HF file-count claims match the Hub tree"
+    claims = _gather_hf_count_claims(body)
+    if not claims:
+        return CheckResult(name, True, "no file-count claims adjacent to HF tree links")
+    mismatched: list[str] = []
+    unverified: list[str] = []
+    probe_memo: dict[tuple[str, str, str, str], tuple[str, int, int, str]] = {}
+    for count, noun, repo_id, repo_type, sha, prefix in claims:
+        key = (repo_id, repo_type, sha, prefix)
+        if key not in probe_memo:
+            if len(probe_memo) >= _HF_COUNT_MAX_PROBES:
+                cap_note = f"`{prefix or repo_id}@{sha[:8]}` (per-body probe cap)"
+                if cap_note not in unverified:
+                    unverified.append(cap_note)
+                continue
+            probe_memo[key] = _hf_file_count_for_prefix(repo_id, repo_type, sha, prefix)
+        status, n_files, n_dirs, note = probe_memo[key]
+        if status != "ok":
+            skip_note = f"`{prefix or repo_id}@{sha[:8]}` ({note})"
+            if skip_note not in unverified:
+                unverified.append(skip_note)
+            continue
+        if noun.lower().startswith("shard") and count <= n_files:
+            continue  # shard claims are one-sided: only folder-inflation WARNs
+        if count == n_files:
+            continue
+        msg = (
+            f"body claims {count} {noun} at `{prefix or '/'}` but `{repo_id}@{sha[:8]}` "
+            f"holds {n_files} file(s)"
+        )
+        if n_dirs and count == n_files + n_dirs:
+            msg += (
+                f" + {n_dirs} folder(s) — the claimed count is consistent with "
+                "files+folders (folder entries are not files)"
+            )
+        elif count < n_files:
+            msg += " (or the claim describes a subset of the prefix)"
+        mismatched.append(msg)
+    unverified_detail = ""
+    if unverified:
+        unverified_detail = f"; {len(unverified)} unverified (count not confirmed): " + "; ".join(
+            unverified
+        )
+    if mismatched:
+        return CheckResult(name, True, "; ".join(mismatched) + unverified_detail, is_warn=True)
+    return CheckResult(name, True, f"{len(claims)} claim(s) checked" + unverified_detail)
+
+
 def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> CheckResult:
     """Lens 14 — mechanical concerns audit (binding-concerns contract,
     composed onto the 2-content-section clean-result spec on 2026-05-31
@@ -7969,7 +8279,8 @@ CHECKS = [
     check_figure_panel_prose_vs_sidecar,  # check 26 (FAIL)
     check_figure_label_codes,  # check 28 (WARN) — opaque config codes in figure sidecar text
     check_figure_tracked_at_head,  # check 29 (WARN) — figures tracked at live refs (#964, #841)
-    # Check 30 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
+    check_hf_file_count_claims,  # check 30 (WARN) — count claims vs Hub files-only count (#931)
+    # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`
     # (#1011; the check-20/#921 precedent).
@@ -8137,7 +8448,7 @@ def verify_text(
             body, issue=issue, eval_root=eval_root, body_source_path=body_source_path
         )
     )
-    # Check 30 (WARN, #1011): orphaned per-unit companion figures — needs the
+    # Check 31 (WARN, #1011): orphaned per-unit companion figures — needs the
     # issue number for figures-dir scoping, so it lives outside the body-only
     # CHECKS list (check-20/#921 precedent).
     results.append(check_orphaned_per_unit_figures(body, issue=issue))
