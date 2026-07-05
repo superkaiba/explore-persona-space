@@ -1,7 +1,7 @@
 ---
-title: Stitched context-only and query-only read-outs beat the full-prompt ridge read-out
-  at recovering the mean answer activation under both last-token and span-mean feature
-  summaries (MODERATE confidence)
+title: Attention mixing adds linearly readable information once the mixed forward
+  is read at matched query-span granularity — the earlier full-prompt deficits were
+  last-token-slot and span-dilution read-out artifacts (MODERATE confidence)
 kind: experiment
 tags:
 - followup-auto
