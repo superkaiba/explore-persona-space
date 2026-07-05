@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1056,
+  "highest_id": 1057,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -450,6 +450,13 @@
       "path": "tasks/proposed/1056",
       "status": "proposed",
       "title": "daily-fix: critics verify figures against pinned blob only"
+    },
+    "1057": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1057",
+      "status": "proposed",
+      "title": "daily-fix: guard_log_dump exempts code files from size heuri"
     },
     "106": {
       "has_clean_result": true,
