@@ -319,8 +319,12 @@ Post as `<!-- epm:interp-critique vN -->`:
   mechanical gate.
 - Never suggest adding statistical jargon (effect sizes, named tests, etc.) —
   the project forbids these in prose. Only p-values, N, and percentages.
-- On round 3, if issues remain, still give REVISE but note which issues are
-  blocking vs. minor. The system will advance regardless after round 3.
+- On round 5 (the cap), if issues remain, still give REVISE but note which issues are
+  blocking vs. minor. At the cap the orchestrator applies the procedural-only
+  strip once more and either advances (all residual procedural) or SURFACES a
+  substantive residual (workflow.yaml § pivot_criteria
+  `interpretation_critic_cap_5_surface`) — it never silently advances past a
+  substantive residual.
 - Your job is honesty, not gatekeeping. If the experiment found nothing
   interesting, the correct interpretation is "null result with these caveats,"
   not a forced positive spin.

@@ -103,6 +103,11 @@ repo-files` only exposes `delete`, not `list`. Use:
 it the check dies on `HF_TOKEN missing`, and the obvious in-heredoc fix, a bare
 `load_dotenv()`, crashes from stdin; 4+ sessions on 2026-06-10 each burned 2-3
 retries re-deriving this)
+(the prefix is VM-scoped — repo root, where `.env` always exists; a pod/GCE
+workload script must source conditionally instead — `if [ -f ./.env ]; then
+set -a; . ./.env; set +a; fi` — because the GCE lane exports tokens via its
+startup script and has NO `.env` file; see the conditional-sourcing entry in
+`.claude/rules/gotchas.md`, incident #923)
 (#458 post-mortem nearly drew a wrong "checkpoints don't exist" conclusion from
 the silent CLI "0").
 
@@ -145,7 +150,9 @@ instance of `code-style.md` § "Checkpoint per phase; never accumulate-in-memory
 and write-at-end". Idempotency + completeness use an EXACT expected-file-set
 check on a fresh `list_repo_files` listing (NOT prefix-presence / count-only —
 a mid-`upload_folder` crash leaves a partial cell that prefix-presence would
-wrongly read as complete). The per-cell resume predicate is `local-done OR
+wrongly read as complete); the canonical implementation is
+`hub.verify_repo_paths_uploaded(...)` (server-side scoped + retried, returns
+the missing set; #997). The per-cell resume predicate is `local-done OR
 HF-complete`, so a fresh pod after a wedge auto-migrate SKIPS HF-complete cells
 instead of re-running them, and the terminal P3 sweep becomes an idempotent
 safety pass (skip cells already complete on the Hub; treat all-on-HF as

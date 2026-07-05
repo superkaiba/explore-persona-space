@@ -546,6 +546,35 @@ and NOT figure captions. Those reader-facing surfaces are what Thomas
 adapts for Slack; the appendix + Data verbatim rows are agent-facing and
 tolerate denser prose.
 
+**Hard ban gate scoping (binding; incidents #498/#518/#923):** if you run
+the `/humanize` hard ban gate (`~/.claude/skills/humanize/check_bans.sh`),
+run it over AUTHORED PROSE ONLY — the ELIDED copy below IS the ban-gate
+input for clean-result work (a repo-side override of the user-global
+skill's whole-body gate wording), never the raw whole draft. The
+`**Sample training/evaluation data + completions:**` slot REQUIRES verbatim
+raw model outputs, which legitimately contain ban-listed strings
+("Certainly!", "Sure, I'd be happy to help"). Elide the verbatim surfaces
+first — fenced ``` blocks, `<details>...</details>` example blocks,
+`>`-blockquoted lines (with or without a following space), `**Completion:**`
+sample lines:
+
+    awk '/^```/{f=!f; next} f{next} /^<details/{d=1} d{if(/<\/details>/)d=0; next} /^>/{next} /^\*\*Completion:\*\*/{next} {print} END{if(f||d) exit 3}' \
+      .claude/cache/experiment-<N>-clean-result.md > /tmp/experiment-<N>-ban-scan.md \
+      && ~/.claude/skills/humanize/check_bans.sh /tmp/experiment-<N>-ban-scan.md
+
+awk exit 3 = structurally unbalanced draft (unclosed fence/`<details>`) — a
+hard workflow error: the gate does NOT run; fix the draft structure and
+re-run. A hit surviving elision is PRESUMPTIVELY authored prose — default:
+real FAIL, rewrite it; if inspection shows it is verbatim sample text the
+elision missed (indented fence, inline `<details>`, multi-line completion),
+strengthen the elision instead and document the disposition — NEVER rewrite
+the sample. A hit whose only occurrences were elided is a FALSE POSITIVE:
+PASS on authored prose, NEVER rewrite or scrub the sample to satisfy the
+gate (it is experimental evidence), and document the disposition so the
+orchestrator carries it into the `epm:humanize-loop` note, naming the
+banned string AND its location (the #923 form). Never move authored prose
+into a blockquote/fence to dodge the gate.
+
 ## Step 5: Verify
 
 Run the pre-publish clean-result validator against the local body file:
@@ -557,7 +586,7 @@ uv run python "$REPO_ROOT"/scripts/audit_clean_results_body_discipline.py .claud
 
 Run BOTH gates. `verify_task_body.py` enforces structure; `audit_clean_results_body_discipline.py` enforces the prose-discipline anti-patterns (bracketed-CI `[lo, hi]` in reader-facing prose via its `interval_inline` regex, `<letter>-family` / opaque codes, `byte identical`). The clean-result-critic runs the SAME discipline audit as its mechanical pre-pass, so any finding here is a guaranteed round-1 bounce — fixing it before posting saves a full analyzer↔critic REVISE round. (Incident: #641 / #559 / #657 round-1 each FAILed on bracketed-CI the Step 4.6 eyeball-checklist missed, 2026-06-18.) Every FAIL from EITHER gate must be fixed before posting. WARNs may ship when explicitly acknowledged in the body (e.g. the qualitative-data-link WARN for runs whose raw completions weren't uploaded — pair with a "re-run with raw-completion upload" note in the relevant result / `## Methodology → **Sample training/evaluation data + completions:**`). Do NOT proceed to Step 6 until both gates are FAIL-free.
 
-The verifier enforces the mechanical checks for the four-flat-H2 (v4) spec — the canonical per-generation enumeration lives in the `scripts/verify_task_body.py` docstring; each check branches on the `<!-- clean-result-v4 -->` sentinel. The v4 essentials a v4 draft must clear: body-nonstub (check 0); no-duplicate-frontmatter (check 0b); title confidence tag; FOUR required H2s in order (`## Takeaways`, `## Goal`, `## Methodology`, `## Results`) — a stray v3 content H2 (`## What I ran` / `## Findings` / `## Data` / `## Reproducibility`) or any retired earlier H2 (`## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure`) is a hard FAIL (forces clean migration to v4); v4-structure (check 3, `check_v4_structure`) — `## Takeaways` 3-6 bullets (authoritative count gate), `## Goal` carries both slots, `## Methodology` carries `**Training:**` (or the no-training marker) + `**Evaluation:**`, `## Results` has ≥1 `### <result>`; at least one `![alt](url)` figure inline under `## Results` + figure URLs resolvable + commit-pinned; Confidence — the H1 title tag is the source of truth (gated on the v2/v3/v4 sentinel); the `**Repro:**` footer present with the `**Context:**` label (check 7); URL permanence + sentinel scrub + same-repo artifact existence over the footer; cherry-picked / subset-disclosure label preceding every sample block in `## Methodology` + `## Results` (checks 10/19); qualitative-data link preceding every sample block in `## Results` + the `## Methodology` Sample slot (check 11); Methodology completeness (check 18, `check_v4_methodology_shape`) — the `**Training:**` hyperparameter table (or no-training marker) + the Sample slot's pinned link; word caps (check 20, `check_v4_word_caps`) — per-`### <result>` ≥180-word hard FAIL, Takeaways-bullet ≤30 / caption ≤60 / total-prose WARN (Methodology excluded); Results three-beat (check 21, `check_v4_results_beat`, WARN); lr matches plan (check 16) — the lr in the `## Methodology` Training table must appear in the approved `plans/plan.md`; Context provenance present (check 17). See `CLAUDE.md § Experiment Report Structure` + `SPEC.md § "v4 body shape"` for the canonical shape.
+The verifier enforces the mechanical checks for the four-flat-H2 (v4) spec — the canonical per-generation enumeration lives in the `scripts/verify_task_body.py` docstring; each check branches on the `<!-- clean-result-v4 -->` sentinel. The v4 essentials a v4 draft must clear: body-nonstub (check 0); no-duplicate-frontmatter (check 0b); title confidence tag; FOUR required H2s in order (`## Takeaways`, `## Goal`, `## Methodology`, `## Results`) — a stray v3 content H2 (`## What I ran` / `## Findings` / `## Data` / `## Reproducibility`) or any retired earlier H2 (`## Human TL;DR` / `## TL;DR` / `## Details` / `## Figure`) is a hard FAIL (forces clean migration to v4); v4-structure (check 3, `check_v4_structure`) — `## Takeaways` 3-6 bullets (authoritative count gate), `## Goal` carries both slots, `## Methodology` carries `**Training:**` (or the no-training marker) + `**Evaluation:**`, `## Results` has ≥1 `### <result>`; at least one `![alt](url)` figure inline under `## Results` + figure URLs resolvable + commit-pinned; Confidence — the H1 title tag is the source of truth (gated on the v2/v3/v4 sentinel); the `**Repro:**` footer present with the `**Context:**` label (check 7); URL permanence + sentinel scrub + same-repo artifact existence over the footer; cherry-picked / subset-disclosure label preceding every sample block in `## Methodology` + `## Results` (checks 10/19); qualitative-data link preceding every sample block in `## Results` + the `## Methodology` Sample slot (check 11); Methodology completeness (check 18, `check_v4_methodology_shape`) — the `**Training:**` hyperparameter table (or no-training marker) + the Sample slot's pinned link; word caps (check 20, `check_v4_word_caps`) — per-`### <result>` ≥180-word hard FAIL, Takeaways-bullet ≤30 / caption ≤60 / total-prose WARN (Methodology excluded); Results three-beat (check 21, `check_v4_results_beat`, WARN); lr matches plan (check 16) — the lr in the `## Methodology` Training table must appear in the approved `plans/plan.md`; Context provenance present with a lineage token (check 17). See `CLAUDE.md § Experiment Report Structure` + `SPEC.md § "v4 body shape"` for the canonical shape.
 
 ## Step 6: Promote the source experiment to a clean-result (inline)
 

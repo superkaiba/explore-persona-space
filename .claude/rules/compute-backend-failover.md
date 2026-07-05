@@ -438,6 +438,26 @@ recovery for a hung-but-RUNNING VM is a manual RunPod pivot. (See also the
 #491 `bufio.Scanner: token too long` zombie in `.claude/rules/gotchas.md`,
 a sibling hung-but-RUNNING mode recoverable in place via SSH relaunch.)
 
+### Live-diagnosis access to a GCE instance (SSH / serial / Monitoring)
+
+Three access facts, each re-discovered by multiple sessions on 2026-07-02
+(≥5 sessions ate a failed first attempt):
+
+- **SSH: external-IP first.** The default `gcloud compute ssh` tries an
+  IAP tunnel, which the `eps-gcp` configuration is NOT authorized for —
+  the first attempt fails every time. Pass the external-IP form up front
+  (`gcloud compute ssh <name> --configuration=eps-gcp --zone=<zone>
+  --tunnel-through-iap=false`, or plain `ssh` to the instance's external
+  IP); fall back to the serial console when guest networking is dead
+  (the #667 wedge above).
+- **Serial console is the always-available read** (`gcloud compute
+  instances get-serial-port-output --configuration=eps-gcp`); the #854
+  eager `[crash-persist]` lines land there.
+- **The Cloud Monitoring API is not enabled** on `eps-persona-gpu-jun2026`
+  — metric probes return nothing. Diagnose via serial console + SSH, or
+  enable the API once (a deliberate ops change, not something a session
+  does mid-run).
+
 ### Gate-park zombie — RUNNING + terminal `eps/phase` (#908/#935)
 
 A GCP workload that exits CLEANLY at a blocking gate (or finishes) leaves
@@ -515,6 +535,26 @@ for the cheap intents and SUPERSEDES that terminal for them ONLY:
   terminal, NOT a RunPod fallback (the watcher's capacity-retry pass keys on
   `no_compute_available`, so the distinct reason means a structurally-unservable
   `cpu-bigmem` RunPod launch is never auto-retried).
+- **Footprint feasibility gate + disk threading (#1010, incident #958).** A
+  plan-STATED footprint (`spec.extra["boot_disk_gb"]` / `["min_ram_gb"]`, from
+  `dispatch_issue.py --boot-disk-gb` / `--min-ram-gb`) is checked at
+  `_runpod_terminal_rung` against `router.RUNPOD_CPU_INSTANCE_CAPS`
+  (probe-verified effective `containerDiskInGb` caps — cpu3g-2-8 → 20,
+  cpu3c-8-16 → 50 honored floor — plus fixed RAM); an unsatisfiable footprint
+  refuses BEFORE any RunPod API call with the typed
+  `CpuFallbackInfeasibleError` / `reason: cpu_fallback_infeasible_for_plan`
+  (a `CpuExhaustedNoRunpodLaneError` subclass; NOT in
+  `TRANSIENT_CAPACITY_REASONS` — the instance can never grow to fit the
+  plan). A feasible `boot_disk_gb` is THREADED into the provision argv
+  (`--container-disk-gb max(50, boot_disk_gb)`, `RunPodBackend.launch`), and
+  `pod_lifecycle`'s CPU branch clamps a default-band over-cap effective
+  payload to the instance cap (the untouched default effective 50 exceeds the
+  cpu3g cap — pre-#1010 every default cpu-small RunPod provision failed
+  validation) while an explicit above-band request refuses pre-API.
+  ADOPTION: launch composers pass `--boot-disk-gb` whenever a CPU stage sizes
+  disk > 50 GB and `--min-ram-gb` whenever it sizes RAM > 16 GB — flag-less
+  launches keep today's behavior (experimenter pre-launch gate as the sole
+  defense).
 
 Tests of record: `tests/test_router.py` (`test_router_cpu_small_capacity_miss_falls_over_to_runpod`,
 `test_router_cpu_intent_capacity_miss_no_runpod_fallback` — the cpu-bigmem

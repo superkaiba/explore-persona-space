@@ -315,10 +315,14 @@ User pause affordance ("pause <N>", "hold <N>", "put <N> on hold"): a user
 pause is a DURABLE park, never a prose-only marker. The session driving <N>
 (or the PM/chat session receiving the directive) executes IN THIS ORDER —
 the order is load-bearing: the `on_hold` park is the COMMIT POINT and comes
-LAST, because an `on_hold` task with a still-RUNNING pod is invisible to
-the watcher's pod-safety pass (`on_hold` is in neither `AUTO_STOP_DONE` nor
-`POD_ACTIVE`, so it classifies "other" -> keep, NO alert — silent billing),
-whereas a crash BEFORE the park leaves the task at its prior ACTIVE status,
+LAST. Since #980 the watcher's pod-safety pass auto-stops an
+`on_hold`+RUNNING RunPod pod (`on_hold` is in the watcher's
+`POD_SAFETY_AUTO_STOP` set) after the 2-consecutive-miss guard (~20-30 min
+at the 10-min cron), so a crash inside the pause window bills for minutes,
+not forever — but the teardown-first ORDER stays load-bearing: the backstop
+is slow and covers RunPod MANAGED pods only (a GCP instance still relies on
+its `--max-run-duration` fence / `dispatch_issue.py finalize`), whereas a
+crash BEFORE the park leaves the task at its prior ACTIVE status,
 where orphan-respawn remains a loud backstop — and for `POD_ACTIVE` statuses
 (`approved`/`running`/`verifying`/`followups_running`) the pod-active-stale
 alert fires too:
@@ -2994,7 +2998,23 @@ ROOT (pinned to `main`), so the `--repo-branch` default (the cwd's
 current branch) resolves to `main`, NOT the issue branch where a
 per-issue driver script lives — the GCE startup script then clones
 `main`, the driver is absent, and the workload dies ~4 min in with the
-EXIT trap powering the VM off (#595, 2026-06-13). Four more gcp/auto
+EXIT trap powering the VM off (#595, 2026-06-13). Defense-in-depth
+(#987): `dispatch_issue.py` and `backend_poll.py` self-pin lane-infra
+imports (`explore_persona_space.backends.*`, lazy `scripts.*`) to the
+MAIN checkout via a `__main__`-guarded git-common-dir sys.path
+bootstrap, so a worktree-cwd script-mode invocation of either
+entrypoint no longer imports a stale branch lane template; the
+repo-root invocation rule above remains the documented default (it
+also selects main's venv for third-party deps), and the pin covers
+ONLY script-mode execution — module-IMPORT consumers of `backends/`
+(e.g. `autonomous_session_watch.py`) are deliberately unpinned, so
+the cron-wrapper convention of `cd`-ing to the main checkout before
+invoking them stays load-bearing. Residuals the pin does NOT close:
+pre-#987 worktree COPIES (branches cut before the fix) carry no
+bootstrap until rebased, an already-running process keeps its cached
+stale modules, import-mode callers (`dispatch_for_issue` from a
+worktree venv) get no pin, and already-launched workloads keep the
+template they were rendered with. Four more gcp/auto
 composition rules ((e) and (f) both hit live on #599, 2026-06-11;
 (g) from #608; (h) from #606): (e) **GPU
 sizing on the gcp/auto lanes comes from `--intent`, never `--gpus`** —
@@ -3360,19 +3380,39 @@ moment catches it, not the third pod-side crash.
 
 ##### Step 6d.0-bis: End-to-end smoke gate (multi-phase data-gen pipelines)
 
-For an experiment whose pipeline chains ≥2 distinct phases of data
-generation before training (typically gen → drift → train → eval →
-aggregate), the architecture-parity gate above is NOT enough: it checks
+For an experiment whose driver chains ≥2 distinct production phases
+before the first GPU launch — data-gen, training, eval, verify, upload
+(typically gen → drift → train → eval → aggregate; a datagen → train →
+verify → upload driver like #906's equally qualifies) — the
+architecture-parity gate above is NOT enough: it checks
 that smoke and sweep share ONE code path, not that EVERY phase ran. A
 resume-skip design serializes bug discovery — each pod cycle surfaces
 the next phase's bug — so before the GPU production launch the FULL
 pipeline must have executed once at tiny N (≈2-3 rows, 1 cell, 1 seed)
-so EVERY phase runs end-to-end on CPU / 1-GPU. Confirm the implementer's
+so EVERY phase runs end-to-end on CPU / 1-GPU.
+The tiny-N pass MUST meet the **tiny-real standard** for `kind:
+experiment`/`batch` drivers: it executes the production path with REAL
+library types at every internal seam the pipeline actually has —
+real tokenizer, real train engine + config builders + callbacks, real
+adapter round-trip, real verify/upload bodies (an API-only driver has
+no train engine; its own real seams bind instead) — faking ONLY
+GPU-scale weights (a from-config tiny same-arch model over the real
+vocab-id space) and the remote Hub boundary (signature-bound). A
+seam-stubbed / mocked smoke does NOT satisfy this gate: mock-seam
+smokes surface shape bugs one per GPU cycle (#906 r11-r14: four
+distinct production shape bugs, four ~1.5h pod cycles, every mocked
+smoke green beforehand; r15 = the tiny-real pivot). Worked example:
+`tests/test_issue906_tiny_real_e2e.py`; full recipe + the two CPU
+traps: `.claude/rules/gotchas.md` "Mock-seam smokes surface production
+shape bugs ONE PER GPU CYCLE".
+Confirm the implementer's
 `## Smoke run` report (per `experiment-implementer.md` § "End-to-end
 smoke run PER PHASE") carries a sub-section with exit code `0` + an
 artifact digest for EACH phase the pipeline executes — not just training
 or data-gen. Any phase missing, or showing only `--help` / `import` /
-`--dry-run` evidence → **REFUSE to dispatch**; bounce to the implementer
+`--dry-run` / seam-stubbed (mocked internal seams — the tiny-real
+standard's two sanctioned fakes excepted) evidence → **REFUSE to
+dispatch**; bounce to the implementer
 with `run the full gen→...→aggregate pipeline once at tiny N before
 production`. FAIL blocks production. (Origin: #408 — a multi-phase
 data-gen pipeline never smoke-tested end-to-end leaked 5+ distinct bugs
@@ -3729,6 +3769,27 @@ matches relaunch markers on that field to follow the new process
 rejects the marker and the poll keeps reading the frozen startup-script
 phase, and an omitted `pod=` is accepted only via the launch-time
 `epm:cluster-launched` timestamp baseline, so include it explicitly.
+
+**A successful relaunch also reconciles a stale `blocked`.** Immediately
+after posting the fresh `epm:run-launched`, read the current status
+(`task.py view <N> --json`); if it is EXACTLY `blocked`, run
+`uv run python scripts/task.py set-status <N> running --note 'relaunch
+succeeded; clearing stale blocked (epm:run-launched <ts>)'`. The stale
+`blocked` arises when an earlier failed round (a cap-hit, a
+STATE-TO-`blocked` exit, or a failed crash-fix cycle) parked the task and
+a LATER round's relaunch succeeded without flipping it back — #742 ran
+healthy ~35h at status `blocked` (2026-07-01→07-02) and the
+dashboard/watcher read wrong until the user asked. Guards: (a) flip ONLY
+`blocked` → `running`, never any other status — a same-issue follow-up
+round holds `followups_running`, never `blocked`, so the flip is inert
+there by construction; (b) the flip is a same-turn serial action after
+YOUR OWN relaunch — never flip on someone else's marker (the watcher's
+stale-blocked FLAG pass is deliberately flag-only; a human reconciles on
+its evidence); (c) if the relaunched run then fails, the normal failure
+path re-blocks — the flip does not suppress it; (d) RE-READ the status
+immediately before the `set-status` call — a non-`blocked` read at that
+instant ABORTS the flip (a human may have reconciled off the watcher
+flag concurrently; a redundant flip attempt is refused, never forced).
 
 The 540-second sleep stays under the Bash tool's 10-minute (`600000` ms)
 cap with margin; longer intervals are achievable by raising the sleep
@@ -4340,6 +4401,12 @@ When this skill is re-invoked in `running`:
    *Before applying either row, the Crash-fix circuit-breaker below checks for
    a same-signature repeat or a spent escape ladder and pivots to re-planning if
    either fires.*
+
+   *Either row's respawn, when its round ends in a successful relaunch
+   (fresh `epm:run-launched`), also triggers the stale-`blocked` reconcile
+   rule ("A successful relaunch also reconciles a stale `blocked`", Step
+   6d.2 poll-loop section) — a task parked `blocked` by an earlier failed
+   round must not stay `blocked` through a healthy relaunched run (#742).*
 
    **Zombie-GPU stall recovery brief (`stall_reason: vllm_worker_dead_zombie_gpu`).**
    When the `status=stalled` tick's `stall_reason` is
@@ -5154,7 +5221,9 @@ breadcrumb post lands before the new boundary and is not re-enumerated;
 markers posted after a task's LAST compute dispatch are never enumerated
 (they can no longer avert a launch); a legacy launch marker
 (`epm:run-launched` / `epm:cluster-launched` posted pre-fix without triage)
-still closes the window.
+still closes the window. A watcher-side NON-GATING observer audits this
+duty post-hoc (flags missing/'none' lines against a re-run of the
+enumerator's window; observe/alert only, never blocks — #967).
 
 **Detached VM-side long compute phases (setsid; pid+log in the breadcrumb — #833).**
 Any VM-LOCAL compute phase with projected wall-time >~15 min that the
@@ -5292,7 +5361,7 @@ re-invocation).**
    `task_workflow.stage_dispatch_should_skip` (run the pre-dispatch
    one-liner above — do not eyeball the scan).
    - Window = **30 min** for Codex-ensembled rounds (ALL `interpreting`
-     AND `clean-result` rounds 1-3 — every round spawns both the Claude
+     AND `clean-result` rounds up to the per-reviewer cap (5) — every round spawns both the Claude
      critic AND a `codex-*-critic` twin at `--effort high|xhigh` via
      `companion task` since the 2026-06-12 all-rounds policy; such
      rounds commonly exceed 15 min wall time).
@@ -5416,7 +5485,7 @@ discarded by Step 8's gap-fill decision rule).
 
    Reconcile rounds do NOT increment the per-reviewer round counter.
 
-**If `final_verdict == REVISE` (rounds 2-3):**
+**If `final_verdict == REVISE` (rounds 2-5):**
 
 Re-spawn analyzer (fresh context, sees original data + ALL critique
 feedback: Claude event + Codex event + reconcile event if any).
@@ -5518,6 +5587,38 @@ audit log records it, and proceed straight to 9a-ter.
      Δ-notation, undefined jargon — anti-patterns from CLAUDE.md
      "Statistics" rules and the clean-result-critic statistical-framing
      lens)
+
+   **Hard ban gate scoping (binding; incidents #498/#518/#923):** the
+   `/humanize` skill's mandatory `check_bans.sh` absolute-ban gate runs
+   over AUTHORED PROSE ONLY — for clean-result work the ELIDED copy below
+   IS the ban-gate input (a repo-side override of the user-global skill's
+   whole-body gate wording), never the raw whole body. SPEC-required
+   verbatim sample completions legitimately contain ban-listed strings
+   ("Certainly!", "Sure, I'd be happy to help"), and rewriting them to
+   satisfy the gate destroys scientific evidence. Gate the body file —
+   `/tmp/issue-<N>-humanize-loop.md` when the loop produced revisions; if
+   the loop made no revisions, materialize the current body to that path
+   first — AFTER eliding the verbatim-quotation surfaces: fenced ``` blocks,
+   `<details>...</details>` example blocks, `>`-blockquoted lines (with or
+   without a following space), and `**Completion:**` sample lines:
+   ```bash
+   awk '/^```/{f=!f; next} f{next} /^<details/{d=1} d{if(/<\/details>/)d=0; next} /^>/{next} /^\*\*Completion:\*\*/{next} {print} END{if(f||d) exit 3}' \
+     /tmp/issue-<N>-humanize-loop.md > /tmp/issue-<N>-ban-scan.md \
+     && ~/.claude/skills/humanize/check_bans.sh /tmp/issue-<N>-ban-scan.md
+   ```
+   awk exit 3 = structurally unbalanced body (unclosed fence/`<details>`) —
+   a hard workflow error: the gate does NOT run; fix the body structure
+   and re-run. A hit SURVIVING elision is PRESUMPTIVELY authored prose —
+   default: real FAIL, rewrite it; if inspection shows it is verbatim
+   sample text the elision missed (indented fence, inline `<details>`,
+   multi-line completion), strengthen the elision instead and document
+   the disposition — NEVER rewrite the sample. A hit whose ONLY
+   occurrences were elided is a FALSE POSITIVE: treat the gate as PASS on
+   authored prose, NEVER rewrite the sample, and DOCUMENT the disposition
+   in the `epm:humanize-loop` note (step 5), naming the banned string AND
+   its location. Never move authored prose into a blockquote/fence to
+   dodge the gate.
+
 3. Loop until all axes score ≤ 1 OR **3 orchestrator-level cycles**
    reached.
 4. If the loop revised the prose surfaces, write the new body to
@@ -5532,7 +5633,11 @@ audit log records it, and proceed straight to 9a-ter.
    (this is rare; the loop only edits prose, not structure).
 5. Post `epm:humanize-loop v1` on the source task with the final 6-axis
    scores + a one-line note ("converged in cycle K" or "exited at cap,
-   residual debt: axis X scored 2 — flagged to user").
+   residual debt: axis X scored 2 — flagged to user"). When the ban gate
+   recorded a verbatim-sample false positive, append the disposition to
+   the note, naming the string and its location (the #923 form: "ban
+   gate: PASS on authored prose; 1 hit ('Certainly!', ## Methodology
+   sample block) — false positive, left in place").
 
 **Skill availability fallback:** if `/humanize` is not loaded in the
 runtime (plugin missing), skip 9a-humanize entirely and proceed to
@@ -5629,7 +5734,8 @@ cells × folds × draws × epochs and the projected wall-time it implies;
 (2) the NAMED batched helper implementing the inner loop (e.g.
 `analysis/vectorized_mlp_skill.py`; the batched `perm_null_draws` in
 `analysis/null_battery.py`), or why the work is genuinely not batchable;
-(3) for reused parent code, that its inner loop + device routing were
+(3) for reused parent code, that its inner loop, device routing, + data-repo
+Hub-call scoping were
 INSPECTED, not assumed (cf. `.claude/rules/artifact-reuse.md`). Projected
 wall-time > ~1h without a batched inner loop is a STOP: vectorize first
 (`.claude/rules/vectorize-many-cell-fits.md`), then launch. If the
@@ -5879,7 +5985,7 @@ dispatching this round's critics.
    the mechanically-verifiable presentation set; it never overrides a
    register / story-arc / statistical-framing lens judgment.
 
-**If REVISE (rounds 2-3):**
+**If REVISE (rounds 2-5):**
 
 Re-spawn `analyzer` agent (fresh context, sees raw data + all
 interp-critique history + the latest clean-result-critique). Analyzer
@@ -7069,19 +7175,23 @@ suite directly and posts an `epm:test-verdict` event with the result.
       runs both from the repo root; the empty-diff NOTE is then expected and
       benign.)
    b. Run the printed command from the SAME worktree cwd (paths are
-      repo-relative). Record pass/fail + ALL selector stderr lines (the
-      provenance breadcrumb, the NOTE if any, and any WARN lines). Two
-      anti-silent-pass guards are LOAD-BEARING here — a `no tests ran` outcome
-      (pytest exit 0 with zero collected tests) is a **FAIL, never a PASS**:
-      it is the signature of a failed `cd` that ran pytest in a directory with
-      no tests (incident: issue 745, SHA 91bed41e, 2026-06-30 — the gate
-      reported PASS on `no tests ran ... pytest exit: 0` and was silently
-      skipped).
+      repo-relative), with the junit flags appended and a pre-run `rm -f` of
+      the junit path (a killed run must leave NO junit — pytest writes it only
+      at session exit; a stale file from a prior round must never be re-read).
+      Record pass/fail + ALL selector stderr lines (the provenance breadcrumb,
+      the NOTE if any, and any WARN lines). Two anti-silent-pass guards are
+      LOAD-BEARING here — a `no tests ran` outcome (pytest exit 0 with zero
+      collected tests) is a **FAIL, never a PASS**: it is the signature of a
+      failed `cd` that ran pytest in a directory with no tests (incident:
+      issue 745, SHA 91bed41e, 2026-06-30 — the gate reported PASS on
+      `no tests ran ... pytest exit: 0` and was silently skipped).
       ```bash
       # The cd to "$WT" in step (a) is REQUIRED — HARD-GUARD it (as above);
       # never let the gate run in the wrong dir on a silent cd failure:
       #   cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
-      PYTEST_OUT=$(uv run pytest <files> -v --tb=short 2>&1); PYTEST_RC=$?
+      rm -f /tmp/step9c-junit-issue-<N>.xml    # MANDATORY before EVERY gate pytest invocation
+      PYTEST_OUT=$(uv run pytest <files> -v --tb=short \
+        --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 2>&1); PYTEST_RC=$?
       echo "$PYTEST_OUT"
       # exit 0 + "no tests ran" (or "collected 0 items") is NOT a PASS:
       if echo "$PYTEST_OUT" | grep -qiE 'no tests ran|collected 0 items'; then
@@ -7091,12 +7201,69 @@ suite directly and posts an `epm:test-verdict` event with the result.
       ```
    c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
       `## Test scope` H2 names `full`, run the FULL suite instead — from the
-      SAME issue-worktree cwd (the branch's own test files exist only there) —
-      but as `timeout 60m uv run pytest tests/ -q -x --maxfail=1`; on
-      timeout/kill, capture `tail -50` of the run log so the stall surfaces
-      actionable evidence (this is the #665/#736 regression — keep it visible,
-      never a silent kill). Default scope is `touched`.
-2. Lint: `uv run ruff check . && uv run ruff format --check .`
+      SAME issue-worktree cwd — as:
+      ```bash
+      rm -f /tmp/step9c-junit-issue-<N>.xml
+      PYTEST_OUT=$(timeout 60m uv run pytest tests/ -q \
+        --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 2>&1); PYTEST_RC=$?
+      echo "$PYTEST_OUT"
+      ```
+      (NO `-x` / `--maxfail` — with the step-1d compare deciding the verdict,
+      an early-exit on the first known-red main failure would leave the rest
+      of the suite unexecuted and let compare PASS a truncated run; the 60m
+      timeout still bounds it.) `PYTEST_RC=$?` is captured IMMEDIATELY after
+      whichever pytest invocation ran (the 1b touched scope, or this override)
+      — step 1d's compare consumes `--pytest-rc "$PYTEST_RC"`, and an unset or
+      stale selected-scope rc would break its rc-not-in-{0,1} -> indeterminate
+      guard on an interrupted / internal-error full run. On timeout/kill
+      (`timeout`'s rc 124 lands in PYTEST_RC, so compare exits 2), capture
+      `tail -50` of `$PYTEST_OUT` so the stall surfaces actionable evidence
+      (the #665/#736 regression — keep it visible, never a silent kill).
+      Default scope is `touched`.
+   d. Classify failures against the known-red-on-main baseline ledger —
+      mechanical (`scripts/step9c_baseline.py compare`), never prose
+      arithmetic (#1022: on 2026-07-02 seven sessions each burned a round
+      re-proving red main was pre-existing). Runs AFTER the final pytest
+      invocation of step 1 (touched scope, or the 1c full-scope override —
+      compare gates the junit of whichever actually ran). From the SAME
+      worktree cwd:
+      ```bash
+      COMPARE_OUT=$(uv run python scripts/step9c_baseline.py compare \
+        --junitxml /tmp/step9c-junit-issue-<N>.xml --pytest-rc "$PYTEST_RC" \
+        --run-pristine --json); COMPARE_RC=$?
+      echo "$COMPARE_OUT"
+      ```
+      The COMPARE verdict — not the raw PYTEST_RC — decides pass/fail for
+      steps 1–2:
+      * `COMPARE_RC=0` → no NEW test failures and no lint regression; failures
+        listed in `stripped` are pre-existing on main and do NOT block (the
+        round may PASS steps 1–2 with PYTEST_RC=1).
+      * `COMPARE_RC=1` → NEW failure(s) the branch introduced and/or a lint
+        regression (the JSON names each). FAIL.
+      * `COMPARE_RC=2` → indeterminate (PYTEST_RC ∉ {0,1} — aborted/interrupted
+        run; missing/empty junitxml; suite crash; unusable ledger; dirty
+        pristine oracle; systemic main breakage). FAIL — never PASS on
+        indeterminate.
+      The two step-1b guards run BEFORE compare and are UNCHANGED: the cd
+      hard-guard and the `no tests ran` FAIL guard (zero collected is a FAIL
+      regardless of compare's exit).
+      If the compare JSON has `"stale": true`, kick a DETACHED background
+      ledger refresh so the next session gets a fresh baseline — do NOT block
+      this verdict on it:
+      ```bash
+      (cd "$REPO_ROOT" && setsid nohup timeout --kill-after=60s 2100s \
+        env OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 \
+        uv run python scripts/step9c_baseline.py refresh \
+        >> "$REPO_ROOT/logs/step9c_baseline_refresh.log" 2>&1 < /dev/null &)
+      ```
+2. Lint: covered by step 1d `compare` — repo-wide `ruff check` /
+   `ruff format --check` are diffed against the LIVE main-root baseline
+   (only an INCREASE fails; main carries 2000+ pre-existing ruff errors,
+   #1022), and the branch's touched `*.py` files must additionally be
+   ruff-clean + format-clean in absolute terms. Do NOT run bare
+   `uv run ruff check . && uv run ruff format --check .` as a verdict gate —
+   it always fails on pre-existing main red and re-derives what the ledger
+   already answers.
 3. Integration tests (conditional, if diff touches train/eval/orchestrate)
 4. Coverage gap report (flags, does not auto-generate)
 
@@ -7104,11 +7271,19 @@ The `epm:test-verdict v1` marker note records: scope used (`touched`/`full`),
 the files run, pass/fail counts, and ALL selector stderr diagnostics — the
 work-root + branch provenance breadcrumb, any `NOTE — empty diff` line, and
 any untested-touched-file WARNs (so the orchestrator surfaces wrong-cwd runs
-and coverage gaps — never silently skipped). A zero-collected / `no tests ran`
-outcome is recorded as FAIL (never PASS on exit 0) per step 1b's guard.
+and coverage gaps — never silently skipped), and the compare classification
+JSON (new vs known-red-stripped failures with any scan-test / diff-linked
+masking WARNs, the ruff delta vs the live main baseline, the ledger main_sha
++ age + stale flag, and any dirty-code-path flags). A zero-collected /
+`no tests ran` outcome is recorded as FAIL (never PASS on exit 0) per step
+1b's guard.
 
-Post `epm:test-verdict v1`. PASS -> Step 10. FAIL (count < 3) -> stay
-in `reviewing`, re-spawn implementer. FAIL (count >= 3) -> run
+Post `epm:test-verdict v1`. PASS = steps 1–2 pass via compare exit 0 (with
+`--pytest-rc` folded) AND neither step-1b guard fired, AND steps 3
+(conditional integration tests) and 4 (coverage gap report) completed per
+their existing rules -> Step 10. FAIL (`epm:test-verdict` FAIL count < 3) ->
+stay in `reviewing`, re-spawn implementer. FAIL (`epm:test-verdict` FAIL
+count >= 3) -> run
 CRON-TEARDOWN (`CronList` → `CronDelete` the `/issue-tick <N>` job — idempotent;
 no-ops for a code-change task that never armed one), then status to
 `blocked`. Fire `PushNotification({"message": f"#{N} BLOCKED: tests

@@ -195,13 +195,16 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   planning + 3 review rounds and crashed phase2 at the pre-train assert on the
   GCP lane because the lane cannot stage a VM-local-only mix AND no file
   resolved at the asserted path.)
-- **(i) Throughput fitness (reused CODE — fit / analysis / eval helpers; N/A
+- **(i) Throughput fitness (reused CODE — fit / analysis / eval /
+  upload-verify-staging helpers; N/A
   for data-only reuse):** the code-reuse default (CLAUDE.md "Reuse existing
   experiment code" / "Reuse existing in-repo tools/helpers") inherits a
   parent's fit/analysis code path — a `scripts/issue<M>_*` fit / predictor /
-  null-battery module, an `analysis/` helper, an eval harness the new run
+  null-battery module, an `analysis/` helper, an eval harness, or an upload /
+  verify / staging helper (an `issue<M>_common.py`-style module) the new run
   imports rather than rewrites. Before recording that reuse, READ the
-  inherited helper's inner loop and device routing. Two checks: **(1) batched
+  inherited helper's inner loop, device routing, and Hub-API call sites.
+  Three checks: **(1) batched
   inner axis** — the per-cell / per-fold / per-draw / per-row axis is
   vectorized into batched tensor ops per
   `.claude/rules/vectorize-many-cell-fits.md`; a serial Python loop over
@@ -213,10 +216,26 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   call-time parameter / flag / env lookup, not a hardcoded module constant; a
   `DEVICE = "cpu"` pin or an implicit CPU default FAILS (#763 and #812
   inherited `issue658_fit_predictors.py`'s module-level `DEVICE = "cpu"` and
-  ran batched-but-on-CPU for hours until the `EPM_FIT_DEVICE=cuda` cutover).
+  ran batched-but-on-CPU for hours until the `EPM_FIT_DEVICE=cuda` cutover);
+  **(3) scoped Hub-API calls** — every post-upload verify / staging /
+  existence-probe call the helper makes against the ~1M-file data repo is
+  prefix-scoped: `list_repo_tree(repo_id, path_in_repo=<prefix>,
+  repo_type="dataset", ...)` for subtree listings,
+  `HfApi().file_exists(...)` for single-path probes, with a BOUNDED outer
+  retry on a first-page 429/5xx (`huggingface_hub` pagination retries 429
+  only on FOLLOW-UP cursor pages, so the first page raises in a quota
+  storm — the #658 rule); an unscoped full-tree `list_repo_files` /
+  `snapshot_download` against the data repo FAILS. Full recipe + quota
+  arithmetic: `.claude/rules/gotchas.md` #833 entry; worked source fix:
+  `scoped_remote_listing` + `retry_hub_quota` in `scripts/issue810_common.py`
+  (readable via `git show 04701b2d56:scripts/issue810_common.py` on branch
+  `issue-810` until #810's merge lands it on main). (#810 btdr round,
+  2026-07-04: reused verify helpers crawled the whole data repo under the
+  2500-req/5-min org quota, wedging in 429 retry storms — retry 20/20 —
+  while an A100 idled at 0%.)
   On a failure, the remedy is NOT retrain/regenerate and NOT a caller-side
   workaround (wrapping the serial loop, monkey-patching the constant): **fix
-  at the SOURCE module** — batch / parametrize it there, so every future
+  at the SOURCE module** — batch / parametrize / scope it there, so every future
   reuser inherits the fix — applying the vectorize-first law (vectorize
   before reaching for GPU or a bigger machine). SCHEDULE that source-module
   fix in the plan: as its own phase, or as a companion infra task filed in
@@ -229,7 +248,8 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   and the review-side named-helper checks (#869 Fix D) — and a check-(i)
   failure never disqualifies the reuse CLASS; it routes to the source-module
   fix, then reuse. Record the inspection result — helper/function name,
-  batched-or-serial verdict, device handling — in the plan's reuse map
+  batched-or-serial verdict, device handling, and (when the helper touches
+  the Hub) the Hub-call-scoping verdict — in the plan's reuse map
   (§10 / §11) and reflect the implied wall-time in the corresponding §9
   compute row.
 - **(j) Pairwise provenance coherence (mutually-dependent artifact PAIRS).**
@@ -287,8 +307,8 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   `.claude/agent-memory/experiment-implementer/feedback_pinned_artifact_pair_mutual_inconsistency.md`.)
 
 A failing check other than (i) → retrain / regenerate; a failing throughput
-check (i) → fix the SOURCE module (batch / parametrize it there — never a
-caller-side workaround), then reuse. Say why in the plan either way.
+check (i) → fix the SOURCE module (batch / parametrize / scope it there —
+never a caller-side workaround), then reuse. Say why in the plan either way.
 
 ## Enforcement chain
 

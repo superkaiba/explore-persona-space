@@ -87,7 +87,11 @@ Your brief contains:
 - `interpretation_marker_path` — path on disk where the orchestrator wrote
   the latest `epm:interpretation v<n>` body for Codex to read.
 - `revision_round` — 1-indexed integer; matches the `v<n>` of the marker
-  you post. Cap 5 per reviewer.
+  you post. Cap 5 per reviewer; rounds 4-5 typically arrive as
+  delta-scoped re-reviews after a reconciler-bound REVISE, but an
+  agreed or unioned REVISE also produces them — compose delta-scoped
+  only when the brief carries a delta scope note (workflow.yaml
+  § ensemble_review).
 - `eval_results_paths` — list of JSON paths the analyzer cited.
 - `figure_paths` — list of PNG paths referenced in the interpretation body
   (for lens 6 plot-prose match — Codex multimodal works, verified

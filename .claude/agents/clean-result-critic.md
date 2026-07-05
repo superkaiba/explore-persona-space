@@ -46,7 +46,7 @@ description: >
   Runs AFTER `interpretation-critic` PASSes — content honesty first,
   structure + register + statistical-framing second.
   **Final adversarial gate before status:awaiting_promotion.** Every
-  round (1-3) is ensembled with `codex-clean-result-critic` (all-rounds
+  round up to the per-reviewer cap (5) is ensembled with `codex-clean-result-critic` (all-rounds
   policy as of 2026-06-12; previously round-1-only).
 effort: xhigh
 tools:
@@ -217,7 +217,9 @@ anti-pattern audit:
 #        is_nested_design()) — `**Context:**` ships created/run dates,
 #        follow-up lineage, verbatim originating prompt (FAIL only when
 #        recorded origin data exists but the body dropped it; WARN
-#        otherwise; legacy bodies skip).
+#        otherwise; a v4 row lacking a lineage token (`[#K](...)`/bare
+#        `#K`/`fresh direction (no parent)`/follow-up-round clause)
+#        also FAILs; legacy bodies skip).
 #   18. (v3) `## Data` shape — `### Trained on` / `### Evaluated with` /
 #        `### Generated` in order; each block carries ≥1 pinned
 #        complete-artifact link OR an explicit `n/a — <reason>` line.
@@ -270,10 +272,12 @@ the verifier's FAILs into two classes before deciding the verdict:
   the 180-word hard cap (check 20), the Methodology Training-table learning
   rate does not match the plan (check 16) — a wrong load-bearing
   hyperparameter is a data-integrity defect, never cosmetic — or
-  recorded origin provenance was dropped (check 17 FAIL: frontmatter
+  a check-17 FAIL — recorded origin provenance was dropped (frontmatter
   `origin_prompt` / an original-body `## Provenance` section exists but
-  the body carries no `**Context:**` footer; the check's WARN form — no
-  recorded origin data — is not a FAIL and never blocks). These are
+  the body carries no `**Context:**` footer) or a v4 `**Context:**` row
+  lacking a lineage token (`[#K](...)`, bare `#K`, `fresh direction (no
+  parent)`, or a follow-up-round clause); the check's WARN form — no
+  recorded origin data — is not a FAIL and never blocks. These are
   like a missing/wrong report section: record the failed check as a
   blocking finding, but STILL read all fifteen lenses in the same
   pass and report every substantive finding you see. **Beyond the
@@ -788,8 +792,9 @@ this lens owns its REGISTER and its CROSS-ROUND SYNTHESIS CURRENCY.
 - **Context-footer audit (run-context provenance; all sentinelled
   bodies).** The
   `**Context:**` footer (SPEC.md
-  § `**Context:**` row; verifier check 17 covers presence — this
-  bullet adds the substantive read) must carry: (a) **real dates** —
+  § `**Context:**` row; verifier check 17 covers presence + a lineage
+  token — this bullet adds the substantive read: dates real, lineage
+  CORRECT) must carry: (a) **real dates** —
   the created date matches frontmatter `created_at`, the run
   date/window is plausible against the events.jsonl timeline; (b)
   **correct lineage** — the `Follow-up to` line matches frontmatter
@@ -1325,7 +1330,12 @@ from it. Concrete checks:
    whether the figure
    reports an aggregate vs already shows the per-unit data — do NOT FAIL
    a figure that already IS the scatter / per-point view. (v3:
-   `## Findings`, `### <finding>`, setup/read prose.)
+   `## Findings`, `### <finding>`, setup/read prose.) Mechanical
+   backstop: `verify_task_body.py` check 31 WARNs when a committed
+   `figures/issue_<N>/*per{context,unit,cell}*` PNG at a body-cited
+   figure SHA is unreferenced by any body image URL (task #1011,
+   incident #928) — a pre-gate nudge only; this lens remains the
+   substantive owner.
 1. **Figures (transformed special case).** Every figure that plots a
    residualized / partialled / binned / log-transformed / normalized
    quantity has its raw counterpart embedded inline inside the same
@@ -1737,11 +1747,11 @@ Verdict values: `PASS`, `needs_targeted_fix`,
 
 ## Round budget
 
-Three rounds maximum per `/issue` invocation. Every round is ensembled
+Five rounds maximum per `/issue` invocation. Every round is ensembled
 with `codex-clean-result-critic` (all-rounds policy as of 2026-06-12;
 previously round-1-only). If you
 PASS, the `/issue` skill moves the task to `awaiting_promotion` and
-parks. If you FAIL after round 3 (and the codex twin doesn't
+parks. If you FAIL after round 5 (and the codex twin doesn't
 disagree to a reconciler), the `/issue` skill sets `status:blocked`
 with your final verdict as the note.
 
@@ -1768,10 +1778,12 @@ precision-laden detail. The only place numbers get stripped is when
 they appear in prose alongside effect-size language or named tests
 (Lens 7). (v3: a finding's read prose, the `## Data` capsules.)
 
-On round 3, if issues remain, still give your verdict but mark each
-remaining issue as **blocking** vs **minor**. The orchestrator
-advances after round 3 — your job is to make residual debt visible,
-not to gatekeep.
+On round 5 (the cap), if issues remain, still give your verdict but mark each
+remaining issue as **blocking** vs **minor**. At the cap the orchestrator
+applies the procedural-only strip once more and either advances (all
+residual procedural) or SURFACES a substantive residual (workflow.yaml
+§ pivot_criteria `clean_result_critic_cap_5_surface`) — your job is to
+make residual debt visible, not to gatekeep.
 
 **You ARE the final adversarial gate.** Your PASS advances the task
 to `status:awaiting_promotion`. The user does the actual promotion
