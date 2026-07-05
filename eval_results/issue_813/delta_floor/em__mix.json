@@ -1,0 +1,20 @@
+{
+  "behavior": "em",
+  "substrate": "mix",
+  "layer": 14,
+  "n_cells": 50,
+  "delta_over_floor": 0.408667617731926,
+  "delta_over_floor_sd": 0.408667617731926,
+  "delta_med": 0.17456220878751955,
+  "floor_combined": 1.4031696561132758,
+  "support_distance": {
+    "mean": 39.30124881870026,
+    "p90": 44.30380230581642,
+    "n_large_shift": 5
+  },
+  "chain_rho": {
+    "n_with_E": 0
+  },
+  "n_with_E": 0,
+  "marker_two_read": false
+}

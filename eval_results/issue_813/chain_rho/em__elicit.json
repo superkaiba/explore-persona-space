@@ -1,0 +1,7 @@
+{
+  "behavior": "em",
+  "substrate": "elicit",
+  "chain_rho": {
+    "n_with_E": 0
+  }
+}
