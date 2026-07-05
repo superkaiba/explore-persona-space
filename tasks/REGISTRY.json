@@ -335,8 +335,8 @@
     "1041": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1041",
-      "status": "proposed",
+      "path": "tasks/planning/1041",
+      "status": "planning",
       "title": "workflow-fix: verify_plan cross-section param-consistency check"
     },
     "1042": {
