@@ -1,6 +1,6 @@
 ---
 title: The chat context→answer map does not carry over to fiction, which hosts only
-  a weak, mostly story-level character→dialogue map with a small character-identity
+  a weak, mostly author- and story-level character→dialogue map with a small character-identity
   component (MODERATE confidence)
 kind: experiment
 tags:
