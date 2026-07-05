@@ -47,8 +47,8 @@
     "1003": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1003",
-      "status": "planning",
+      "path": "tasks/approved/1003",
+      "status": "approved",
       "title": "workflow-fix: gotchas rc=134 \u2014 in-process streaming-datasets release"
     },
     "1004": {
