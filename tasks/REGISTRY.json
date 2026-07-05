@@ -279,8 +279,8 @@
     "1034": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1034",
-      "status": "approved",
+      "path": "tasks/running/1034",
+      "status": "running",
       "title": "daily-fix: HF quota-headroom preflight before multi-TB uploads"
     },
     "1035": {
