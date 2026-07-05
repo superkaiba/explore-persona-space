@@ -552,8 +552,8 @@
     "1070": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1070",
-      "status": "running",
+      "path": "tasks/reviewing/1070",
+      "status": "reviewing",
       "title": "workflow-fix: launchers atomically refresh the pid file on every relaunch (stale-pid poll target)"
     },
     "1071": {
