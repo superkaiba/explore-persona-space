@@ -163,7 +163,16 @@
 #       (x-b) a `WT` value exported from the user's own shell profile —
 #       outside the harness contract that shell state never persists across
 #       Bash tool calls, which the latch's same-call-assignment proof relies
-#       on.
+#       on; and (x-c) a `WT=<worktree>` assignment line inside a compound
+#       body the shell never executes (a function DEFINITION body, a
+#       false-branch `if`/`then` body) — the clause splitter is a flat
+#       stream with no compound-construct tracking, so an NL-preceded
+#       assignment inside such a body arms the latch although bash only
+#       defines/skips it; requires deliberately wrapping a worktree
+#       assignment in a never-run compound AND a `cd "$WT"` AND a gated git
+#       verb in one call — the same flat-stream compound blindness the
+#       literal cd-latch has always had (parity), cooperative-model
+#       accepted.
 # (xi)  (#1058) argv-form `subprocess.run(["git", ...])` inside a stripped
 #       body — explicitly PRE-EXISTING: the raw scan never saw the argv form
 #       before this change either (no `git <verb>` bigram), and
@@ -176,7 +185,13 @@
 #       Deliberate-only constructions, accepted (a `$`-first-word opener
 #       refusal was considered and rejected: it would false-refuse every
 #       legitimate `$PYTHON - <<'PY'`-style consumer for zero
-#       accidental-risk reduction).
+#       accidental-risk reduction). Same family: build-tool / interpreter
+#       stdin consumers with dash-file flags (`make -f -`, `cmake -P -`,
+#       `awk -f -`) and interpreter bodies whose shell-out spelling evades
+#       the finite body-refusal list — a denylist cannot enumerate every
+#       stdin-executing program; feeding a destructive git recipe to such a
+#       consumer at the repo root is a deliberate construction, accepted
+#       (add further FAIL-CLOSED consumer words as they surface).
 # (xiii) (#1058) Fail-closed FALSE-POSITIVE notes for the strip (a no-strip
 #       keeps CURRENT behavior — the command blocks only when a gated form
 #       ALSO appears): plain `${VAR}` references in an unquoted-tag body
