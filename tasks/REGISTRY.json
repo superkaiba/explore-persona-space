@@ -370,8 +370,8 @@
     "1046": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1046",
-      "status": "running",
+      "path": "tasks/reviewing/1046",
+      "status": "reviewing",
       "title": "daily-fix: Step 9c timeout sizing + slow-file batch + rc hyg"
     },
     "1047": {
