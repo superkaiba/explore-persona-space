@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1052,
+  "highest_id": 1053,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -422,6 +422,13 @@
       "path": "tasks/proposed/1052",
       "status": "proposed",
       "title": "daily-fix: CRON-TEARDOWN idempotent + sweep one-shot wakeups"
+    },
+    "1053": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1053",
+      "status": "proposed",
+      "title": "daily-fix: Step 0 detect-and-exit posts an audit marker"
     },
     "106": {
       "has_clean_result": true,
