@@ -70,6 +70,8 @@ from explore_persona_space.experiments.issue_952.run_952 import (  # noqa: E402
     MATCHED_T2,
     POSITION_SLOTS,
     _json_np,
+    kfold_split_hashes,
+    make_kfold_splits,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -1394,6 +1396,532 @@ def cross_layer_main(args: argparse.Namespace) -> None:
     )
 
 
+# ── kfold cross-fit (follow-up round `kfold-decision-cells`, plan v10 §2/§3) ────
+# Pools the K rotation folds' per-context cells (each context from the ONE fold
+# where it was in test), validates every fold's gate-5 provenance manifest, then
+# reuses the REGISTERED --cross-layer statistics code paths verbatim on the
+# pooled population (pinned bootstrap p, Holm per family, three-way statuses,
+# TOTAL lattice — population swapped, constructions unchanged).
+
+KFOLD_COMPANION_H1 = (20,)  # pooled L20 read — companion only (parent L20 registered read stands)
+KFOLD_COMPANION_H2 = (17, 20)  # pooled L17/L20 reads — companions only (plan §2)
+
+
+def _manifest_fingerprint(m: dict) -> tuple:
+    """(git_sha, env-json, staging_revision) — the shared-provenance fingerprint."""
+    return (
+        m.get("git_sha"),
+        json.dumps(m.get("env"), sort_keys=True),
+        m.get("staging_revision"),
+    )
+
+
+def validate_kfold_manifests(
+    fold_npzs: dict[int, dict],
+    eval_dir: pathlib.Path,
+    folds: list[dict],
+    gate_record: dict,
+) -> dict:
+    """Gate-5 CONSUMER RULE (plan v10 §2): every fold's persisted manifests (npz
+    ``__manifest__`` + report-JSON ``provenance_manifest``) must match the
+    RECOMPUTED ``make_kfold_splits`` hashes/counts/fold identity, and ONE shared
+    (git_sha, env, staging_revision) fingerprint must hold across ALL verdict
+    folds AND the calibration gate-PASS record. RAISES before any statistic is
+    computed on absence or mismatch — never a pooled statistic over
+    mixed-provenance folds (plan kill criterion). Applies in --smoke too (the
+    perturbed-manifest probe exercises exactly this branch)."""
+    problems: list[str] = []
+    fingerprints: dict[str, tuple] = {}
+    manifests: dict[int, dict] = {}
+    for f in folds:
+        k = int(f["fold"])
+        npz = fold_npzs[k]
+        m_npz = json.loads(str(npz["__manifest__"])) if "__manifest__" in npz else None
+        rep_path = eval_dir / f"position_r2_by_arm_fold{k}.json"
+        m_rep = (
+            json.loads(rep_path.read_text()).get("provenance_manifest")
+            if rep_path.exists()
+            else None
+        )
+        expected = {
+            "fold": k,
+            "k_folds": int(f["k_folds"]),
+            "split_seed": int(f["seed"]),
+            "n_pool": int(f["n_pool"]),
+            "counts": {key: len(f[key]) for key in ("train", "val", "test")},
+            "split_sha256": kfold_split_hashes(f),
+        }
+        for src, m in (("npz", m_npz), ("report_json", m_rep)):
+            if not isinstance(m, dict):
+                problems.append(f"fold {k}: {src} manifest absent")
+                continue
+            for key, want in expected.items():
+                if m.get(key) != want:
+                    problems.append(
+                        f"fold {k}: {src} manifest mismatch at {key!r} "
+                        f"(persisted={m.get(key)!r} != recomputed={want!r})"
+                    )
+            fingerprints[f"fold{k}/{src}"] = _manifest_fingerprint(m)
+        if isinstance(m_npz, dict):
+            manifests[k] = m_npz
+    gate_manifest = (
+        gate_record.get("provenance_manifest") if isinstance(gate_record, dict) else None
+    )
+    if not isinstance(gate_manifest, dict):
+        problems.append("calibration gate record: provenance_manifest absent")
+    else:
+        fingerprints["gate_record"] = _manifest_fingerprint(gate_manifest)
+    if len(set(fingerprints.values())) > 1:
+        shas = {carrier: fp[0] for carrier, fp in fingerprints.items()}
+        problems.append(
+            f"shared-fingerprint violation: (git_sha, env, staging_revision) differ "
+            f"across carriers — git_shas={shas}"
+        )
+    if problems:
+        raise RuntimeError(
+            "kfold gate-5 manifest validation FAIL — refusing to consume fold outputs "
+            f"({len(problems)} problem(s)): " + "; ".join(problems[:8])
+        )
+    fp0 = next(iter(fingerprints.values()))
+    rec = {
+        "n_folds": len(folds),
+        "carriers_checked": sorted(fingerprints),
+        "shared_git_sha": fp0[0],
+        "shared_staging_revision": fp0[2],
+        "lambda_tables_by_fold": {
+            str(k): m.get("lam_star_by_slot_by_layer") for k, m in sorted(manifests.items())
+        },
+        "status": "PASS",
+    }
+    logger.info(
+        "[kfold] gate-5 manifest validation PASS: %d carriers, shared git_sha=%s",
+        len(fingerprints),
+        fp0[0],
+    )
+    return rec
+
+
+def merge_fold_npzs(
+    fold_npzs: dict[int, dict], xlayer_layers: list[int], matched_layers: list[int]
+) -> dict[str, np.ndarray]:
+    """Concatenate the REGISTERED per-context arrays across folds (each context's
+    row comes from the ONE fold where it was in test — plan §2 pooling rule).
+
+    Registered keys are ENUMERATED and fail loud on absence (never inferred from
+    a fold's own key set, so a partial fold cannot silently shrink coverage);
+    per-fold-only keys (λ indices, bank arrays — consumed per fold by the H3
+    rider — and any drifted-fold extras) are excluded; M/P families present in
+    EVERY fold are concatenated as descriptive companions."""
+    ks = sorted(fold_npzs)
+    ds = [fold_npzs[k] for k in ks]
+    merged: dict[str, np.ndarray] = {}
+    for name in ("A_group_names", "B_group_names"):
+        for d in ds[1:]:
+            assert np.array_equal(d[name], ds[0][name]), f"{name} drift across folds"
+        merged[name] = ds[0][name]
+    required = [
+        "A_test_ctx_ids",
+        "A_test_ssres",
+        "A_test_sstot",
+        "B_test_ctx_ids",
+        "B_test_ssres",
+        "B_test_sstot",
+        "M16_ctx_ids",
+    ]
+    for la in xlayer_layers:
+        required += [f"A_test_ssres_L{la}", f"A_test_sstot_L{la}"]
+    for la in matched_layers:
+        for leg in ("cleg", "zleg"):
+            for arm in MATCHED_ARMS:
+                required += [f"M16_L{la}_{leg}_{arm}_ssres", f"M16_L{la}_{leg}_{arm}_sstot"]
+    for key in required:
+        absent = [k for k, d in zip(ks, ds, strict=True) if key not in d]
+        if absent:
+            raise RuntimeError(
+                f"kfold merge: registered key {key!r} absent from fold(s) {absent} — a "
+                "partial fold npz must fail loud, never shrink pooled coverage"
+            )
+        merged[key] = np.concatenate([d[key] for d in ds], axis=0)
+    optional = set.intersection(*(set(d) for d in ds)) - set(merged) - {"__manifest__"}
+    for key in sorted(optional):
+        if key.startswith(("M", "P_")) and key.endswith(("_ssres", "_sstot", "_ctx_ids")):
+            merged[key] = np.concatenate([d[key] for d in ds], axis=0)
+    return merged
+
+
+def assert_kfold_partition_coverage(
+    folds: list[dict],
+    pool: list[int],
+    merged: dict[str, np.ndarray],
+    spans: dict[str, dict[int, int]],
+) -> dict:
+    """Exact-partition coverage (plan §2/§3): (a) the K test blocks partition the
+    pool — every context tested exactly once; (b) the pooled A-family ids cover
+    the registered span>=32-in-all-arms survivor set exactly once (the realized
+    H1 population); (c) the pooled H2 matched ids equal the same survivor set
+    (the u_match[16] universe IS U_A). Raises on any violation."""
+    all_test = [int(c) for f in folds for c in f["test"]]
+    assert len(all_test) == len(pool), (
+        f"fold test blocks cover {len(all_test)} contexts != pool {len(pool)}"
+    )
+    assert len(set(all_test)) == len(all_test), "a context appears in >1 fold's test block"
+    assert set(all_test) == {int(c) for c in pool}, "fold test blocks != pool (set mismatch)"
+    survivors = {int(c) for c in pool if all(spans[a].get(int(c), 0) >= 32 for a in ARMS)}
+    a_ids = [int(c) for c in merged["A_test_ctx_ids"].tolist()]
+    assert len(a_ids) == len(set(a_ids)), "duplicate pooled A-family test ids"
+    assert set(a_ids) == survivors, (
+        f"pooled A-family ids != span>=32 survivor set (A-only: "
+        f"{sorted(set(a_ids) - survivors)[:5]}, survivors-only: "
+        f"{sorted(survivors - set(a_ids))[:5]})"
+    )
+    m_ids = [int(c) for c in merged["M16_ctx_ids"].tolist()]
+    assert len(m_ids) == len(set(m_ids)), "duplicate pooled H2 matched ids"
+    assert set(m_ids) == survivors, "pooled H2 matched ids != span>=32 survivor set"
+    rec = {
+        "partition_n": len(pool),
+        "h1_survivor_n": len(a_ids),
+        "h2_survivor_n": len(m_ids),
+        "status": "PASS",
+    }
+    logger.info("[kfold] partition coverage: %s", rec)
+    return rec
+
+
+def _fold_point_estimates(
+    fold_npz: dict[str, np.ndarray], test_ids: list[int], layers: list[int]
+) -> dict:
+    """Per-fold POINT estimates per layer (descriptive heterogeneity block, plan
+    §3 — exploratory; no CIs, no decisions). H1 only where the fold carries the
+    layer's suffixed A arrays; H2 wherever the matched cells exist."""
+    fb = CellBank([int(c) for c in test_ids])
+    register_lmsys_cells(fold_npz, fb)
+    avail = [la for la in layers if f"A_test_ssres_L{la}" in fold_npz]
+    register_cross_layer_cells(fold_npz, fb, avail)
+    obs = fb.observed()
+    dummy = obs[None, :]
+    out: dict[str, Any] = {}
+    for la in layers:
+        rec: dict[str, Any] = {}
+        if la in avail:
+            h1 = h1_reads(fb, obs, dummy, cell_prefix=f"A_L{la}")
+            rec["h1_contrast_ext_plain"] = h1["ext_plain"]["h1_contrast"]
+            rec["h1_contrast_ext_style"] = h1["ext_style"]["h1_contrast"]
+        try:
+            h2 = h2_layer_read(fb, obs, dummy, la)
+            rec["h2_delta_G_ext_plain"] = h2["ext_plain"]["delta_G"]
+            rec["h2_delta_G_ext_style"] = h2["ext_style"]["delta_G"]
+        except RuntimeError:
+            rec["h2_delta_G_ext_plain"] = None
+            rec["h2_delta_G_ext_style"] = None
+        out[str(la)] = rec
+    return out
+
+
+def _compact_h3(rec: dict) -> dict:
+    """Compact per-(fold, layer) H3 digest (descriptive rider, plan §2)."""
+    return {
+        k: rec.get(k) for k in ("status", "n_pairs", "headline_mean_drop_diff", "sign_flip_null")
+    }
+
+
+def kfold_main(args: argparse.Namespace) -> None:
+    """--kfold driver (follow-up plan v10 §2/§3): gate-5 manifest validation ->
+    exact-partition coverage -> pooled registered H1/H2 (pinned bootstrap p,
+    Holm per family, three-way statuses, TOTAL lattice — the --cross-layer code
+    paths, population swapped) + pooled L20/L17 companions + per-fold
+    heterogeneity + descriptive per-fold H3 rider + carried parent/ROUND-1 rows.
+    Writes ``<eval-dir>/stats_kfold.json``."""
+    t0 = time.time()
+    eval_dir = pathlib.Path(args.eval_dir)
+    npz_arg = pathlib.Path(args.npz)
+    npz_dir = npz_arg if npz_arg.is_dir() else npz_arg.parent
+    spans_dir = pathlib.Path(args.spans_dir) if args.spans_dir else npz_dir
+    out_path = pathlib.Path(args.out) if args.out else eval_dir / "stats_kfold.json"
+    k_folds = int(args.k_folds)
+
+    def _resolve(name: str) -> pathlib.Path:
+        for d in (eval_dir, eval_dir.parent):
+            if (d / name).exists():
+                return d / name
+        raise FileNotFoundError(f"{name} not found in {eval_dir} or {eval_dir.parent}")
+
+    split_name = "split_seed952_smoke.json" if args.smoke else "split_seed952.json"
+    split = json.loads(_resolve(split_name).read_text())
+    pool = sorted(int(c) for key in ("train", "val", "test") for c in split[key])
+    folds = make_kfold_splits(pool, k_folds)
+    cal_fold = k_folds - 1
+    verification = json.loads(_resolve("divergence_bank_verification.json").read_text())
+    fold_assignment = json.loads((eval_dir / "fold_assignment.json").read_text())
+    gate_record = json.loads((eval_dir / "kfold_calibration_gate_record.json").read_text())
+
+    # fold_assignment must agree with the recomputed construction (defense in depth
+    # behind the per-fold manifests).
+    for f in folds:
+        rec_sha = fold_assignment["split_sha256_by_fold"][str(f["fold"])]
+        assert rec_sha == kfold_split_hashes(f), (
+            f"fold_assignment.json split hashes != recomputed construction (fold {f['fold']})"
+        )
+
+    fold_npzs = {
+        int(f["fold"]): dict(
+            np.load(npz_dir / f"per_context_stats_fold{f['fold']}.npz", allow_pickle=False)
+        )
+        for f in folds
+    }
+
+    # ── gate-5 manifest validation BEFORE consuming anything (plan §2) ───────────
+    manifest_rec = validate_kfold_manifests(fold_npzs, eval_dir, folds, gate_record)
+
+    # Calibration gate-PASS check (production): the battery would have raised on a
+    # miss, but never trust record presence alone.
+    gates = gate_record.get("gates") or {}
+    if not args.smoke:
+        for gname in (
+            "l20_reproduction_gate",
+            "suffixed_l20_calibration_gate",
+            "round1_xlayer_reproduction_gate",
+        ):
+            grec = gates.get(gname)
+            assert isinstance(grec, dict) and grec.get("pass") is True, (
+                f"calibration gate record: {gname} did not PASS ({grec}) — plan kill criterion"
+            )
+        assert int(gates.get("l_star_pos", -1)) == 20, gates.get("l_star_pos")
+        assert gates.get("parity_failed") is False, "parity_failed in calibration fold meta"
+
+    family_layers = [int(x) for x in args.decision_layers.split(",") if x.strip()]
+    assert family_layers, "no decision layers"
+    xlayer_layers = sorted({*family_layers, *KFOLD_COMPANION_H1})
+    matched_layers = sorted({*family_layers, *KFOLD_COMPANION_H2})
+
+    merged = merge_fold_npzs(fold_npzs, xlayer_layers, matched_layers)
+    spans = load_spans(spans_dir)
+    cov_partition = assert_kfold_partition_coverage(folds, pool, merged, spans)
+    cov_h2 = assert_h2_row_coverage(merged, spans, pool)
+    cov_xlayer = assert_cross_layer_coverage(merged, xlayer_layers)
+    cov_h2_cells = assert_h2_decision_cell_coverage(merged, matched_layers)
+    cov_h3 = {
+        str(k): assert_h3_row_coverage(fold_npzs[k], verification, smoke=args.smoke)
+        for k in sorted(fold_npzs)
+    }
+
+    # ── pooled shared-draw bootstrap over the cross-fitted population ────────────
+    bank = CellBank(pool)
+    fam = register_lmsys_cells(merged, bank)
+    xfam = register_cross_layer_cells(merged, bank, xlayer_layers)
+    rng = np.random.default_rng(BOOTSTRAP_SEED)
+    n_test = bank.n_test
+    w = rng.multinomial(n_test, np.full(n_test, 1.0 / n_test), size=args.n_draws).astype(np.float64)
+    obs = bank.observed()
+    draws = bank.draws(w)
+    parity = serial_oracle_parity(bank, w, draws)
+
+    # ── registered H1/H2 families on the pooled cells (constructions inherited) ──
+    h1_by_layer = {
+        str(la): h1_reads(bank, obs, draws, cell_prefix=f"A_L{la}", with_pinned_p=True)
+        for la in family_layers
+    }
+    h1_companions = {
+        str(la): h1_reads(bank, obs, draws, cell_prefix=f"A_L{la}", with_pinned_p=True)
+        for la in KFOLD_COMPANION_H1
+    }
+    h1_raw_p = {
+        la: h1_by_layer[la]["ext_plain"].get("p_two_sided_raw") for la in map(str, family_layers)
+    }
+    _assert_registered_family_ps("h1", h1_raw_p)
+    h1_holm = holm_adjust(h1_raw_p)
+
+    h2_by_layer = {str(la): h2_layer_read(bank, obs, draws, la) for la in family_layers}
+    h2_companions = {str(la): h2_layer_read(bank, obs, draws, la) for la in KFOLD_COMPANION_H2}
+    h2_raw_p = {
+        la: h2_by_layer[la]["ext_plain"]["p_one_sided_raw"] for la in map(str, family_layers)
+    }
+    _assert_registered_family_ps("h2", h2_raw_p)
+    h2_holm = holm_adjust(h2_raw_p)
+
+    h1_statuses: dict[str, str] = {}
+    h2_statuses: dict[str, str] = {}
+    for la in map(str, family_layers):
+        r1 = h1_by_layer[la].get("ext_plain", {})
+        ci1 = r1.get("ci95") or [np.nan, np.nan]
+        h1_by_layer[la]["ext_plain"]["p_holm"] = h1_holm.get(la)
+        h1_statuses[la] = h1_status(r1.get("h1_contrast"), ci1[0], ci1[1], h1_holm.get(la))
+        h1_by_layer[la]["ext_plain"]["status"] = h1_statuses[la]
+        r2rec = h2_by_layer[la]
+        ci2 = r2rec["ext_plain"]["ci95"]
+        r2rec["ext_plain"]["p_holm"] = h2_holm.get(la)
+        h2_statuses[la] = h2_status(r2rec["ext_plain"]["delta_G"], ci2[1], h2_holm.get(la))
+        r2rec["ext_plain"]["status"] = h2_statuses[la]
+
+    lattice = map_outcome_lattice(h1_statuses, h2_statuses)
+
+    # ── per-fold heterogeneity + fold l_star (descriptive, plan §3) ──────────────
+    het_layers = sorted({*family_layers, *KFOLD_COMPANION_H1, *KFOLD_COMPANION_H2})
+    per_fold_heterogeneity = {
+        str(k): _fold_point_estimates(fold_npzs[k], folds[k]["test"], het_layers)
+        for k in sorted(fold_npzs)
+    }
+    fold_lstar = {}
+    for k in sorted(fold_npzs):
+        meta_path = eval_dir / f"battery_meta_fold{k}.json"
+        fold_lstar[str(k)] = (
+            json.loads(meta_path.read_text()).get("l_star_pos") if meta_path.exists() else None
+        )
+
+    # ── descriptive per-fold H3 rider: each bank cell under each fold's maps ─────
+    h3_layers = sorted({*family_layers, *KFOLD_COMPANION_H1})
+    h3_by_layer_descriptive: dict[str, Any] = {}
+    for la in h3_layers:
+        per_fold = {
+            str(k): _compact_h3(
+                h3_reads(fold_npzs[k], verification, args.n_draws, args.smoke, key_suffix=f"_L{la}")
+            )
+            for k in sorted(fold_npzs)
+        }
+        means = [
+            r["headline_mean_drop_diff"]["mean"]
+            for r in per_fold.values()
+            if isinstance(r.get("headline_mean_drop_diff"), dict)
+        ]
+        h3_by_layer_descriptive[str(la)] = {
+            "per_fold": per_fold,
+            "across_fold_mean": float(np.mean(means)) if means else None,
+            "across_fold_range": [float(np.min(means)), float(np.max(means))] if means else None,
+            "note": "descriptive rider — across-fold mean + range; no decision, no Holm "
+            "(plan v10 §2 H3)",
+        }
+
+    # ── carried comparison rows (never pooled into the headline) ─────────────────
+    parent_stats_path = (
+        pathlib.Path(args.parent_stats)
+        if args.parent_stats
+        else eval_dir.parent / "stats_summary.json"
+    )
+    if parent_stats_path.exists():
+        parent = json.loads(parent_stats_path.read_text())
+        carried_parent = {
+            "source": str(parent_stats_path),
+            "label": "PARENT",
+            "note": "PARENT single-split L20/L17 rows carried verbatim (plan §2) — the "
+            "registered parent reads stand; pooled L20/L17 here are companions only",
+            "h1": {"L20": parent.get("h1")},
+            "h2": {
+                f"L{la}": parent.get("h2_matched", {}).get("contrasts", {}).get(f"t16_L{la}")
+                for la in (20, 17)
+            },
+            "h3_L20_headline": {
+                k: parent.get("h3", {}).get(k)
+                for k in ("n_pairs", "headline_mean_drop_diff", "sign_flip_null")
+            },
+        }
+    elif args.smoke:
+        logger.warning("[kfold] parent stats absent (%s) — carried rows omitted", parent_stats_path)
+        carried_parent = {"status": f"parent stats absent: {parent_stats_path}"}
+    else:
+        raise FileNotFoundError(f"parent stats_summary.json required: {parent_stats_path}")
+
+    round1_path = (
+        pathlib.Path(args.round1_stats)
+        if args.round1_stats
+        else eval_dir.parent / "cross-layer-decision-cells" / "stats_cross_layer.json"
+    )
+    if round1_path.exists():
+        r1 = json.loads(round1_path.read_text())
+        carried_round1 = {
+            "source": str(round1_path),
+            "label": "ROUND-1",
+            "note": "ROUND-1 single-split rows carried verbatim — SUPERSEDED by this "
+            "round's cross-fitted statuses (plan v10 §2; never pooled with them: the "
+            "populations overlap, B4 ⊂ pool)",
+            "h1_by_layer": r1.get("h1_by_layer"),
+            "h1_calibration_L20_companion": r1.get("h1_calibration_L20_companion"),
+            "h2_by_layer": r1.get("h2_by_layer"),
+            "h2_calibration_L20_companion": r1.get("h2_calibration_L20_companion"),
+            "h1_status": r1.get("h1_status"),
+            "h2_status": r1.get("h2_status"),
+            "overall_verdict": r1.get("overall_verdict"),
+        }
+    elif args.smoke:
+        logger.warning("[kfold] round-1 stats absent (%s) — carried rows omitted", round1_path)
+        carried_round1 = {"status": f"round-1 stats absent: {round1_path}"}
+    else:
+        raise FileNotFoundError(f"round-1 stats_cross_layer.json required: {round1_path}")
+
+    summary = {
+        "issue": 952,
+        "mode": "kfold_decision_cells",
+        "k_folds": k_folds,
+        "calibration_fold": cal_fold,
+        "added_layers": family_layers,
+        "companion_layers": {"h1": list(KFOLD_COMPANION_H1), "h2": list(KFOLD_COMPANION_H2)},
+        "margins": {"h1": H1_MARGIN, "h2": H2_MARGIN, "alpha": XLAYER_ALPHA},
+        "p_construction": (
+            "shift-to-null-center (null = draws - observed), add-one counting "
+            "(1 + #extreme)/(1 + B); H1 two-sided vs 0, H2 one-sided positive-tail "
+            "vs 0; B = n_draws (plan §2 pinned, inherited verbatim); bootstrap "
+            "resamples paired CONTEXTS over the pooled cross-fitted population "
+            "(fold assignment fixed — CI conditionality: fold-model variance not "
+            "propagated)"
+        ),
+        "n_draws": args.n_draws,
+        "seeds": {"bootstrap": BOOTSTRAP_SEED, "sign_flip": SIGNFLIP_SEED},
+        "smoke": args.smoke,
+        "populations": cov_partition,
+        "manifest_validation": manifest_rec,
+        "fold_assignment": fold_assignment,
+        "fold_lstar": fold_lstar,
+        "row_coverage": {
+            "partition": cov_partition,
+            "h2": cov_h2,
+            "h3_per_fold": cov_h3,
+            "cross_layer": cov_xlayer,
+            "h2_decision_cells": cov_h2_cells,
+        },
+        "bootstrap_gemm_parity": parity,
+        "n_cells": len(bank.names),
+        "families": {**{k: len(v) for k, v in fam.items()}, **{k: len(v) for k, v in xfam.items()}},
+        "h1_by_layer": h1_by_layer,
+        "h1_companions": h1_companions,
+        "h1_holm": h1_holm,
+        "h1_status": h1_statuses,
+        "h2_by_layer": h2_by_layer,
+        "h2_companions": h2_companions,
+        "h2_holm": h2_holm,
+        "h2_status": h2_statuses,
+        "h3_by_layer_descriptive": h3_by_layer_descriptive,
+        "per_fold_heterogeneity": per_fold_heterogeneity,
+        **lattice,
+        "carried_parent_rows": carried_parent,
+        "carried_round1_rows": carried_round1,
+        "calibration_gate_record": gate_record,
+        "inputs": {
+            "npz_dir": str(npz_dir),
+            "eval_dir": str(eval_dir),
+            "n_fold_npz_keys": {str(k): len(d) for k, d in sorted(fold_npzs.items())},
+        },
+        "git_sha": _git_sha(),
+        "numpy_version": np.__version__,
+        "wall_seconds": time.time() - t0,
+        "ts": time.time(),
+    }
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(summary, indent=2, default=_json_np))
+    logger.info(
+        "[stats:kfold] K=%d pooled n=%d (H1/H2 survivors %d/%d): h1=%s h2=%s -> %s; "
+        "%d cells, %d draws in %.1fs -> %s",
+        k_folds,
+        len(pool),
+        cov_partition["h1_survivor_n"],
+        cov_partition["h2_survivor_n"],
+        h1_statuses,
+        h2_statuses,
+        lattice["overall_verdict"],
+        len(bank.names),
+        args.n_draws,
+        summary["wall_seconds"],
+        out_path,
+    )
+
+
 def main() -> None:
     """Phase-2 statistics driver (coverage asserts -> batched draw batteries -> JSON)."""
     ap = argparse.ArgumentParser(description="Issue #952 Phase 2 stats (VM, CPU)")
@@ -1447,8 +1975,34 @@ def main() -> None:
         help="parent stats_summary.json for the carried L20/L17 rows "
         "(default: <eval-dir>/../stats_summary.json)",
     )
+    ap.add_argument(
+        "--kfold",
+        action="store_true",
+        help="follow-up `kfold-decision-cells` mode: validate every fold's gate-5 "
+        "provenance manifest, pool the K rotation folds' per-context cells (each "
+        "context from its test fold) and recompute the registered H1/H2 + enum + "
+        "lattice + Holm on the pooled population; --npz names the DIRECTORY holding "
+        "per_context_stats_fold{k}.npz (a file path resolves to its parent dir); "
+        "writes <eval-dir>/stats_kfold.json (default --out)",
+    )
+    ap.add_argument(
+        "--k-folds",
+        type=int,
+        default=5,
+        help="number of rotation folds for --kfold (default 5; plan v10 §2)",
+    )
+    ap.add_argument(
+        "--round1-stats",
+        type=str,
+        default=None,
+        help="round-1 stats_cross_layer.json for the carried ROUND-1 rows (default: "
+        "<eval-dir>/../cross-layer-decision-cells/stats_cross_layer.json)",
+    )
     args = ap.parse_args()
 
+    if args.kfold:
+        kfold_main(args)
+        return
     if args.cross_layer:
         cross_layer_main(args)
         return

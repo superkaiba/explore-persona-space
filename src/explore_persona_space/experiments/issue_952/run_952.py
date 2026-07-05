@@ -131,6 +131,28 @@ FOLLOWUP_TAG = os.environ.get("EPM_I952_FOLLOWUP_TAG", "").strip()
 assert re.fullmatch(r"[a-z0-9_]*", FOLLOWUP_TAG), f"bad EPM_I952_FOLLOWUP_TAG: {FOLLOWUP_TAG!r}"
 _FOLLOWUP_NPZ_NAMES = {"cross_layer_decision_cells": "per_context_stats_cross_layer.npz"}
 L20_REPRO_TOL = 1e-6  # plan §3 gates 2+3: |ΔR²| tolerance (λ choices exactly equal)
+# EPM_I952_KFOLD_BLOCKS: 5-fold cross-fit follow-up (round `kfold-decision-cells`,
+# plan v10 §2/§3). Unset/empty/"0" = off — the parent single-split and round-1
+# cross-layer paths stay byte-compatible. When set (K >= 3), the battery +
+# bank-score phases loop over the K rotation folds of `make_kfold_splits`
+# (calibration fold = K-1, executed FIRST) with per-fold outputs + the gate-5
+# provenance/fingerprint contract (manifest match-or-invalidate resume).
+KFOLD_BLOCKS = int(os.environ.get("EPM_I952_KFOLD_BLOCKS", "0") or "0")
+assert KFOLD_BLOCKS == 0 or KFOLD_BLOCKS >= 3, f"EPM_I952_KFOLD_BLOCKS={KFOLD_BLOCKS} (need >=3)"
+# The load-bearing env knobs every gate-5 provenance manifest records (plan §2
+# gate 5); the resume + consumer predicates require an exact match on these.
+KFOLD_MANIFEST_ENV_KEYS = (
+    "EPM_I952_LAYER_GRID",
+    "EPM_I952_DECISION_LAYERS",
+    "EPM_I952_KFOLD_BLOCKS",
+    "EPM_I952_FOLLOWUP_TAG",
+    "EPM_I952_SKIP_POOLED_PREFIX",
+)
+# The registered read-out layer set is pre-registered {14, 17, 20, 23, 26}
+# (plan §2): under kfold the xlayer pass-2 set is pinned to DECISION_LAYERS +
+# L20 even if a rotated fold's recorded l_star drifts (drift is descriptive,
+# never consumed — plan §2 gate 2 note).
+KFOLD_PINNED_XLAYER = 20
 
 PREFIX_TS = (1, 2, 4, 8, 16, 32, 64, 128)
 DECILES = (0.05, 0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95)
@@ -301,11 +323,24 @@ def eval_out_dir(base_dir: pathlib.Path) -> pathlib.Path:
     return root / FOLLOWUP_TAG.replace("_", "-") if FOLLOWUP_TAG else root
 
 
-def per_context_npz_name() -> str:
-    """The battery npz filename (a follow-up round never overwrites the parent's)."""
+def per_context_npz_name(fold: int | None = None) -> str:
+    """The battery npz filename (a follow-up round never overwrites the parent's).
+
+    ``fold`` (kfold rounds): the per-fold name ``per_context_stats_fold{k}.npz``
+    — the plan §6.5 deliverable glob; parent + round-1 npz names untouched."""
+    if fold is not None:
+        return f"per_context_stats_fold{fold}.npz"
     if not FOLLOWUP_TAG:
         return "per_context_stats.npz"
     return _FOLLOWUP_NPZ_NAMES.get(FOLLOWUP_TAG, f"per_context_stats_{FOLLOWUP_TAG}.npz")
+
+
+def fold_suffixed(name: str, fold: int | None) -> str:
+    """Insert ``_fold{k}`` before the extension (identity when ``fold`` is None)."""
+    if fold is None:
+        return name
+    stem, _dot, ext = name.rpartition(".")
+    return f"{stem}_fold{fold}.{ext}"
 
 
 def repo_root() -> pathlib.Path:
@@ -466,6 +501,138 @@ def make_split(pool_ids: list[int]) -> dict:
             f"{EXPECTED_POOL_N} — split protocol drift"
         )
     return split
+
+
+def make_kfold_splits(pool_ids: list[int], k: int) -> list[dict]:
+    """K-fold rotation over the SAME rng(SPLIT_SEED) permutation ``make_split`` uses
+    (kfold follow-up, plan v10 §2).
+
+    Sorted ids -> rng(952) permutation -> K consecutive equal blocks B0..B(K-1)
+    (n_pool must divide exactly). Fold j: test = Bj, val = B((j-1) mod K),
+    train = the remaining K-2 blocks — every fold keeps the parent's exact
+    train/val/test proportions. The fold with test = B(K-1) is IDENTICALLY the
+    single split ``make_split`` produces (parent train/val/test =
+    ``order[:n_tr] / order[n_tr:n_tr+n_val] / order[rest]``) — HARD-ASSERTED
+    here, so the calibration-fold identity is checked, not assumed (plan §3
+    kill criterion: a mismatch = construction drift, stop)."""
+    ids = sorted(int(i) for i in pool_ids)
+    n = len(ids)
+    assert k >= 3, f"k={k} (rotation needs >=3 blocks)"
+    assert n % k == 0, f"pool n={n} does not divide into {k} equal blocks"
+    rng = np.random.default_rng(SPLIT_SEED)
+    perm = rng.permutation(n)
+    order = [ids[i] for i in perm]
+    block = n // k
+    blocks = [order[j * block : (j + 1) * block] for j in range(k)]
+    folds: list[dict] = []
+    for j in range(k):
+        val_j = (j - 1) % k
+        train = [c for m in range(k) if m not in (j, val_j) for c in blocks[m]]
+        folds.append(
+            {
+                "fold": j,
+                "k_folds": k,
+                "seed": SPLIT_SEED,
+                "n_pool": n,
+                "train": sorted(train),
+                "val": sorted(blocks[val_j]),
+                "test": sorted(blocks[j]),
+            }
+        )
+    single = make_split(pool_ids)
+    cal = folds[k - 1]
+    for key in ("train", "val", "test"):
+        assert cal[key] == single[key], (
+            f"kfold calibration fold (test=B{k - 1}) != make_split on '{key}' "
+            f"(n_pool={n}, k={k}) — fold-construction drift (plan §3 kill criterion)"
+        )
+    return folds
+
+
+def kfold_split_hashes(fold_split: dict) -> dict[str, str]:
+    """sha256 per split member (the gate-5 manifest fingerprint; shared with the
+    ``issue952_stats.py --kfold`` consumer so both sides hash identically)."""
+    return {
+        key: hashlib.sha256(json.dumps([int(i) for i in fold_split[key]]).encode()).hexdigest()
+        for key in ("train", "val", "test")
+    }
+
+
+def _repo_git_sha() -> str:
+    """HEAD sha of the running checkout ('unknown' on failure, never raises)."""
+    import subprocess
+
+    try:
+        return (
+            subprocess.check_output(
+                ["git", "rev-parse", "HEAD"], cwd=str(repo_root()), env={**os.environ}
+            )
+            .decode()
+            .strip()
+        )
+    except Exception as e:
+        logger.warning("git sha lookup failed (recorded 'unknown'): %s", e)
+        return "unknown"
+
+
+# Manifest keys the resume + consumer predicates MUST match exactly (plan §2
+# gate 5: split hashes + counts + fold identity + staging revision + git SHA +
+# env knobs). The λ table + schema tag are OUTPUT metadata — recorded, never
+# part of the match.
+KFOLD_MANIFEST_MATCH_KEYS = (
+    "fold",
+    "k_folds",
+    "split_seed",
+    "n_pool",
+    "counts",
+    "split_sha256",
+    "staging_revision",
+    "git_sha",
+    "env",
+)
+
+
+def kfold_manifest(
+    fold_split: dict,
+    staging_revision: str | None,
+    lam_star_table: dict | None = None,
+) -> dict:
+    """The gate-5 provenance manifest for one fold (plan v10 §2 gate 5).
+
+    Carried by every fold output (npz ``__manifest__`` + the fold report JSON's
+    ``provenance_manifest``) and the calibration gate-PASS record. The λ*(slot|layer)
+    table is filled after the fold's battery completes (None pre-run)."""
+    return {
+        "schema": "i952-kfold-manifest-v1",
+        "fold": int(fold_split["fold"]),
+        "k_folds": int(fold_split["k_folds"]),
+        "split_seed": int(fold_split["seed"]),
+        "n_pool": int(fold_split["n_pool"]),
+        "counts": {key: len(fold_split[key]) for key in ("train", "val", "test")},
+        "split_sha256": kfold_split_hashes(fold_split),
+        "staging_revision": staging_revision,
+        "git_sha": _repo_git_sha(),
+        "env": {key: os.environ.get(key, "") for key in KFOLD_MANIFEST_ENV_KEYS},
+        "lam_star_by_slot_by_layer": lam_star_table,
+    }
+
+
+def kfold_manifest_match(persisted: dict | None, expected: dict) -> tuple[bool, str]:
+    """Gate-5 match predicate: exact equality on ``KFOLD_MANIFEST_MATCH_KEYS``.
+
+    Returns (ok, reason). ANY mismatch — split hash, count, staging revision,
+    git SHA, or env knob — invalidates the persisted fold (plan §2 gate 5:
+    recompute; a gate PASS from a different code state never vouches)."""
+    if not isinstance(persisted, dict):
+        return False, "manifest absent or not a dict"
+    for key in KFOLD_MANIFEST_MATCH_KEYS:
+        if persisted.get(key) != expected.get(key):
+            return (
+                False,
+                f"manifest mismatch at {key!r}: persisted={persisted.get(key)!r} "
+                f"!= expected={expected.get(key)!r}",
+            )
+    return True, "match"
 
 
 def parse_judge_score(text: str) -> float | None:
@@ -2199,7 +2366,12 @@ def synthesize_capture_for_smoke(
 
     # LMSYS pool: one short-span row, placed at a TRAIN position of the seed-952
     # smoke split (train={2,3,4,6,7,8}) so val/test keep >=2 survivors per cell.
-    base_spans = np.where(np.arange(n) % 10 == 4, 24, 160)
+    # kfold smoke: ALL-long spans — under the 5-fold rotation every id lands in
+    # some fold's 2-id test/val block, so a single short-span row would leave
+    # that fold with <2 matched survivors and skip its M cells, breaking the
+    # pooled consumer's registered-key coverage (attrition handling stays
+    # covered on the non-kfold smoke path).
+    base_spans = np.full(n, 160) if KFOLD_BLOCKS else np.where(np.arange(n) % 10 == 4, 24, 160)
     for arm in ARMS:
         _one(list(pool_ids), arm, base_spans)
     # Bank: kept pairs from the verification record.
@@ -2317,6 +2489,7 @@ def _battery_regime(
     fit_device: str,
     have_bank: bool,
     min_train: int,
+    fold: int | None = None,
 ) -> dict:
     """Output-affecting regime keys for the 1e per-unit resume (incl. descope flags).
 
@@ -2345,21 +2518,30 @@ def _battery_regime(
         # Cross-layer follow-up regime keys (plan §3): both change outputs.
         "followup_tag": FOLLOWUP_TAG,
         "decision_layers": list(DECISION_LAYERS),
+        # kfold regime keys (plan v10 §3) — added ONLY on the fold path so the
+        # parent / round-1 regime dicts stay byte-identical (resume-compatible).
+        **({"kfold": {"blocks": KFOLD_BLOCKS, "fold": int(fold)}} if fold is not None else {}),
     }
 
 
-def _init_battery_ckpt(base_dir: pathlib.Path, regime: dict) -> pathlib.Path:
+def _battery_ckpt_dir(base_dir: pathlib.Path, fold: int | None = None) -> pathlib.Path:
+    """The 1e per-unit checkpoint dir (tag- and, on kfold rounds, fold-suffixed)."""
+    stem = f"battery_ckpt_{FOLLOWUP_TAG}" if FOLLOWUP_TAG else "battery_ckpt"
+    if fold is not None:
+        stem = f"{stem}_fold{fold}"
+    return base_dir / "analysis_tensors" / stem
+
+
+def _init_battery_ckpt(
+    base_dir: pathlib.Path, regime: dict, fold: int | None = None
+) -> pathlib.Path:
     """Init (or regime-invalidate) the 1e checkpoint dir; returns the dir.
 
     A regime mismatch DELETES the stale unit shards (loudly) and rewrites the
     regime file — a resume never mixes shards across regimes. A follow-up round
     (FOLLOWUP_TAG) uses its own tag-suffixed dir so parent-run shards are never
-    touched pod-side."""
-    ck = (
-        base_dir
-        / "analysis_tensors"
-        / (f"battery_ckpt_{FOLLOWUP_TAG}" if FOLLOWUP_TAG else "battery_ckpt")
-    )
+    touched pod-side; a kfold fold uses its own fold-suffixed dir."""
+    ck = _battery_ckpt_dir(base_dir, fold)
     ck.mkdir(parents=True, exist_ok=True)
     rpath = ck / "regime.json"
     if rpath.exists():
@@ -2565,17 +2747,136 @@ def suffixed_l20_calibration_gate(
     return rec
 
 
+def locate_round1_reference(name: str, base_dir: pathlib.Path) -> pathlib.Path | None:
+    """Round-1 (`cross-layer-decision-cells`) committed reference file: repo
+    checkout first (the dispatch clones the issue-952 branch, plan §10), then
+    base_dir; None when absent from both."""
+    for c in (
+        repo_root() / "eval_results" / "issue_952" / "cross-layer-decision-cells" / name,
+        base_dir / "eval_results" / "issue_952" / "cross-layer-decision-cells" / name,
+    ):
+        if c.exists():
+            return c
+    return None
+
+
+def round1_xlayer_reproduction_gate(round1_ref: dict, fold_report: dict, smoke: bool) -> dict:
+    """kfold plan v10 §2 gate 4 (NEW): the calibration fold's layer-suffixed
+    cells must match round-1's committed position_r2_by_arm_cross_layer.json
+    within ``L20_REPRO_TOL`` over the FULL enumerated (layer x arm x slot) grid
+    AND select IDENTICAL λ*(slot|layer) — the new fold-loop code re-produces
+    round-1's numbers on the one fold where the answer is known, BEFORE any
+    rotated-fold number is trusted. The expected layer set = round-1's
+    ``decision_layers`` + its calibration layer, ENUMERATED (never inferred
+    from either report's own keys — the l20_reproduction_gate lesson). Raises
+    RuntimeError on a production miss; ``--smoke`` executes the identical
+    comparison and logs it (synthetic smoke data cannot match round-1's
+    committed values by construction)."""
+    layers = sorted(
+        {int(x) for x in round1_ref.get("decision_layers", [])} | {int(round1_ref["l_star"])}
+    )
+    deltas: list[tuple[str, float]] = []
+    lam_mismatch: list[str] = []
+    missing_ref: list[str] = []
+    missing_fold: list[str] = []
+    for layer in layers:
+        ref_block = (round1_ref.get("by_layer") or {}).get(str(layer))
+        fold_block = (fold_report.get("by_layer") or {}).get(str(layer))
+        for arm in ARMS:
+            for slot in POSITION_SLOTS:
+                cell = f"L{layer}|{slot}|{arm}"
+                ref_rec = ref_block.get(arm, {}).get(slot) if isinstance(ref_block, dict) else None
+                got_rec = (
+                    fold_block.get(arm, {}).get(slot) if isinstance(fold_block, dict) else None
+                )
+                if not isinstance(ref_rec, dict):
+                    missing_ref.append(cell)
+                    continue
+                if not isinstance(got_rec, dict):
+                    missing_fold.append(cell)
+                    continue
+                deltas.append(
+                    (
+                        cell,
+                        abs(float(got_rec["test_pooled_r2"]) - float(ref_rec["test_pooled_r2"])),
+                    )
+                )
+                if float(got_rec["lambda"]) != float(ref_rec["lambda"]):
+                    lam_mismatch.append(cell)
+    n_expected = len(layers) * len(ARMS) * len(POSITION_SLOTS)
+    max_delta = max((d for _c, d in deltas), default=float("inf"))
+    worst = max(deltas, key=lambda cd: cd[1], default=("none", float("inf")))
+    l_star_equal = int(round1_ref["l_star"]) == int(fold_report.get("l_star", -1))
+    rec = {
+        "layers": layers,
+        "n_cells_expected": n_expected,
+        "n_cells_compared": len(deltas),
+        "n_missing_round1": len(missing_ref),
+        "n_missing_fold": len(missing_fold),
+        "missing_round1_cells": missing_ref[:10],
+        "missing_fold_cells": missing_fold[:10],
+        "max_abs_delta_r2": max_delta,
+        "worst_cell": worst[0],
+        "lambda_mismatch_cells": lam_mismatch[:10],
+        "n_lambda_mismatch": len(lam_mismatch),
+        "l_star_equal": l_star_equal,
+        "tol": L20_REPRO_TOL,
+        "pass": (
+            l_star_equal
+            and len(deltas) == n_expected
+            and not missing_ref
+            and not missing_fold
+            and not lam_mismatch
+            and max_delta <= L20_REPRO_TOL
+        ),
+    }
+    if not rec["pass"]:
+        msg = (
+            f"round-1 cross-layer reproduction gate FAIL: {len(deltas)}/{n_expected} cells "
+            f"compared (round1-missing={missing_ref[:5]}, fold-missing={missing_fold[:5]}), "
+            f"max|ΔR²|={max_delta:.3e} at {worst[0]} (tol {L20_REPRO_TOL}), λ mismatches "
+            f"{lam_mismatch[:5]} ({len(lam_mismatch)}), l_star_equal={l_star_equal} — the "
+            "fold-loop code does not reproduce round-1 on the calibration fold; no "
+            "rotated-fold number is trusted (plan kill criterion)"
+        )
+        if smoke:
+            logger.warning("[kfold-gate] SMOKE (non-binding, comparison executed): %s", msg)
+        else:
+            raise RuntimeError(msg)
+    else:
+        logger.info(
+            "[kfold-gate] round-1 cross-layer reproduction PASS: %d/%d cells, "
+            "max|ΔR²|=%.3e, λ* identical",
+            len(deltas),
+            n_expected,
+            max_delta,
+        )
+    return rec
+
+
 def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + selection + outputs
     base_dir: pathlib.Path,
     smoke: bool,
     pool_ids: list[int],
     split: dict,
     fit_device: str,
+    fold: int | None = None,
+    fold_calibration: bool = True,
 ) -> None:
     """Phase 1e: parity gate + batched shared-SVD ridge batteries + selection.
 
     Outputs: validation_selection_matrix.json, position_r2_by_arm.json,
     prefix_closure_by_arm.json, battery_meta.json, per_context_stats.npz.
+
+    ``fold`` (kfold rounds, plan v10 §3): every output filename gains a
+    ``_fold{k}`` suffix, the per-unit ckpt dir is fold-suffixed, and the
+    xlayer/prefix layer sets are pinned to include L20 (the registered read-out
+    set) even under rotated-fold l_star drift. ``fold_calibration`` binds the
+    cross-run reproduction gates (l_star==20 assert + L20 reproduction vs the
+    parent's committed reference): True on the non-kfold path (byte-compatible)
+    and on the calibration fold; False on rotated folds — their l_star is
+    RECORDED (``l_star_pos`` in the fold meta), never asserted, and no parent
+    reference exists for their split (plan §2 gate 2 note).
     """
     import time
 
@@ -2626,8 +2927,8 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
     # Per-unit resume shards (concern long-loop-restartability-1c-1e-blocking):
     # each long-loop unit below persists its result the moment it completes and
     # is SKIPPED on re-entry; the final JSON/NPZ outputs assemble from shards.
-    regime = _battery_regime(smoke, pool_ids, split, fit_device, have_bank, min_train)
-    ck_dir = _init_battery_ckpt(base_dir, regime)
+    regime = _battery_regime(smoke, pool_ids, split, fit_device, have_bank, min_train, fold=fold)
+    ck_dir = _init_battery_ckpt(base_dir, regime, fold=fold)
 
     meta: dict[str, Any] = {
         "layers": list(LAYER_GRID),
@@ -2714,7 +3015,9 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
             "projected_hours": projected_h,
         }
         if projected_h > 6.0:
-            (out_dir / "battery_meta.json").write_text(json.dumps(meta, indent=2, default=_json_np))
+            (out_dir / fold_suffixed("battery_meta.json", fold)).write_text(
+                json.dumps(meta, indent=2, default=_json_np)
+            )
             raise RuntimeError(
                 f"parity FAIL and serial fallback projects {projected_h:.1f} h > 6 h — stopping "
                 "battery (captures already persisted); re-plan the solver (plan kill criterion)"
@@ -2746,10 +3049,12 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
                     "selected_lambda": r["selected_lambda"],
                     "test_pooled_r2": r["test_pooled_r2"],
                 }
-        (out_dir / "position_r2_by_arm_serial_fallback.json").write_text(
+        (out_dir / fold_suffixed("position_r2_by_arm_serial_fallback.json", fold)).write_text(
             json.dumps({"layer": FALLBACK_LAYER, "cells": fb_out}, indent=2, default=_json_np)
         )
-        (out_dir / "battery_meta.json").write_text(json.dumps(meta, indent=2, default=_json_np))
+        (out_dir / fold_suffixed("battery_meta.json", fold)).write_text(
+            json.dumps(meta, indent=2, default=_json_np)
+        )
         log_phase("p1e_done_fallback")
         return
 
@@ -2851,7 +3156,7 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
     meta["lam_star_by_slot_A"] = {s: DEFAULT_LAMBDAS_LIST[i] for s, i in lam_by_slot_a.items()}
     logger.info("[1e] selected l_star=%d; layer scores %s", l_star, meta["layer_scores"])
 
-    (out_dir / "validation_selection_matrix.json").write_text(
+    (out_dir / fold_suffixed("validation_selection_matrix.json", fold)).write_text(
         json.dumps(
             {
                 "layers": list(LAYER_GRID),
@@ -2958,28 +3263,45 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
         _ckpt_save(pass2_path, npz2, {"position_report": position_report})
         npz.update(npz2)
         del res_star, res_star_b
-    (out_dir / "position_r2_by_arm.json").write_text(
+    (out_dir / fold_suffixed("position_r2_by_arm.json", fold)).write_text(
         json.dumps(position_report, indent=2, default=_json_np)
     )
 
     # ── cross-layer decision cells (follow-up plan §3): gates + per-layer pass-2 ─
     if DECISION_LAYERS:
         # Gate 1: l_star == 20 (selection drift = nothing downstream interpretable).
+        # Binds on the calibration path only; a rotated kfold fold RECORDS its
+        # l_star (meta['l_star_pos'] -> fold_lstar in the stats JSON) — drift is
+        # descriptive, never a kill (plan v10 §2 gate 2 note).
         if smoke:
             logger.warning(
                 "[xlayer-gate] SMOKE (non-binding, comparison executed): l_star==20 "
                 "assert read l_star=%d",
                 l_star,
             )
-        elif l_star != 20:
+        elif l_star != 20 and fold_calibration:
             raise RuntimeError(
                 f"l_star gate FAIL: selected l_star={l_star} != 20 on the layer grid "
                 f"{LAYER_GRID} — selection drift (plan kill criterion)"
             )
+        elif l_star != 20:
+            logger.warning(
+                "[xlayer-gate] rotated fold %s: recorded l_star=%d != 20 — descriptive "
+                "only (registered read-out set stays pinned; plan v10 §2)",
+                fold,
+                l_star,
+            )
         # Gate 2: L20 reproduction vs the parent's committed position_r2_by_arm.json
-        # (staged copy) — BEFORE any new-layer number is computed.
+        # (staged copy) — BEFORE any new-layer number is computed. Calibration
+        # path only: no parent reference exists for a rotated fold's split.
         parent_ref_path = parent_eval_dir(base_dir) / "position_r2_by_arm.json"
-        if parent_ref_path.exists():
+        if not fold_calibration:
+            logger.info(
+                "[xlayer-gate] rotated fold %s: L20 reproduction gate skipped "
+                "(parent reference binds only on the calibration fold)",
+                fold,
+            )
+        elif parent_ref_path.exists():
             meta["l20_reproduction_gate"] = l20_reproduction_gate(
                 json.loads(parent_ref_path.read_text()), position_report, smoke
             )
@@ -3004,7 +3326,15 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
             "by_layer": {},
         }
         # Calibration layer FIRST: gate 3 fires before any added-layer compute.
-        loop_layers = [l_star] + [la for la in sorted(DECISION_LAYERS) if la != l_star]
+        # kfold rounds pin the registered read-out set (DECISION_LAYERS + L20)
+        # so a rotated fold's l_star drift can never drop the L20 suffixed
+        # arrays the pooled consumer requires (plan v10 §2).
+        xlayer_set = (
+            sorted(set(DECISION_LAYERS) | {KFOLD_PINNED_XLAYER})
+            if fold is not None
+            else sorted(DECISION_LAYERS)
+        )
+        loop_layers = [l_star] + [la for la in xlayer_set if la != l_star]
         lam_by_slot_star: dict[str, int] | None = None
         for layer in loop_layers:
             li_l = LAYER_GRID.index(layer)
@@ -3120,7 +3450,7 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
                     lam_by_slot_star,
                     smoke,
                 )
-        (out_dir / "position_r2_by_arm_cross_layer.json").write_text(
+        (out_dir / fold_suffixed("position_r2_by_arm_cross_layer.json", fold)).write_text(
             json.dumps(xlayer_report, indent=2, default=_json_np)
         )
         meta["cross_layer"] = {
@@ -3136,7 +3466,13 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
         logger.warning("[1e] descope: prefix battery at l_star only (EPM_I952_PREFIX_LSTAR_ONLY)")
     else:
         # Follow-up plan §3(b): decision layers widen the prefix/matched batteries.
-        prefix_layers = sorted({l_star, FALLBACK_LAYER} | set(DECISION_LAYERS))
+        # kfold rounds additionally pin L20 (registered read-out set survives a
+        # rotated fold's l_star drift; identical set when l_star == 20).
+        prefix_layers = sorted(
+            {l_star, FALLBACK_LAYER}
+            | set(DECISION_LAYERS)
+            | ({KFOLD_PINNED_XLAYER} if fold is not None else set())
+        )
     closure: dict[str, Any] = {"layers": prefix_layers, "attrition": {}, "cells": {}}
     d10_group_names = list(D10_SLOTS)
     for layer in prefix_layers:
@@ -3412,24 +3748,322 @@ def phase_battery(  # noqa: C901 — the 1e driver: gates + 4 batteries + select
             if layer != l_star:
                 del slots_l
     closure["matched_contrasts"] = matched
-    (out_dir / "prefix_closure_by_arm.json").write_text(
+    (out_dir / fold_suffixed("prefix_closure_by_arm.json", fold)).write_text(
         json.dumps(closure, indent=2, default=_json_np)
     )
 
     meta["pass1_svd_seconds"] = cell_seconds
     meta["phase_wall_seconds"] = time.time() - t_phase0
-    (out_dir / "battery_meta.json").write_text(json.dumps(meta, indent=2, default=_json_np))
-    np.savez(tensors_dir / per_context_npz_name(), **npz)
+    (out_dir / fold_suffixed("battery_meta.json", fold)).write_text(
+        json.dumps(meta, indent=2, default=_json_np)
+    )
+    np.savez(tensors_dir / per_context_npz_name(fold), **npz)
     logger.info(
-        "[1e] done in %.1f min; per_context_stats.npz keys=%d",
+        "[1e] done in %.1f min; %s keys=%d",
         meta["phase_wall_seconds"] / 60,
+        per_context_npz_name(fold),
         len(npz),
     )
     write_sentinel(
         pathlib.Path("/workspace/logs/issue-952-phase1e-done.json"),
-        {"kind": "epm:progress", "version": 1, "note": "1e battery done", "l_star": l_star},
+        {
+            "kind": "epm:progress",
+            "version": 1,
+            "note": f"1e battery done (fold={fold})" if fold is not None else "1e battery done",
+            "l_star": l_star,
+        },
     )
-    log_phase("p1e_done")
+    log_phase(f"p1e_done_fold{fold}" if fold is not None else "p1e_done")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# kfold cross-fit driver (round `kfold-decision-cells`, plan v10 §2/§3)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+def _fold_output_paths(base_dir: pathlib.Path, fold: int) -> tuple[pathlib.Path, pathlib.Path]:
+    """(fold report JSON, fold npz) — the two per-fold gate-5 manifest carriers."""
+    return (
+        eval_out_dir(base_dir) / fold_suffixed("position_r2_by_arm.json", fold),
+        base_dir / "analysis_tensors" / per_context_npz_name(fold),
+    )
+
+
+def _read_persisted_fold_manifests(base_dir: pathlib.Path, fold: int) -> dict[str, dict | None]:
+    """{carrier: manifest-or-None} for the fold's persisted outputs (an unreadable
+    carrier reads as None -> gate-5 rejection -> recompute, never a crash)."""
+    j_path, npz_path = _fold_output_paths(base_dir, fold)
+    out: dict[str, dict | None] = {"report_json": None, "npz": None}
+    if j_path.exists():
+        try:
+            out["report_json"] = json.loads(j_path.read_text()).get("provenance_manifest")
+        except (OSError, json.JSONDecodeError):
+            out["report_json"] = None
+    if npz_path.exists():
+        try:
+            with np.load(npz_path, allow_pickle=False) as d:
+                if "__manifest__" in d.files:
+                    out["npz"] = json.loads(str(d["__manifest__"]))
+        except (OSError, ValueError, json.JSONDecodeError):
+            out["npz"] = None
+    return out
+
+
+def _embed_fold_manifest(base_dir: pathlib.Path, fold: int, manifest: dict) -> None:
+    """Embed the completed fold's gate-5 manifest into BOTH carriers (atomic
+    tmp + os.replace rewrites; a crash between battery end and embed leaves the
+    fold manifest-less -> the resume predicate recomputes it, never trusts it)."""
+    j_path, npz_path = _fold_output_paths(base_dir, fold)
+    rep = json.loads(j_path.read_text())
+    rep["provenance_manifest"] = manifest
+    tmp = j_path.with_name(j_path.name + ".tmp")
+    tmp.write_text(json.dumps(rep, indent=2, default=_json_np))
+    os.replace(tmp, j_path)
+    with np.load(npz_path, allow_pickle=False) as d:
+        arrays = {k: d[k] for k in d.files if k != "__manifest__"}
+    arrays["__manifest__"] = np.asarray(json.dumps(manifest, default=_json_np))
+    tmpz = npz_path.with_name(npz_path.name + ".tmp")
+    with open(tmpz, "wb") as f:
+        np.savez(f, **arrays)
+    os.replace(tmpz, npz_path)
+
+
+def _lam_table_from_xlayer_report(base_dir: pathlib.Path, fold: int) -> dict | None:
+    """{layer: {slot: λ}} from the fold's cross-layer report — the manifest's
+    selected-λ*(slot|layer) table (λ is arm-shared per slot by construction of
+    ``_lam_star_by_slot``, so the 'own' arm's records carry the table)."""
+    p = eval_out_dir(base_dir) / fold_suffixed("position_r2_by_arm_cross_layer.json", fold)
+    if not p.exists():
+        return None
+    rep = json.loads(p.read_text())
+    table: dict[str, dict[str, float]] = {}
+    for layer, block in (rep.get("by_layer") or {}).items():
+        own = block.get("own") or {}
+        table[str(layer)] = {slot: float(r["lambda"]) for slot, r in own.items()}
+    return table
+
+
+def _write_kfold_gate_record(base_dir: pathlib.Path, manifest: dict, smoke: bool) -> None:
+    """The calibration gate-PASS record (gate-5 carrier #3): gates 1-4 outcomes
+    + the shared provenance manifest. Gate 4 (round-1 cross-layer reproduction,
+    plan §2) RUNS here — right after the calibration fold completes and BEFORE
+    any rotated fold's verdict is generated (RuntimeError on a production miss)."""
+    out_dir = eval_out_dir(base_dir)
+    cal = KFOLD_BLOCKS - 1
+    meta = json.loads((out_dir / fold_suffixed("battery_meta.json", cal)).read_text())
+    fold_report_path = out_dir / fold_suffixed("position_r2_by_arm_cross_layer.json", cal)
+    ref_path = locate_round1_reference("position_r2_by_arm_cross_layer.json", base_dir)
+    if ref_path is None:
+        if smoke:
+            logger.warning(
+                "[kfold-gate] SMOKE: round-1 cross-layer reference absent — gate 4 "
+                "comparison skipped"
+            )
+            gate4: dict[str, Any] = {"status": "reference_absent_smoke"}
+        else:
+            raise RuntimeError(
+                "round-1 committed position_r2_by_arm_cross_layer.json not found (repo "
+                "checkout or base_dir under eval_results/issue_952/cross-layer-decision-"
+                "cells/) — gate 4 cannot bind; refusing rotated-fold verdicts"
+            )
+    else:
+        gate4 = round1_xlayer_reproduction_gate(
+            json.loads(ref_path.read_text()), json.loads(fold_report_path.read_text()), smoke
+        )
+        gate4["reference"] = str(ref_path)
+    rec = {
+        "kind": "kfold_calibration_gate_record",
+        "calibration_fold": cal,
+        "smoke": smoke,
+        "gates": {
+            "l_star_pos": meta.get("l_star_pos"),
+            "parity_failed": meta.get("parity_failed"),
+            "l20_reproduction_gate": meta.get("l20_reproduction_gate"),
+            "suffixed_l20_calibration_gate": meta.get("suffixed_l20_calibration_gate"),
+            "round1_xlayer_reproduction_gate": gate4,
+        },
+        "provenance_manifest": manifest,
+    }
+    p = out_dir / "kfold_calibration_gate_record.json"
+    tmp = p.with_name(p.name + ".tmp")
+    tmp.write_text(json.dumps(rec, indent=2, default=_json_np))
+    os.replace(tmp, p)
+    logger.info("[kfold] calibration gate record written: %s", p)
+
+
+def _fold_resume_accepts(
+    base_dir: pathlib.Path,
+    fold: int,
+    expected: dict,
+    gate_rec_path: pathlib.Path | None,
+) -> bool:
+    """The gate-5 resume entry predicate for one fold (plan v10 §2 gate 5).
+
+    Accepts a persisted fold ONLY when BOTH carriers exist AND every persisted
+    manifest (npz + report JSON + the gate record, when ``gate_rec_path`` is
+    given — the calibration fold) matches the recomputed/current expectation
+    exactly. A present-but-mismatched carrier is logged loudly (REJECTED —
+    recompute under the CURRENT code state); output existence alone is never
+    trusted."""
+    j_path, npz_path = _fold_output_paths(base_dir, fold)
+    matches = {
+        name: kfold_manifest_match(m, expected)
+        for name, m in _read_persisted_fold_manifests(base_dir, fold).items()
+    }
+    gate_rec_ok = True
+    if gate_rec_path is not None:
+        gate_manifest = None
+        if gate_rec_path.exists():
+            try:
+                gate_manifest = json.loads(gate_rec_path.read_text()).get("provenance_manifest")
+            except (OSError, json.JSONDecodeError):
+                gate_manifest = None
+        gate_rec_ok = kfold_manifest_match(gate_manifest, expected)[0]
+    if (
+        j_path.exists()
+        and npz_path.exists()
+        and all(ok for ok, _why in matches.values())
+        and gate_rec_ok
+    ):
+        return True
+    if (
+        j_path.exists()
+        or npz_path.exists()
+        or (gate_rec_path is not None and gate_rec_path.exists())
+    ):
+        reasons = [f"{name}: {why}" for name, (ok, why) in matches.items() if not ok]
+        if not gate_rec_ok:
+            reasons.append("gate record: manifest absent/mismatched")
+        logger.warning(
+            "[kfold] fold %d persisted outputs REJECTED (%s) — invalidating + "
+            "recomputing under the CURRENT code state (plan §2 gate 5)",
+            fold,
+            "; ".join(reasons) or "incomplete carrier set",
+        )
+    return False
+
+
+def _pin_fold_ckpt_manifest(base_dir: pathlib.Path, fold: int, expected: dict) -> None:
+    """Pin the fold's expected manifest into its ckpt dir BEFORE the battery runs.
+
+    In-flight per-unit ckpt shards carry no git-sha key of their own, so a
+    code/env-state change between attempts must wipe them — otherwise a fold
+    'recomputed under the current code' would silently resume stale units
+    (gate-5 strictness; the #722-r3 regime-key lesson at the fold grain)."""
+    ck = _battery_ckpt_dir(base_dir, fold)
+    mpath = ck / "fold_manifest_expected.json"
+    if mpath.exists():
+        try:
+            prior = json.loads(mpath.read_text())
+        except (OSError, json.JSONDecodeError):
+            prior = None
+        ok_prior, why_prior = kfold_manifest_match(prior, expected)
+        if not ok_prior:
+            stale = sorted(ck.glob("*.npz"))
+            for p in stale:
+                p.unlink()
+            logger.warning(
+                "[kfold] fold %d in-flight ckpt shards invalidated (%s) — %d wiped",
+                fold,
+                why_prior,
+                len(stale),
+            )
+    ck.mkdir(parents=True, exist_ok=True)
+    mpath.write_text(json.dumps(expected, indent=2, default=_json_np))
+
+
+def run_kfold_battery(
+    base_dir: pathlib.Path,
+    smoke: bool,
+    pool_ids: list[int],
+    fit_device: str,
+    staging_revision: str | None,
+) -> None:
+    """The kfold fold loop around ``phase_battery`` (plan v10 §3): calibration
+    fold (test = B(K-1)) FIRST with the fold-aware gates 1-4, then the rotated
+    folds; per-fold persist the moment each fold completes + the §2 gate-5
+    manifest resume predicate — a persisted fold is accepted ONLY on a full
+    manifest match (recomputed split hashes + staging revision + git SHA + env);
+    any mismatch invalidates the fold (outputs AND its in-flight ckpt shards)
+    and recomputes it under the CURRENT code state. A calibration fold (or its
+    gate record) persisted under a different code state forces calibration +
+    gates re-run BEFORE any rotated-fold verdict."""
+    assert KFOLD_BLOCKS >= 3
+    log_phase("p1e_kfold")
+    folds = make_kfold_splits(pool_ids, KFOLD_BLOCKS)
+    cal = KFOLD_BLOCKS - 1
+    out_dir = eval_out_dir(base_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    # Calibration-fold identity vs the COMMITTED split artifact (plan §3: checked
+    # against the artifact, not just the construction — make_kfold_splits already
+    # asserts fold(K-1) == make_split(pool)).
+    persisted_split = (
+        base_dir
+        / "eval_results"
+        / "issue_952"
+        / ("split_seed952_smoke.json" if smoke else "split_seed952.json")
+    )
+    if persisted_split.exists():
+        on_disk = json.loads(persisted_split.read_text())
+        for key in ("train", "val", "test"):
+            assert on_disk[key] == folds[cal][key], (
+                f"kfold calibration fold != committed {persisted_split} ({key}) — "
+                "construction drift (plan kill criterion)"
+            )
+    elif not smoke:
+        raise RuntimeError(
+            "committed split file required for the calibration-fold identity assert: "
+            f"{persisted_split}"
+        )
+
+    (out_dir / "fold_assignment.json").write_text(
+        json.dumps(
+            {
+                "k_folds": KFOLD_BLOCKS,
+                "split_seed": SPLIT_SEED,
+                "n_pool": len(pool_ids),
+                "calibration_fold": cal,
+                "rotation": "fold j: test=Bj, val=B((j-1) mod K), train=rest (plan v10 §2)",
+                "test_ids_by_fold": {str(f["fold"]): f["test"] for f in folds},
+                "split_sha256_by_fold": {str(f["fold"]): kfold_split_hashes(f) for f in folds},
+                "smoke": smoke,
+            },
+            indent=2,
+            default=_json_np,
+        )
+    )
+
+    gate_rec_path = out_dir / "kfold_calibration_gate_record.json"
+    order = [cal] + [j for j in range(KFOLD_BLOCKS) if j != cal]
+    for j in order:
+        fold_split = folds[j]
+        expected = kfold_manifest(fold_split, staging_revision)
+        if _fold_resume_accepts(base_dir, j, expected, gate_rec_path if j == cal else None):
+            logger.info("[kfold] SKIP fold %d — outputs present, gate-5 manifests match", j)
+            continue
+        _pin_fold_ckpt_manifest(base_dir, j, expected)
+        if j == cal:
+            logger.info(
+                "[kfold] fold %d (CALIBRATION, test=B%d) runs FIRST — gates bind here", j, cal
+            )
+        phase_battery(
+            base_dir,
+            smoke,
+            pool_ids,
+            fold_split,
+            fit_device,
+            fold=j,
+            fold_calibration=(j == cal),
+        )
+        manifest = kfold_manifest(
+            fold_split, staging_revision, _lam_table_from_xlayer_report(base_dir, j)
+        )
+        _embed_fold_manifest(base_dir, j, manifest)
+        if j == cal:
+            _write_kfold_gate_record(base_dir, manifest, smoke)
+        logger.info("[kfold] fold %d complete + manifest embedded", j)
+    log_phase("p1e_kfold_done")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -3464,14 +4098,27 @@ def _apply_frozen_preds(
 
 
 def phase_bank_score(  # noqa: C901 — the 1f driver: bank reads + H3 secondary + uploads
-    base_dir: pathlib.Path, smoke: bool, bank_file: str | None, uploader: _UploadWorker
+    base_dir: pathlib.Path,
+    smoke: bool,
+    bank_file: str | None,
+    uploader: _UploadWorker,
+    fold: int | None = None,
+    split_override: dict | None = None,
+    run_terminal_upload: bool = True,
 ) -> None:
-    """Phase 1f: per-pair bank reads + error-cosine secondary + terminal uploads."""
-    log_phase("p1f_bank_score")
+    """Phase 1f: per-pair bank reads + error-cosine secondary + terminal uploads.
+
+    ``fold`` (kfold rounds): reads the fold's own battery meta + npz and writes
+    ``divergence_eval_fold{k}.json``; ``split_override`` supplies the fold's own
+    train split for the H3 secondary refit (each bank cell evaluated under each
+    fold's maps — plan v10 §2 H3 rider); ``run_terminal_upload=False`` defers
+    the terminal upload to ``_kfold_terminal_upload`` (one upload after all
+    folds), keeping the per-fold loop pure scoring."""
+    log_phase(f"p1f_bank_score_fold{fold}" if fold is not None else "p1f_bank_score")
     out_dir = eval_out_dir(base_dir)  # follow-up rounds write under their own subdir
     tensors_dir = base_dir / "analysis_tensors"
-    meta = json.loads((out_dir / "battery_meta.json").read_text())
-    npz_path = tensors_dir / per_context_npz_name()
+    meta = json.loads((out_dir / fold_suffixed("battery_meta.json", fold)).read_text())
+    npz_path = tensors_dir / per_context_npz_name(fold)
     npz = dict(np.load(npz_path, allow_pickle=False))
 
     # The bank verification is a PARENT-run input (staged on follow-up rounds).
@@ -3528,6 +4175,8 @@ def phase_bank_score(  # noqa: C901 — the 1f driver: bank reads + H3 secondary
         # on divergent queries (plan §3 H3) — needs prediction vectors.
         l_star = int(meta["l_star_pos"])
         pool_ids, split = _load_pool_and_split(base_dir, smoke)
+        if split_override is not None:
+            split = split_override  # the fold's own split (kfold H3 rider, plan v10 §2)
         pos_map = {cid: i for i, cid in enumerate(pool_ids)}
         spans_by_arm = {
             arm: np.asarray(
@@ -3579,8 +4228,14 @@ def phase_bank_score(  # noqa: C901 — the 1f driver: bank reads + H3 secondary
     else:
         logger.warning("[p1f] no bank per-context stats in npz — bank scoring skipped")
 
-    (out_dir / "divergence_eval.json").write_text(json.dumps(div_eval, indent=2, default=_json_np))
-    logger.info("[p1f] divergence_eval.json: %d rows", len(div_eval["rows"]))
+    div_eval["fold"] = fold
+    div_name = fold_suffixed("divergence_eval.json", fold)
+    (out_dir / div_name).write_text(json.dumps(div_eval, indent=2, default=_json_np))
+    logger.info("[p1f] %s: %d rows", div_name, len(div_eval["rows"]))
+
+    if not run_terminal_upload:
+        log_phase(f"p1f_done_fold{fold}" if fold is not None else "p1f_done")
+        return
 
     # Terminal uploads: eval JSONs + npz + bank raw completions + bank shards.
     upload_paths: list[pathlib.Path] = sorted((out_dir).glob("*.json"))
@@ -3600,45 +4255,67 @@ def phase_bank_score(  # noqa: C901 — the 1f driver: bank reads + H3 secondary
             upload_paths += sorted(p for p in judge_dir.rglob("*.json") if p.is_file())
         upload_paths += sorted(tensors_dir.glob("slots_bank_*.pt"))
         upload_paths += sorted(tensors_dir.glob("spans_*.json"))
-    # Workload-log leg (plan §10 artifacts: HF logs/issue-952-workload.log). A CLEAN
-    # GCE run's log dies with the instance DELETE unless uploaded here; the GCE
-    # startup script exports its path as EPS_LOG_PATH (backends/gcp.log_path_for).
-    log_src = pathlib.Path(os.environ.get("EPS_LOG_PATH") or "/workspace/logs/issue-952.log")
-    if log_src.is_file():
-        import shutil
-
-        log_dest = base_dir / "logs" / "issue-952-workload.log"
-        log_dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(log_src, log_dest)
+    log_dest = _stage_workload_log(base_dir)
+    if log_dest is not None:
         upload_paths.append(log_dest)
-        logger.info(
-            "[p1f] workload log staged for upload: %s (%d bytes)",
-            log_src,
-            log_dest.stat().st_size,
-        )
-    else:
-        logger.warning("[p1f] workload log not found at %s — upload leg skipped", log_src)
     uploader.submit("1f terminal", [p for p in upload_paths if p.exists()], base_dir)
     uploader.join()
     log_phase("p1f_done")
 
 
+def _stage_workload_log(base_dir: pathlib.Path) -> pathlib.Path | None:
+    """Stage the workload log for upload (plan §10: HF logs/issue-952-workload.log).
+
+    A CLEAN GCE run's log dies with the instance DELETE unless uploaded; the GCE
+    startup script exports its path as EPS_LOG_PATH (backends/gcp.log_path_for).
+    Returns the staged copy, or None when the source log is absent (warned)."""
+    log_src = pathlib.Path(os.environ.get("EPS_LOG_PATH") or "/workspace/logs/issue-952.log")
+    if not log_src.is_file():
+        logger.warning("[p1f] workload log not found at %s — upload leg skipped", log_src)
+        return None
+    import shutil
+
+    log_dest = base_dir / "logs" / "issue-952-workload.log"
+    log_dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(log_src, log_dest)
+    logger.info(
+        "[p1f] workload log staged for upload: %s (%d bytes)", log_src, log_dest.stat().st_size
+    )
+    return log_dest
+
+
+def _kfold_terminal_upload(base_dir: pathlib.Path, uploader: _UploadWorker) -> None:
+    """ONE terminal upload after all kfold folds are scored (plan v10 §9 phase 3):
+    every JSON in the kfold out dir (fold reports, meta, closures, divergence
+    evals, fold_assignment, gate record) + the K fold npzs + the staged parent
+    verification records + the workload log — all namespaced under
+    followups/<tag>/ by ``_hf_commit_files`` (parent HF files never overwritten)."""
+    out_dir = eval_out_dir(base_dir)
+    tensors_dir = base_dir / "analysis_tensors"
+    upload_paths: list[pathlib.Path] = sorted(out_dir.glob("*.json"))
+    upload_paths += [tensors_dir / per_context_npz_name(j) for j in range(KFOLD_BLOCKS)]
+    for name in ("phase0_verify.json", "bank_length_filter.json"):
+        p = parent_eval_dir(base_dir) / name
+        if p.exists():
+            upload_paths.append(p)
+    log_dest = _stage_workload_log(base_dir)
+    if log_dest is not None:
+        upload_paths.append(log_dest)
+    missing = [str(p) for p in upload_paths if not p.exists()]
+    if missing:
+        # Fail loud on a missing fold npz/report — a partial kfold upload must
+        # never masquerade as complete (persist-by-default, upload policy).
+        raise RuntimeError(f"kfold terminal upload: expected artifacts missing: {missing[:8]}")
+    uploader.submit("kfold terminal", upload_paths, base_dir)
+    uploader.join()
+    log_phase("p1f_kfold_done")
+
+
 def write_final_sentinel(base_dir: pathlib.Path, smoke: bool) -> None:
     """Write the epm:results sentinel for poll_pipeline.py (run_823 contract)."""
-    import subprocess
     import time
 
-    git_sha = "unknown"
-    try:
-        git_sha = (
-            subprocess.check_output(
-                ["git", "rev-parse", "HEAD"], cwd=str(repo_root()), env={**os.environ}
-            )
-            .decode()
-            .strip()
-        )
-    except Exception as e:
-        logger.warning("git sha lookup failed (recorded 'unknown'): %s", e)
+    git_sha = _repo_git_sha()
     # Results-card plan_deviations (round-2 concern i823-pool-coherence-empty-answers):
     # prefer the live phase0_verify.json record; fall back to the static note.
     deviation = PLAN_DEVIATION_NOTE
@@ -3918,9 +4595,29 @@ def main() -> None:  # noqa: C901 — the phase dispatcher IS the unified smoke/
     if "bank-capture" in phases and not args.synth_capture:
         phase_bank_capture(base_dir, smoke, args.bank_file)
     if "battery" in phases:
-        phase_battery(base_dir, smoke, pool_ids, split, fit_device)
+        if KFOLD_BLOCKS:
+            run_kfold_battery(base_dir, smoke, pool_ids, fit_device, args.stage_battery_inputs)
+        else:
+            phase_battery(base_dir, smoke, pool_ids, split, fit_device)
     if "bank-score" in phases:
-        phase_bank_score(base_dir, smoke, args.bank_file, uploader)
+        if KFOLD_BLOCKS:
+            # 1f bank-score xK under each fold's own maps (plan v10 §9 phase 3);
+            # ONE terminal upload after all folds.
+            kfolds = make_kfold_splits(pool_ids, KFOLD_BLOCKS)
+            cal = KFOLD_BLOCKS - 1
+            for j in [cal] + [x for x in range(KFOLD_BLOCKS) if x != cal]:
+                phase_bank_score(
+                    base_dir,
+                    smoke,
+                    args.bank_file,
+                    uploader,
+                    fold=j,
+                    split_override=kfolds[j],
+                    run_terminal_upload=False,
+                )
+            _kfold_terminal_upload(base_dir, uploader)
+        else:
+            phase_bank_score(base_dir, smoke, args.bank_file, uploader)
         write_final_sentinel(base_dir, smoke)
     uploader.join()
     log_phase("done")
