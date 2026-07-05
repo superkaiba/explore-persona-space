@@ -2000,7 +2000,7 @@ markers:
   - kind: "epm:clean-result-critique-codex"
     posted_by: skill (via codex-clean-result-critic)
     when: "Step 9a-bis"
-    fields: "Codex (gpt-5.5 via companion task) twin of clean-result-critic. Runs verify_task_body.py and audit_clean_results_body_discipline.py independently."
+    fields: "Codex (gpt-5.5 via companion task) twin of clean-result-critic. Grounds its mechanical pre-pass on composer-inlined verify_task_body.py + audit_clean_results_body_discipline.py (markdown) / verify_paper.py (paper) output — the composer runs them outside the sandbox at compose time (#1050; this twin is dispatched read-only and uv cannot reliably execute in its sandbox)."
   - kind: "epm:methodology-doc-generated"
     posted_by: "skill (orchestrator export of the body's `## Methodology` section + gist publish; v3/v2 grandfathered path via methodology-writer agent; paper-task skip post)"
     when: "Step 9a-quater (after clean-result-critic PASS, before `awaiting_promotion` park)"
