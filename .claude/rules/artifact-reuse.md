@@ -420,8 +420,8 @@ diff: the constant's comment/docstring states its calibration source (the
 #813 round-4 pattern); a threshold with no committed-reference grounding
 is a blocker-worthy finding, not an FYI. Hardware/precision false-parity
 SIBLINGS (gauge-origin hardware; float64 clone for fp32 kernel parity)
-are environment mismatch, distinct from calibration: gotchas.md #723-family
-+ #841 entries.
+are environment mismatch, distinct from calibration: gotchas.md
+#723-family + #841 entries.
 
 ## Enforcement chain
 
