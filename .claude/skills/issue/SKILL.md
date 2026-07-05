@@ -8252,7 +8252,14 @@ recovery sub-procedure. (This is exactly why #787 itself — which MODIFIES
 # Fast-path predicate — ALL of:
 #  (a) task is kind:infra AND tagged wf-fix (a workflow-fix branch), AND
 #  (b) BEHIND > 1000 (branch predates significant main churn), AND
-#  (c) the branch's OWN diff touches <= 15 files, AND
+#  (c) the branch's OWN diff (after the agent-memory filter below) touches
+#      BETWEEN 1 and 15 files — the `-ge 1` LOWER bound is load-bearing: the
+#      memory filter can EMPTY the list (a branch whose entire own-diff is
+#      Guard-0 memory commits), and an empty list must NEVER fast-path — the
+#      surgical `--diff-filter=A` list is then empty too, and an empty-input
+#      xargs would run `git checkout issue-<N> --` with NO pathspec, which is
+#      a BRANCH SWITCH of the shared repo root (`xargs -r` at the checkout is
+#      the depth-2 defense), AND
 #  (d) every touched file is in-scope: this task's own paths, workflow
 #      surface, .gitattributes, or the methodology doc — NO shared src/ or
 #      scripts/ additions (those need the full rebase to land), AND
@@ -8292,6 +8299,7 @@ FAST_PATH=no
 if [ "$TASK_KIND" = "infra" ] \
    && printf '%s' "$TASK_TAGS" | grep -qw 'wf-fix' \
    && [ "$BEHIND" -gt 1000 ] \
+   && [ "$N_FILES" -ge 1 ] \
    && [ "$N_FILES" -le 15 ] \
    && [ "$IN_SCOPE" = "yes" ] \
    && [ "$ADDED_ONLY" = "yes" ]; then
@@ -8340,14 +8348,65 @@ Gate the merge payload on the lint BEFORE anything lands:
   not fail (PASS = exit 0 on both).
 
   ```bash
-  LINT_RC=0
-  uv run python "$WT/scripts/workflow_lint.py" \
-    > /tmp/issue-<N>-lint.txt 2>&1 || LINT_RC=$?
-  # Parity leg — checks tests/test_workflow_lint.py pins that the no-flags
-  # bundle omits:
-  uv run python "$WT/scripts/workflow_lint.py" \
-    --check-references --check-tables --check-asks --check-autonomous-asks \
-    >> /tmp/issue-<N>-lint.txt 2>&1 || LINT_RC=$?
+  # EXECUTABLE gate — forms (i) safe case and (ii) recovery share this block
+  # verbatim (gated = the WORKTREE lint copy on the payload-bearing branch-tip
+  # tree; baseline = the repo-root copy on the payload-free main tree). Form
+  # (iii) inlines the SAME trigger/normalize/subtract/verdict steps around its
+  # checkout — see the surgical block. The verdict is PERSISTED to a file
+  # because fenced bash blocks are separate shell invocations: the binding
+  # sites consume the FILE, never a shell variable.
+  if git -C "$WT" diff --name-only origin/main...HEAD \
+      | grep -qvE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)'; then
+    # BASELINE legs (payload-free tree). Exit codes deliberately NOT captured:
+    # only the baseline's normalized failure LINES enter the compare — a red
+    # baseline exit code carries no payload information.
+    uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+      > /tmp/issue-<N>-lint-baseline.txt 2>&1 || true
+    uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+      --check-references --check-tables --check-asks --check-autonomous-asks \
+      >> /tmp/issue-<N>-lint-baseline.txt 2>&1 || true
+    # GATED legs (payload-bearing tree; parity leg covers the checks the
+    # no-flags bundle omits — see the bullet above):
+    GATED_RC=0
+    uv run python "$WT/scripts/workflow_lint.py" \
+      > /tmp/issue-<N>-lint-gated.txt 2>&1 || GATED_RC=$?
+    uv run python "$WT/scripts/workflow_lint.py" \
+      --check-references --check-tables --check-asks --check-autonomous-asks \
+      >> /tmp/issue-<N>-lint-gated.txt 2>&1 || GATED_RC=$?
+    # Normalize failure lines: keep per-error `workflow_lint: <err>` lines,
+    # DROP the PASS / `FAIL (N error(s))` summary lines (their COUNT changes
+    # even when the failure identities match — a payload that fixes one
+    # pre-existing error must not false-block on a differing summary), and
+    # blank `:<line>:` numbers so unrelated drift cannot fake a NEW line.
+    # (WARNs never enter: workflow_lint emits them with a `WARN: ` prefix.)
+    for leg in baseline gated; do
+      grep -h '^workflow_lint: ' "/tmp/issue-<N>-lint-$leg.txt" \
+        | grep -vE '^workflow_lint: (PASS$|FAIL \()' \
+        | sed -E 's/:[0-9]+:/::/g' | sort -u \
+        > "/tmp/issue-<N>-lint-$leg-norm.txt" || true
+    done
+    # NEW = gated_failures − baseline_failures (set subtraction):
+    comm -23 /tmp/issue-<N>-lint-gated-norm.txt \
+      /tmp/issue-<N>-lint-baseline-norm.txt > /tmp/issue-<N>-lint-new.txt
+    # Gated failure lines naming a file IN the own-diff:
+    git -C "$WT" diff --name-only origin/main...HEAD > /tmp/issue-<N>-own-diff.txt
+    grep -F -f /tmp/issue-<N>-own-diff.txt /tmp/issue-<N>-lint-gated-norm.txt \
+      > /tmp/issue-<N>-lint-owndiff.txt || true
+    # VERDICT — the captured GATED_RC is consumed HERE: a green gated run
+    # (exit 0) can never block; a red one blocks only when payload-attributed
+    # (an own-diff-named failure line OR a non-empty NEW set).
+    if [ "$GATED_RC" -ne 0 ] \
+       && { [ -s /tmp/issue-<N>-lint-owndiff.txt ] || [ -s /tmp/issue-<N>-lint-new.txt ]; }; then
+      echo block > /tmp/issue-<N>-lint-verdict.txt
+    else
+      echo pass > /tmp/issue-<N>-lint-verdict.txt
+    fi
+  else
+    # Executable trigger (the Trigger bullet above): artifact-only payload —
+    # both lint runs skipped by design.
+    echo skip-artifact-only > /tmp/issue-<N>-lint-verdict.txt
+  fi
+  cat /tmp/issue-<N>-lint-verdict.txt   # pass | block | skip-artifact-only
   ```
 
 - **Verdict — payload-attributed via failure-LINE-SET subtraction; NEVER
@@ -8357,22 +8416,30 @@ Gate the merge payload on the lint BEFORE anything lands:
   prefixes; keep the `<check>/<file>[:<line>] <msg>` identity) between the
   GATED run and a payload-free BASELINE run — BOTH legs (no-flags + parity)
   in each run, so a pre-existing parity-leg red on main can never be
-  misread as payload-caused (and vice versa). On any gated-run failure:
-  1. Any gated failure line naming a file IN the own-diff → the payload is
-     the offender. Fix it in the worktree (the lint names file + rule),
+  misread as payload-caused (and vice versa). The executable block above
+  computes the BINARY verdict (`block` | `pass` | `skip-artifact-only`) and
+  persists it to `/tmp/issue-<N>-lint-verdict.txt`; the binding sites gate
+  their merge/push/add commands on that FILE with an explicit conditional —
+  a missing verdict file fails CLOSED (the gate has not run yet). On a
+  `block` verdict:
+  1. An own-diff-named gated failure line exists
+     (`/tmp/issue-<N>-lint-owndiff.txt` non-empty) → the payload is the
+     offender. Fix it in the worktree (the lint names file + rule),
      commit by explicit path, re-run the gate ONCE; still failing → post
      `epm:merge-failed v1` with `{reason: "pre-push workflow-lint gate",
      lint_tail: <last lines>}`, surface ONE line in chat, CONTINUE (same
      fail-fast policy as a merge failure; retried idempotently on the next
      `/issue <N>`).
-  2. No own-diff-named line → compute `NEW = gated_failures −
-     baseline_failures` (set subtraction on the normalized lines). NEW
-     non-empty → a payload-caused cross-file interaction (e.g. a
-     lessons-index / lens-coverage check naming the index rather than the
-     added rule file) — treat as case 1 (block). NEW empty → pre-existing
-     red — WARN (record the lint tail in the `epm:merged` note) and
-     PROCEED. Run the baseline and gated runs back-to-back in the same
-     turn so a concurrent merge cannot widen the compare window
+  2. No own-diff-named line → the block came from
+     `NEW = gated_failures − baseline_failures` (`comm -23` on the
+     normalized lines, persisted at `/tmp/issue-<N>-lint-new.txt`) — a
+     payload-caused cross-file interaction (e.g. a lessons-index /
+     lens-coverage check naming the index rather than the added rule
+     file) — treat as case 1 (block). NEW empty with no own-diff-named
+     line never blocks: the executable block writes `pass` — pre-existing
+     red is a WARN (record the lint tail in the `epm:merged` note) and
+     the merge PROCEEDS. Run the baseline and gated runs back-to-back in
+     the same turn so a concurrent merge cannot widen the compare window
      (moving-main race — keep the window tight, preserve the
      main-already-red detail in the marker).
 - **Baseline semantics per binding form (the baseline is ALWAYS a
@@ -8390,11 +8457,23 @@ Gate the merge payload on the lint BEFORE anything lands:
   exactly the fast-path form; sequence = baseline (root copy, both legs) →
   checkout → gated (root copy, both legs) → set-subtraction verdict → on
   pass, `git add`. On a block at (iii), clean the payload out of BOTH
-  index and working tree — `xargs -a /tmp/issue-<N>-additive-files.txt
-  git restore --staged --worktree --` (the paths are A-only; a bare
-  `rm -f` leaves them STAGED in the shared root index, polluting
-  concurrent sessions' `git diff --cached` echoes). The fast path routes
-  through (iii). Idempotent: re-entry just re-runs the gate.
+  index and working tree with the hook-VERIFIED two-step (run from
+  `$REPO_ROOT`; simulated against `scripts/guard_repo_root_branch.sh`
+  2026-07-05 — the one-shot restore invocation carrying `--staged` PLUS a
+  worktree flag is mechanically BLOCKED by its #897 restore detector, whose allow
+  arm requires `--staged` AND no worktree flag, and the hook's own
+  guidance bans pointing `-C` at the repo root for a DESTRUCTIVE op):
+  first `xargs -r -a /tmp/issue-<N>-additive-files.txt git -C "$REPO_ROOT"
+  restore --staged --` (index-only unstage — non-destructive, admitted by
+  the restore allow-arm), then `xargs -r -a
+  /tmp/issue-<N>-additive-files.txt rm -f --` (the paths are A-only,
+  absent from `main`, and untracked after the unstage — the plain `rm`
+  destroys no main state; a bare `rm -f` WITHOUT the unstage would leave
+  them STAGED in the shared root index, polluting concurrent sessions'
+  `git diff --cached` echoes). The `xargs -r` (`--no-run-if-empty`) on
+  every additive-list consumer is load-bearing: on an EMPTY list a
+  flag-less xargs still runs its command once with NO pathspec. The fast
+  path routes through (iii). Idempotent: re-entry just re-runs the gate.
 - **Known residual (accepted, documented):** on path (i) the gated lint is
   the branch's merge-base copy (Step 5a's spec-freshness `SPECS` list
   covers `.claude/` specs + CLAUDE.md, NOT `scripts/` — verified at the
@@ -8428,14 +8507,35 @@ else
   # (WORKTREE-scoped: `git -C "$WT"` on the issue branch. scripts/sync_repo_root.py
   # does NOT apply here — it is repo-root-only by design, preconditioned on
   # HEAD == main, exit 5 otherwise.)
-  if [ "$STRIPPED_FOREIGN" = "yes" ] || [ "$MEM_COMMITTED" = "yes" ]; then
+  #
+  # The push condition RE-DERIVES "unpushed local commits exist" from git
+  # state (rev-list against origin/issue-<N>) instead of trusting the
+  # STRIPPED_FOREIGN / MEM_COMMITTED flags alone: fenced bash blocks are
+  # SEPARATE shell invocations, so a flag assigned in Guard 0/1 is unset
+  # here (and would silently skip the second-chance push); the git-state
+  # read also survives a crash + re-entry, and covers BOTH the strip commit
+  # and the memory commit in one predicate. The flags stay as same-block
+  # conveniences only (they still short-circuit true when guards and merge
+  # happen to run in one shell). A missing / unresolvable origin/issue-<N>
+  # ref counts as unpushed (`|| echo 1` — fails toward pushing, the safe
+  # direction; a redundant push is a no-op "Everything up-to-date").
+  if [ "$(git -C "$WT" rev-list --count origin/issue-<N>..HEAD 2>/dev/null || echo 1)" -gt 0 ] \
+     || [ "$STRIPPED_FOREIGN" = "yes" ] || [ "$MEM_COMMITTED" = "yes" ]; then
     git -C "$WT" push origin issue-<N> \
       || { git -C "$WT" pull --rebase=merges --autostash \
            && git -C "$WT" push origin issue-<N>; }
   fi
-  # Pre-push workflow-lint gate (subsection above) — run BEFORE gh pr ready.
-  gh pr ready <PR>
-  gh pr merge <PR> --rebase --delete-branch=false
+  # Pre-push workflow-lint gate (subsection above) — run its executable
+  # block FIRST, then gate the merge on the PERSISTED verdict file: the
+  # explicit conditional below is the hard stop (a missing verdict file
+  # fails CLOSED — the gate has not run yet; run it, then re-enter).
+  if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null; then
+    gh pr ready <PR>
+    gh pr merge <PR> --rebase --delete-branch=false
+  else
+    echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — fix the named offender in the worktree, re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict case 1). Do NOT merge."
+    false
+  fi
 fi
 ```
 
@@ -8478,12 +8578,21 @@ git -C "$WT" merge origin/main          # conflicts surface HERE, in the worktre
 # outside this task's deliverables), then:
 git -C "$WT" add <each resolved file>
 git -C "$WT" commit --no-edit
-# Re-run the targeted tests for the touched surface AND the Pre-push workflow-lint gate (subsection above), then:
-git -C "$WT" push
-# gh recomputes mergeability asynchronously after a push — it can be
-# momentarily stale. Re-check before concluding failure:
-gh pr view <PR> --json mergeable -q .mergeable   # brief wait/retry until MERGEABLE
-gh pr merge <PR> --rebase --delete-branch=false
+# Re-run the targeted tests for the touched surface AND the executable
+# Pre-push workflow-lint gate block (subsection above; gated = this
+# post-merge worktree copy, which carries main's CURRENT lint — the ideal
+# gate point). The push is then GATED on the persisted verdict file — the
+# explicit conditional is the hard stop (missing file fails CLOSED):
+if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null; then
+  git -C "$WT" push
+  # gh recomputes mergeability asynchronously after a push — it can be
+  # momentarily stale. Re-check before concluding failure:
+  gh pr view <PR> --json mergeable -q .mergeable   # brief wait/retry until MERGEABLE
+  gh pr merge <PR> --rebase --delete-branch=false
+else
+  echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — fix the named offender in the worktree, re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict case 1). Do NOT push."
+  false
+fi
 ```
 
 One recovery attempt per Step 10d invocation. If the re-checked
@@ -8623,40 +8732,85 @@ Decision tree:
 
   ```bash
   cd "$REPO_ROOT"
-  # Pre-push workflow-lint gate — BASELINE leg (subsection above). Run BOTH
-  # lint legs on the ROOT copy BEFORE the checkout below lands the payload:
-  # a post-checkout "baseline" would re-lint the same contaminated tree — a
-  # degenerate self-compare that fails open. Skip both legs only when the
-  # additive-files list is artifact-only (the gate's Trigger bullet).
-  BASE_RC=0
-  uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
-    > /tmp/issue-<N>-lint-baseline.txt 2>&1 || BASE_RC=$?
-  uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
-    --check-references --check-tables --check-asks --check-autonomous-asks \
-    >> /tmp/issue-<N>-lint-baseline.txt 2>&1 || BASE_RC=$?
+  # Pre-push workflow-lint gate — form (iii) (subsection above): the payload
+  # lands in the ROOT tree, so BOTH lint runs use the root copy, sequenced
+  # around the checkout — BASELINE BEFORE (payload-free tree; a post-checkout
+  # "baseline" would re-lint the same contaminated tree, a degenerate
+  # self-compare that fails open), GATED AFTER. The whole gate-and-land
+  # sequence runs in ONE fenced block, so the verdict variable is
+  # same-invocation state (no cross-block variable). Executable trigger
+  # first: an artifact-only additive list skips both lint runs.
+  GATE_ARMED=no
+  if grep -qvE '^(tasks/|figures/|eval_results/|ood_eval_results/|raw/|data/|docs/methodology/)' \
+       /tmp/issue-<N>-additive-files.txt; then
+    GATE_ARMED=yes
+    # BASELINE legs (exit codes deliberately not captured — only normalized
+    # failure LINES enter the compare):
+    uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+      > /tmp/issue-<N>-lint-baseline.txt 2>&1 || true
+    uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+      --check-references --check-tables --check-asks --check-autonomous-asks \
+      >> /tmp/issue-<N>-lint-baseline.txt 2>&1 || true
+  fi
   # `-C "$REPO_ROOT"` is the repo-root guard's designed deliberate-override
   # (#897): the hook's working-tree-revert detector would bounce the bare
   # `checkout <branch> -- <paths>` form; the `-C` names the tree explicitly.
-  xargs -a /tmp/issue-<N>-additive-files.txt git -C "$REPO_ROOT" checkout issue-<N> --
-  # Pre-push workflow-lint gate — GATED leg: the root tree now carries the
-  # payload; re-run both legs, then apply the failure-LINE-SET subtraction
-  # verdict (subsection above). On a block, clean the payload out of BOTH
-  # index and working tree:
-  #   xargs -a /tmp/issue-<N>-additive-files.txt git restore --staged --worktree --
-  GATED_RC=0
-  uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
-    > /tmp/issue-<N>-lint-gated.txt 2>&1 || GATED_RC=$?
-  uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
-    --check-references --check-tables --check-asks --check-autonomous-asks \
-    >> /tmp/issue-<N>-lint-gated.txt 2>&1 || GATED_RC=$?
-  xargs -a /tmp/issue-<N>-additive-files.txt git add --
-  git diff --cached --name-only   # sanity echo: spot any foreign staged entries
-  xargs -a /tmp/issue-<N>-additive-files.txt git commit -m "issue-<N>: surgical additive checkout (full rebase deferred — guard 3)
+  # `xargs -r` (--no-run-if-empty) is load-bearing: on an EMPTY additive list
+  # a flag-less xargs still runs `git checkout issue-<N> --` ONCE with no
+  # pathspec — a BRANCH SWITCH of the shared root (the FAST_PATH `-ge 1`
+  # lower bound is the first defense; this is defense-in-depth).
+  xargs -r -a /tmp/issue-<N>-additive-files.txt git -C "$REPO_ROOT" checkout issue-<N> --
+  # GATED legs + verdict — the root tree now carries the payload. Same
+  # normalize → comm -23 subtraction → verdict as the gate's executable
+  # block; own-diff here = the additive-files list.
+  GATE_VERDICT=pass
+  if [ "$GATE_ARMED" = "yes" ]; then
+    GATED_RC=0
+    uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+      > /tmp/issue-<N>-lint-gated.txt 2>&1 || GATED_RC=$?
+    uv run python "$REPO_ROOT/scripts/workflow_lint.py" \
+      --check-references --check-tables --check-asks --check-autonomous-asks \
+      >> /tmp/issue-<N>-lint-gated.txt 2>&1 || GATED_RC=$?
+    for leg in baseline gated; do
+      grep -h '^workflow_lint: ' "/tmp/issue-<N>-lint-$leg.txt" \
+        | grep -vE '^workflow_lint: (PASS$|FAIL \()' \
+        | sed -E 's/:[0-9]+:/::/g' | sort -u \
+        > "/tmp/issue-<N>-lint-$leg-norm.txt" || true
+    done
+    comm -23 /tmp/issue-<N>-lint-gated-norm.txt \
+      /tmp/issue-<N>-lint-baseline-norm.txt > /tmp/issue-<N>-lint-new.txt
+    grep -F -f /tmp/issue-<N>-additive-files.txt /tmp/issue-<N>-lint-gated-norm.txt \
+      > /tmp/issue-<N>-lint-owndiff.txt || true
+    # GATED_RC consumed HERE — a red gated run blocks only when
+    # payload-attributed (own-diff-named line OR NEW non-empty):
+    if [ "$GATED_RC" -ne 0 ] \
+       && { [ -s /tmp/issue-<N>-lint-owndiff.txt ] || [ -s /tmp/issue-<N>-lint-new.txt ]; }; then
+      GATE_VERDICT=block
+    fi
+  fi
+  # HARD STOP: stage/commit/push run ONLY on a pass verdict; a block cleans
+  # the payload back out of the shared root (index + working tree).
+  if [ "$GATE_VERDICT" = "pass" ]; then
+    xargs -r -a /tmp/issue-<N>-additive-files.txt git add --
+    git diff --cached --name-only   # sanity echo: spot any foreign staged entries
+    xargs -r -a /tmp/issue-<N>-additive-files.txt git commit -m "issue-<N>: surgical additive checkout (full rebase deferred — guard 3)
 
   Branch unsafe to blind-rebase: <based on <PARENT> (not on mainline) |
   own commits touch foreign / out-of-scope paths>. Cherry-picked this
   task's own added files only; shared src/ / scripts/ unchanged." --
-  git push origin main
+    git push origin main
+  else
+    # BLOCKED: the checkout above already staged the A-only paths AND wrote
+    # them to the working tree — clean BOTH with the hook-verified two-step
+    # (the gate subsection's baseline-semantics bullet documents why the
+    # one-shot restore form is hook-blocked): index-only unstage, then plain
+    # rm of the now-untracked A-only files (absent from main — no main state
+    # destroyed).
+    xargs -r -a /tmp/issue-<N>-additive-files.txt git -C "$REPO_ROOT" restore --staged --
+    xargs -r -a /tmp/issue-<N>-additive-files.txt rm -f --
+    echo "BLOCKED: pre-push workflow-lint gate — fix the named offender in the worktree, re-run ONCE; still failing -> epm:merge-failed (gate subsection, verdict case 1). Payload cleaned from the root index + working tree."
+    false
+  fi
   ```
 
   Then post `epm:merged v1` with `{artifact_confirmed: true,

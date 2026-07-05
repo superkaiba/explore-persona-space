@@ -330,11 +330,29 @@ def test_guard0_mem_committed_flag_in_guards_region():
     )
 
 
+def _artifact_confirmed_region(text: str) -> str:
+    """The artifact-confirmed merge procedure slice (the surgical additive
+    checkout lands here; the round-2 gate-verdict pins scope to it)."""
+    start_marker = "#### The artifact-confirmed merge procedure"
+    end_marker = "#### Post-merge stale-task-folder guard"
+    start = text.find(start_marker)
+    end = text.find(end_marker)
+    assert start != -1, "artifact-confirmed merge heading not found in SKILL.md"
+    assert end != -1, "post-merge stale-task-folder guard heading not found"
+    assert start < end, "artifact-confirmed region must precede the post-merge guard"
+    return text[start:end]
+
+
 def test_prepush_workflow_lint_gate_between_fast_path_and_auto_merge():
     """#1047 lint gate: the Pre-push workflow-lint gate subsection must sit
     between the fast-path pre-check and the auto-merge procedure, and be
     named at >=3 bind hooks besides its heading (safe case, recovery,
-    surgical checkout) so every merge form runs it (#931)."""
+    surgical checkout) so every merge form runs it (#931). Round-2
+    strengthening (Codex Minor): the load-bearing invariant is that the
+    SURGICAL block computes a payload-attributed verdict — consuming
+    GATED_RC + the normalized failure-line files via `comm -23` — BEFORE the
+    first `git add`, and gates the stage/commit/push on an explicit
+    GATE_VERDICT branch, not just a phrase count."""
     text = _skill_text()
     fast = text.find("#### Fast-path routing pre-check")
     gate = text.find("#### Pre-push workflow-lint gate")
@@ -345,6 +363,112 @@ def test_prepush_workflow_lint_gate_between_fast_path_and_auto_merge():
     )
     assert text.count("Pre-push workflow-lint gate") >= 4, (
         "the gate must be named at its heading plus >=3 bind hooks"
+    )
+    region = _artifact_confirmed_region(text)
+    first_add = region.find("git add --")
+    assert first_add != -1, "surgical block must stage by explicit path (git add --)"
+    rc_consumption = region.find('[ "$GATED_RC" -ne 0 ]')
+    subtraction = region.find("comm -23")
+    verdict_branch = region.find('if [ "$GATE_VERDICT" = "pass" ]')
+    assert -1 < rc_consumption < first_add, (
+        "GATED_RC must be consumed by a conditional BEFORE the first git add "
+        "(a captured-but-unchecked RC is a hollow gate)"
+    )
+    assert -1 < subtraction < first_add, (
+        "the failure-line-set subtraction (comm -23) must run BEFORE the first git add"
+    )
+    assert -1 < verdict_branch < first_add, (
+        "the stage/commit/push must sit inside an explicit GATE_VERDICT=pass branch"
+    )
+
+
+def test_gate_executable_block_normalizes_subtracts_and_persists_verdict():
+    """Round-2 (Codex M1): the gate subsection must carry a fully EXECUTABLE
+    block — documented normalization of `workflow_lint:` failure lines,
+    `comm -23` set subtraction, and a persisted binary verdict file the
+    binding sites consume (fenced bash blocks are separate shells)."""
+    text = _skill_text()
+    gate = text.find("#### Pre-push workflow-lint gate")
+    auto = text.find("#### The auto-merge procedure")
+    region = text[gate:auto]
+    assert "grep -h '^workflow_lint: '" in region, "normalization must keep workflow_lint: lines"
+    assert "sed -E 's/:[0-9]+:/::/g'" in region, "normalization must blank :<line>: numbers"
+    assert "comm -23" in region, "NEW = gated - baseline must use comm -23"
+    assert '[ "$GATED_RC" -ne 0 ]' in region, "GATED_RC must be consumed in the gate block"
+    for verdict in ("block", "pass", "skip-artifact-only"):
+        assert f"echo {verdict} > /tmp/issue-<N>-lint-verdict.txt" in region, (
+            f"the gate block must persist the '{verdict}' verdict to the verdict file"
+        )
+
+
+def test_gate_verdict_file_gates_safe_case_and_recovery():
+    """Round-2 (Codex M1/M2): the persisted verdict file must be consumed by
+    an explicit conditional BEFORE `gh pr ready` (safe case) and BEFORE the
+    recovery `git -C "$WT" push` — a missing verdict file fails CLOSED."""
+    text = _skill_text()
+    probe = "grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt"
+    first = text.find(probe)
+    second = text.find(probe, first + 1)
+    assert first != -1 and second != -1, (
+        "both the safe case and the recovery must consume the persisted verdict file"
+    )
+    ready = text.find("gh pr ready <PR>")
+    assert -1 < first < ready < second, "the safe-case verdict conditional must precede gh pr ready"
+    rec = text.find("#### Merge-conflict recovery")
+    rec_push = text.find('git -C "$WT" push\n', rec)
+    assert -1 < rec < second < rec_push, (
+        "the recovery verdict conditional must precede the recovery push"
+    )
+
+
+def test_fast_path_lower_bound_and_no_flagless_additive_xargs():
+    """Round-2 (Claude M2): the FAST_PATH conjunction must require a NON-EMPTY
+    filtered own-diff (`-ge 1`), and every xargs consuming the additive-files
+    list must carry `-r` (--no-run-if-empty) — an empty-input xargs checkout
+    degenerates to `git checkout issue-<N> --` with NO pathspec, a branch
+    SWITCH of the shared repo root."""
+    text = _skill_text()
+    assert '[ "$N_FILES" -ge 1 ]' in text, "FAST_PATH must require N_FILES >= 1"
+    assert "xargs -a /tmp/issue-<N>-additive-files.txt" not in text, (
+        "no flag-less additive-list xargs may remain (must be xargs -r -a)"
+    )
+    assert text.count("xargs -r -a /tmp/issue-<N>-additive-files.txt") >= 5, (
+        "checkout / add / commit / restore / rm additive-list consumers must all carry -r"
+    )
+
+
+def test_gate_block_cleanup_recipe_hook_admitted():
+    """Round-2 (Claude M1): the on-block cleanup must be the hook-admitted
+    two-step — index-only `restore --staged` unstage, then plain `rm` of the
+    now-untracked A-only files. The one-shot restore-with-worktree-flag form
+    is mechanically BLOCKED by scripts/guard_repo_root_branch.sh's #897
+    restore detector (allow requires --staged AND no worktree flag; verified
+    by hook simulation 2026-07-05, exit 2)."""
+    text = _skill_text()
+    assert "--staged --worktree" not in text, (
+        "the hook-blocked one-shot restore form must not be documented anywhere"
+    )
+    assert 'git -C "$REPO_ROOT" restore --staged --' in text, (
+        "cleanup step 1 must be the index-only unstage (hook allow-arm)"
+    )
+    assert "rm -f --" in text, (
+        "cleanup step 2 must remove the now-untracked A-only files via plain rm"
+    )
+
+
+def test_safe_case_push_rederives_unpushed_from_git_state():
+    """Round-2 (Codex M3): the safe-case pre-merge push must RE-DERIVE
+    'unpushed local commits exist' from git state — fenced bash blocks are
+    separate shell invocations, so the Guard-0/1 flags are unset there; the
+    flags remain same-block conveniences only. A missing origin/issue-<N>
+    ref counts as unpushed (fails toward pushing)."""
+    text = _skill_text()
+    assert (
+        '[ "$(git -C "$WT" rev-list --count origin/issue-<N>..HEAD 2>/dev/null'
+        ' || echo 1)" -gt 0 ]' in text
+    ), (
+        "the push condition's load-bearing arm must be the re-derived "
+        "unpushed-commit count against origin/issue-<N>"
     )
 
 
