@@ -1,0 +1,94 @@
+{
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "by_behavior": {
+    "deception": {
+      "kept_pos": 264,
+      "kept_neg": 979,
+      "dropped_pos_judge": 736,
+      "dropped_neg_judge": 21,
+      "dropped_pos_capture": 0,
+      "dropped_neg_capture": 0,
+      "target_per_arm": 1000,
+      "pv_thin_sample": true,
+      "rb_shape": [
+        28,
+        3584
+      ],
+      "pv_keepflags_source": "canonical_trait_rubric_v2",
+      "judge_system_prompt_hash": "62d91c8f17f9c2d1bb4c2771252e28f85fa1c18afff32f553610d06f03d20b80"
+    },
+    "fact_expression": {
+      "kept_pos": 804,
+      "kept_neg": 707,
+      "dropped_pos_judge": 196,
+      "dropped_neg_judge": 293,
+      "dropped_pos_capture": 0,
+      "dropped_neg_capture": 0,
+      "target_per_arm": 1000,
+      "pv_thin_sample": true,
+      "rb_shape": [
+        28,
+        3584
+      ],
+      "pv_keepflags_source": "canonical_trait_rubric_v2",
+      "judge_system_prompt_hash": "62d91c8f17f9c2d1bb4c2771252e28f85fa1c18afff32f553610d06f03d20b80"
+    },
+    "format_style": {
+      "kept_pos": 997,
+      "kept_neg": 994,
+      "dropped_pos_judge": 3,
+      "dropped_neg_judge": 6,
+      "dropped_pos_capture": 0,
+      "dropped_neg_capture": 0,
+      "target_per_arm": 1000,
+      "pv_thin_sample": false,
+      "rb_shape": [
+        28,
+        3584
+      ],
+      "pv_keepflags_source": "canonical_trait_rubric_v2",
+      "judge_system_prompt_hash": "62d91c8f17f9c2d1bb4c2771252e28f85fa1c18afff32f553610d06f03d20b80"
+    },
+    "self_report": {
+      "kept_pos": 1000,
+      "kept_neg": 49,
+      "dropped_pos_judge": 0,
+      "dropped_neg_judge": 951,
+      "dropped_pos_capture": 0,
+      "dropped_neg_capture": 0,
+      "target_per_arm": 1000,
+      "pv_thin_sample": true,
+      "rb_shape": [
+        28,
+        3584
+      ],
+      "pv_keepflags_source": "canonical_trait_rubric_v2",
+      "judge_system_prompt_hash": "62d91c8f17f9c2d1bb4c2771252e28f85fa1c18afff32f553610d06f03d20b80"
+    },
+    "persona_drift": {
+      "kept_pos": 840,
+      "kept_neg": 999,
+      "dropped_pos_judge": 160,
+      "dropped_neg_judge": 1,
+      "dropped_pos_capture": 0,
+      "dropped_neg_capture": 0,
+      "target_per_arm": 1000,
+      "pv_thin_sample": false,
+      "rb_shape": [
+        28,
+        3584
+      ],
+      "pv_keepflags_source": "canonical_trait_rubric_v2",
+      "judge_system_prompt_hash": "62d91c8f17f9c2d1bb4c2771252e28f85fa1c18afff32f553610d06f03d20b80"
+    }
+  },
+  "judge_threshold": 50,
+  "metadata": {
+    "git_commit": "f72f8a605fdee0cab596cdcd1db5708244b885b0",
+    "timestamp_utc": "2026-07-01T06:03:18.387726Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "phase": "pv_extract_capture"
+  }
+}

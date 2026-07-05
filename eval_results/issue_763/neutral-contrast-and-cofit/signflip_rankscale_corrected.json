@@ -1,0 +1,83 @@
+{
+ "round": "neutral-contrast-and-cofit",
+ "note": "Rank-scale CORRECTION of the kernel-vs-linear paired sign-flip. The as-run test in nonlinear_tests.json compared squared errors of predictions on different scales (ridge: raw shrunk linear predictor, sd~0.01; KRR: rank scale), so its p = 1e-4 on all five behaviors is a location/scale artifact (mean err_lin ~ 1/3 = E[U^2]). Here BOTH prediction vectors are rank-transformed to [0,1] before forming per-context squared errors, matching the plan's rank-scale registration and the signflip_min_detectable_delta_rho simulation harness convention.",
+ "n_flips": 10000,
+ "by_behavior": {
+  "deception": {
+   "signflip_rankscale": {
+    "statistic_mean_err_diff": 0.003798417326114115,
+    "p_value": 0.8151184881511849,
+    "n_flips": 10000,
+    "n": 50
+   },
+   "as_run_signflip_scale_contaminated": {
+    "statistic_mean_err_diff": 0.2605000439750609,
+    "p_value": 9.999000099990002e-05,
+    "n_flips": 10000,
+    "n": 50
+   },
+   "paired_delta_rho_krr_minus_ridge": 0.0218967587034814
+  },
+  "fact_expression": {
+   "signflip_rankscale": {
+    "statistic_mean_err_diff": -0.0044814660558100804,
+    "p_value": 0.0415958404159584,
+    "n_flips": 10000,
+    "n": 50
+   },
+   "as_run_signflip_scale_contaminated": {
+    "statistic_mean_err_diff": 0.3020212912211038,
+    "p_value": 9.999000099990002e-05,
+    "n_flips": 10000,
+    "n": 50
+   },
+   "paired_delta_rho_krr_minus_ridge": -0.02583433373349342
+  },
+  "format_style": {
+   "signflip_rankscale": {
+    "statistic_mean_err_diff": 0.029662640566430646,
+    "p_value": 0.0034996500349965005,
+    "n_flips": 10000,
+    "n": 50
+   },
+   "as_run_signflip_scale_contaminated": {
+    "statistic_mean_err_diff": 0.2696160521828089,
+    "p_value": 9.999000099990002e-05,
+    "n_flips": 10000,
+    "n": 50
+   },
+   "paired_delta_rho_krr_minus_ridge": 0.17146636230486167
+  },
+  "self_report": {
+   "signflip_rankscale": {
+    "statistic_mean_err_diff": -0.0026322365680966258,
+    "p_value": 0.5305469453054694,
+    "n_flips": 10000,
+    "n": 50
+   },
+   "as_run_signflip_scale_contaminated": {
+    "statistic_mean_err_diff": 0.29344000816938676,
+    "p_value": 9.999000099990002e-05,
+    "n_flips": 10000,
+    "n": 50
+   },
+   "paired_delta_rho_krr_minus_ridge": -0.015174069627851172
+  },
+  "persona_drift": {
+   "signflip_rankscale": {
+    "statistic_mean_err_diff": 0.00594752186588921,
+    "p_value": 0.0974902509749025,
+    "n_flips": 10000,
+    "n": 50
+   },
+   "as_run_signflip_scale_contaminated": {
+    "statistic_mean_err_diff": 0.30846066848019904,
+    "p_value": 9.999000099990002e-05,
+    "n_flips": 10000,
+    "n": 50
+   },
+   "paired_delta_rho_krr_minus_ridge": 0.03428571428571425
+  }
+ },
+ "generated_utc": "2026-07-03T07:20:34.062827+00:00"
+}

@@ -1,0 +1,67 @@
+{
+  "what": "deception ceiling on the PARENT (rubric-v1) E0 under BOTH split-half estimators \u2014 diagnostic only; the parent record is history and is not rewritten",
+  "aligned": {
+    "sqrt_r_yy_split_half": 0.1744128685238493,
+    "sqrt_r_yy_binomial": 1.0,
+    "sqrt_r_yy": 0.1744128685238493,
+    "sqrt_r_yy_ci": [
+      0.0,
+      0.5932245513882627
+    ],
+    "split_half": {
+      "r_hh": 0.015444839189074386,
+      "r_yy": 0.030419848706717545,
+      "sqrt_r_yy": 0.1744128685238493,
+      "n_contexts_used": 50,
+      "n_splits": 200,
+      "method": "aligned"
+    },
+    "binomial": {
+      "r_yy": 1.0,
+      "sqrt_r_yy": 1.0,
+      "signal_var": 33.0901713667422,
+      "mean_noise_var": -24.821425911351117,
+      "observed_var": 8.268745455391079,
+      "n_contexts": 50
+    },
+    "split_half_method": "aligned",
+    "seed": 763
+  },
+  "legacy_independent": {
+    "sqrt_r_yy_split_half": 0.0,
+    "sqrt_r_yy_binomial": 1.0,
+    "sqrt_r_yy": 0.0,
+    "sqrt_r_yy_ci": [
+      0.0,
+      0.0
+    ],
+    "split_half": {
+      "r_hh": -0.4138815972187382,
+      "r_yy": 0.0,
+      "sqrt_r_yy": 0.0,
+      "n_contexts_used": 50,
+      "n_splits": 200,
+      "method": "independent"
+    },
+    "binomial": {
+      "r_yy": 1.0,
+      "sqrt_r_yy": 1.0,
+      "signal_var": 33.0901713667422,
+      "mean_noise_var": -24.821425911351117,
+      "observed_var": 8.268745455391079,
+      "n_contexts": 50
+    },
+    "split_half_method": "independent",
+    "seed": 763
+  },
+  "metadata": {
+    "git_commit": "6ca67c904eac3a129de508c4a6e0b0e4d94c4054",
+    "timestamp_utc": "2026-07-02T19:46:23.688803Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "phase": "fit",
+    "mode": "reliability-refresh-aligned",
+    "e0": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-763/eval_results/issue_763/E0_matched_by_behavior.json"
+  }
+}
