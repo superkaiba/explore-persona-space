@@ -1870,6 +1870,8 @@ bash "$REPO_ROOT/scripts/new_worktree.sh" "$WORKTREE" issue-<N> --issue <N>
 # Sparse by default (~0.4G vs ~3.8G full); reuses if it exists (resume case);
 # symlinks the repo .env (worktrees do NOT inherit it — RUNPOD_API_KEY /
 # HF_TOKEN / WANDB_API_KEY dotenv loads fail without it).
+# --issue <N> is inferred from the issue-<N> branch name when omitted
+# (since #1054), but keep passing it explicitly.
 ```
 
 **Sparse-worktree notes (task #596).** The worktree excludes
