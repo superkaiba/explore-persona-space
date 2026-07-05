@@ -248,6 +248,10 @@ commit SHA — NEVER relative (dashboard-invisible, #365) or
    `### <result>`:
    `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)`
    — no `## Figure` H2 (check-2 hard FAIL). Alt text may contain `[brackets]`.
+4. Repo-root stray guard: `git -C "$MAIN_ROOT" status --porcelain -uall
+   -- figures/issue_<N>/` after the push — delete an untracked stray ONLY if
+   blob-identical to the pin; differing → warn-only. Never `git clean` /
+   `checkout .` / `restore .` (§ Step 3 of the section reference, #922).
 
 Full text: `analyzer-section-reference.md`
 § Step 3: Generate Plots (grep heading, chunked Read).

@@ -357,6 +357,22 @@ Every figure saves PNG + PDF + `.meta.json` sidecar (commit-pinned) via `savefig
 3. Capture the commit SHA: `git rev-parse HEAD`.
 4. Reference the figure inline inside the relevant `### <result>` under `## Results` with `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)` — pinned to the commit SHA, never `main`/`master`/`HEAD`. **Do NOT emit a `## Figure` H2** — verifier check 2 hard-FAILs any v4 body that carries it.
 5. Alt text may contain `[brackets]` (e.g. literal marker names like `[ZLT]`); the verifier's image regex handles them.
+6. **Repo-root stray guard (#922).** When you worked from a worktree, check
+   the MAIN checkout for stale duplicates after the push:
+   `git -C "$MAIN_ROOT" status --porcelain -uall -- "figures/issue_<N>/"`
+   (with `MAIN_ROOT="${TASK_DIR%/tasks/*}"`, the worktree-proof root;
+   `-uall` is load-bearing — without it a wholly-untracked dir collapses
+   to one `?? figures/issue_<N>/` entry, the exact #922 shape, and the
+   per-file hash compare has nothing to enumerate). For each
+   untracked (`??`) entry, compare it to the pinned blob
+   (`git hash-object <file>` vs `git rev-parse <sha>:<path>`):
+   blob-identical → MAY delete that specific file (`rm` — the content is
+   committed, zero loss); differing → do NOT delete (it could be another
+   round's in-flight work) — WARN in your report naming path + mtime so the
+   orchestrator can triage; the critics' pin-first read rule makes it
+   harmless to the review either way. NEVER `git clean` / `git checkout .` /
+   `git restore .` at the repo root (hard rule above); tracked files are
+   never touched.
 
 `verify_task_body.py` Check 4b (`Figure URL resolvable`) fails any body with a relative figure URL, a `main`/`master`/`HEAD`-pinned raw URL, or a figure URL whose target does NOT exist — same-repo SHA-pinned raw URLs are verified against the git object database via `git cat-file` (incident: task #507, 2026-06-09 — a caption cited a figure that was never generated), with an HTTP HEAD fallback for unknown SHAs / other hosts. The gate blocks promotion to `awaiting_promotion` until the URL is fixed, so commit the figure FIRST (steps 2-3 above) and pin the URL to the commit SHA that actually carries it.
 
