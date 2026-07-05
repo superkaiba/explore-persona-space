@@ -342,8 +342,8 @@
     "1042": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1042",
-      "status": "planning",
+      "path": "tasks/approved/1042",
+      "status": "approved",
       "title": "workflow-fix: verify_plan flags grep-arity acceptance gates"
     },
     "1043": {
