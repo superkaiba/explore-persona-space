@@ -146,7 +146,7 @@ Bars: reliability ceiling per cell (binomial headline; black line = cluster-boot
 | harmful compliance / Betley | 0.692 | 0.578 | 0.666 [0.000, 0.839] | −0.026 [−0.692, 0.147] | ceiling-limited (under-determined) | 0.326 |
 | harmful compliance / UltraChat | 0.611 | 0.428 | 0.686 [0.000, 0.836] | 0.075 [−0.611, 0.225] | ceiling-limited (under-determined) | 0.327 |
 
-Sycophancy's bracket stays 0.75–0.87 wide in both genres with a tight ceiling CI, falsifying the linear-at-ceiling hypothesis. Refusal/Betley resolves headroom (width CI 0.05–0.49) but its ceiling is estimator-sensitive; the four ceiling-limited cells are noise-limited non-rejections. The refit ridge closes barely half the sycophancy gap (0.649/0.484 vs a 0.994 ceiling) and is worse than the fixed direction in 4 of the 8 cells.
+Sycophancy's bracket stays 0.75–0.87 wide in both genres with a tight ceiling CI, falsifying the linear-at-ceiling hypothesis. Refusal/Betley resolves headroom (width CI 0.05–0.49) but its ceiling is estimator-sensitive; the four ceiling-limited cells are noise-limited non-rejections. Refitting the ridge buys sycophancy less than half the gap back (ρ 0.649/0.484 against a 0.994 ceiling); in 4 of 8 cells the refit does worse than the persisted fixed direction.
 
 ### The ceiling is not judge-limited, but it is estimator-sensitive in five of eight cells
 
