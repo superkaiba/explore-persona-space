@@ -489,8 +489,8 @@
     "1061": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1061",
-      "status": "running",
+      "path": "tasks/reviewing/1061",
+      "status": "reviewing",
       "title": "daily-fix: /daily durable filing bodies + incremental filing"
     },
     "1062": {
