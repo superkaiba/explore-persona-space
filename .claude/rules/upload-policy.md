@@ -29,13 +29,90 @@ prelude (`backends/gcp.py`), and the SLURM sbatch env block (`backends/slurm.py`
 — the load-bearing placement, because `huggingface_hub.constants` freezes
 `HF_HUB_ENABLE_HF_TRANSFER` at import time — plus an `orchestrate/env.py`
 `setdefault` belt-and-suspenders for local-dev. Override per-launch with `=0` /
-`HF_XET_DISABLE=1` (the #515 xet-CDN DOWNLOAD workaround): every default is a
-`setdefault` / `${VAR:-1}` so an explicit launch-time `=0` always wins (the GCP
-/ SLURM passthrough allowlists forward a dispatch-process `=0` to the remote
-worker). A NEW direct-upload script must use the project
+`HF_HUB_DISABLE_XET=1`: the two accelerator defaults are `setdefault` /
+`${VAR:-1}` so an explicit launch-time `=0` always wins, and the GCP / SLURM
+passthrough allowlists forward a dispatch-process `=0` FOR THOSE TWO VARS
+(`HF_XET_HIGH_PERFORMANCE` / `HF_HUB_ENABLE_HF_TRANSFER`) to the remote
+worker — they do NOT (yet) forward `HF_HUB_DISABLE_XET` (code follow-up
+pending), so on GCP/SLURM the xet kill switch must be set in the WORKER
+shell, not the dispatch process. The effective xet kill switch is
+`HF_HUB_DISABLE_XET=1` — it flips `is_xet_available()` False
+(`huggingface_hub` 0.36.2, the uv.lock pin; `constants.py` reads
+`HF_HUB_DISABLE_XET`), which gates the upload branch (`_commit_api.py:380`);
+download-side coverage has a reported gap on this pin (hub GH issue #3266),
+so treat it as upload-verified. The historically-documented
+`HF_XET_DISABLE=1` (the #515 xet-CDN DOWNLOAD workaround, still echoed in
+bootstrap/backends comments) is a VERIFIED NO-OP on this stack — consumed by
+neither `huggingface_hub` nor the `hf_xet` Rust binary (strings-checked;
+live-tested 2026-07-05) — so a recipe leaning on it likely never left the
+xet path; #931's first two wedge replays did exactly this. Upload sitting at
+~0 TX? Run the wedge escalation ladder in the next block. A NEW
+direct-upload script must use the project
 `explore_persona_space.orchestrate.env.load_dotenv` wrapper, NOT the bare
 `from dotenv import load_dotenv` (enforced by
 `scripts/workflow_lint.py --check-dotenv-before-hf-import`).
+
+**Pod→HF upload WEDGE — recognize it, then run the three-rung escalation
+ladder (#931).** This is the UPLOAD sibling of the #515 download workaround
+above. Signature: the upload process looks healthy (no traceback) while
+transfer bytes stop — interface TX delta ~0 across two samples ≥5 min
+apart (`cat /sys/class/net/eth0/statistics/tx_bytes`, sample twice), and/or
+one ESTAB socket to the CDN (port 443) whose counters are frozen in
+`ss -tinp` (`bytes_acked` / send-q not advancing; `apt-get install -y
+iproute2` if `ss` is absent on the pod). High sustained CPU with ~0 TX can
+be legitimate local pre-processing (xet chunking / sha256 of multi-GB
+files) — the frozen-ESTAB-socket check is the discriminator. #931
+(2026-07-04, an org-wide HF-429 day) sat ~30 min at ~0 TX before the first
+kill — once the signature is confirmed on a re-sample, escalate immediately.
+Three preconditions: (a) the upload path is replay-idempotent (per-cell /
+per-folder skip-if-complete — the #664 per-cell contract; #931's completed
+folder commits skipped idempotently on replay), (b) each rung is
+KILL-hung-process → REPLAY-with-env — never export on top of a live process
+(`huggingface_hub.constants` freezes env at import), (c) the rung env is set
+IN THE WORKER's shell (SSH into the pod/worker and relaunch there): until
+the allowlist follow-up lands, a dispatch-process `HF_HUB_DISABLE_XET=1` is
+NOT forwarded to GCP/SLURM workers, so a full re-dispatch "replay" from the
+orchestrator silently recreates the placebo. Do not wait for a rung
+to self-heal: hf_transfer retries fire only on ERRORING parts
+(`max_retries=5` threaded by `lfs.py::_upload_parts_hf_transfer`), the
+pure-python `http_backoff` path retries only raised errors
+(Timeout/ConnectionError/5xx) and its PUTs pass no `timeout=`, and the xet
+client's timeout knobs did not rescue #931's 30-min hang — a silently hung
+ESTAB read never becomes an error, so detection + kill is always manual.
+
+1. **Rung 1 — kill + replay with `HF_HUB_DISABLE_XET=1`** (the REAL switch —
+   NOT the no-op `HF_XET_DISABLE`, see the clause above). Targets a
+   xet-client-specific stall (hung CAS read, finalization hang — #825 r2's
+   class); the upload falls back to the LFS multipart path,
+   hf_transfer-accelerated since `HF_HUB_ENABLE_HF_TRANSFER=1` is default.
+2. **Rung 2 — wedged identically? kill + replay with `HF_HUB_DISABLE_XET=1
+   HF_HUB_ENABLE_HF_TRANSFER=0`** — the pure-python requests path. Rung 2
+   without rung 1's var is a placebo on the project's xet-backed repos: while
+   xet is available the upload never reaches the LFS path where hf_transfer
+   lives.
+3. **Rung 3 — still wedged? The on-pod upload path is dead for this run;
+   reroute around it.** rsync the artifact dirs pod→VM (rsync IS on
+   bootstrapped pods — `bootstrap_pod.sh` Step 2 installs it, commit
+   `22e1a882a1` 2026-06-12; the RunPod image ships without it, so a
+   `--no-bootstrap` pod needs the tar-over-ssh form in the #541 recovery
+   below), verify the VM→HF route with a small probe upload, run the VM-side
+   `upload_folder` to the SAME `path_in_repo`, then a pod-side local-only
+   sentinel replay so `epm:results` lands via the normal poller drain. #931
+   moved ~9.9 GB this way in ≈24 min after three wedged on-pod attempts
+   (≈37 min first-kill → results, ≈60 min upload-phase-start → results,
+   derived from the 06:13Z/06:36Z/06:49Z/07:13Z markers); the same-day
+   `epm:upload-fix` round reused the VM route directly. If the VM→HF probe
+   ALSO wedges (an HF-side incident — #931's day was an org-wide 429 day),
+   the pod→VM rsync has already made the data durable: stop/terminate the
+   pod rather than idling it, and retry the VM→HF upload when the incident
+   clears.
+
+Honesty caveat: #931's rung-1/2 replays set the no-op `HF_XET_DISABLE`, so
+all three on-pod attempts likely ran the SAME xet client — rung-1/2 value is
+derived from the 0.36.2 code paths + HF's documented legacy-LFS fallback
+(docs/hub/en/xet/legacy-git-lfs), not yet proven in anger; the route-level
+rung-3 reroute is the proven recovery. On a known org-wide 429/CDN-incident
+day, consider going straight from one confirmed rung-1 wedge to rung 3.
 
 **Intermediate analysis tensors referenced by the plan MUST upload before pod
 termination.** Any artifact the plan's analysis / negative-control sections
@@ -256,9 +333,11 @@ overflow repo `superkaiba1/explore-persona-space-overflow` under the same
 `issueN_<slug>/...` subfolder layout, record a plan-deviation entry + the
 overflow URLs in the run's results sentinel, and migrate to the canonical repo
 after quota is freed. As a second durable replica (or if the private path also
-fails), pull the adapters off the pod to the VM via tar-over-ssh
-(`ssh <pod> 'tar -C /workspace -cf - <adapter-dir>' | tar -xf -` — rsync is NOT
-installed on RunPod pods) into a local staging dir
+fails), pull the adapters off the pod to the VM
+(rsync — installed on bootstrapped pods by `bootstrap_pod.sh` Step 2 since
+2026-06-12, commit `22e1a882a1`; on a `--no-bootstrap` pod use tar-over-ssh:
+`ssh <pod> 'tar -C /workspace -cf - <adapter-dir>' | tar -xf -`) into a local
+staging dir
 `eval_results/issue_<N>/adapter_backup/<cell>/` (local staging only —
 `*.safetensors` is gitignored; the "eval_results/ is JSON/text only" rule
 governs what gets committed) AND log a WandB Artifact (`type="model"`) copy.
