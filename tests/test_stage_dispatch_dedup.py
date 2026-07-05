@@ -480,6 +480,38 @@ def test_deliberate_stop_note_prefix_alone_does_not_refresh():
     )
 
 
+def test_1053_issue_session_guard_exit_breadcrumbs_do_not_refresh_window():
+    # #1053: the Step 0 single-orchestrator collision exit and the stale-wake
+    # YIELD each post one deliberate-stop breadcrumb (by="issue-session-guard",
+    # SKILL.md Step 0). Those are death records, not stage liveness — the
+    # EXACT prescribed notes must not refresh a stage-dispatch window.
+    collision_note = (
+        "deliberate-stop pid=n/a target=self reason=step0-session-collision "
+        "owner=happy-session:abc123 — duplicate /issue 1053 session exiting at Step 0; "
+        "owner happy-session:abc123 remains the driver; no state mutated"
+    )
+    yield_note = (
+        "deliberate-stop pid=n/a target=self reason=stale-wake-yield "
+        "replacement=happy-session:def456 — stale /issue 1053 session yielding on wake; "
+        "the replacement owns the task; no state mutated"
+    )
+    for note in (collision_note, yield_note):
+        events = [
+            _ev(
+                "2026-07-01T10:00:00Z",
+                "epm:progress",
+                "stage-dispatch stage=implementing round=1 subagent=experiment-implementer",
+            ),
+            _ev("2026-07-01T10:14:00Z", "epm:progress", note, by="issue-session-guard"),
+        ]
+        assert (
+            tw.stage_dispatch_should_skip(
+                events, "implementing", 1, 15, now=_dt("2026-07-01T10:20:00Z")
+            )
+            is None
+        ), note
+
+
 def test_watcher_telemetry_notes_do_not_refresh_window():
     # Third-party bracketed telemetry (watcher + spawn-session bookkeeping)
     # is not stage liveness; the watcher's own progress clock excludes the

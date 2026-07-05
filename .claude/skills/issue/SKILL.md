@@ -920,10 +920,39 @@ uv run python scripts/task.py view <N> --json | uv run python -c \
 `/issue <N>` at a time. Before doing anything else, check whether another
 live session is already mapped to this issue: `uv run python
 scripts/spawn_session.py list` (issue-mapping column). If a live session is
-already driving #N, EXIT immediately as a duplicate — post no markers (do
-NOT run `scripts/post_step_completed.py`: a duplicate session must not touch
-#N's `events.jsonl` — this is the one deliberately marker-free EXIT), mutate
-nothing — UNLESS this session is its explicit replacement (an
+already driving #N, EXIT immediately as a duplicate. Before ending, post
+EXACTLY ONE exit breadcrumb so the audit trail distinguishes a deliberate
+collision exit from a wrapper crash (#1053: a `/issue 958` session died
+~1 min after spawn with no recorded reason — under the old marker-free
+mandate a deliberate guard exit and a crash left identical evidence:
+nothing):
+
+```bash
+uv run python scripts/task.py post-marker <N> epm:progress --by issue-session-guard \
+  --note "deliberate-stop pid=n/a target=self reason=step0-session-collision owner=<owner-session-id> — duplicate /issue <N> session exiting at Step 0; owner <owner-session-id> remains the driver; no state mutated"
+```
+
+The `deliberate-stop ` note PREFIX is load-bearing (the note must START
+with it, lstripped): all four staleness clocks —
+`task_workflow.stage_dispatch_should_skip`,
+`autonomous_session_watch._latest_progress_ts`,
+`autonomous_session_watch._latest_nonwatcher_event_ts`, and
+`tick_triage.latest_event_ts` (#810/#949/#990/#1053) — drop it by prefix,
+so the breadcrumb never refreshes the OWNER's freshness windows or
+staleness clocks. It WILL surface as one pre-dispatch triage candidate for
+the owner — deliberate: a session collision is genuinely triage-worthy
+externality (mirroring the existing operator-stop breadcrumb;
+`issue-session-guard` is deliberately NOT in `TRIAGE_MACHINE_BY`).
+Presence of this breadcrumb PROVES a deliberate guard exit; its ABSENCE is
+evidence of — not proof of — a crash (a fail-soft post failure, a
+pre-guard death, or a stale skill copy also yield absence). Fail-soft: if
+the post fails, state the failure in your final text and still exit —
+never block the exit on the breadcrumb (a deferred-commit stderr ERROR
+with exit 0 is SUCCESS; never re-post on it). Post NOTHING else: do NOT
+run `scripts/post_step_completed.py`, do NOT write the per-issue
+self-report (`session_progress_report.py` would clobber the OWNER's shared
+`~/.eps-autonomous/issue-progress/<N>.json`), mutate nothing else —
+UNLESS this session is its explicit replacement (an
 `autonomous_session_watch` crash-recovery respawn, or the user said to take
 over; in that case stop the stale session via `spawn_session.py stop` first).
 Incident 2026-06-09 (#524): two concurrent orchestrators both picked up a
@@ -945,8 +974,21 @@ scripts/task.py latest-marker <N>`, `~/.eps-autonomous/issue-<N>.json`,
 and `uv run python scripts/spawn_session.py list`. If a replacement
 session is registered for #N (a `spawned_at` newer than this session's
 own start) OR the marker trail shows another writer has advanced the task
-past this session's last-known state, YIELD immediately — post no
-markers, launch nothing, mutate nothing; the replacement owns the task.
+past this session's last-known state, YIELD immediately. Before ending,
+post the SAME exit-breadcrumb convention as the Step 0 guard above (one
+`epm:progress`; same fail-soft contract — a deferred-commit stderr ERROR
+with exit 0 is SUCCESS, never re-post):
+
+```bash
+uv run python scripts/task.py post-marker <N> epm:progress --by issue-session-guard \
+  --note "deliberate-stop pid=n/a target=self reason=stale-wake-yield replacement=<replacement-session-id-or-marker-evidence> — stale /issue <N> session yielding on wake; the replacement owns the task; no state mutated"
+```
+
+Then launch nothing, mutate nothing else; the replacement owns the task.
+A `deliberate-stop` breadcrumb is a death record, NOT task advancement —
+ANY marker-trail reader (this re-check, `task.py latest-marker <N>`, a
+successor session deriving state from the trail) must never count one as
+"another writer has advanced the task".
 The cheap tell is always `task.py latest-marker <N>` before resuming any
 stale in-flight plan: if events have advanced past your own last-known
 state, re-derive state from the markers instead of executing the stale

@@ -180,6 +180,66 @@ def test_latest_event_ts_ignores_watcher_sentinel_notes():
     assert ts is not None and (NOW - ts) > 3600
 
 
+def test_latest_event_ts_ignores_deliberate_stop_records():
+    # #1053: both legs of the deliberate-stop predicate — the lstripped note
+    # PREFIX (an issue-session-guard exit breadcrumb) and the
+    # by="spawn_session-stop" identity (note text irrelevant) — must never
+    # count as issue freshness.
+    for row in (
+        {
+            "kind": "epm:progress",
+            "ts": _iso(NOW - 60),
+            "note": "deliberate-stop pid=n/a target=self reason=step0-session-collision "
+            "owner=happy-session:abc123 — duplicate /issue 42 session exiting at Step 0; "
+            "owner happy-session:abc123 remains the driver; no state mutated",
+            "by": "issue-session-guard",
+        },
+        {
+            "kind": "epm:progress",
+            "ts": _iso(NOW - 60),
+            "note": "stopping session",
+            "by": "spawn_session-stop",
+        },
+    ):
+        events = [_event("epm:progress v1", 7200, note="real work marker"), row]
+        ts = tick_triage.latest_event_ts(events)
+        assert ts is not None and (NOW - ts) > 3600, row
+
+
+# ── #1053 end-to-end: exit breadcrumb must not mask staleness ───────────────
+
+
+def test_step0_collision_exit_breadcrumb_does_not_mask_staleness(state_dir, monkeypatch):
+    # #1053 MF-2 pin (end-to-end): a stale issue whose ONLY fresh event is the
+    # prescribed Step 0 collision-exit (or stale-wake-yield) breadcrumb must
+    # stay STALE-REDRIVE — the duplicate's death record must not flip the tick
+    # verdict to HEALTHY and mask a dead owner chain.
+    collision_note = (
+        "deliberate-stop pid=n/a target=self reason=step0-session-collision "
+        "owner=happy-session:abc123 — duplicate /issue 1053 session exiting at Step 0; "
+        "owner happy-session:abc123 remains the driver; no state mutated"
+    )
+    yield_note = (
+        "deliberate-stop pid=n/a target=self reason=stale-wake-yield "
+        "replacement=happy-session:def456 — stale /issue 1053 session yielding on wake; "
+        "the replacement owns the task; no state mutated"
+    )
+    stale_age = tick_triage.stale_s() + 600
+    for note in (collision_note, yield_note):
+        events = [
+            _event("epm:progress v1", stale_age, note="real work marker"),
+            {
+                "kind": "epm:progress",
+                "ts": _iso(NOW - 60),
+                "note": note,
+                "by": "issue-session-guard",
+            },
+        ]
+        _patch_issue_state(monkeypatch, "running", events)
+        verdict, reason = tick_triage.triage(1053, "issue")
+        assert verdict == "STALE-REDRIVE", (verdict, reason, note)
+
+
 # ── runaway streak (via triage end-to-end) ──────────────────────────────────
 
 

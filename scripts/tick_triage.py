@@ -299,7 +299,8 @@ def parse_event_ts(ts: str | None) -> float | None:
 
 def latest_event_ts(events: list[dict], *, prefix: str | None = None) -> float | None:
     """Epoch ts of the newest event (optionally restricted to a kind prefix;
-    watcher-sentinel notes never count as freshness)."""
+    watcher-sentinel notes and deliberate session-stop records never count
+    as freshness)."""
     best: float | None = None
     for row in events:
         if not isinstance(row, dict):
@@ -309,6 +310,15 @@ def latest_event_ts(events: list[dict], *, prefix: str | None = None) -> float |
             continue
         note = row.get("note")
         if isinstance(note, str) and _WATCHER_NOTE_SENTINEL in note:
+            continue
+        # #1053: a deliberate session-stop record — incl. the Step-0
+        # collision-exit / stale-wake-yield breadcrumb — is the driver's
+        # death record: anti-liveness, never issue freshness (same predicate
+        # as task_workflow.stage_dispatch_should_skip and the watcher's
+        # _latest_progress_ts / _latest_nonwatcher_event_ts).
+        if (isinstance(note, str) and note.lstrip().startswith("deliberate-stop ")) or row.get(
+            "by"
+        ) == "spawn_session-stop":
             continue
         ts = parse_event_ts(row.get("ts"))
         if ts is not None and (best is None or ts > best):
