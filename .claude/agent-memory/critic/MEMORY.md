@@ -109,6 +109,7 @@
 - [Renumber check greps wrong file](feedback_renumber_check_greps_wrong_file.md) — read the EDITED file's numbering, not cross-refs (#578)
 - [Agent-spec gate vs modal lane](feedback_agent_spec_gate_modal_lane.md) — gates skip GCP/SLURM launches; write-side rule is all-lane (#578)
 - [ERROR-demotion binding check](feedback_error_demotion_binding_check.md) — only BINDING old ERRORs regress; tolerated = no-op (#554)
+- [Group-coarsening fold attribution](feedback_group_coarsening_fold_attribution.md) — coarser re-fold subtraction claim needs size-matched pseudo-group null; n_train artifact co-localizes on dominant-group fold (#931)
 
 ## Folded post-prune (2026-06-12 live writes)
 
