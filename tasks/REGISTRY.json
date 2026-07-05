@@ -195,8 +195,8 @@
     "1022": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1022",
-      "status": "running",
+      "path": "tasks/reviewing/1022",
+      "status": "reviewing",
       "title": "daily-fix: Step 9c known-red-on-main baseline ledger"
     },
     "1023": {
