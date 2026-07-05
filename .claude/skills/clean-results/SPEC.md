@@ -897,7 +897,10 @@ Forward-only: each check branches on the sentinel. The v4 checks
 15. Footer "committed at commit `<sha>`" claims resolve.
 16. Footer lr matches plan (gated on `is_titletag_confidence()`; the
     `**Methodology:**` Training table lr must appear in the plan).
-17. `**Context:**` provenance present (gated on `is_titletag_confidence()`).
+17. `**Context:**` provenance present, and (v4) the row carries a lineage
+    token — `[#K](...)`/bare `#K`, `fresh direction (no parent)`/`fresh (no
+    parent)`, or a same-issue-follow-up-round clause (gated on
+    `is_titletag_confidence()`).
 18. **`## Methodology` completeness** (`check_v4_methodology_shape`, v4
     only): the `**Training:**` slot carries the complete hyperparameter
     table (≥1 GFM table after the Training label, OR the explicit

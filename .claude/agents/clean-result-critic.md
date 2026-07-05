@@ -217,7 +217,9 @@ anti-pattern audit:
 #        is_nested_design()) — `**Context:**` ships created/run dates,
 #        follow-up lineage, verbatim originating prompt (FAIL only when
 #        recorded origin data exists but the body dropped it; WARN
-#        otherwise; legacy bodies skip).
+#        otherwise; a v4 row lacking a lineage token (`[#K](...)`/bare
+#        `#K`/`fresh direction (no parent)`/follow-up-round clause)
+#        also FAILs; legacy bodies skip).
 #   18. (v3) `## Data` shape — `### Trained on` / `### Evaluated with` /
 #        `### Generated` in order; each block carries ≥1 pinned
 #        complete-artifact link OR an explicit `n/a — <reason>` line.
@@ -270,10 +272,12 @@ the verifier's FAILs into two classes before deciding the verdict:
   the 180-word hard cap (check 20), the Methodology Training-table learning
   rate does not match the plan (check 16) — a wrong load-bearing
   hyperparameter is a data-integrity defect, never cosmetic — or
-  recorded origin provenance was dropped (check 17 FAIL: frontmatter
+  a check-17 FAIL — recorded origin provenance was dropped (frontmatter
   `origin_prompt` / an original-body `## Provenance` section exists but
-  the body carries no `**Context:**` footer; the check's WARN form — no
-  recorded origin data — is not a FAIL and never blocks). These are
+  the body carries no `**Context:**` footer) or a v4 `**Context:**` row
+  lacking a lineage token (`[#K](...)`, bare `#K`, `fresh direction (no
+  parent)`, or a follow-up-round clause); the check's WARN form — no
+  recorded origin data — is not a FAIL and never blocks. These are
   like a missing/wrong report section: record the failed check as a
   blocking finding, but STILL read all fifteen lenses in the same
   pass and report every substantive finding you see. **Beyond the
@@ -788,8 +792,9 @@ this lens owns its REGISTER and its CROSS-ROUND SYNTHESIS CURRENCY.
 - **Context-footer audit (run-context provenance; all sentinelled
   bodies).** The
   `**Context:**` footer (SPEC.md
-  § `**Context:**` row; verifier check 17 covers presence — this
-  bullet adds the substantive read) must carry: (a) **real dates** —
+  § `**Context:**` row; verifier check 17 covers presence + a lineage
+  token — this bullet adds the substantive read: dates real, lineage
+  CORRECT) must carry: (a) **real dates** —
   the created date matches frontmatter `created_at`, the run
   date/window is plausible against the events.jsonl timeline; (b)
   **correct lineage** — the `Follow-up to` line matches frontmatter
@@ -1325,7 +1330,12 @@ from it. Concrete checks:
    whether the figure
    reports an aggregate vs already shows the per-unit data — do NOT FAIL
    a figure that already IS the scatter / per-point view. (v3:
-   `## Findings`, `### <finding>`, setup/read prose.)
+   `## Findings`, `### <finding>`, setup/read prose.) Mechanical
+   backstop: `verify_task_body.py` check 31 WARNs when a committed
+   `figures/issue_<N>/*per{context,unit,cell}*` PNG at a body-cited
+   figure SHA is unreferenced by any body image URL (task #1011,
+   incident #928) — a pre-gate nudge only; this lens remains the
+   substantive owner.
 1. **Figures (transformed special case).** Every figure that plots a
    residualized / partialled / binned / log-transformed / normalized
    quantity has its raw counterpart embedded inline inside the same
