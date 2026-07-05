@@ -20,3 +20,21 @@ pre-empt on any critique-mandated body edit:
    (the `pre_reg` anti-pattern; quality-bar item 7 "pre-registration mentions").
    Write "registered" / "the plan's <X> read" instead — the body can reference plan
    registration, just not with the `pre-regist*` token.
+
+Update (#813 concern round): check 20's per-result count EXCLUDES the `###`
+heading line itself (`flines[line_no+1:end]`) — measuring a standalone block
+with `_prose_words` over-counts by the heading's word count (a 24-word heading
+made 181 read as 205). Measure heading-stripped, or run the real verifier on a
+working copy. Also: a new same-section per-unit companion costs ~1 image line
+(alt words + 1 URL token) + optional what-is-plotted pointer; captions stay
+exempt, so put the recompute-gate numbers there.
+
+Update (#813 r3): when a critique union forces additions into a `### <result>`
+block already at 176-179 words, relocate the MECHANICS (λ-grid details,
+skipped-check disclosures, oracle math) into `## Methodology` — it is EXCLUDED
+from check 20's per-result and total-prose counts — and leave only a short
+pointer qualifier in the Results prose ("under the registered saturated λ grid
+(Methodology)"). Then trim what-is-plotted phrasing ("dots own-grain fits,
+ticks cross-grain transfers") before touching load-bearing numbers; measure
+with the verifier's exact `_prose_words` rules (excludes `>`-lines, `|`-rows,
+fences, details bodies; image + what-is-plotted lines COUNT).
