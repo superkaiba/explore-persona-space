@@ -64,7 +64,13 @@ fitness checks, quick probes), the canonical recipe is:
 `find_dotenv()` stack-walk crashes from stdin; see gotchas.md). For
 `scripts/*.sh` this is enforced mechanically by
 `scripts/workflow_lint.py --check-heredoc-dotenv` (bundled into the
-no-flags default run; incidents #552/#612).
+no-flags default run; incidents #552/#612). This recipe is VM-scoped
+(repo root, where `.env` always exists): pod/GCE workload scripts must
+source conditionally instead — `if [ -f ./.env ]; then set -a; . ./.env;
+set +a; fi`, never unconditional sourcing inside the `&&`-chain of a
+command whose exit code is classified — because the GCE lane exports
+tokens via its startup script and has NO `.env` file (see
+`.claude/rules/gotchas.md`; incident #923).
 
 ## Agent Roles
 

@@ -118,8 +118,7 @@ silently pass when it ISN'T (full mechanics:
 uv run python -c "
 from huggingface_hub import list_repo_files
 files = list_repo_files('superkaiba1/explore-persona-space',
-                        revision='main')          # or repo_type='dataset' for the data repo
-# Optional repo_type='dataset' for the data-repo case.
+                        revision='main')          # data repo: use scoped list_repo_tree(path_in_repo=...) / file_exists — bare listing times out (#833; gotchas.md)
 for f in files:
     if 'adapters/issue_<M>/<cell>/' in f:
         print(f)

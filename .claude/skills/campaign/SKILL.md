@@ -265,9 +265,12 @@ THIS order (the state save sits between filing and spawning so a crash
 in any window cannot duplicate a child or leak committed hours):
 
 1. File the child:
-   `uv run python scripts/task.py new --kind experiment --parent <N>
+   `uv run python scripts/task.py new --workflow v1 --kind experiment --parent <N>
    --title "<row title>" --goal "<one-sentence goal from the
-   hypothesis>" --body-file <tmp>` — the body OPENS with the fixed line
+   hypothesis>" --body-file <tmp>` — campaign children are pinned to the v1
+   pipeline explicitly, so the future v2 default-flip
+   (env `EPM_DEFAULT_WORKFLOW` / `task.py new` default) never leaks into
+   campaign children (plan Assumption 2). The body OPENS with the fixed line
    `<!-- campaign_experiment_id: <row id> -->` (the deterministic
    reconcile key for orphan adoption, Step 1.1) and carries the
    hypothesis, the single-variable design sketch, `gpu_hours_est`, and

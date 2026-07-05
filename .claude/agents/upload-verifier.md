@@ -168,7 +168,9 @@ uv run python -c "from huggingface_hub import HfApi; HfApi().list_repo_files('su
   | grep <expected-path>
 
 # HF Hub data repo
-uv run python -c "from huggingface_hub import HfApi; HfApi().list_repo_files('superkaiba1/explore-persona-space-data', repo_type='dataset')" \
+# bare list_repo_files on the ~1M-file data repo times out (>90 s, #833) —
+# scope the listing to the expected prefix (gotchas.md):
+uv run python -c "from huggingface_hub import HfApi; print('\n'.join(e.path for e in HfApi().list_repo_tree('superkaiba1/explore-persona-space-data', path_in_repo='<expected-prefix>', repo_type='dataset', recursive=True)))" \
   | grep <expected-path>
 
 # WandB
@@ -727,6 +729,41 @@ correct lifecycle state:
   (look under `scripts/` or `src/explore_persona_space/experiments/`).
   The script is your source of truth for what was supposed to be
   produced and where it was supposed to go.
+
+## v2 mode (`workflow: v2` tasks)
+
+When the task frontmatter carries `workflow: v2`, run the full v1 procedure
+above AND the extra checks below. v1 behavior is unchanged; v2 audits the
+upload-by-default, no-ceiling contract (`.claude/rules/upload-policy.md`
+§ v2 tasks — read it for the policy rationale).
+
+1. **Enumerate output dirs AND the shard-upload log.** Beyond Step 1, read the
+   incremental shard-upload log (`upload_dir_sharded` INFO lines / the driver's
+   per-shard log). A shard absent from the pod because it was uploaded +
+   deleted locally is NOT missing — verify it against the HF listing.
+2. **100% reconciliation incl. already-deleted shards.** Reconcile the FULL
+   expected shard set (shard manifest / log dest list) against
+   `list_repo_files_complete` on the EFFECTIVE repo (canonical for normal
+   shards, overflow for rerouted ones). A shard on neither pod nor HF is
+   silent loss → FAIL.
+3. **Undeclared missing = FAIL** — any produced artifact (generations, judge
+   outputs, metrics, configs, tensor shards) not at a permanent URL and not a
+   validly-declared discard, same bar as v1's silent-data-loss gate.
+4. **A declared discard is valid ONLY with all three:** proof BOTH main AND
+   overflow repos refused (the `upload_dir_sharded` both-refused `RuntimeError`
+   or its recorded equivalent), a plan `discarded_artifacts:` `{name, reason,
+   regen_recipe}` entry, AND an alert naming the closed gate. Only a large
+   intermediate TENSOR qualifies; a generation / rollout-text / judge-output /
+   metrics / configs discard NEVER PASSes (text is quota-immune on the non-LFS
+   path — the v1 Step 3 generation-discard gate still binds).
+5. **Overflow rerouting must have been ATTEMPTED before any discard.** Evidence
+   showing only a main-repo 403 (no overflow attempt) is INVALID → FAIL; the
+   canonical-repo `OVERFLOW_POINTER.json` + the `hf-overflow-routing.jsonl`
+   event are the reroute evidence — confirm rerouted shards list on overflow.
+6. **On PASS, append one `artifacts/registry.jsonl` row per artifact** via
+   `scripts/artifact_registry.py` (id, `type`, HF/git path, issue,
+   `size_bytes`, one-line `recipe` capsule) — the reuse registry the planner +
+   methodology-writer read before any retrain/regenerate.
 
 ## Failure mode this spec was rewritten to catch (incident #456 — phantom URLs)
 

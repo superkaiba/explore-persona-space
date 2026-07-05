@@ -41,6 +41,16 @@ schedule "ridge per fold × layer × arm" for this to apply — a serial per-cel
 full factorization is the default implementation unless the plan states the
 factorization is shared/batched (#823).
 
+**And the same law covers per-item SERIALIZATION / per-file-upload loops** —
+when per-item IO (client-side compression, `savez_compressed`, a per-file Hub
+commit) rivals or dominates the item's compute, write the cheap format per
+item and compress/upload out-of-band or batched, and benchmark one
+production-shape item's serialization wall-time at plan/gate time (#813:
+`savez_compressed` 103.8 s vs plain `savez` 1.2 s per file at a 1.29× ratio —
+65% of row wall-time; implementation-side rule: `.claude/rules/code-style.md`
+§ Compute-throughput discipline; plan-side recipe:
+`.claude/rules/plan-compute-sizing.md` § Store-heavy / IO-heavy phase sizing).
+
 ## The diagnostic signature
 
 - The job runs at high `%CPU` (many cores) but makes little progress, with a
@@ -247,6 +257,15 @@ a many-cell repeated dense-factorization loop: per-cell full
 same overhead class (redundant recompute of shareable work), and neither a GPU
 lane nor a bigger CPU fixes it (#823).
 
+**GPU caveat — batched `eigh`/small-matrix factorizations are cuSOLVER's weak
+spot.** Batching many SMALL symmetric eigendecompositions (or similar small
+dense factorizations) onto CUDA does not reliably beat CPU: cuSOLVER's batched
+paths on many small matrices show high, unpredictable per-cell variance
+(#813, 2026-07-03: the CUDA leg ran ~30–100 min/cell and was swapped for the
+CPU-verified path). For many small symmetric eigs, prefer the vectorized CPU
+path or a shared-factorization restructure; benchmark one cell on BOTH devices
+before committing a long sweep to the GPU leg.
+
 ## Files of record
 
 `.claude/rules/vectorize-many-cell-fits.md` (this file);
@@ -266,5 +285,6 @@ typically fires BOTH rules (statistical validity there, compute shape here).
 
 **Sibling check:** `.claude/rules/artifact-reuse.md` item (i) — reusing a parent's
 fit/analysis helper requires the plan-time throughput inspection (inner loop batched?
-device parametrized?) against this rule, with failures fixed at the source module
+device parametrized? data-repo Hub calls scoped?) against this rule, with failures
+fixed at the source module
 (#761/#763/#812).

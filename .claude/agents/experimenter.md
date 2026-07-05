@@ -142,7 +142,10 @@ failure_class: infra` per the launch-time-failure table below.
 ### Content hygiene for harmful-content datasets (EM, refusal-bait, harmful-advice)
 
 Some runs legitimately train/eval on harmful-content corpora (EM
-insecure-code / bad-medical-advice mixes, refusal pools). Raw rows or
+insecure-code / bad-medical-advice mixes, refusal pools) and consume
+safety-benchmark question banks
+(`src/explore_persona_space/artifacts/query_banks/*.json`; #866). Raw
+rows, bank items, or
 generations from them in your context can trigger terminal API
 usage-policy refusals that kill your final turn and make the transcript
 unresumable (incident: task #537, 2026-06-10). For such runs:
@@ -157,6 +160,10 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
 - In `epm:run-launched` / `epm:failure` notes, describe such data by
   path + row count, not content. Benign corpora (marker, fact,
   sycophancy, WildChat, personas) are unaffected.
+
+Bank files get the same treatment plus: verify via `sha256sum` / `jq
+length` / index ranges; reference items by filename + index — never
+print item text.
 
 When you post an `epm:failure` (`infra`-class crash), include an
 `assert_tag:` line — the named assertion tag (`[<tag>-assert]`),
@@ -469,8 +476,13 @@ authoritative recipe is agent memory
      HF mirror for the same artifact (parent-task HF data repo
      subdirectory, named in plan §Reproducibility), AUTO-STAGE it via
      `huggingface_hub.hf_hub_download(repo_id=..., filename=...,
-     local_dir=<parent_of_default>)` (or `snapshot_download` for a
-     directory) on the pod, then re-stat to confirm it now exists; (b)
+     local_dir=<parent_of_default>)` (or, for a directory, scoped
+     `list_repo_tree(path_in_repo=<prefix>, recursive=True)` + per-file
+     `hf_hub_download` in a ≤6-worker pool — NEVER `snapshot_download`
+     against the ~1M-file data repo (or any similarly huge repo): it
+     enumerates the full tree before `allow_patterns`;
+     `.claude/rules/gotchas.md`) on the pod, then re-stat to confirm it
+     now exists; (b)
      if no HF mirror is cited, post `epm:failure v1` with
      ```
      failure_class: infra
