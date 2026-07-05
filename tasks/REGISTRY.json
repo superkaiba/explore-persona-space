@@ -132,8 +132,8 @@
     "1014": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1014",
-      "status": "reviewing",
+      "path": "tasks/completed/1014",
+      "status": "completed",
       "title": "workflow-fix: check 17 lacks a Context-row lineage-token requirement"
     },
     "1015": {
