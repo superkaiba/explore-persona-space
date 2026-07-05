@@ -1,5 +1,5 @@
 ---
-description: Trained-artifact + code reuse fitness check (a)-(j) — when to reuse a prior HF adapter / checkpoint / training-mix / raw-completion bucket / eval JSON / fit-analysis helper vs retrain or rewrite, incl. pairwise pair-provenance coherence (#922), with the enforcement chain (loads at plan time via plan-file paths)
+description: Trained-artifact + code reuse fitness check (a)-(j) — when to reuse a prior HF adapter / checkpoint / training-mix / raw-completion bucket / eval JSON / fit-analysis helper vs retrain or rewrite, incl. pairwise pair-provenance coherence (#922) and reuse-validation gate calibration + HALT-vs-WARN severity (#813), with the enforcement chain (loads at plan time via plan-file paths)
 paths:
   - ".claude/plans/**"
   - "tasks/**/plans/**"
@@ -139,7 +139,9 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   the CURRENT stack, pinning the read gauge in plan §4 (a recipe-identical
   parent committed at classic `α/r` is an unconditional repeater at the
   faithful `α/√r` current vLLM+PEFT honor for `use_rslora: true`; incident
-  #601).
+  #601). Threshold calibration + HALT-vs-WARN severity for this probe and
+  every other reuse-validation gate: § Reuse-validation gate calibration
+  below.
 - **(h) Source resolution + consumer-exact path layout + target-backend
   fetchability (reused TRAINING-INPUT artifacts):** for any reused
   training-input file — a parent's `train/*.jsonl` mix, an on-policy response
@@ -309,6 +311,117 @@ The planner verifies, before recording an artifact as reused in §10/§11:
 A failing check other than (i) → retrain / regenerate; a failing throughput
 check (i) → fix the SOURCE module (batch / parametrize / scope it there —
 never a caller-side workaround), then reuse. Say why in the plan either way.
+
+## Reuse-validation gate calibration + severity (HALT vs WARN) (#813)
+
+Checks (b)/(f)/(g)/(j) become RUNTIME GATES in dispatchers — a numeric
+write-ratio parity floor, a behavioral install confirmation, a one-cell
+gate. Every number in this section is an incident-specific illustration
+(the #813/#537/#667 lineage), never a portable default — inheriting 0.01,
+0.004, or 0.1729 into a new gate without re-derivation is itself the
+violation rule 1 names. Two rules govern every such gate:
+
+**1. Calibrate the threshold against the reused artifact's OWN committed
+per-behavior, SAME-SURFACE reference values — never a bare global
+constant.** Before a gate threshold reaches code, the plan names — PER
+(behavior, adapter-class) cell the gate will run against — the committed
+reference the threshold is derived from, file + field: e.g. #537's
+committed G_cells
+(`eval_results/issue_537/G_cells/marker/default__default__seed42.json` →
+`g_mean_delta_logp = 6.062`), #667's committed per-behavior write ratios
+(em 0.1729, sycophancy 0.0757), the artifact's own `adapter_config.json`,
+or the parent `## Reproducibility` rows. A constant calibrated on ONE
+adapter class silently mis-fires on another: #813's global
+`PARITY_MIN_WRITE_RATIO = 0.01` was calibrated on 7-module adapters
+(em 0.1729) and false-HALTed the 4-module attention-only α=64 marker
+adapter writing 0.00903 — correctly. Band-stopped marker adapters
+(lr ≤ 5e-6 per `.claude/rules/marker-training-recipe.md`) are the
+CANONICAL near-floor case: they legitimately sit near any generic floor,
+so a marker cell inheriting a non-marker constant is presumptively
+miscalibrated. **Same-surface commensurability:** a committed reference
+is HALT-calibrating ONLY if it was measured under the SAME read surface —
+rig / gauge / slot / conditioning — the gate will execute. A
+committed-reference-calibrated bar on a DIFFERENT surface is still
+miscalibrated: #813 halt-3's 2.5-nat bar was grounded on #537's committed
+frozen-R diagonal band (this very G_cells exemplar), review-PASSed twice,
+and still false-HALTed a fresh-greedy-R slot read at 0.7516 — same
+nominal units, different statistic. A reference from a different read
+surface is NOT a calibration source for a HALT: derive a same-surface
+reference first, or the gate runs as WARN (rule 2). Likewise a behavior
+with NO committed reference for the gate's read (marker was never run
+against #667's floor) does not silently inherit another behavior's
+constant — derive a reference first, or run that behavior's gate as WARN
+(rule 2).
+
+**2. A HALT threshold must sit at a DISCRIMINATING value between
+failure-mode bands; a diagnostic that can only fail by the artifact being
+WEAKER than expected defaults to WARN + analyzer adjudication.** HALT is
+reserved for apply-path breakage, whose signature is structural or
+MULTIPLICATIVE: wrong adapter resolved/loaded, marker-token-id mismatch,
+gauge violation (an α/√r-vs-α/r error at r=32 is a √32 ≈ 5.66×
+discrepancy — ~0.0016 or ~0.05 against a correct 0.009 — never a 10%
+shortfall), wrong scaling regime. Place a HALT threshold BETWEEN the
+correct-weak band and the wrong-gauge band (#813 round-4: floor 0.004
+separates 0.009 correct from 0.0016 wrong-gauge, ≥2.25× margin each way;
+note a one-sided floor catches only the UNDER-scaled wrong-gauge arm —
+name the companion check that catches the over-scaled ~0.05 direction,
+e.g. a ceiling on the same read or the sibling exact-match check).
+When no discriminating placement exists — legitimate reads overlap every
+bar groundable without the parent's exact eval rig (#813's behavioral
+gate: 0.8547 < 1.0 nat, then 0.7516 < 2.5 after re-grounding; the
+committed 6.06-nat diagonal was measured under #537's frozen-R rig, not
+the probe's fresh-greedy-R slot) — the gate CANNOT hold HALT. Demote it
+to WARN, but ONLY with all three of: (a) the apply path independently
+confirmed (e.g. a sibling behavior's write-ratio matching the committed
+value EXACTLY — #813's em 0.1729 == #667's committed 0.1729); (b) the
+measured value PERSISTED in the run artifacts (never dropped); (c) a
+NAMED analyzer-adjudication concern plus the cheap discriminating test
+that would resolve the fork (#813: `marker_delta_logp_nats` persisted,
+WARN carried to the analyzer, frozen-R teacher-forced re-read named).
+This is NOT threshold-loosening-to-pass (banned — see gotchas.md #841
+"never loosen the fp32 tol", and #813's own supervisor ruling "do NOT
+lower the 2.5-nat bar to pass 0.75"): the signal is preserved and
+adjudicated, not redefined away; and the apply-path HALTs still catch
+every genuinely-broken artifact. Consistent with the fail-fast Critical
+Rule — a persisted WARN with a named adjudication is a surfaced failure,
+not a swallowed one.
+
+**Severity lattice, fully mapped (no unmapped cell).** (i) Structural /
+multiplicative apply-path breakage → HALT, always — this precedence is
+absolute and no WARN license overrides it. (ii) A same-surface committed
+reference WITH a discriminating placement → HALT at that placement.
+(iii) NO same-surface reference (absent, or rig-mismatched) or no
+discriminating placement → the gate CANNOT hold HALT: it is DESIGNED as a
+fresh WARN gate. Conditions (b) persist + (c) named adjudication bind
+EVERY WARN gate, fresh or demoted; condition (a) independent apply-path
+confirmation is specifically the license for DEMOTING an in-flight HALT
+mid-run — a run that cannot produce (a) when demoting does not demote: it
+stays halted until a same-surface reference or apply-path confirmation is
+produced. A fresh plan-time WARN gate needs (b)+(c) only.
+
+**Relaunch discipline.** A gate-threshold change is a FIX: declare its
+fix-engaged signal before relaunching, per `.claude/rules/crash-fix-rounds.md`
+§ "Crash-fix rounds: declare the fix-engaged signal (REQUIRED)" (#813
+round-4 verified the old `0.00903 < 0.01` signature gone before
+attributing the new HALT). Probe logs APPEND across runs — attribute a
+HALT to the CURRENT run by source line number, never to a stale appended
+traceback. And demote-to-WARN is the ONLY licensed remedy for an
+ungroundable gate — SKIPPING the gate (a `--skip-*` flag) is not: #813's
+terminal relaunches ran `--skip-apply-parity` only AFTER the WARN
+demotion had landed and the em exact-match had confirmed the apply path;
+a skip flag with no demotion record is a silent gate deletion.
+
+**Enforcement.** planner step 5 self-attest: a plan whose design carries a
+reuse-validation gate names each threshold's calibration source (file +
+field, per behavior) and its HALT-vs-WARN class in §4/§11. `critic.md`
+Methodology lens item 9 REVISEs a bare-constant threshold or an
+unjustified weaker-than-expected HALT. `code-reviewer`, on a gate-bearing
+diff: the constant's comment/docstring states its calibration source (the
+#813 round-4 pattern); a threshold with no committed-reference grounding
+is a blocker-worthy finding, not an FYI. Hardware/precision false-parity
+SIBLINGS (gauge-origin hardware; float64 clone for fp32 kernel parity)
+are environment mismatch, distinct from calibration: gotchas.md #723-family
++ #841 entries.
 
 ## Enforcement chain
 

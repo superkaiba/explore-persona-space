@@ -102,6 +102,14 @@ confirmed `### fix-engaged signal` sub-section FAILs with the
 `substantive` blocker tag. Ordinary (non-crash-fix) rounds do NOT
 emit this block.
 
+A fix that ADDS or RE-TUNES a reuse-validation gate threshold mid-round
+is additionally governed by `.claude/rules/artifact-reuse.md`
+§ Reuse-validation gate calibration — derive the threshold from the
+artifact's own committed per-behavior, same-surface reference values
+(never a bare constant), and check its HALT-vs-WARN severity class
+before relaunching (#813 halts 2-3 were gates invented in crash-fix
+rounds).
+
 ### Kill-before-relaunch + `timeout`-bounded smokes (REQUIRED — every retry surface)
 
 Applies to EVERY re-run of a smoke / launch / dispatch command — crash-fix

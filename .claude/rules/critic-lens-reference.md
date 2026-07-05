@@ -190,6 +190,14 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    downstream analyzer can re-check; not a REVISE when the plan retrains / regenerates AND names the
    specific fitness-check failure that licenses it (a checklist-item-(i) failure licenses NO retrain
    and NO caller-side workaround — its remedy is the source-module fix, then reuse).
+   REVISE also when the design carries a reuse-VALIDATION gate (a numeric parity floor, a
+   behavioral install confirmation, a one-cell gate) whose threshold is a bare constant not
+   derived from the reused artifact's own committed per-behavior reference values (file + field
+   named in §4/§11), or that assigns run-abort HALT to a weaker-than-expected diagnostic without
+   a discriminating-band placement — full rule: `.claude/rules/artifact-reuse.md`
+   § Reuse-validation gate calibration (#813: 3 launch-halts + ~1.6h of 8×H100 on a
+   7-module-calibrated 0.01 floor and an ungroundable behavioral bar against a correctly-applied
+   4-module marker adapter).
    Conclusion-changing because (i) a wrong-recipe /
    saturated / missing-conditions artifact produces numbers that look like results but answer a
    different question, and (ii) gratuitous retraining changes the inherited baseline so the new
