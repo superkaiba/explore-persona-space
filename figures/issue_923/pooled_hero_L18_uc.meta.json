@@ -1,0 +1,202 @@
+{
+  "commit": "a37785a004",
+  "created": "2026-07-05T06:19:44Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.09271415167138453,
+      "error": 0.036224790463526696,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.4476865407310563,
+      "error": 0.027054714423203924,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5404902223995558,
+      "error": 0.02584391465475322,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5334868105888129,
+      "error": 0.022538776932998716,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.81,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.4598371316002853,
+      "error": 0.07818147162127359,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.08884545165987967,
+      "error": 0.038448595441664145,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.480735174225672,
+      "error": 0.02246508343394532,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5696081228911489,
+      "error": 0.022506299227170457,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5624357022664012,
+      "error": 0.020380364035851306,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.2791441441270812,
+      "error": 0.16511031323151554,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.05677468269938549,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.81,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.41974963384896097,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.81,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5142239342813864,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.81,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5130038849067832,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.81,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.35884776629146775,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.12922426362643888,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.4738590626953688,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.81,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5659117635908928,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.81,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5580814387727806,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.81,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5152107095340149,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.05180483144209323,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.45642765846622024,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5482505182353996,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5441654460238219,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.10490596972124533,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.12870202232542152,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5013578253341109,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5932631166897405,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.5849261740955245,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.19,
+      "Pooled held-out skill R\u00b2 (layer 18)": 0.4351265961842764,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 30
+}
