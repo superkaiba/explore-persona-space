@@ -50,6 +50,12 @@ FIGURES_DIR = PROJECT_ROOT / "figures" / "issue_923"
 
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_PREFIX_923 = "issue923_ctx_query_decomposition"
+# Pinned data-repo revision of the POOLED round's own uploads (pool_* packs
+# under analysis_tensors/pooled_capture — plan v9 §4.1; Hub-verified in the
+# mixed-forward-span-stitch scope pass). The mixed round's identity refs
+# (pool_ffull_*) + reused concat part (pool_fctx_*) fetch at THIS revision;
+# hf_pins.json keeps pinning the PARENT (pre-pooled) revision for targets.
+HF_POOLED_CAPTURE_REVISION = "ecf9b61367b24b20fc88647c9cddde1e75127216"
 # Reused #658 stores (plan §10; Hub-verified at plan time). Keyed by genre.
 STORE_PREFIXES: dict[str, str] = {
     "betley": "issue658_theory_assumptions/store",

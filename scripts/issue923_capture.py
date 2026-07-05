@@ -85,6 +85,7 @@ from issue923_common import (  # noqa: E402
     EXPECTED_HIDDEN,
     EXPECTED_LAYERS,
     HF_DATA_REPO,
+    HF_POOLED_CAPTURE_REVISION,
     HF_PREFIX_923,
     SEED,
     V0_MAX_NEW_TOKENS,
@@ -374,6 +375,7 @@ def masked_context_capture(
     rows: list[dict],
     batch_tokens: int,
     tag: str,
+    masked: bool = True,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     """Presentation (iii): RIGHT-padded batched forwards with the 4D mask.
 
@@ -385,6 +387,12 @@ def masked_context_capture(
     ``pool_start``/``pool_len`` row fields (ABSOLUTE positions — right-pad, no
     offset; masked context positions are never inside the span by
     construction). Rows without a pool span get a zero fpool.
+
+    ``masked=False`` (mixed-forward-span-stitch round, plan v9 §4.2): the ONE
+    manipulated variable — the context-blocking 4D mask is swapped for the
+    standard 2D right-pad attention mask (plain causal attention; query tokens
+    SEE the context). Every other line — batching, span-mean gather, flast
+    gather, absolute right-pad positions — is identical.
     """
     lc = len(capture_layers)
     hidden = model.config.hidden_size
@@ -412,10 +420,16 @@ def masked_context_capture(
             ctx_lens.append(r["ctx_len"])
             pool_start[bi] = r.get("pool_start", 0)  # absolute (right-pad, no offset)
             pool_len[bi] = r.get("pool_len", 0)
-        mask4d = build_masked_context_4d_mask(ctx_lens, seq_lens, max_len, dtype, device)
+        if masked:
+            attn_mask = build_masked_context_4d_mask(ctx_lens, seq_lens, max_len, dtype, device)
+        else:
+            attn_mask = torch.zeros((b, max_len), dtype=torch.long)
+            for bi, sl in enumerate(seq_lens):
+                attn_mask[bi, :sl] = 1  # standard 2D right-pad mask (plain causal)
+            attn_mask = attn_mask.to(device)
         input_ids = input_ids.to(device)
         with torch.no_grad():
-            _ = model(input_ids=input_ids, attention_mask=mask4d, **_logits_kwargs(model))
+            _ = model(input_ids=input_ids, attention_mask=attn_mask, **_logits_kwargs(model))
         last_idx = torch.tensor([sl - 1 for sl in seq_lens], device=device)
         pool_start_d = pool_start.to(device)
         pool_len_d = pool_len.to(device)
@@ -713,12 +727,16 @@ def build_pool_iii_row(tokenizer, instance: dict, q: str, key) -> dict:
     }
 
 
-def masked_equivalence_check(model, tokenizer, capture_layers, rows: list[dict]) -> dict:
+def masked_equivalence_check(
+    model, tokenizer, capture_layers, rows: list[dict], masked: bool = True
+) -> dict:
     """Batched right-pad 4D-mask capture vs an independent batch-1 slice reference.
 
     cosine(batched, serial) >= 0.999 per (row x layer) for flast AND fpool —
     the batched-rewrite equivalence gate for the NEW masked-span gather (the
-    left-pad path is covered by ``equivalence_check``).
+    left-pad path is covered by ``equivalence_check``). ``masked=False``
+    gates the UNMASKED variant (mixed round): the batch-1 reference is a
+    plain no-mask causal forward, the batched side the 2D right-pad path.
     """
     dtype = next(model.parameters()).dtype
     capture = LayerCapture(model, len(model.model.layers))
@@ -727,9 +745,13 @@ def masked_equivalence_check(model, tokenizer, capture_layers, rows: list[dict])
         for r in rows:
             t = len(r["full_ids"])
             ids = torch.tensor(r["full_ids"], dtype=torch.long).unsqueeze(0).to(model.device)
-            mask4d = build_masked_context_4d_mask([r["ctx_len"]], [t], t, dtype, model.device)
+            kwargs = {}
+            if masked:
+                kwargs["attention_mask"] = build_masked_context_4d_mask(
+                    [r["ctx_len"]], [t], t, dtype, model.device
+                )
             with torch.no_grad():
-                _ = model(input_ids=ids, attention_mask=mask4d, **_logits_kwargs(model))
+                _ = model(input_ids=ids, **kwargs, **_logits_kwargs(model))
             fl, fp = [], []
             for li in capture_layers:
                 hs = capture.latest[li][0]  # (T, H)
@@ -741,7 +763,14 @@ def masked_equivalence_check(model, tokenizer, capture_layers, rows: list[dict])
             serial_fl.append(torch.stack(fl))
             serial_fp.append(torch.stack(fp))
         bfl, bfp = masked_context_capture(
-            model, tokenizer, capture, capture_layers, [dict(r) for r in rows], 10**9, "meq"
+            model,
+            tokenizer,
+            capture,
+            capture_layers,
+            [dict(r) for r in rows],
+            10**9,
+            "meq" if masked else "meq_unmasked",
+            masked=masked,
         )
     finally:
         capture.remove()
@@ -1195,35 +1224,44 @@ def _scoped_tree_listing(prefix: str, attempts: int = 4) -> list[str]:
     raise RuntimeError(f"scoped listing failed after {attempts} attempts: {prefix}") from last
 
 
-def pooled_upload_stage(args, packs_dir: Path) -> None:
-    """Upload the pooled packs dir (one folder commit) + verify + sentinel LAST.
+def _packs_upload_stage(packs_dir: Path, prefix: str, sentinel_name: str, script_tag: str) -> None:
+    """Upload one packs dir (one folder commit) + scoped verify + sentinel LAST.
 
     Verification uses SCOPED ``list_repo_tree`` (server-side prefix, bounded
     transient retry) — a bare ``list_repo_files`` full listing of the
     ~1M-file data repo times out (the #833 gotcha).
     """
-    prefix = f"{HF_PREFIX_923}/analysis_tensors/pooled_capture"
-    n_local = len([p for p in packs_dir.iterdir() if p.name != "UPLOAD_COMPLETE_POOLED.json"])
+    n_local = len([p for p in packs_dir.iterdir() if p.name != sentinel_name])
     hub._upload(packs_dir, HF_DATA_REPO, "dataset", prefix)
     listing = _scoped_tree_listing(prefix)
     assert len(listing) >= n_local, (
-        f"pooled upload verification failed: hub {len(listing)} < local {n_local}"
+        f"upload verification failed for {prefix}: hub {len(listing)} < local {n_local}"
     )
     complete = {
         "uploaded": n_local,
         "files": listing,
-        "metadata": reproducibility_metadata({"script": "issue923_capture:pooled_upload"}),
+        "metadata": reproducibility_metadata({"script": script_tag}),
     }
-    complete_path = packs_dir / "UPLOAD_COMPLETE_POOLED.json"
+    complete_path = packs_dir / sentinel_name
     dump_json(complete, complete_path)
     hub._upload(
         complete_path,
         HF_DATA_REPO,
         "dataset",
-        f"{prefix}/UPLOAD_COMPLETE_POOLED.json",
+        f"{prefix}/{sentinel_name}",
         upload_as_file=True,
     )
-    logger.info("[pooled_upload] verified %d files under %s", len(listing), prefix)
+    logger.info("[upload] verified %d files under %s", len(listing), prefix)
+
+
+def pooled_upload_stage(args, packs_dir: Path) -> None:
+    """Upload the pooled packs dir + verify + ``UPLOAD_COMPLETE_POOLED.json`` LAST."""
+    _packs_upload_stage(
+        packs_dir,
+        f"{HF_PREFIX_923}/analysis_tensors/pooled_capture",
+        "UPLOAD_COMPLETE_POOLED.json",
+        "issue923_capture:pooled_upload",
+    )
 
 
 def pooled_main(args) -> int:
@@ -1250,6 +1288,274 @@ def pooled_main(args) -> int:
             print("[phase=identity_gate_failed]", flush=True)
             return 4
     phase("done")
+    return 0
+
+
+# ── mixed-forward-span-stitch stage pipeline (plan v9 §4.2) ───────────────────
+
+
+def qry_mix_capture_stage(
+    args, packs_dir: Path, shard_k: int, n_shards: int, shard_tag: str
+) -> None:
+    """Capture the mixed-forward query-span family (``arm_qry_mix`` inputs).
+
+    Plan v9 §4.1: the SAME rows ``build_pool_iii_row`` builds for presentation
+    (iii) — ``{full_ids, ctx_len, pool_start, pool_len}`` with the per-row
+    piecewise-retokenization assert — run through the right-pad batched
+    forward WITHOUT the context-blocking 4D mask (``masked=False``: standard
+    causal attention, query tokens SEE the context), span-mean over the query
+    block at the same absolute positions. Packs are shard-checkpointed (an
+    existing pack is SKIPPED; ``--fresh`` overwrites).
+    """
+    phase("mix_load")
+    model, tokenizer = load_model_and_tokenizer(args)
+    n_layers = len(model.model.layers)
+    hidden = model.config.hidden_size
+    if not args.tiny_model:
+        assert n_layers == args.expected_layers, (n_layers, args.expected_layers)
+        assert hidden == args.expected_hidden, (hidden, args.expected_hidden)
+    capture_layers = list(range(n_layers))
+    batch_tokens = args.batch_tokens or (2048 if args.tiny_model else 16384)
+    instances, pools = _pool_inputs(args)
+    inst_shard = [inst for i, inst in enumerate(instances) if i % n_shards == shard_k]
+    logger.info(
+        "[mix] shard %d/%d: %d contexts; pools uc=%d betley=%d dolly=%d",
+        shard_k,
+        n_shards,
+        len(inst_shard),
+        len(pools["uc"]),
+        len(pools["betley"]),
+        len(pools["dolly"]),
+    )
+    run_meta: dict = {
+        "shard": args.shard,
+        "smoke": args.smoke,
+        "model": args.model if not args.tiny_model else "tiny-random-qwen2",
+        "capture_layers": capture_layers,
+        "pools_hash": {g: texts_hash(p) for g, p in pools.items()},
+        "round": "mixed-forward-span-stitch",
+        "masked": False,  # the ONE manipulated variable vs pool_fqry_iii
+        "metadata": reproducibility_metadata({"script": "issue923_capture:qry_mix"}),
+    }
+
+    if args.smoke:
+        # Batched-vs-batch-1 UNMASKED equivalence gate (plan v9 §4.2): the
+        # batched right-pad 2D-mask path vs an independent no-mask batch-1
+        # slice reference, cos >= 0.999 per (row x layer) for flast AND fpool.
+        phase("mix_equivalence")
+        meq_rows = [
+            build_pool_iii_row(tokenizer, instances[0], q, ("meq", qi))
+            for qi, q in enumerate(pools["uc"][:3])
+        ]
+        run_meta["equivalence_unmasked"] = masked_equivalence_check(
+            model, tokenizer, capture_layers, meq_rows, masked=False
+        )
+        assert run_meta["equivalence_unmasked"]["ok"], run_meta["equivalence_unmasked"]
+        logger.info("[mix] unmasked equivalence PASS: %s", run_meta["equivalence_unmasked"])
+        # Rendered spans printed VERBATIM for eyeball (plan v9 §4.2 smoke).
+        r0 = meq_rows[0]
+        span_ids = r0["full_ids"][r0["pool_start"] : r0["pool_start"] + r0["pool_len"]]
+        print(f"[mix-smoke] full render (row 0): {tokenizer.decode(r0['full_ids'])!r}", flush=True)
+        print(f"[mix-smoke] pooled query span (row 0): {tokenizer.decode(span_ids)!r}", flush=True)
+
+    def _skip(path: Path) -> bool:
+        if path.exists() and not args.fresh:
+            logger.info("[mix] %s exists — skipped (resume; --fresh overwrites)", path.name)
+            return True
+        return False
+
+    phase("mix_capture")
+    capture = LayerCapture(model, n_layers)
+    try:
+        for genre, pool in pools.items():
+            pack_path = packs_dir / f"pool_fqry_mix_{genre}_{shard_tag}.pt"
+            if _skip(pack_path):
+                continue
+            rows, keys = [], []
+            for inst in inst_shard:
+                for qi, q in enumerate(pool):
+                    rows.append(build_pool_iii_row(tokenizer, inst, q, (inst["id"], qi)))
+                    keys.append({"ctx_id": inst["id"], "q_idx": qi})
+            if not rows:
+                continue
+            flast, fpool = masked_context_capture(
+                model,
+                tokenizer,
+                capture,
+                capture_layers,
+                rows,
+                batch_tokens,
+                f"pool_fqry_mix_{genre}",
+                masked=False,
+            )
+            pool_valid = torch.tensor([r["pool_len"] > 0 for r in rows], dtype=torch.bool)
+            _save_pool_pack(
+                pack_path,
+                {"fpool": fpool, "flast": flast, "pool_valid": pool_valid},
+                run_meta,
+                f"pool_fqry_mix_{genre}",
+                keys,
+            )
+    finally:
+        capture.remove()
+    dump_json(run_meta, packs_dir / f"mix_run_meta_{shard_tag}.json")
+
+
+def _fetch_mixed_identity_refs(ref_dir: Path) -> None:
+    """Fetch the pooled ``pool_ffull`` shard0 refs at the PINNED pooled revision.
+
+    shard0 only (~1.3 GB total): the mix packs use the SAME ctx-shard function,
+    so shard0's ctx set fully overlaps — >= 100 joinable rows per genre for the
+    k1 sample.
+    """
+    from huggingface_hub import hf_hub_download
+
+    names = [f"pool_ffull_{g}_shard0of4.pt" for g in ("uc", "betley", "dolly")]
+    ref_dir.mkdir(parents=True, exist_ok=True)
+    for name in names:
+        target = ref_dir / name
+        if target.exists():
+            continue
+        local = hf_hub_download(
+            HF_DATA_REPO,
+            f"{HF_PREFIX_923}/analysis_tensors/pooled_capture/{name}",
+            repo_type="dataset",
+            revision=HF_POOLED_CAPTURE_REVISION,
+            local_dir=str(ref_dir / "hf_dl"),
+        )
+        target.write_bytes(Path(local).read_bytes())
+        logger.info("[identity_mix] fetched pooled ref %s", name)
+
+
+def qry_mix_identity_stage(args, packs_dir: Path) -> bool:
+    """k1-style identity gate (plan v9 §4.2): cos(flast_new, pooled ffull flast).
+
+    ~100 seeded-sample rows per genre; per-row score = MIN over layers of the
+    per-layer cosine (the parent convention). Same ``full_ids``, BOTH forwards
+    unmasked — the only difference is padding scheme (right-pad here vs the
+    pooled round's left-pad prompt-only path) — so the gate joins render
+    provenance AND unmasked-forward correctness in one check. Family MEDIAN
+    >= 0.99 hard gate (the calibrated bf16 floor); sub-0.999 rows are warned +
+    recorded, never a failure. Writes (and uploads) ``identity_check_mix.json``
+    either way; returns overall pass.
+    """
+    ref_dir = args.identity_ref_dir or (
+        PROJECT_ROOT / "data" / "issue_923" / "capture" / "pooled_ref"
+    )
+    if args.identity_ref_dir is None:
+        _fetch_mixed_identity_refs(ref_dir)
+    rng = np.random.default_rng(SEED)
+    results: dict = {}
+    ok_all = True
+    for genre in ("uc", "betley", "dolly"):
+        ref_files = sorted(ref_dir.glob(f"pool_ffull_{genre}_shard*.pt"))
+        assert ref_files, (
+            f"identity check: no pooled refs matching pool_ffull_{genre}_shard*.pt under {ref_dir}"
+        )
+        ref_idx: dict = {}
+        for f in ref_files:
+            tensors, meta = load_pack(f)
+            for i, r in enumerate(meta["rows"]):
+                ref_idx[(r["ctx_id"], r["q_idx"])] = (tensors["flast"], i)
+        mix_files = sorted(packs_dir.glob(f"pool_fqry_mix_{genre}_shard*.pt"))
+        assert mix_files, (
+            f"identity check: no mixed packs matching pool_fqry_mix_{genre}_shard*.pt "
+            f"under {packs_dir}"
+        )
+        matched = []
+        for f in mix_files:
+            tensors, meta = load_pack(f)
+            for i, r in enumerate(meta["rows"]):
+                hit = ref_idx.get((r["ctx_id"], r["q_idx"]))
+                if hit is not None:
+                    matched.append((tensors["flast"], i, hit))
+        assert matched, f"identity check: ZERO overlapping rows for {genre} — join broken"
+        if len(matched) > IDENTITY_SAMPLE_PER_FAMILY:
+            sel = rng.choice(len(matched), size=IDENTITY_SAMPLE_PER_FAMILY, replace=False)
+            matched = [matched[int(s)] for s in sorted(sel)]
+        cos_rows = []
+        for new_t, ni, (ref_t, ri) in matched:
+            cos = torch.nn.functional.cosine_similarity(
+                new_t[ni].float(), ref_t[ri].float(), dim=1
+            )  # per layer
+            cos_rows.append(float(cos.min()))
+        med = float(np.median(cos_rows))
+        fam_ok = med >= IDENTITY_MEDIAN_FLOOR
+        ok_all &= fam_ok
+        n_warn = sum(c < IDENTITY_WARN_FLOOR for c in cos_rows)
+        if not fam_ok:
+            logger.error(
+                "[identity_mix] %s FAILED: median min-cos %.6f < %.2f",
+                genre,
+                med,
+                IDENTITY_MEDIAN_FLOOR,
+            )
+        elif n_warn:
+            logger.warning(
+                "[identity_mix] %s: %d/%d rows below %.3f (bf16 numerics, recorded); median %.6f",
+                genre,
+                n_warn,
+                len(cos_rows),
+                IDENTITY_WARN_FLOOR,
+                med,
+            )
+        results[genre] = {
+            "n": len(cos_rows),
+            "median_min_cos": med,
+            "min": float(min(cos_rows)),
+            "n_below_0p999": n_warn,
+            "pass": fam_ok,
+            "cos_rows": cos_rows,  # per-row min-over-layers cos (figure input)
+        }
+    payload = {
+        "pass": bool(ok_all),
+        "median_floor": IDENTITY_MEDIAN_FLOOR,
+        "warn_floor": IDENTITY_WARN_FLOOR,
+        "ref_revision": HF_POOLED_CAPTURE_REVISION,
+        "families": results,
+        "metadata": reproducibility_metadata({"script": "issue923_capture:qry_mix_identity"}),
+    }
+    dump_json(payload, packs_dir / "identity_check_mix.json")
+    if not args.no_upload:
+        hub._upload(
+            packs_dir / "identity_check_mix.json",
+            HF_DATA_REPO,
+            "dataset",
+            f"{HF_PREFIX_923}/analysis_tensors/mixed_capture/identity_check_mix.json",
+            upload_as_file=True,
+        )
+    logger.info("[identity_mix] overall pass=%s: %s", ok_all, json.dumps(results))
+    return bool(ok_all)
+
+
+def mixed_main(args) -> int:
+    """Dispatcher for the mixed-forward-span-stitch stages (capture/upload/identity)."""
+    shard_k, n_shards = (int(x) for x in args.shard.split("/"))
+    assert 0 <= shard_k < n_shards, args.shard
+    if args.smoke and args.out_dir == PROJECT_ROOT / "data" / "issue_923" / "capture":
+        # Smoke redirect (fit-script parity): smoke packs must never land in
+        # the canonical dir, where skip-if-exists resume would mix them in.
+        args.out_dir = Path("/tmp/issue-923-smoke/capture")
+        logger.info("[mix] --smoke: out-dir redirected to %s", args.out_dir)
+    packs_dir = args.out_dir / "packs_mixed"
+    packs_dir.mkdir(parents=True, exist_ok=True)
+    shard_tag = f"shard{shard_k}of{n_shards}"
+    if args.qry_mix_features:
+        qry_mix_capture_stage(args, packs_dir, shard_k, n_shards, shard_tag)
+    if args.qry_mix_upload and not args.no_upload:
+        phase("mix_upload")
+        _packs_upload_stage(
+            packs_dir,
+            f"{HF_PREFIX_923}/analysis_tensors/mixed_capture",
+            "UPLOAD_COMPLETE_MIXED.json",
+            "issue923_capture:mixed_upload",
+        )
+    if args.qry_mix_identity_check:
+        phase("mix_identity")
+        if not qry_mix_identity_stage(args, packs_dir):
+            print("[phase=identity_gate_failed]", flush=True)
+            return 4
+    print("[script-complete]", flush=True)
     return 0
 
 
@@ -1301,11 +1607,29 @@ def parse_args(argv=None):
         help="parent ref packs dir (default: fetch from HF at the pinned revision)",
     )
     p.add_argument("--fresh", action="store_true", help="overwrite existing pooled packs")
+    # mixed-forward-span-stitch round (plan v9 §4.2) — separate stage pipeline:
+    p.add_argument(
+        "--qry-mix-features",
+        action="store_true",
+        help="capture the UNMASKED query-span family (pool_fqry_mix_*) for this shard",
+    )
+    p.add_argument(
+        "--qry-mix-upload",
+        action="store_true",
+        help="upload packs_mixed/ to analysis_tensors/mixed_capture (verify + sentinel)",
+    )
+    p.add_argument(
+        "--qry-mix-identity-check",
+        action="store_true",
+        help="k1 gate: cos(flast_new, pooled ffull flast) per genre; exit 4 on median<0.99",
+    )
     return p.parse_args(argv)
 
 
 def main() -> int:  # noqa: C901 — linear phase pipeline; see phase() markers
     args = parse_args()
+    if args.qry_mix_features or args.qry_mix_upload or args.qry_mix_identity_check:
+        return mixed_main(args)
     if args.pooled_features or args.pooled_upload or args.pooled_identity_check:
         return pooled_main(args)
     shard_k, n_shards = (int(x) for x in args.shard.split("/"))

@@ -375,6 +375,7 @@ class GridData:
         ffull: torch.Tensor,
         fqryiii: torch.Tensor | None,
         qryiii_valid: torch.Tensor | None,
+        fqrymix: torch.Tensor | None = None,
     ) -> None:
         self.genre = genre
         self.ctx_ids = ctx_ids
@@ -382,9 +383,10 @@ class GridData:
         self.n_ctx = len(ctx_ids)
         self.n_q = n_q
         self.target = target  # (n_cells, Lc, H) fp16
-        self.valid = valid  # (n_cells,) bool (target ∧ ffull [∧ qryiii])
+        self.valid = valid  # (n_cells,) bool (target ∧ loaded feature grids)
         self.ffull = ffull
         self.fqryiii = fqryiii  # None when arm dropped
+        self.fqrymix = fqrymix  # mixed round only (plan v9); None otherwise
 
     def ctx_of(self, cells: np.ndarray) -> np.ndarray:
         return cells // self.n_q
@@ -401,6 +403,8 @@ def load_grids(  # noqa: C901 — linear grid-assembly, per-genre branches
     ood: bool,
     feature_source: str = "last",
     pooled_packs_dir: Path | None = None,
+    mixed_packs_dir: Path | None = None,
+    parts_needed: set[str] | None = None,
 ):
     """Assemble GridData per genre (+ dolly) from capture shards + reduce packs.
 
@@ -411,12 +415,26 @@ def load_grids(  # noqa: C901 — linear grid-assembly, per-genre branches
     reads the ``pool_*`` packs' ``fpool`` key from ``pooled_packs_dir``;
     TARGETS keep reading ``vbar`` from the same tgt/reduce packs (byte-identical
     inputs — the round's reuse premise).
+
+    ``parts_needed`` (mixed round's ``--arms`` restriction, plan v9 §4.2):
+    when given, ONLY the named part families are loaded (absent families
+    neither fetch-assert nor gate cell validity); ``None`` = load everything
+    (parent + pooled behavior, unchanged). ``qry_mix`` parts read the
+    ``pool_fqry_mix_*`` stems (``fpool`` key) from ``mixed_packs_dir``.
     """
     from issue594_common import load_battery
 
     pool = feature_source == "pool"
     if pool:
         assert pooled_packs_dir is not None, "feature_source=pool requires --pooled-packs-dir"
+
+    def need(part: str) -> bool:
+        return parts_needed is None or part in parts_needed
+
+    if need("qry_mix"):
+        assert pool and mixed_packs_dir is not None, (
+            "qry_mix arms require --feature-source pool and --mixed-packs-dir"
+        )
     feat_dir = pooled_packs_dir if pool else packs_dir
     feat_key = "fpool" if pool else "flast"
 
@@ -441,6 +459,9 @@ def load_grids(  # noqa: C901 — linear grid-assembly, per-genre branches
 
     fqry: dict[str, dict[str, torch.Tensor]] = {}
     for pres in ("i", "ii"):
+        if not need(f"qry_{pres}"):
+            fqry[pres] = {}  # restricted run: family not consumed, not fetched
+            continue
         packs = _collect_shards(feat_dir, f"pool_fqry_{pres}" if pool else f"fqry_{pres}")
         per_genre: dict[str, torch.Tensor] = {}
         for tensors, meta in packs:
@@ -458,57 +479,82 @@ def load_grids(  # noqa: C901 — linear grid-assembly, per-genre branches
         fqry[pres] = per_genre
 
     def _grid(genre: str, n_q: int, target: torch.Tensor, valid: torch.Tensor) -> GridData:
+        common = valid.clone()
         ffull = torch.zeros(len(ctx_ids) * n_q, lc, hidden, dtype=torch.float16)
-        fvalid = torch.zeros(len(ctx_ids) * n_q, dtype=torch.bool)
-        if pool:
-            # ONE pack family per genre, GLOBAL q_idx (ext lives at 48+ for uc).
-            _fill_rows(
-                ffull,
-                fvalid,
-                _collect_shards(feat_dir, f"pool_ffull_{genre}"),
-                feat_key,
-                ctx_idx,
-                n_q,
-            )
-        elif genre == "uc":
-            _fill_rows(
-                ffull, fvalid, _collect_shards(packs_dir, "ffull_uc48"), "flast", ctx_idx, n_q
-            )
-            # ext cells: F_full rides the TF pack's flast (same forward, plan 1b);
-            # ext q_idx is LOCAL 0..95 → shift by the DERIVED store-pool offset.
-            ext = _collect_shards(packs_dir, "tgt_ucext")
-            off = _uc_ext_offset(ext, n_q)
-            for tensors, meta in ext:
-                for i, r in enumerate(meta["rows"]):
-                    row = cell_row(ctx_idx[r["ctx_id"]], off + r["q_idx"], n_q)
-                    ffull[row] = tensors["flast"][i]
-                    fvalid[row] = True
-        elif genre == "betley":
-            _fill_rows(
-                ffull, fvalid, _collect_shards(packs_dir, "ffull_betley"), "flast", ctx_idx, n_q
-            )
-        else:  # dolly — F_full from the TF pack (same-forward flast)
-            _fill_rows(
-                ffull, fvalid, _collect_shards(packs_dir, "tgt_dolly"), "flast", ctx_idx, n_q
-            )
-        if mask_backend == "dropped":
-            # The ONLY licensed drop path: the capture run RECORDED the §8
-            # mask-ladder failure in its pack meta. Pack ABSENCE without that
-            # record is a fetch/upload/coverage failure and fails loud below
-            # (r1 blocker fqryiii-pack-absence-silently-drops-arm).
-            fqryiii, iii_valid = None, None
-        else:
-            iii_packs = _collect_shards(
-                feat_dir, f"pool_fqry_iii_{genre}" if pool else f"fqry_iii_{genre}"
-            )
-            fqryiii = torch.zeros(len(ctx_ids) * n_q, lc, hidden, dtype=torch.float16)
-            iii_valid = torch.zeros(len(ctx_ids) * n_q, dtype=torch.bool)
-            _fill_rows(fqryiii, iii_valid, iii_packs, feat_key, ctx_idx, n_q)
-        assert (fqryiii is None) == (mask_backend == "dropped")  # gate consistency
-        common = valid & fvalid
-        if iii_valid is not None:
-            common = common & iii_valid  # the #823 common-valid rule
-        return GridData(genre, ctx_ids, families, n_q, target, common, ffull, fqryiii, iii_valid)
+        if need("full"):
+            fvalid = torch.zeros(len(ctx_ids) * n_q, dtype=torch.bool)
+            if pool:
+                # ONE pack family per genre, GLOBAL q_idx (ext lives at 48+ for uc).
+                _fill_rows(
+                    ffull,
+                    fvalid,
+                    _collect_shards(feat_dir, f"pool_ffull_{genre}"),
+                    feat_key,
+                    ctx_idx,
+                    n_q,
+                )
+            elif genre == "uc":
+                _fill_rows(
+                    ffull, fvalid, _collect_shards(packs_dir, "ffull_uc48"), "flast", ctx_idx, n_q
+                )
+                # ext cells: F_full rides the TF pack's flast (same forward, plan 1b);
+                # ext q_idx is LOCAL 0..95 → shift by the DERIVED store-pool offset.
+                ext = _collect_shards(packs_dir, "tgt_ucext")
+                off = _uc_ext_offset(ext, n_q)
+                for tensors, meta in ext:
+                    for i, r in enumerate(meta["rows"]):
+                        row = cell_row(ctx_idx[r["ctx_id"]], off + r["q_idx"], n_q)
+                        ffull[row] = tensors["flast"][i]
+                        fvalid[row] = True
+            elif genre == "betley":
+                _fill_rows(
+                    ffull, fvalid, _collect_shards(packs_dir, "ffull_betley"), "flast", ctx_idx, n_q
+                )
+            else:  # dolly — F_full from the TF pack (same-forward flast)
+                _fill_rows(
+                    ffull, fvalid, _collect_shards(packs_dir, "tgt_dolly"), "flast", ctx_idx, n_q
+                )
+            common = common & fvalid
+        fqryiii, iii_valid = None, None
+        if need("qry_iii"):
+            if mask_backend == "dropped":
+                # The ONLY licensed drop path: the capture run RECORDED the §8
+                # mask-ladder failure in its pack meta. Pack ABSENCE without that
+                # record is a fetch/upload/coverage failure and fails loud below
+                # (r1 blocker fqryiii-pack-absence-silently-drops-arm).
+                fqryiii, iii_valid = None, None
+            else:
+                iii_packs = _collect_shards(
+                    feat_dir, f"pool_fqry_iii_{genre}" if pool else f"fqry_iii_{genre}"
+                )
+                fqryiii = torch.zeros(len(ctx_ids) * n_q, lc, hidden, dtype=torch.float16)
+                iii_valid = torch.zeros(len(ctx_ids) * n_q, dtype=torch.bool)
+                _fill_rows(fqryiii, iii_valid, iii_packs, feat_key, ctx_idx, n_q)
+            assert (fqryiii is None) == (mask_backend == "dropped")  # gate consistency
+            if iii_valid is not None:
+                common = common & iii_valid  # the #823 common-valid rule
+        fqrymix = None
+        if need("qry_mix"):
+            # Mixed round (plan v9): pool_fqry_mix packs from the mixed dir;
+            # a missing pack family fails loud in _collect_shards (a fetch
+            # miss, never a silent arm drop — we control this capture).
+            mix_packs = _collect_shards(mixed_packs_dir, f"pool_fqry_mix_{genre}")
+            fqrymix = torch.zeros(len(ctx_ids) * n_q, lc, hidden, dtype=torch.float16)
+            mix_valid = torch.zeros(len(ctx_ids) * n_q, dtype=torch.bool)
+            _fill_rows(fqrymix, mix_valid, mix_packs, "fpool", ctx_idx, n_q)
+            common = common & mix_valid
+        return GridData(
+            genre,
+            ctx_ids,
+            families,
+            n_q,
+            target,
+            common,
+            ffull,
+            fqryiii,
+            iii_valid,
+            fqrymix=fqrymix,
+        )
 
     grids: dict[str, GridData] = {}
     for genre in genres:
@@ -664,6 +710,14 @@ def build_part(
         tr_n, te_n = _std(tr_amb, [te_amb])
         pr = _pca_lowrank_project(tr_n, [tr_n, te_n], PCA_DIM, seed)
         return pr[0], pr[1]
+    if part == "qry_mix":
+        # Mixed-forward query span (plan v9): per-cell like qry_iii — same
+        # cell-level pca_lowrank path; only the source grid differs.
+        tr_amb = grid_tr.fqrymix[tr_cells, layer, :].double()
+        te_amb = grid_te.fqrymix[te_cells, layer, :].double()
+        tr_n, te_n = _std(tr_amb, [te_amb])
+        pr = _pca_lowrank_project(tr_n, [tr_n, te_n], PCA_DIM, seed)
+        return pr[0], pr[1]
     if part == "full":
         tr_amb = grid_tr.ffull[tr_cells, layer, :].double()
         te_amb = grid_te.ffull[te_cells, layer, :].double()
@@ -682,7 +736,23 @@ ARM_PARTS = {
     "arm_concat_ii": ["ctx", "qry_ii"],
     "arm_concat_iii": ["ctx", "qry_iii"],
     ARM_FULL: ["full"],
+    # mixed-forward-span-stitch round (plan v9 §4.1): query-span mean of the
+    # UNMASKED full forward, and its stitched variant (pool_fctx ⊕ qry_mix —
+    # by the causal identity exactly the full mixed forward at two spans).
+    "arm_qry_mix": ["qry_mix"],
+    "arm_concat_mix": ["ctx", "qry_mix"],
 }
+# Arms whose per-cell feature grid can be legitimately absent (the §8 mask
+# ladder drop for iii; a fetch miss for mix fails loud at load instead).
+_ARMS_NEEDING_QRYIII = ("arm_qry_iii", "arm_concat_iii")
+_ARMS_NEEDING_QRYMIX = ("arm_qry_mix", "arm_concat_mix")
+
+
+def _arm_features_missing(arm: str, grid) -> bool:
+    """True when ``arm`` needs a per-cell feature grid the GridData lacks."""
+    if arm in _ARMS_NEEDING_QRYIII and grid.fqryiii is None:
+        return True
+    return arm in _ARMS_NEEDING_QRYMIX and grid.fqrymix is None
 
 
 def build_arm_design(arm, layer, grid_tr, tr_cells, grid_te, te_cells, fctx, fqry, seed):
@@ -1038,7 +1108,7 @@ def fit_layer_unit(  # noqa: C901 — one self-contained checkpoint unit (folds 
             Yte = (Yte_amb - mu_y) @ Vy
             ymu = Ytr.mean(0, keepdim=True)
             for arm in arms:
-                if arm in ("arm_qry_iii", "arm_concat_iii") and gte.fqryiii is None:
+                if _arm_features_missing(arm, gte):
                     continue
                 Xtr, Xte = build_arm_design(arm, layer, grid, tr, gte, te, fctx, fqry, seedf)
                 fit = press_fit_predict(Xtr.to(dev), Ytr, Xte.to(dev), standardize=False)
@@ -1095,7 +1165,7 @@ def fit_layer_unit(  # noqa: C901 — one self-contained checkpoint unit (folds 
                 tr_pos = np.array([pos_of[int(c)] for c in tr])
                 te_pos_d = np.array([d_pos_of[int(c)] for c in te])
                 for arm in arms:
-                    if arm in ("arm_qry_iii", "arm_concat_iii") and dolly.fqryiii is None:
+                    if _arm_features_missing(arm, dolly):
                         continue
                     Xtr, Xte = build_arm_design(arm, layer, grid, tr, dolly, te, fctx, fqry, seedf)
                     fit = press_fit_predict(
@@ -1390,9 +1460,218 @@ def kill_floor_flags(stats: dict, genres: list[str]) -> dict[str, bool]:
     """Per-genre §6 k2 flags from ``compute_stats`` output.
 
     ``kill_floor_triggered`` = pool_full held-out R² < 0.05 at EVERY fitted
-    layer for that genre; absent genres default False (no floor evidence).
+    layer for that genre (restricted runs: ALL fitted arms below the floor —
+    the plan-v9 re-point); absent genres default False (no floor evidence).
     """
     return {g: bool(stats.get(g, {}).get("kill_floor_triggered")) for g in genres}
+
+
+# ── paired skill diffs vs the POOLED round (mixed-forward-span-stitch, v9) ────
+
+# (read name, NEW arm — this round's fits, REF arm — pooled persisted sums).
+MIXED_PAIRED_READS: tuple[tuple[str, str, str], ...] = (
+    ("primary_qry_mix_vs_qry_iii", "arm_qry_mix", "arm_qry_iii"),
+    ("s2_concat_mix_vs_concat_i", "arm_concat_mix", "arm_concat_i"),
+    ("s3_concat_mix_vs_concat_iii", "arm_concat_mix", "arm_concat_iii"),
+    ("s1_concat_mix_vs_full", "arm_concat_mix", "arm_full"),
+)
+MIXED_PRIMARY_READ = "primary_qry_mix_vs_qry_iii"
+MIXED_REF_ARMS = ("arm_qry_iii", "arm_concat_i", "arm_concat_iii", "arm_full")
+
+
+def mixed_direction_verdict(ci: list[float]) -> dict:
+    """§3 registered falsification directions — disjoint + exhaustive on the CI.
+
+    (a) CI wholly above 0 → mixing ADDS linearly readable information (headline
+    overturned); (b) wholly below 0 → mixing DEGRADES readability; (c) includes
+    0 → the no-mixing-advantage claim hardens. Exactly one fires.
+    """
+    lo, hi = float(ci[0]), float(ci[1])
+    if lo > 0.0:
+        label, direction = "mixing-adds", "a"
+    elif hi < 0.0:
+        label, direction = "mixing-degrades", "b"
+    else:
+        label, direction = "no-mixing-advantage-hardens", "c"
+    return {"label": label, "direction": direction, "D_ci95": [lo, hi]}
+
+
+def _fam_sums(node: dict, arm: str) -> tuple[np.ndarray, np.ndarray]:
+    """(fam_res, fam_tot) float64 arrays for one arm's persisted node."""
+    return (
+        np.asarray(node[arm]["fam_res"], dtype=np.float64),
+        np.asarray(node[arm]["fam_tot"], dtype=np.float64),
+    )
+
+
+def paired_skill_diff_mixed(
+    new_fams: dict | None,
+    paired_ref_dir: Path,
+    n_boot: int,
+    kill_floor: dict[str, bool] | None = None,
+) -> dict:
+    """Paired family bootstrap of the four registered mixed reads (plan v9 §3/§6).
+
+    D = R²(new arm, this round) − R²(ref arm, POOLED persisted sums) on ONE
+    shared set of seed-42 family-count draws (``_replay_family_counts``),
+    applied to BOTH rounds' per-family ``fam_res``/``fam_tot`` at frozen L18:
+    primary (arm_qry_mix − arm_qry_iii), s2 (arm_concat_mix − arm_concat_i),
+    s3 companion (arm_concat_mix − arm_concat_iii), and the s1 dilution read
+    (arm_concat_mix − arm_full). Per-family skills + gaps ride each pair (the
+    §3 s1 per-family panel inputs).
+
+    REPRODUCE-CHECK FIRST (plan v9 §4.1): per genre the POOLED sums must
+    reproduce (i) every ref arm's published L18 skill and (ii) the pooled
+    round's published Δ (−0.2904 uc / −0.1633 betley) + its family-bootstrap
+    CI vs ``fits_pooled/headline.json``, all to <= 1e-12, before ANY pairing —
+    a mismatch fails loud (broken pairing premise).
+
+    ``new_fams``: {genre: {"families": [...], "arms": {arm: (fam_res,
+    fam_tot)}}} for THIS round at the frozen headline layer; genre-key set
+    equality vs the ref is asserted before pairing (§6 row-coverage).
+
+    ``kill_floor`` (§6 k2, RE-POINTED): per-genre flags from this round's
+    ``compute_stats`` (ALL fitted arms < 0.05 at every layer). A triggered
+    genre keeps its paired numbers but gets ``verdict: None`` +
+    ``verdict_skipped_reason: "k2_new_arms_floor"``; the top-level primary
+    verdict (= UC) is skipped the same way.
+    """
+    ref_skill = load_json(paired_ref_dir / "decomposition_skill.json")
+    ref_head = load_json(paired_ref_dir / "headline.json")
+    n_boot_ref = int(ref_head["stats"]["n_boot"])
+    assert n_boot_ref == n_boot, (
+        f"mixed paired diff requires the pooled round's n_boot ({n_boot_ref}); got {n_boot}"
+    )
+    ref_genres = [g for g in ("uc", "betley") if g in ref_skill["genres"]]
+    genre_specs = []
+    for g in ref_genres:
+        fams = ref_head["stats"][g]["families"]
+        genre_specs.append((g, len(fams), PARENT_QCOLS[g]))
+    counts_by_genre = _replay_family_counts(n_boot, genre_specs)
+    hl = str(HEADLINE_LAYER)
+    out: dict = {
+        "n_boot": n_boot,
+        "seed": SEED,
+        "paired_ref_dir": str(paired_ref_dir),
+        "reads": [name for name, _n, _r in MIXED_PAIRED_READS],
+        "genres": {},
+    }
+    for g, _nf, _q in genre_specs:
+        counts = counts_by_genre[g]
+        ref18 = ref_skill["genres"][g][hl]["arms"]
+        fams = list(ref_head["stats"][g]["families"])
+        # Reproduce-check (i): every ref arm's L18 skill from its sums.
+        err_skill = 0.0
+        for arm in MIXED_REF_ARMS:
+            rr, rt = _fam_sums(ref18, arm)
+            err_skill = max(
+                err_skill,
+                abs((1.0 - rr.sum() / rt.sum()) - ref_head["stats"][g]["L18"][arm]["skill"]),
+            )
+        # Reproduce-check (ii): the pooled Δ (full − concat_i) value + CI on
+        # the replayed shared draws.
+        pf_res, pf_tot = _fam_sums(ref18, "arm_full")
+        pc_res, pc_tot = _fam_sums(ref18, "arm_concat_i")
+        delta_obs = (1.0 - pf_res.sum() / pf_tot.sum()) - (1.0 - pc_res.sum() / pc_tot.sum())
+        delta_draws = family_bootstrap(pf_res, pf_tot, counts) - family_bootstrap(
+            pc_res, pc_tot, counts
+        )
+        ci_delta = [
+            float(np.nanpercentile(delta_draws, 2.5)),
+            float(np.nanpercentile(delta_draws, 97.5)),
+        ]
+        ref_delta = ref_head["stats"][g]["delta_r2"]
+        err = max(
+            err_skill,
+            abs(delta_obs - ref_delta["value"]),
+            abs(ci_delta[0] - ref_delta["ci95"][0]),
+            abs(ci_delta[1] - ref_delta["ci95"][1]),
+        )
+        assert err <= 1e-12, (
+            f"mixed paired-diff reproduce-check FAILED for {g}: max abs err {err} > 1e-12 "
+            f"(Δ {delta_obs} vs {ref_delta['value']}; CI {ci_delta} vs {ref_delta['ci95']}) — "
+            "the pooled family sums do not reproduce the pooled headline; pairing premise broken"
+        )
+        entry: dict = {
+            "reproduce_check": {
+                "max_abs_err": err,
+                "delta_full_minus_concat_i": delta_obs,
+                "ci95": ci_delta,
+                "pass": True,
+            }
+        }
+        if new_fams is None or g not in new_fams:
+            entry["pairs"] = None
+            entry["note"] = "new-arm side absent for this genre — pairing skipped"
+            out["genres"][g] = entry
+            continue
+        # §6 row-coverage: the two sides' family keys must be EQUAL (same
+        # list, same order — the index alignment the shared draws assume).
+        new_families = list(new_fams[g]["families"])
+        assert new_families == fams, (
+            f"family-key mismatch for {g}: new {new_families} vs pooled {fams} — "
+            "pairing premise broken"
+        )
+        entry["pairs"] = {}
+        for name, new_arm, ref_arm in MIXED_PAIRED_READS:
+            nr, nt = (np.asarray(x, dtype=np.float64) for x in new_fams[g]["arms"][new_arm])
+            rr, rt = _fam_sums(ref18, ref_arm)
+            skill_new = 1.0 - nr.sum() / nt.sum()
+            skill_ref = 1.0 - rr.sum() / rt.sum()
+            draws_new = family_bootstrap(nr, nt, counts)
+            draws_ref = family_bootstrap(rr, rt, counts)
+            d_draws = draws_new - draws_ref
+            with np.errstate(divide="ignore", invalid="ignore"):
+                fam_new = (1.0 - nr / nt).tolist()
+                fam_ref = (1.0 - rr / rt).tolist()
+            entry["pairs"][name] = {
+                "new_arm": new_arm,
+                "ref_arm": ref_arm,
+                "skill_new": float(skill_new),
+                "skill_new_ci95": [
+                    float(np.nanpercentile(draws_new, 2.5)),
+                    float(np.nanpercentile(draws_new, 97.5)),
+                ],
+                "skill_ref": float(skill_ref),
+                "skill_ref_ci95": [
+                    float(np.nanpercentile(draws_ref, 2.5)),
+                    float(np.nanpercentile(draws_ref, 97.5)),
+                ],
+                "D_value": float(skill_new - skill_ref),
+                "D_ci95": [
+                    float(np.nanpercentile(d_draws, 2.5)),
+                    float(np.nanpercentile(d_draws, 97.5)),
+                ],
+                "D_se": float(np.nanstd(d_draws)),
+                "D_draws": d_draws.tolist(),  # figure input (paired draws)
+                "fam_skill_new": fam_new,
+                "fam_skill_ref": fam_ref,
+                "fam_gap": [a - b for a, b in zip(fam_new, fam_ref, strict=True)],
+            }
+        # s1 dilution reference: the POOLED round's per-family full − stitched
+        # gaps (the −0.621 WildChat / −0.493 ICL observation this round tests).
+        with np.errstate(divide="ignore", invalid="ignore"):
+            fam_full = 1.0 - pf_res / pf_tot
+            fam_concat = 1.0 - pc_res / pc_tot
+        entry["s1_reference"] = {
+            "families": fams,
+            "fam_gap_full_minus_concat_i_ref": (fam_full - fam_concat).tolist(),
+        }
+        if kill_floor and kill_floor.get(g):
+            # §6 k2 (re-pointed): new arms below the power floor at every
+            # layer — record the paired diagnostics, label NOTHING.
+            entry["verdict"] = None
+            entry["verdict_skipped_reason"] = "k2_new_arms_floor"
+        else:
+            entry["verdict"] = mixed_direction_verdict(entry["pairs"][MIXED_PRIMARY_READ]["D_ci95"])
+        out["genres"][g] = entry
+    uc_entry = out["genres"].get("uc", {})
+    if uc_entry.get("verdict"):
+        out["verdict"] = uc_entry["verdict"]["label"]  # §3/§6 primary = UC at frozen L18
+        out["verdict_note"] = f"direction ({uc_entry['verdict']['direction']})"
+    elif uc_entry.get("verdict_skipped_reason"):
+        out["verdict_skipped_reason"] = uc_entry["verdict_skipped_reason"]
+    return out
 
 
 def headline_payload(meta: dict, stats: dict, paired: dict | None) -> dict:
@@ -1416,9 +1695,23 @@ def headline_payload(meta: dict, stats: dict, paired: dict | None) -> dict:
 
 
 def compute_stats(units: dict, arms: list[str], n_boot: int, genres: list[str]) -> dict:
-    """Bootstrap CIs + ΔR²/ρ_dec (+ guard) + H3 cross-classified + oracle checks."""
+    """Bootstrap CIs + ΔR²/ρ_dec (+ guard) + H3 cross-classified + oracle checks.
+
+    RESTRICTED-ARM runs (the mixed round's ``--arms``, plan v9 §4.2): the whole
+    pooled-registry block — ΔR²/ρ_dec (arm_blend/singles/arm_concat_i/ARM_FULL
+    reads), H3, oracle checks — is GUARDED on the standard registry being
+    present; only the per-arm L18 CIs, layer curves, and the RE-POINTED §6 k2
+    kill floor (ALL fitted arms below 0.05 at every layer) are computed. The
+    family + query rng draws keep the SAME seed-42 call order either way (the
+    shared-draw contract ``_replay_family_counts`` replays).
+    """
     rng = np.random.default_rng(SEED)
     stats: dict = {"headline_layer": HEADLINE_LAYER, "n_boot": n_boot}
+    # The pooled-registry block needs every arm it reads (plan v9 §4.2 named
+    # the ≥6 unguarded arm-keyed reads: blend, the ρ_dec singles, concat_i,
+    # ARM_FULL, the oracle reads).
+    std_registry = all(a in arms for a in (*SINGLES_FOR_RHO_DEC, "arm_concat_i", ARM_FULL))
+    blend_arms = ["arm_blend"] if ("arm_ctx" in arms and "arm_qry_i" in arms) else []
     for genre in genres:
         layers = sorted({u["layer"] for u in units.values() if u["genre"] == genre})
         # Frozen pre-registered headline layer 18 (#722 peak); a truncated smoke
@@ -1433,7 +1726,7 @@ def compute_stats(units: dict, arms: list[str], n_boot: int, genres: list[str]) 
             counts[:, j] = (picks == j).sum(axis=1)
         g: dict = {"layers": layers, "families": fams, "headline_layer_used": hl}
         boot18 = {}
-        for arm in [*arms, "arm_blend"]:
+        for arm in [*arms, *blend_arms]:
             a = u18["arms"][arm]
             draws = family_bootstrap(a["fam_res"], a["fam_tot"], counts)
             boot18[arm] = draws
@@ -1442,77 +1735,89 @@ def compute_stats(units: dict, arms: list[str], n_boot: int, genres: list[str]) 
                 "ci95": [float(np.nanpercentile(draws, 2.5)), float(np.nanpercentile(draws, 97.5))],
                 "se": float(np.nanstd(draws)),
             }
-        # ΔR² + ρ_dec (per-draw best-single argmax + §3 denominator guard).
-        singles = np.stack([boot18[s] for s in SINGLES_FOR_RHO_DEC])  # (2, n_boot)
-        best_single_draws = singles.max(axis=0)
-        best_single_which = np.array(SINGLES_FOR_RHO_DEC)[singles.argmax(axis=0)]
-        num_draws = boot18["arm_concat_i"] - best_single_draws
-        den_draws = boot18[ARM_FULL] - best_single_draws
-        delta_draws = boot18[ARM_FULL] - boot18["arm_concat_i"]
-        obs = {arm: u18["arms"][arm]["skill"] for arm in [*arms, "arm_blend"]}
-        obs_best = max(obs[s] for s in SINGLES_FOR_RHO_DEC)
-        D = obs[ARM_FULL] - obs_best
-        se_D = float(np.nanstd(den_draws))
-        guard = max(0.02, 2.0 * se_D)
-        rho_defined = guard < D
-        g["delta_r2"] = {
-            "value": obs[ARM_FULL] - obs["arm_concat_i"],
-            "ci95": [
-                float(np.nanpercentile(delta_draws, 2.5)),
-                float(np.nanpercentile(delta_draws, 97.5)),
-            ],
-            "se": float(np.nanstd(delta_draws)),
-        }
-        g["rho_dec"] = {
-            "defined": bool(rho_defined),
-            "value": ((obs["arm_concat_i"] - obs_best) / D) if rho_defined else None,
-            "denominator_D": D,
-            "guard_threshold": guard,
-            "se_D": se_D,
-            "singles_set": list(SINGLES_FOR_RHO_DEC),
-            "per_draw_numerator": num_draws.tolist(),
-            "per_draw_denominator": den_draws.tolist(),
-            "per_draw_best_single_arm": best_single_which.tolist(),
-            "note": None
-            if rho_defined
-            else "undefined — no measurable best-single→full gap (§3 guard)",
-        }
-        # H3: cross-classified family x query bootstrap (primary) + family-only.
-        qcols = np.asarray(u18["arms"]["arm_ctx"]["famq_res"]).shape[1]
+        obs = {arm: u18["arms"][arm]["skill"] for arm in [*arms, *blend_arms]}
+        # Cross-classified query picks: ALWAYS drawn (rng call-order parity
+        # with the pooled round + _replay_family_counts), consumed only by
+        # the standard-registry H3 read below.
+        qcols = np.asarray(u18["arms"][arms[0]]["famq_res"]).shape[1]
         vpicks = rng.integers(0, qcols, size=(n_boot, qcols))
-        vcounts = np.zeros((n_boot, qcols))
-        for j in range(qcols):
-            vcounts[:, j] = (vpicks == j).sum(axis=1)
+        if std_registry:
+            # ΔR² + ρ_dec (per-draw best-single argmax + §3 denominator guard).
+            singles = np.stack([boot18[s] for s in SINGLES_FOR_RHO_DEC])  # (2, n_boot)
+            best_single_draws = singles.max(axis=0)
+            best_single_which = np.array(SINGLES_FOR_RHO_DEC)[singles.argmax(axis=0)]
+            num_draws = boot18["arm_concat_i"] - best_single_draws
+            den_draws = boot18[ARM_FULL] - best_single_draws
+            delta_draws = boot18[ARM_FULL] - boot18["arm_concat_i"]
+            obs_best = max(obs[s] for s in SINGLES_FOR_RHO_DEC)
+            D = obs[ARM_FULL] - obs_best
+            se_D = float(np.nanstd(den_draws))
+            guard = max(0.02, 2.0 * se_D)
+            rho_defined = guard < D
+            g["delta_r2"] = {
+                "value": obs[ARM_FULL] - obs["arm_concat_i"],
+                "ci95": [
+                    float(np.nanpercentile(delta_draws, 2.5)),
+                    float(np.nanpercentile(delta_draws, 97.5)),
+                ],
+                "se": float(np.nanstd(delta_draws)),
+            }
+            g["rho_dec"] = {
+                "defined": bool(rho_defined),
+                "value": ((obs["arm_concat_i"] - obs_best) / D) if rho_defined else None,
+                "denominator_D": D,
+                "guard_threshold": guard,
+                "se_D": se_D,
+                "singles_set": list(SINGLES_FOR_RHO_DEC),
+                "per_draw_numerator": num_draws.tolist(),
+                "per_draw_denominator": den_draws.tolist(),
+                "per_draw_best_single_arm": best_single_which.tolist(),
+                "note": None
+                if rho_defined
+                else "undefined — no measurable best-single→full gap (§3 guard)",
+            }
+            # H3: cross-classified family x query bootstrap (primary) + family-only.
+            vcounts = np.zeros((n_boot, qcols))
+            for j in range(qcols):
+                vcounts[:, j] = (vpicks == j).sum(axis=1)
 
-        def _cc_skill(arm: str, _u=u18, _c=counts, _v=vcounts) -> np.ndarray:
-            M_res = np.asarray(_u["arms"][arm]["famq_res"], dtype=np.float64)
-            M_tot = np.asarray(_u["arms"][arm]["famq_tot"], dtype=np.float64)
-            num = np.einsum("bf,fq,bq->b", _c, M_res, _v)
-            den = np.einsum("bf,fq,bq->b", _c, M_tot, _v)
-            with np.errstate(divide="ignore", invalid="ignore"):
-                return 1.0 - num / den
+            def _cc_skill(arm: str, _u=u18, _c=counts, _v=vcounts) -> np.ndarray:
+                M_res = np.asarray(_u["arms"][arm]["famq_res"], dtype=np.float64)
+                M_tot = np.asarray(_u["arms"][arm]["famq_tot"], dtype=np.float64)
+                num = np.einsum("bf,fq,bq->b", _c, M_res, _v)
+                den = np.einsum("bf,fq,bq->b", _c, M_tot, _v)
+                with np.errstate(divide="ignore", invalid="ignore"):
+                    return 1.0 - num / den
 
-        gap_cc = _cc_skill("arm_ctx") - _cc_skill("arm_qry_i")
-        gap_fam = boot18["arm_ctx"] - boot18["arm_qry_i"]
-        g["h3_ctx_minus_qry"] = {
-            "value": obs["arm_ctx"] - obs["arm_qry_i"],
-            "cross_classified_ci95": [
-                float(np.nanpercentile(gap_cc, 2.5)),
-                float(np.nanpercentile(gap_cc, 97.5)),
-            ],
-            "family_only_ci95": [
-                float(np.nanpercentile(gap_fam, 2.5)),
-                float(np.nanpercentile(gap_fam, 97.5)),
-            ],
-        }
+            gap_cc = _cc_skill("arm_ctx") - _cc_skill("arm_qry_i")
+            gap_fam = boot18["arm_ctx"] - boot18["arm_qry_i"]
+            g["h3_ctx_minus_qry"] = {
+                "value": obs["arm_ctx"] - obs["arm_qry_i"],
+                "cross_classified_ci95": [
+                    float(np.nanpercentile(gap_cc, 2.5)),
+                    float(np.nanpercentile(gap_cc, 97.5)),
+                ],
+                "family_only_ci95": [
+                    float(np.nanpercentile(gap_fam, 2.5)),
+                    float(np.nanpercentile(gap_fam, 97.5)),
+                ],
+            }
         # Layer curves + kill floor + per-layer family-bootstrap SEs.
-        curves = {arm: [] for arm in [*arms, "arm_blend"]}
+        curves = {arm: [] for arm in [*arms, *blend_arms]}
         for layer in layers:
             u = units[(genre, layer)]
-            for arm in [*arms, "arm_blend"]:
+            for arm in [*arms, *blend_arms]:
                 curves[arm].append(u["arms"][arm]["skill"])
         g["layer_curves"] = curves
-        g["kill_floor_triggered"] = bool(all(s < 0.05 for s in curves[ARM_FULL]))
+        if std_registry:
+            g["kill_floor_triggered"] = bool(all(s < 0.05 for s in curves[ARM_FULL]))
+        else:
+            # §6 k2 RE-POINTED (plan v9): BOTH/ALL fitted arms below the 0.05
+            # power floor at every layer → skip verdicts, report vs nulls.
+            g["kill_floor_triggered"] = bool(all(all(s < 0.05 for s in curves[a]) for a in arms))
+        if not std_registry:
+            stats[genre] = g
+            continue
         # Oracle-consistency checks (§3): tolerance-flagged anomalies, no crash.
         shares = u18["anova"]["pca48"]
         checks = []
@@ -1632,6 +1937,7 @@ def build_smoke_inputs(tmp: Path) -> tuple[dict, torch.Tensor, dict, dict]:
     target = torch.zeros(n_ctx * n_q, lc, hidden, dtype=torch.float16)
     ffull = torch.zeros(n_ctx * n_q, lc, hidden, dtype=torch.float16)
     fiii = torch.zeros(n_ctx * n_q, lc, hidden, dtype=torch.float16)
+    fmix = torch.zeros(n_ctx * n_q, lc, hidden, dtype=torch.float16)
     for li in range(lc):
         for c in range(n_ctx):
             fctx[c, li] = (a[c] + 0.1 * torch.randn(hidden)).half()
@@ -1644,9 +1950,14 @@ def build_smoke_inputs(tmp: Path) -> tuple[dict, torch.Tensor, dict, dict]:
                 target[row, li] = y.half()
                 ffull[row, li] = (a[c] + b[q] + 0.1 * torch.randn(hidden)).half()
                 fiii[row, li] = (b[q] + 0.15 * torch.randn(hidden)).half()
+                # mixed query span: query-dominant with context mixed in
+                # (the unmasked-forward analogue of fiii; plan v9 smoke).
+                fmix[row, li] = (b[q] + 0.5 * a[c] + 0.15 * torch.randn(hidden)).half()
     valid = torch.ones(n_ctx * n_q, dtype=torch.bool)
     valid[3] = False  # exercise the common-valid drop path
-    grid = GridData("uc", ctx_ids, families, n_q, target, valid, ffull, fiii, valid.clone())
+    grid = GridData(
+        "uc", ctx_ids, families, n_q, target, valid, ffull, fiii, valid.clone(), fqrymix=fmix
+    )
     d_target = target + 0.05 * torch.randn_like(target.float()).half()
     dolly = GridData(
         "dolly",
@@ -1658,6 +1969,7 @@ def build_smoke_inputs(tmp: Path) -> tuple[dict, torch.Tensor, dict, dict]:
         ffull.clone(),
         fiii.clone(),
         valid.clone(),
+        fqrymix=fmix.clone(),
     )
     grids = {"uc": grid, "dolly": dolly}
     fqry = {"i": {"uc": fq, "dolly": fq.clone()}, "ii": {"uc": fq.clone(), "dolly": fq.clone()}}
@@ -1861,6 +2173,25 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
         "spot-check when tgt_regen packs are absent; without this flag absence "
         "is a coverage failure and raises (r1 blocker: unregistered fail-soft)",
     )
+    # mixed-forward-span-stitch round (plan v9 §4.2):
+    parser.add_argument(
+        "--arms",
+        default=None,
+        help="csv arm restriction — fit ONLY the listed arms (mixed round: "
+        "arm_qry_mix,arm_concat_mix); default: the full registry",
+    )
+    parser.add_argument(
+        "--mixed-packs-dir",
+        type=Path,
+        default=PROJECT_ROOT / "data/issue_923/capture/packs_mixed",
+        help="mixed feature packs dir (pool_fqry_mix_* stems; qry_mix arms only)",
+    )
+    parser.add_argument(
+        "--paired-ref-dir",
+        type=Path,
+        default=PROJECT_ROOT / "eval_results/issue_923/fits_pooled",
+        help="POOLED round fits dir — the mixed paired reads' persisted comparison side",
+    )
     args = parser.parse_args()
 
     device = _resolve_device(_requested_device(args.device))
@@ -1909,19 +2240,33 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
         return 0
 
     pool = args.feature_source == "pool"
+    arms_requested: list[str] | None = None
+    if args.arms:
+        arms_requested = [a.strip() for a in args.arms.split(",") if a.strip()]
+        unknown = [a for a in arms_requested if a not in ARM_PARTS]
+        assert not unknown, f"unknown arms {unknown}; registry: {sorted(ARM_PARTS)}"
+    mixed = bool(arms_requested) and any(a in _ARMS_NEEDING_QRYMIX for a in arms_requested)
     out_dir: Path = args.out_dir
     if pool and out_dir == PROJECT_ROOT / "eval_results/issue_923/fits":
-        # follow-up-label rule: pooled outputs land in their own round dir.
-        out_dir = PROJECT_ROOT / "eval_results/issue_923/pooled-span-features"
+        # follow-up-label rule: each round's outputs land in their own dir.
+        out_dir = PROJECT_ROOT / (
+            "eval_results/issue_923/mixed-forward-span-stitch"
+            if mixed
+            else "eval_results/issue_923/pooled-span-features"
+        )
     if pool and args.tensors_dir == PROJECT_ROOT / "data/issue_923/fit_tensors":
-        args.tensors_dir = PROJECT_ROOT / "data/issue_923/fit_tensors_pooled"
+        args.tensors_dir = PROJECT_ROOT / (
+            "data/issue_923/fit_tensors_mixed" if mixed else "data/issue_923/fit_tensors_pooled"
+        )
     if args.smoke and out_dir in (
         PROJECT_ROOT / "eval_results/issue_923/fits",
         PROJECT_ROOT / "eval_results/issue_923/pooled-span-features",
+        PROJECT_ROOT / "eval_results/issue_923/mixed-forward-span-stitch",
     ):
         # never clobber committed paths
-        out_dir = Path(f"/tmp/issue-923-smoke/fits{'_pooled' if pool else ''}")
-        args.tensors_dir = Path(f"/tmp/issue-923-smoke/fit_tensors{'_pooled' if pool else ''}")
+        tag = "_mixed" if mixed else ("_pooled" if pool else "")
+        out_dir = Path(f"/tmp/issue-923-smoke/fits{tag}")
+        args.tensors_dir = Path(f"/tmp/issue-923-smoke/fit_tensors{tag}")
     out_dir.mkdir(parents=True, exist_ok=True)
     partials = out_dir / "partials"
     partials.mkdir(parents=True, exist_ok=True)
@@ -1942,6 +2287,7 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
         grids, fctx, fqry, folds_payload = build_smoke_inputs(out_dir)
         ood = True
     else:
+        parts_needed = {p for a in arms_requested for p in ARM_PARTS[a]} if arms_requested else None
         grids, fctx, fqry, folds_payload, load_meta = load_grids(
             args.packs_dir,
             args.reduce_dir,
@@ -1950,6 +2296,8 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
             ood=not args.no_ood,
             feature_source=args.feature_source,
             pooled_packs_dir=args.pooled_packs_dir if pool else None,
+            mixed_packs_dir=args.mixed_packs_dir if mixed else None,
+            parts_needed=parts_needed,
         )
         ood = not args.no_ood
         meta["mask_backend"] = load_meta["mask_backend"]
@@ -1965,11 +2313,22 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
 
     lc = fctx.shape[1]
     layers = list(range(lc)) if args.layers == "all" else [int(x) for x in args.layers.split(",")]
-    arms = [
-        a
-        for a in [*ARMS_SINGLE, *ARMS_CONCAT, ARM_FULL]
-        if not (a in ("arm_qry_iii", "arm_concat_iii") and grids[genres[0]].fqryiii is None)
-    ]
+    if arms_requested:
+        arms = list(arms_requested)
+        for a in arms:
+            # An EXPLICITLY requested arm never silently drops — a missing
+            # feature grid here is a fetch/coverage failure, not the §8 ladder.
+            assert not _arm_features_missing(a, grids[genres[0]]), (
+                f"requested arm {a} has no feature grid loaded — fetch/coverage failure"
+            )
+    else:
+        arms = [
+            a
+            for a in [*ARMS_SINGLE, *ARMS_CONCAT, ARM_FULL]
+            if not (a in ("arm_qry_iii", "arm_concat_iii") and grids[genres[0]].fqryiii is None)
+        ]
+    blend_included = "arm_ctx" in arms and "arm_qry_i" in arms
+    arms_out = [*arms] + (["arm_blend"] if blend_included else [])
     # The regime key covers FLAGS *and* INPUT IDENTITIES (fold hash + per-pack
     # identity), so a `--fits-only` re-dispatch after a re-captured/re-reduced
     # pack set refuses stale partials loudly instead of silently resuming them
@@ -1996,7 +2355,10 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
             else _input_pack_identity(
                 args.packs_dir,
                 args.reduce_dir,
-                extra_dirs=(args.pooled_packs_dir,) if pool else (),
+                extra_dirs=(
+                    ((args.pooled_packs_dir,) if pool else ())
+                    + ((args.mixed_packs_dir,) if mixed else ())
+                ),
             )
         ),
     }
@@ -2056,12 +2418,14 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
             unit_ser = json.loads(json.dumps(unit, default=lambda o: o.tolist()))
             units[(genre, layer)] = unit_ser
             save_pack(part_path, {}, {"regime_hash": regime_hash, "unit": unit_ser})
+            probe_arm = ARM_FULL if ARM_FULL in unit["arms"] else arms[-1]
             logger.info(
-                "[fits] %s L%02d done (%.1fs elapsed, full=%.3f)",
+                "[fits] %s L%02d done (%.1fs elapsed, %s=%.3f)",
                 genre,
                 layer,
                 time.time() - t0,
-                unit["arms"][ARM_FULL]["skill"],
+                probe_arm,
+                unit["arms"][probe_arm]["skill"],
             )
 
     print("[phase=stats]", flush=True)
@@ -2094,7 +2458,7 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
                             else {}
                         ),
                     }
-                    for arm in [*arms, "arm_blend"]
+                    for arm in arms_out
                 },
                 "lofo_marginal": u.get("lofo_marginal"),
                 "qfold_marginal": u.get("qfold_marginal"),
@@ -2242,7 +2606,73 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
 
     # Paired residual diff vs the parent round (pooled headline consumer; §4.2).
     paired = None
-    if pool:
+    if pool and mixed:
+        # Mixed round (plan v9): the four registered paired reads vs the
+        # POOLED round's persisted family sums (fits_pooled), shared draws.
+        print("[phase=paired_diff]", flush=True)
+        k2 = kill_floor_flags(stats, genres)
+        ref_skill = load_json(args.paired_ref_dir / "decomposition_skill.json")
+        ref_boot = int(load_json(args.paired_ref_dir / "headline.json")["stats"]["n_boot"])
+        hl18 = str(HEADLINE_LAYER)
+        if args.smoke:
+            # SELF-PAIR on the pooled round's REAL persisted sums (the
+            # synthetic grid has no pooled counterpart): the new side maps
+            # arm_qry_mix <- arm_qry_iii and arm_concat_mix <- arm_concat_i,
+            # so the primary + s2 reads are identically 0 by construction
+            # while the reproduce-check + pairing + verdict machinery run on
+            # real data.
+            ref_head_fams = load_json(args.paired_ref_dir / "headline.json")["stats"]
+            new_fams = {
+                g: {
+                    "families": list(ref_head_fams[g]["families"]),
+                    "arms": {
+                        "arm_qry_mix": _fam_sums(
+                            ref_skill["genres"][g][hl18]["arms"], "arm_qry_iii"
+                        ),
+                        "arm_concat_mix": _fam_sums(
+                            ref_skill["genres"][g][hl18]["arms"], "arm_concat_i"
+                        ),
+                    },
+                }
+                for g in ref_skill["genres"]
+            }
+            paired = paired_skill_diff_mixed(new_fams, args.paired_ref_dir, ref_boot, kill_floor=k2)
+            for g, entry in paired["genres"].items():
+                assert entry["pairs"] is not None, g
+                for name in ("primary_qry_mix_vs_qry_iii", "s2_concat_mix_vs_concat_i"):
+                    assert abs(entry["pairs"][name]["D_value"]) < 1e-15, (
+                        g,
+                        name,
+                        entry["pairs"][name]["D_value"],
+                    )
+            paired["smoke_self_paired"] = True
+        else:
+            new_fams = {}
+            for genre in genres:
+                if genre not in PARENT_QCOLS or (genre, HEADLINE_LAYER) not in units:
+                    continue
+                u18a = units[(genre, HEADLINE_LAYER)]
+                new_fams[genre] = {
+                    "families": list(u18a["families_present"]),
+                    "arms": {
+                        arm: (
+                            np.asarray(u18a["arms"][arm]["fam_res"], dtype=np.float64),
+                            np.asarray(u18a["arms"][arm]["fam_tot"], dtype=np.float64),
+                        )
+                        for arm in ("arm_qry_mix", "arm_concat_mix")
+                        if arm in u18a["arms"]
+                    },
+                }
+            paired = paired_skill_diff_mixed(
+                new_fams, args.paired_ref_dir, args.n_boot, kill_floor=k2
+            )
+        logger.info(
+            "[paired_diff] mixed verdict=%s note=%s skipped=%s",
+            paired.get("verdict"),
+            paired.get("verdict_note"),
+            paired.get("verdict_skipped_reason"),
+        )
+    elif pool:
         print("[phase=paired_diff]", flush=True)
         # §6 k2 kill rule (ENFORCED, r2 Major): this round's per-genre
         # pool_full power-floor flags gate the verdict labels below.
@@ -2327,7 +2757,7 @@ def main() -> int:  # noqa: C901 — linear phase pipeline; see [phase=...] mark
 
     if not args.no_upload and not args.smoke:
         print("[phase=upload]", flush=True)
-        suffix = "fits_pooled" if pool else "fits"
+        suffix = "fits_mixed" if mixed else ("fits_pooled" if pool else "fits")
         hub._upload(
             args.tensors_dir,
             HF_DATA_REPO,
