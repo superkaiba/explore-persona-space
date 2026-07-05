@@ -2586,7 +2586,11 @@ markers:
       `reconnected`, `provisioning_failure`, `workload_failure`,
       `attempt_cap_exceeded`, `quota_headroom_insufficient` — the GCP
       lane's pre-create regional-quota probe read insufficient headroom
-      and skipped the lane WITHOUT burning a daily attempt, #608), and
+      and skipped the lane WITHOUT burning a daily attempt, #608 —
+      and `boot_loop_rung_skipped` — the rung's same-UTC-day
+      pre-workload boot-death streak reached the #1029 breaker
+      threshold, so the ladder skipped it WITHOUT burning a daily
+      attempt), and
       the GCP lane with its per-day attempt-count guard reading. A GCP
       `provisioning_failure` attempt's `detail` carries the captured
       gcloud `stderr_tail` (~1KB) alongside the classified reason
