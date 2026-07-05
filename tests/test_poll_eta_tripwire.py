@@ -373,6 +373,60 @@ def test_eta_relaunch_resets_posted_keys(monkeypatch: pytest.MonkeyPatch) -> Non
     assert len(posted) == 2
 
 
+def test_run_scope_clears_idle_keys_on_new_run() -> None:
+    """#1033: the run-scope clear set is ``_RUN_SCOPED_STATE_KEYS`` — the #873
+    tripwire dedup keys PLUS the three GPU-idle advisory/escalation keys. A
+    fresh ``epm:run-launched`` epoch clears ALL of them (the pre-#1033
+    "idle keys untouched by the reset" contract was the bug: #763 printed a
+    543-min idle advisory on a ~17-min-old fresh instance). Non-run-scoped
+    keys (``phase``) are kept."""
+    now = 1_000_000
+    prev = {
+        "phase": "workload",
+        "gpu_idle_since_epoch": str(now - 543 * 60),
+        "gpu_idle_advised_phases": "startup,workload",
+        "gpu_idle_escalated_phases": "workload",
+        "eta_deviation_posted_keys": "extract",
+        "tripwire_run_epoch": "1000",  # the PREVIOUS run's launch epoch
+    }
+    state, epoch = pp._tripwire_run_scope(prev, run_age_sec=120.0, now_epoch=now)
+    assert epoch == now - 120
+    idle_keys = (
+        "gpu_idle_since_epoch",
+        "gpu_idle_advised_phases",
+        "gpu_idle_escalated_phases",
+    )
+    for key in idle_keys:
+        assert key not in state
+    assert "eta_deviation_posted_keys" not in state  # #873 keys still cleared
+    assert state["phase"] == "workload"  # non-run-scoped keys survive
+    # The clear-set invariant: tripwire keys ⊂ run-scoped keys, idle keys in.
+    assert set(pp._TRIPWIRE_STATE_KEYS) < set(pp._RUN_SCOPED_STATE_KEYS)
+    assert set(idle_keys) <= set(pp._RUN_SCOPED_STATE_KEYS)
+
+
+def test_run_scope_keeps_idle_keys_same_run() -> None:
+    """#1033 fail-safes pinned: a same-run anchor (within the 60s jitter
+    tolerance) AND an unknown run age (missing/unreadable marker) BOTH keep
+    the idle keys — the anchor semantics + fail-safe branches are
+    byte-unchanged from #873; only the clear SET widened."""
+    now = 1_000_000
+    prev = {
+        "gpu_idle_since_epoch": str(now - 40 * 60),
+        "gpu_idle_advised_phases": "scoring",
+        "gpu_idle_escalated_phases": "",
+        "tripwire_run_epoch": str(now - 3 * 3600),
+    }
+    # Same run: 30s jitter, within tolerance -> kept.
+    state, epoch = pp._tripwire_run_scope(prev, run_age_sec=3 * 3600.0 - 30, now_epoch=now)
+    assert epoch == now - 3 * 3600
+    assert state["gpu_idle_since_epoch"] == str(now - 40 * 60)
+    assert state["gpu_idle_advised_phases"] == "scoring"
+    # Unknown run age -> kept verbatim.
+    state2, _epoch2 = pp._tripwire_run_scope(prev, run_age_sec=None, now_epoch=now)
+    assert state2 is prev
+
+
 def test_eta_same_run_does_not_reset_posted_keys() -> None:
     """The no-reset control: a run-launched epoch within the 60s jitter
     tolerance of the stored anchor preserves the dedup keys."""
