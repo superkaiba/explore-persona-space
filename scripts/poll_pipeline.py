@@ -2539,6 +2539,15 @@ def _maybe_post_gpu_idle_advisory(
     downstream consumers) — no new marker schema. A post failure is logged
     and the phase is NOT recorded as advised, so the next tick retries; the
     advisory never affects the status verdict and never stops anything.
+
+    The reported idle minutes are PER-INSTANCE / PER-RUN, never cumulative
+    across relaunches (#1033): both callers hand this function a
+    run/instance-scoped ``prev_state`` — the RunPod lane via
+    ``_tripwire_run_scope`` (``_RUN_SCOPED_STATE_KEYS`` includes the idle
+    keys), the GCP lane additionally via attempt-id keying
+    (``backend_poll._scope_idle_state_to_attempt``) — so an advisory can
+    never report an idle span exceeding the current instance's own poll
+    history (#763: "543 min" printed on a ~17-min-old fresh VM pre-#1033).
     """
     try:
         prev_idle_since = int(prev_state.get("gpu_idle_since_epoch", "0"))
