@@ -1032,9 +1032,18 @@ def check_hf_storage(report: PreflightReport, planned_upload_gb: float | None = 
                     f"EPM_HF_STORAGE_SOFT_CEILING_TB after buying storage. "
                     f"See .claude/rules/upload-policy.md § Proactive detection."
                 )
-        # ph.verdict in {"fits", "unknown", "disabled"} -> nothing / existing
-        # WARNs only (fail-open: a live-unknown or stale-high-then-live-fits
-        # never blocks).
+        elif ph.verdict in {"unknown", "disabled"}:
+            # A REQUESTED gate that could not be evaluated must say so (#1034
+            # revision): on the stale-high-cache-then-live-unknown arm the
+            # cached read is KNOWN (no "usage unknown" WARN above fires), so
+            # without this the report would be warning-free about the gate.
+            report.add_warning(
+                f"HF headroom: planned-upload gate not evaluated ({ph.verdict}, "
+                f"basis={ph.basis}) — fail-open; the reactive 403 backstop stays "
+                f"authoritative"
+            )
+        # ph.verdict == "fits" -> silent (fail-open: a stale-high cache whose
+        # live re-probe fits never blocks and adds no warning).
 
 
 def preflight_check(

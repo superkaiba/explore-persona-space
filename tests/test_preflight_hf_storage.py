@@ -205,6 +205,24 @@ def test_stale_high_cache_live_fits_never_blocks():
     assert True in calls  # the live re-probe is what rescued the verdict
 
 
+def test_stale_high_cache_live_unknown_warns_gate_not_evaluated():
+    """#1034 test 25 (revision r2): a stale-high CACHED read (9.5 + 2 > 10, so
+    no existing WARN fires — used is KNOWN and under ceiling) whose
+    force_refresh live re-probe returns UNKNOWN (used_tb=None) stays fail-open
+    (ok True, no error) but the REQUESTED gate is named NOT EVALUATED in a
+    warning — never a warning-free report about an armed gate."""
+    fake, calls = _probe_recorder(
+        _headroom(used_tb=9.5), live=_headroom(used_tb=None, basis="unknown (api down)")
+    )
+    report = PreflightReport()
+    with patch(HELPER, side_effect=fake):
+        check_hf_storage(report, planned_upload_gb=2000.0)
+    assert report.ok is True
+    assert report.errors == []
+    assert any("planned-upload gate not evaluated" in w for w in report.warnings)
+    assert True in calls  # the live force_refresh re-probe is what returned unknown
+
+
 def test_probe_raises_with_planned_flag_warns_only():
     """#1034 test 23: the helper raises (bad ceiling env / API error) WITH the
     planned flag set -> warning only, ok True (the existing except-Exception
