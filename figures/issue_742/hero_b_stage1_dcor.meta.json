@@ -1,0 +1,84 @@
+{
+  "commit": "9d0b1c08ff",
+  "created": "2026-07-05T00:21:50Z",
+  "figsize": [
+    9.0,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "distance correlation": 0.2770731270105483,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "distance correlation": 0.31383826286935446,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "distance correlation": 0.4700557627271491,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "distance correlation": 0.27220493703744075,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "broad_em\n(betley)",
+      "distance correlation": 0.28255651055327113,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\n(betley)",
+      "distance correlation": 0.2741500587377692,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "refusal\n(betley)",
+      "distance correlation": 0.32072262221941694,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\n(ultrachat)",
+      "distance correlation": 0.2655783829469624,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "distance correlation": 0.26690669848514514,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "distance correlation": 0.27987999032135674,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "distance correlation": 0.29943570284031584,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "distance correlation": 0.24525767682934052,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12
+}

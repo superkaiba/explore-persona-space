@@ -1,0 +1,2412 @@
+{
+  "commit": "9d0b1c08ff",
+  "created": "2026-07-05T00:21:52Z",
+  "figsize": [
+    12.0,
+    5.2
+  ],
+  "points": [
+    {
+      "x": 0.07343408669927001,
+      "judged behavior rate E0 (per context, n=50)": 0.005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11993575054586206,
+      "judged behavior rate E0 (per context, n=50)": 0.01,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04128924674532761,
+      "judged behavior rate E0 (per context, n=50)": 0.005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04094970775032852,
+      "judged behavior rate E0 (per context, n=50)": 0.005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04686289627565496,
+      "judged behavior rate E0 (per context, n=50)": 0.0025,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06337703173365028,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.005765689783439831,
+      "judged behavior rate E0 (per context, n=50)": 0.0025,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06832771778369783,
+      "judged behavior rate E0 (per context, n=50)": 0.0025,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09002996739807713,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09180018679315807,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10954936956277514,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13552431157521586,
+      "judged behavior rate E0 (per context, n=50)": 0.0025,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1507514672359014,
+      "judged behavior rate E0 (per context, n=50)": 0.002506265664160401,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.14308156996204432,
+      "judged behavior rate E0 (per context, n=50)": 0.005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11109180865501325,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04518290193781646,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.014483265698126052,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11670984245539753,
+      "judged behavior rate E0 (per context, n=50)": 0.007537688442211055,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06050052589589744,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.056183580105347464,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0640177398291511,
+      "judged behavior rate E0 (per context, n=50)": 0.005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0972342536046219,
+      "judged behavior rate E0 (per context, n=50)": 0.0025,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0028976059857767633,
+      "judged behavior rate E0 (per context, n=50)": 0.0075,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15293438857474365,
+      "judged behavior rate E0 (per context, n=50)": 0.0125,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.029802495729549683,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08854670918831403,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.15553423324379287,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10197239284840151,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.046208600335541875,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1491005548679289,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0022886533191955327,
+      "judged behavior rate E0 (per context, n=50)": 0.0025,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.14162533975200023,
+      "judged behavior rate E0 (per context, n=50)": 0.0025,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.019583717310303977,
+      "judged behavior rate E0 (per context, n=50)": 0.0025,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09849034331968756,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.009221608558069333,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14829039368796015,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06713463381442218,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.013648495242234243,
+      "judged behavior rate E0 (per context, n=50)": 0.005,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1116844730328814,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08091082407643271,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.01815541957115893,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.012571610166618813,
+      "judged behavior rate E0 (per context, n=50)": 0.002506265664160401,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.13126379958268838,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.017565615436127446,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15549475067184723,
+      "judged behavior rate E0 (per context, n=50)": 0.0,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.054419031964588055,
+      "judged behavior rate E0 (per context, n=50)": 0.01,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0825093256520563,
+      "judged behavior rate E0 (per context, n=50)": 0.05,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.03997528222621177,
+      "judged behavior rate E0 (per context, n=50)": 0.0025,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.05384632411376078,
+      "judged behavior rate E0 (per context, n=50)": 0.0075,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.040636568864621164,
+      "judged behavior rate E0 (per context, n=50)": 0.03,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.1387029634340229,
+      "judged behavior rate E0 (per context, n=50)": 0.33043478260869563,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1278172354015161,
+      "judged behavior rate E0 (per context, n=50)": 0.2956521739130435,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9079138599585898,
+      "judged behavior rate E0 (per context, n=50)": 0.3130434782608696,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9478643972731327,
+      "judged behavior rate E0 (per context, n=50)": 0.3130434782608696,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8794884188210675,
+      "judged behavior rate E0 (per context, n=50)": 0.3217391304347826,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0836243878076646,
+      "judged behavior rate E0 (per context, n=50)": 0.26956521739130435,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.917447289967786,
+      "judged behavior rate E0 (per context, n=50)": 0.2807017543859649,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1374876352298506,
+      "judged behavior rate E0 (per context, n=50)": 0.2982456140350877,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0172419759089077,
+      "judged behavior rate E0 (per context, n=50)": 0.35964912280701755,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.042460496434702,
+      "judged behavior rate E0 (per context, n=50)": 0.3217391304347826,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0740392836237642,
+      "judged behavior rate E0 (per context, n=50)": 0.2782608695652174,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9023750434666085,
+      "judged behavior rate E0 (per context, n=50)": 0.2807017543859649,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.085531984336584,
+      "judged behavior rate E0 (per context, n=50)": 0.25217391304347825,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1463704027539654,
+      "judged behavior rate E0 (per context, n=50)": 0.2807017543859649,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9185057138682803,
+      "judged behavior rate E0 (per context, n=50)": 0.391304347826087,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9597235842437798,
+      "judged behavior rate E0 (per context, n=50)": 0.41739130434782606,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1013194132447153,
+      "judged behavior rate E0 (per context, n=50)": 0.4,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9223197413707167,
+      "judged behavior rate E0 (per context, n=50)": 0.41739130434782606,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1574878628511034,
+      "judged behavior rate E0 (per context, n=50)": 0.3391304347826087,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.028256381340724,
+      "judged behavior rate E0 (per context, n=50)": 0.3652173913043478,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0214797810212066,
+      "judged behavior rate E0 (per context, n=50)": 0.3217391304347826,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0828388193103204,
+      "judged behavior rate E0 (per context, n=50)": 0.3565217391304348,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8819546806427524,
+      "judged behavior rate E0 (per context, n=50)": 0.34782608695652173,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0126344671985301,
+      "judged behavior rate E0 (per context, n=50)": 0.3565217391304348,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8695592228774853,
+      "judged behavior rate E0 (per context, n=50)": 0.35964912280701755,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.951381856488467,
+      "judged behavior rate E0 (per context, n=50)": 0.3217391304347826,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9846092005137969,
+      "judged behavior rate E0 (per context, n=50)": 0.3217391304347826,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9695564627770695,
+      "judged behavior rate E0 (per context, n=50)": 0.3391304347826087,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.007721918812086,
+      "judged behavior rate E0 (per context, n=50)": 0.3217391304347826,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.057021358955435,
+      "judged behavior rate E0 (per context, n=50)": 0.3391304347826087,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8621756471629021,
+      "judged behavior rate E0 (per context, n=50)": 0.30434782608695654,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0739372288156996,
+      "judged behavior rate E0 (per context, n=50)": 0.33043478260869563,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9808461865648355,
+      "judged behavior rate E0 (per context, n=50)": 0.34210526315789475,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0137504721719108,
+      "judged behavior rate E0 (per context, n=50)": 0.38596491228070173,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0166221324227291,
+      "judged behavior rate E0 (per context, n=50)": 0.3130434782608696,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.031531199687848,
+      "judged behavior rate E0 (per context, n=50)": 0.33043478260869563,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8785181491569622,
+      "judged behavior rate E0 (per context, n=50)": 0.30434782608695654,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9775780591714889,
+      "judged behavior rate E0 (per context, n=50)": 0.2956521739130435,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9365213450339464,
+      "judged behavior rate E0 (per context, n=50)": 0.3739130434782609,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.955031223291237,
+      "judged behavior rate E0 (per context, n=50)": 0.3684210526315789,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.048430973520987,
+      "judged behavior rate E0 (per context, n=50)": 0.30434782608695654,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9513898785972659,
+      "judged behavior rate E0 (per context, n=50)": 0.5175438596491229,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8715950599305269,
+      "judged behavior rate E0 (per context, n=50)": 0.3739130434782609,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9564269363688368,
+      "judged behavior rate E0 (per context, n=50)": 0.2956521739130435,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1241562252304766,
+      "judged behavior rate E0 (per context, n=50)": 0.30434782608695654,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0128837084772029,
+      "judged behavior rate E0 (per context, n=50)": 0.3391304347826087,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9947814593786378,
+      "judged behavior rate E0 (per context, n=50)": 0.09565217391304348,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8672280104493514,
+      "judged behavior rate E0 (per context, n=50)": 0.3565217391304348,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1564627566923102,
+      "judged behavior rate E0 (per context, n=50)": 0.22608695652173913,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8593658111438913,
+      "judged behavior rate E0 (per context, n=50)": 0.2782608695652174,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.944540196696285,
+      "judged behavior rate E0 (per context, n=50)": 0.0485,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.076185098851,
+      "judged behavior rate E0 (per context, n=50)": 0.051,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9234211543240212,
+      "judged behavior rate E0 (per context, n=50)": 0.0525,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9455770194562798,
+      "judged behavior rate E0 (per context, n=50)": 0.055,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9100291491519101,
+      "judged behavior rate E0 (per context, n=50)": 0.0525,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1425540922509083,
+      "judged behavior rate E0 (per context, n=50)": 0.0565,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9926050800946038,
+      "judged behavior rate E0 (per context, n=50)": 0.0535,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0927140592566253,
+      "judged behavior rate E0 (per context, n=50)": 0.0475,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9024495089866558,
+      "judged behavior rate E0 (per context, n=50)": 0.0875,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1175310690582707,
+      "judged behavior rate E0 (per context, n=50)": 0.0415,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9203330686286235,
+      "judged behavior rate E0 (per context, n=50)": 0.07603801900950476,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9029048745898798,
+      "judged behavior rate E0 (per context, n=50)": 0.0675,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1400161943355887,
+      "judged behavior rate E0 (per context, n=50)": 0.0875,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9968107137527489,
+      "judged behavior rate E0 (per context, n=50)": 0.068,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.902973077460995,
+      "judged behavior rate E0 (per context, n=50)": 0.1375,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.084108490079664,
+      "judged behavior rate E0 (per context, n=50)": 0.117,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9086171269404864,
+      "judged behavior rate E0 (per context, n=50)": 0.0745,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0995398356931343,
+      "judged behavior rate E0 (per context, n=50)": 0.319,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1017368208076297,
+      "judged behavior rate E0 (per context, n=50)": 0.0865,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8781079806961292,
+      "judged behavior rate E0 (per context, n=50)": 0.0925,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.037550653080183,
+      "judged behavior rate E0 (per context, n=50)": 0.16858429214607304,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9583122936957786,
+      "judged behavior rate E0 (per context, n=50)": 0.071,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0725238797455465,
+      "judged behavior rate E0 (per context, n=50)": 0.1785,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.063178892015817,
+      "judged behavior rate E0 (per context, n=50)": 0.1765,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9368324186103452,
+      "judged behavior rate E0 (per context, n=50)": 0.0655,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.984259983545325,
+      "judged behavior rate E0 (per context, n=50)": 0.0505,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.103227183306677,
+      "judged behavior rate E0 (per context, n=50)": 0.0465,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0665410981098473,
+      "judged behavior rate E0 (per context, n=50)": 0.052,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1034936869672247,
+      "judged behavior rate E0 (per context, n=50)": 0.049,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8500750285185572,
+      "judged behavior rate E0 (per context, n=50)": 0.0645,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9249986665289749,
+      "judged behavior rate E0 (per context, n=50)": 0.054,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0272482690313653,
+      "judged behavior rate E0 (per context, n=50)": 0.075,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.925408460528936,
+      "judged behavior rate E0 (per context, n=50)": 0.0665,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1376347794906843,
+      "judged behavior rate E0 (per context, n=50)": 0.074,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.093851516861959,
+      "judged behavior rate E0 (per context, n=50)": 0.047,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0313630298489525,
+      "judged behavior rate E0 (per context, n=50)": 0.044,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9655552041469908,
+      "judged behavior rate E0 (per context, n=50)": 0.0485,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8878760133013948,
+      "judged behavior rate E0 (per context, n=50)": 0.0495,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9660689538800549,
+      "judged behavior rate E0 (per context, n=50)": 0.081,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9367527128702555,
+      "judged behavior rate E0 (per context, n=50)": 0.06,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.05391802718358,
+      "judged behavior rate E0 (per context, n=50)": 0.0750375187593797,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8683258409760861,
+      "judged behavior rate E0 (per context, n=50)": 0.0715,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.054322301397182,
+      "judged behavior rate E0 (per context, n=50)": 0.0475,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9216980281470502,
+      "judged behavior rate E0 (per context, n=50)": 0.054,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.102981109523725,
+      "judged behavior rate E0 (per context, n=50)": 0.0595,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.056226608176656,
+      "judged behavior rate E0 (per context, n=50)": 0.034,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.094699369508248,
+      "judged behavior rate E0 (per context, n=50)": 0.0415,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8633876920326276,
+      "judged behavior rate E0 (per context, n=50)": 0.0885,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9345416963113422,
+      "judged behavior rate E0 (per context, n=50)": 0.06259389083625438,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8598039644499962,
+      "judged behavior rate E0 (per context, n=50)": 0.2635,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.0005768248660183,
+      "judged behavior rate E0 (per context, n=50)": 0.21962616822429906,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.048018529268824,
+      "judged behavior rate E0 (per context, n=50)": 0.22429906542056074,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0313215461349463,
+      "judged behavior rate E0 (per context, n=50)": 0.23255813953488372,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.054223738315173,
+      "judged behavior rate E0 (per context, n=50)": 0.205607476635514,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.037152744952976,
+      "judged behavior rate E0 (per context, n=50)": 0.2336448598130841,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.937193464767284,
+      "judged behavior rate E0 (per context, n=50)": 0.2651162790697674,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9559821329830327,
+      "judged behavior rate E0 (per context, n=50)": 0.2372093023255814,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.991220467208924,
+      "judged behavior rate E0 (per context, n=50)": 0.22790697674418606,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.070178668453775,
+      "judged behavior rate E0 (per context, n=50)": 0.26976744186046514,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.124760805575465,
+      "judged behavior rate E0 (per context, n=50)": 0.21495327102803738,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9990475863256454,
+      "judged behavior rate E0 (per context, n=50)": 0.2616822429906542,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8452045296342483,
+      "judged behavior rate E0 (per context, n=50)": 0.3037383177570093,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8857594652918173,
+      "judged behavior rate E0 (per context, n=50)": 0.2616822429906542,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9739999301851605,
+      "judged behavior rate E0 (per context, n=50)": 0.26976744186046514,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8412359618012775,
+      "judged behavior rate E0 (per context, n=50)": 0.17757009345794392,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.876912019957485,
+      "judged behavior rate E0 (per context, n=50)": 0.17209302325581396,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.936385533705007,
+      "judged behavior rate E0 (per context, n=50)": 0.17674418604651163,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.137715742103574,
+      "judged behavior rate E0 (per context, n=50)": 0.16822429906542055,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.140623807890697,
+      "judged behavior rate E0 (per context, n=50)": 0.16744186046511628,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.980571155598038,
+      "judged behavior rate E0 (per context, n=50)": 0.16744186046511628,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0833780819575405,
+      "judged behavior rate E0 (per context, n=50)": 0.21962616822429906,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0836318812861028,
+      "judged behavior rate E0 (per context, n=50)": 0.1822429906542056,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9634139911222053,
+      "judged behavior rate E0 (per context, n=50)": 0.14953271028037382,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.053742300812112,
+      "judged behavior rate E0 (per context, n=50)": 0.18604651162790697,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8524444530484767,
+      "judged behavior rate E0 (per context, n=50)": 0.21226415094339623,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9434940529679703,
+      "judged behavior rate E0 (per context, n=50)": 0.20930232558139536,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8810778835849504,
+      "judged behavior rate E0 (per context, n=50)": 0.21395348837209302,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0758927338074815,
+      "judged behavior rate E0 (per context, n=50)": 0.22325581395348837,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.888102163167528,
+      "judged behavior rate E0 (per context, n=50)": 0.19069767441860466,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8597134004542797,
+      "judged behavior rate E0 (per context, n=50)": 0.2102803738317757,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.002111152089431,
+      "judged behavior rate E0 (per context, n=50)": 0.22790697674418606,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1507163252131645,
+      "judged behavior rate E0 (per context, n=50)": 0.24766355140186916,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0355084366766505,
+      "judged behavior rate E0 (per context, n=50)": 0.22535211267605634,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.964667470496643,
+      "judged behavior rate E0 (per context, n=50)": 0.17674418604651163,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9492968436159446,
+      "judged behavior rate E0 (per context, n=50)": 0.20930232558139536,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0452811450928787,
+      "judged behavior rate E0 (per context, n=50)": 0.22429906542056074,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8912867078667115,
+      "judged behavior rate E0 (per context, n=50)": 0.20930232558139536,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1483112820371333,
+      "judged behavior rate E0 (per context, n=50)": 0.24651162790697675,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8567908453573514,
+      "judged behavior rate E0 (per context, n=50)": 0.17209302325581396,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.120456562718125,
+      "judged behavior rate E0 (per context, n=50)": 0.24766355140186916,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.044290037768831,
+      "judged behavior rate E0 (per context, n=50)": 0.22790697674418606,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1273627419096237,
+      "judged behavior rate E0 (per context, n=50)": 0.11162790697674418,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0808829532528965,
+      "judged behavior rate E0 (per context, n=50)": 0.16744186046511628,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.006178727930525,
+      "judged behavior rate E0 (per context, n=50)": 0.22790697674418606,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.885273130454855,
+      "judged behavior rate E0 (per context, n=50)": 0.21962616822429906,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9932666471771947,
+      "judged behavior rate E0 (per context, n=50)": 0.2558139534883721,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9867324756392963,
+      "judged behavior rate E0 (per context, n=50)": 0.4511627906976744,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1337830989526347,
+      "judged behavior rate E0 (per context, n=50)": 0.2102803738317757,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8910467732768006,
+      "judged behavior rate E0 (per context, n=50)": 0.2744186046511628,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0763355534415493,
+      "judged behavior rate E0 (per context, n=50)": 0.3023255813953488,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.05907291992749358,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12674009785699544,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.1593832212660588,
+      "y": 0.007518796992481203,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.016206275575127327,
+      "y": 0.0075,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.03408686353555154,
+      "y": 0.005,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.06166178587113383,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.10143966520708816,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0726459455933409,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07378019224975906,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.15520653316478059,
+      "y": 0.0075,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.035628280227368,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.03579859799826875,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.055336241724964125,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0382760282490936,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.012353903731141175,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.07954419932429974,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.02503081674956739,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.10286054027607872,
+      "y": 0.005012531328320802,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.11249956109400658,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.03473892204694601,
+      "y": 0.0075,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.029472073480400846,
+      "y": 0.005,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.08912812714663285,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.15832275033954954,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.13934435498150358,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.12131686634762805,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.0011350747331570765,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.044918178377176515,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.15039802514549003,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.029825221027409865,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09001537062908269,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.05613355918090121,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.15116517560485915,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.08343901172497883,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.13227753398208097,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.12313423419830008,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.11083067965404059,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.09913419257650583,
+      "y": 0.005012531328320802,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.12255316378570946,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.11528445426856543,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.14788731104238687,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0781119808164048,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.019720837902116206,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.01328193778618722,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.07685176947668651,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.0390928884502556,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.08158346941185415,
+      "y": 0.0125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.07837686658822059,
+      "y": 0.0425,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.07620559692842821,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.1102133438506546,
+      "y": 0.0025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.007063128507950878,
+      "y": 0.025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.095599072717218,
+      "y": 0.30434782608695654,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.945825390568902,
+      "y": 0.2894736842105263,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9401737490259148,
+      "y": 0.25217391304347825,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8869614441391879,
+      "y": 0.3652173913043478,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9432496369203679,
+      "y": 0.2956521739130435,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8677516812241288,
+      "y": 0.2956521739130435,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.026099098295478,
+      "y": 0.32456140350877194,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.041042924391093,
+      "y": 0.2782608695652174,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8877346082488864,
+      "y": 0.3130434782608696,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.101811827536694,
+      "y": 0.3217391304347826,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9319242973072838,
+      "y": 0.2543859649122807,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0242870459133502,
+      "y": 0.3217391304347826,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9105332401740825,
+      "y": 0.26956521739130435,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8939078952326369,
+      "y": 0.2956521739130435,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1083755661300116,
+      "y": 0.37719298245614036,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.075019781739303,
+      "y": 0.34782608695652173,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0574239860447832,
+      "y": 0.41739130434782606,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8929554711662696,
+      "y": 0.40869565217391307,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0921012702075452,
+      "y": 0.3652173913043478,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9097216652879299,
+      "y": 0.4,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9926300803550628,
+      "y": 0.30434782608695654,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0490679109502052,
+      "y": 0.3565217391304348,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9179231770569408,
+      "y": 0.3826086956521739,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8965301843706767,
+      "y": 0.37719298245614036,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8849081383509578,
+      "y": 0.3508771929824561,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9076549112882817,
+      "y": 0.30434782608695654,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8499546175567047,
+      "y": 0.3565217391304348,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.005668198480003,
+      "y": 0.3391304347826087,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9450813772459601,
+      "y": 0.3130434782608696,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9196773251776311,
+      "y": 0.3391304347826087,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8859380449267077,
+      "y": 0.3130434782608696,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1455796688459512,
+      "y": 0.3391304347826087,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9413116689481512,
+      "y": 0.3565217391304348,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.148027523408171,
+      "y": 0.37168141592920356,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8725951839433586,
+      "y": 0.2956521739130435,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1137529163877016,
+      "y": 0.2807017543859649,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1593781105884395,
+      "y": 0.30434782608695654,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1266066566995108,
+      "y": 0.3508771929824561,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9596017180884042,
+      "y": 0.40350877192982454,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0806872789899609,
+      "y": 0.3684210526315789,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9289345063877358,
+      "y": 0.3130434782608696,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.9218610068092663,
+      "y": 0.5304347826086957,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1376936520661183,
+      "y": 0.391304347826087,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.933425532571505,
+      "y": 0.3130434782608696,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.144942472875149,
+      "y": 0.33043478260869563,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.8672214200094017,
+      "y": 0.2956521739130435,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1070020082480043,
+      "y": 0.11304347826086956,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.1300929546197074,
+      "y": 0.33043478260869563,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.068188982712865,
+      "y": 0.23478260869565218,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.0093859602514557,
+      "y": 0.2543859649122807,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.9819314020579144,
+      "y": 0.043,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0156593145419404,
+      "y": 0.0495,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8664231838817762,
+      "y": 0.0505,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8981330241873604,
+      "y": 0.055,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0042343025446576,
+      "y": 0.0585,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9792527449939032,
+      "y": 0.062,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.029029696101758,
+      "y": 0.0495,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0205231921620173,
+      "y": 0.0515,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.158615866584012,
+      "y": 0.093,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8932439259018308,
+      "y": 0.046,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.13166561624054,
+      "y": 0.080040020010005,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1549800496947222,
+      "y": 0.074,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.948765240069518,
+      "y": 0.09,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.125249256890387,
+      "y": 0.063,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0057944356339794,
+      "y": 0.13263263263263264,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8786659653871154,
+      "y": 0.1235,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1349802086930953,
+      "y": 0.07,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8593912519803777,
+      "y": 0.302,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9328029120187884,
+      "y": 0.0945,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.107759760835875,
+      "y": 0.084,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.876738588789602,
+      "y": 0.1775,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0903386682348373,
+      "y": 0.0675,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1559794963272862,
+      "y": 0.1825,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0705802226007384,
+      "y": 0.18,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9625112494027965,
+      "y": 0.063,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1254525027585904,
+      "y": 0.0525,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8510232440932612,
+      "y": 0.0455,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.144309920648185,
+      "y": 0.0545,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9595541190493684,
+      "y": 0.053,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.078712868425878,
+      "y": 0.058,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.134469273298186,
+      "y": 0.0575,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.058115201034346,
+      "y": 0.076,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.111069842833581,
+      "y": 0.069,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1114026811476365,
+      "y": 0.079,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8674308960455317,
+      "y": 0.0485,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9451749558893257,
+      "y": 0.0495,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.000263127422171,
+      "y": 0.0475,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.8638080848307494,
+      "y": 0.049,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9952153293058772,
+      "y": 0.0815,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.1537692299992695,
+      "y": 0.063,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9025940613171068,
+      "y": 0.071,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.845217175969105,
+      "y": 0.066,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9646646929603588,
+      "y": 0.044,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0537039425498445,
+      "y": 0.0505,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9608129221245962,
+      "y": 0.056,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.056444897633103,
+      "y": 0.033,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9765627655851064,
+      "y": 0.0385,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.0724299998187266,
+      "y": 0.0915,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9232532683320944,
+      "y": 0.064,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.9010060144995786,
+      "y": 0.266,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9513877534545743,
+      "y": 0.22429906542056074,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9825225320345785,
+      "y": 0.21395348837209302,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.906556512678273,
+      "y": 0.24186046511627907,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0579194903865767,
+      "y": 0.21395348837209302,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9031738596553653,
+      "y": 0.2383177570093458,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.862284416220673,
+      "y": 0.2558139534883721,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9153724779291164,
+      "y": 0.23255813953488372,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.8463514099775358,
+      "y": 0.22325581395348837,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0594846144447847,
+      "y": 0.2744186046511628,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9759001905009947,
+      "y": 0.2186046511627907,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.956848945306942,
+      "y": 0.2837209302325581,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9943426287153545,
+      "y": 0.3209302325581395,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9975317382670577,
+      "y": 0.2558139534883721,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0730852799895527,
+      "y": 0.2651162790697674,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.866585837662024,
+      "y": 0.19626168224299065,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1177380141808917,
+      "y": 0.17674418604651163,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0955064424049326,
+      "y": 0.1813953488372093,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.11925455147993,
+      "y": 0.16744186046511628,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.046866290747352,
+      "y": 0.19534883720930232,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9608713234271313,
+      "y": 0.16744186046511628,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.018060434160376,
+      "y": 0.22429906542056074,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.947749912988174,
+      "y": 0.18604651162790697,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9846687989360112,
+      "y": 0.14953271028037382,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.13492452734301,
+      "y": 0.18604651162790697,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.894678744497415,
+      "y": 0.19069767441860466,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9309378380874986,
+      "y": 0.20465116279069767,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.050540488986237,
+      "y": 0.2102803738317757,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.01674974580553,
+      "y": 0.23255813953488372,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0274975611196355,
+      "y": 0.205607476635514,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.8433112836339265,
+      "y": 0.2102803738317757,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.107933865514764,
+      "y": 0.24186046511627907,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.8630021950410627,
+      "y": 0.2523364485981308,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.004573553697572,
+      "y": 0.22325581395348837,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.911079635779982,
+      "y": 0.17209302325581396,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1326304907683244,
+      "y": 0.20465116279069767,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.040796369828959,
+      "y": 0.21395348837209302,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9725725489577455,
+      "y": 0.20465116279069767,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0441810100067173,
+      "y": 0.24186046511627907,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.8541274268726076,
+      "y": 0.16279069767441862,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.130161714791407,
+      "y": 0.22429906542056074,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0969275415829802,
+      "y": 0.22897196261682243,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.031790063262511,
+      "y": 0.10232558139534884,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.143663711640206,
+      "y": 0.15813953488372093,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.043222467124285,
+      "y": 0.2186046511627907,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.9412163211820452,
+      "y": 0.22897196261682243,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0786610810982276,
+      "y": 0.26046511627906976,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.0976784409456384,
+      "y": 0.4604651162790698,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.8996248226370507,
+      "y": 0.21395348837209302,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 3.1029062729432284,
+      "y": 0.27906976744186046,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.891198070326275,
+      "y": 0.2837209302325581,
+      "_kind": "scatter",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 400
+}
