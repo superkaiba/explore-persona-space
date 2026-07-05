@@ -7942,3 +7942,72 @@ def test_poll_terminated_with_workload_phase_still_dead() -> None:
     pr = backend.poll(_poll_handle())
     assert pr.status == "dead"
     assert pr.current_phase == "terminal_terminated"
+
+
+# ---------------------------------------------------------------------------
+# issue #1029 — TERMINATED-window setup-death discrimination: a TERMINATED VM
+# whose eps/phase reads "failed" runs the SAME §4.1.0b workload_started
+# discrimination the RUNNING path runs, so the classification of a trap-written
+# boot death is timing-independent (RUNNING window and TERMINATED window agree).
+# ---------------------------------------------------------------------------
+
+
+def test_terminated_with_failed_phase_and_no_workload_start_maps_to_terminal_setup_failed() -> (
+    None
+):
+    """#1029 §4.1: TERMINATED + eps/phase=failed + workload_started ABSENT (the
+    404 not-written case) is a deterministic PRE-WORKLOAD boot death ->
+    ``terminal_setup_failed`` — the same classification the RUNNING window
+    already produces for the identical death (timing-independent)."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload_multi([("phase", "failed")]), ""),
+            # The workload_started probe finds the attribute not written (404).
+            GcloudRunResult(1, "", "guest attribute eps/workload_started not found"),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_setup_failed"
+
+
+def test_terminated_with_failed_phase_and_workload_started_keeps_terminal_terminated() -> None:
+    """#1029 §4.1 (the #669 spot exclusion, preserved): TERMINATED +
+    eps/phase=failed + workload_started PRESENT is a MID-RUN guest shutdown
+    (e.g. a spot preemption whose EXIT trap completed) — it keeps
+    ``terminal_terminated`` verbatim, so a lone preemption still never fails
+    over and never counts as a deterministic boot death."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload_multi([("phase", "failed")]), ""),
+            GcloudRunResult(0, _guest_attr_payload_multi([("workload_started", "true")]), ""),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_terminated"
+
+
+def test_terminated_with_failed_phase_probe_error_keeps_terminal_terminated() -> None:
+    """#1029 §4.1 (conservative fallback): TERMINATED + eps/phase=failed + a
+    PROBE FAILURE on the workload_started read (auth/transport — NOT the 404
+    not-written case) falls back to workload-started=True by
+    ``_workload_started``'s existing contract -> keeps ``terminal_terminated``
+    (never manufactures a setup classification from an unprovable read)."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload_multi([("phase", "failed")]), ""),
+            GcloudRunResult(
+                1, "", "ERROR: Required 'compute.instances.getGuestAttributes' permission denied"
+            ),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_terminated"

@@ -2052,3 +2052,456 @@ def test_runspec_from_gcp_handle_preserves_footprint_extra():
         _gcp_handle({**_GCP_EXTRA_659, "repo_branch": "issue-909"}), 659
     )
     assert branch_spec.extra == {"repo_branch": "issue-909"}
+
+
+# ---------------------------------------------------------------------------
+# issue #1029 — GCP pre-workload boot-loop breaker (recorder + escalation +
+# failover + reset). The streak rides the durable lease (tmp-isolated by the
+# autouse _isolate_lease_store fixture); each VM CREATE is a distinct
+# INCARNATION (job_id), and each relaunch writes a FRESH sidecar — the tests
+# model exactly that #763 shape.
+# ---------------------------------------------------------------------------
+
+#: The #1029 boot-loop test extra: a GPU GCP handle carrying the threaded
+#: ladder-rung label (the streak key) on top of the #659 spec-threading keys.
+_GCP_EXTRA_1029 = {**_GCP_EXTRA_659, "issue": 1029, "gcp_ladder_rung": "flexstart_l4"}
+
+
+def _boot_handle(
+    *,
+    job_id: str = "instance-boot-1",
+    extra: dict | None = None,
+    launched_ts: float | None = None,
+) -> RunHandle:
+    """A GCP RunHandle for the boot-loop tests: distinct ``job_id`` per CREATE
+    (the incarnation key), optional ``gcp_launched_ts`` for the heuristic
+    branch."""
+    e = dict(extra if extra is not None else _GCP_EXTRA_1029)
+    if launched_ts is not None:
+        e["gcp_launched_ts"] = launched_ts
+    return RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id=job_id,
+        pod_name="eps-issue-1029",
+        scratch_dir="/workspace/eps-issue-1029",
+        log_path="/workspace/logs/issue-1029.log",
+        extra=e,
+    )
+
+
+def _poll_death(
+    monkeypatch, capsys, *, sidecar: Path, handle: RunHandle, phase: str = "terminal_setup_failed"
+) -> dict:
+    """Write the handle sidecar, script one dead poll at ``phase``, run main()."""
+    sidecar.parent.mkdir(parents=True, exist_ok=True)
+    write_handle_sidecar(handle, sidecar)
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("dead", phase)),
+    )
+    rc = backend_poll_main(["--issue", "1029", "--handle-file", str(sidecar)])
+    assert rc == 0
+    return _last_json_line(capsys)
+
+
+def test_gcp_first_setup_death_records_streak_but_does_NOT_fail_over(
+    tmp_path, monkeypatch, capsys
+):
+    """#1029 AC-2: a SINGLE pre-workload setup death takes the ordinary dead
+    path unchanged (terminal JSON as today) — but the (issue, rung) streak is
+    RECORDED (0 -> 1) so the route()-side skip and the Nth-death escalation can
+    key on it."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    sidecar = tmp_path / "issue-1029-handle.json"
+    out = _poll_death(monkeypatch, capsys, sidecar=sidecar, handle=_boot_handle())
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_setup_failed"
+    assert len(rp.launches) == 0
+    assert read_handle_sidecar(sidecar).backend == "gcp"  # sidecar unchanged
+    assert gcp_boot_death_streak(1029, "flexstart_l4") == 1
+
+
+def test_gcp_second_consecutive_setup_death_same_rung_fails_over_to_runpod(
+    tmp_path, monkeypatch, capsys
+):
+    """#1029 AC-1 (headline): TWO consecutive pre-workload deaths on one rung —
+    DISTINCT incarnations (job_id), each on a FRESH handle + FRESH sidecar (the
+    relaunch rewrites the sidecar, so the record must survive in the durable
+    lease) — produce EXACTLY ONE RunPod failover with reason
+    ``gcp_boot_loop_failover_runpod``."""
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    # Death #1 (create #1) — ordinary dead path, streak 1.
+    out1 = _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=tmp_path / "launch1" / "issue-1029-handle.json",
+        handle=_boot_handle(job_id="instance-boot-1"),
+    )
+    assert out1["status"] == "dead"
+    assert len(rp.launches) == 0
+
+    # Death #2 (create #2, FRESH sidecar + FRESH instance id) — the breaker.
+    sidecar2 = tmp_path / "launch2" / "issue-1029-handle.json"
+    out2 = _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=sidecar2,
+        handle=_boot_handle(job_id="instance-boot-2"),
+    )
+    assert out2["status"] == "running"
+    assert out2["current_phase"] == "gcp_boot_loop_failover_runpod"
+    assert len(rp.launches) == 1  # exactly ONE failover
+    assert read_handle_sidecar(sidecar2).backend == "runpod"
+
+
+def test_gcp_boot_loop_fires_with_same_attempt_id_distinct_incarnations(
+    tmp_path, monkeypatch, capsys
+):
+    """#1029 Must-Fix (the #763-shape replay): all of #763's five creates shared
+    ONE attempt_id (att-20260630-141513) with DISTINCT instance ids — so the
+    idempotency key MUST be the incarnation (job_id), never attempt_id alone.
+    Two deaths sharing an attempt_id but with distinct job_ids reach streak 2
+    and fire the failover; attempt_id-keying would freeze the streak at 1."""
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    shared = {**_GCP_EXTRA_1029, "attempt_id": "att-20260630-141513"}
+
+    _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=tmp_path / "launch1" / "issue-1029-handle.json",
+        handle=_boot_handle(job_id="5583329098377891015", extra=dict(shared)),
+    )
+    out2 = _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=tmp_path / "launch2" / "issue-1029-handle.json",
+        handle=_boot_handle(job_id="1628930989301073651", extra=dict(shared)),
+    )
+    assert out2["current_phase"] == "gcp_boot_loop_failover_runpod"
+    assert len(rp.launches) == 1
+
+
+def test_gcp_boot_loop_repeat_poll_same_incarnation_does_not_double_increment(
+    tmp_path, monkeypatch, capsys
+):
+    """#1029 AC-1 (re-poll control): the SAME dead instance re-polled (same
+    handle, same sidecar, same job_id) does NOT double-increment — the streak
+    stays 1 and no failover fires."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    sidecar = tmp_path / "issue-1029-handle.json"
+    handle = _boot_handle(job_id="instance-boot-1")
+    for _tick in range(2):
+        out = _poll_death(monkeypatch, capsys, sidecar=sidecar, handle=handle)
+        assert out["status"] == "dead"
+        assert out["current_phase"] == "terminal_setup_failed"
+    assert gcp_boot_death_streak(1029, "flexstart_l4") == 1
+    assert len(rp.launches) == 0
+
+
+def test_gcp_boot_loop_degenerate_incarnation_key_skips_record(tmp_path, monkeypatch, capsys):
+    """#1029 Must-Fix (degenerate-key guard): a pre-fix handle with NO job_id,
+    NO attempt_id, and NO gcp_launched_ts has a fully-degenerate incarnation
+    key — the record is SKIPPED entirely (logged, fail-open) rather than keyed
+    on "" (which would dedupe every pre-fix handle's deaths together)."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    extra = dict(_GCP_EXTRA_1029)
+    extra.pop("attempt_id", None)
+    out = _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=tmp_path / "issue-1029-handle.json",
+        handle=_boot_handle(job_id="", extra=extra),
+    )
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_setup_failed"
+    assert gcp_boot_death_streak(1029, "flexstart_l4") == 0  # no record
+    assert len(rp.launches) == 0
+
+
+def test_gcp_boot_loop_failover_does_NOT_increment_gcp_attempts_today(
+    tmp_path, monkeypatch, capsys
+):
+    """#1029 (mirror of the #783 test): the boot-loop failover never re-enters
+    _attempt_one_gcp_rung, so the per-day GCP attempt counter is UNCHANGED
+    across the full two-death escalation + RunPod failover."""
+    from explore_persona_space.backends.router import Lease, LeaseStore
+
+    store = LeaseStore()  # resolves to the tmp ~/.eps-routing (autouse fixture)
+    store.write(Lease(issue=1029, spec_hash="deadbeef", attempt_id="att-1", gcp_attempts_today=3))
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=tmp_path / "launch1" / "issue-1029-handle.json",
+        handle=_boot_handle(job_id="instance-boot-1"),
+    )
+    _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=tmp_path / "launch2" / "issue-1029-handle.json",
+        handle=_boot_handle(job_id="instance-boot-2"),
+    )
+    assert len(rp.launches) == 1  # the failover fired
+    lease_after = store.read(1029)
+    assert lease_after is not None
+    assert lease_after.gcp_attempts_today == 3  # counter untouched
+
+
+def test_gcp_young_terminated_death_counts_via_heuristic_branch(tmp_path, monkeypatch, capsys):
+    """#1029 heuristic branch: a YOUNG ``terminal_terminated`` death (the
+    TERMINATED-window observation of an attribute-unreadable boot death) counts
+    toward the streak via the launch-age heuristic."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    out = _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=tmp_path / "issue-1029-handle.json",
+        handle=_boot_handle(launched_ts=_time.time() - 60),
+        phase="terminal_terminated",
+    )
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_terminated"  # single death: unchanged
+    assert gcp_boot_death_streak(1029, "flexstart_l4") == 1
+
+
+@pytest.mark.parametrize("age_seconds", [1500, 100_000])
+def test_gcp_old_terminated_death_does_NOT_count(tmp_path, monkeypatch, capsys, age_seconds):
+    """#1029 spot-preemption protection: a ``terminal_terminated`` death whose
+    launch->observation age is AT the floor (>= semantics — exactly 1500s) or
+    far above it does NOT count toward the streak — a lone mid-run spot
+    preemption / max-run-duration / manual stop keeps today's behavior."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    out = _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=tmp_path / "issue-1029-handle.json",
+        handle=_boot_handle(launched_ts=_time.time() - age_seconds),
+        phase="terminal_terminated",
+    )
+    assert out["status"] == "dead"
+    assert gcp_boot_death_streak(1029, "flexstart_l4") == 0
+
+
+def test_gcp_terminated_death_without_launched_ts_fails_open(tmp_path, monkeypatch, capsys):
+    """#1029 pre-fix-handle guard: a ``terminal_terminated`` death on a handle
+    WITHOUT ``gcp_launched_ts`` (pre-#1029 sidecar) leaves the heuristic branch
+    inert — no record, ordinary dead JSON."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    out = _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=tmp_path / "issue-1029-handle.json",
+        handle=_boot_handle(),  # no launched_ts
+        phase="terminal_terminated",
+    )
+    assert out["status"] == "dead"
+    assert gcp_boot_death_streak(1029, "flexstart_l4") == 0
+
+
+def test_gcp_instance_not_found_young_death_counts(tmp_path, monkeypatch, capsys):
+    """#1029 heuristic branch (post-DELETE observation): a YOUNG
+    ``terminal_instance not found`` death — the instance record already gone at
+    describe time, the COMMON observation at the 540s poll default — counts
+    toward the streak."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    out = _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=tmp_path / "issue-1029-handle.json",
+        handle=_boot_handle(launched_ts=_time.time() - 60),
+        phase="terminal_instance not found",
+    )
+    assert out["status"] == "dead"
+    assert gcp_boot_death_streak(1029, "flexstart_l4") == 1
+
+
+def test_gcp_workload_crash_keeps_659_reason_not_boot_loop(tmp_path, monkeypatch, capsys):
+    """#1029 AC-4: a REAL workload crash (terminal_workload_failed) still takes
+    the #659 path with the #659 reason — AND resets the boot streak (the
+    workload started, so boot demonstrably succeeded)."""
+    from explore_persona_space.backends.router import (
+        gcp_boot_death_streak,
+        record_gcp_boot_death,
+    )
+
+    record_gcp_boot_death(1029, "flexstart_l4", incarnation="prior-create-1")
+    assert gcp_boot_death_streak(1029, "flexstart_l4") == 1
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    out = _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=tmp_path / "issue-1029-handle.json",
+        handle=_boot_handle(job_id="instance-boot-2"),
+        phase="terminal_workload_failed",
+    )
+    assert out["status"] == "running"
+    assert out["current_phase"] == "gcp_workload_failover_runpod_async"  # the #659 reason
+    assert len(rp.launches) == 1
+    assert gcp_boot_death_streak(1029, "flexstart_l4") == 0  # reset: boot was fine
+
+
+@pytest.mark.parametrize(
+    ("status", "phase"),
+    [
+        ("running", "workload"),
+        ("running", "relaunched_workload"),
+        ("dead", "terminal_workload_failed"),
+        ("done", "workload_done"),
+        ("done", "workload_done_self_poweroff"),
+        ("done", "relaunched_workload_done"),
+    ],
+)
+def test_gcp_boot_streak_resets_on_workload_phase_observation(
+    tmp_path, monkeypatch, capsys, status, phase
+):
+    """#1029 reset (positive direction): a POSITIVE workload signal — a running
+    'workload'/'relaunched_workload' phase, a workload crash (started => boot
+    fine), or a #935 done shape — clears the (issue, rung) streak so
+    non-consecutive deaths never accumulate."""
+    from explore_persona_space.backends.router import (
+        gcp_boot_death_streak,
+        record_gcp_boot_death,
+    )
+
+    record_gcp_boot_death(1029, "flexstart_l4", incarnation="prior-create-1")
+    assert gcp_boot_death_streak(1029, "flexstart_l4") == 1
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+    sidecar = tmp_path / "issue-1029-handle.json"
+    write_handle_sidecar(_boot_handle(job_id="instance-boot-2"), sidecar)
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll(status, phase)),
+    )
+    rc = backend_poll_main(["--issue", "1029", "--handle-file", str(sidecar)])
+    assert rc == 0
+    assert gcp_boot_death_streak(1029, "flexstart_l4") == 0
+
+
+def test_gcp_pre_workload_running_observation_does_NOT_reset_streak(
+    tmp_path, monkeypatch, capsys
+):
+    """#1029 Must-Fix (the negative reset control): PRE-WORKLOAD running
+    observations — the mid-boot 'startup' guest phase AND the booting-no-phase
+    '' — must NOT reset the streak (positive-signal design; a blocklist-style
+    reset omitting 'startup' would silently defeat the breaker in exactly the
+    #763 boot-window scenario). A subsequent second death still fails over."""
+    from explore_persona_space.backends.router import (
+        gcp_boot_death_streak,
+        record_gcp_boot_death,
+    )
+
+    record_gcp_boot_death(1029, "flexstart_l4", incarnation="instance-boot-1")
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    # Relaunch #2's first polls land in the ~5.5-min boot window: running with
+    # the mid-boot 'startup' phase, then the booting-no-phase '' value.
+    for boot_phase in ("startup", ""):
+        sidecar = tmp_path / f"boot-{boot_phase or 'nophase'}" / "issue-1029-handle.json"
+        sidecar.parent.mkdir(parents=True, exist_ok=True)
+        write_handle_sidecar(_boot_handle(job_id="instance-boot-2"), sidecar)
+        monkeypatch.setattr(
+            "scripts.backend_poll._resolve_backend",
+            lambda name, _p=boot_phase: _PollDouble(_poll("running", _p)),
+        )
+        rc = backend_poll_main(["--issue", "1029", "--handle-file", str(sidecar)])
+        assert rc == 0
+        assert gcp_boot_death_streak(1029, "flexstart_l4") == 1, (
+            f"pre-workload running phase {boot_phase!r} must NOT reset the streak"
+        )
+
+    # Relaunch #2 then dies pre-workload -> the SECOND consecutive death fires.
+    out = _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=tmp_path / "launch2" / "issue-1029-handle.json",
+        handle=_boot_handle(job_id="instance-boot-2"),
+    )
+    assert out["current_phase"] == "gcp_boot_loop_failover_runpod"
+    assert len(rp.launches) == 1
+
+
+def test_gcp_boot_loop_cpu_bigmem_records_but_never_rewrites(tmp_path, monkeypatch, capsys):
+    """#1029 AC-4 (CPU guard): a cpu-bigmem boot loop RECORDS the streak (the
+    route()-side skip is its only breaker) but NEVER rewrites to
+    terminal_boot_loop — no RunPod lane exists for it (#677), so both deaths
+    print the ordinary dead JSON. The cpu-small counterpart (mapped, #747) DOES
+    rewrite and fails over."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    bigmem_extra = {
+        **_GCP_EXTRA_1029,
+        "gpu_count": 0,
+        "intent": "cpu-bigmem",
+        "gcp_ladder_rung": "ondemand_cpu",
+    }
+    for n, job_id in enumerate(["cpu-inst-1", "cpu-inst-2"], start=1):
+        out = _poll_death(
+            monkeypatch,
+            capsys,
+            sidecar=tmp_path / f"bigmem-{n}" / "issue-1029-handle.json",
+            handle=_boot_handle(job_id=job_id, extra=dict(bigmem_extra)),
+        )
+        assert out["status"] == "dead"
+        assert out["current_phase"] == "terminal_setup_failed"  # never rewritten
+        assert gcp_boot_death_streak(1029, "ondemand_cpu") == n  # still recorded
+    assert len(rp.launches) == 0
+
+    # cpu-small counterpart: mapped in RUNPOD_CPU_INSTANCE_FOR_INTENT -> the
+    # second death DOES rewrite + fail over (a distinct rung key keeps the two
+    # sub-cases independent).
+    small_extra = {
+        **_GCP_EXTRA_1029,
+        "gpu_count": 0,
+        "intent": "cpu-small",
+        "gcp_ladder_rung": "spot_cpu",
+    }
+    _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=tmp_path / "small-1" / "issue-1029-handle.json",
+        handle=_boot_handle(job_id="cpu-small-inst-1", extra=dict(small_extra)),
+    )
+    out2 = _poll_death(
+        monkeypatch,
+        capsys,
+        sidecar=tmp_path / "small-2" / "issue-1029-handle.json",
+        handle=_boot_handle(job_id="cpu-small-inst-2", extra=dict(small_extra)),
+    )
+    assert out2["status"] == "running"
+    assert out2["current_phase"] == "gcp_boot_loop_failover_runpod"
+    assert len(rp.launches) == 1
