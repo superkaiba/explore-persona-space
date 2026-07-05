@@ -118,8 +118,8 @@
     "1012": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1012",
-      "status": "approved",
+      "path": "tasks/running/1012",
+      "status": "running",
       "title": "workflow-fix: reconcile stale ensemble round ranges (1-3) with the cap-5 policy"
     },
     "1013": {
