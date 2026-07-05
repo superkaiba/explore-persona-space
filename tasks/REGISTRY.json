@@ -510,8 +510,8 @@
     "1064": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1064",
-      "status": "reviewing",
+      "path": "tasks/completed/1064",
+      "status": "completed",
       "title": "daily-fix: artifact-reuse checks consumer read path vs layou"
     },
     "1065": {
