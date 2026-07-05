@@ -788,6 +788,10 @@ PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     "EPM_HF_OVERFLOW_ROUTING",
     "EPM_HF_STORAGE_CHECK",
     "EPM_HF_STORAGE_CACHE_TTL_S",
+    # Size-aware projected-headroom probe floor (#1034): same remote-relevance
+    # as the #564 knobs above — a dispatch-process floor override must reach
+    # the compute node or it silently no-ops remotely.
+    "EPM_HF_LARGE_UPLOAD_PROBE_GB",
     # HF Hub upload accelerator OVERRIDE channel (#745): forwarded so a
     # dispatch-process =0 / HF_XET_DISABLE=1 (the #515 xet-CDN workaround)
     # reaches the compute node. The DEFAULTS (=1) are a STATIC env block in

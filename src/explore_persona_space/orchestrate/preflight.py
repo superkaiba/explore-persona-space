@@ -943,15 +943,28 @@ def check_connectivity(report: PreflightReport):
         report.add_warning("Cannot reach api.wandb.ai — result uploads will fail")
 
 
-def check_hf_storage(report: PreflightReport):
-    """Non-fatal WARN when account HF public storage exceeds the soft ceiling.
+def check_hf_storage(report: PreflightReport, planned_upload_gb: float | None = None):
+    """Non-fatal WARN when account HF public storage exceeds the soft ceiling —
+    plus an OPT-IN hard gate against a caller-supplied planned LFS upload (#1034).
 
-    Advisory only: never adds an error, never raises — an unreachable HF API
-    degrades to an 'unknown headroom' warning, and a non-parseable ceiling/TTL
-    env value (the helper's deliberate ``ValueError``) is caught and reported
-    as a warning here (it still propagates at the fail-loud persist gate in
-    ``train/trainer.py``). See ``.claude/rules/upload-policy.md``
-    § HF storage-quota 403 for the incident this fronts (#541/#552).
+    Advisory only by default: never adds an error, never raises — an
+    unreachable HF API degrades to an 'unknown headroom' warning, and a
+    non-parseable ceiling/TTL env value (the helper's deliberate
+    ``ValueError``) is caught and reported as a warning here (it still
+    propagates at the fail-loud persist gate in ``train/trainer.py``). See
+    ``.claude/rules/upload-policy.md`` § HF storage-quota 403 for the incident
+    this fronts (#541/#552).
+
+    ``planned_upload_gb`` (decimal GB) means "LFS bytes the run REQUIRES on
+    the canonical PUBLIC repos"; runs whose stores tolerate overflow (v2
+    ``upload_dir_sharded`` flows) either omit it or arm
+    ``EPM_HF_OVERFLOW_ROUTING=1`` — so the gate cannot false-block them. When
+    supplied, the projection is routed THROUGH
+    :func:`hub.check_projected_upload_headroom` (``probe_floor_gb=0.0`` — an
+    explicit projection always probes) so the FAIL arm inherits the live
+    ``force_refresh=True`` confirm: LIVE-CONFIRMED-insufficient + routing off
+    → ERROR; routing armed → WARNING; unknown/disabled → WARNING (fail-open —
+    a stale-high cache can never false-block).
     """
     try:
         from explore_persona_space.orchestrate.hub import check_hf_storage_headroom
@@ -964,6 +977,14 @@ def check_hf_storage(report: PreflightReport):
     report.hf_storage_ceiling_tb = h.ceiling_tb
     report.hf_storage_basis = h.basis
     if h.basis == "disabled":
+        if planned_upload_gb is not None:
+            # Armed-but-blind combo made visible (#1034): a REQUESTED gate must
+            # never be silently swallowed by the kill switch (mirrors the
+            # _OVERFLOW_BLIND_WARNED precedent in hub.py).
+            report.add_warning(
+                "HF headroom: planned-upload gate requested but storage check "
+                "disabled (EPM_HF_STORAGE_CHECK=0) — gate not evaluated"
+            )
         return
     if h.used_tb is None:
         report.add_warning(
@@ -976,6 +997,44 @@ def check_hf_storage(report: PreflightReport):
             f"(adapters/checkpoints) will 403 at the hard quota; see "
             f".claude/rules/upload-policy.md § HF storage-quota 403"
         )
+    if planned_upload_gb is not None and h.used_tb is not None:
+        try:
+            from explore_persona_space.orchestrate.hub import check_projected_upload_headroom
+
+            # NEVER gate on the raw cached probe (Must-Fix): the wrapper embeds
+            # the force_refresh=True live confirm before any "insufficient"
+            # verdict, so a stale-high cache cannot false-block a healthy run.
+            # probe_floor_gb=0.0: the caller EXPLICITLY declared the projection,
+            # so the tiny-upload skip must not disarm a requested gate.
+            ph = check_projected_upload_headroom(int(planned_upload_gb * 1e9), probe_floor_gb=0.0)
+        except Exception as e:
+            report.add_warning(f"HF planned-upload headroom gate failed ({e}) — gate not evaluated")
+            return
+        if ph.verdict == "insufficient":
+            if os.environ.get("EPM_HF_OVERFLOW_ROUTING") == "1":
+                report.add_warning(
+                    f"HF headroom: planned {planned_upload_gb:.0f} GB LFS upload would "
+                    f"exceed the soft ceiling ({ph.used_tb:.2f}+{ph.projected_tb:.2f} > "
+                    f"{ph.ceiling_tb:.1f} TB, live-confirmed) — EPM_HF_OVERFLOW_ROUTING=1 "
+                    f"is armed, uploads will reroute to the private overflow repo "
+                    f"(NOTE: arming is environment-wide — it also reroutes every armed "
+                    f"upload_model flow in this env)"
+                )
+            else:
+                report.add_error(
+                    f"HF headroom insufficient for planned upload (live-confirmed): "
+                    f"{planned_upload_gb:.0f} GB projected vs "
+                    f"{(ph.ceiling_tb - ph.used_tb) * 1000:.0f} GB remaining "
+                    f"({ph.used_tb:.2f}/{ph.ceiling_tb:.1f} TB, {ph.basis}). Remediation: "
+                    f"(1) route the store through upload_dir_sharded (proactive overflow, "
+                    f"#1034); (2) arm EPM_HF_OVERFLOW_ROUTING=1 for upload_model flows whose "
+                    f"arming contract permits (environment-wide effect); (3) free quota / raise "
+                    f"EPM_HF_STORAGE_SOFT_CEILING_TB after buying storage. "
+                    f"See .claude/rules/upload-policy.md § Proactive detection."
+                )
+        # ph.verdict in {"fits", "unknown", "disabled"} -> nothing / existing
+        # WARNs only (fail-open: a live-unknown or stale-high-then-live-fits
+        # never blocks).
 
 
 def preflight_check(
@@ -986,6 +1045,7 @@ def preflight_check(
     check_code_sync: bool = True,
     planned_footprint_gb: float | None = None,
     per_pod_quota_gb: float | None = RUNPOD_PER_POD_QUOTA_GB,
+    planned_upload_gb: float | None = None,
 ) -> PreflightReport:
     """Run all pre-experiment checks.
 
@@ -1002,6 +1062,11 @@ def preflight_check(
         per_pod_quota_gb: RunPod MooseFS per-pod writable-bytes quota in GB used to
             cap usable disk headroom (defaults to ``RUNPOD_PER_POD_QUOTA_GB``).
             None disables the cap (over-quota footprints become undetectable).
+        planned_upload_gb: Planned canonical-public LFS upload size in decimal GB
+            (#1034). When supplied, the HF-storage check hard-FAILs on a
+            LIVE-CONFIRMED insufficient headroom with overflow routing off
+            (WARNs when armed; fail-open on unknown/disabled). None (default)
+            => today's WARN-only behavior, so existing callers are unaffected.
 
     Returns:
         PreflightReport with pass/fail status and details.
@@ -1049,7 +1114,7 @@ def preflight_check(
     check_env_vars(report, required_env_vars)
     check_vllm_transformers_compat(report)
     check_connectivity(report)
-    check_hf_storage(report)
+    check_hf_storage(report, planned_upload_gb)
 
     return report
 
@@ -1097,6 +1162,15 @@ def main(argv: list[str] | None = None) -> int:
         "it exceeds usable (quota-capped) headroom. Omit to skip the budget check.",
     )
     parser.add_argument(
+        "--planned-upload-gb",
+        type=float,
+        default=None,
+        help="Planned canonical-public LFS upload size in decimal GB (#1034); FAILs "
+        "preflight when a LIVE-CONFIRMED headroom read says used + planned exceeds the "
+        "soft ceiling and EPM_HF_OVERFLOW_ROUTING is off (WARNs when armed; fail-open "
+        "on unknown). Omit to keep the WARN-only advisory.",
+    )
+    parser.add_argument(
         "--per-pod-quota-gb",
         type=float,
         default=RUNPOD_PER_POD_QUOTA_GB,
@@ -1121,6 +1195,7 @@ def main(argv: list[str] | None = None) -> int:
         min_disk_gb=args.min_disk,
         planned_footprint_gb=args.planned_footprint_gb,
         per_pod_quota_gb=per_pod_quota_gb,
+        planned_upload_gb=args.planned_upload_gb,
     )
 
     if args.json:

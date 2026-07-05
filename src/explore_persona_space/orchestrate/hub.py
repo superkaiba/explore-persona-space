@@ -308,6 +308,73 @@ def check_hf_storage_headroom(
     )
 
 
+@dataclass(frozen=True)
+class ProjectedUploadHeadroom:
+    """Verdict of a size-aware account-headroom probe for one planned LFS upload."""
+
+    verdict: str  # "below-threshold" | "disabled" | "unknown" | "fits" | "insufficient"
+    projected_tb: float
+    used_tb: float | None
+    ceiling_tb: float | None  # None on the zero-I/O below-threshold arm; may also be
+    # None on the disabled/unknown arms (passes h.ceiling_tb through)
+    basis: str
+
+
+def check_projected_upload_headroom(
+    projected_bytes: int,
+    *,
+    probe_floor_gb: float | None = None,
+    confirm_live: bool = True,
+) -> ProjectedUploadHeadroom:
+    """Does a planned LFS upload of ``projected_bytes`` fit under the public-storage soft ceiling?
+
+    Size-aware wrapper over :func:`check_hf_storage_headroom` (#564 — reused, never
+    re-implemented). Decimal GB/TB throughout (1 GB = 1e9 bytes), matching
+    ``_BYTES_PER_TB = 1000**4``. Never raises on API failure; ``ValueError`` only on a
+    non-parseable env knob (same fail-fast contract as the #564 knobs).
+
+    * projected below the probe floor (``probe_floor_gb``, default env
+      ``EPM_HF_LARGE_UPLOAD_PROBE_GB`` = 100.0) -> ``"below-threshold"``, ZERO
+      headroom I/O (tiny uploads never pay the ~25 s cache-miss probe).
+    * kill switch / disabled -> ``"disabled"`` (escape hatch always wins).
+    * probe unknown/suspect -> ``"unknown"`` (fail-open; callers must not block
+      or reroute — the reactive 403 backstop stays authoritative).
+    * used + projected <= ceiling -> ``"fits"``.
+    * used + projected > ceiling -> when ``confirm_live``, re-probe with
+      ``force_refresh=True`` (the trainer.py minute-1 pattern: never act on a
+      stale cached over-read) and re-evaluate; only a LIVE-confirmed overflow
+      returns ``"insufficient"`` (a live-unknown degrades to ``"unknown"``).
+
+    Concurrency note: ``"fits"`` is advisory, not a reservation — two concurrent
+    large uploads can both read fits against the same headroom (TOCTOU); the
+    soft-ceiling runway + the reactive 403 backstop absorb races, never worse
+    than status quo.
+    """
+    assert projected_bytes >= 0, projected_bytes
+    floor_gb = (
+        probe_floor_gb
+        if probe_floor_gb is not None
+        else _env_float("EPM_HF_LARGE_UPLOAD_PROBE_GB", 100.0)
+    )
+    projected_tb = projected_bytes / _BYTES_PER_TB
+    if projected_bytes < floor_gb * 1e9:
+        return ProjectedUploadHeadroom("below-threshold", projected_tb, None, None, "not-probed")
+    h = check_hf_storage_headroom()
+    if h.basis == "disabled":
+        return ProjectedUploadHeadroom("disabled", projected_tb, None, h.ceiling_tb, h.basis)
+    if h.used_tb is None:
+        return ProjectedUploadHeadroom("unknown", projected_tb, None, h.ceiling_tb, h.basis)
+    if h.used_tb + projected_tb <= h.ceiling_tb:
+        return ProjectedUploadHeadroom("fits", projected_tb, h.used_tb, h.ceiling_tb, h.basis)
+    if confirm_live:
+        h = check_hf_storage_headroom(force_refresh=True)
+        if h.used_tb is None:
+            return ProjectedUploadHeadroom("unknown", projected_tb, None, h.ceiling_tb, h.basis)
+        if h.used_tb + projected_tb <= h.ceiling_tb:
+            return ProjectedUploadHeadroom("fits", projected_tb, h.used_tb, h.ceiling_tb, h.basis)
+    return ProjectedUploadHeadroom("insufficient", projected_tb, h.used_tb, h.ceiling_tb, h.basis)
+
+
 def _repo_is_private(repo_id: str, repo_type: str = "model") -> bool | None:
     """TRI-STATE privacy probe: True | False | None (undeterminable).
 
@@ -334,18 +401,22 @@ def _repo_is_private(repo_id: str, repo_type: str = "model") -> bool | None:
 _OVERFLOW_BLIND_WARNED = False
 
 
-def _resolve_lfs_upload_repo(repo_id: str) -> tuple[str, bool]:
+def _resolve_lfs_upload_repo(repo_id: str, projected_bytes: int | None = None) -> tuple[str, bool]:
     """``(effective_repo_id, rerouted)`` for an LFS-bearing model upload.
 
     SHORT-CIRCUITS on the env gate first: ``EPM_HF_OVERFLOW_ROUTING != "1"``
     returns ``(repo_id, False)`` with ZERO headroom I/O — routing is
     default-off and must add no latency to normal uploads. When armed, the
     upload reroutes to :data:`DEFAULT_OVERFLOW_REPO` iff headroom is
-    KNOWN-over-ceiling AND ``repo_id`` is not already the overflow repo AND
-    the target is CONFIRMED public (a private target has its own quota
-    headroom; privacy ``None``/undeterminable does not reroute — routing only
-    acts on confirmed signal). Unknown/disabled headroom never reroutes and
-    logs one loud armed-but-blind warning per process.
+    KNOWN-insufficient (``used + projected > ceiling``; with
+    ``projected_bytes=None`` this reproduces the legacy binary
+    KNOWN-over-ceiling check exactly) AND ``repo_id`` is not already the
+    overflow repo AND the target is CONFIRMED public (a private target has
+    its own quota headroom; privacy ``None``/undeterminable does not reroute
+    — routing only acts on confirmed signal). Unknown/disabled headroom never
+    reroutes and logs one loud armed-but-blind warning per process. The
+    ARMING CONTRACT is unchanged: default-off, zero headroom I/O unarmed
+    (#1034 added only the size-aware predicate on the already-armed path).
     """
     global _OVERFLOW_BLIND_WARNED
     if os.environ.get("EPM_HF_OVERFLOW_ROUTING") != "1":
@@ -363,7 +434,8 @@ def _resolve_lfs_upload_repo(repo_id: str) -> tuple[str, bool]:
             )
             _OVERFLOW_BLIND_WARNED = True
         return repo_id, False
-    if not h.over_ceiling:
+    projected_tb = (projected_bytes or 0) / _BYTES_PER_TB
+    if h.used_tb + projected_tb <= h.ceiling_tb:
         return repo_id, False
     if _repo_is_private(repo_id) is not False:
         # Private target: separate quota, rerouting would be wrong-place.
@@ -385,13 +457,22 @@ def _overflow_event_path() -> Path:
 
 
 def _emit_overflow_routing_event(
-    *, original_repo: str, effective_repo: str, path_in_repo: str
+    *,
+    original_repo: str,
+    effective_repo: str,
+    path_in_repo: str,
+    reason: str = "quota-403-reactive",
+    projected_gb: float | None = None,
 ) -> None:
     """Append a plan-deviation JSON line to the local event sink. Fail-soft.
 
     Pod-side library code never shells ``task.py`` — the orchestrator /
     upload-verifier observing this sentinel (or the paired structured WARN in
     the run log) posts the actual ``epm:`` plan-deviation marker.
+
+    ``reason`` / ``projected_gb`` (#1034) are append-only JSONL fields —
+    backward-compatible: existing callers omit them (default reason
+    ``"quota-403-reactive"``), and JSONL consumers are prose-level observers.
     """
     try:
         h = check_hf_storage_headroom()  # cache hit — routing just confirmed over-ceiling
@@ -402,7 +483,10 @@ def _emit_overflow_routing_event(
             "path_in_repo": path_in_repo,
             "used_tb": h.used_tb,
             "ceiling_tb": h.ceiling_tb,
+            "reason": reason,
         }
+        if projected_gb is not None:
+            event["projected_gb"] = projected_gb
         path = _overflow_event_path()
         path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("a", encoding="utf-8") as f:
@@ -1149,11 +1233,19 @@ def upload_model(
 
     Returns:
         The HF Hub path where the model was uploaded.
+
+    Size-aware routing note (#1034): the armed resolver receives this dir's
+    on-disk byte sum (an rglob walk — milliseconds for adapter dirs) so an
+    armed flow reroutes when ``used + projected > ceiling``, not only when
+    already over. The walk OVER-counts vs what is actually sent (it includes
+    ``TRAINING_STATE_IGNORE_PATTERNS``-excluded files) — conservative: an
+    over-projection can only reroute slightly early, never under-protect.
     """
     if path_in_repo is None:
         path_in_repo = f"{condition_name}_seed{seed}"
 
-    effective_repo, rerouted = _resolve_lfs_upload_repo(repo_id)
+    projected = sum(f.stat().st_size for f in Path(model_path).rglob("*") if f.is_file())
+    effective_repo, rerouted = _resolve_lfs_upload_repo(repo_id, projected_bytes=projected)
     if rerouted:
         logger.warning(
             "EPM_HF_OVERFLOW_ROUTING: rerouting LFS upload %s -> %s "

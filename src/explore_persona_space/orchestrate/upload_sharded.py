@@ -41,6 +41,8 @@ from explore_persona_space.orchestrate.hub import (
     DEFAULT_OVERFLOW_REPO,
     _emit_overflow_routing_event,
     _is_storage_quota_403,
+    _repo_is_private,
+    check_projected_upload_headroom,
     list_hf_files_under_path,
 )
 
@@ -111,6 +113,22 @@ def _write_overflow_pointer(
         )
 
 
+def _ensure_overflow_repo(api) -> None:
+    """Create the private overflow repo if missing (idempotent).
+
+    Overflow repo is private (separate LFS quota with headroom); created if
+    missing, matching the existing hub reroute contract. Shared by the
+    reactive quota-403 branch and the #1034 proactive projected-headroom
+    branch.
+    """
+    api.create_repo(
+        repo_id=DEFAULT_OVERFLOW_REPO,
+        repo_type="model",
+        private=True,
+        exist_ok=True,
+    )
+
+
 def _reroute_to_overflow(
     api,
     *,
@@ -118,9 +136,15 @@ def _reroute_to_overflow(
     dest: str,
     canonical_repo: str,
     canonical_repo_type: str,
+    emitted_prefixes: set[str] | None = None,
 ) -> str:
     """Upload one shard to the private overflow repo after a quota-403 on the
-    canonical repo. Writes the pointer breadcrumb + deviation event.
+    canonical repo. Writes the pointer breadcrumb + deviation event ONCE per
+    ``path_in_repo`` prefix per ``upload_dir_sharded`` call (#1034 dedup —
+    the pointer dest is already prefix-level, so N per-shard commits of the
+    same file were pure duplicate Hub commits against the 256 commits/hr cap;
+    ``emitted_prefixes=None`` keeps the legacy emit-every-time behavior for
+    direct callers).
 
     Returns the overflow repo id (the effective destination). Raises if the
     overflow upload ITSELF fails — that is the both-quotas-exhausted terminal.
@@ -131,32 +155,29 @@ def _reroute_to_overflow(
         shard.name,
         DEFAULT_OVERFLOW_REPO,
     )
-    # Overflow repo is private (separate LFS quota with headroom); created if
-    # missing, matching the existing hub reroute contract.
-    api.create_repo(
-        repo_id=DEFAULT_OVERFLOW_REPO,
-        repo_type="model",
-        private=True,
-        exist_ok=True,
-    )
+    _ensure_overflow_repo(api)
     api.upload_file(
         path_or_fileobj=str(shard),
         repo_id=DEFAULT_OVERFLOW_REPO,
         path_in_repo=dest,
         repo_type="model",
     )
-    _emit_overflow_routing_event(
-        original_repo=canonical_repo,
-        effective_repo=DEFAULT_OVERFLOW_REPO,
-        path_in_repo=dest,
-    )
-    _write_overflow_pointer(
-        api,
-        canonical_repo=canonical_repo,
-        canonical_repo_type=canonical_repo_type,
-        path_in_repo=os.path.dirname(dest),
-        overflow_repo=DEFAULT_OVERFLOW_REPO,
-    )
+    prefix = os.path.dirname(dest)
+    if emitted_prefixes is None or prefix not in emitted_prefixes:
+        _emit_overflow_routing_event(
+            original_repo=canonical_repo,
+            effective_repo=DEFAULT_OVERFLOW_REPO,
+            path_in_repo=dest,
+        )
+        _write_overflow_pointer(
+            api,
+            canonical_repo=canonical_repo,
+            canonical_repo_type=canonical_repo_type,
+            path_in_repo=prefix,
+            overflow_repo=DEFAULT_OVERFLOW_REPO,
+        )
+        if emitted_prefixes is not None:
+            emitted_prefixes.add(prefix)
     return DEFAULT_OVERFLOW_REPO
 
 
@@ -185,12 +206,26 @@ def upload_dir_sharded(
     delete_local: bool = True,
     api=None,
     token: str | None = None,
+    proactive_overflow: bool = True,
 ) -> ShardUploadResult:
     """Upload ``local_dir``'s shard files one at a time, bounding local footprint.
 
     Per shard, in order: upload to ``repo_id`` → (on quota-403) reroute to the
     private overflow repo → verify the shard lists at its destination → delete
     the local shard (only when ``delete_local`` and verification passed).
+
+    Proactive projected-headroom routing (#1034, default ON): before any
+    upload, the exact on-disk shard byte sum is probed against the remaining
+    public-storage headroom (:func:`hub.check_projected_upload_headroom` —
+    live-confirmed before any "insufficient" verdict). On KNOWN-insufficient
+    + CONFIRMED-public canonical target, ALL shards route to the overflow
+    repo UP-FRONT — one pointer, one JSONL event, zero canonical LFS bytes
+    attempted — instead of splitting the store at a mid-store 403 (the #841
+    incident shape). Default ON because THIS flow already reroutes
+    unconditionally on 403, so consumers must already handle
+    ``result.rerouted`` + pointers; ``proactive_overflow=False`` is the
+    escape hatch for a future canonical-path-verifying caller (the i528-style
+    arming-contract concern).
 
     Args:
         local_dir: Directory holding the shard files.
@@ -206,6 +241,11 @@ def upload_dir_sharded(
         api: An ``huggingface_hub.HfApi`` (constructed from ``token`` / env if
             None) — injectable for testing.
         token: HF token override (default ``$HF_TOKEN``).
+        proactive_overflow: When True (default), probe projected headroom at
+            entry and route ALL shards to overflow up-front on a
+            live-confirmed insufficient verdict against a confirmed-public
+            canonical target. False skips the probe entirely (zero headroom
+            I/O) — straight to the legacy per-shard loop.
 
     Returns:
         A :class:`ShardUploadResult` summarising what uploaded / rerouted /
@@ -228,38 +268,104 @@ def upload_dir_sharded(
     result = ShardUploadResult(repo_id=repo_id)
 
     shards = sorted(p for p in local.glob(shard_glob) if p.is_file())
+
+    route_all_to_overflow = False
+    if proactive_overflow and shards and repo_id != DEFAULT_OVERFLOW_REPO:
+        projected = sum(p.stat().st_size for p in shards)
+        ph = check_projected_upload_headroom(projected)
+        if ph.verdict == "insufficient" and _repo_is_private(repo_id, repo_type=repo_type) is False:
+            # KNOWN-insufficient + CONFIRMED-public canonical target only.
+            # repo_type= MUST be threaded (#1034 Must-Fix): _repo_is_private
+            # defaults repo_type="model" while THIS flow's canonical target
+            # defaults repo_type="dataset" — the incident-shape store targets
+            # the public DATA repo, and a bare call would 404 -> None ->
+            # fail-open -> the proactive route never fires on the primary
+            # incident path. (private target = separate quota; privacy None =
+            # fail-open, no reroute on uncertainty — the
+            # _resolve_lfs_upload_repo semantics.)
+            route_all_to_overflow = True
+            logger.warning(
+                "[hf-headroom] projected %.1f GB exceeds remaining public headroom "
+                "(%.2f/%.1f TB used, %s) — routing ALL %d shards of %s -> %s UP-FRONT "
+                "(#1034 proactive; #841 v11 pattern)",
+                projected / 1e9,
+                ph.used_tb,
+                ph.ceiling_tb,
+                ph.basis,
+                len(shards),
+                repo_id,
+                DEFAULT_OVERFLOW_REPO,
+            )
+            _ensure_overflow_repo(api)
+            _emit_overflow_routing_event(
+                original_repo=repo_id,
+                effective_repo=DEFAULT_OVERFLOW_REPO,
+                path_in_repo=prefix,
+                reason="projected-headroom-proactive",
+                projected_gb=projected / 1e9,
+            )
+            _write_overflow_pointer(
+                api,
+                canonical_repo=repo_id,
+                canonical_repo_type=repo_type,
+                path_in_repo=prefix,
+                overflow_repo=DEFAULT_OVERFLOW_REPO,
+            )
+
+    # Once-per-prefix dedup for the REACTIVE 403 path (#1034): a 1000-shard
+    # store 403-ing at shard 50 would otherwise issue ~950 duplicate pointer
+    # COMMITS of the same prefix-level file — straight into the 256 commits/hr
+    # Hub cap.
+    emitted_prefixes: set[str] = set()
+
     for shard in shards:
         dest = f"{prefix}/{shard.name}" if prefix else shard.name
-        try:
+        if route_all_to_overflow:
+            # Proactive branch: straight to overflow (repo_type "model",
+            # matching the reactive reroute); zero canonical attempts.
             api.upload_file(
                 path_or_fileobj=str(shard),
-                repo_id=repo_id,
+                repo_id=DEFAULT_OVERFLOW_REPO,
                 path_in_repo=dest,
-                repo_type=repo_type,
+                repo_type="model",
             )
-            effective_repo = repo_id
-            effective_repo_type = repo_type
-        except Exception as exc:
-            if not _is_storage_quota_403(exc):
-                # Non-quota failure: fail loud, do not reroute or delete.
-                raise
-            try:
-                effective_repo = _reroute_to_overflow(
-                    api,
-                    shard=shard,
-                    dest=dest,
-                    canonical_repo=repo_id,
-                    canonical_repo_type=repo_type,
-                )
-            except Exception as reroute_exc:
-                raise RuntimeError(
-                    f"both main ({repo_id}) and overflow ({DEFAULT_OVERFLOW_REPO}) repos "
-                    f"refused shard {shard.name!r}; not deleting local copy. "
-                    f"A discard-with-regen-recipe is the caller's decision, always alerted."
-                ) from reroute_exc
+            effective_repo = DEFAULT_OVERFLOW_REPO
             effective_repo_type = "model"
             result.rerouted.append(dest)
+        else:
+            try:
+                api.upload_file(
+                    path_or_fileobj=str(shard),
+                    repo_id=repo_id,
+                    path_in_repo=dest,
+                    repo_type=repo_type,
+                )
+                effective_repo = repo_id
+                effective_repo_type = repo_type
+            except Exception as exc:
+                if not _is_storage_quota_403(exc):
+                    # Non-quota failure: fail loud, do not reroute or delete.
+                    raise
+                try:
+                    effective_repo = _reroute_to_overflow(
+                        api,
+                        shard=shard,
+                        dest=dest,
+                        canonical_repo=repo_id,
+                        canonical_repo_type=repo_type,
+                        emitted_prefixes=emitted_prefixes,
+                    )
+                except Exception as reroute_exc:
+                    raise RuntimeError(
+                        f"both main ({repo_id}) and overflow ({DEFAULT_OVERFLOW_REPO}) repos "
+                        f"refused shard {shard.name!r}; not deleting local copy. "
+                        f"A discard-with-regen-recipe is the caller's decision, always alerted."
+                    ) from reroute_exc
+                effective_repo_type = "model"
+                result.rerouted.append(dest)
 
+        # Parity with the reactive path: consumers reading the full dest list
+        # must see rerouted shards too (rerouted dests appear in BOTH lists).
         result.uploaded.append(dest)
 
         verified = True

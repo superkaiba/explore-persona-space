@@ -947,6 +947,10 @@ STARTUP_PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     "EPM_HF_OVERFLOW_ROUTING",
     "EPM_HF_STORAGE_CHECK",
     "EPM_HF_STORAGE_CACHE_TTL_S",
+    # Size-aware projected-headroom probe floor (#1034): same remote-relevance
+    # as the #564 knobs above — a dispatch-process floor override must reach
+    # the VM workload or it silently no-ops remotely.
+    "EPM_HF_LARGE_UPLOAD_PROBE_GB",
     # Local-SSD scratch root for the per-cell .npz write-decoupling helper
     # (#674): forwarded so a dispatch-process EPS_SCRATCH_DIR reaches the GCE
     # workload subprocess. The startup script ALSO sets a default (below), so

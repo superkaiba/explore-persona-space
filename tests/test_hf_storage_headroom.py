@@ -23,7 +23,7 @@ event sink) into a tmp dir so no test ever touches the real ``~/.cache``.
 import json
 import logging
 import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, create_autospec, patch
 
 import pytest
 
@@ -650,3 +650,211 @@ class TestOverflowRouting:
         assert result == f"{NS}/my-private-repo/issue564/cellA"
         assert fake.upload_folder_calls[0]["repo_id"] == f"{NS}/my-private-repo"
         assert not (tmp_path / "overflow-events.jsonl").exists()
+
+
+# ---------------------------------------------------------------------------
+# Size-aware projected-upload headroom (#1034)
+# ---------------------------------------------------------------------------
+
+GB = 10**9  # decimal bytes per GB (1000 GB = 1 TB, matching _BYTES_PER_TB)
+
+
+def _h(**kw):
+    """HfStorageHeadroom stand-in returned by the mocked inner probe."""
+    base = dict(used_tb=3.0, ceiling_tb=10.0, over_ceiling=False, basis="live-api", n_repos=5)
+    base.update(kw)
+    return hub.HfStorageHeadroom(**base)
+
+
+def _probe_autospec(ret):
+    """Signature-conformant fake for the inner probe (autospec — a wrong-kwarg
+    call from the wrapper fails loud, per the #906 boundary-fake discipline)."""
+    return create_autospec(check_hf_storage_headroom, return_value=ret)
+
+
+class TestCheckProjectedUploadHeadroom:
+    def test_below_threshold_zero_probe_io(self, tmp_path):
+        """#1034 test 1: below the 100 GB default floor -> ZERO headroom I/O."""
+        probe = _probe_autospec(_h())
+        with _env(tmp_path), patch.object(hub, "check_hf_storage_headroom", probe):
+            ph = hub.check_projected_upload_headroom(50 * GB)
+        assert ph.verdict == "below-threshold"
+        assert ph.basis == "not-probed"
+        assert ph.used_tb is None and ph.ceiling_tb is None
+        assert probe.call_count == 0
+
+    def test_boundary_projected_equals_floor_probes(self, tmp_path):
+        """#1034 test 1 boundary: projected == floor EXACTLY (100 GB) DOES
+        probe — the skip is strict `<` (pins against an inclusive-compare
+        mutation)."""
+        probe = _probe_autospec(_h())
+        with _env(tmp_path), patch.object(hub, "check_hf_storage_headroom", probe):
+            ph = hub.check_projected_upload_headroom(100 * GB)
+        assert probe.call_count == 1
+        assert ph.verdict == "fits"
+
+    def test_floor_env_override_and_invalid_raise(self, tmp_path):
+        """#1034 test 2: EPM_HF_LARGE_UPLOAD_PROBE_GB=1 -> a 2 GB projection
+        probes; a non-parseable env value raises (the _env_float contract)."""
+        probe = _probe_autospec(_h())
+        with (
+            _env(tmp_path, EPM_HF_LARGE_UPLOAD_PROBE_GB="1"),
+            patch.object(hub, "check_hf_storage_headroom", probe),
+        ):
+            ph = hub.check_projected_upload_headroom(2 * GB)
+        assert probe.call_count == 1
+        assert ph.verdict == "fits"
+
+        with (
+            _env(tmp_path, EPM_HF_LARGE_UPLOAD_PROBE_GB="hundred"),
+            pytest.raises(ValueError, match="EPM_HF_LARGE_UPLOAD_PROBE_GB"),
+        ):
+            hub.check_projected_upload_headroom(2 * GB)
+
+    def test_fits_single_probe(self, tmp_path):
+        """#1034 test 3: used 3 + projected 2 <= ceiling 10 -> fits, ONE probe."""
+        probe = _probe_autospec(_h())
+        with _env(tmp_path), patch.object(hub, "check_hf_storage_headroom", probe):
+            ph = hub.check_projected_upload_headroom(2000 * GB)
+        assert ph.verdict == "fits"
+        assert ph.used_tb == pytest.approx(3.0)
+        assert ph.projected_tb == pytest.approx(2.0)
+        assert probe.call_count == 1
+
+    def test_boundary_exact_ceiling_fits(self, tmp_path):
+        """#1034 test 3 boundary: used + projected == ceiling EXACTLY -> fits
+        (`<=`, consistent with the legacy over_ceiling = used > ceiling)."""
+        probe = _probe_autospec(_h(used_tb=8.0))
+        with _env(tmp_path), patch.object(hub, "check_hf_storage_headroom", probe):
+            ph = hub.check_projected_upload_headroom(2000 * GB)
+        assert ph.verdict == "fits"
+        assert probe.call_count == 1
+
+    def test_insufficient_requires_live_confirm(self, tmp_path):
+        """#1034 test 4: over on the cached read -> the SECOND probe carries
+        force_refresh=True -> still over -> insufficient."""
+        calls: list[bool] = []
+
+        def probe(*a, force_refresh=False, **k):
+            calls.append(force_refresh)
+            return _h(used_tb=9.5)
+
+        with _env(tmp_path), patch.object(hub, "check_hf_storage_headroom", probe):
+            ph = hub.check_projected_upload_headroom(2000 * GB)
+        assert ph.verdict == "insufficient"
+        assert calls == [False, True]
+
+    def test_live_confirm_flips_to_fits(self, tmp_path):
+        """#1034 test 5: stale-high cache (9.5), live re-probe 7.0 -> fits —
+        never act on a stale cached over-read."""
+
+        def probe(*a, force_refresh=False, **k):
+            return _h(used_tb=7.0) if force_refresh else _h(used_tb=9.5)
+
+        with _env(tmp_path), patch.object(hub, "check_hf_storage_headroom", probe):
+            ph = hub.check_projected_upload_headroom(2000 * GB)
+        assert ph.verdict == "fits"
+        assert ph.used_tb == pytest.approx(7.0)
+
+    def test_live_confirm_unknown_degrades_to_unknown(self, tmp_path):
+        """#1034 test 6: live re-probe unknown -> unknown (fail-open)."""
+
+        def probe(*a, force_refresh=False, **k):
+            if force_refresh:
+                return _h(used_tb=None, basis="unknown (api down)")
+            return _h(used_tb=9.5)
+
+        with _env(tmp_path), patch.object(hub, "check_hf_storage_headroom", probe):
+            ph = hub.check_projected_upload_headroom(2000 * GB)
+        assert ph.verdict == "unknown"
+
+    def test_disabled_and_unknown_first_probe_no_second_probe(self, tmp_path):
+        """#1034 test 7: kill switch -> disabled; unknown first probe ->
+        unknown — NEITHER issues a second (force_refresh) probe."""
+        probe = _probe_autospec(_h(used_tb=None, basis="disabled"))
+        with _env(tmp_path), patch.object(hub, "check_hf_storage_headroom", probe):
+            ph = hub.check_projected_upload_headroom(2000 * GB)
+        assert ph.verdict == "disabled"
+        assert probe.call_count == 1
+
+        probe2 = _probe_autospec(_h(used_tb=None, basis="unknown (api down)"))
+        with _env(tmp_path), patch.object(hub, "check_hf_storage_headroom", probe2):
+            ph2 = hub.check_projected_upload_headroom(2000 * GB)
+        assert ph2.verdict == "unknown"
+        assert probe2.call_count == 1
+
+    def test_negative_projected_asserts(self, tmp_path):
+        """Fail-fast on a nonsensical projection (caller bug, never coerced)."""
+        with _env(tmp_path), pytest.raises(AssertionError):
+            hub.check_projected_upload_headroom(-1)
+
+
+class TestResolveLfsUploadRepoSizeAware:
+    def test_armed_projected_pushes_over_reroutes(self, tmp_path):
+        """#1034 test 8: armed + used 9 + projected 2 TB (ceiling 10) + public
+        target -> reroutes (used + projected > ceiling)."""
+        with (
+            _env(tmp_path, EPM_HF_OVERFLOW_ROUTING="1"),
+            patch.object(hub, "check_hf_storage_headroom", _probe_autospec(_h(used_tb=9.0))),
+            patch.object(
+                hub, "_repo_is_private", create_autospec(hub._repo_is_private, return_value=False)
+            ),
+        ):
+            repo, rerouted = hub._resolve_lfs_upload_repo(
+                DEFAULT_MODEL_REPO, projected_bytes=2000 * GB
+            )
+        assert (repo, rerouted) == (DEFAULT_OVERFLOW_REPO, True)
+
+    def test_armed_no_projection_keeps_legacy_binary(self, tmp_path):
+        """#1034 test 8 (cont.): projected_bytes=None reproduces the legacy
+        binary over-ceiling check — used 9 < ceiling 10 -> NO reroute."""
+        with (
+            _env(tmp_path, EPM_HF_OVERFLOW_ROUTING="1"),
+            patch.object(hub, "check_hf_storage_headroom", _probe_autospec(_h(used_tb=9.0))),
+        ):
+            repo, rerouted = hub._resolve_lfs_upload_repo(DEFAULT_MODEL_REPO)
+        assert (repo, rerouted) == (DEFAULT_MODEL_REPO, False)
+
+    def test_unarmed_huge_projection_zero_probe(self, tmp_path):
+        """#1034 test 8 (cont.): unarmed -> never reroutes, ZERO headroom I/O
+        (the ARMING CONTRACT is untouched by the size-aware predicate)."""
+        probe = _probe_autospec(_h(used_tb=9.0))
+        with _env(tmp_path), patch.object(hub, "check_hf_storage_headroom", probe):
+            repo, rerouted = hub._resolve_lfs_upload_repo(
+                DEFAULT_MODEL_REPO, projected_bytes=10**15
+            )
+        assert (repo, rerouted) == (DEFAULT_MODEL_REPO, False)
+        assert probe.call_count == 0
+
+    def test_upload_model_threads_dir_size_end_to_end(self, tmp_path):
+        """#1034 test 8b (Must-Fix): armed + used = ceiling - epsilon (UNDER the
+        ceiling absolutely, over once this dir's bytes are added) -> the
+        upload lands in the overflow repo. A mutation dropping
+        `projected_bytes=projected` from upload_model's resolver call MUST
+        fail this test (with None the legacy binary check reads under-ceiling
+        -> no reroute). Doubles as the pin that upload_model actually computes
+        + threads the dir-size walk (AC 6)."""
+        model_dir = _adapter_dir(tmp_path)
+        dir_bytes = sum(f.stat().st_size for f in model_dir.rglob("*") if f.is_file())
+        assert dir_bytes > 1
+        fake = FakeHfApi(
+            models=[(f"{NS}/big", False)],
+            # ε = dir_bytes // 2 + 1 bytes under the 10 TB default ceiling:
+            # under absolutely, over after the projected dir_bytes.
+            used={f"{NS}/big": 10 * TB - dir_bytes // 2 - 1},
+            repo_info_private=False,
+        )
+        with (
+            _env(tmp_path, EPM_HF_OVERFLOW_ROUTING="1"),
+            patch("huggingface_hub.HfApi", return_value=fake),
+        ):
+            result = upload_model(str(model_dir), path_in_repo="issue1034/cellA")
+        assert result == f"{DEFAULT_OVERFLOW_REPO}/issue1034/cellA"
+        assert fake.upload_folder_calls[0]["repo_id"] == DEFAULT_OVERFLOW_REPO
+        # Deviation event carries the backward-compatible default reason.
+        events = [
+            json.loads(line)
+            for line in (tmp_path / "overflow-events.jsonl").read_text().split("\n")
+            if line.strip()
+        ]
+        assert events[0]["reason"] == "quota-403-reactive"
