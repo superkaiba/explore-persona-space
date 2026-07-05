@@ -825,10 +825,14 @@ authoritative recipe is agent memory
    (re)launch:
    - Overwrite (not append) the pidfile: the launcher's
      `echo $$ > /workspace/logs/issue-<N>.pid` already truncates, so
-     re-running the launcher is sufficient. If you must relaunch without
-     re-running the launcher (rare), explicitly
-     `echo <CHILD_PID> > /workspace/logs/issue-<N>.pid` on the pod
-     before posting the marker.
+     re-running the launcher is sufficient (the launcher-internal
+     `echo $$ >` pre-exec write is the accepted carve-out of the
+     generic contract). If you must relaunch without re-running the
+     launcher (rare), rewrite ATOMICALLY on the pod before posting
+     the marker:
+     `printf '%s\n' "<CHILD_PID>" > /workspace/logs/issue-<N>.pid.tmp && mv /workspace/logs/issue-<N>.pid.tmp /workspace/logs/issue-<N>.pid`
+     (tmp+rename — no window where the poller reads a truncated/empty
+     file).
    - The `epm:run-launched` marker MUST carry BOTH `pid=<live child>`
      AND `pid_file=/workspace/logs/issue-<N>.pid`. Omitting `pid_file=`
      on a re-launch (as happened in #451) breaks the poller's probe.
@@ -898,19 +902,25 @@ authoritative recipe is agent memory
        command="cat /workspace/logs/issue-<N>.pid")`
      must echo the same number you post in `pid=`. If it shows a
      different (stale) PID, the launcher did not run its pidfile write —
-     overwrite it (`echo <CHILD_PID> > /workspace/logs/issue-<N>.pid`)
-     before posting. (poll_pipeline.py now also self-corrects by
+     rewrite it ATOMICALLY on the pod
+     (`printf '%s\n' "<CHILD_PID>" > /workspace/logs/issue-<N>.pid.tmp && mv /workspace/logs/issue-<N>.pid.tmp /workspace/logs/issue-<N>.pid`
+     — this is a launcher-less correction, so the tmp+rename form of
+     the § Pid-file launch contract applies, not the launcher-internal
+     `echo $$ >` carve-out) before posting. (poll_pipeline.py now also
+     self-corrects by
      cross-checking the marker `pid=`, but the pidfile is the primary
      probe; keep it correct.)
    - **Write the pidfile ON THE POD — never on the local VM.**
      `poll_pipeline.py` evaluates `[ -f <pid_file> ]` inside its remote
      SSH heredoc, so the path you post as `pid_file=` must exist
      pod-side; write it in the launch itself (the step-1 launcher's
-     `echo $$ > /workspace/logs/issue-<N>.pid`, or for a rare
-     launcher-less relaunch `setsid nohup ... < /dev/null & echo $! >
-     /workspace/logs/issue-<N>.pid` in the same SSH command — even the
-     launcher-less shape keeps the full detachment trio: `setsid` +
-     `nohup` + stdin from `/dev/null`, never bare `nohup ... &`). A pidfile
+     `echo $$ > /workspace/logs/issue-<N>.pid` — the launcher-internal
+     pre-exec carve-out — or for a rare launcher-less relaunch
+     `setsid nohup ... < /dev/null & printf '%s\n' "$!" > /workspace/logs/issue-<N>.pid.tmp && mv /workspace/logs/issue-<N>.pid.tmp /workspace/logs/issue-<N>.pid`
+     in the same SSH command (atomic tmp+rename per the § Pid-file
+     launch contract) — even the launcher-less shape keeps the full
+     detachment trio: `setsid` + `nohup` + stdin from `/dev/null`,
+     never bare `nohup ... &`). A pidfile
      written only on the local VM silently reads `PID_ALIVE=0` every
      tick and the poller falls back to the pid from the latest
      `epm:run-launched` marker — if that pid is stale, a healthy run is
