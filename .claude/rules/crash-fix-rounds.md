@@ -160,6 +160,9 @@ EXEMPT — never wrap those in `timeout`. Unlike the tool timeout, GNU
 command's CHILDREN too. Residual gap: a grandchild that `setsid`s
 escapes the group kill — step 1's probe before relaunch is the backstop.
 
+Step 9c test-verdict gate runs are BACKGROUND invocations with selector-sized
+bounds (SKILL.md 9c step 1b) — the ~510s foreground bound does NOT apply to them.
+
 ### Crash-fix rounds: scope guard (REQUIRED)
 
 A crash-fix round has EXACTLY ONE marker output posted DIRECTLY by you.

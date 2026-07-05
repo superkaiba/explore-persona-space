@@ -6398,6 +6398,13 @@ steps 4 + 6-9 are the LATE JOIN executed here):
    block the step or the park on a missing gist; the committed repo
    doc is the durable artifact and the next step links to it either
    way.
+   Keep the `[ -z "$GIST_URL" ]` capture in the if-form shown above — a
+   trailing `[ -z "$GIST_URL" ] && gist_err=...` one-liner variant makes the
+   CALL report Exit 1 on SUCCESS (URL present -> the test is false -> `&&`
+   short-circuits with rc 1; incident #928, 2026-07-04). Same exit-code
+   hygiene rule as Step 9c step 1b: never leave a bare conditional or
+   informational grep as the last command of a call — if-form it or
+   `|| true` it.
 7. **Append the link lines to the clean-result body — TWO locations.**
    Use `task.py set-body <N> --file <new-body.md>` (NO
    `--snapshot` — the previous body is already the canonical
@@ -7248,82 +7255,141 @@ suite directly and posts an `epm:test-verdict` event with the result.
       cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
       uv run python scripts/select_step9c_tests.py --base main
       ```
-      It prints the exact `uv run pytest <files> -v --tb=short` command, plus
-      stderr diagnostics: a one-line work-root + branch provenance breadcrumb
-      on every run, any `untested touched file: <path>` WARN lines, and the
+      It prints the exact gate command —
+      `timeout --kill-after=60s <T>s uv run pytest <files> -v --tb=short`,
+      `<T>` sized deterministically from the selection
+      (`recommended_timeout_s()`: 120s base + 30s/file + a 900s surcharge when
+      `tests/test_workflow_lint.py` is selected, which alone measured up to
+      771s) — plus stderr diagnostics: a one-line work-root + branch
+      provenance breadcrumb on every run, a `recommended-timeout-s=<T>`
+      sizing line, any `untested touched file: <path>` WARN lines, and the
       empty-diff NOTE described above. (A code-change task with NO worktree
       runs both from the repo root; the empty-diff NOTE is then expected and
       benign.)
-   b. Run the printed command from the SAME worktree cwd (paths are
-      repo-relative), with the junit flags appended and a pre-run `rm -f` of
-      the junit path (a killed run must leave NO junit — pytest writes it only
-      at session exit; a stale file from a prior round must never be re-read).
-      Record pass/fail + ALL selector stderr lines (the provenance breadcrumb,
-      the NOTE if any, and any WARN lines). Two anti-silent-pass guards are
-      LOAD-BEARING here — a `no tests ran` outcome (pytest exit 0 with zero
+   b. Run the printed command as a BACKGROUND Bash invocation
+      (`run_in_background=true`) from the SAME worktree cwd (paths are
+      repo-relative), with the junit flags + log/rc-file tail appended and a
+      pre-run `rm -f` of all three gate files (a killed run must leave NO
+      junit — pytest writes it only at session exit; a stale file from a
+      prior round must never be re-read). BACKGROUND IS REQUIRED, NOT
+      OPTIONAL: the selection always contains the 32-file workflow-invariant
+      set incl. `tests/test_workflow_lint.py` (median ~6.5 min alone, max
+      ~13 min; whole gate median ~11 min, max ~21 min of test time plus
+      collection overhead — 26 junit runs measured 2026-07-04/05), so the
+      gate can NEVER fit the 600s foreground Bash tool cap. The
+      crash-fix-rounds ~510s foreground `timeout` bound
+      (`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch) applies to
+      FOREGROUND smokes ONLY — wrapping this gate in any ≤600s bound is the
+      #991/#996/#906 kill class (exit 143 at 480-540s). The ONLY wedge bound
+      is the selector-printed `timeout --kill-after=60s <T>s` prefix.
+      ```bash
+      # Shell state does NOT persist across Bash calls — hard-guard the cd
+      # INSIDE this same background call (never rely on a prior call's cwd;
+      # a silent cd failure must never run the gate in the wrong dir):
+      cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
+      # earlyoom-protect the gate (#1045; FAIL-OPEN — never block the gate on a choom failure):
+      # pytest is in this VM's earlyoom --prefer regex (+300 badness), so a gate run is the
+      # designated victim under fleet memory pressure (#906 killed twice; #995 at ~42%).
+      # Self-choom the gate shell: every child forked after this line (the timeout wrapper,
+      # pytest + its subprocesses) inherits adj=-600.
+      sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && GATE_CHOOM=ok \
+        || { GATE_CHOOM=failed; echo "[warn] choom failed — gate pytest is earlyoom-UNPROTECTED (choom=failed)" >&2; }
+      echo "[step9c] gate earlyoom protection choom=$GATE_CHOOM"
+      rm -f /tmp/step9c-junit-issue-<N>.xml /tmp/step9c-rc-issue-<N> \
+            /tmp/step9c-pytest-issue-<N>.log   # MANDATORY before EVERY gate pytest invocation
+      # ONE background Bash call (run_in_background=true) — the selector-printed
+      # command verbatim, with the junit + log + rc-file tail appended:
+      timeout --kill-after=60s <T>s uv run pytest <files> -v --tb=short \
+        --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
+        > /tmp/step9c-pytest-issue-<N>.log 2>&1; echo $? > /tmp/step9c-rc-issue-<N>
+      ```
+      When the background call completes (the harness notifies), read the
+      verdict in a fresh foreground call — the rc FILE replaces the former
+      in-shell `PYTEST_RC=$?` capture (shell variables do not survive across
+      Bash calls). A MISSING rc file means the background run died before
+      pytest exited (tool kill / watcher force-stop, #833): treat as FAIL,
+      never a silent PASS, and apply crash-fix-rounds § Kill-before-relaunch
+      (probe `pgrep -af 'pytest.*step9c-junit-issue-<N>'` — the junit path
+      makes the probe exact-invocation-scoped) before any re-run:
+      ```bash
+      if [ ! -f /tmp/step9c-rc-issue-<N> ]; then
+        echo "FATAL: gate rc file missing — the background run died before pytest exited. Kill-before-relaunch, then re-run the gate; NEVER record PASS." >&2
+      else
+        PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)
+        tail -30 /tmp/step9c-pytest-issue-<N>.log
+        # exit 0 + "no tests ran" (or "collected 0 items") is NOT a PASS:
+        if grep -qiE 'no tests ran|collected 0 items' /tmp/step9c-pytest-issue-<N>.log; then
+          echo "FATAL: pytest collected 0 tests — test-verdict gate did NOT run. Treating as FAIL." >&2
+          # -> post epm:test-verdict v1 as FAIL; do NOT record PASS on exit 0.
+        fi
+      fi
+      ```
+      Record pass/fail + ALL selector stderr lines (the provenance
+      breadcrumb, the `recommended-timeout-s=<T>` sizing line, the NOTE if
+      any, and any WARN lines). The two anti-silent-pass guards above are
+      LOAD-BEARING — a `no tests ran` outcome (pytest exit 0 with zero
       collected tests) is a **FAIL, never a PASS**: it is the signature of a
       failed `cd` that ran pytest in a directory with no tests (incident:
       issue 745, SHA 91bed41e, 2026-06-30 — the gate reported PASS on
       `no tests ran ... pytest exit: 0` and was silently skipped).
-      ```bash
-      # The cd to "$WT" in step (a) is REQUIRED — HARD-GUARD it (as above);
-      # never let the gate run in the wrong dir on a silent cd failure:
-      #   cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
-      # earlyoom-protect the gate (#1045; FAIL-OPEN — never block the gate on a choom failure):
-      # pytest is in this VM's earlyoom --prefer regex (+300 badness), so a gate run is the
-      # designated victim under fleet memory pressure (#906 killed twice; #995 at ~42%).
-      # Self-choom the gate shell: every child forked after this line (pytest + its
-      # subprocesses, incl. compare's pristine oracle runs in this call) inherits adj=-600.
-      sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && GATE_CHOOM=ok \
-        || { GATE_CHOOM=failed; echo "[warn] choom failed — gate pytest is earlyoom-UNPROTECTED (choom=failed)" >&2; }
-      echo "[step9c] gate earlyoom protection choom=$GATE_CHOOM"
-      rm -f /tmp/step9c-junit-issue-<N>.xml    # MANDATORY before EVERY gate pytest invocation
-      PYTEST_OUT=$(uv run pytest <files> -v --tb=short \
-        --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 2>&1); PYTEST_RC=$?
-      echo "$PYTEST_OUT"
-      # exit 0 + "no tests ran" (or "collected 0 items") is NOT a PASS:
-      if echo "$PYTEST_OUT" | grep -qiE 'no tests ran|collected 0 items'; then
-        echo "FATAL: pytest collected 0 tests — test-verdict gate did NOT run. Treating as FAIL." >&2
-        # -> post epm:test-verdict v1 as FAIL; do NOT record PASS on exit 0.
-      fi
-      ```
+
+      **Recipe exit-code hygiene (every gate call — and every improvised
+      monitoring one-liner):** the Bash tool reports the exit code of the
+      LAST command in the call, and an `Exit 1` from a trailing INFORMATIONAL
+      command is indistinguishable in the transcript from a gate failure. Any
+      trailing command that legitimately returns non-zero without meaning
+      failure — a display/filter `grep` that may match nothing (#969: a
+      healthy gate read as a false Exit 1), a bare `[ -z "$VAR" ]` /
+      `[ -s <file> ]` test (#928: a trailing `[ -z "$GIST_URL" ] && ...`
+      variant reported Exit 1 on success), a `tail`/`cat` on a possibly-
+      absent file — MUST be if-formed (`if grep -q ...; then ...; fi`) or
+      given an explicit `|| true`. The verdict-bearing rcs are NEVER the raw
+      call exit code: PYTEST_RC lives in `/tmp/step9c-rc-issue-<N>` and
+      COMPARE_RC in its captured variable — read those, not the tool's Exit
+      line.
    c. Scope override: if the plan-body frontmatter has `test_scope: full` OR a
       `## Test scope` H2 names `full`, run the FULL suite instead — from the
-      SAME issue-worktree cwd — as:
+      SAME issue-worktree cwd, in the SAME background + rc-file pattern as 1b
+      (a 60m run is 6x the foreground tool cap):
       ```bash
+      cd "$WT" || { echo "FATAL: cd to issue worktree failed" >&2; exit 1; }
       # earlyoom-protect the gate (#1045; fail-open — see the 1b preamble): self-choom, children inherit.
       sudo -n choom -n -600 -p $$ >/dev/null 2>&1 && GATE_CHOOM=ok \
         || { GATE_CHOOM=failed; echo "[warn] choom failed — gate pytest is earlyoom-UNPROTECTED (choom=failed)" >&2; }
       echo "[step9c] gate earlyoom protection choom=$GATE_CHOOM"
-      rm -f /tmp/step9c-junit-issue-<N>.xml
-      PYTEST_OUT=$(timeout 60m uv run pytest tests/ -q \
-        --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 2>&1); PYTEST_RC=$?
-      echo "$PYTEST_OUT"
+      rm -f /tmp/step9c-junit-issue-<N>.xml /tmp/step9c-rc-issue-<N> \
+            /tmp/step9c-pytest-issue-<N>.log
+      # ONE background Bash call (run_in_background=true):
+      timeout --kill-after=60s 60m uv run pytest tests/ -q \
+        --junitxml=/tmp/step9c-junit-issue-<N>.xml -o junit_family=xunit1 \
+        > /tmp/step9c-pytest-issue-<N>.log 2>&1; echo $? > /tmp/step9c-rc-issue-<N>
       ```
       (NO `-x` / `--maxfail` — with the step-1d compare deciding the verdict,
       an early-exit on the first known-red main failure would leave the rest
       of the suite unexecuted and let compare PASS a truncated run; the 60m
-      timeout still bounds it.) `PYTEST_RC=$?` is captured IMMEDIATELY after
-      whichever pytest invocation ran (the 1b touched scope, or this override)
-      — step 1d's compare consumes `--pytest-rc "$PYTEST_RC"`, and an unset or
-      stale selected-scope rc would break its rc-not-in-{0,1} -> indeterminate
-      guard on an interrupted / internal-error full run. On timeout/kill
-      (`timeout`'s rc 124 lands in PYTEST_RC, so compare exits 2), capture
-      `tail -50` of `$PYTEST_OUT` so the stall surfaces actionable evidence
-      (the #665/#736 regression — keep it visible, never a silent kill).
-      Default scope is `touched`.
+      timeout still bounds it.) The rc file is written by the SAME background
+      command immediately after pytest exits (1b touched scope and this
+      override alike) — step 1d's compare consumes
+      `--pytest-rc "$PYTEST_RC"` with `PYTEST_RC=$(cat /tmp/step9c-rc-issue-<N>)`
+      from 1b's completion read; a missing rc file takes 1b's FAIL path (an
+      unset or stale rc would break compare's rc-not-in-{0,1} ->
+      indeterminate guard). On timeout/kill (`timeout`'s rc 124 lands in the
+      rc file, so compare exits 2), capture
+      `tail -50 /tmp/step9c-pytest-issue-<N>.log` so the stall surfaces
+      actionable evidence (the #665/#736 regression — keep it visible, never
+      a silent kill). Default scope is `touched`.
 
       **Gate earlyoom protection (#1045).** The self-choom preamble in the
-      1b/1c blocks is the foreground sibling of § "Detached VM-side long
+      1b/1c blocks is the same-call sibling of § "Detached VM-side long
       compute phases": `oom_score_adj` inherits across fork/exec
       (probe-verified), so choom-ing the gate shell BEFORE pytest launches
-      protects the whole gate tree with zero change to the
-      `PYTEST_OUT`/`PYTEST_RC`/junitxml contract — no backgrounding, no
-      session games. Because 1b→1d must run in ONE Bash call anyway
-      (`PYTEST_RC` is a shell variable compare consumes, and shell state does
-      not persist across calls), the −600 also covers step 1d compare's
-      pristine single-file oracle runs by inheritance; a compare run in a
-      separate call is short/bounded and accepted unprotected. FAIL-OPEN: a
+      protects the whole gate tree — the `timeout` wrapper, pytest, and its
+      subprocesses inside the background call — with zero change to the
+      rc-file/junitxml contract (#1046: the gate is a background invocation;
+      `PYTEST_RC` travels via `/tmp/step9c-rc-issue-<N>`, not shell state).
+      Step 1d compare — including its pristine single-file oracle runs —
+      executes in a separate, short/bounded foreground call and is accepted
+      unprotected. FAIL-OPEN: a
       choom failure warns, records `choom=failed`, and the gate proceeds
       unprotected — a gate is NEVER blocked by a choom failure, and
       `choom=ok` re-orders earlyoom's victim selection (−600, not −1000: the
@@ -7391,7 +7457,8 @@ suite directly and posts an `epm:test-verdict` event with the result.
 4. Coverage gap report (flags, does not auto-generate)
 
 The `epm:test-verdict v1` marker note records: scope used (`touched`/`full`),
-the files run, pass/fail counts, and ALL selector stderr diagnostics — the
+the files run, the gate timeout bound used (the selector's
+recommended-timeout-s), pass/fail counts, and ALL selector stderr diagnostics — the
 work-root + branch provenance breadcrumb, any `NOTE — empty diff` line, and
 any untested-touched-file WARNs (so the orchestrator surfaces wrong-cwd runs
 and coverage gaps — never silently skipped), and the compare classification
