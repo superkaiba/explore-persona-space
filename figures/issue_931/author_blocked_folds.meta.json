@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "git_commit": "b73c8f8484964659f9e0b924343bb9232f1db7f8",
+    "timestamp": "2026-07-05T00:18:48Z",
+    "seed": 0,
+    "n": 1982,
+    "script": "scripts/issue931_author_blocked_folds.py",
+    "issue": 931
+  },
+  "what": "L19 held-out pooled R^2 of the two Arm-A cells under novel-blocked vs author-blocked K=5 folds (sweep obs, group-bootstrap obs + 95% CI, shuffle-null p97.5), and the per-author held-out R^2 (19 labeled points). Author folds are imbalanced by construction (honest blocking): fold 0: 525 rows / 4 authors; fold 1: 215 rows / 4 authors; fold 2: 1030 rows / 4 authors; fold 3: 107 rows / 4 authors; fold 4: 105 rows / 3 authors.",
+  "points": {
+    "l19": {
+      "within novel folds": {
+        "sweep_obs": 0.1729,
+        "bootstrap_obs": 0.208064,
+        "ci": [
+          0.162212,
+          0.217978
+        ],
+        "null_p975": -0.085963
+      },
+      "within author folds": {
+        "sweep_obs": -0.06536,
+        "bootstrap_obs": 0.042288,
+        "ci": [
+          -0.137911,
+          0.121564
+        ],
+        "null_p975": -0.097962
+      },
+      "ctxmean novel folds": {
+        "sweep_obs": 0.170017,
+        "bootstrap_obs": 0.205304,
+        "ci": [
+          0.156828,
+          0.218124
+        ],
+        "null_p975": -0.109667
+      },
+      "ctxmean author folds": {
+        "sweep_obs": -0.047647,
+        "bootstrap_obs": 0.058211,
+        "ci": [
+          -0.104931,
+          0.124143
+        ],
+        "null_p975": -0.121992
+      }
+    },
+    "per_author_r2": {
+      "AUST": -0.47249353054828824,
+      "CARR": -1.2358932822497275,
+      "CHES": -0.22148632443673133,
+      "CHOP": -0.15373215395837692,
+      "CHRI": -0.024295728600580935,
+      "DICK": -0.18648298721393375,
+      "DOST": -0.30535285530454215,
+      "DOYL": -0.19670182493239263,
+      "DUNB": -0.1364624882033627,
+      "FORS": -0.03689512480946866,
+      "HEMI": -0.26562154995600107,
+      "JAME": -0.17539602434065893,
+      "MILN": -0.402190382895272,
+      "MONT": -0.2282795659599186,
+      "WAUG": -0.05931916421149275,
+      "WELL": -0.16985753904583545,
+      "WHAR": -0.08587599884154873,
+      "WILD": -0.4810267609893406,
+      "WOOL": -0.06369980938129016
+    }
+  }
+}
