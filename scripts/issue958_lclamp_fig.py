@@ -17,6 +17,11 @@ for _p in (PROJECT_ROOT / "src", PROJECT_ROOT / "scripts"):
     if str(_p) not in sys.path:
         sys.path.insert(0, str(_p))
 
+# #847: shared-VM thread caps must bind BEFORE torch/numpy freeze their pools at import.
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
 import matplotlib  # noqa: E402
 
 matplotlib.use("Agg")
