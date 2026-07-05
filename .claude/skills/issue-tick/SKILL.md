@@ -281,30 +281,57 @@ tool from the deferred load.
 
 The cron this skill is fired by is registered with the literal prompt
 `"/issue-tick <N>"`. Find and delete it — ALL matching jobs, not just
-the first:
+the first — and ALSO sweep stray one-shot `/issue <N>` wakeups (#980),
+resolving ids from a FRESH `CronList` at teardown time (#988):
 
 ```python
+# CRON-TEARDOWN sweep — hardened 2026-06-12 (#501); widened + idempotent
+# 2026-07-05 (#1052). Resolve live ids with a FRESH CronList() HERE, at
+# teardown time — never CronDelete an id recorded earlier in the session
+# (arm-time asserts, a previous tick's listing): recorded ids go stale when
+# a one-shot fires or a concurrent teardown wins the race (#988).
 jobs = CronList()  # [{id, cron, prompt, recurring, durable, ...}, ...]
 for job in jobs:
     p = job.get("prompt", "").strip()
-    # Primary match: whole-string equality (prompt.strip() == "/issue-tick <N>").
-    # Hardened fallback: harness prompt-normalization drift was the #501
-    # failure mode (teardown silently no-oped 1,951 times), so ALSO match
-    # the anchored pattern — the (?!\d) guard prevents sibling mis-delete
-    # ("/issue-tick 46" never matches "/issue-tick 467").
-    if p == f"/issue-tick {N}" or re.search(rf"issue-tick\s+{N}(?!\d)", p):
+    # Leg 1 — the recurring tick cron: whole-string equality
+    # (prompt.strip() == "/issue-tick <N>"); hardened fallback is the
+    # anchored pattern for harness prompt-normalization drift (#501 — the
+    # whole-string teardown silently no-oped 1,951 times). The (?!\d)
+    # guard prevents sibling mis-delete ("/issue-tick 46" never matches
+    # "/issue-tick 467").
+    leg1 = p == f"/issue-tick {N}" or re.search(rf"issue-tick\s+{N}(?!\d)", p)
+    # Leg 2 — stray one-shot wakeups that would re-drive the FULL skill on
+    # a terminal/park task (#980: a live one-shot survived teardown on a
+    # completed task and re-drove it). Anchored at the START so a prose
+    # prompt that merely MENTIONS the issue is never deleted; (?!\d)
+    # guards siblings; the '-' in "/issue-tick" fails \s+, so leg 2 never
+    # re-matches leg 1's job. Trailing text (e.g. "--auto") matches by
+    # design — anything in the store that starts with the bare full-skill
+    # prompt is a re-driver for THIS issue and must die at teardown.
+    leg2 = p == f"/issue {N}" or re.match(rf"/issue\s+{N}(?!\d)", p)
+    if leg1 or leg2:
         CronDelete(id=job["id"])
+        # IDEMPOTENT DELETE (#988): a CronDelete error indicating the job
+        # does not exist (observed shape: 'No scheduled job with id ...')
+        # means it is ALREADY GONE — that IS the desired end state. Treat
+        # it as SUCCESS: continue the sweep; never retry the same id,
+        # never abort or raise on it.
 
-# ASSERT-AFTER-DELETE: re-list and verify nothing matching survived.
-# If a job survived, retry the delete ONCE; if it STILL survives, log
-# LOUDLY and exit — the runaway parachute (tick_triage's
-# 3-consecutive-terminal flag + the watcher force-stop) bounds the damage.
+# ASSERT-AFTER-DELETE: re-CronList() and verify NO job matching EITHER leg
+# survived. If one did, retry that delete ONCE (fresh id from the re-list);
+# if it STILL survives, log LOUDLY and exit — the runaway parachute
+# (tick_triage's 3-consecutive-terminal flag + the watcher force-stop)
+# bounds the damage of a job that refuses to die.
 ```
 
-Never use bare substring matching without the trailing-digit guard —
-`"/issue-tick 46"` is a substring of `"/issue-tick 467"`, so unguarded
-substring matching would mis-delete a sibling issue's cron. Idempotent:
-if no matching job exists, this is a no-op. Do not raise.
+Never use bare substring matching without the trailing-digit guard on
+EITHER leg — `"/issue-tick 46"` is a substring of `"/issue-tick 467"`
+(and the same for the leg-2 wakeup prompts), so unguarded substring
+matching would mis-delete a sibling issue's cron or wakeup. Idempotent:
+if no matching job exists, this is a no-op. Do not raise. A `CronDelete`
+error indicating the job does not exist (observed shape:
+`No scheduled job with id …`) is SUCCESS, not a failure — idempotent
+means the job being gone is the goal.
 
 ## What this skill does NOT do
 

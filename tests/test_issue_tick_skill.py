@@ -1,4 +1,4 @@
-"""Structural tests for the ``/issue-tick`` lightweight recurring driver.
+r"""Structural tests for the ``/issue-tick`` lightweight recurring driver.
 
 What this pins (guarded-no-op redesign, 2026-06-12):
 
@@ -11,13 +11,20 @@ What this pins (guarded-no-op redesign, 2026-06-12):
 3. **The skill teardown match string matches the cron prompt literal**
    (``/issue-tick <N>``, NOT ``/issue <N>`` — the round-1 reviewer
    CRITICAL-2), with the hardened assert-after-delete (#501 runaway class).
+   Widened 2026-07-05 (#1052): the TEARDOWN sweep additionally matches
+   stray one-shot wakeup prompts as a second leg (start-anchored,
+   ``(?!\d)``-guarded, resolved from a fresh ``CronList`` at teardown
+   time, ``CronDelete`` not-found = success) — the ARM sites still fire
+   ONLY the tick prompt.
 4. **The full ``/issue`` skill's CronCreate (Step 0 + Step 6d.2) fires the
    ``/issue-tick <N>`` prompt at the ``*/45`` cadence** — the recurring
    driver is the lightweight skill, NOT the full ``/issue`` reload.
 5. **Every CRON-TEARDOWN site in the full ``/issue`` skill matches
    ``/issue-tick <N>``** so a teardown across N sites doesn't drift from the
    cron prompt (an unguarded substring-match would mis-dedupe sibling
-   issues).
+   issues). Since the 2026-07-05 widening (#1052) every teardown exit site
+   also carries the two-leg pointer (stray one-shot wakeups included) —
+   pinned per-site by ``test_issue_skill_exit_sites_carry_widened_pointer``.
 6. **``spawn_session.py --auto`` initial prompt is ``/issue {issue}``**
    (NOT ``/loop 10m /issue {issue}``) — cold start fires the full skill once,
    which then arms the tick cron. Cold respawn via
@@ -222,6 +229,15 @@ def test_issue_skill_no_residual_issue_cron_match():
     """No site in the /issue skill should still match the OLD cron prompt
     literal ``"/issue <N>"`` for CRON-TEARDOWN purposes — that drift left
     stranded crons after the rename.
+
+    NOTE (2026-07-05, #1052): the banned literals below are the OLD-drift
+    *framings* (a teardown that thinks the recurring tick cron's prompt is
+    the bare full-skill prompt). The DELIBERATE #1052 one-shot-wakeup leg
+    of the teardown sweep uses distinct framing — the phrase
+    "stray one-shot wakeups" plus a start-anchored fallback pattern —
+    pinned POSITIVELY by ``test_teardown_match_set_includes_one_shot_wakeups``
+    and ``test_issue_skill_exit_sites_carry_widened_pointer``; it must
+    never be written in any of the banned shapes.
     """
     body = ISSUE_SKILL.read_text()
     # Catch both `prompt.strip() == "/issue <N>"` and `prompt="/issue <N>"`
@@ -239,6 +255,141 @@ def test_issue_skill_no_residual_issue_cron_match():
         f"these CRON-TEARDOWN literals still reference the old /issue prompt; "
         f"rewrite to /issue-tick: {found}"
     )
+
+
+def _cron_teardown_procedure_span(issue_skill_body: str) -> str:
+    """Return the Step 6d.2 canonical CRON-TEARDOWN procedure span of
+    ``issue/SKILL.md`` — from the literal ``**CRON-TEARDOWN procedure``
+    heading phrase up to the next bold paragraph heading (the
+    ``**Prevention ban`` paragraph that immediately follows it).
+
+    Section-scoping is what makes the #1052 pins non-vacuous: asserting the
+    two-leg fragments on the WHOLE file would pass even if the procedure
+    paragraph itself were reverted (the fragments also appear at the exit
+    sites). ``str.index`` raises ``ValueError`` on a missing anchor, so a
+    renamed/removed heading fails LOUDLY rather than silently widening the
+    span.
+    """
+    start = issue_skill_body.index("**CRON-TEARDOWN procedure")
+    end = issue_skill_body.index("\n\n**Prevention ban", start)
+    return issue_skill_body[start:end]
+
+
+def test_teardown_match_set_includes_one_shot_wakeups():
+    """#1052 widening (incident #980: a live one-shot wakeup with the bare
+    full-skill prompt survived teardown on a completed task and re-drove
+    it): the CRON-TEARDOWN sweep is TWO-LEG — the recurring tick cron PLUS
+    stray one-shot wakeups — and the arm sites still fire ONLY the tick
+    prompt (leg 2 is teardown-only, checked by the untouched arm-site
+    assertions above)."""
+    issue_body = ISSUE_SKILL.read_text()
+    span = _cron_teardown_procedure_span(issue_body)
+    # (i) leg 2 is named with the distinctive phrase in the canonical
+    # procedure span itself, not merely somewhere in the 9000-line file.
+    assert "stray one-shot `/issue <N>` wakeups" in span, (
+        "the Step 6d.2 canonical CRON-TEARDOWN procedure must name leg 2 "
+        "(stray one-shot `/issue <N>` wakeups) — the #980 class"
+    )
+    # (ii) the leg-2 fallback is START-anchored + trailing-digit-guarded.
+    assert r"/issue\s+<N>(?!\d)" in span, (
+        "the canonical procedure must carry the start-anchored, "
+        r"(?!\d)-guarded leg-2 fallback pattern /issue\s+<N>(?!\d)"
+    )
+    # The tick skills' canonical pseudocode carries the leg-2 whole-string
+    # equality in f-string form (never the banned prompt-literal shapes).
+    issue_tick_body = ISSUE_TICK_SKILL.read_text()
+    campaign_tick_body = (ISSUE_TICK_SKILL.parent.parent / "campaign-tick" / "SKILL.md").read_text()
+    assert 'f"/issue {N}"' in issue_tick_body, (
+        "issue-tick's canonical sweep block must match leg 2 by whole-string "
+        'equality (f"/issue {N}")'
+    )
+    assert 'f"/campaign {N}"' in campaign_tick_body, (
+        "campaign-tick's mirrored sweep block must match leg 2 by "
+        'whole-string equality (f"/campaign {N}")'
+    )
+    # Prevention ban: an /issue session never schedules its own re-drive
+    # (no ScheduleWakeup / one-shot CronCreate), regardless of prompt shape.
+    assert "ScheduleWakeup" in issue_body, (
+        "issue/SKILL.md must carry the #1052 prevention ban naming "
+        "ScheduleWakeup — the sanctioned self-wake is ONLY the tick cron"
+    )
+    # Campaign twin: the full /campaign skill's teardown pointer sites carry
+    # the campaign-variant leg-2 phrase (the positive pin the round-1 test
+    # set lacked).
+    campaign_body = (ISSUE_TICK_SKILL.parent.parent / "campaign" / "SKILL.md").read_text()
+    assert "stray one-shot `/campaign <N>` wakeups" in campaign_body, (
+        "campaign/SKILL.md's CRON-TEARDOWN pointer sites must name the "
+        "campaign leg-2 match (stray one-shot `/campaign <N>` wakeups)"
+    )
+
+
+def test_teardown_cron_delete_not_found_is_success():
+    """#1052 idempotency (incident #988: a teardown ran CronDelete on a
+    recorded job id that was already gone, and the resulting
+    'No scheduled job with id ...' error was treated as a failure when the
+    job being gone IS the desired end state): every teardown-owning skill
+    body must (a) treat a CronDelete not-found error as SUCCESS and (b)
+    resolve live ids from a FRESH CronList at teardown time, never a
+    recorded id."""
+    bodies = {
+        "issue-tick": ISSUE_TICK_SKILL.read_text(),
+        "campaign-tick": (
+            ISSUE_TICK_SKILL.parent.parent / "campaign-tick" / "SKILL.md"
+        ).read_text(),
+        "issue": ISSUE_SKILL.read_text(),
+    }
+    for name, body in bodies.items():
+        assert "No scheduled job with id" in body, (
+            f"{name}: teardown must document the not-found-is-success rule "
+            "with the observed error shape 'No scheduled job with id' (#988)"
+        )
+        assert "FRESH `CronList`" in body, (
+            f"{name}: teardown must resolve live job ids from a FRESH "
+            "`CronList` at teardown time — recorded ids go stale (#988)"
+        )
+
+
+# The 8 anchored CRON-TEARDOWN edit sites of the #1052 widening. Each anchor
+# is a phrase that is (a) unique in issue/SKILL.md and (b) adjacent to (or
+# part of) the exit-site prose itself, so a missed / reverted site FAILS BY
+# NAME instead of hiding behind a whole-file token count.
+_EXIT_SITE_ANCHORS = {
+    "cap5-blocked-exit": "residual at cap-5 — open it",
+    "unrecognised-gate-exit": "reason: unrecognised_gate_name",
+    # Pinned literal preserved verbatim for
+    # tests/test_pv_phase1_done_gate_handler.py::
+    # test_section_tail_cron_teardown_scoped_to_park_mode.
+    "park-mode-gate": "run CRON-TEARDOWN before parking",
+    "step9b-awaiting-promotion": "Run CRON-TEARDOWN now.",
+    "step9c-3x-fail": "FAIL after 3 rounds — open it",
+    "step10-auto-complete": "Run CRON-TEARDOWN before applying the terminal status",
+    "resume-row-promote-pending-unmerged": "Step 9b auto-merge was interrupted",
+    "resume-row-promote-pending-merged": "worktree already merged",
+}
+
+
+def test_issue_skill_exit_sites_carry_widened_pointer():
+    """Per-site completeness for the #1052 widening: every teardown exit
+    site (6 inline exit sites + the 2 awaiting_promotion promote-pending
+    resume-table rows) carries the widened two-leg pointer. A missed site
+    fails BY NAME; a vanished anchor fails LOUDLY (anchor-not-found) rather
+    than silently passing."""
+    body = ISSUE_SKILL.read_text()
+    lines = body.splitlines()
+    for site, anchor in _EXIT_SITE_ANCHORS.items():
+        hits = [i for i, line in enumerate(lines) if anchor in line]
+        assert hits, (
+            f"{site}: anchor {anchor!r} not found in issue/SKILL.md — the "
+            "exit site moved or was rewritten; re-anchor this test rather "
+            "than deleting the per-site pin"
+        )
+        i = hits[0]
+        window = re.sub(r"\s+", " ", " ".join(lines[max(0, i - 8) : i + 9]))
+        assert "stray one-shot" in window, (
+            f"{site}: the teardown prose within ±8 lines of anchor "
+            f"{anchor!r} does not carry the widened two-leg fragment "
+            "'stray one-shot' — this exit site missed the #1052 widening"
+        )
 
 
 def test_issue_skill_documents_push_notification():
