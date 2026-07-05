@@ -412,8 +412,8 @@
     "1051": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1051",
-      "status": "approved",
+      "path": "tasks/running/1051",
+      "status": "running",
       "title": "daily-fix: tick_triage liveness probe before STALE-REDRIVE"
     },
     "1052": {
