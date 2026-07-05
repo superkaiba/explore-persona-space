@@ -1,0 +1,1 @@
+{"ts": "2026-07-05T14:27:03Z", "event": "raised", "concern_id": "gate-block-cleanup-hook-blocked", "severity": "BLOCKER", "summary": "SKILL.md:8381+8633 cleanup cmd (restore --staged --worktree, no -C) is hook-blocked by guard_repo_root_branch.sh at execution time; needs -C \"$REPO_ROOT\" at both sites", "raised_by": "code-reviewer", "raised_at_round": 1}
