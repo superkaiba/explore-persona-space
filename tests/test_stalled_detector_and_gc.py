@@ -1461,3 +1461,362 @@ def test_stalled_hardening_fields_legacy_defaults_and_advancement_clear():
     assert fields["stop_pending_sid"] is None
     assert fields["wt_hold_count"] == 0
     assert fields["stop_retried"] is True  # truthy string -> bool() semantics
+
+
+# ─── #1071 — evidence-based alert reasons + post-stop hold gate ───────────────
+#
+# Both #813 incidents (2026-07-03/04) had daemon_reachable=True on every tick,
+# yet the alert marker said "Happy daemon unreachable" — the pre-#759 reason
+# ladder's else-branch fabricated a daemon outage for the live-corroboration
+# downgrade, and the resulting "stop+respawn manually" instruction produced two
+# manual respawns racing an in-flight auto-recovery. These tests pin the
+# evidence-based ladder (reason + truthful next-step per branch), the
+# corroboration helper's downgrade_note, the daemon-outage retry semantics
+# (persisted `alerted` + eligibility flip == execute-on-next-reachable-tick),
+# and the post-stop worktree-hold gate.
+
+
+def _make_stalled_ctx(asw, **overrides):
+    """Construct a minimal ``_StalledActionCtx`` for direct handler tests.
+
+    Defaults model the #813 shape: autonomous entry, ACTIVE status, no pod,
+    ``dry_run=True`` (no state writes; the marker post is monkeypatched by the
+    caller). Override per test."""
+    kwargs = dict(
+        issue=813,
+        happy_session_id="sess-813",
+        prev_state={},
+        alerted=False,
+        respawn_count=0,
+        exhausted=False,
+        last_self_report_ts="2026-07-03T20:00:00Z",
+        self_gap="131.8m",
+        marker_gap="131.8m",
+        has_pod=False,
+        task_status="running",
+        in_active=True,
+        threshold=2,
+        dry_run=True,
+        manual=False,
+    )
+    kwargs.update(overrides)
+    return asw._StalledActionCtx(**kwargs)
+
+
+def test_stalled_alert_reason_corroboration_downgrade_not_daemon(monkeypatch):
+    # Acceptance criterion 1: a corroboration-downgraded alert names the
+    # debounce (episode n/K + the auto-escalation next-step) and NEVER
+    # contains "daemon unreachable" while daemon_reachable=True. Full
+    # note-CONTENT assertions, not just the sentinel label.
+    import autonomous_session_watch as asw
+
+    posts: list[str] = []
+    monkeypatch.setattr(
+        asw, "_post_progress_marker", lambda issue, note, dry_run, label: posts.append(note)
+    )
+    downgrade = (
+        "live-session corroboration debounce: consecutive live-stall "
+        "episode 1/2; the session id is still in the daemon live set"
+    )
+    ctx = _make_stalled_ctx(asw, daemon_reachable=True, downgrade_note=downgrade)
+    asw._handle_stalled_alert(ctx)
+
+    assert len(posts) == 1
+    note = posts[0]
+    assert asw._STALLED_ALERT_NOTE_SENTINEL in note
+    assert "live-session corroboration debounce" in note
+    assert "episode 1/2" in note
+    assert "auto-escalates" in note
+    assert "daemon unreachable" not in note
+    assert "watcher bug" not in note
+    # The manual-intervention invitation that raced the auto-recovery in both
+    # #813 incidents survives ONLY in the manual branch.
+    assert "stop+respawn manually" not in note
+
+
+def test_stalled_alert_reason_daemon_outage_states_auto_retry(monkeypatch):
+    # Acceptance criterion 2, BOTH halves: a genuine daemon-outage alert
+    # states the persisted auto-retry ("next daemon-reachable tick") AND the
+    # #845 (c) phone-push escalation clause ("2 blocked ticks").
+    import autonomous_session_watch as asw
+
+    posts: list[str] = []
+    monkeypatch.setattr(
+        asw, "_post_progress_marker", lambda issue, note, dry_run, label: posts.append(note)
+    )
+    ctx = _make_stalled_ctx(asw, daemon_reachable=False, downgrade_note=None)
+    asw._handle_stalled_alert(ctx)
+
+    assert len(posts) == 1
+    note = posts[0]
+    assert "Happy daemon unreachable" in note
+    assert "next daemon-reachable tick" in note
+    assert "2 blocked ticks" in note
+    assert "watcher bug" not in note
+    assert "stop+respawn manually" not in note
+
+
+def test_stalled_alert_unexpected_cause_flags_bug(monkeypatch):
+    # A future alert producer that reaches the handler without evidence
+    # (non-manual, ACTIVE, daemon up, no downgrade note) must self-identify
+    # as a watcher bug instead of fabricating a daemon outage (the exact
+    # failure mode behind this task's incorrect premise).
+    import autonomous_session_watch as asw
+
+    posts: list[str] = []
+    monkeypatch.setattr(
+        asw, "_post_progress_marker", lambda issue, note, dry_run, label: posts.append(note)
+    )
+    ctx = _make_stalled_ctx(asw, daemon_reachable=True, downgrade_note=None)
+    asw._handle_stalled_alert(ctx)
+
+    assert len(posts) == 1
+    assert "watcher bug" in posts[0]
+    assert "daemon unreachable" not in posts[0]
+
+
+def test_daemon_outage_remediation_executes_on_recovery_tick():
+    # Goal part 2's "queued and executed on the next daemon-reachable tick"
+    # semantics, pinned as a two-tick decide() SEQUENCE (#1071): tick 1 — the
+    # threshold trips while the daemon is DOWN (respawn_eligible=False), so
+    # the episode fires the ALERT (the caller persists alerted=True); tick 2
+    # — the first reachable tick (respawn_eligible=True) escalates the
+    # alerted episode straight to the respawn, no re-accumulation. Extends
+    # (does not duplicate) the single-call #506-branch assertions in
+    # test_alerted_escalates_to_respawn_when_eligible above: the persisted
+    # `alerted` flag IS the queue — nothing is dropped during an outage.
+    stale = STALLED_MARKER_WINDOW_S_DEFAULT + 60
+    # Tick 1: threshold trip, daemon down -> alert.
+    assert decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=True,
+        missed=1,
+        alerted=False,
+        respawn_eligible=False,
+        threshold=2,
+    ) == ("alert", 0)
+    # Tick 2: daemon back -> the alerted episode respawns the same tick.
+    assert decide_session_stalled(
+        self_report_age_s=stale,
+        marker_progress_age_s=stale,
+        has_pod=True,
+        missed=0,
+        alerted=True,
+        respawn_eligible=True,
+        respawn_count=0,
+        threshold=2,
+    ) == ("respawn", 0)
+
+
+def test_corroboration_returns_downgrade_note(isolated_registry, monkeypatch):
+    # Arity pin for the #1071 triple return: the downgrade branch returns a
+    # note carrying the {live_consecutive}/{k} episode fragment (criterion
+    # 1's n/K disclosure); the escalation / dead-sid / daemon-down /
+    # other-action branches all return None.
+    import autonomous_session_watch as asw
+
+    monkeypatch.setenv("EPM_STALLED_LIVE_ESCALATION_K", "2")
+    entry = {"issue": 5, "happy_session_id": "sid-live"}
+
+    # Downgrade branch (live sid, episode 1 < K=2).
+    action, live, note = asw._apply_stalled_live_corroboration(
+        issue=5,
+        entry=entry,
+        action="respawn",
+        daemon_reachable=True,
+        live_ids={"sid-live"},
+        live_consecutive=0,
+        dry_run=True,
+    )
+    assert (action, live) == ("alert", 1)
+    assert note is not None
+    assert "live-session corroboration debounce" in note
+    assert "1/2" in note
+
+    # Escalation branch (Kth consecutive live stall) -> respawn, no note.
+    assert asw._apply_stalled_live_corroboration(
+        issue=5,
+        entry=entry,
+        action="respawn",
+        daemon_reachable=True,
+        live_ids={"sid-live"},
+        live_consecutive=1,
+        dry_run=True,
+    ) == ("respawn", 0, None)
+
+    # Dead-sid branch -> respawn passes through, no note.
+    assert asw._apply_stalled_live_corroboration(
+        issue=5,
+        entry=entry,
+        action="respawn",
+        daemon_reachable=True,
+        live_ids={"sid-other"},
+        live_consecutive=1,
+        dry_run=True,
+    ) == ("respawn", 0, None)
+
+    # Daemon-down branch -> respawn passes through, no note.
+    assert asw._apply_stalled_live_corroboration(
+        issue=5,
+        entry=entry,
+        action="respawn",
+        daemon_reachable=False,
+        live_ids=None,
+        live_consecutive=1,
+        dry_run=True,
+    ) == ("respawn", 0, None)
+
+    # Non-respawn action -> passthrough + counter reset, no note.
+    assert asw._apply_stalled_live_corroboration(
+        issue=5,
+        entry=entry,
+        action="keep",
+        daemon_reachable=True,
+        live_ids={"sid-live"},
+        live_consecutive=1,
+        dry_run=True,
+    ) == ("keep", 0, None)
+
+
+def test_wt_hold_skipped_when_fence_stop_pending(isolated_registry, monkeypatch):
+    # Acceptance criterion 4, both halves. (a) Once stop_pending_sid is set
+    # a stop has already been ISSUED — the #812 mid-edit hold protects the
+    # STOP, so holding post-stop only delays the fence's verified-dead spawn
+    # (incident #813: 3 held ticks post-stop, issue driverless). The hold is
+    # skipped mid-fence, still applied pre-stop (persisting wt_hold_count).
+    # (b) The spawn-grace skip stays UNCONDITIONAL — it guards concurrent
+    # respawns, which is still valid mid-fence.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_RESPAWN_SPAWN_GRACE_MIN", raising=False)
+    monkeypatch.setattr(asw, "_worktree_recent_activity", lambda *_a, **_k: True)
+    now = 1_000_000.0
+
+    # Mid-fence (stop issued): hold does NOT apply — the arm proceeds.
+    ctx = _make_stalled_ctx(
+        asw, dry_run=False, now=now, stop_pending_sid="sidX", entry_spawned_at=None
+    )
+    assert asw._stalled_arm_deferral(ctx) is False
+
+    # Pre-stop: hold applies and persists wt_hold_count=1.
+    ctx = _make_stalled_ctx(
+        asw, dry_run=False, now=now, stop_pending_sid=None, entry_spawned_at=None
+    )
+    assert asw._stalled_arm_deferral(ctx) is True
+    state = json.loads((isolated_registry / f"{STALLED_STATE_PREFIX}813.json").read_text())
+    assert state["wt_hold_count"] == 1
+
+    # Mid-grace AND mid-fence: the spawn-grace skip is unconditional.
+    ctx = _make_stalled_ctx(
+        asw, dry_run=False, now=now, stop_pending_sid="sidX", entry_spawned_at=now - 60.0
+    )
+    assert asw._stalled_arm_deferral(ctx) is True
+
+
+def test_stalled_pass_corroboration_downgrade_note_threaded(
+    isolated_registry, hermetic_provision_probes, monkeypatch
+):
+    # r1 Must-Fix (production-path threading, corroboration): drive the REAL
+    # stalled_session_pass so the #759 downgrade fires through the live
+    # _apply_stalled_live_corroboration call site and the _StalledActionCtx
+    # construction. A threading miss there (downgrade_note not passed into
+    # the ctx) falls through to the else-branch and posts "watcher bug";
+    # the pre-#1071 code posted "daemon unreachable". Both are asserted
+    # absent; the debounce reason is asserted present.
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    posts: list[tuple[int, str, str]] = []
+    respawns: list[int] = []
+    _write_autonomous_entry(isolated_registry, 489, "sess-489")
+
+    monkeypatch.setenv("EPM_STALLED_LIVE_ESCALATION_K", "2")
+    stale = STALLED_WINDOW_S + 600
+    monkeypatch.setattr(
+        asw,
+        "_self_report_age_seconds",
+        lambda issue, now: (stale, "2026-06-05T10:00:00Z"),
+    )
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    # ACTIVE status + reachable daemon + live sid: decide() wants a respawn;
+    # the corroboration downgrades episode 1/2 to an alert.
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    # Make a wrong-path respawn observable (mirror of the #661 test's stubs).
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: True)
+    monkeypatch.setattr(
+        asw,
+        "_respawn_stalled_session",
+        lambda issue, cap, dry_run: respawns.append(issue) or "spawned",
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, note, label)),
+    )
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=1, now=now, daemon_reachable=True, live_ids={"sess-489"}
+    )
+
+    assert respawns == []
+    assert len(posts) == 1
+    issue, note, label = posts[0]
+    assert issue == 489
+    assert label == "session-stalled-alert"
+    assert "live-session corroboration debounce" in note
+    assert "episode 1/2" in note
+    assert "daemon unreachable" not in note
+    assert "watcher bug" not in note
+
+
+def test_stalled_pass_daemon_outage_note_threaded(
+    isolated_registry, hermetic_provision_probes, monkeypatch
+):
+    # r1 Must-Fix (production-path threading, outage): the same pass-level
+    # pattern with daemon_reachable=False on an ACTIVE task at the threshold
+    # trip — the posted note must state the persisted auto-retry, proving
+    # the pass-level daemon_reachable flag is threaded into the ctx (a miss
+    # keeps the True default and posts the "watcher bug" else-branch).
+    import autonomous_session_watch as asw
+
+    now = 1_000_000.0
+    posts: list[tuple[int, str, str]] = []
+    respawns: list[int] = []
+    _write_autonomous_entry(isolated_registry, 489, "sess-489")
+
+    stale = STALLED_WINDOW_S + 600
+    monkeypatch.setattr(
+        asw,
+        "_self_report_age_seconds",
+        lambda issue, now: (stale, "2026-06-05T10:00:00Z"),
+    )
+    monkeypatch.setattr(asw, "_task_events", lambda issue: [])
+    monkeypatch.setattr(asw, "_running_managed_issue_pods", lambda *_a, **_k: [])
+    monkeypatch.setattr(asw, "_task_status", lambda issue: "running")
+    monkeypatch.setattr(asw, "_telegram_push", lambda *_a, **_k: None)
+    monkeypatch.setattr(asw, "_stop_session", lambda sid, dry_run: True)
+    monkeypatch.setattr(
+        asw,
+        "_respawn_stalled_session",
+        lambda issue, cap, dry_run: respawns.append(issue) or "spawned",
+    )
+    monkeypatch.setattr(
+        asw,
+        "_post_progress_marker",
+        lambda issue, note, dry_run, label: posts.append((issue, note, label)),
+    )
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=1, now=now, daemon_reachable=False, live_ids=None
+    )
+
+    assert respawns == []
+    assert len(posts) == 1
+    issue, note, label = posts[0]
+    assert issue == 489
+    assert label == "session-stalled-alert"
+    assert "Happy daemon unreachable" in note
+    assert "next daemon-reachable tick" in note
+    assert "watcher bug" not in note
