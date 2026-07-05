@@ -463,6 +463,60 @@ def test_stalled_signal2_still_excludes_watcher_sentinel_markers():
     assert asw._latest_nonwatcher_event_ts(events) == asw._parse_event_ts("2026-06-25T01:15:00Z")
 
 
+# ─── #1053 exit breadcrumbs are anti-liveness on BOTH watcher clocks ──────────
+
+
+def test_1053_exit_breadcrumbs_advance_neither_staleness_clock():
+    # #1053 MF-1 pin: the EXACT prescribed Step 0 collision-exit and
+    # stale-wake-yield breadcrumbs (by="issue-session-guard", SKILL.md Step 0)
+    # advance NEITHER `_latest_progress_ts` NOR `_latest_nonwatcher_event_ts`
+    # — a duplicate session's death record must not shield the OWNER from the
+    # stalled / orphan-respawn / reconcile-idle / campaign-freshness reads.
+    import autonomous_session_watch as asw
+
+    collision_note = (
+        "deliberate-stop pid=n/a target=self reason=step0-session-collision "
+        "owner=happy-session:abc123 — duplicate /issue 1053 session exiting at Step 0; "
+        "owner happy-session:abc123 remains the driver; no state mutated"
+    )
+    yield_note = (
+        "deliberate-stop pid=n/a target=self reason=stale-wake-yield "
+        "replacement=happy-session:def456 — stale /issue 1053 session yielding on wake; "
+        "the replacement owns the task; no state mutated"
+    )
+    for note in (collision_note, yield_note):
+        events = [
+            {"kind": "epm:progress", "ts": "2026-07-04T10:00:00Z", "note": "step 100"},
+            {
+                "kind": "epm:progress",
+                "ts": "2026-07-04T12:00:00Z",
+                "note": note,
+                "by": "issue-session-guard",
+            },
+        ]
+        expected = asw._parse_event_ts("2026-07-04T10:00:00Z")
+        assert asw._latest_progress_ts(events) == expected, note
+        assert asw._latest_nonwatcher_event_ts(events) == expected, note
+
+
+def test_1053_nonwatcher_clock_still_counts_normal_markers():
+    # Non-vacuity companion to the exclusion above: an ordinary marker (no
+    # deliberate-stop prefix, benign by) still advances
+    # `_latest_nonwatcher_event_ts` after the #1053 exclusion landed.
+    import autonomous_session_watch as asw
+
+    events = [
+        {"kind": "epm:progress", "ts": "2026-07-04T10:00:00Z", "note": "step 100"},
+        {
+            "kind": "epm:experiment-implementation",
+            "ts": "2026-07-04T12:00:00Z",
+            "note": "implemented dispatch script",
+            "by": "test",
+        },
+    ]
+    assert asw._latest_nonwatcher_event_ts(events) == asw._parse_event_ts("2026-07-04T12:00:00Z")
+
+
 # ─── stalled_session_pass — top-level driver ─────────────────────────────────
 
 

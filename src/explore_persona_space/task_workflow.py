@@ -1864,7 +1864,9 @@ TRIAGE_EXEMPT_KINDS = frozenset(
 # self- and PM-chat posts carried by="unknown"). Compliant emitters now set
 # a distinctive by (the #966 convention list): "pm-chat" (PM-session
 # cross-session posts), "autonomous_session_watch" (watcher passes),
-# "spawn_session" / "spawn_session-stop" (spawn helper). A value on that
+# "spawn_session" / "spawn_session-stop" (spawn helper),
+# "issue-session-guard" (a /issue session's own Step-0 collision-exit /
+# stale-wake-yield deliberate-stop breadcrumb, #1053). A value on that
 # convention list is a trustworthy-POSITIVE externality signal for the
 # LLM-side triage read (conventional, not authenticated — nothing verifies
 # the emitter, but in-repo emitters set only their own identity); absence

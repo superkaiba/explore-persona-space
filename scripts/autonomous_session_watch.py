@@ -13638,11 +13638,19 @@ def _latest_nonwatcher_event_ts(events: list[dict]) -> float | None:
     ...) is evidence somebody/something is still working the task, and the
     sweep must err toward keeping the session. Watcher-posted notes stay
     excluded (the alert/stop markers land on the very task whose inactivity
-    they measure — counting them would reset the clock they read)."""
+    they measure — counting them would reset the clock they read), and so
+    do deliberate session-stop records (#990/#1053 — same predicate as
+    :func:`_latest_progress_ts`)."""
     best: float | None = None
     for ev in events:
         note = ev.get("note") or ""
         if any(sentinel in note for sentinel in _WATCHER_NOTE_SENTINELS):
+            continue
+        # A deliberate session stop — incl. the #1053 Step-0 collision-exit /
+        # stale-wake-yield breadcrumb — is the death record of the task's
+        # driver: anti-liveness, never activity (#990/#1053; mirrors
+        # _latest_progress_ts).
+        if note.lstrip().startswith("deliberate-stop ") or ev.get("by") == "spawn_session-stop":
             continue
         ts = _parse_event_ts(ev.get("ts"))
         if ts is not None and (best is None or ts > best):
