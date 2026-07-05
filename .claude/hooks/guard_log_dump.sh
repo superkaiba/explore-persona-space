@@ -204,7 +204,12 @@ check_cmd() {
         if [ "$await_n" = 1 ]; then
           # Signed counts (+K / -K) are open-ended / complement reads — track
           # the sign so pending_check can deny them the bounded-range relief.
-          case "$tok" in +* | -*) nlines_signed=1 ;; esac
+          # Quote-strip BEFORE the sign check (same idiom as files/sed scripts):
+          # word-splitting does no quote removal, so a quoted operand like
+          # '+201' would hide the sign while the real shell strips the quotes
+          # and tail/head sees +201 — genuinely unbounded.
+          val=${tok#\'}; val=${val%\'}; val=${val#\"}; val=${val%\"}
+          case "$val" in +* | -*) nlines_signed=1 ;; esac
           nlines=$(printf '%s' "$tok" | tr -dc '0-9')
           : "${nlines:=0}"
           await_n=0
@@ -213,7 +218,10 @@ check_cmd() {
         case "$tok" in
           -n) await_n=1 ;;
           -n* | --lines=*)
+            # Prefix-strip FIRST, then quote-strip: quotes can sit after the
+            # '=' (--lines='+201') and after -n (-n'+201').
             val=${tok#--lines=}; val=${val#-n}
+            val=${val#\'}; val=${val%\'}; val=${val#\"}; val=${val%\"}
             case "$val" in +* | -*) nlines_signed=1 ;; esac
             nlines=$(printf '%s' "$tok" | tr -dc '0-9'); : "${nlines:=0}" ;;
           -[0-9]*) nlines=$(printf '%s' "$tok" | tr -dc '0-9'); : "${nlines:=0}" ;;
@@ -346,6 +354,11 @@ EOF'
   run_case "cat of big .md blocks (vacuity witness for .md fixture)" 2 'cat big_notes.md'
   run_case "head -n 400 of big .py allowed (head verb relief)"       0 'head -n 400 big_source.py'
   run_case "huge flag resets across separator (no leak)"             0 "sed -n '1,2001p' notes.md && sed -n '1,400p' big_source.py"
+  # --- round-2 pins: quoted signed counts must not escape sign detection ---
+  run_case "tail -n '+201' of big .py blocks (quoted signed)"        2 "tail -n '+201' big_source.py"
+  run_case "tail -n'+201' glued quoted of big .py blocks"            2 "tail -n'+201' big_source.py"
+  run_case "head -n '-201' of big .py blocks (quoted complement)"    2 "head -n '-201' big_source.py"
+  run_case "tail --lines='+201' quoted of big .py blocks"            2 "tail --lines='+201' big_source.py"
 
   if [ "$FAILED" = 1 ]; then
     echo "self-test: FAIL" >&2
