@@ -1,0 +1,9 @@
+{
+  "git_commit": "e9838cfe932285ce55e01d970862237280c860a6",
+  "timestamp_utc": "2026-07-05T16:43:17.331013Z",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "all",
+  "script": "issue923_fig_mixed",
+  "note": "round-5 body embed of the workload layer-sweep panel (persisted curves; no re-analysis)"
+}
