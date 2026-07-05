@@ -200,8 +200,8 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    code reuse. Existence verification of HF paths is already
    handled by planner.md step 5's `huggingface_hub.list_repo_files` check; this item is about
    FITNESS beyond mere existence.
-10. **CPU/analysis-phase placement — idle multi-GPU pod (efficiency), oversized-VM-footprint (disk
-    safety), gradient-descent / dense-factorization fit — or any high-count tiny-op battery (draws, per-item serialization, per-file uploads) — mis-routed to CPU or left serial (compute character), AND a narrow GPU phase
+10. **CPU/analysis-phase placement — idle multi-GPU pod (efficiency), oversized-VM-footprint
+    (disk/RAM safety), gradient-descent / dense-factorization fit — or any high-count tiny-op battery (draws, per-item serialization, per-file uploads) — mis-routed to CPU or left serial (compute character), AND a narrow GPU phase
     holding the run's peak-width pod (GPU-width right-sizing).** A CPU/analysis phase must be placed
     where it neither holds an idle multi-GPU pod NOR overruns the disk it runs on NOR runs an
     iterative-optimization fit GPU-starved on the VM CPU; and a multi-phase GPU run must size EACH
@@ -225,7 +225,7 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       never needed to hold (2026-06-09: pod-518 ran 1h+ of pure-CPU permutation/bootstrap scoring
       with all 8 H100s at 0%, pod-523 ran a CPU-only metrics phase ~6h on idle GPUs — ~$48/hr of
       idle burn).
-    - **(ii) Oversized footprint placed on the VM (disk safety).** REVISE when the plan routes the
+    - **(ii) Oversized footprint placed on the VM (disk/RAM safety).** REVISE when the plan routes the
       phase to the VM (the off-pod default) but its estimated local footprint exceeds
       `VM_ANALYSIS_FOOTPRINT_GB_MAX = 50` GB — `downloaded_inputs_gb +
       materialized_tensors/activations/store_gb + scratch_gb`. The VM root disk is ~188 GB and
@@ -245,6 +245,21 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
       footprint exceeds the disk — the fix is placement, not cleanup. (2026-06-26: #658's Phase-1
       analysis materialized a 139 GB activation store on the VM worktree on the shared 188 GB disk;
       `/` hit 100% full and the whole fleet stalled.)
+      The RAM twin: ALSO REVISE when a VM-placed phase's projected peak RSS is
+      ≥~16 GB (single phase, or SUMMED concurrent VM-resident phases crossing
+      the same bar), or when a VM-placed phase that plausibly materializes a
+      multi-GB resident set (bulk tensor loads, a large draw pool, many
+      concurrent fits) states NO RSS estimate at all — the shared VM's earlyoom
+      (SIGTERM below ~12.8 GB MemAvailable, +300 python bias) makes such a phase
+      the default kill victim under fleet pressure, and runtime choom protection
+      is mitigation, not permission (#778: a 22-GiB-RSS null battery
+      earlyoom-killed 3× before its cpu-bigmem pivot; #833: two ~13-15 GB
+      concurrent phases lost 5 cells). The fix is placement — `cpu-mid` (32 GB
+      GCP) / `cpu-bigmem` (128 GB), with `--min-ram-gb` stated when sizing
+      >16 GB (arms the #1010 feasibility gate; the RunPod cpu-mid fallback has
+      only 16 GB) — or a stream-reduce formulation that bounds peak RSS at
+      O(one item). Full recipe: `.claude/rules/plan-compute-sizing.md`
+      § CPU-phase RAM/RSS routing.
     - **(iii) Gradient-descent, many-cell dense-factorization fit, OR any high-count tiny-op battery silently placed on the VM CPU / left serial (compute character).** REVISE when §9 routes an **iterative-optimization fit** — a torch-MLP LOCO / leave-one-class-out fit, a per-cell probe trained via SGD / AdamW, a small adapter fit, or any phase whose inner loop runs gradient descent on parameters — to the VM CPU default (or treats it as cheap closed-form CPU work), per planner.md §9 "Compute-character carve-out". Such a fit is GPU-worthy even at small model / dataset size and must route to a GPU lane (a GPU pod or the GCP GPU lane: `lora-7b` for a full A100, `eval` / `debug` for a smaller GPU — the smallest intent that fits). This axis is ORTHOGONAL to footprint: a gradient-descent fit goes to a GPU lane whether its footprint is large or small. A >50 GB gradient fit goes to a GPU lane with its disk sized explicitly (`--boot-disk-gb` on the GCP lane, `--volume`/intent volume on the RunPod lane), NOT `cpu-bigmem` (`gpu_count=0`, which would re-starve the fit); a closed-form aggregation with a >50 GB footprint still routes to `cpu-bigmem` per (ii). The qualifier is "iterative gradient descent on parameters" (the AdamW / SGD inner loop), NOT "uses pytorch" — a single closed-form torch reduction (`torch.linalg.lstsq`, a vectorized bootstrap) stays cheap CPU work. The "vectorized" qualifier is load-bearing, and the CHECK fires on intent, not implementation wording: ANY non-trivial permutation / bootstrap / null-draw battery over a large fixed/pooled set — non-trivial per the SAME ~15-30 min phase-wall floor as the rest of this item — triggers scrutiny UNLESS the plan explicitly states the draws are already batched/vectorized or the loop is sub-minute (#778's plan never said "serial"; it just scheduled the battery, and serial was the default implementation). REVISE when the plan schedules per-draw re-reduction of the pool or simply names the battery with NO batching/vectorization plan: the fix is a batched formulation (pool reduction precomputed once; mean/sum/covariance draws as one GEMM via the subset-sum identity, median/rank draws via batched `argsort` — `.claude/rules/vectorize-many-cell-fits.md`), NOT a GPU or bigger-CPU re-route, which leaves the redundant per-draw recompute in place (#778: ~4.1 s/draw serial `perm_null_draws`; ~15h projected across the full null battery's draw loops vs the plan's 1h §8 estimate; ~70× batched). The SAME intent-fired scrutiny covers many-cell repeated dense linear-algebra fits: REVISE when §9 schedules a full svd/eigh/lstsq/GCV-ridge solve looped over fold × layer × arm × trait with NO shared/batched-factorization plan, or with a per-call cost asserted rather than grounded on a measurement at production shape / a FLOP floor (#823: "~2 s/fit" asserted; ~125 s/fit real at N_tr≈4000, H=3584; ~3780 calls, 12-20 h — the body-named Gram-space fast twin was dropped). The fix is Gram/dual-space or a shared factorization, NOT a GPU/bigger-CPU re-route. The SAME intent-fired scrutiny covers ANY high-count tiny-op battery regardless of op class — >~10^4 closed-form tiny fits (#813's substrate-swap null: ~2M tiny fits projected 10-12 h serial), per-item SERIALIZATION of many multi-hundred-MB artifacts, and per-file Hub commits (#813: `savez_compressed` at 103.8 s/file made the store, not the forwards, the wall-clock driver — 4.5× over plan): REVISE when §9 schedules such a battery with NO batching / vectorization / out-of-band-IO plan, under the same ~15-30 min phase-wall floor. A genuinely vectorized battery (draws already batched) stays exempt cheap CPU work. The size gate is the SAME ~15-30 min floor, on the PHASE wall-time (the whole fit loop in aggregate), NOT any single fit: a many-cell/many-draw loop of individually-fast fits/draws counts if the loop runs longer than the floor, while a genuinely tiny one-off fit below the floor (a single linear probe trained in < 30 s, no long surrounding loop) stays on the VM — do not over-route trivial fits. (#658: `_fit_mlp_loco` ran a 300-epoch AdamW fit per cell on the VM CPU, a long per-cell loop that was GPU-starved.) When ANY lens's recommendation raises draws/B/N/cells, the Statistics lens item 12 same-round re-cost obligation applies — cross-check the affected §9 rows were re-costed.
     - **(iv) Narrow GPU phase holding the run's PEAK-width pod (GPU-width right-sizing).** REVISE
       when a multi-phase GPU run sizes ONE pod at its peak-phase width (e.g. 8× H100 for a
@@ -336,7 +351,14 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     approaches the routed lane's fence (the GCP `--max-run-duration` default is 7d — the FLEX_START
     ceiling, #741 — but a plan may deliberately set a SHORTER fence via
     `spec.extra["max_run_duration"]`, in which case reconcile against THAT value) and the plan
-    declares none of: (a) a deliberate `spec.extra["max_run_duration"]` for the GCP dispatch, (b) a
+    declares none of: (a) a deliberate `spec.extra["max_run_duration"]` for the GCP dispatch —
+    option (a) satisfies this item ONLY when the fence is sized off the p90 per-cell wall estimate
+    (a prior-issue per-cell wall distribution, else the measured mean × a STATED dispersion
+    factor, default ×2) and cleared with stated margin (≥~1.25×); a MEAN-sized deliberate fence is
+    exactly the #833 failure (realized per-cell wall ran ~2× the plan mean and overran a
+    deliberate 36h fence, hard-deleting the instance) and is itself a REVISE — fence-sizing
+    recipe: the fence clause of `.claude/rules/plan-compute-sizing.md` § Cost wall-time against
+    the machine the router will ACTUALLY provision — (b) a
     pre-registered phase split across provisions naming which artifacts persist (HF / git per the
     Upload Policy) before the first instance dies, (c) an explicit `backend: runpod` override with
     the long-run residual gap named; and (iii) for a store-heavy phase (>~10^3 output files or

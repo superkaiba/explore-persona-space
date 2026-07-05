@@ -337,9 +337,11 @@ to amortize 8× setup"). If the answer is "no parallelism axis applies,"
 say so — silence is not acceptable.
 
 > **Compute-sizing recipes (HBM sizing / merge-disk / sentinel lanes / floor
-> cross-check / machine costing)** — when sizing any §9 phase (activation
-> capture, adapter merges, sentinel-signaling workloads, long-phase wall-time
-> floors, per-machine wall-time costing), READ
+> cross-check / store-IO / CPU-phase RAM/RSS routing / machine costing +
+> p90 fence sizing)** — when sizing any §9 phase (activation capture, adapter
+> merges, sentinel-signaling workloads, long-phase wall-time floors,
+> store-heavy writes, VM-placed CPU-phase RAM, per-machine wall-time costing,
+> a deliberate GCP fence), READ
 > `.claude/rules/plan-compute-sizing.md` IN FULL before writing the table.
 > (Relocated verbatim from this spec, #829.)
 
@@ -398,6 +400,21 @@ client-side compression OFF for fp16 tensors bound for a Xet-backed HF repo
 (#813: `savez_compressed` 103.8 s vs plain `savez` 1.2 s per file for a
 1.29× ratio; the store phase ran 4.5× over plan). Full recipe:
 `.claude/rules/plan-compute-sizing.md` § Store-heavy / IO-heavy phase sizing.
+
+**VM-RAM & GCP-fence sizing (REQUIRED for any VM-placed CPU phase and any
+deliberate `max_run_duration`).** State each VM-placed CPU/analysis
+phase's projected peak RSS in its row's `basis` (measured one-chunk
+`ru_maxrss` at production shape, or resident-pool bytes × MEASURED
+live-factor); ≥~16 GB — single phase or SUMMED concurrent VM phases —
+routes off the shared VM to `cpu-mid`/`cpu-bigmem`, with `--min-ram-gb`
+stated when the phase sizes >16 GB (#778: a 22-GiB-RSS battery
+earlyoom-killed 3×; #833: two ~13-15 GB concurrent phases lost 5 cells).
+Size any deliberate GCP `--max-run-duration` off the p90 per-cell wall —
+a prior-issue distribution, else measured mean × a stated dispersion
+factor (default ×2) — never the mean (#833 overran its 36h fence at ~2×
+mean). Full recipes: `.claude/rules/plan-compute-sizing.md`
+§ CPU-phase RAM/RSS routing + the fence clause of § Cost wall-time
+against the machine the router will ACTUALLY provision.
 
 **Stratification spec.** If the sweep has multiple statistical
 dimensions (seeds, framings, cells-per-stratum), name in §9 the
