@@ -384,8 +384,8 @@
     "1048": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1048",
-      "status": "reviewing",
+      "path": "tasks/completed/1048",
+      "status": "completed",
       "title": "daily-fix: mechanically block piped git push (mask-prone)"
     },
     "1049": {
