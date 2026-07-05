@@ -139,8 +139,8 @@
     "1015": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1015",
-      "status": "running",
+      "path": "tasks/reviewing/1015",
+      "status": "reviewing",
       "title": "workflow-fix: audit interval_inline bound-form pattern"
     },
     "1016": {
