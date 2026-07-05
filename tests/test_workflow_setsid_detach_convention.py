@@ -46,8 +46,10 @@ def test_step9c_gate_choom_defaults_pinned() -> None:
     assert skill_text.count("sudo -n choom -n -600 -p $$") == 2
     # Unconditional both-branch gate breadcrumb (success state durably observable)
     assert "[step9c] gate earlyoom protection choom=$GATE_CHOOM" in skill_text
-    # 1d refresh: pid capture + session sweep present
+    # 1d refresh: pid capture + session sweep present (both literals — removing
+    # only the sweep while keeping pid capture must fail this pin; Codex r1 minor)
     assert "REFRESH_PID" in skill_text
+    assert 'pgrep -s "$1" | xargs -rn1 sudo -n choom -n -600 -p' in skill_text
     # Vectorize rule carries the launch-form cross-reference (fix item 7)
     vec_text = VECTORIZE_MD.read_text(encoding="utf-8")
     assert "Detached VM-side long compute phases" in vec_text
