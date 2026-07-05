@@ -1252,7 +1252,11 @@ metadata. Order:
 
    Once the user answers, draft a body covering Goal / Hypothesis / Setup
    / Eval / Success criterion / Kill criterion / Compute / Pod preference
-   / References, then patch the task:
+   / References (for a representation-mapping task — geometry read /
+   predictor / probe / direction extraction over activations — the drafted
+   Setup names BOTH mapping arms, prefix-based AND context-based, per the
+   CLAUDE.md "Prefix mapping AND context mapping" Critical Rule; a one-arm
+   draft states the deviation explicitly), then patch the task:
    ```bash
    uv run python scripts/task.py set-body <N> --file /tmp/issue-<N>-body.md
    ```
