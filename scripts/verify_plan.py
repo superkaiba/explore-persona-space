@@ -46,11 +46,13 @@ Check catalog (id — classification — kind scope)
       coherence                 (analysis), conditional   analysis
   c21 grep-arity acceptance     WARN-only, conditional    all kinds
       gate → AST arity audit
+  c22 cross-section param       WARN-only, conditional    all kinds
+      consistency
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21) also SKIP when their content trigger does not fire.
+19, 20, 21, 22) also SKIP when their content trigger does not fire.
 
 Canonical N/A escape phrases (quote verbatim in bounce briefs):
 
@@ -3110,6 +3112,198 @@ def check_grep_arity_gate(plan: str, kind: str) -> CheckResult:
     )
 
 
+# ─── Check 22 — cross-section param consistency (WARN-only, all kinds) ─────
+
+_C22_PARAM_TOKENS = (
+    r"temperature|max_new_tokens|max_tokens|learning_rate|lr|epochs|"
+    r"seeds|seed|rank|alpha|batch_size|batch|top_p"
+)  # longer alternatives first where prefixes overlap
+_C22_ALIASES = {"learning_rate": "lr", "seeds": "seed", "batch_size": "batch"}
+_C22_NUM = r"(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)(?:[eE][+-]?[0-9]+)?"
+# param=value / param: value; tolerates `code`/**bold** wrappers; captures a
+# single numeric, a comma-run of numerics, or a {...} brace set (<=120 chars).
+# The leading \b means compound tokens (JUDGE_TEMPERATURE=0.7) never match —
+# underscore is \w, so there is no boundary before the bare param name.
+_C22_VALUE_RE = re.compile(
+    rf"(?i)\b(?P<param>{_C22_PARAM_TOKENS})\b\s*[=:]\s*[`*]{{0,2}}\s*"
+    rf"(?P<vals>\{{[^}}\n]{{0,120}}\}}|{_C22_NUM}(?:\s*,\s*{_C22_NUM})*)"
+)
+# Range/schedule continuation right after the captured value ("1e-4 → 1e-5",
+# "1-3", "1 -> 3"): the tail value joins the occurrence's value set.
+_C22_RANGE_TAIL_RE = re.compile(
+    rf"\s*[`*]{{0,2}}\s*(?:[-\u2013\u2014]|->|→)\s*[`*]{{0,2}}({_C22_NUM})"
+)
+# Omission assertion: the #1024 corrected-text shape ("temperature OMITTED").
+_C22_OMIT_RE = re.compile(
+    rf"(?i)\b(?P<param>{_C22_PARAM_TOKENS})\b\s+(?:is\s+)?(?:omitted|left\s+unset)\b"
+)
+# Historical / declared-but-never-threaded clause vocabulary (value
+# occurrences only). `was` is value-adjacent only (`was 0.7` / `was set`),
+# NOT bare \bwas\b — bare `was` is ubiquitous and would silently exclude
+# CURRENT stale values on lines like "temperature=0.7 was chosen per #612".
+_C22_EXCLUDE_RE = re.compile(
+    rf"(?i)declared\s+but\s+never|never\s+threaded|not\s+threaded|never\s+used|"
+    rf"\bpreviously\b|superseded|corrected\s+(?:from|to)|historical|\bstale\b|"
+    rf"deprecated|no\s+longer|old\s+(?:value|default)|\bwas\s+(?:{_C22_NUM}|set\b|used\b)"
+)
+_C22_SWEEP_LINE_RE = re.compile(r"(?i)\bsweeps?\b|\bgrid\b|ablation")
+_C22_PHASE_RE = re.compile(r"(?i)\bphase[\s-]*([0-9]+)\b")
+_C22_LORA_CTX_RE = re.compile(r"(?i)lora|rslora|\brank\b|adapter|peft")
+
+# Same-line character window around a value match inside which the
+# historical-clause vocabulary excludes the occurrence (window-bounded so a
+# very long line's distant vocabulary cannot wrongly exclude a live value).
+_C22_EXCLUDE_WINDOW_CHARS = 100
+
+
+def _c22_top_section(headings: list[Heading], line_idx: int) -> tuple[int, str]:
+    """Top-level-section attribution for ``line_idx``: the SHALLOWEST heading
+    of level >= 2 containing the line (the H2 ancestor — sibling H3
+    subsections under one ``## 4. Design`` group as ONE section); falls back
+    to ``_innermost_section`` for H1-only docs, else a synthetic preamble
+    key. Returns ``(heading.line, heading.text)`` as the section key."""
+    candidates = [h for h in headings if h.level >= 2 and h.line <= line_idx < h.end]
+    if candidates:
+        best = min(candidates, key=lambda h: h.level)
+        return (best.line, best.text)
+    inner = _innermost_section(headings, line_idx)
+    if inner is not None:
+        return (inner.line, inner.text)
+    return (-1, "(preamble)")
+
+
+def _c22_record(
+    occ: dict[str, dict[tuple[int, str], dict]],
+    key: str,
+    section: tuple[int, str],
+    vals: set,
+    lineno: int,
+    span: str,
+) -> None:
+    """Union ``vals`` into ``occ[key][section]``, keeping the FIRST matched
+    ``(lineno, span)`` per (param, section) for the WARN detail."""
+    recs = occ.setdefault(key, {})
+    rec = recs.get(section)
+    if rec is None:
+        recs[section] = {"vals": set(vals), "lineno": lineno, "span": span}
+    else:
+        rec["vals"] |= vals
+
+
+def _c22_collect_occurrences(plan: str) -> dict[str, dict[tuple[int, str], dict]]:
+    """Build the (param-key → top-level section → {vals, lineno, span}) map.
+
+    Fenced lines never vote (module convention). Value occurrences on
+    sweep/grid/ablation lines, stats-``alpha`` outside LoRA context, and
+    values inside a historical/never-threaded clause (same-line ±100-char
+    window) are excluded. Literal omission assertions (``<param> OMITTED``)
+    are EXEMPT from the exclusion filter — the corrected text legitimately
+    reads "temperature OMITTED — the builders never set it": the clause
+    explains the omission, it does not mark it historical. Phase-qualified
+    lines key as ``<param>@phase<K>``."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    headings = _headings(plan)
+    occ: dict[str, dict[tuple[int, str], dict]] = {}
+    for i, line in enumerate(lines):
+        if mask[i]:
+            continue
+        pm = _C22_PHASE_RE.search(line)
+        phase = f"@phase{pm.group(1)}" if pm else ""
+        section = _c22_top_section(headings, i)
+        for m in _C22_VALUE_RE.finditer(line):
+            param = _C22_ALIASES.get(m["param"].lower(), m["param"].lower())
+            if param == "alpha" and not _C22_LORA_CTX_RE.search(line):
+                continue  # stats-alpha guard: significance level, not LoRA alpha
+            if _C22_SWEEP_LINE_RE.search(line):
+                continue  # sweep/grid/ablation declarations are legitimately multi-value
+            w = _C22_EXCLUDE_WINDOW_CHARS
+            window = line[max(0, m.start() - w) : m.end() + w]
+            if _C22_EXCLUDE_RE.search(window):
+                continue  # historical / declared-but-never-threaded clause
+            vals: set = {float(v) for v in re.findall(_C22_NUM, m["vals"])}
+            if not vals:
+                continue  # non-numeric brace set
+            tm = _C22_RANGE_TAIL_RE.match(line, m.end())
+            if tm:
+                vals.add(float(tm.group(1)))
+            _c22_record(occ, param + phase, section, vals, i, m.group(0))
+        for m in _C22_OMIT_RE.finditer(line):
+            param = _C22_ALIASES.get(m["param"].lower(), m["param"].lower())
+            _c22_record(occ, param + phase, section, {"OMITTED"}, i, m.group(0))
+    return occ
+
+
+def check_cross_section_param_consistency(plan: str, kind: str) -> CheckResult:
+    """The same tracked hyperparameter stated with contradictory values in
+    DIFFERENT top-level sections is the #1024 incident class: a fact-check
+    correction lands in one section while a stale restatement survives in
+    another (§11 *What:* lines, assumption rows). Tracked params:
+    temperature, max_tokens / max_new_tokens (distinct keys — API judge cap
+    vs HF generate cap), lr / learning_rate, epochs, seed / seeds, rank,
+    alpha (LoRA context only), batch / batch_size, top_p. A conflict is a
+    pair of top-level sections whose value SETS are disjoint — overlap is
+    consistent, which is what lets per-arm tables, ranges/schedules, and
+    seed lists restated against a member value all PASS while ``0.7`` vs
+    ``OMITTED``/``1.0`` WARNs. v1 scope: value-vs-value plus
+    value-vs-literal-omission-token (``<param> OMITTED`` / ``left unset``) —
+    the #1024 v2 offender shape; broader omission phrasings ("builders omit
+    temperature", "no temperature parameter") are OUT of v1 scope.
+    WARN-only, never FAIL (legitimate multi-value plans exist, and Phase
+    1.5.0 forwards WARNs verbatim into the fact-checker/critic briefs — the
+    intended consumption path); ALL kinds (the motivating #1024 offender is
+    ``kind: infra``); conditional SKIP when no tracked param spans >= 2
+    top-level sections.
+
+    Documented v1 limits: (i) half-corrected-section masking — a section
+    carrying BOTH a stale ``temperature=0.7`` and the corrected
+    "temperature OMITTED" unions to {0.7, OMITTED}, which overlaps a §11
+    {0.7} → PASS; intra-section contradictions are out of v1 cross-section
+    scope. (ii) Phase-qualifier asymmetry — a phase-qualified occurrence
+    (``epochs@phase1``) never compares against an unqualified ``epochs=3``;
+    a c22 PASS is not "no cross-section drift" for phase-keyed params.
+    (iii) Markdown-table blindness — the value regex requires ``=`` or
+    ``:``, so pipe-table hyperparameter rows (``| lr | 1e-4 |``) never
+    parse; the table-vs-prose restatement class is invisible to v1."""
+    cid, name = "c22_cross_section_param_consistency", "cross-section param consistency"
+    del kind  # registry symmetry, c5-style: c22 runs for ALL kinds (#1024 is kind: infra)
+    occ = _c22_collect_occurrences(plan)
+    cross = {k: recs for k, recs in occ.items() if len(recs) >= 2}
+    if not cross:
+        return _skip(cid, name, "no cross-section parameter restatement detected")
+    conflicts: list[tuple[str, tuple, tuple]] = []
+    for key, recs in cross.items():
+        sections = list(recs.items())
+        found = None
+        for a in range(len(sections)):
+            for b in range(a + 1, len(sections)):
+                if sections[a][1]["vals"].isdisjoint(sections[b][1]["vals"]):
+                    found = (key, sections[a], sections[b])
+                    break
+            if found:
+                break
+        if found:
+            conflicts.append(found)  # first disjoint pair reported per param
+    if not conflicts:
+        return _pass(
+            cid, name, f"{len(cross)} parameter(s) restated across sections, all consistent"
+        )
+    parts = []
+    for key, (sec_a, rec_a), (sec_b, rec_b) in conflicts[:2]:
+        parts.append(
+            f"{key}: '{rec_a['span']}' (§'{sec_a[1]}' L{rec_a['lineno'] + 1}) vs "
+            f"'{rec_b['span']}' (§'{sec_b[1]}' L{rec_b['lineno'] + 1})"
+        )
+    more = len(conflicts) - 2
+    detail = (
+        "; ".join(parts)
+        + (f" …and {more} more param(s)" if more > 0 else "")
+        + " — cross-section contradiction; if one side is a stale post-correction "
+        "restatement, fix it"
+    )
+    return _warn(cid, name, detail)
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -3134,6 +3328,7 @@ CHECKS = [
     check_ood_folds,
     check_verdict_lattice_coherence,
     check_grep_arity_gate,
+    check_cross_section_param_consistency,
 ]
 
 
