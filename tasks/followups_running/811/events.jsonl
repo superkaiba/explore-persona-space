@@ -447,3 +447,4 @@
 {"ts": "2026-07-05T21:12:47Z", "kind": "epm:progress", "version": 178, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~8.5h in, pid alive (100% GPU, cputime accruing at last probe)."}
 {"ts": "2026-07-05T22:15:37Z", "kind": "epm:progress", "version": 179, "by": "unknown", "note": "tick heartbeat: GPU leg gate ~9.5h in, pid alive."}
 {"ts": "2026-07-05T22:45:43Z", "kind": "epm:results", "version": 1, "by": "issue811_dispatch", "note": "issue811 pre_user FITS stage complete (off-instance): fit + analyze + figures done against the uploaded store. Deliverables under eval_results/issue_811/pre-user-boundary-summary/."}
+{"ts": "2026-07-05T22:48:50Z", "kind": "epm:progress", "version": 180, "by": "unknown", "note": "stage-dispatch stage=followup-verifying round=2 subagent=upload-verifier worktree=/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-811"}
