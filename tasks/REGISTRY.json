@@ -503,8 +503,8 @@
     "1063": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1063",
-      "status": "proposed",
+      "path": "tasks/planning/1063",
+      "status": "planning",
       "title": "daily-fix: both-arms mapping default applied at capture time"
     },
     "1064": {
