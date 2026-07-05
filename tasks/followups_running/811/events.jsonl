@@ -426,3 +426,4 @@
 {"ts": "2026-07-05T10:10:41Z", "kind": "epm:progress", "version": 161, "by": "unknown", "note": "tick heartbeat: fits 82/108 (~2.2h remaining)."}
 {"ts": "2026-07-05T10:42:02Z", "kind": "epm:progress", "version": 162, "by": "unknown", "note": "tick heartbeat: fits 89/108 (~1.6h remaining; kill-before-gate + GPU leg upcoming at 108)."}
 {"ts": "2026-07-05T11:13:08Z", "kind": "epm:progress", "version": 163, "by": "unknown", "note": "tick heartbeat: fits 96/108 (~1h left); next tick shortened to 20min to catch 108/108 for the kill-before-gate + GPU-leg handoff."}
+{"ts": "2026-07-05T12:09:16Z", "kind": "epm:concern-addressed", "version": 1, "by": "orchestrator", "concern_id": "phase3-mlp-gate-epochs-wall", "note": "concern_id: phase3-mlp-gate-epochs-wall\nseverity: CONCERN\nsummary: STAGE=fits relaunch needs --mlp-epochs clamp or GPU host: Phase-3 gate at defaul"}
