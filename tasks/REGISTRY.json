@@ -363,8 +363,8 @@
     "1045": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1045",
-      "status": "proposed",
+      "path": "tasks/planning/1045",
+      "status": "planning",
       "title": "daily-fix: choom-protect Step 9c gates + VM long fits by def"
     },
     "1046": {
