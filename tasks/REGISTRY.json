@@ -545,8 +545,8 @@
     "1069": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1069",
-      "status": "approved",
+      "path": "tasks/running/1069",
+      "status": "running",
       "title": "workflow-fix: reuse-parity gates calibrate vs the artifact's committed per-behavior values; weaker-than-constant = WARN not HALT"
     },
     "1070": {
