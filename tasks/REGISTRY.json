@@ -125,8 +125,8 @@
     "1013": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1013",
-      "status": "proposed",
+      "path": "tasks/archived/1013",
+      "status": "archived",
       "title": "workflow-fix: v4 no-issue-refs check misses markdown-linked refs in Methodology prose"
     },
     "1014": {
