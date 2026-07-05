@@ -50,11 +50,13 @@ Check catalog (id — classification — kind scope)
       consistency
   c23 goal currency             WARN-only, conditional    all kinds,
       (stale-Goal quote)                                  --issue mode only
+  c24 resume-skip provenance    WARN-only, conditional    experiment +
+      validation                                          analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23) also SKIP when their content trigger does not fire.
+19, 20, 21, 22, 23, 24) also SKIP when their content trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -78,6 +80,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no held-out predictive DV`` (check 19)
   - ``N/A — no registered verdict lattice`` (check 20)
   - ``N/A — no arity acceptance gate`` (check 21)
+  - ``N/A — no resume/persist pattern`` (check 24)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -1128,8 +1131,9 @@ def _trigger_windows(plan: str, trigger_re: re.Pattern[str], window_lines: int) 
     fence-only example is not a trigger — the line-preserving equivalent of
     searching ``strip_fences(plan)``); each WINDOW is raw text, so evidence
     inside adjacent tables/fences still counts. Shared by c12
-    (``_BATTERY_TRIGGER_RE``, ±15) and c16 (``_C16_EXTRACT_RE`` ±3;
-    ``_C16_REGEN_RE`` at radius 0 = same-line adjacency)."""
+    (``_BATTERY_TRIGGER_RE``, ±15), c16 (``_C16_EXTRACT_RE`` ±3;
+    ``_C16_REGEN_RE`` at radius 0 = same-line adjacency), and c24
+    (``_C24_TRIGGER_RE``, ±15)."""
     lines = plan.splitlines()
     mask = _fence_mask(lines)
     windows: list[str] = []
@@ -3448,6 +3452,112 @@ def check_goal_currency(
     return _pass(cid, name, f"coverage: current {cov_cur:.2f}, max superseded {cov_stale:.2f}")
 
 
+# ─── Check 24 — resume-skip provenance validation (conditional) ─────────────
+
+# Trigger: a per-unit persist + resume-skip pattern. Compound forms ONLY —
+# bare "resume" fires on pod lifecycle ("pod.py resume", "resume the poll
+# loop") and bare "checkpoint"/"persist" on model checkpoints / the upload
+# policy (calibration 2026-07-05: 63 experiment|analysis plan-version hits
+# over the 1,367-file v*.md corpus, every spot-checked hit a genuine
+# resume-skip loop; zero pod-resume / upload-policy false hits; 28
+# non-exp/analysis triggered versions all land on the kind gate).
+_C24_TRIGGER_RE = re.compile(
+    r"(?i)\b(?:resume[- ]skip|resume[- ]predicate"
+    r"|skip[- ]if[- ]exists?"
+    r"|skips?\s+(?:already[- ])?(?:completed|done|existing)"
+    r"|checkpoint[- ](?:skip|resume)"
+    r"|per[- ](?:fold|cell|unit|seed|row|shard)[- ]persist\w*"
+    r"|idempotent re-?runs?"
+    r"|load[- ]partial[- ]and[- ]skip)"
+)
+
+# Satisfier: a recognizable input-fingerprint / provenance token near the
+# resume mention. Compound-form discipline on BOTH flanks (plan #1043 v3):
+# bare "provenance" and bare "manifest" are deliberately EXCLUDED —
+# "Completion provenance:" is a REQUIRED §4-design bullet in every
+# experiment plan (on-policy-completions enforcement), so it lands within
+# ±15 lines of resume prose and false-satisfied 52% of the v2-calibration
+# PASSes (#811 v1, #622 v1-v3, #931 v6 measured; 2026-07-05 reconciler).
+# Bare "regime" is likewise EXCLUDED — persona-vectors "read-out regime"
+# prose sits inside resume windows (#779 v5 measured) and would
+# self-satisfy. The final alternate (assert/validate/verify … existing/
+# persisted/… … match) catches contracts phrased without a fingerprint
+# noun (#560 v3: "assert the existing file's `sampling.temperature` /
+# `sampling_seed` match the requested flags"); it requires a resume-object
+# token between verb and "match" so an equivalence-gate assert ("assert
+# the vmapped MLP path matches a seeded serial reference", #922 v1-v3
+# measured) does NOT satisfy, and its spans are [^\n] (not
+# sentence-bounded) because periods inside code tokens like
+# `sampling.temperature` break [^.]-spans.
+_C24_FINGERPRINT_RE = re.compile(
+    r"(?i)\b(?:fingerprints?"
+    r"|provenance[- ](?:manifest\w*|contract\w*|validation\w*|check\w*)"
+    r"|manifest[- ](?:match\w*|validation\w*|mismatch\w*|check\w*)"
+    r"|sha[- ]?256|git[_ -]?sha|code[- ]sha|commit[- ](?:sha|hash)"
+    r"|(?:split|content|input|data)[- ]hash(?:es)?"
+    r"|env[- ](?:fingerprint|knobs?)"
+    r"|regime[- ]key(?:ed|s)?"
+    r"|never skip\w* on (?:[\w-]+[- ])?existence"
+    r"|(?:assert\w*|validat\w+|verif\w+)[^\n]{0,80}?"
+    r"\b(?:existing|persisted|resumed?|cached|stored|prior)\b[^\n]{0,80}?\bmatch\w*)"
+)
+
+# Evidence window: ± this many RAW lines around each trigger (the provenance
+# contract legitimately lives in an adjacent sentence/table row — #952 v12
+# names it in the same bullet; #813 v3 one section over).
+_C24_WINDOW_LINES = 15
+
+
+def check_resume_provenance(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a plan naming a per-unit persist + resume-skip
+    pattern must, within ±15 raw lines of SOME resume mention, name an
+    input-fingerprint / provenance validation for the resumed outputs (split
+    hashes, code SHA, env knobs, a regime-keyed resume predicate, an explicit
+    never-skip-on-bare-existence commitment, or an assert-that-the-existing-
+    file-matches contract) — never output existence alone. NEVER FAILs in
+    v1 — the trigger is a vocabulary heuristic and semantic adequacy of the
+    named validation stays with the critics (task #1043 constraint). Known
+    accepted gap under WARN-only: a plan that QUOTES this check's WARN
+    remedy text near a trigger self-satisfies (the remedy names "split
+    hashes, code SHA, env knobs"); the anti-paste guard covers only the N/A
+    phrase. Any future WARN→FAIL promotion MUST close that gap first (plan
+    #1043 §10 must-ask hook). Incident #952 v9: per-fold persist +
+    resume-skip with a bare skips-completed-folds predicate would have let
+    stale-fold outputs (or a stale calibration-gate PASS) silently vouch for
+    post-code-fix verdict folds; caught only by the critic ensemble (v10
+    added the gate-5 provenance-manifest contract). ANY-window semantics per
+    the c12 precedent: the contract is typically declared once near one
+    mention."""
+    cid, name = "c24_resume_provenance", "resume-skip provenance validation"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid, name, "kind-exempt: resume-provenance is an experiment|analysis plan shape"
+        )
+    windows = _trigger_windows(plan, _C24_TRIGGER_RE, _C24_WINDOW_LINES)
+    if not windows:
+        return _skip(cid, name, "no per-unit persist + resume-skip pattern named")
+    if _standalone_na_declared(plan, r"no resume\s*[/-]?\s*persist pattern"):
+        return _pass(cid, name, "explicit N/A declared (no resume/persist pattern)")
+    for window in windows:
+        if _C24_FINGERPRINT_RE.search(window):
+            return _pass(
+                cid,
+                name,
+                "a resume window names a provenance/fingerprint validation — whether the "
+                "named fields (input hashes, code SHA, env) are SUFFICIENT stays critic-owned",
+            )
+    return _warn(
+        cid,
+        name,
+        "plan names a per-unit persist + resume-skip pattern but no input-fingerprint / "
+        "provenance validation near any resume mention (split hashes, code SHA, env knobs, "
+        "a regime-keyed resume predicate) — a resume that trusts bare output existence lets "
+        "stale units silently vouch after a crash + code-fix round (#952 v9; #722 r3); "
+        "name the validation per the #952 gate-5 manifest shape, or declare "
+        "'N/A — no resume/persist pattern' on its own line if the mention is incidental",
+    )
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -3473,6 +3583,7 @@ CHECKS = [
     check_verdict_lattice_coherence,
     check_grep_arity_gate,
     check_cross_section_param_consistency,
+    check_resume_provenance,
 ]
 
 
