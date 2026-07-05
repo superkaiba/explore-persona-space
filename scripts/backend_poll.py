@@ -476,6 +476,44 @@ def _save_gpu_idle_state(path: Path, payload: dict[str, str]) -> None:
     tmp.replace(path)
 
 
+# #1033: the GPU-idle advisory/escalation keys scoped to ONE instance
+# incarnation on the GCP lane. Kept in lockstep with the idle subset of
+# ``poll_pipeline._RUN_SCOPED_STATE_KEYS`` (the RunPod-lane sibling clear set).
+_IDLE_ADVISORY_STATE_KEYS: tuple[str, ...] = (
+    "gpu_idle_since_epoch",
+    "gpu_idle_advised_phases",
+    "gpu_idle_escalated_phases",
+)
+
+
+def _scope_idle_state_to_attempt(
+    prev_state: dict[str, str], attempt_id: str | None
+) -> dict[str, str]:
+    """Reset the idle-advisory clock when the instance identity changed (#1033).
+
+    ``attempt_id`` is fresh per genuinely NEW instance and label-stable on
+    reconnect (#927; the ``gcp.py`` reconnect recovery re-reads it from the
+    instance labels), so a mismatch against the stored ``idle_attempt_id``
+    means the persisted idle span belongs to a PREVIOUS instance (#763: a
+    "543 min" idle advisory on a ~17-min-old VM whose phase name matched the
+    stored one, so the per-phase reset never fired). The reported idle
+    minutes are PER-INSTANCE, never cumulative across relaunches.
+
+    Fail-safe: an absent/empty CURRENT attempt_id cannot decide instance
+    identity, so the state is kept verbatim (pre-#1033 behavior). A
+    stored-key MISS with a KNOWN current id also resets — the migration
+    path for pre-#1033 state files, failing toward one delayed/duplicate
+    advisory, never a stale counter (same cheaper-failure direction as
+    ``_tripwire_run_scope``'s malformed-anchor branch). Pure / no I/O;
+    never raises into the poll tick.
+    """
+    if not attempt_id:
+        return prev_state
+    if prev_state.get("idle_attempt_id", "") == attempt_id:
+        return prev_state
+    return {k: v for k, v in prev_state.items() if k not in _IDLE_ADVISORY_STATE_KEYS}
+
+
 def _missing_sidecar_json(issue: int, sidecar_path: Path, reason: str) -> dict:
     """Build the failure-shape JSON line for a missing / unreadable sidecar.
 
@@ -3583,17 +3621,29 @@ def main(argv: list[str] | None = None) -> int:
 
         gpu_idle_state_path = _gpu_idle_state_path(Path(sidecar))
         prev_gpu_idle_state = _load_gpu_idle_state(gpu_idle_state_path)
+        # ── #1033 per-instance idle-clock scoping (attempt-id keyed) ─────
+        # attempt_id is on the handle at poll time (no extra gcloud call),
+        # fresh per new instance, label-recovered on reconnect (#927).
+        # Scope BEFORE the run-epoch anchor below so ONE consistently-scoped
+        # dict flows through every consumer AND the persist at the bottom —
+        # an unscoped read at persist time could resurrect a cleared key.
+        current_attempt_id = str(handle.extra.get("attempt_id") or "")
+        prev_gpu_idle_state = _scope_idle_state_to_attempt(prev_gpu_idle_state, current_attempt_id)
         zone = handle.extra.get("zone") or backend._config.primary_zone
         gpu_util = backend._gcp_gpu_util_probe(handle, zone)
         now_epoch = int(time.time())
         current_phase = getattr(result, "current_phase", "") or ""
         pod = handle.pod_name
-        # ── #873 run-scoped tripwire dedup anchor (AC #6, GCP mirror) ────
-        # A fresh epm:run-launched clears the width dedup keys so a
-        # relaunch / follow-up round re-arms the width advisory. Applied to
-        # the WIDTH call only — the idle-advisory keys are untouched by the
-        # reset (disjoint key set), so the two existing calls keep reading
-        # prev_gpu_idle_state verbatim.
+        # ── #873/#1033 run-scoped state anchor (AC #6, GCP mirror) ───────
+        # A fresh epm:run-launched clears the width dedup keys AND (since
+        # #1033) the idle-advisory keys — belt-and-suspenders next to the
+        # attempt-id scoping above (a same-instance relaunch posts a fresh
+        # run-launched with no attempt change; a fresh instance changes the
+        # attempt id whether or not the marker landed). The pre-#1033
+        # "idle-advisory keys are untouched by the reset" contract was the
+        # bug being fixed (#763/#810 stale idle minutes on fresh VMs). ALL
+        # consumers below — idle advisory, escalation, width — read the
+        # scoped ``tripwire_state``.
         tripwire_state, tripwire_run_epoch = _tripwire_run_scope(
             prev_gpu_idle_state,
             run_age_sec=_run_launched_age_sec(args.issue, now_epoch),
@@ -3606,7 +3656,7 @@ def main(argv: list[str] | None = None) -> int:
             status="running",
             gpu_util=gpu_util,
             current_phase=current_phase,
-            prev_state=prev_gpu_idle_state,
+            prev_state=tripwire_state,
             now_epoch=now_epoch,
         )
         escalated_phases, gcp_gpu_idle_escalation_posted = _maybe_escalate_gpu_idle(
@@ -3616,7 +3666,7 @@ def main(argv: list[str] | None = None) -> int:
             gpu_util=gpu_util,
             current_phase=current_phase,
             idle_since_epoch=idle_since,
-            prev_state=prev_gpu_idle_state,
+            prev_state=tripwire_state,
             now_epoch=now_epoch,
         )
         # ── #873 m-of-N GPU-width advisory (GCP mirror of the RunPod call) ─
@@ -3645,6 +3695,13 @@ def main(argv: list[str] | None = None) -> int:
                 "gpu_width_idle_set": ",".join(str(i) for i in gcp_width_idle_set),
                 "gpu_width_advised_phases": ",".join(sorted(gcp_width_advised)),
                 "tripwire_run_epoch": str(tripwire_run_epoch),
+                # #1033: the instance incarnation the idle keys above belong
+                # to. An empty CURRENT id (fail-safe keep branch) preserves
+                # the stored one — read from the SCOPED dict, never the raw
+                # load, so a cleared key can never be resurrected here.
+                "idle_attempt_id": (
+                    current_attempt_id or tripwire_state.get("idle_attempt_id", "")
+                ),
             },
         )
 
