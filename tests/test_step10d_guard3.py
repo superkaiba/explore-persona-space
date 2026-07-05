@@ -486,3 +486,101 @@ def test_post_merge_guard_push_retry_uses_sync_repo_root():
     assert "|| { git pull --rebase=merges --autostash && git push origin main; }" not in region, (
         "the hand-rolled repo-root pull retry must be gone from the post-merge guard"
     )
+
+
+# --------------------------------------------------------------------------
+# Round 3 — lint-gate crash class (#1047 concerns: lint-gate-crash-fails-open
+# BLOCKER + lint-baseline-crash-erased CONCERN)
+# --------------------------------------------------------------------------
+
+
+def _gate_region(text: str) -> str:
+    """The Pre-push workflow-lint gate subsection (shared executable block)."""
+    start = text.find("#### Pre-push workflow-lint gate")
+    end = text.find("#### The auto-merge procedure")
+    assert start != -1, "Pre-push workflow-lint gate heading not found"
+    assert end != -1, "auto-merge procedure heading not found"
+    assert start < end, "gate subsection must precede the auto-merge procedure"
+    return text[start:end]
+
+
+def test_gate_crash_arm_fails_closed_before_pass():
+    """Round-3 (#1047 `lint-gate-crash-fails-open` BLOCKER): a workflow_lint.py
+    CRASH (rc>1, or rc!=0 with ZERO normalized `workflow_lint:` failure lines)
+    must fail CLOSED at BOTH gate sites — an explicit crash arm BEFORE any
+    `pass` write (shared block) / before the attribution `GATE_VERDICT=block`
+    arm (surgical block) — never land in the else->pass leg."""
+    text = _skill_text()
+    region = _gate_region(text)
+    crash_arm = region.find('[ "$GATED_RC" -gt 1 ]')
+    crash_write = region.find("echo crash > /tmp/issue-<N>-lint-verdict.txt")
+    pass_write = region.find("echo pass > /tmp/issue-<N>-lint-verdict.txt")
+    assert crash_arm != -1, "shared gate must carry an explicit GATED_RC>1 crash arm"
+    assert crash_write != -1, "shared gate must persist the crash verdict to the verdict file"
+    assert -1 < crash_arm < pass_write, (
+        "the crash arm must be evaluated BEFORE the pass write (fail CLOSED on a crash)"
+    )
+    assert "[ ! -s /tmp/issue-<N>-lint-gated-norm.txt ]" in region, (
+        "rc!=0 with zero normalized gated failure lines must be classified as a crash"
+    )
+    surg = _artifact_confirmed_region(text)
+    s_crash_arm = surg.find('[ "$GATED_RC" -gt 1 ]')
+    s_crash = surg.find("GATE_VERDICT=crash")
+    s_block = surg.find("GATE_VERDICT=block")
+    assert s_crash_arm != -1, "surgical block must carry the GATED_RC>1 crash arm"
+    assert s_crash != -1, "surgical block must set GATE_VERDICT=crash on a linter crash"
+    assert -1 < s_crash < s_block, "the surgical crash arm must precede the attribution block arm"
+
+
+def test_gate_baseline_rc_captured_not_erased():
+    """Round-3 (#1047 `lint-baseline-crash-erased` CONCERN): baseline lint legs
+    must capture BASE_RC per leg (feeding the crash arm), never `|| true`-erase
+    it; a baseline rc=1 WITH lines stays a legitimate red baseline (the
+    subtraction handles it)."""
+    text = _skill_text()
+    assert "lint-baseline.txt 2>&1 || true" not in text, (
+        "no baseline lint leg may erase its exit code with `|| true`"
+    )
+    assert text.count("|| BASE_RC=$?") >= 4, (
+        "both baseline legs at both gate sites must capture BASE_RC (2 legs x 2 sites)"
+    )
+    assert '[ "$BASE_RC" -gt 1 ]' in text, "a BASE_RC>1 baseline crash must feed the crash arm"
+    assert "[ ! -s /tmp/issue-<N>-lint-baseline-norm.txt ]" in text, (
+        "a baseline rc!=0 with zero normalized lines must be classified as a crash"
+    )
+
+
+def test_gate_verdict_file_consumed_then_removed():
+    """Round-3 (Claude r2 minor (b)): every verdict-file binding site must
+    remove the file after consuming it (consume-once, both branches) so a
+    stale verdict from a prior invocation can never certify a later merge."""
+    text = _skill_text()
+    assert text.count("rm -f /tmp/issue-<N>-lint-verdict.txt") >= 4, (
+        "both consumers (safe case + recovery) must rm the verdict file in both branches"
+    )
+    probe = "grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt"
+    first = text.find(probe)
+    first_rm = text.find("rm -f /tmp/issue-<N>-lint-verdict.txt", first)
+    ready = text.find("gh pr ready <PR>")
+    assert -1 < first < first_rm < ready, (
+        "the safe-case pass branch must consume-then-remove BEFORE gh pr ready"
+    )
+
+
+def test_gate_trigger_diff_exit_guarded():
+    """Round-3 (Codex r2 unaddressed case): a FAILED trigger `git diff
+    origin/main...HEAD` must not read as an artifact-only skip — the shared
+    gate materializes the own-diff with an explicit exit check routing to the
+    crash verdict; the straight-into-grep pipe trigger form is gone."""
+    text = _skill_text()
+    region = _gate_region(text)
+    assert (
+        'if ! git -C "$WT" diff --name-only origin/main...HEAD > /tmp/issue-<N>-own-diff.txt'
+        in region
+    ), "the trigger diff must be materialized with an explicit exit check"
+    assert region.count("echo crash > /tmp/issue-<N>-lint-verdict.txt") >= 2, (
+        "both the failed-trigger-diff arm and the linter-crash arm must write the crash verdict"
+    )
+    assert "cat /tmp/issue-<N>-lint-verdict.txt   # pass | block | crash | skip-artifact-only" in (
+        region
+    ), "the verdict enumeration must include crash"
