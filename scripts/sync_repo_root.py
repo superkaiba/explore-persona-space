@@ -74,7 +74,14 @@ Safety invariants (binding; pinned by tests/test_sync_repo_root.py):
     ``shutil.move`` replace a prior rescue copy and clobber its manifest).
   * Fail loud; no silent husks; a young (< ``EPM_ROOT_SYNC_HUSK_AGE_S``)
     rebase/merge husk or a persistent index.lock is reported and exits 5 —
-    never deleted. A STALE husk is git-aborted; when git itself cannot abort
+    never deleted — UNLESS the husk is at least ``EPM_ROOT_SYNC_HUSK_MIN_AGE_S``
+    (default 600s) old AND a COMPLETED, budget-bounded /proc scan
+    (``_probe_git_liveness``) proves no live git process is attributable to
+    this repo, in which case the EXISTING stale handling applies (abort /
+    archive-aside — still never deleted). An uncertain, timed-out,
+    budget-exhausted, or disabled (``EPM_ROOT_SYNC_HUSK_PROBE=0``) probe
+    keeps the exit-5 refusal, with the probe evidence appended to the
+    message. A STALE husk is git-aborted; when git itself cannot abort
     it (the head-name-less shape a crashed autostash-pull leaves) its
     autostash is rescued to the stash list and the husk dir is ARCHIVED to
     the rescue root — never deleted — with a rescue failure blocking the
@@ -144,6 +151,12 @@ IN_FLIGHT_MSG = (
 COLLISION_STDERR_NEEDLE = "untracked working tree files would be overwritten by"
 # Emitted on STDERR with pull rc=0 (plan §12 item 4) — never key on exit code.
 AUTOSTASH_CONFLICT_NEEDLE = "Applying autostash resulted in conflicts"
+# Exact wording verified on git 2.34.1 (`strings $(command -v git)` + live
+# two-refspec repro, #1044 §3): builtin/pull.c die()s this BEFORE any rebase
+# starts, when a concurrent fetch left >1 for-merge FETCH_HEAD entries.
+# Substring without the `fatal: ` wrapper and trailing period — still the
+# exact phrase; robust to die()'s prefix.
+MULTI_BRANCH_STDERR_NEEDLE = "Cannot rebase onto multiple branches"
 
 SCRATCH_WORKTREE_RECIPE = (
     "Manual next step (the recovery that resolved 6c1b3fadf7):\n"
@@ -172,6 +185,35 @@ def _fresh_s() -> float:
     """Mtime freshness window under which a collision is rescued, never removed
     (``EPM_ROOT_SYNC_FRESH_S``)."""
     return float(os.environ.get("EPM_ROOT_SYNC_FRESH_S", "60"))
+
+
+def _husk_probe_enabled() -> bool:
+    """Liveness-probe kill switch (``EPM_ROOT_SYNC_HUSK_PROBE`` != "0")."""
+    return os.environ.get("EPM_ROOT_SYNC_HUSK_PROBE", "1") != "0"
+
+
+def _husk_min_age_s() -> float:
+    """Age floor below which a young husk is NEVER liveness-downgraded
+    (``EPM_ROOT_SYNC_HUSK_MIN_AGE_S``)."""
+    return float(os.environ.get("EPM_ROOT_SYNC_HUSK_MIN_AGE_S", "600"))
+
+
+def _probe_timeout_s() -> float:
+    """Per-candidate bound for the probe's rev-parse attribution subprocess
+    (``EPM_ROOT_SYNC_PROBE_TIMEOUT_S``)."""
+    return float(os.environ.get("EPM_ROOT_SYNC_PROBE_TIMEOUT_S", "5.0"))
+
+
+def _probe_budget_s() -> float:
+    """TOTAL wall-clock budget for one liveness scan
+    (``EPM_ROOT_SYNC_PROBE_BUDGET_S``). Exhaustion ⇒ verdict "uncertain"
+    (scan incomplete) — never "none"."""
+    return float(os.environ.get("EPM_ROOT_SYNC_PROBE_BUDGET_S", "30.0"))
+
+
+def _retry_sleep_s() -> float:
+    """Sleep before the one multiple-branches retry (``EPM_ROOT_SYNC_RETRY_SLEEP_S``)."""
+    return float(os.environ.get("EPM_ROOT_SYNC_RETRY_SLEEP_S", "2.0"))
 
 
 def _rescue_timestamp() -> str:
@@ -332,6 +374,40 @@ def pull_rebase(repo: Path, timeout_s: float) -> GitResult:
     return _run_bounded(_pull_argv(repo), timeout_s)
 
 
+def _pull_with_transient_retry(repo: Path, report: dict, timeout_s: float) -> GitResult:
+    """Bounded pull with exactly ONE retry on the transient multiple-branches race.
+
+    ``fatal: Cannot rebase onto multiple branches.`` is die()d by
+    builtin/pull.c BEFORE any rebase starts, when a concurrent fetch rewrote
+    FETCH_HEAD with >1 for-merge entries mid-pull (#965/#998); verified to
+    leave no rebase state, no autostash, and an untouched worktree (#1044
+    §3), so the retry is state-safe. Retry once after a short sleep — the
+    retry's own fetch rewrites FETCH_HEAD — and only when no rebase state
+    exists (belt-and-braces re-verification). A second failure returns
+    as-is and surfaces through the existing handling unchanged. A SUCCESSFUL
+    retry is itself diagnostic evidence of an unserialized FETCH_HEAD writer
+    (a fetch bypassing this helper's flocks) — the ``_msg`` line preserves
+    that in the report/journal so recurrences stay attributable.
+    """
+    result = pull_rebase(repo, timeout_s)
+    if not result.timed_out and result.rc != 0 and MULTI_BRANCH_STDERR_NEEDLE in result.stderr:
+        if _rebase_in_progress(repo):
+            _msg(
+                report,
+                "multiple-branches signature but rebase state exists — NOT retrying "
+                "(unexpected shape; surfacing the failure as-is).",
+            )
+            return result
+        _msg(
+            report,
+            "transient 'Cannot rebase onto multiple branches' (concurrent FETCH_HEAD "
+            f"rewrite) — one retry after {_retry_sleep_s():.1f}s.",
+        )
+        time.sleep(_retry_sleep_s())
+        return pull_rebase(repo, timeout_s)
+    return result
+
+
 # ─── Report ──────────────────────────────────────────────────────────────────
 
 
@@ -413,6 +489,86 @@ def _fuser_evidence(path: Path) -> str:
     return (proc.stdout + proc.stderr).strip() or "(fuser: no holder reported)"
 
 
+@dataclasses.dataclass
+class LivenessProbe:
+    """Outcome of the /proc git-liveness scan: verdict + human-readable evidence."""
+
+    verdict: str  # "holder" | "none" | "uncertain"
+    evidence: str
+
+
+def _probe_git_liveness(gd: Path, proc_root: Path = Path("/proc")) -> LivenessProbe:
+    """Scan ``proc_root`` for a live git process operating on THIS repo.
+
+    "holder": a ``comm == git`` process whose cwd attributes (via a BOUNDED
+    ``git -C <cwd> rev-parse --absolute-git-dir``) to this repo's git dir —
+    state-owning git commands chdir to the worktree toplevel (verified,
+    #1044 §3), so linked-worktree / other-repo git activity is excluded
+    without hardcoded paths. "none" ONLY when the scan COMPLETED within the
+    total budget with zero holders and zero unattributable git candidates.
+    Everything else — ``proc_root`` unreadable, a git process whose cwd is
+    unreadable (EACCES: another user's process), unattributable, or whose
+    attribution TIMED OUT (a hung FUSE/network mount), or the total probe
+    budget exhausted mid-scan — is "uncertain". Every attribution subprocess
+    runs under ``_run_bounded`` with ``_probe_timeout_s()``; the whole scan
+    is capped by a ``_probe_budget_s()`` monotonic deadline, so the probe can
+    never stall ``preflight()`` (which holds both flocks) on a dead mount.
+    The caller treats anything but "none" as "keep today's young-husk
+    refusal": the probe fails TOWARD conservatism by construction. It cannot
+    see a conflict-paused rebase awaiting a human (no process exists then) —
+    that residual is bounded by ``_husk_min_age_s`` and the repo-root policy
+    that conflicts are resolved in scratch worktrees, never in place. It
+    also cannot see a rebase driven by a non-git process image (a
+    library-driven rebase via pygit2/dulwich or a wrapper whose ``comm`` is
+    not ``git``) — a second false-"none" residual, accepted because fleet
+    git activity goes through the git CLI.
+    """
+    deadline = time.monotonic() + _probe_budget_s()
+    try:
+        pids = [p for p in os.listdir(proc_root) if p.isdigit()]
+    except OSError as e:
+        return LivenessProbe("uncertain", f"{proc_root} unreadable: {e!r}")
+    gd_resolved = gd.resolve()
+    unattributable: list[str] = []
+    for pid in pids:
+        pdir = proc_root / pid
+        try:
+            comm = (pdir / "comm").read_text().strip()
+        except OSError:
+            continue  # vanished mid-scan — provably not a live holder
+        if comm != "git":
+            continue
+        try:
+            cwd = os.readlink(pdir / "cwd")
+        except FileNotFoundError:
+            continue  # vanished mid-scan
+        except OSError as e:
+            unattributable.append(f"pid {pid}: cwd unreadable ({e.__class__.__name__})")
+            continue
+        if time.monotonic() > deadline:
+            return LivenessProbe(
+                "uncertain",
+                f"probe budget ({_probe_budget_s():.0f}s) exhausted before attributing "
+                f"pid {pid} — scan incomplete",
+            )
+        rp = _run_bounded(
+            _git_argv(Path(cwd), "rev-parse", "--absolute-git-dir"), _probe_timeout_s()
+        )
+        if rp.timed_out:
+            unattributable.append(
+                f"pid {pid}: attribution timed out after {_probe_timeout_s():.0f}s (cwd {cwd})"
+            )
+            continue
+        if rp.rc != 0:
+            unattributable.append(f"pid {pid}: cwd {cwd} not attributable to a git dir")
+            continue
+        if Path(rp.stdout.strip()).resolve() == gd_resolved:
+            return LivenessProbe("holder", f"live git pid {pid}, cwd {cwd}")
+    if unattributable:
+        return LivenessProbe("uncertain", "; ".join(unattributable[:5]))
+    return LivenessProbe("none", "scan completed: no live git process attributable to this repo")
+
+
 def acquire_task_workflow_lock(wait_s: float) -> int:
     """Bounded acquisition of ``task_workflow.LOCK_PATH`` (LOCK_NB + 2s poll).
 
@@ -490,11 +646,27 @@ def preflight(repo: Path, report: dict, dry_run: bool) -> None:
         if not husk.exists():
             continue
         age = now - husk.stat().st_mtime
+        stale_how = f"> {_husk_age_s():.0f}s"
         if age <= _husk_age_s():
-            raise SyncAbortError(
-                EXIT_PRECONDITION,
-                f"young {husk.name} husk ({age:.0f}s old, threshold {_husk_age_s():.0f}s) — "
-                "someone may be mid-operation; refusing to touch it.",
+            probe = (
+                _probe_git_liveness(gd)
+                if _husk_probe_enabled() and age > _husk_min_age_s()
+                else None
+            )
+            if probe is None or probe.verdict != "none":
+                extra = f"\nliveness probe: {probe.verdict} — {probe.evidence}" if probe else ""
+                raise SyncAbortError(
+                    EXIT_PRECONDITION,
+                    f"young {husk.name} husk ({age:.0f}s old, threshold {_husk_age_s():.0f}s) — "
+                    f"someone may be mid-operation; refusing to touch it.{extra}",
+                )
+            stale_how = "young, liveness-downgraded"
+            _msg(
+                report,
+                f"YOUNG-HUSK DOWNGRADE: {husk.name} is {age:.0f}s old "
+                f"(< {_husk_age_s():.0f}s threshold, > {_husk_min_age_s():.0f}s floor) but no "
+                f"live git process is attributable to this repo ({probe.evidence}); "
+                "treating as STALE.",
             )
         # Discriminators scoped to REBASE state dirs only (MERGE_HEAD — even a
         # malformed directory — routes to the explicit refuse branch below).
@@ -523,7 +695,7 @@ def preflight(repo: Path, report: dict, dry_run: bool) -> None:
         if aborted.returncode == 0:
             _msg(
                 report,
-                f"STALE-HUSK ABORT: {husk.name} was {age:.0f}s old (> {_husk_age_s():.0f}s); "
+                f"STALE-HUSK ABORT: {husk.name} was {age:.0f}s old ({stale_how}); "
                 f"ran `git {' '.join(abort_args)}` "
                 "(restores original HEAD + re-applies autostash).",
             )
@@ -547,7 +719,7 @@ def preflight(repo: Path, report: dict, dry_run: bool) -> None:
                 f"head-name-less rebase shape — refusing to touch it.\n"
                 f"stderr: {aborted.stderr.strip()}",
             )
-        _recover_headnameless_husk(repo, husk, age, aborted, report)
+        _recover_headnameless_husk(repo, husk, age, aborted, report, stale_how)
 
     branch = git(repo, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip()
     if branch != "main":
@@ -562,9 +734,18 @@ def preflight(repo: Path, report: dict, dry_run: bool) -> None:
 
 
 def _recover_headnameless_husk(
-    repo: Path, husk: Path, age: float, aborted: subprocess.CompletedProcess[str], report: dict
+    repo: Path,
+    husk: Path,
+    age: float,
+    aborted: subprocess.CompletedProcess[str],
+    report: dict,
+    stale_how: str,
 ) -> None:
     """Rescue-then-ARCHIVE for a stale, un-abortable, head-name-less rebase husk.
+
+    ``stale_how`` names WHY the husk counts as stale ("> <threshold>s" for the
+    wall-clock path, "young, liveness-downgraded" for the #1044 probe path) so
+    the ARCHIVED report never states a false age threshold.
 
     A crashed ``pull --rebase --autostash`` can die after writing
     ``<state-dir>/autostash`` but before ``head-name`` (2026-07-03 incident,
@@ -652,7 +833,7 @@ def _recover_headnameless_husk(
     shutil.move(str(husk), str(dest))
     _msg(
         report,
-        f"STALE-HUSK ARCHIVED: {husk.name} was {age:.0f}s old (> {_husk_age_s():.0f}s), "
+        f"STALE-HUSK ARCHIVED: {husk.name} was {age:.0f}s old ({stale_how}), "
         f"head-name-less and un-abortable (`git rebase --abort` rc={aborted.returncode}: "
         f"{aborted.stderr.strip()}); {disposition}; husk dir archived to {dest}.",
     )
@@ -1085,14 +1266,16 @@ def _pull_pipeline(
 ) -> None:
     """Sweep-wrapped pull: enumerate collisions → journaled sweep (each action
     durable BEFORE it executes; consolidated manifest after) → bounded
-    pull-rebase → error-driven fallback sweep + one retry → conflict/timeout
-    abort policy → post-pull stranded-autostash recovery. The rescue dir is
-    allocated lazily + exclusively on first sweep need (``RescueDir``)."""
+    pull-rebase (with one transient multiple-branches retry,
+    ``_pull_with_transient_retry``) → error-driven fallback sweep + one retry →
+    conflict/timeout abort policy → post-pull stranded-autostash recovery. The
+    rescue dir is allocated lazily + exclusively on first sweep need
+    (``RescueDir``)."""
     collisions = enumerate_collisions(repo)
     _record_collision_plan(report, collisions)
     _sweep_and_record(repo, collisions, ledger, rescue, report)
 
-    result = pull_rebase(repo, timeout_s)
+    result = _pull_with_transient_retry(repo, report, timeout_s)
     if result.timed_out:
         if _rebase_in_progress(repo):
             git(repo, "rebase", "--abort")
@@ -1111,7 +1294,7 @@ def _pull_pipeline(
         )
         fallback = [_classify(repo, p) for p in first_paths if (repo / p).exists()]
         _sweep_and_record(repo, fallback, ledger, rescue, report)
-        result = pull_rebase(repo, timeout_s)
+        result = _pull_with_transient_retry(repo, report, timeout_s)
         if result.timed_out:
             if _rebase_in_progress(repo):
                 git(repo, "rebase", "--abort")
