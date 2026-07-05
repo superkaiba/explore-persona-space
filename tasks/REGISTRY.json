@@ -419,8 +419,8 @@
     "1052": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1052",
-      "status": "running",
+      "path": "tasks/reviewing/1052",
+      "status": "reviewing",
       "title": "daily-fix: CRON-TEARDOWN idempotent + sweep one-shot wakeups"
     },
     "1053": {
