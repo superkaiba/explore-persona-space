@@ -26,6 +26,16 @@ committed ``eval_results/`` artifacts as fixtures, so ``new_worktree.sh``
 pre-adds every cone in that registry — a sparse worktree must materialize
 them without a manual ``sparse-checkout add``, and a whitespace-bearing
 registry line must be refused loudly.
+
+Items 21-29 pin the #1054 branch-name inference + reuse-path cone repair
+(the #906 incident: a flagless creation on branch ``issue-906`` left
+``eval_results/issue_906`` out-of-cone, and the exit-0 reuse path kept it
+broken for life): inference from ``issue-<N>`` / ``issue-<N>-<suffix>``
+branch names (21-22), explicit ``--issue`` precedence (23), conservative
+rejection of nonconforming branches (24), reuse-path repair of BOTH
+own-issue cones — flagless and flagged (25), full-worktree no-op with no
+WARN (26), sparse-non-issue no-op (27), repair-failure WARN-not-fail (28),
+and additive-``add`` preservation of non-inferable prior cones (29).
 """
 
 from __future__ import annotations
@@ -62,6 +72,12 @@ _GIT_ENV = {
     "GIT_AUTHOR_EMAIL": "t@t",
     "GIT_COMMITTER_NAME": "t",
     "GIT_COMMITTER_EMAIL": "t@t",
+    # #1054 env hygiene: branch-name inference makes _assign_project_quota
+    # reachable on FLAGLESS issue-<N> creations too (e.g. item 9's `--full`
+    # on branch issue-4), so a dev shell exporting EPS_WORKTREE_ASSIGN_QUOTA=1
+    # would send fixture runs into `sudo chattr`. Pin the opt-in OFF for every
+    # helper invocation in this file (env-only; no test contract changes).
+    "EPS_WORKTREE_ASSIGN_QUOTA": "0",
 }
 
 
@@ -794,6 +810,181 @@ def test_inert_warn_production_probe_rejects_plain_dir(repo: Path, tmp_path: Pat
             "production findmnt --mountpoint must report a plain (non-mount) data-disk "
             f"path as NOT live → no WARN; got substring {sub!r}: {res.stderr}"
         )
+
+
+# --- items 21-29: #1054 branch-name inference + reuse-path cone repair -------
+#
+# The #906 incident: `new_worktree.sh <path> issue-906` (no --issue) created a
+# sparse worktree WITHOUT eval_results/issue_906 cones, so committing the
+# task's own artifacts failed with "outside of your sparse-checkout
+# definition" — and the exit-0 reuse path kept the worktree broken for life.
+# Items 21-24 pin the inference at creation; 25-29 pin the reuse-path repair.
+
+_REPAIR_WARN = "WARN — could not ensure"
+
+
+def test_issue_inferred_from_branch_name(repo: Path, tmp_path: Path) -> None:
+    """Item 21: flagless creation on `issue-6` infers --issue 6 — the inverted
+    #906 repro: the own-issue cones are present and `git add` of the issue's
+    own artifact succeeds with no ceremony."""
+    wt = tmp_path / "wt-infer"
+    res = _run_helper(repo, wt, "issue-6")  # NO --issue
+    assert res.returncode == 0
+    assert "inferred --issue 6" in res.stderr, f"inference notice missing: {res.stderr}"
+    cones = _git(wt, "sparse-checkout", "list").stdout.split()
+    assert "eval_results/issue_6" in cones
+    assert "ood_eval_results/issue_6" in cones
+    p = wt / "eval_results/issue_6/r.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("{}\n")
+    ok = _git(wt, "add", "eval_results/issue_6/r.json", check=False)
+    assert ok.returncode == 0, f"the #906 repro must be fixed: {ok.stderr}"
+
+
+def test_issue_inferred_from_suffix_branch(repo: Path, tmp_path: Path) -> None:
+    """Item 22: a same-issue follow-up branch `issue-<N>-<suffix>` infers N."""
+    wt = tmp_path / "wt-infer-suffix"
+    res = _run_helper(repo, wt, "issue-6-followup-a")  # NO --issue
+    assert res.returncode == 0
+    assert "inferred --issue 6" in res.stderr
+    cones = _git(wt, "sparse-checkout", "list").stdout.split()
+    assert "eval_results/issue_6" in cones
+    assert "ood_eval_results/issue_6" in cones
+
+
+def test_explicit_issue_wins_over_inference(repo: Path, tmp_path: Path) -> None:
+    """Item 23: an explicit --issue 9 on branch `issue-6` yields issue_9 cones,
+    NOT issue_6 — the flag is the deliberate override channel."""
+    wt = tmp_path / "wt-explicit"
+    res = _run_helper(repo, wt, "issue-6", "--issue", "9")
+    assert res.returncode == 0
+    assert "inferred" not in res.stderr, "no inference notice when the flag was given"
+    cones = _git(wt, "sparse-checkout", "list").stdout.split()
+    assert "eval_results/issue_9" in cones
+    assert "eval_results/issue_6" not in cones
+
+
+@pytest.mark.parametrize("branch", ["issue-12abc", "infra-misc"])
+def test_no_inference_on_nonconforming_branch(repo: Path, tmp_path: Path, branch: str) -> None:
+    """Item 24: branches not matching `issue-<digits>(-…)` get NO issue cones
+    (today's behavior — conservative inference; extends existing item 14)."""
+    wt = tmp_path / f"wt-noninfer-{branch}"
+    res = _run_helper(repo, wt, branch)  # NO --issue
+    assert res.returncode == 0
+    assert "inferred" not in res.stderr
+    cones = _git(wt, "sparse-checkout", "list").stdout
+    assert "eval_results/issue_" not in cones, f"unexpected issue cone for {branch!r}: {cones}"
+
+
+def test_reuse_path_repairs_missing_own_issue_cone(repo: Path, tmp_path: Path) -> None:
+    """Item 25: re-invoking the helper on an existing sparse worktree that is
+    MISSING its own-issue cones restores BOTH eval_results/issue_<N> AND
+    ood_eval_results/issue_<N> (an eval-only repair mutant must not pass),
+    exits 0 with "reusing as-is" — flagless (inference) AND flagged variants."""
+    wt = tmp_path / "wt-reuse-repair"
+    _run_helper(repo, wt, "issue-6")  # flagless creation (inference)
+    # Simulate the pre-fix broken state: drop the own-issue cones.
+    _git(wt, "sparse-checkout", "set", "src", "figures")
+    cones = _git(wt, "sparse-checkout", "list").stdout.split()
+    assert "eval_results/issue_6" not in cones, "broken-state precondition failed"
+    # Flagless re-invoke: the reuse path repairs BOTH cones via inference.
+    res = _run_helper(repo, wt, "issue-6")
+    assert res.returncode == 0
+    assert "reusing as-is" in res.stdout
+    cones = _git(wt, "sparse-checkout", "list").stdout.split()
+    assert "eval_results/issue_6" in cones, "reuse repair must restore the eval cone"
+    assert "ood_eval_results/issue_6" in cones, "reuse repair must restore the ood cone"
+    # The #906 `git add` now succeeds.
+    p = wt / "eval_results/issue_6/r.json"
+    p.parent.mkdir(parents=True, exist_ok=True)
+    p.write_text("{}\n")
+    ok = _git(wt, "add", "eval_results/issue_6/r.json", check=False)
+    assert ok.returncode == 0, f"the #906 repro must be fixed on reuse: {ok.stderr}"
+    _git(wt, "commit", "-q", "-m", "issue artifact")
+    # Flagged variant: drop again, repair with an explicit --issue 6.
+    _git(wt, "sparse-checkout", "set", "src", "figures")
+    res2 = _run_helper(repo, wt, "issue-6", "--issue", "6")
+    assert res2.returncode == 0
+    assert "reusing as-is" in res2.stdout
+    cones = _git(wt, "sparse-checkout", "list").stdout.split()
+    assert "eval_results/issue_6" in cones
+    assert "ood_eval_results/issue_6" in cones
+
+
+def test_reuse_path_full_worktree_untouched(repo: Path, tmp_path: Path) -> None:
+    """Item 26 (+ T6 addendum): reuse on a --full worktree changes nothing —
+    still not sparse, bulk still materialized, exit 0, and NO repair WARN (a
+    mutant that attempts + fails the add on a full worktree must not survive)."""
+    wt = tmp_path / "wt-full-reuse"
+    _run_helper(repo, wt, "issue-4", "--full")
+    res = _run_helper(repo, wt, "issue-4", "--issue", "4")
+    assert res.returncode == 0
+    assert "reusing as-is" in res.stdout
+    # Non-sparse probe: the script's own skip predicate (cone-mode worktree
+    # config unset). `sparse-checkout list` rc is version-dependent here —
+    # git 2.34 warns "this worktree is not sparse" but exits 0.
+    cone = _git(wt, "config", "--worktree", "core.sparseCheckoutCone", check=False)
+    assert cone.stdout.strip() != "true", "a --full worktree must stay non-sparse after reuse"
+    assert _git(wt, "sparse-checkout", "list", check=False).stdout.strip() == "", (
+        "a --full worktree must have no cone entries after reuse"
+    )
+    assert (wt / "external/ref.txt").is_file()
+    assert _REPAIR_WARN not in res.stderr, (
+        f"full-worktree reuse must not attempt the cone add: {res.stderr}"
+    )
+
+
+def test_reuse_path_sparse_non_issue_noop(repo: Path, tmp_path: Path) -> None:
+    """Item 27: reuse on a sparse worktree with NO issue association (branch
+    `infra-misc`, no flag) adds no issue cones and emits no WARN."""
+    wt = tmp_path / "wt-nonissue-reuse"
+    _run_helper(repo, wt, "infra-misc")
+    res = _run_helper(repo, wt, "infra-misc")
+    assert res.returncode == 0
+    assert "reusing as-is" in res.stdout
+    cones = _git(wt, "sparse-checkout", "list").stdout
+    assert "eval_results/issue_" not in cones
+    assert _REPAIR_WARN not in res.stderr
+
+
+def test_reuse_repair_failure_warns_not_fails(repo: Path, tmp_path: Path) -> None:
+    """Item 28: a failed reuse-path repair WARNs to stderr and still exits 0
+    (the exit-0 reuse contract is load-bearing — it fires on every /issue
+    resume). Failure injection: a pre-created index.lock in the worktree's
+    private gitdir makes `sparse-checkout add` fail (rc=128 "File exists";
+    fact-checker-probed on git 2.34.1; pre-probed fallback per plan §8:
+    chmod 0555 on the worktree gitdir's info/)."""
+    wt = tmp_path / "wt-warn-reuse"
+    _run_helper(repo, wt, "issue-6")
+    _git(wt, "sparse-checkout", "set", "src", "figures")  # drop the own cones
+    gitdir = Path(_git(wt, "rev-parse", "--absolute-git-dir").stdout.strip())
+    lock = gitdir / "index.lock"
+    lock.write_text("")
+    try:
+        res = _run_helper(repo, wt, "issue-6")
+        assert res.returncode == 0, f"reuse must stay exit-0 on a failed repair: {res.stderr}"
+        assert "reusing as-is" in res.stdout
+        assert _REPAIR_WARN in res.stderr, f"failed repair must WARN: {res.stderr}"
+    finally:
+        lock.unlink()
+
+
+def test_reuse_repair_preserves_non_inferable_prior_cones(repo: Path, tmp_path: Path) -> None:
+    """Item 29: the reuse repair is ADDITIVE (`sparse-checkout add`) — a prior
+    manually-added cone the helper cannot infer (another issue's fixtures)
+    SURVIVES alongside the restored own-issue cones. A regression to `set`
+    semantics (or dropping the $EXISTING capture) fails this test."""
+    wt = tmp_path / "wt-prior-cones"
+    _run_helper(repo, wt, "issue-7")  # flagless; inference → issue_7 cones
+    # A non-inferable prior cone + the broken own-cone state, together.
+    _git(wt, "sparse-checkout", "set", "src", "figures", "eval_results/issue_99")
+    res = _run_helper(repo, wt, "issue-7")  # flagless reuse
+    assert res.returncode == 0
+    assert "reusing as-is" in res.stdout
+    cones = _git(wt, "sparse-checkout", "list").stdout.split()
+    assert "eval_results/issue_99" in cones, "repair must be additive, never a cone reset"
+    assert "eval_results/issue_7" in cones
+    assert "ood_eval_results/issue_7" in cones
 
 
 if __name__ == "__main__":
