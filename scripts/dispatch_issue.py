@@ -1483,6 +1483,9 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
 # ``epm:upload-verification`` marker note (shape: ``**Verdict: PASS**``;
 # see workflow.yaml § markers). Case-sensitive on purpose — the schema
 # emits uppercase PASS/FAIL, and prose mentions of "pass" must not match.
+# Private copy of the canonical ``task_workflow.UPLOAD_VERIFICATION_PASS_RE``
+# (#1026); pattern parity is pinned by
+# tests/test_upload_verifier_currency.py::test_pass_regex_parity_with_dispatch_issue.
 _UPLOAD_VERIFICATION_PASS_RE = re.compile(r"Verdict:\s*PASS\b")
 
 
@@ -1509,6 +1512,13 @@ def _agent_upload_verification_passed(issue: int) -> bool:
     ``False`` after a logged warning — the safe direction: no evidence ⇒
     the caller keeps the exit-3 teardown-skip; we never tear down on a
     guess.
+
+    CURRENCY is NOT this probe's job (#1026): the evidence forms above are
+    deliberately unchanged, and the verifier-currency gate
+    (:func:`_upload_verification_currency_blocker`, wired at the top of
+    :func:`_cmd_finalize`) wraps AROUND it — refusing teardown when a
+    verifier round is in flight, the latest verdict is a FAIL, or the
+    newest ``epm:results`` postdates the latest verdict.
     """
     log = logging.getLogger("dispatch_issue")
     try:
@@ -1549,6 +1559,38 @@ def _agent_upload_verification_passed(issue: int) -> bool:
     return False
 
 
+def _upload_verification_currency_blocker(issue: int) -> dict | None:
+    """Guarded wrapper over ``task_workflow.upload_verification_currency_blocker``.
+
+    Read/LOOKUP failures (missing task, unreadable events.jsonl) return None
+    after a logged warning — NOT a refusal: with unreadable events,
+    :func:`_agent_upload_verification_passed` also returns False, so the
+    degrade cannot fire and the existing exit-3 paths already hold teardown.
+    Deliberately NARROW (#1026 MF-C): a helper BUG
+    (TypeError/AttributeError/...) raises loudly instead of silently
+    disarming the gate (fail-fast rule). ``find_task_path`` raises
+    ``FileNotFoundError`` on a registry miss (and its
+    ``StaleTaskPathError`` subclass on multi-hit registry corruption) —
+    both are ``OSError`` lookup failures the narrow tuple absorbs.
+    """
+    try:
+        from explore_persona_space.task_workflow import (
+            list_events,
+            upload_verification_currency_blocker,
+        )
+
+        return upload_verification_currency_blocker(list_events(int(issue)))
+    except (FileNotFoundError, KeyError, OSError) as exc:
+        logging.getLogger("dispatch_issue").warning(
+            "could not read upload-verifier currency evidence for issue=%d (%s: %s); "
+            "treating as no blocker (the PASS-evidence probe keeps its own safe direction)",
+            int(issue),
+            type(exc).__name__,
+            exc,
+        )
+        return None
+
+
 def _cmd_finalize(
     args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]
 ) -> int:
@@ -1562,17 +1604,36 @@ def _cmd_finalize(
     (HF Hub list_repo_files + WandB run + git-figure + completion
     sentinel — see ``backends.artifacts.confirm_artifacts_from_handle``).
 
+    Verifier-currency gate (#1026): BEFORE ``fetch_results``, ONE top gate
+    (:func:`_upload_verification_currency_blocker`) requires the
+    upload-verification evidence to be a CURRENT PASS, uniformly on ALL
+    non-skip paths (declaration-present AND declaration-less). Five typed
+    exit-3 reasons: ``upload_verifier_in_flight`` (a dispatched verifier
+    round has no verdict yet, liveness window fresh),
+    ``upload_verifier_stalled`` (window lapsed, no verdict),
+    ``upload_verification_ambiguous`` (a late verdict cannot be attributed
+    to the current results-epoch), ``upload_verification_stale`` (the
+    latest ``epm:results`` postdates the latest verdict),
+    ``upload_verification_failed_current`` (the latest verification is a
+    FAIL). ``--skip-confirm-artifacts`` refuses ONLY a FRESH in-flight
+    round (never destroy a running round's pod; the 15-min liveness window
+    lapsing to ``stalled`` is the flag-free escape) and degrades the other
+    four reasons to a loud warning + a ``verifier_warning`` field in the
+    success JSON.
+
     Degrade path: when the handle carries NO ``expected_artifacts``
     declaration the mechanical gate is structurally unsatisfiable.
-    Every launch path (GCP, SLURM, RunPod) populates the declaration as
-    of #598, so a declaration-less handle is a pre-#598 in-flight
-    sidecar only; a confirm FAIL on one falls back to the agent-level
+    Declaration-less handles still occur in production (RunPod
+    experimenter-launched runs, pre-#598 sidecars); a confirm FAIL on one
+    falls back to the agent-level
     upload-verification PASS evidence on the task's ``events.jsonl``
     (:func:`_agent_upload_verification_passed`). Evidence found →
     teardown proceeds with a LOUD log + a ``confirm_artifacts`` field in
     the output JSON; no evidence → exit 3 with
     ``reason: confirm_artifacts_no_declaration``. A handle WITH a
     declaration never degrades — a real mechanical FAIL always exits 3.
+    Either way the currency gate above already ran: the degrade can only
+    execute when the blocker is None on the non-skip path.
 
     After a SUCCESSFUL teardown the sidecar is renamed to
     ``<name>.finalized`` (audit record, never deleted) so a later
@@ -1607,6 +1668,59 @@ def _cmd_finalize(
     handle = read_handle_sidecar(Path(sidecar))
     deps = backends_factory()
     backend = _resolve_backend_for_handle(handle, deps)
+
+    # ── #1026 verifier-currency gate (uniform: ALL paths) ────────────────
+    # Teardown requires the upload-verification evidence to be a CURRENT
+    # PASS. --skip-confirm-artifacts relaxes every reason EXCEPT a FRESH
+    # in-flight round (never destroy a running verifier round's pod; the
+    # 15-min liveness window lapsing to "stalled" is the flag-free escape)
+    # to a loud warning + a verifier_warning field in the output JSON.
+    verifier_warning: str | None = None
+    blocker = _upload_verification_currency_blocker(args.issue)
+    if blocker is not None:
+        if args.skip_confirm_artifacts and blocker["reason"] != "upload_verifier_in_flight":
+            verifier_warning = blocker["reason"]
+            logging.getLogger("dispatch_issue").warning(
+                "finalize --skip-confirm-artifacts: %s — proceeding on the explicit "
+                "skip flag; confirm pod-side data is safe before relying on this.",
+                blocker["detail"],
+            )
+        else:
+            hint = {
+                "upload_verifier_in_flight": (
+                    "WAIT for the epm:upload-verification verdict; on PASS re-run "
+                    "finalize; on FAIL run the uploader gap-fill + re-verify — "
+                    "NEVER finalize on a FAIL."
+                ),
+                "upload_verifier_stalled": (
+                    "re-spawn the upload-verifier to a verdict, then finalize on PASS."
+                ),
+                "upload_verification_ambiguous": (
+                    "re-run the upload-verifier against the current results (the "
+                    "fresh round resolves the ambiguity), then finalize on PASS."
+                ),
+                "upload_verification_stale": (
+                    "re-run the upload-verifier against the current results to a "
+                    "PASS, then re-run finalize."
+                ),
+                "upload_verification_failed_current": (
+                    "run the uploader gap-fill, re-verify to a PASS, then finalize."
+                ),
+            }[blocker["reason"]]
+            body = {
+                "ok": False,
+                "issue": int(args.issue),
+                "phase": "confirm_artifacts",
+                "chosen_kind": handle.backend,
+                "pod_name": handle.pod_name,
+                "reason": blocker["reason"],
+                "verifier_state": blocker["state"],
+                "skip_confirm_artifacts": bool(args.skip_confirm_artifacts),
+                "detail": blocker["detail"] + " — teardown SKIPPED. Recover: " + hint,
+            }
+            print(json.dumps(body, sort_keys=True))
+            return 3
+    # ─────────────────────────────────────────────────────────────────────
 
     # ``fetch_results`` BEFORE the confirm gate (#588 / latent slice-6
     # gap): the GCP completion sentinel lives ON the VM — ``GcpBackend.
@@ -1736,6 +1850,8 @@ def _cmd_finalize(
     }
     if confirm_degraded is not None:
         body["confirm_artifacts"] = confirm_degraded
+    if verifier_warning is not None:
+        body["verifier_warning"] = verifier_warning
     print(json.dumps(body, sort_keys=True))
     return 0
 
@@ -2167,6 +2283,7 @@ __all__ = [
     "_provision_still_waiting",
     "_recognized_frontmatter_backends",
     "_resolve_backend_for_handle",
+    "_upload_verification_currency_blocker",
     "_wrap_marker_poster_with_override_flag",
     "main",
 ]
