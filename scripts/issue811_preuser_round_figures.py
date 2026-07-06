@@ -10,7 +10,10 @@ script adds the three analyzer figures the body embeds. All figures save via
 Figures:
 - ``chain_shift_forest_12_summaries`` — the base-to-post chain-correlation
   SHIFT (rho_diff with 95% family-clustered CI) per behavior x layer x
-  summary; gate-failed arms and per-behavior base-leg collapses drawn open.
+  summary; gate-failed arms and per-behavior base-leg collapses drawn as open
+  circles, and gate-PASSING arms whose per-behavior base-leg margin ratio is
+  flagged ``near_threshold`` in ``validity_gate_phase0.json`` (e.g. the role
+  token's taught-fact leg at 0.502 vs the 0.5 cut) drawn as open diamonds.
 - ``scatter_incl_hdr_vs_content`` — two-panel 9-cell scatter of raw
   Delta_med: header-inclusive mean pool vs the content-only mean (left) and
   header-inclusive max pool vs content-only max-pool (right), log-log, 45deg.
@@ -115,9 +118,26 @@ def _untrusted(beh: str, summary: str) -> bool:
     return beh == "sycophancy" and summary in SYCO_UNTRUSTED
 
 
+def _near_threshold_flags() -> set[tuple[str, str]]:
+    """(behavior, summary) pairs on gate-PASSING arms whose per-behavior
+    base-leg margin ratio carries ``near_threshold: true`` in the phase-0
+    gate record (e.g. the role token's taught-fact leg, ratio 0.502)."""
+    with open(EVAL_DIR / "validity_gate_phase0.json") as fh:
+        per_arm = json.load(fh)["per_arm"]
+    flags: set[tuple[str, str]] = set()
+    for arm, rec in per_arm.items():
+        if rec["gate_status"] != "pass":
+            continue
+        for beh, pb in rec["per_behavior"].items():
+            if pb.get("near_threshold"):
+                flags.add((beh, arm))
+    return flags
+
+
 def fig_chain_shift_forest() -> None:
     """Base-to-post chain-rho shift, family-clustered CI, 12 summaries x 3 layers."""
     rho = {s: _rho_cells(s) for s in SUMMARIES}
+    near_thr = _near_threshold_flags()
     c_layer = {
         7: paper_palette_role("baseline"),
         14: paper_palette_role("primary"),
@@ -135,17 +155,18 @@ def fig_chain_shift_forest() -> None:
                 err = [[pt - ci["ci_lo"]], [ci["ci_hi"] - pt]]
                 color = c_layer[li]
                 open_marker = _untrusted(beh, s)
+                is_near = (not open_marker) and (beh, s) in near_thr
                 style = (
                     {"markerfacecolor": "white", "markeredgecolor": color, "markeredgewidth": 1.2}
-                    if open_marker
+                    if (open_marker or is_near)
                     else {"markeredgewidth": 0.0}
                 )
                 ax.errorbar(
                     [pt],
                     [y + dy],
                     xerr=err,
-                    fmt="o",
-                    ms=4.0,
+                    fmt="D" if is_near else "o",
+                    ms=4.6 if is_near else 4.0,
                     color=color,
                     elinewidth=1.0,
                     capsize=1.8,
@@ -180,10 +201,23 @@ def fig_chain_shift_forest() -> None:
             markerfacecolor="white",
             markeredgecolor=c_layer[14],
             markeredgewidth=1.2,
-            label="open: gate-failed arm or collapsed base-leg behavior",
+            label="open circle: gate-failed arm or collapsed base-leg behavior",
         )
     )
-    fig.legend(handles=handles, loc="outside lower center", ncol=4, fontsize=8)
+    handles.append(
+        plt.Line2D(
+            [0],
+            [0],
+            marker="D",
+            ls="",
+            color="none",
+            markerfacecolor="white",
+            markeredgecolor=c_layer[14],
+            markeredgewidth=1.2,
+            label="open diamond: gate-passing arm, near-threshold gate leg (role-token fact 0.502)",
+        )
+    )
+    fig.legend(handles=handles, loc="outside lower center", ncol=3, fontsize=8)
     savefig_paper(fig, f"{FIG_PREFIX}/chain_shift_forest_12_summaries", dir=FIG_DIR)
     plt.close(fig)
 
@@ -313,7 +347,7 @@ def fig_heatmap_12_summaries() -> None:
         grid, cmap="viridis", norm=LogNorm(vmin=grid.min(), vmax=grid.max()), aspect="auto"
     )
     for i, s in enumerate(SUMMARIES):
-        for j, (beh, li) in enumerate(cols):
+        for j, (beh, _li) in enumerate(cols):
             v = grid[i, j]
             ax.text(
                 j,
