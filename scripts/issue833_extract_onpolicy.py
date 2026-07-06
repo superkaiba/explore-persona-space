@@ -1734,9 +1734,125 @@ SUBSET_NAMESPACES = {
     "nonemit": "analysis_tensors_nonemit",
     "matchedn": "analysis_tensors_matchedN",
     "eq5": "analysis_tensors_nonemit_eq5",
+    "fixedtext": "analysis_tensors_fixedtext",  # plan v13 (fixed-template-weights-read)
 }
 PARITY_CROSSRUN_REL_L2 = 1e-3  # the parent's stack-parity threshold (plan v10 §11.8)
 EXIT_PARITY_CROSSRUN_FAIL = 6  # driver fires the registered full-text re-extraction contingency
+# Base-leg cross-source consistency tolerance (plan v13 §4/§11.5 — the
+# parity-threshold family): v0(R_fixed) is source-independent by design, so the
+# 16 per-source recomputations of each (target, layer) base-leg vector must
+# agree to rel L2 ≤ this, else extraction nondeterminism contaminates every
+# paired read (STOP).
+FIXEDTEXT_BASE_CONSISTENCY_REL_L2 = 1e-3
+
+
+def _load_fixed_template(path: Path, *, expected_sha: str | None = None) -> dict:
+    """Load + GUARD the committed Phase-F0 template pin (plan v13 §4(b)).
+
+    Asserts (a) file self-consistency — ``sha256(template) == the JSON's own
+    sha256 field`` — and (b) the sha equals the CODE-side pin
+    ``emrate.FIXED_TEMPLATE_SHA256`` (a stale/foreign pin file fails loud —
+    plan §13: template-pin sha mismatch pod-side → HALT, no silent re-pin).
+    Returns the parsed pin dict. The fixedtext analogue of round 2's
+    ``_load_subset_artifacts`` manifest guard, which fixedtext mode BYPASSES
+    (no retention manifest is consumed).
+    """
+    if not path.exists():
+        raise FileNotFoundError(
+            f"{path} missing — run scripts/issue833_emission_rate.py --stage fixed-template "
+            "(Phase F0) and commit its output before any fixedtext extraction"
+        )
+    pin = json.loads(path.read_text())
+    got = _sha256(pin["template"])
+    if got != pin["sha256"]:
+        raise RuntimeError(
+            f"fixed-template pin self-consistency FAIL: sha256(template) {got[:12]} != recorded "
+            f"{pin['sha256'][:12]} — corrupted pin file, STOP (plan §13)"
+        )
+    want = expected_sha if expected_sha is not None else emrate.FIXED_TEMPLATE_SHA256
+    if pin["sha256"] != want:
+        raise RuntimeError(
+            f"fixed-template sha {pin['sha256'][:12]} != the plan pin {want[:12]} — "
+            "STOP per plan §13 (no silent re-pin)"
+        )
+    logger.info(
+        "[phase=extract] fixed-template guard PASS: sha %s (%d occurrences / %d non-emission)",
+        pin["sha256"][:12],
+        pin["n_occurrences"],
+        pin["n_nonemission"],
+    )
+    return pin
+
+
+def check_fixedtext_base_consistency(
+    root: Path,
+    *,
+    expected_sha: str,
+    tol: float = FIXEDTEXT_BASE_CONSISTENCY_REL_L2,
+) -> dict:
+    """In-run extraction-determinism control (plan v13 §4, registered).
+
+    v0(R_fixed) depends only on (target context, probe, template) — NOT the
+    source — so the per-cell pass recomputes each of the 900 distinct base-leg
+    rows 16×. This walks every npz under ``root/fact``, asserts (a) EVERY row's
+    ``resp_sha256`` equals the template pin (the free per-row audit, plan
+    §4(b)) and (b) the max rel L2 across the source-copies of each
+    (target, layer) ``v0_onpolicy`` vector — vs the FIRST source dir in sorted
+    order — is ≤ ``tol``. RuntimeError on any violation (STOP — it would
+    contaminate every paired read). Returns the summary dict (caller persists);
+    ``per_group_rel_l2`` feeds the exploratory consistency histogram.
+    """
+    cell_dirs = sorted((root / "fact").glob("*_seed*"))
+    if not cell_dirs:
+        raise FileNotFoundError(f"{root}/fact has no source cell dirs — extraction incomplete")
+    groups: dict[tuple[str, int], list[tuple[str, np.ndarray]]] = {}
+    n_npz = 0
+    for cd in cell_dirs:
+        for p in sorted(cd.glob("*_L*.npz")):
+            d = np.load(p, allow_pickle=True)
+            shas = [str(s) for s in np.asarray(d["resp_sha256"]).tolist()]
+            n_bad = sum(1 for s in shas if s != expected_sha)
+            if n_bad:
+                raise RuntimeError(
+                    f"{p}: {n_bad}/{len(shas)} resp_sha256 rows != the template pin "
+                    f"{expected_sha[:12]} — non-template rows in the fixedtext namespace, STOP"
+                )
+            tcid, li_str = p.stem.rsplit("_L", 1)
+            groups.setdefault((tcid, int(li_str)), []).append(
+                (cd.name, np.asarray(d["v0_onpolicy"], dtype=np.float64))
+            )
+            n_npz += 1
+    worst, worst_key = 0.0, None
+    per_group: dict[str, float] = {}
+    for (tcid, li), copies in sorted(groups.items()):
+        copies.sort(key=lambda t: t[0])
+        ref = copies[0][1]
+        denom = max(float(np.linalg.norm(ref)), 1e-12)
+        rel = max(
+            (float(np.linalg.norm(v - ref)) / denom for _, v in copies[1:]),
+            default=0.0,
+        )
+        per_group[f"{tcid}_L{li}"] = rel
+        if rel > worst:
+            worst, worst_key = rel, f"{tcid}_L{li}"
+    summary = {
+        "n_npz": n_npz,
+        "n_groups": len(groups),
+        "n_source_dirs": len(cell_dirs),
+        "max_rel_l2": worst,
+        "worst_group": worst_key,
+        "tolerance": tol,
+        "reference": "first source dir in sorted order",
+        "template_sha256": expected_sha,
+        "per_group_rel_l2": per_group,
+        "ts": _now(),
+    }
+    if worst > tol:
+        raise RuntimeError(
+            f"base-leg cross-source consistency FAIL: max rel L2 {worst:.3e} > {tol} at "
+            f"{worst_key} — extraction nondeterminism, STOP (plan v13 §6 kill criterion)"
+        )
+    return summary
 
 
 def _load_subset_artifacts(args, out_root: Path) -> tuple[dict, dict[str, dict]]:
@@ -1812,15 +1928,22 @@ def _subset_rows_for_target(
     floor: int,
     manifest_cells: dict,
     indices_by_subset: dict[str, dict],
+    fixed_template: str | None = None,
 ) -> list | None:
     """Kept rows for ONE subset at one target, or None = cell dropped (recorded upstream).
 
     Per-cell pod-side consistency guard (plan v10 §4(b)): the nonemit recount must
     equal the committed manifest; the index-driven subsets must reproduce the
     persisted probe-id sets exactly (``emrate.indexed_rows`` fail-louds on a miss).
+    Mode ``fixedtext`` (plan v13 §4(b)): ALL rows with the response replaced by
+    the pinned template — never None, no floor, no skip; ``(probe_idx, probe)``
+    preserved so the per-cell mean stays over the same 30 probes as the parent.
     """
     if subset == "all":
         return [r for r in rows if r[2].strip()]
+    if subset == "fixedtext":
+        assert fixed_template is not None, "fixedtext mode needs the pinned template threaded"
+        return [(qi, q, fixed_template) for qi, q, _ in rows]
     rec = manifest_cells[cell_key]  # KeyError = manifest/grid mismatch, fail loud
     if subset == "nonemit":
         kept = emrate.retained_rows(rows, phrase)
@@ -2086,6 +2209,11 @@ def stage_upload_subset(args) -> int:
             "emission_rate/eq5_sample_indices.json",
             "sample_indices.json",
         ),
+        # plan v13 §4(b): the template pin rides next to its npz (also git-committed).
+        "analysis_tensors_fixedtext": (
+            "emission_rate/fixed_template.json",
+            "fixed_template.json",
+        ),
     }
     upload_sets: list[tuple[Path, str]] = [
         (out_root / ns, f"{HF_PREFIX}/{ns}") for ns in namespaces
@@ -2169,11 +2297,29 @@ def stage_extract(args) -> int:  # noqa: C901 — subset routing wraps the verba
         roots = {s: out_root / SUBSET_NAMESPACES[s] for s in subsets}
     manifest_cells: dict = {}
     indices_by_subset: dict[str, dict] = {}
+    fixed_template: str | None = None
+    fixed_template_pin: dict | None = None
     if subset_mode:
         assert tuple(behaviors) == ("fact",), (
             "subset modes are fact-only — the pinned emission matcher is the taught-fact span"
         )
-        manifest_cells, indices_by_subset = _load_subset_artifacts(args, out_root)
+        if "fixedtext" in subsets:
+            # plan v13 §4(b): fixedtext consumes NO retention manifest — the
+            # template pin guard replaces the _load_subset_artifacts guard, and
+            # the mode is exclusive (its guard set differs from the
+            # retention-based subsets').
+            assert subsets == ["fixedtext"], (
+                "--response-subset fixedtext is exclusive of the retention-based subsets"
+            )
+            tpl_path = (
+                Path(args.fixed_template_file)
+                if args.fixed_template_file
+                else out_root / "emission_rate" / "fixed_template.json"
+            )
+            fixed_template_pin = _load_fixed_template(tpl_path)
+            fixed_template = fixed_template_pin["template"]
+        else:
+            manifest_cells, indices_by_subset = _load_subset_artifacts(args, out_root)
     if not args.subset_dry_run:
         device = x667._device(args.gpu_id, args.cpu_only)
         dtype = torch.float32 if device.type == "cpu" else torch.bfloat16
@@ -2234,11 +2380,20 @@ def stage_extract(args) -> int:  # noqa: C901 — subset routing wraps the verba
                             floor=args.retention_floor,
                             manifest_cells=manifest_cells,
                             indices_by_subset=indices_by_subset,
+                            fixed_template=fixed_template,
                         )
                         if kept is None:
                             skipped_cells[s].append(key)
                         else:
                             plan[s][tcid] = kept
+                if "fixedtext" in active:
+                    # plan v13 §4(b): fixedtext covers ALL cells by construction
+                    # — the full-complement assert runs unsubsetted.
+                    assert len(plan["fixedtext"]) == len(targets), (
+                        source,
+                        len(plan["fixedtext"]),
+                        len(targets),
+                    )
             if args.subset_dry_run:
                 for s in active:
                     dry_tally[s] += len(plan[s])
@@ -2359,6 +2514,28 @@ def stage_extract(args) -> int:  # noqa: C901 — subset routing wraps the verba
             {s: len(v) for s, v in skipped_cells.items()},
         )
     elif subset_mode:
+        if "fixedtext" in subsets:
+            assert fixed_template_pin is not None
+            if args.source_cid:
+                logger.warning(
+                    "[phase=extract] fixedtext base-leg consistency check SKIPPED under "
+                    "--source-cid (needs all 16 source copies) — run the full pass before upload"
+                )
+            else:
+                # Registered in-run determinism control (plan v13 §4): the 16
+                # source-copies of each (target, layer) base-leg vector must
+                # agree; every resp_sha256 row must equal the template pin.
+                summary = check_fixedtext_base_consistency(
+                    roots["fixedtext"], expected_sha=fixed_template_pin["sha256"]
+                )
+                _write_json(roots["fixedtext"] / "base_consistency.json", summary)
+                logger.info(
+                    "[phase=extract] fixedtext base-leg consistency PASS: max rel L2 %.3e "
+                    "over %d (target, layer) groups (tol %g)",
+                    summary["max_rel_l2"],
+                    summary["n_groups"],
+                    FIXEDTEXT_BASE_CONSISTENCY_REL_L2,
+                )
         for s in subsets:
             _write_json(
                 roots[s] / "pod_subset_summary.json",
@@ -2861,6 +3038,12 @@ def main() -> int:
     )
     parser.add_argument("--matchedn-indices", default=None)
     parser.add_argument("--eq5-indices", default=None)
+    parser.add_argument(
+        "--fixed-template-file",
+        default=None,
+        help="committed Phase-F0 template pin (default <out>/emission_rate/fixed_template.json; "
+        "consumed iff --response-subset fixedtext)",
+    )
     parser.add_argument(
         "--namespace-override",
         default=None,
