@@ -1,0 +1,84 @@
+{
+  "commit": "1aee2f9596",
+  "created": "2026-07-06T10:31:42Z",
+  "figsize": [
+    10.5,
+    5.4
+  ],
+  "points": [
+    {
+      "category": "sycophancy\nbase",
+      "fraction of generated positive completions": 0.2777777777777778,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "sycophancy\nabliterated",
+      "fraction of generated positive completions": 0.2222222222222222,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "harmful\nbase",
+      "fraction of generated positive completions": 0.04186046511627907,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "harmful\nabliterated",
+      "fraction of generated positive completions": 0.8232558139534883,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "sycophancy\nbase",
+      "fraction of generated positive completions": 0.7222222222222222,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\nabliterated",
+      "fraction of generated positive completions": 0.7499999999999999,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "harmful\nbase",
+      "fraction of generated positive completions": 0.8930232558139534,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "harmful\nabliterated",
+      "fraction of generated positive completions": 0.08837209302325583,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\nbase",
+      "fraction of generated positive completions": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "sycophancy\nabliterated",
+      "fraction of generated positive completions": 0.02777777777777768,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "harmful\nbase",
+      "fraction of generated positive completions": 0.06511627906976747,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "harmful\nabliterated",
+      "fraction of generated positive completions": 0.08837209302325588,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12
+}

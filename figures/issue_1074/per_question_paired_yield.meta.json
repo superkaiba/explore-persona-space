@@ -1,0 +1,827 @@
+{
+  "commit": "1aee2f9596",
+  "created": "2026-07-06T10:31:35Z",
+  "figsize": [
+    11.5,
+    5.4
+  ],
+  "points": [
+    {
+      "base Qwen: kept fraction per question": 0.5098624177480147,
+      "abliterated Qwen: kept fraction per question": 0.5047399183683944,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0022003761689261166,
+      "abliterated Qwen: kept fraction per question": 0.009291158643073456,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": 0.012909525116809768,
+      "abliterated Qwen: kept fraction per question": -0.005237065147324738,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": 0.007105249046137099,
+      "abliterated Qwen: kept fraction per question": 0.016945128878216514,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": -0.014609615476044616,
+      "abliterated Qwen: kept fraction per question": 0.014152360367599117,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": 0.017122404658923212,
+      "abliterated Qwen: kept fraction per question": 0.010021805894655428,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": 0.009401029271652706,
+      "abliterated Qwen: kept fraction per question": -0.010993006517329165,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": 0.010298314989970338,
+      "abliterated Qwen: kept fraction per question": -0.0011980438658267707,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": -0.013387909223680348,
+      "abliterated Qwen: kept fraction per question": -0.016423064431659765,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": 0.9982138937642404,
+      "abliterated Qwen: kept fraction per question": -0.012445578285568276,
+      "label": "0013",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": -0.004651271127627076,
+      "abliterated Qwen: kept fraction per question": 0.006589762316728365,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": 0.5153635395985496,
+      "abliterated Qwen: kept fraction per question": 0.5088114376126814,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": 0.0051791443229039225,
+      "abliterated Qwen: kept fraction per question": 0.01683035036763156,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": 0.011619418077749879,
+      "abliterated Qwen: kept fraction per question": -0.006270287107026529,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": 0.9979629111577839,
+      "abliterated Qwen: kept fraction per question": -0.00466345058274472,
+      "label": "0013",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": -0.00981940601574803,
+      "abliterated Qwen: kept fraction per question": -0.0010959907940709147,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": 0.8019650523325701,
+      "abliterated Qwen: kept fraction per question": 0.9888209689270343,
+      "label": "0024",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": 0.9842974212197503,
+      "abliterated Qwen: kept fraction per question": -0.01332282580792302,
+      "label": "0013",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": 1.011794722191733,
+      "abliterated Qwen: kept fraction per question": 0.9991253773441336,
+      "label": "0024",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "base Qwen: kept fraction per question": -0.009831263434168172,
+      "abliterated Qwen: kept fraction per question": 0.9859087266808759,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.006113303808570371,
+      "abliterated Qwen: kept fraction per question": 1.0062006433494333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0022625309205960946,
+      "abliterated Qwen: kept fraction per question": 0.7421244162182044,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.011976415058082147,
+      "abliterated Qwen: kept fraction per question": 0.6724058815155751,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.007209543672080966,
+      "abliterated Qwen: kept fraction per question": 1.0081718061143277,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0067548009102465206,
+      "abliterated Qwen: kept fraction per question": 1.0096713097090357,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.011961352850227237,
+      "abliterated Qwen: kept fraction per question": 0.9858786740544123,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.010971516869884866,
+      "abliterated Qwen: kept fraction per question": 1.014976426424954,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.00405077835491372,
+      "abliterated Qwen: kept fraction per question": 0.9902877036722157,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.007620188258511212,
+      "abliterated Qwen: kept fraction per question": 0.9833468520223425,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.006569838143099117,
+      "abliterated Qwen: kept fraction per question": 1.0019746888980934,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.012968910590064846,
+      "abliterated Qwen: kept fraction per question": -0.004646797780952205,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.010803304710896099,
+      "abliterated Qwen: kept fraction per question": 1.011872430752767,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0177349582889638,
+      "abliterated Qwen: kept fraction per question": 1.0110970529943148,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.010329277590076982,
+      "abliterated Qwen: kept fraction per question": 0.9934170001416177,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.005934630837313156,
+      "abliterated Qwen: kept fraction per question": 0.5163043782225109,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.007385953630548062,
+      "abliterated Qwen: kept fraction per question": 0.9924730421730442,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.010106245116790844,
+      "abliterated Qwen: kept fraction per question": 1.0005420566523417,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0014790320806197625,
+      "abliterated Qwen: kept fraction per question": 0.9912147432604337,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.002474683054304174,
+      "abliterated Qwen: kept fraction per question": 0.01569756852176268,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.01296730806740433,
+      "abliterated Qwen: kept fraction per question": 0.9879258814329527,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.013876917352704955,
+      "abliterated Qwen: kept fraction per question": -0.016383217701876156,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.006062506624456978,
+      "abliterated Qwen: kept fraction per question": 0.9976634941601094,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0010405365788472287,
+      "abliterated Qwen: kept fraction per question": 1.01772552030601,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 1.0023484998333227,
+      "abliterated Qwen: kept fraction per question": 1.0141003815851768,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.009539958866976919,
+      "abliterated Qwen: kept fraction per question": 0.6756165553671168,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.004849859520021267,
+      "abliterated Qwen: kept fraction per question": 1.014068529671627,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.0019288584236878507,
+      "abliterated Qwen: kept fraction per question": 1.014164079029123,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 1.002131457786835,
+      "abliterated Qwen: kept fraction per question": 1.000678900973912,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.007057796469745961,
+      "abliterated Qwen: kept fraction per question": -0.006626554134091451,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.01689055795555418,
+      "abliterated Qwen: kept fraction per question": 1.0097924475559956,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0022781739876349544,
+      "abliterated Qwen: kept fraction per question": 0.005819805474039399,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.010274951778496948,
+      "abliterated Qwen: kept fraction per question": -0.004548321760546438,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0032929688259130986,
+      "abliterated Qwen: kept fraction per question": 0.9854008000502146,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.012722510637653978,
+      "abliterated Qwen: kept fraction per question": 1.008884426008565,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.009578178508847733,
+      "abliterated Qwen: kept fraction per question": 0.9914485785732231,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.015901101299193622,
+      "abliterated Qwen: kept fraction per question": 1.0157252734192161,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.007870179887208124,
+      "abliterated Qwen: kept fraction per question": 0.9906749407002047,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.00743062472039939,
+      "abliterated Qwen: kept fraction per question": 0.6530859522334801,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.005828994530168222,
+      "abliterated Qwen: kept fraction per question": 1.0119200561964967,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.002053157484286021,
+      "abliterated Qwen: kept fraction per question": 0.9875182353984818,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.010220335527830884,
+      "abliterated Qwen: kept fraction per question": 0.9884536590936787,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.005915287451785951,
+      "abliterated Qwen: kept fraction per question": 1.0035777804947503,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0033700729881574604,
+      "abliterated Qwen: kept fraction per question": 0.5134842334701487,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.5113047338479773,
+      "abliterated Qwen: kept fraction per question": 0.48907164796572467,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.011988974883322658,
+      "abliterated Qwen: kept fraction per question": -0.006828347775596587,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.01718236536718102,
+      "abliterated Qwen: kept fraction per question": 1.0099865741766825,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.014758277012076895,
+      "abliterated Qwen: kept fraction per question": 1.0169857513381948,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.008004936621472211,
+      "abliterated Qwen: kept fraction per question": 1.0000266827032844,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0013724197109500555,
+      "abliterated Qwen: kept fraction per question": 0.987180310091845,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.012194215954790335,
+      "abliterated Qwen: kept fraction per question": 0.9825017063574952,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 3.761190372108744e-05,
+      "abliterated Qwen: kept fraction per question": -0.00973238292004121,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.012516764302325935,
+      "abliterated Qwen: kept fraction per question": 0.48674559984031474,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.007067533502798498,
+      "abliterated Qwen: kept fraction per question": 1.0063957122500629,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.001938374079334896,
+      "abliterated Qwen: kept fraction per question": 0.9863859701666271,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.004283235860526631,
+      "abliterated Qwen: kept fraction per question": 0.5002278775383427,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0071455647906764445,
+      "abliterated Qwen: kept fraction per question": 0.6736601143498105,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.004690173352279985,
+      "abliterated Qwen: kept fraction per question": 0.7529201979319525,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.004974746020077945,
+      "abliterated Qwen: kept fraction per question": -0.010808076540237924,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.014844602904620363,
+      "abliterated Qwen: kept fraction per question": 1.0109484829425615,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.013751787523661447,
+      "abliterated Qwen: kept fraction per question": 1.0077546566661688,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.016628315923782524,
+      "abliterated Qwen: kept fraction per question": 1.0086034241409596,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.01470890486547385,
+      "abliterated Qwen: kept fraction per question": 0.9867180790560632,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.007189456817186985,
+      "abliterated Qwen: kept fraction per question": 0.9864551369314124,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.008428681387457294,
+      "abliterated Qwen: kept fraction per question": 0.015392251836234275,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.01689034958451806,
+      "abliterated Qwen: kept fraction per question": 0.9963128149776979,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.010035032542768604,
+      "abliterated Qwen: kept fraction per question": 0.9928341529041138,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.5078080468097238,
+      "abliterated Qwen: kept fraction per question": 0.9995890256326552,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0018229859228236084,
+      "abliterated Qwen: kept fraction per question": 1.005863111659489,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.008199303773574274,
+      "abliterated Qwen: kept fraction per question": 0.016402437253690918,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.014529925362474024,
+      "abliterated Qwen: kept fraction per question": 0.992312064167754,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.5144936862755783,
+      "abliterated Qwen: kept fraction per question": 1.015293103455233,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.001592053565990001,
+      "abliterated Qwen: kept fraction per question": 0.9828949416899052,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.010714918867371708,
+      "abliterated Qwen: kept fraction per question": 0.0019871295237656877,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.006985561530576509,
+      "abliterated Qwen: kept fraction per question": 1.004823104020519,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.002851904481908255,
+      "abliterated Qwen: kept fraction per question": 0.3191456398683604,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.011636179814187658,
+      "abliterated Qwen: kept fraction per question": 0.9870522254943008,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.012838114227325517,
+      "abliterated Qwen: kept fraction per question": 0.9970881154953869,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.009306703074067564,
+      "abliterated Qwen: kept fraction per question": 1.0167843488371546,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.007900666414233724,
+      "abliterated Qwen: kept fraction per question": 0.0034575319164374223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.6642220160985703,
+      "abliterated Qwen: kept fraction per question": 1.0155888359776075,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 1.004583118265288,
+      "abliterated Qwen: kept fraction per question": 1.010956992962067,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 1.0030275268808584,
+      "abliterated Qwen: kept fraction per question": 0.9988257376559905,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.00539447765597352,
+      "abliterated Qwen: kept fraction per question": 1.0102514841730788,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.014960004438963993,
+      "abliterated Qwen: kept fraction per question": 0.9826421242231715,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.003030933521858053,
+      "abliterated Qwen: kept fraction per question": 0.9859291838835664,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.01650188974097187,
+      "abliterated Qwen: kept fraction per question": 1.0118594301357786,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.00021633050719731955,
+      "abliterated Qwen: kept fraction per question": 1.0106854151797058,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.006124996356019728,
+      "abliterated Qwen: kept fraction per question": 0.9903750667107916,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.012797129200822311,
+      "abliterated Qwen: kept fraction per question": 1.001107705261566,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.01427749316198814,
+      "abliterated Qwen: kept fraction per question": 1.0038165695452004,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.003155204598397632,
+      "abliterated Qwen: kept fraction per question": 1.0132386023359363,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0118586531326721,
+      "abliterated Qwen: kept fraction per question": 1.0037118576641941,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.015304324261564698,
+      "abliterated Qwen: kept fraction per question": 0.4968525764938525,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.00291820102921422,
+      "abliterated Qwen: kept fraction per question": 0.9954706255626585,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0055126870367458655,
+      "abliterated Qwen: kept fraction per question": 0.9973317551094464,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.0032729576933310037,
+      "abliterated Qwen: kept fraction per question": 0.005469516920879072,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.01717906064293089,
+      "abliterated Qwen: kept fraction per question": 1.0132296627430837,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.016508131676692028,
+      "abliterated Qwen: kept fraction per question": 0.9983402877547468,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0006370762700555928,
+      "abliterated Qwen: kept fraction per question": 0.9909222242662489,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.010178468181010304,
+      "abliterated Qwen: kept fraction per question": 0.9905198450679129,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.01502172000279221,
+      "abliterated Qwen: kept fraction per question": 1.008856514088764,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0004803000898262258,
+      "abliterated Qwen: kept fraction per question": 1.0113964754832607,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.00033454820323724696,
+      "abliterated Qwen: kept fraction per question": 0.9857900108747485,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.015761752379099384,
+      "abliterated Qwen: kept fraction per question": 0.9843961188503865,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.0025822098855387138,
+      "abliterated Qwen: kept fraction per question": 1.0033996118952322,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.0009543815619496646,
+      "abliterated Qwen: kept fraction per question": 0.9872622367909372,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.00838887612869183,
+      "abliterated Qwen: kept fraction per question": 1.0116879108564283,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.006063516095668121,
+      "abliterated Qwen: kept fraction per question": 0.9931720482612667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.0007442064889753609,
+      "abliterated Qwen: kept fraction per question": 0.9871793895869612,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.002199187429018319,
+      "abliterated Qwen: kept fraction per question": 1.0151549370095483,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.017221965124308104,
+      "abliterated Qwen: kept fraction per question": 0.98795914201847,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.01174650927099688,
+      "abliterated Qwen: kept fraction per question": 0.9922499229641657,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.014261787786231602,
+      "abliterated Qwen: kept fraction per question": 0.9875300822269141,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": -0.012951032796050012,
+      "abliterated Qwen: kept fraction per question": 0.9861576422919528,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "base Qwen: kept fraction per question": 0.0019453011674057767,
+      "abliterated Qwen: kept fraction per question": 0.9827613285881118,
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 135
+}
