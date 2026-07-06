@@ -611,8 +611,8 @@
     "1078": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1078",
-      "status": "approved",
+      "path": "tasks/running/1078",
+      "status": "running",
       "title": "daily-fix: paper_palette crashes at >8 colors - extend grace"
     },
     "1079": {
