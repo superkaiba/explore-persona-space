@@ -1,0 +1,1015 @@
+{
+  "task": 778,
+  "description": "Honest-null-ladder comparison figures: paper vs our reproduction vs each random-direction null.",
+  "rendered_at_git_head": "d8e7e4c1f50c1998b96963188a84adc3087cd4c8",
+  "honestnulls_source": "eval_results/issue_778/honest_nulls/{trait}_{setting}_honestnulls.json",
+  "honestnulls_git_commit": "97c70bf755 (committed by the honest-null-ladder run)",
+  "model": "Qwen/Qwen2.5-7B-Instruct",
+  "judge_model": "claude-sonnet-4-5-20250929",
+  "circularity_finding": "the two ORIGINAL #778 stochastic nulls (orig_randnorm pooled-cov, orig_perm shuffled-label) are circular: pooled-cov top PC vs r_B cos 0.996/0.985/0.736; the honest families (isotropic, within_class [primary], neg_arm_only, rb_projected_out) are trait-agnostic",
+  "regime_note": "bar observed |r| is FIXED-LAYER (the #778-selected or paper-steering layer), NOT the max-over-28-layers regime of summary_scatter_ours_vs_random.png; regimes are never mixed in one panel",
+  "paper_note": "paper appears only in the bar figure \u2014 we do not have the paper's raw datapoints",
+  "ci_note": "bar figure CIs: our |r| = 95% bootstrap CI recomputed AT THE PLOTTED LAYER via the ladder's imported bootstrap helper (seed = recorded cell_idx, n_boot=1000), validated bit-exact against the committed JSON's bootstrap_ci95_at_own_argmax (within cells' CIs are within-condition-resampled, not pooled); a cell whose recompute fails to reproduce the JSON or fails to bracket the observed value has its whisker suppressed + our_ci95_valid=false. Null-family bars are the MEDIAN with p2.5-p97.5 whiskers (full 95% band from 1000 draws). Cross-trait is plotted as its 2 other-trait direction |r| POINTS (no bar/band \u2014 only 2 fixed directions). Paper bars are point values with no whisker (the paper prints no CIs).",
+  "paper_reference_values": {
+    "finetune": {
+      "evil": null,
+      "sycophancy": null,
+      "hallucination": null
+    },
+    "corr_pooled": {
+      "evil": 0.747,
+      "sycophancy": 0.798,
+      "hallucination": 0.83
+    },
+    "corr_within": {
+      "evil": 0.511,
+      "sycophancy": 0.669,
+      "hallucination": 0.245
+    },
+    "many_pooled": {
+      "evil": 0.755,
+      "sycophancy": 0.817,
+      "hallucination": 0.634
+    },
+    "many_within": {
+      "evil": 0.735,
+      "sycophancy": 0.813,
+      "hallucination": 0.4
+    }
+  },
+  "bar_ladder_issue778_selected": {
+    "finetune": {
+      "evil": {
+        "layer": 23,
+        "our_fixed_r": 0.9143,
+        "paper_r": null,
+        "our_ci95": [
+          0.7968,
+          0.9676
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.3846,
+          "p2_5": 0.0211,
+          "p97_5": 0.8131
+        },
+        "within_class": {
+          "median": 0.4756,
+          "p2_5": 0.0284,
+          "p97_5": 0.8724
+        },
+        "neg_arm_only": {
+          "median": 0.4194,
+          "p2_5": 0.0249,
+          "p97_5": 0.8192
+        },
+        "rb_projected_out": {
+          "median": 0.4536,
+          "p2_5": 0.0363,
+          "p97_5": 0.843
+        },
+        "orig_randnorm": {
+          "median": 0.7984,
+          "p2_5": 0.0881,
+          "p97_5": 0.9353
+        },
+        "orig_perm": {
+          "median": 0.8081,
+          "p2_5": 0.074,
+          "p97_5": 0.942
+        },
+        "crosstrait": {
+          "values": [
+            0.7244,
+            0.2448
+          ],
+          "max": 0.7244
+        }
+      },
+      "sycophancy": {
+        "layer": 20,
+        "our_fixed_r": 0.8463,
+        "paper_r": null,
+        "our_ci95": [
+          0.7116,
+          0.9372
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.4016,
+          "p2_5": 0.0174,
+          "p97_5": 0.8157
+        },
+        "within_class": {
+          "median": 0.5615,
+          "p2_5": 0.0277,
+          "p97_5": 0.9015
+        },
+        "neg_arm_only": {
+          "median": 0.3904,
+          "p2_5": 0.0187,
+          "p97_5": 0.8104
+        },
+        "rb_projected_out": {
+          "median": 0.583,
+          "p2_5": 0.041,
+          "p97_5": 0.8517
+        },
+        "orig_randnorm": {
+          "median": 0.7122,
+          "p2_5": 0.0564,
+          "p97_5": 0.917
+        },
+        "orig_perm": {
+          "median": 0.6986,
+          "p2_5": 0.0709,
+          "p97_5": 0.9175
+        },
+        "crosstrait": {
+          "values": [
+            0.7045,
+            0.7284
+          ],
+          "max": 0.7284
+        }
+      },
+      "hallucination": {
+        "layer": 25,
+        "our_fixed_r": 0.9714,
+        "paper_r": null,
+        "our_ci95": [
+          0.9509,
+          0.986
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.4259,
+          "p2_5": 0.0148,
+          "p97_5": 0.864
+        },
+        "within_class": {
+          "median": 0.758,
+          "p2_5": 0.0611,
+          "p97_5": 0.9535
+        },
+        "neg_arm_only": {
+          "median": 0.7869,
+          "p2_5": 0.0682,
+          "p97_5": 0.9594
+        },
+        "rb_projected_out": {
+          "median": 0.5123,
+          "p2_5": 0.0295,
+          "p97_5": 0.8739
+        },
+        "orig_randnorm": {
+          "median": 0.8141,
+          "p2_5": 0.0597,
+          "p97_5": 0.9646
+        },
+        "orig_perm": {
+          "median": 0.8223,
+          "p2_5": 0.0907,
+          "p97_5": 0.9647
+        },
+        "crosstrait": {
+          "values": [
+            0.4626,
+            0.1154
+          ],
+          "max": 0.4626
+        }
+      }
+    },
+    "corr_pooled": {
+      "evil": {
+        "layer": 23,
+        "our_fixed_r": 0.8075,
+        "paper_r": 0.747,
+        "our_ci95": [
+          0.7606,
+          0.8486
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.2498,
+          "p2_5": 0.0151,
+          "p97_5": 0.607
+        },
+        "within_class": {
+          "median": 0.2723,
+          "p2_5": 0.0125,
+          "p97_5": 0.7131
+        },
+        "neg_arm_only": {
+          "median": 0.1411,
+          "p2_5": 0.0079,
+          "p97_5": 0.4335
+        },
+        "rb_projected_out": {
+          "median": 0.1692,
+          "p2_5": 0.0091,
+          "p97_5": 0.506
+        },
+        "orig_randnorm": {
+          "median": 0.6054,
+          "p2_5": 0.026,
+          "p97_5": 0.8209
+        },
+        "orig_perm": {
+          "median": 0.6027,
+          "p2_5": 0.0543,
+          "p97_5": 0.8188
+        },
+        "crosstrait": {
+          "values": [
+            0.6131,
+            0.7436
+          ],
+          "max": 0.7436
+        }
+      },
+      "sycophancy": {
+        "layer": 20,
+        "our_fixed_r": 0.7959,
+        "paper_r": 0.798,
+        "our_ci95": [
+          0.7288,
+          0.8488
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.3794,
+          "p2_5": 0.0164,
+          "p97_5": 0.755
+        },
+        "within_class": {
+          "median": 0.5061,
+          "p2_5": 0.0208,
+          "p97_5": 0.7849
+        },
+        "neg_arm_only": {
+          "median": 0.4765,
+          "p2_5": 0.0359,
+          "p97_5": 0.7051
+        },
+        "rb_projected_out": {
+          "median": 0.3093,
+          "p2_5": 0.0168,
+          "p97_5": 0.7136
+        },
+        "orig_randnorm": {
+          "median": 0.7109,
+          "p2_5": 0.0944,
+          "p97_5": 0.8369
+        },
+        "orig_perm": {
+          "median": 0.7098,
+          "p2_5": 0.0593,
+          "p97_5": 0.8335
+        },
+        "crosstrait": {
+          "values": [
+            0.7075,
+            0.637
+          ],
+          "max": 0.7075
+        }
+      },
+      "hallucination": {
+        "layer": 21,
+        "our_fixed_r": 0.8373,
+        "paper_r": 0.83,
+        "our_ci95": [
+          0.7787,
+          0.8874
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.3079,
+          "p2_5": 0.0152,
+          "p97_5": 0.7009
+        },
+        "within_class": {
+          "median": 0.5446,
+          "p2_5": 0.0312,
+          "p97_5": 0.8094
+        },
+        "neg_arm_only": {
+          "median": 0.5702,
+          "p2_5": 0.0299,
+          "p97_5": 0.817
+        },
+        "rb_projected_out": {
+          "median": 0.2841,
+          "p2_5": 0.0157,
+          "p97_5": 0.6551
+        },
+        "orig_randnorm": {
+          "median": 0.6065,
+          "p2_5": 0.0466,
+          "p97_5": 0.8246
+        },
+        "orig_perm": {
+          "median": 0.6125,
+          "p2_5": 0.0498,
+          "p97_5": 0.8189
+        },
+        "crosstrait": {
+          "values": [
+            0.4967,
+            0.1939
+          ],
+          "max": 0.4967
+        }
+      }
+    },
+    "corr_within": {
+      "evil": {
+        "layer": 23,
+        "our_fixed_r": 0.2913,
+        "paper_r": 0.511,
+        "our_ci95": [
+          0.1015,
+          0.4755
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.1037,
+          "p2_5": 0.0038,
+          "p97_5": 0.3103
+        },
+        "within_class": {
+          "median": 0.0948,
+          "p2_5": 0.0051,
+          "p97_5": 0.2787
+        },
+        "neg_arm_only": {
+          "median": 0.0912,
+          "p2_5": 0.0052,
+          "p97_5": 0.2735
+        },
+        "rb_projected_out": {
+          "median": 0.093,
+          "p2_5": 0.0058,
+          "p97_5": 0.2653
+        },
+        "orig_randnorm": {
+          "median": 0.1213,
+          "p2_5": 0.0042,
+          "p97_5": 0.3204
+        },
+        "orig_perm": {
+          "median": 0.1197,
+          "p2_5": 0.0067,
+          "p97_5": 0.324
+        },
+        "crosstrait": {
+          "values": [
+            0.0952,
+            0.1699
+          ],
+          "max": 0.1699
+        }
+      },
+      "sycophancy": {
+        "layer": 20,
+        "our_fixed_r": 0.6654,
+        "paper_r": 0.669,
+        "our_ci95": [
+          0.4958,
+          0.7592
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.2651,
+          "p2_5": 0.0187,
+          "p97_5": 0.6336
+        },
+        "within_class": {
+          "median": 0.266,
+          "p2_5": 0.0184,
+          "p97_5": 0.633
+        },
+        "neg_arm_only": {
+          "median": 0.1734,
+          "p2_5": 0.0074,
+          "p97_5": 0.4831
+        },
+        "rb_projected_out": {
+          "median": 0.2803,
+          "p2_5": 0.0144,
+          "p97_5": 0.5929
+        },
+        "orig_randnorm": {
+          "median": 0.4025,
+          "p2_5": 0.0358,
+          "p97_5": 0.6849
+        },
+        "orig_perm": {
+          "median": 0.4152,
+          "p2_5": 0.0246,
+          "p97_5": 0.6793
+        },
+        "crosstrait": {
+          "values": [
+            0.1249,
+            0.0118
+          ],
+          "max": 0.1249
+        }
+      },
+      "hallucination": {
+        "layer": 21,
+        "our_fixed_r": 0.6469,
+        "paper_r": 0.245,
+        "our_ci95": [
+          0.5468,
+          0.7538
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.2116,
+          "p2_5": 0.0091,
+          "p97_5": 0.5761
+        },
+        "within_class": {
+          "median": 0.3709,
+          "p2_5": 0.0262,
+          "p97_5": 0.6646
+        },
+        "neg_arm_only": {
+          "median": 0.378,
+          "p2_5": 0.0182,
+          "p97_5": 0.6602
+        },
+        "rb_projected_out": {
+          "median": 0.2476,
+          "p2_5": 0.0117,
+          "p97_5": 0.568
+        },
+        "orig_randnorm": {
+          "median": 0.382,
+          "p2_5": 0.02,
+          "p97_5": 0.6659
+        },
+        "orig_perm": {
+          "median": 0.3927,
+          "p2_5": 0.0269,
+          "p97_5": 0.6727
+        },
+        "crosstrait": {
+          "values": [
+            0.0698,
+            0.2019
+          ],
+          "max": 0.2019
+        }
+      }
+    },
+    "many_pooled": {
+      "evil": {
+        "layer": 20,
+        "our_fixed_r": 0.6769,
+        "paper_r": 0.755,
+        "our_ci95": [
+          0.5777,
+          0.7577
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.202,
+          "p2_5": 0.0092,
+          "p97_5": 0.5416
+        },
+        "within_class": {
+          "median": 0.2567,
+          "p2_5": 0.0146,
+          "p97_5": 0.5586
+        },
+        "neg_arm_only": {
+          "median": 0.2641,
+          "p2_5": 0.0145,
+          "p97_5": 0.5584
+        },
+        "rb_projected_out": {
+          "median": 0.198,
+          "p2_5": 0.015,
+          "p97_5": 0.4871
+        },
+        "orig_randnorm": {
+          "median": 0.5104,
+          "p2_5": 0.0383,
+          "p97_5": 0.6906
+        },
+        "orig_perm": {
+          "median": 0.5005,
+          "p2_5": 0.036,
+          "p97_5": 0.6902
+        },
+        "crosstrait": {
+          "values": [
+            0.2419,
+            0.1705
+          ],
+          "max": 0.2419
+        }
+      },
+      "sycophancy": {
+        "layer": 20,
+        "our_fixed_r": 0.8661,
+        "paper_r": 0.817,
+        "our_ci95": [
+          0.8144,
+          0.9044
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.3701,
+          "p2_5": 0.0222,
+          "p97_5": 0.7768
+        },
+        "within_class": {
+          "median": 0.4554,
+          "p2_5": 0.0235,
+          "p97_5": 0.8285
+        },
+        "neg_arm_only": {
+          "median": 0.3975,
+          "p2_5": 0.0281,
+          "p97_5": 0.7643
+        },
+        "rb_projected_out": {
+          "median": 0.3213,
+          "p2_5": 0.0196,
+          "p97_5": 0.744
+        },
+        "orig_randnorm": {
+          "median": 0.6923,
+          "p2_5": 0.0448,
+          "p97_5": 0.8838
+        },
+        "orig_perm": {
+          "median": 0.6892,
+          "p2_5": 0.0439,
+          "p97_5": 0.8816
+        },
+        "crosstrait": {
+          "values": [
+            0.62,
+            0.2872
+          ],
+          "max": 0.62
+        }
+      },
+      "hallucination": {
+        "layer": 23,
+        "our_fixed_r": 0.7292,
+        "paper_r": 0.634,
+        "our_ci95": [
+          0.6316,
+          0.807
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.2433,
+          "p2_5": 0.011,
+          "p97_5": 0.6143
+        },
+        "within_class": {
+          "median": 0.3632,
+          "p2_5": 0.0139,
+          "p97_5": 0.7091
+        },
+        "neg_arm_only": {
+          "median": 0.3824,
+          "p2_5": 0.0204,
+          "p97_5": 0.7195
+        },
+        "rb_projected_out": {
+          "median": 0.2868,
+          "p2_5": 0.0169,
+          "p97_5": 0.589
+        },
+        "orig_randnorm": {
+          "median": 0.4133,
+          "p2_5": 0.0165,
+          "p97_5": 0.7488
+        },
+        "orig_perm": {
+          "median": 0.3913,
+          "p2_5": 0.0172,
+          "p97_5": 0.7462
+        },
+        "crosstrait": {
+          "values": [
+            0.1373,
+            0.2209
+          ],
+          "max": 0.2209
+        }
+      }
+    },
+    "many_within": {
+      "evil": {
+        "layer": 20,
+        "our_fixed_r": 0.6583,
+        "paper_r": 0.735,
+        "our_ci95": [
+          0.6045,
+          0.807
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.2213,
+          "p2_5": 0.0063,
+          "p97_5": 0.5438
+        },
+        "within_class": {
+          "median": 0.2597,
+          "p2_5": 0.0134,
+          "p97_5": 0.5866
+        },
+        "neg_arm_only": {
+          "median": 0.2716,
+          "p2_5": 0.0145,
+          "p97_5": 0.5688
+        },
+        "rb_projected_out": {
+          "median": 0.2099,
+          "p2_5": 0.0103,
+          "p97_5": 0.5141
+        },
+        "orig_randnorm": {
+          "median": 0.4631,
+          "p2_5": 0.0331,
+          "p97_5": 0.6746
+        },
+        "orig_perm": {
+          "median": 0.4542,
+          "p2_5": 0.0349,
+          "p97_5": 0.673
+        },
+        "crosstrait": {
+          "values": [
+            0.332,
+            0.349
+          ],
+          "max": 0.349
+        }
+      },
+      "sycophancy": {
+        "layer": 20,
+        "our_fixed_r": 0.8193,
+        "paper_r": 0.813,
+        "our_ci95": [
+          0.7305,
+          0.8805
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.3528,
+          "p2_5": 0.017,
+          "p97_5": 0.7557
+        },
+        "within_class": {
+          "median": 0.38,
+          "p2_5": 0.0213,
+          "p97_5": 0.7655
+        },
+        "neg_arm_only": {
+          "median": 0.2867,
+          "p2_5": 0.0195,
+          "p97_5": 0.6787
+        },
+        "rb_projected_out": {
+          "median": 0.355,
+          "p2_5": 0.0161,
+          "p97_5": 0.7323
+        },
+        "orig_randnorm": {
+          "median": 0.6017,
+          "p2_5": 0.0349,
+          "p97_5": 0.8496
+        },
+        "orig_perm": {
+          "median": 0.6174,
+          "p2_5": 0.0316,
+          "p97_5": 0.845
+        },
+        "crosstrait": {
+          "values": [
+            0.3791,
+            0.2808
+          ],
+          "max": 0.3791
+        }
+      },
+      "hallucination": {
+        "layer": 23,
+        "our_fixed_r": 0.648,
+        "paper_r": 0.4,
+        "our_ci95": [
+          0.5262,
+          0.7754
+        ],
+        "our_ci95_valid": true,
+        "isotropic": {
+          "median": 0.2162,
+          "p2_5": 0.0079,
+          "p97_5": 0.5587
+        },
+        "within_class": {
+          "median": 0.3179,
+          "p2_5": 0.0132,
+          "p97_5": 0.6687
+        },
+        "neg_arm_only": {
+          "median": 0.3213,
+          "p2_5": 0.0232,
+          "p97_5": 0.6922
+        },
+        "rb_projected_out": {
+          "median": 0.2738,
+          "p2_5": 0.0189,
+          "p97_5": 0.5769
+        },
+        "orig_randnorm": {
+          "median": 0.3403,
+          "p2_5": 0.0234,
+          "p97_5": 0.6957
+        },
+        "orig_perm": {
+          "median": 0.3379,
+          "p2_5": 0.0159,
+          "p97_5": 0.6967
+        },
+        "crosstrait": {
+          "values": [
+            0.1074,
+            0.1088
+          ],
+          "max": 0.1088
+        }
+      }
+    }
+  },
+  "raw_scatter_seed0_by_family": {
+    "finetune": {
+      "evil": {
+        "selected_layer": 23,
+        "ours_r": 0.9143,
+        "families": {
+          "isotropic": {
+            "seed0_r": -0.2176,
+            "seed0_abs_r_percentile": 27.3
+          },
+          "within_class": {
+            "seed0_r": 0.7625,
+            "seed0_abs_r_percentile": 88.0
+          },
+          "neg_arm_only": {
+            "seed0_r": -0.7788,
+            "seed0_abs_r_percentile": 94.1
+          },
+          "rb_projected_out": {
+            "seed0_r": -0.6702,
+            "seed0_abs_r_percentile": 79.4
+          },
+          "orig_randnorm": {
+            "seed0_r": 0.1224,
+            "seed0_abs_r_percentile": 4.0
+          }
+        },
+        "n_points": 24
+      },
+      "sycophancy": {
+        "selected_layer": 20,
+        "ours_r": 0.8463,
+        "families": {
+          "isotropic": {
+            "seed0_r": 0.1704,
+            "seed0_abs_r_percentile": 22.6
+          },
+          "within_class": {
+            "seed0_r": -0.7801,
+            "seed0_abs_r_percentile": 80.5
+          },
+          "neg_arm_only": {
+            "seed0_r": 0.4378,
+            "seed0_abs_r_percentile": 54.8
+          },
+          "rb_projected_out": {
+            "seed0_r": 0.7541,
+            "seed0_abs_r_percentile": 84.9
+          },
+          "orig_randnorm": {
+            "seed0_r": -0.4863,
+            "seed0_abs_r_percentile": 28.3
+          }
+        },
+        "n_points": 24
+      },
+      "hallucination": {
+        "selected_layer": 25,
+        "ours_r": 0.9714,
+        "families": {
+          "isotropic": {
+            "seed0_r": -0.7702,
+            "seed0_abs_r_percentile": 90.7
+          },
+          "within_class": {
+            "seed0_r": -0.3258,
+            "seed0_abs_r_percentile": 15.0
+          },
+          "neg_arm_only": {
+            "seed0_r": -0.7165,
+            "seed0_abs_r_percentile": 40.1
+          },
+          "rb_projected_out": {
+            "seed0_r": -0.2814,
+            "seed0_abs_r_percentile": 25.3
+          },
+          "orig_randnorm": {
+            "seed0_r": -0.9165,
+            "seed0_abs_r_percentile": 76.4
+          }
+        },
+        "n_points": 24
+      }
+    },
+    "corrected": {
+      "evil": {
+        "selected_layer": 23,
+        "ours_r": 0.8075,
+        "families": {
+          "isotropic": {
+            "seed0_r": -0.2516,
+            "seed0_abs_r_percentile": 50.4
+          },
+          "within_class": {
+            "seed0_r": -0.0099,
+            "seed0_abs_r_percentile": 1.9
+          },
+          "neg_arm_only": {
+            "seed0_r": -0.1928,
+            "seed0_abs_r_percentile": 66.7
+          },
+          "rb_projected_out": {
+            "seed0_r": 0.3097,
+            "seed0_abs_r_percentile": 77.6
+          },
+          "orig_randnorm": {
+            "seed0_r": 0.1389,
+            "seed0_abs_r_percentile": 10.0
+          }
+        },
+        "n_points": 160
+      },
+      "sycophancy": {
+        "selected_layer": 20,
+        "ours_r": 0.7959,
+        "families": {
+          "isotropic": {
+            "seed0_r": -0.5548,
+            "seed0_abs_r_percentile": 77.4
+          },
+          "within_class": {
+            "seed0_r": -0.6331,
+            "seed0_abs_r_percentile": 73.2
+          },
+          "neg_arm_only": {
+            "seed0_r": -0.4588,
+            "seed0_abs_r_percentile": 46.8
+          },
+          "rb_projected_out": {
+            "seed0_r": 0.2075,
+            "seed0_abs_r_percentile": 35.3
+          },
+          "orig_randnorm": {
+            "seed0_r": -0.4725,
+            "seed0_abs_r_percentile": 17.1
+          }
+        },
+        "n_points": 160
+      },
+      "hallucination": {
+        "selected_layer": 21,
+        "ours_r": 0.8373,
+        "families": {
+          "isotropic": {
+            "seed0_r": 0.6222,
+            "seed0_abs_r_percentile": 93.1
+          },
+          "within_class": {
+            "seed0_r": -0.7489,
+            "seed0_abs_r_percentile": 86.6
+          },
+          "neg_arm_only": {
+            "seed0_r": -0.7476,
+            "seed0_abs_r_percentile": 85.2
+          },
+          "rb_projected_out": {
+            "seed0_r": -0.0768,
+            "seed0_abs_r_percentile": 13.2
+          },
+          "orig_randnorm": {
+            "seed0_r": -0.7136,
+            "seed0_abs_r_percentile": 71.8
+          }
+        },
+        "n_points": 152
+      }
+    },
+    "manyshot": {
+      "evil": {
+        "selected_layer": 20,
+        "ours_r": 0.6769,
+        "families": {
+          "isotropic": {
+            "seed0_r": 0.0512,
+            "seed0_abs_r_percentile": 13.8
+          },
+          "within_class": {
+            "seed0_r": 0.0955,
+            "seed0_abs_r_percentile": 17.9
+          },
+          "neg_arm_only": {
+            "seed0_r": 0.065,
+            "seed0_abs_r_percentile": 12.3
+          },
+          "rb_projected_out": {
+            "seed0_r": 0.0201,
+            "seed0_abs_r_percentile": 3.4
+          },
+          "orig_randnorm": {
+            "seed0_r": -0.5421,
+            "seed0_abs_r_percentile": 55.4
+          }
+        },
+        "n_points": 100
+      },
+      "sycophancy": {
+        "selected_layer": 20,
+        "ours_r": 0.8661,
+        "families": {
+          "isotropic": {
+            "seed0_r": 0.2784,
+            "seed0_abs_r_percentile": 37.6
+          },
+          "within_class": {
+            "seed0_r": -0.6234,
+            "seed0_abs_r_percentile": 72.9
+          },
+          "neg_arm_only": {
+            "seed0_r": -0.2407,
+            "seed0_abs_r_percentile": 28.6
+          },
+          "rb_projected_out": {
+            "seed0_r": 0.3984,
+            "seed0_abs_r_percentile": 60.8
+          },
+          "orig_randnorm": {
+            "seed0_r": -0.4324,
+            "seed0_abs_r_percentile": 23.8
+          }
+        },
+        "n_points": 100
+      },
+      "hallucination": {
+        "selected_layer": 23,
+        "ours_r": 0.7292,
+        "families": {
+          "isotropic": {
+            "seed0_r": 0.0139,
+            "seed0_abs_r_percentile": 3.2
+          },
+          "within_class": {
+            "seed0_r": 0.3245,
+            "seed0_abs_r_percentile": 44.4
+          },
+          "neg_arm_only": {
+            "seed0_r": -0.2688,
+            "seed0_abs_r_percentile": 34.9
+          },
+          "rb_projected_out": {
+            "seed0_r": -0.1847,
+            "seed0_abs_r_percentile": 31.2
+          },
+          "orig_randnorm": {
+            "seed0_r": -0.3645,
+            "seed0_abs_r_percentile": 42.8
+          }
+        },
+        "n_points": 95
+      }
+    }
+  },
+  "figures": [
+    "bar_panels_with_honest_nulls.png",
+    "bar_panels_with_honest_nulls_paper_steering.png",
+    "raw_scatter_finetune_ladder.png",
+    "raw_scatter_corrected_ladder.png",
+    "raw_scatter_manyshot_ladder.png"
+  ]
+}

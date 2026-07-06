@@ -102,6 +102,14 @@ confirmed `### fix-engaged signal` sub-section FAILs with the
 `substantive` blocker tag. Ordinary (non-crash-fix) rounds do NOT
 emit this block.
 
+A fix that ADDS or RE-TUNES a reuse-validation gate threshold mid-round
+is additionally governed by `.claude/rules/artifact-reuse.md`
+§ Reuse-validation gate calibration — derive the threshold from the
+artifact's own committed per-behavior, same-surface reference values
+(never a bare constant), and check its HALT-vs-WARN severity class
+before relaunching (#813 halts 2-3 were gates invented in crash-fix
+rounds).
+
 ### Kill-before-relaunch + `timeout`-bounded smokes (REQUIRED — every retry surface)
 
 Applies to EVERY re-run of a smoke / launch / dispatch command — crash-fix
@@ -147,6 +155,13 @@ load-186 VM overload).
    by explicit PID. Weaker than step 1 (a writer that opens-writes-closes
    is invisible between writes) — prefer the cmdline probe when possible.
 
+**After the kill, the relaunch itself must rewrite the pid file** with
+the new live pid in the same command chain, then confirm it before
+posting the fresh marker (`.claude/rules/pod-side-reporting.md`
+§ Pid-file launch contract — #813 v5: a relaunch that left the
+predecessor's pid in `/workspace/logs/issue-<N>.pid` cost a corrective
+extra round).
+
 **Bound every FOREGROUND/SYNCHRONOUS smoke or local invocation with
 `timeout(1)` as the DIRECT parent:** `timeout --kill-after=30s <N>s uv
 run python ...`, sized so `<N> + 30` ends ≥ 60 s BEFORE the Bash tool
@@ -159,6 +174,9 @@ EXEMPT — never wrap those in `timeout`. Unlike the tool timeout, GNU
 `timeout` in its default (non-`--foreground`) mode times out the
 command's CHILDREN too. Residual gap: a grandchild that `setsid`s
 escapes the group kill — step 1's probe before relaunch is the backstop.
+
+Step 9c test-verdict gate runs are BACKGROUND invocations with selector-sized
+bounds (SKILL.md 9c step 1b) — the ~510s foreground bound does NOT apply to them.
 
 ### Crash-fix rounds: scope guard (REQUIRED)
 
@@ -224,3 +242,11 @@ instance / SLURM job. Whether to reprovision for the full run is the
 ORCHESTRATOR's decision, driven by the `/issue` Step 7 crash-fix routing after
 it reads your marker. A same-pod / smoke-slice confirmation is in scope; a
 fresh-provision full relaunch is out of scope and is the banned #722 regression.
+
+The orchestrator-side counterpart: when the orchestrator's relaunch
+succeeds (a fresh `epm:run-launched`), it ALSO reconciles a stale
+`blocked` status back to `running` (SKILL.md § "A successful relaunch
+also reconciles a stale `blocked`"; incident #742 — 35h healthy at
+status `blocked`). Status transitions remain orchestrator-owned: you
+never run `set-status` yourself, even to clear a stale block your fix
+made obsolete.

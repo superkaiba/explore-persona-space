@@ -1,0 +1,32 @@
+{
+  "commit": "328ab540",
+  "created": "2026-07-04T06:08:24Z",
+  "figsize": [
+    6.0,
+    3.8
+  ],
+  "points": [
+    {
+      "category": "direct (ctx\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.5914952858206106,
+      "_kind": "bar"
+    },
+    {
+      "category": "stage 2 oracle (cot\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.7068199910266061,
+      "_kind": "bar"
+    },
+    {
+      "category": "composed (ctx\u2192\u0109ot\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.5930387445125731,
+      "_kind": "bar"
+    },
+    {
+      "category": "augmented ([ctx,cot]\u2192ans)",
+      "held-out skill-over-mean R\u00b2": 0.7000883811584906,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 4
+}

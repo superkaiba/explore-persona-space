@@ -1,0 +1,3061 @@
+{
+  "commit": "b8e605ddf5",
+  "created": "2026-07-03T17:14:16Z",
+  "figsize": [
+    10.4,
+    4.6
+  ],
+  "points": [
+    {
+      "x": 0.08766593553790827,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0595056530304528,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01955889927934326,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.015447924527996315,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1147513343716424,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.14510735845531605,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06315776929899644,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0714545029485206,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12986324867595214,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09860450830003382,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1521991525237619,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.1371071410131956,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08356470463691296,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.08975095271325662,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0915405776886252,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.10515472671629861,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11900363754382531,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07181528744234503,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01587649987341852,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.14220660106768485,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04134463224557401,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.11391073544682763,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.1365647964315526,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.25995175192768927,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04603683842581266,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09846433463289656,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10328371624666557,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.22015331041338126,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.018107456375254044,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.15206626634356815,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0872836090288714,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.13843084933998623,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.017467131845067124,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.17033540689675936,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1395784780466639,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.02018383300301959,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10484197503762624,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.16503923493964484,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.042132607719060744,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.033007137782326446,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08258807682731964,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.12688876824716966,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04655169019844213,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.048625282529978386,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.15062336780636906,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09294875849461819,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.12579875882310323,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.17834914892810932,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0890827190636038,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.3247700481561714,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09771561348737037,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.7923463920780964,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01064927880734906,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.11001142467876865,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1459827949480868,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.10992931068554646,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1106273625383847,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.04656101271954745,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.05857566503758549,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.15642349752670903,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07832388989050149,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.27251450683791,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.14960311437894722,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.22289399871651078,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.055735885395791385,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.1851644353399458,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.041452894068841964,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09801766539684065,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.009742140391741455,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09618330636039757,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09936916509302858,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.052743164996928785,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11842511829264907,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.3023123356338816,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0077744236077011974,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.5159951824046807,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.08738900830371708,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.18315331838322746,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0543404782984033,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09792385630772071,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.020111385960854156,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -1.122554869210425,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10645702273850796,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.03418655502087559,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06408483264071971,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09373630214071502,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.060042674757746856,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.3888665077572444,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10632313644646432,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.11186290501362034,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09752459439897662,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09519661177807504,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.03600691871034417,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.08568643434272676,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06773500674232188,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.04566994613189668,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.058398561271992167,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.4907625641164689,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11527920524502086,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.5078734544575454,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.9039706247920347,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.015215785616701227,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8423559263203217,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.022783903493275248,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0918158008006842,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.12048241608498153,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0527522741094504,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.02728430278224068,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0656529211604273,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.37235519813198514,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0898332899270298,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.08824585508996574,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9868530481722688,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.30787453571110035,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0219971827049261,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.012469430509750162,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8847350394008504,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.049743807499883996,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8766496235315115,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.06025371583798286,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.053888947772951,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09310697074299616,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9907507859658025,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.3639902943794264,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0208755540739805,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.027204837186907416,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.084799634373128,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.16684272713538384,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.043109862400189,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.007671820484176035,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0171454082105587,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0013298380860673475,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0189462914385323,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.03184195625369418,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9372640313800359,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0242682389332853,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8498617070617406,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.44753624969059097,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9797495645543559,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.10661252796487036,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9086670953022493,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.012484017607938297,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9707291659918835,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0225018443736045,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.113088983445813,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.08730234949148145,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.914860635476909,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.05164524088806971,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8586568773405011,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.28176478545477834,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9300428454470389,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.25521733290080467,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9339500024853388,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.05207732760212309,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0518132847126065,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.20289956037163961,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.018250288749209,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07840768315442324,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0908474269140522,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.06193305384383077,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.052580332904764,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.2718953352800287,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9700437956608225,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.20608394368881733,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.100486523093131,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.04343644259335554,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8934313343704653,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.08403370688668699,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8472678634028353,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.08080602891186628,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8688153154482053,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.007057509967118611,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.071154992190864,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.4320049259808794,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.987800713680444,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.28530261066487556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8916069692907526,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.1397856671348784,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0003343280330763,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.006671852752068996,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8887398728682139,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.22895717563777196,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0628225200248755,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07813759604242332,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9827700081836899,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0876017623799529,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9619267923508744,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.3042300295597259,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9364838685273205,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.10399418778968783,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0416904297980443,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07556617162242207,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.9557800353770849,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.06793646012040515,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8680479741811523,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.038206415006506456,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.8777618886785649,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.015499949745448216,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.1478072526558447,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.192332331668455,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.130745821026434,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.01766347391452701,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0639062828194397,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0066144326548724375,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9250783876670463,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.24114157162770197,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1501364407512717,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.025043172621427752,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0892002892690544,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.3965446320043024,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0694048605308786,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.07625989864379706,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9837956806860124,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.2708418776978795,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9271172997904509,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.02415121155313671,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8708451078891197,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.003560206349615458,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1288327668940292,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.03253257677815383,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9858484127467555,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.13207781909860244,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9047562767344737,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.39232113008744574,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9379061197282088,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.061374144522797186,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.025350262061407,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.14954951562836627,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8965672905405542,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.005319764496537309,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.11411657090956,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.021899843458322077,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0827262495472674,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.033030886125385156,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0702281459043,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.022758376678103924,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9782697727280332,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.3323364379603731,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.040738829024782,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.010767669337837904,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0269113500520755,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.01578344488297645,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0479509124975426,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.01324574627906211,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8670221827647646,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.1512014594555416,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.973058368694595,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07575995873902266,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8533165356358057,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.1887450964129176,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.998077062158246,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.23407633602649125,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9455555879464912,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.04813022821014133,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.886247740437135,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.19282151740905093,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8730889496712164,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.16778483924002002,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0280462630968676,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09769173051699631,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8945897499318036,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.12575755194268834,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.136038437880575,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07300538488373515,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0259395647041263,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0394261049332611,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.950998337451148,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0885261558912484,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0290929572740533,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.15979351886663112,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8472972387295032,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.016213504167231704,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1467389482372625,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.25829251970021766,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.994337099821728,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.1854639080669232,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0904752727200915,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.12442558077933688,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8664735999751803,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.014972486760027492,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9957306658682112,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.24672377139794022,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9970262381934467,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.040327364814841914,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.1401044655919943,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.016329650275112295,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0229529767603442,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.17051788490816955,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9915166083382252,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.07419687523740282,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9254322121894059,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.04383499143342118,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.9461020791496166,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.13204794950110638,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.006615168790892,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.038016614052996764,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.980451667297615,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.08642589412838719,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.8469158655617057,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.1221472324694384,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.1044134157421945,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.01790620172321003,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1267714469887253,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.03758239422357265,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8848797084795557,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.11901436171292404,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0172915659324957,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.023231501004960554,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.874744237163342,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.1971103141805448,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.05511682977274,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.004267740446957602,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.929994810828483,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.2337902109545099,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0510152431014084,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.01064398010932098,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0726382765718023,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.026428366388514313,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0859671974136504,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.030553666432907495,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.874477102705887,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.058397850225175726,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1331237904440346,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.26987320589284036,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.913668477086362,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.025741184522623584,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8519720179763777,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09048858588844289,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.017552790205275,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.005634228953222263,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9586951308359803,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.024152436255946652,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1055327178023724,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.02170660561756868,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0986404710605764,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0172541426036055,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.941484445703269,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.24245453344014062,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1449278064223183,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.01741757496111651,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.933093708204838,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.007168277012826282,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0048182813541486,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.014602275722369967,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.921908828981633,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.06457104643052397,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1395339424156683,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.03792472153048476,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.892674501626246,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.1661559380246675,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8543713982055454,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.275069544390166,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.979231059200972,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.05291041424572265,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.157560180497868,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.16559841991367397,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1253367252015725,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.04373848909229376,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0795545662262236,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.08398217633782137,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.125053597081128,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.14414911232847483,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.125902924703316,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.10180476573656017,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0060346753236638,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.039193028134676705,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9410972965858537,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0614748524579643,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.087043978275516,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.04847358950683833,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.0517316042136837,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.004375568797811667,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9595704732395873,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.2913901307012658,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.870229333779685,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.3050797395259039,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.078972675631688,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.08009506528282012,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9239873650953165,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.023276033722732903,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1397802081708095,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.32198349710482255,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.917110584001819,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.035500155793316605,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8792825383716756,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.012698928843666857,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.10595605507997,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.20002486159815336,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.889050981319838,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.06668831070296899,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.8973658586104767,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.013539321841296248,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.03180249328667,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.04078519266741293,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 3.1198598530679886,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.02627205351805662,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9028590930286633,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.018541184048804782,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.9393035753280303,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.18264721399631664,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 4.088769548237177,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.00469320725161794,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.1509844563395095,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.01685245923143963,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.000237179584749,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.14877831620173007,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8860472008164004,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.028620217226650924,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8444596120666246,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.28482811718988005,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9134899295996335,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.033993493250870366,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.882183109691687,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.17154468664117561,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.056850775556114,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0013702516793878267,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.87898640148113,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.014075747221644341,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.0020255781186025,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.009974651341314561,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.062163979405724,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07903413914979575,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.025957314950689,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.33432953127562137,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9039282085312186,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.016052447608502773,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.097319848378324,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.18441609032948125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.068930281477057,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.014882084332152011,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.076474881252973,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07270323346976665,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.88193848049834,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.06501686726498618,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8796012171681102,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.020809388196063837,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.1368200163220825,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.31872914693141347,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.967225022023981,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.047138191683426534,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9363035813699008,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.005056690661009555,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9963468945124907,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.04499395368952125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.052116548084347,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09654630866859797,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.14579944225503,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07701116628971746,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.931662792602258,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.24335649806350063,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.135938697379848,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.28747875655645855,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.847955037243602,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.03959461186361272,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.0176633735445835,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.11191131428222056,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.042872035737947,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07484914005734343,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8738871692002412,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0743925818252946,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.884908671060452,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.2183336421398897,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9741165821812174,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.12710371721960634,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.149194211885818,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.023795290549964626,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.030733617035,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0115688859237294,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.138567430912068,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.08535816502869031,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.09739549299615,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.01204702049344096,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.989562112497693,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.33132574969642276,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.0911243037607,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.37299715288005814,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.845707770872636,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.05001581569934044,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.8749260789650353,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.032720196038891314,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.105417156762476,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.46204525385404327,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.094981468264052,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.04709473508429212,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.914445037429259,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.057455015978288976,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.009846268991697,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.37528932925338265,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.033925062624004,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.04459818570719273,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.117676465208324,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.039532946238268085,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 4.032994290348392,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.06330698950980602,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.972022902167578,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.034295093094317344,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9597388938902984,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.06876080145962377,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 3.9762822676395233,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.2295552620524293,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 5.048617928185592,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.029021881734708294,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.1175970021607435,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.07019538896222297,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.9852470022644155,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07600718336310885,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.919308660144434,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.031455393144493256,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.915731956159226,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.11662043574956342,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.078724569677902,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.027666877714540128,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.101302004295651,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.3640537961072403,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.87368898555332,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.024813107776185353,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.861298834225657,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.057735607322045523,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.030218772402065,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.049329476249840576,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.8867754381416635,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.05187666510761378,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.103892540946029,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.19401278682774778,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.939307095655704,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.038481548910801466,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.886039018550766,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.04523373039324824,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.134710551195984,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.005639825092205029,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.892970151275289,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0048133895344998345,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.931110426348139,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0006541829583860126,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.889156286461459,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.019750423941933437,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.8769568203729134,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.17002417636310097,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.84676736522766,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.023618815471206367,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.857726530932563,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.02006669460558759,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.895885270699472,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.05695486628901783,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.857082218440696,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.03711834376695561,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.029166021155511,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.052186045241186196,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.057828648575842,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.08976454780160761,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.965961746186249,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.22513555801302904,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.941757151024656,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.05835327501879416,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.001448395847113,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.1916020768630924,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.120001581515075,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.023604472396784745,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.112362120583106,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.06718835620787628,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.853912019844094,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.12682311092537363,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.898079491070888,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.08044959531294801,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.915758358753407,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.04838481389909591,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.919804024266308,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.12241811810142739,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.022794448557687,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.021183178687514015,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.9732039762250215,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.00679867160085116,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.85576131837683,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.19418313575767643,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.959556524307063,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.27020643388995874,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.007600943589644,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.13592554101607132,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.872535008929189,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.05815970754410846,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.106706737212339,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.23285673003989582,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.856627797268834,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.030952112405160735,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.1359493980857795,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.02255758690282786,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 4.87171620530556,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.15577303113299612,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.109943984511281,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.10978063553086273,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.1288490060568375,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.07570299808407438,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.15346261778771,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.02668564208253578,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.09664828168755,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.029172245223219453,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.089432813046825,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.016854498261296424,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 5.045594648318575,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.1155012428214032,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 6.089278833465001,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0040061527932737095,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.883056706692207,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.03876886216611669,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.011541771503244,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.13382111796822208,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.0045513184609325,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0492289844865297,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.114423086119219,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.19938697721424287,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.988095796989925,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0766149802544332,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.963228638752113,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.2923303773741551,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.044660246795876,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.004422492115517249,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.92526826160027,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.00017613272416006076,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.8847258915052665,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.007106520757621054,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.992920727687599,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.10224708169549913,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.973404597950363,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.29032303109935786,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.914422380969239,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.05995856638888769,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.957603779236841,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.18668771163289655,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.957245583944399,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0071474517087722,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.944798580612015,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.05519274913561778,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.961428505512617,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.04372766542654519,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.059437870545903,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.030781544768753236,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.9350004718628115,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.27377992281645475,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.143634536548909,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.10449405494832592,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.133231366252217,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.01855700533811612,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.993891337056025,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.04525668475331218,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.945075585601501,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07974762696725983,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.011339132745601,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.10312290981971886,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.11153935640756,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.17024118233158142,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.048827948979232,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.26303797655762257,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.097405384943065,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.052764207372837435,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.010471128341037,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.14886447050699714,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.0425336413656385,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0666255078611669,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.9322097965383875,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.08223911125627284,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.075165811939293,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.2234060941595737,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.90476946980023,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09616087939752285,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.06233540122192,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0233223791436261,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.115430101864286,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.048172377697507485,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.882272907936494,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07023349572231008,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.036601516973414,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.024564046936417644,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.870430639433579,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.22387763087023121,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.072229001046857,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.3619472439696882,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.867037830023526,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0677396514547493,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.1395007432642,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.007247759620347072,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.883970537612097,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.3979410670014458,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.1468416786909055,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.06217938025152243,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.096282936347231,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.081065744418189,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.029978241429233,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.34946886053216686,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.090439713481455,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.05726595997572484,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.094436748474587,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.029198801108326067,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.142728660101546,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.06911068818551984,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.92108267322854,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0448609623666853,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 6.028824286514659,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07690935096949719,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 5.870415743220608,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.18081290671505637,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 7.037173024007719,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.006245696861500755,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.894813217309692,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.009274564351417103,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.020784195671181,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0025462688774605113,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.023177764490832,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0004903245296357835,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.9891152489539925,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.005560466012204529,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.0072421681642,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.030627794932441332,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.084455484802108,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.010984165692877523,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.095758309283862,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.006219434684531719,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.997489028984138,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.011694783112124518,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.031869901287236,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.001454962076604921,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.137995595420833,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.002235576414775786,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.878314748320359,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.004081298982582401,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.877473141088036,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.03687570717130928,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.868066883811446,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.013171097042930957,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.050516251212969,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.003687879798055245,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.973954656252921,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.015038422675122898,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.08778285316539,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0013726525334890605,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.05479405225875,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0002824780588425793,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.9467640826650365,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.006663904221920758,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.127477295155692,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.042671812055653235,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.0840102870626085,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.006217215066605428,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.926571181091256,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.011895805355201655,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.956541445687058,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0007099648835763375,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.9406207936653646,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0010583490004464902,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.89043572756,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.013540556385571167,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.887290679213502,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.014132025099222068,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.139560788280238,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.005786238012091091,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.980129291903601,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.018822082459949763,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.9626623432887715,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0020317056238486203,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.073499426776761,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.000492528273474041,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.016957780880928,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0018596265421702562,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.139564795788308,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.004429698704388058,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.089696478051006,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.00797555419905363,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.993398260519853,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.014212446437541049,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.960435031513865,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0007766193005451227,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.155722094375783,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0007649021760022245,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.069683275521166,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.001474706487501365,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.14438229120123,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0014949871727908959,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.877913144709453,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.020411628906464696,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.11217077734105,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0038176064017844125,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.043863642877186,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.007560465149129281,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.879014937067236,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0006025714638607793,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.028242559990151,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.03353627513247842,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.059550836833743,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.007105759210528584,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.843936859484353,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.012615602913257917,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.985381747789359,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.013605983869915184,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.104127843582822,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.0012209637021542985,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.934514888110109,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 7.099746676646201e-05,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.986735386175536,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.006442589196186899,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 6.981540520661726,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.008608690285237253,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 7.936616765261597,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.0746981653923082,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.133901406564977,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.24973122580934703,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.090014091338086,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.04725018854860519,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.875388291518755,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.05305762027021397,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.159051090508024,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.05599581209744116,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.121344007778479,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.5072561736021071,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.930850700116492,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.06638138980392883,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.1078069054915,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.06893616010977163,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.874054250198842,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.1880270012786586,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.159713513751756,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.038653032651337293,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.053019115554092,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09916787469083659,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.048040004978816,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.02814886934150164,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.868941032634923,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.07851675559226642,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.12705068764692,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.5489554273658704,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.84927984102543,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.17753524227230041,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.917064978573167,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.01643957076163377,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.885767000053323,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.01448743189882526,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.08856574102151,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.009847461038889276,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.903425352708127,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.06504829327655724,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.131404232681883,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.18242238539603925,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.050006092584796,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.060392349631019165,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.851572067358303,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.2046724269313458,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.841737546921184,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.11260178668100361,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.856530533444608,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07724470365012859,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.033896056847272,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.07392768429660382,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.096474179475013,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09852982673867766,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.916336902600764,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.11959978461984366,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.111810829735383,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.04145556356768032,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.858314220849043,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.08338298583038199,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.096308433165337,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.062020391641084915,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.13689453765513,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.04047528497409891,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.087074687713402,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.13083312813552445,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.063398650873165,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.09165650239652985,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.108153669969722,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.010499604489641934,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.852848415855061,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.036899706875622024,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.904570275430098,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.07056843111114006,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.879975577377806,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.2918225083610229,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.001449916861755,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.06198495835157908,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.07846020106523,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.13397379720620833,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.041603790264448,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.06248781380794505,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.11236195192382,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.233884847831216,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.889668157581149,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.027054390514153225,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.075078749419252,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.08420755910062397,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.901773277078049,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.415667328398427,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.926642800421696,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.11472450342470597,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.067169503130017,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.6797946836579244,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.153665531167578,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.01931441728774598,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.035693953912663,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.03419375821136243,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 7.8574401007972146,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": 0.10906722502396593,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 8.03721887037681,
+      "per-context error-fraction gap\n(mean \u2212 new row) at layer 18": -0.32795712511375086,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "held-out error fraction, mean summary": 0.09312772681672621,
+      "held-out error fraction, whole-turn mean": 0.08688202995522545,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.270100175060917,
+      "held-out error fraction, whole-turn mean": 0.2608256107094999,
+      "label": "format: xml",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.13378500938507445,
+      "held-out error fraction, whole-turn mean": 0.13123874050761394,
+      "label": "rephrase: legalese",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.030718952566882986,
+      "held-out error fraction, whole-turn mean": 0.030228628037247202,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.09432302514935244,
+      "held-out error fraction, whole-turn mean": 0.08876255913714791,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.40024161189110824,
+      "held-out error fraction, whole-turn mean": 0.3696138169586669,
+      "label": "format: markdown table",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.8791972580729909,
+      "held-out error fraction, whole-turn mean": 0.8682130923801133,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.10884972977167293,
+      "held-out error fraction, whole-turn mean": 0.10263029508714121,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.19728110329706458,
+      "held-out error fraction, whole-turn mean": 0.18558632018494006,
+      "label": "format: json",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.23827170443239581,
+      "held-out error fraction, whole-turn mean": 0.2368167423557909,
+      "label": "format: json",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.07901021357045228,
+      "held-out error fraction, whole-turn mean": 0.07677463715567649,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.08985495722555722,
+      "held-out error fraction, whole-turn mean": 0.09393625620813963,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.29325493128456964,
+      "held-out error fraction, whole-turn mean": 0.25637922411326036,
+      "label": "format: xml",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.4035959365661528,
+      "held-out error fraction, whole-turn mean": 0.3904248395232218,
+      "label": "format: markdown table",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.06225906040305818,
+      "held-out error fraction, whole-turn mean": 0.05857118060500294,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.3111372907459329,
+      "held-out error fraction, whole-turn mean": 0.29609886807081,
+      "label": "format: xml",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.20114801501425916,
+      "held-out error fraction, whole-turn mean": 0.1997753624807701,
+      "label": "format: json",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.015843737708981724,
+      "held-out error fraction, whole-turn mean": 0.016126215767824303,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.14177636590320392,
+      "held-out error fraction, whole-turn mean": 0.13511246168128316,
+      "label": "rephrase: legalese",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.3577745150966684,
+      "held-out error fraction, whole-turn mean": 0.3151027030410152,
+      "label": "format: bullets",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.09122085153393442,
+      "held-out error fraction, whole-turn mean": 0.08500363646732899,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.24287163085510932,
+      "held-out error fraction, whole-turn mean": 0.23097582549990767,
+      "label": "format: json",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.05810246623201849,
+      "held-out error fraction, whole-turn mean": 0.057392501348442156,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.13007857043051835,
+      "held-out error fraction, whole-turn mean": 0.12902022143007186,
+      "label": "rephrase: legalese",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.15549660551647587,
+      "held-out error fraction, whole-turn mean": 0.16903716190204704,
+      "label": "rephrase: legalese",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.24127393859319907,
+      "held-out error fraction, whole-turn mean": 0.227141913493977,
+      "label": "format: json",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.07585064219655255,
+      "held-out error fraction, whole-turn mean": 0.07006440418446146,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.42165186345445826,
+      "held-out error fraction, whole-turn mean": 0.4028297809945085,
+      "label": "format: markdown table",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.10191574015145509,
+      "held-out error fraction, whole-turn mean": 0.09988403452760647,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.06554089100336385,
+      "held-out error fraction, whole-turn mean": 0.0660334192768379,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.128781966922614,
+      "held-out error fraction, whole-turn mean": 0.12692234038044375,
+      "label": "rephrase: legalese",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.1482963928763103,
+      "held-out error fraction, whole-turn mean": 0.14386669417192224,
+      "label": "rephrase: legalese",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.10652009134586689,
+      "held-out error fraction, whole-turn mean": 0.09854453714681326,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.34397728753837437,
+      "held-out error fraction, whole-turn mean": 0.3297648411008333,
+      "label": "format: bullets",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.20055822221951364,
+      "held-out error fraction, whole-turn mean": 0.20133484152005876,
+      "label": "format: json",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.041063377523220215,
+      "held-out error fraction, whole-turn mean": 0.04029847534721799,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.16560890531209477,
+      "held-out error fraction, whole-turn mean": 0.1641341988245934,
+      "label": "rephrase: legalese",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.3275756228382329,
+      "held-out error fraction, whole-turn mean": 0.3290706100110238,
+      "label": "format: bullets",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.3431068624478042,
+      "held-out error fraction, whole-turn mean": 0.3226952335413395,
+      "label": "format: bullets",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.2899367638611906,
+      "held-out error fraction, whole-turn mean": 0.2861191574594062,
+      "label": "format: xml",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.4513322872809291,
+      "held-out error fraction, whole-turn mean": 0.44377182213179983,
+      "label": "format: markdown table",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.03707447740450979,
+      "held-out error fraction, whole-turn mean": 0.03767704886837057,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.2134513182117351,
+      "held-out error fraction, whole-turn mean": 0.17991504307925668,
+      "label": "format: json",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.28230048690935927,
+      "held-out error fraction, whole-turn mean": 0.2751947276988307,
+      "label": "format: xml",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.25004975279227803,
+      "held-out error fraction, whole-turn mean": 0.23743414987902012,
+      "label": "format: json",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.5102242936810836,
+      "held-out error fraction, whole-turn mean": 0.4966183098111684,
+      "label": "format: markdown table",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.07524367316618531,
+      "held-out error fraction, whole-turn mean": 0.07402270946403101,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.02074354816185466,
+      "held-out error fraction, whole-turn mean": 0.020672550695088197,
+      "label": "software engineer",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.4091178404654573,
+      "held-out error fraction, whole-turn mean": 0.4026752512692704,
+      "label": "format: markdown table",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "held-out error fraction, mean summary": 0.17086408565619574,
+      "held-out error fraction, whole-turn mean": 0.16225539537095848,
+      "label": "rephrase: legalese",
+      "_kind": "scatter",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 500
+}

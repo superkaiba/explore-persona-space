@@ -1,0 +1,453 @@
+{
+  "commit": "566eb04d01",
+  "created": "2026-07-03T22:26:25Z",
+  "figsize": [
+    6.5,
+    4.2
+  ],
+  "points": [
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.8038623217417584,
+      "series": "ridge t17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 10000.0,
+      "held-out r2_meancentered": 0.8322645456339783,
+      "series": "ridge t17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 25000.0,
+      "held-out r2_meancentered": 0.8508272084230598,
+      "series": "ridge t17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 50000.0,
+      "held-out r2_meancentered": 0.8590831805412769,
+      "series": "ridge t17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.8623213117069963,
+      "series": "ridge t17",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.7690880057115453,
+      "series": "ridge t18",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fit-set size n": 10000.0,
+      "held-out r2_meancentered": 0.8011060903622061,
+      "series": "ridge t18",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fit-set size n": 25000.0,
+      "held-out r2_meancentered": 0.8216134593212492,
+      "series": "ridge t18",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fit-set size n": 50000.0,
+      "held-out r2_meancentered": 0.8312220922955043,
+      "series": "ridge t18",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.8353504416834909,
+      "series": "ridge t18",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.7902152197471809,
+      "series": "ridge t19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit-set size n": 10000.0,
+      "held-out r2_meancentered": 0.8217313439454291,
+      "series": "ridge t19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit-set size n": 25000.0,
+      "held-out r2_meancentered": 0.8411311895929297,
+      "series": "ridge t19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit-set size n": 50000.0,
+      "held-out r2_meancentered": 0.8498724850043325,
+      "series": "ridge t19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.8537920450695847,
+      "series": "ridge t19",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.7478821521770411,
+      "series": "ridge t20",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "fit-set size n": 10000.0,
+      "held-out r2_meancentered": 0.7830135309832355,
+      "series": "ridge t20",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "fit-set size n": 25000.0,
+      "held-out r2_meancentered": 0.8053530706012844,
+      "series": "ridge t20",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "fit-set size n": 50000.0,
+      "held-out r2_meancentered": 0.8155629104387508,
+      "series": "ridge t20",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.820669182447897,
+      "series": "ridge t20",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.7530284848105572,
+      "series": "ridge t21",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "fit-set size n": 10000.0,
+      "held-out r2_meancentered": 0.7857672897274581,
+      "series": "ridge t21",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "fit-set size n": 25000.0,
+      "held-out r2_meancentered": 0.8062404874386807,
+      "series": "ridge t21",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "fit-set size n": 50000.0,
+      "held-out r2_meancentered": 0.8161896227430208,
+      "series": "ridge t21",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.8213231349583082,
+      "series": "ridge t21",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.7584109887892547,
+      "series": "ridge t22",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "fit-set size n": 10000.0,
+      "held-out r2_meancentered": 0.7899127753539231,
+      "series": "ridge t22",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "fit-set size n": 25000.0,
+      "held-out r2_meancentered": 0.8098137490440579,
+      "series": "ridge t22",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "fit-set size n": 50000.0,
+      "held-out r2_meancentered": 0.8192151971618282,
+      "series": "ridge t22",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.8247759507910515,
+      "series": "ridge t22",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.7179006975871169,
+      "series": "ridge t23",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fit-set size n": 10000.0,
+      "held-out r2_meancentered": 0.7521968052436548,
+      "series": "ridge t23",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fit-set size n": 25000.0,
+      "held-out r2_meancentered": 0.7736726286123471,
+      "series": "ridge t23",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fit-set size n": 50000.0,
+      "held-out r2_meancentered": 0.7847220938796149,
+      "series": "ridge t23",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.7915350310625751,
+      "series": "ridge t23",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.7262536034013309,
+      "series": "ridge t24",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fit-set size n": 10000.0,
+      "held-out r2_meancentered": 0.7614590008309849,
+      "series": "ridge t24",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fit-set size n": 25000.0,
+      "held-out r2_meancentered": 0.7818759231720438,
+      "series": "ridge t24",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fit-set size n": 50000.0,
+      "held-out r2_meancentered": 0.7929748562897023,
+      "series": "ridge t24",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.7996969759531563,
+      "series": "ridge t24",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.7041366024047033,
+      "series": "ridge t25",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "fit-set size n": 10000.0,
+      "held-out r2_meancentered": 0.742922134699012,
+      "series": "ridge t25",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "fit-set size n": 25000.0,
+      "held-out r2_meancentered": 0.7659081747665208,
+      "series": "ridge t25",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "fit-set size n": 50000.0,
+      "held-out r2_meancentered": 0.778584220961707,
+      "series": "ridge t25",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.7857879251106755,
+      "series": "ridge t25",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.7390807101654528,
+      "series": "MLP t17",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.7900945331447409,
+      "series": "MLP t17",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.7133934319885267,
+      "series": "MLP t18",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.7754523687054095,
+      "series": "MLP t18",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.7321456573743625,
+      "series": "MLP t19",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.7889208908245626,
+      "series": "MLP t19",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.6845049135175698,
+      "series": "MLP t20",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.7547445929150209,
+      "series": "MLP t20",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.6933073824241516,
+      "series": "MLP t21",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.7610138422133012,
+      "series": "MLP t21",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.7095691331992202,
+      "series": "MLP t22",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.7721167789063563,
+      "series": "MLP t22",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.6617440596973128,
+      "series": "MLP t23",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.7369839080462212,
+      "series": "MLP t23",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.6804747237589237,
+      "series": "MLP t24",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.7597887826439045,
+      "series": "MLP t24",
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "fit-set size n": 4000.0,
+      "held-out r2_meancentered": 0.6803026193191315,
+      "series": "MLP t25",
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "fit-set size n": 100000.0,
+      "held-out r2_meancentered": 0.7458849571379381,
+      "series": "MLP t25",
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 63
+}

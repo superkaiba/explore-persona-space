@@ -1,0 +1,690 @@
+{
+  "commit": "dd0092d6dc",
+  "created": "2026-07-03T09:31:25Z",
+  "figsize": [
+    11.0,
+    4.0
+  ],
+  "points": [
+    {
+      "r_B layer index (0-indexed block outputs)": 0.0,
+      "cos(r_B v2, r_B v1)": 0.995102082970041,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 1.0,
+      "cos(r_B v2, r_B v1)": 0.9956195824390285,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 2.0,
+      "cos(r_B v2, r_B v1)": 0.9955938653801183,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 3.0,
+      "cos(r_B v2, r_B v1)": 0.9955575729101317,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 4.0,
+      "cos(r_B v2, r_B v1)": 0.9958480710740161,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 5.0,
+      "cos(r_B v2, r_B v1)": 0.995937038705138,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 6.0,
+      "cos(r_B v2, r_B v1)": 0.9960915922794884,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 7.0,
+      "cos(r_B v2, r_B v1)": 0.9960058687055109,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 8.0,
+      "cos(r_B v2, r_B v1)": 0.9959119657946713,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 9.0,
+      "cos(r_B v2, r_B v1)": 0.9956331252280567,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 10.0,
+      "cos(r_B v2, r_B v1)": 0.9956491827164852,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 11.0,
+      "cos(r_B v2, r_B v1)": 0.9959011791309413,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 12.0,
+      "cos(r_B v2, r_B v1)": 0.9961101078209563,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 13.0,
+      "cos(r_B v2, r_B v1)": 0.9957857155446639,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 14.0,
+      "cos(r_B v2, r_B v1)": 0.996127496944326,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 15.0,
+      "cos(r_B v2, r_B v1)": 0.9966823497028867,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 16.0,
+      "cos(r_B v2, r_B v1)": 0.9966917288486814,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 17.0,
+      "cos(r_B v2, r_B v1)": 0.996915459518728,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 18.0,
+      "cos(r_B v2, r_B v1)": 0.9970855319293435,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 19.0,
+      "cos(r_B v2, r_B v1)": 0.9973353668844678,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 20.0,
+      "cos(r_B v2, r_B v1)": 0.997349617445658,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 21.0,
+      "cos(r_B v2, r_B v1)": 0.9968985874699832,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 22.0,
+      "cos(r_B v2, r_B v1)": 0.9969899675093132,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 23.0,
+      "cos(r_B v2, r_B v1)": 0.9971393721260523,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 24.0,
+      "cos(r_B v2, r_B v1)": 0.9971418982725403,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 25.0,
+      "cos(r_B v2, r_B v1)": 0.9971341368942557,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 26.0,
+      "cos(r_B v2, r_B v1)": 0.9972559756060763,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 27.0,
+      "cos(r_B v2, r_B v1)": 0.9979792191407977,
+      "series": "evil",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 0.0,
+      "cos(r_B v2, r_B v1)": 0.9898679414135418,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 1.0,
+      "cos(r_B v2, r_B v1)": 0.991689418105103,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 2.0,
+      "cos(r_B v2, r_B v1)": 0.9927262283108487,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 3.0,
+      "cos(r_B v2, r_B v1)": 0.9934756002436118,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 4.0,
+      "cos(r_B v2, r_B v1)": 0.9939143345074841,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 5.0,
+      "cos(r_B v2, r_B v1)": 0.9947142903673525,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 6.0,
+      "cos(r_B v2, r_B v1)": 0.9949819242683979,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 7.0,
+      "cos(r_B v2, r_B v1)": 0.9951798309774609,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 8.0,
+      "cos(r_B v2, r_B v1)": 0.9943243911878593,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 9.0,
+      "cos(r_B v2, r_B v1)": 0.9925118783204826,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 10.0,
+      "cos(r_B v2, r_B v1)": 0.9929549229863338,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 11.0,
+      "cos(r_B v2, r_B v1)": 0.9934932030039118,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 12.0,
+      "cos(r_B v2, r_B v1)": 0.9934980376394311,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 13.0,
+      "cos(r_B v2, r_B v1)": 0.9924266622794589,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 14.0,
+      "cos(r_B v2, r_B v1)": 0.9936120760078384,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 15.0,
+      "cos(r_B v2, r_B v1)": 0.9950869661580463,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 16.0,
+      "cos(r_B v2, r_B v1)": 0.9949940604409543,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 17.0,
+      "cos(r_B v2, r_B v1)": 0.9952489866464951,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 18.0,
+      "cos(r_B v2, r_B v1)": 0.9953677541765196,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 19.0,
+      "cos(r_B v2, r_B v1)": 0.9962366124036789,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 20.0,
+      "cos(r_B v2, r_B v1)": 0.9958715058759015,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 21.0,
+      "cos(r_B v2, r_B v1)": 0.9950631856843098,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 22.0,
+      "cos(r_B v2, r_B v1)": 0.994249000531484,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 23.0,
+      "cos(r_B v2, r_B v1)": 0.9945615037966435,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 24.0,
+      "cos(r_B v2, r_B v1)": 0.9938500519902258,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 25.0,
+      "cos(r_B v2, r_B v1)": 0.9936276003126941,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 26.0,
+      "cos(r_B v2, r_B v1)": 0.993346485898827,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 27.0,
+      "cos(r_B v2, r_B v1)": 0.9960802174954815,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 0.0,
+      "cos(r_B v2, r_B v1)": 0.943788490292563,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 1.0,
+      "cos(r_B v2, r_B v1)": 0.9533758771585623,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 2.0,
+      "cos(r_B v2, r_B v1)": 0.9541909844118264,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 3.0,
+      "cos(r_B v2, r_B v1)": 0.9635378466691887,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 4.0,
+      "cos(r_B v2, r_B v1)": 0.9611059281066726,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 5.0,
+      "cos(r_B v2, r_B v1)": 0.9696650624564087,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 6.0,
+      "cos(r_B v2, r_B v1)": 0.9719883976843127,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 7.0,
+      "cos(r_B v2, r_B v1)": 0.9709856226080726,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 8.0,
+      "cos(r_B v2, r_B v1)": 0.9694254023817797,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 9.0,
+      "cos(r_B v2, r_B v1)": 0.9584176821135791,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 10.0,
+      "cos(r_B v2, r_B v1)": 0.9604765468454118,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 11.0,
+      "cos(r_B v2, r_B v1)": 0.9640585017335104,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 12.0,
+      "cos(r_B v2, r_B v1)": 0.9688816572984126,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 13.0,
+      "cos(r_B v2, r_B v1)": 0.9697284587205618,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 14.0,
+      "cos(r_B v2, r_B v1)": 0.973370689587981,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 15.0,
+      "cos(r_B v2, r_B v1)": 0.9773121077182256,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 16.0,
+      "cos(r_B v2, r_B v1)": 0.9778272828375234,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 17.0,
+      "cos(r_B v2, r_B v1)": 0.9796103040112494,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 18.0,
+      "cos(r_B v2, r_B v1)": 0.9811697598574154,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 19.0,
+      "cos(r_B v2, r_B v1)": 0.9789065203210914,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 20.0,
+      "cos(r_B v2, r_B v1)": 0.978306701548394,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 21.0,
+      "cos(r_B v2, r_B v1)": 0.9730961202631087,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 22.0,
+      "cos(r_B v2, r_B v1)": 0.9651213243926977,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 23.0,
+      "cos(r_B v2, r_B v1)": 0.9603906110225072,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 24.0,
+      "cos(r_B v2, r_B v1)": 0.9529668175997913,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 25.0,
+      "cos(r_B v2, r_B v1)": 0.9502929988011494,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 26.0,
+      "cos(r_B v2, r_B v1)": 0.9446558230585245,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 27.0,
+      "cos(r_B v2, r_B v1)": 0.9635859156987673,
+      "series": "hallucination",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": -0.00079,
+      "y": -0.0015804282378019119,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": 0.00092,
+      "y": 0.0018403957433069662,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": -0.009048,
+      "y": -0.018096566345612047,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": 0.001915,
+      "y": 0.0038291892325817978,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": 0.001347,
+      "y": 0.0026949082544512892,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": -0.001451,
+      "y": -0.0029020855853018057,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": 0.003649,
+      "y": 0.00729705340669351,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": -0.015246,
+      "y": -0.030491948333394428,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": 0.0032,
+      "y": 0.006400128884420764,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": -0.016148,
+      "y": -0.03229653819156168,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": 0.000586,
+      "y": 0.00117175807217762,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": 0.001203,
+      "y": 0.0024066022079403115,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": 0.002244,
+      "y": 0.004488150015687031,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": 0.000451,
+      "y": 0.0009016934912934316,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "observed |r| (v2 direction) - |r| (v1 direction) @ paper layer": -0.001703,
+      "y": -0.003405605353897667,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 99
+}

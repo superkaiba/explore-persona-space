@@ -1,0 +1,316 @@
+{
+  "commit": "dfa953a482",
+  "created": "2026-07-02T23:05:57Z",
+  "figsize": [
+    7.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.3,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.7086942677038546,
+      "error": 0.10921535913822022,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.7,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.6336279883110754,
+      "error": 0.10240162649636375,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.7,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.31102521007139083,
+      "error": 0.09000513881654158,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.7,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.2141047433262991,
+      "error": 0.07229866376532208,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.6577140323811628,
+      "error": 0.07017376868224462,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.9,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.3624056614579658,
+      "error": 0.06270523646909099,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.9,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.24201248605662187,
+      "error": 0.05471411410977721,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.9,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.2417553561950191,
+      "error": 0.07444962070278444,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.6226048535874372,
+      "error": 0.18080021895305995,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.17062434546195654,
+      "error": 0.1454727342197793,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": 0.12392815168640613,
+      "error": 0.11486906065989999,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": 0.22872561789561893,
+      "error": 0.06326022772663771,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.3,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.5058120970484465,
+      "error": 0.26759151247307855,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.3,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.16248503887632437,
+      "error": 0.13830811334644347,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.3,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.041141938251288056,
+      "error": 0.07959295714066236,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.3,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.3291992294138394,
+      "error": 0.06876217291650655,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.30000000000000004,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.8202031855573672,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.7,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.7384446546111956,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.7,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.40344289620086254,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.7,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.28950872981133163,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.30000000000000004,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.6017724672809267,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.7,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.5336414016184681,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.7,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.22343261856777938,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.7,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.14491140228068747,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": -0.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.7273080641233539,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.9,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.428991194737333,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.9,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.2966595260876287,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.9,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.3182488589770074,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": -0.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.5869605267588647,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.9,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.303580721799151,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.9,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.18723129786807427,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.9,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.16934961757143852,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.8092349436827843,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.3146727057631846,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": 0.012512823659976538,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": 0.16635290862029375,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.44763450577666436,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.023727237323626,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": 0.2422509449797765,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.1,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": 0.2928733640735692,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.30000000000000004,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.829422104737243,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.3,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.32321621577582227,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.3,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.12162341475409816,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.3,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.40051144203397354,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.30000000000000004,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.29423907979108593,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.3,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.046599989082935334,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.3,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": 0.03756249952722656,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.3,
+      "Paired $\\Delta R^2$ (cross-role minus within-role, 95% CI)": -0.26298709620096045,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 48
+}

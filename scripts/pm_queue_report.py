@@ -75,7 +75,10 @@ def _read_events(task_path: Path) -> list[dict]:
     if not events_path.exists():
         return []
     events: list[dict] = []
-    for line in events_path.read_text().splitlines():
+    # split("\n"), NOT splitlines(): raw U+2028/U+2029/NEL inside
+    # ensure_ascii=False notes are Unicode line boundaries that would shred
+    # valid records (gotchas.md; #825 → #950).
+    for line in events_path.read_text().split("\n"):
         line = line.strip()
         if not line:
             continue

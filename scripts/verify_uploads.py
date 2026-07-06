@@ -144,15 +144,47 @@ def check_hf_hub_path(
     the files actually exist at the pinned revision a downstream consumer
     will dereference — this is what the phantom-URL gate needs (a string
     claiming ``/tree/<sha>/...`` is not the same as the files being there).
+
+    The listing is SCOPED server-side to ``path_in_repo`` via
+    ``list_repo_tree(path_in_repo=...)`` (through
+    ``hub.list_repo_files_complete``, inheriting its 504 transient-retry,
+    #794/#658) — a bare full-repo ``list_repo_files`` wedges >600 s on the
+    ~1M-file data repo (#920, the #833 gotcha). The tree endpoint 404s
+    when ``path_in_repo`` names an exact FILE rather than a directory, so
+    an ``EntryNotFoundError`` falls back to one ``HfApi.file_exists`` probe.
     """
     try:
         from huggingface_hub import HfApi
+        from huggingface_hub.utils import EntryNotFoundError
+
+        from explore_persona_space.orchestrate.hub import list_repo_files_complete
 
         api = HfApi(token=os.environ.get("HF_TOKEN"))
-        files = api.list_repo_files(repo_id=repo_id, repo_type=repo_type, revision=revision)
-        prefix = path_in_repo.rstrip("/") + "/"
-        matching = [f for f in files if f.startswith(prefix) or f == path_in_repo]
+        normalized = path_in_repo.rstrip("/")
+        if not normalized:
+            # A falsy path would silently degrade to a FULL-repo listing —
+            # the exact hang this function exists to avoid. Fail loud.
+            return {"status": "ERROR", "url": "", "detail": "empty path_in_repo"}
         rev_url = revision or "main"
+        try:
+            matching = list_repo_files_complete(
+                api,
+                repo_id,
+                repo_type=repo_type,
+                revision=revision,
+                path_in_repo=normalized,
+            )
+        except EntryNotFoundError:
+            # Not a directory at this revision; may still be an exact file
+            # (tree endpoint 404s on file paths — verified on hub 0.36.2).
+            # file_exists only fires AFTER the tree call proved repo+revision
+            # resolve, so its False genuinely means "file missing" (its
+            # swallowing of Repository/RevisionNotFoundError is unreachable
+            # here).
+            if api.file_exists(repo_id, normalized, repo_type=repo_type, revision=revision):
+                matching = [normalized]
+            else:
+                matching = []
         if matching:
             url = f"https://huggingface.co/{repo_id}/tree/{rev_url}/{path_in_repo}"
             return {"status": "OK", "url": url, "file_count": len(matching)}

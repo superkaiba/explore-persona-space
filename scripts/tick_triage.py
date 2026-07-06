@@ -18,6 +18,18 @@ ANY failure (missing task, unreadable registry, unknown status) exits
 non-zero with a loud stderr line — the tick skill treats a non-zero exit as
 STALE-REDRIVE (fail toward coverage, never toward silence).
 
+Before returning an issue-mode STALE-REDRIVE, ``triage()`` runs a cheap
+liveness screen (issue #1051, ``issue_liveness_reason``): a live,
+identity-verified detached-phase pid (from the newest in-flight
+``stage-dispatch`` breadcrumb), a freshly-appended breadcrumb ``log=`` file,
+or a fresh ``[long-phase-heartbeat]`` note converts the verdict to HEALTHY.
+Pid-bearing detached-phase evidence is authoritative — a heartbeat never
+rescues a dead pid or a cleared phase — so a dead session with a live
+detached fit reads HEALTHY until the fit ends, and the first tick after the
+pid dies fires STALE-REDRIVE exactly when the re-driven session can harvest
+(the intended sequencing; a 48h breadcrumb cap bounds a wedged-leader
+latch). Kill switch: ``EPM_TICK_LIVENESS_PROBE=0``.
+
 Side effects (both under ``~/.eps-autonomous``, overridable for tests via
 ``EPM_TICK_STATE_DIR``):
 
@@ -122,6 +134,34 @@ def root_disk_snapshot() -> dict | None:
         return None
     return {"band": root_disk_band(free), "free_gib": round(free / _GIB, 1)}
 
+
+# ── detached-phase liveness (issue #1051) ───────────────────────────────────
+# Mirror of autonomous_session_watch.py's opt-in long-phase-heartbeat
+# convention (_LONG_PHASE_HEARTBEAT_PREFIX / EPM_LONG_PHASE_HEARTBEAT_FRESH_MIN,
+# task #761): the SAME prefix + env knob so the two never drift (the same
+# mirror-by-env pattern as the disk bands above). Parity pinned by
+# tests/test_tick_triage.py::test_heartbeat_constants_match_watcher.
+# Known accepted divergence: the watcher's env parse accepts a non-positive
+# EPM_LONG_PHASE_HEARTBEAT_FRESH_MIN; tick falls back to the 90-min default
+# instead (the safer behavior — a typo'd var must not disable the window).
+LONG_PHASE_HEARTBEAT_PREFIX = "[long-phase-heartbeat]"
+LONG_PHASE_HEARTBEAT_FRESH_MIN_DEFAULT = 90.0
+# Identity-guard slack: a live /proc/<pid> counts as the breadcrumb's process
+# only when its start-epoch <= breadcrumb ts + this slack (the leader starts
+# BEFORE the breadcrumb is posted; a recycled pid starts strictly after the
+# original died, i.e. after the breadcrumb — see the issue SKILL.md
+# "Detached VM-side long compute phases" successor rule).
+PID_START_SLACK_S = 120.0
+# Safety valve: a pid-bearing breadcrumb older than this never grants HEALTHY
+# (bounds a wedged-leader / abandoned-task latch to one wasted re-drive per
+# window for ultra-long fits). Env: EPM_TICK_PHASE_BREADCRUMB_MAX_AGE_H.
+PHASE_BREADCRUMB_MAX_AGE_H_DEFAULT = 48.0
+# Extra clearing kinds for the *running*-stage breadcrumb (STAGE_RESULT_KINDS
+# has no "running" key; a completed run posts one of these): once cleared, the
+# breadcrumb is dead history and is never probed.
+PHASE_CLEARING_EXTRA = frozenset({"epm:results", "epm:upload-verification"})
+# Test seam for /proc reads (tests point this at a fake proc tree).
+_PROC_ROOT = Path("/proc")
 
 # Watcher-posted campaign markers carry this sentinel in their note; they are
 # alerts, not campaign progress, so they never count as freshness.
@@ -259,7 +299,8 @@ def parse_event_ts(ts: str | None) -> float | None:
 
 def latest_event_ts(events: list[dict], *, prefix: str | None = None) -> float | None:
     """Epoch ts of the newest event (optionally restricted to a kind prefix;
-    watcher-sentinel notes never count as freshness)."""
+    watcher-sentinel notes and deliberate session-stop records never count
+    as freshness)."""
     best: float | None = None
     for row in events:
         if not isinstance(row, dict):
@@ -269,6 +310,15 @@ def latest_event_ts(events: list[dict], *, prefix: str | None = None) -> float |
             continue
         note = row.get("note")
         if isinstance(note, str) and _WATCHER_NOTE_SENTINEL in note:
+            continue
+        # #1053: a deliberate session-stop record — incl. the Step-0
+        # collision-exit / stale-wake-yield breadcrumb — is the driver's
+        # death record: anti-liveness, never issue freshness (same predicate
+        # as task_workflow.stage_dispatch_should_skip and the watcher's
+        # _latest_progress_ts / _latest_nonwatcher_event_ts).
+        if (isinstance(note, str) and note.lstrip().startswith("deliberate-stop ")) or row.get(
+            "by"
+        ) == "spawn_session-stop":
             continue
         ts = parse_event_ts(row.get("ts"))
         if ts is not None and (best is None or ts > best):
@@ -285,6 +335,252 @@ def plan_pending_over_cap(events: list[dict]) -> bool:
         return False
     changed = latest_event_ts(events, prefix="epm:status-changed")
     return changed is None or spend >= changed
+
+
+# ── detached-phase liveness probes (issue #1051) ────────────────────────────
+
+
+def liveness_probe_enabled() -> bool:
+    """``EPM_TICK_LIVENESS_PROBE`` kill switch (default on; ``0``/``false``
+    disables — restores pre-#1051 STALE-REDRIVE behavior fleet-wide)."""
+    raw = os.environ.get("EPM_TICK_LIVENESS_PROBE", "").strip().lower()
+    return raw not in ("0", "false")
+
+
+def heartbeat_fresh_s() -> float:
+    """``EPM_LONG_PHASE_HEARTBEAT_FRESH_MIN`` (minutes) -> seconds; malformed
+    or non-positive -> ``LONG_PHASE_HEARTBEAT_FRESH_MIN_DEFAULT`` (the same
+    fallback shape as ``stale_s()``; see the constants block for the noted
+    divergence from the watcher's parse)."""
+    raw = os.environ.get("EPM_LONG_PHASE_HEARTBEAT_FRESH_MIN", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return LONG_PHASE_HEARTBEAT_FRESH_MIN_DEFAULT * 60.0
+    return val * 60.0 if val > 0 else LONG_PHASE_HEARTBEAT_FRESH_MIN_DEFAULT * 60.0
+
+
+def phase_breadcrumb_max_age_s() -> float:
+    """``EPM_TICK_PHASE_BREADCRUMB_MAX_AGE_H`` (hours) -> seconds; malformed
+    or non-positive -> ``PHASE_BREADCRUMB_MAX_AGE_H_DEFAULT`` (same shape as
+    ``stale_s()``)."""
+    raw = os.environ.get("EPM_TICK_PHASE_BREADCRUMB_MAX_AGE_H", "")
+    try:
+        val = float(raw)
+    except ValueError:
+        return PHASE_BREADCRUMB_MAX_AGE_H_DEFAULT * 3600.0
+    return val * 3600.0 if val > 0 else PHASE_BREADCRUMB_MAX_AGE_H_DEFAULT * 3600.0
+
+
+def latest_heartbeat_ts(events: list[dict]) -> float | None:
+    """Epoch ts of the newest ``epm:progress`` note containing
+    ``LONG_PHASE_HEARTBEAT_PREFIX``, excluding watcher-sentinel notes
+    (``_WATCHER_NOTE_SENTINEL``, same exclusion as ``latest_event_ts``).
+    ``None`` when absent. Callers compute ``age = now - ts`` and treat
+    ``age < 0`` as NOT fresh (future ts — mirrors the watcher's
+    ``_long_phase_heartbeat_reason`` clock-skew guard) and compare ``ts``
+    against ``latest_clearing_ts`` (a heartbeat at or older than the newest
+    clearing event is invalidated)."""
+    best: float | None = None
+    for row in events:
+        if not isinstance(row, dict):
+            continue
+        if not str(row.get("kind", "")).startswith("epm:progress"):
+            continue
+        note = row.get("note")
+        if not isinstance(note, str) or LONG_PHASE_HEARTBEAT_PREFIX not in note:
+            continue
+        if _WATCHER_NOTE_SENTINEL in note:
+            continue
+        ts = parse_event_ts(row.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return best
+
+
+def latest_clearing_ts(events: list[dict]) -> float | None:
+    """Epoch ts of the newest stage-clearing event (the union of ALL
+    ``STAGE_RESULT_KINDS`` values across stages, plus ``epm:failure`` and
+    ``PHASE_CLEARING_EXTRA``). A heartbeat at or older than this never grants
+    HEALTHY — the phase that emitted it is over. ``None`` when absent."""
+    from explore_persona_space.task_workflow import STAGE_RESULT_KINDS
+
+    clearing: set[str] = {"epm:failure"} | PHASE_CLEARING_EXTRA
+    for kinds in STAGE_RESULT_KINDS.values():
+        clearing |= kinds
+    best: float | None = None
+    for row in events:
+        if not isinstance(row, dict):
+            continue
+        kind = str(row.get("kind", ""))
+        if not any(kind.startswith(k) for k in clearing):
+            continue
+        ts = parse_event_ts(row.get("ts"))
+        if ts is not None and (best is None or ts > best):
+            best = ts
+    return best
+
+
+def newest_inflight_pid_breadcrumb(events: list[dict]) -> dict | None:
+    """The newest ``epm:progress`` event whose lstripped note starts
+    ``"stage-dispatch "`` AND carries an integer ``pid=`` field, with NO
+    later stage-clearing event.
+
+    Returns ``{"pid": int, "ts": float, "log": str | None}`` or ``None``.
+    Clearing set = ``STAGE_RESULT_KINDS.get(_normalize_stage(stage),
+    frozenset()) | {"epm:failure"} | PHASE_CLEARING_EXTRA``. Malformed pid /
+    ts -> skipped. Scans newest-first; the first pid-bearing breadcrumb
+    decides (if cleared -> return ``None``; probing an OLDER phase's pid
+    would resurrect dead history)."""
+    from explore_persona_space.task_workflow import (
+        STAGE_RESULT_KINDS,
+        _breadcrumb_fields,
+        _normalize_stage,
+    )
+
+    for idx in range(len(events) - 1, -1, -1):
+        row = events[idx]
+        if not isinstance(row, dict):
+            continue
+        if not str(row.get("kind", "")).startswith("epm:progress"):
+            continue
+        note = row.get("note")
+        if not isinstance(note, str):
+            continue
+        stripped = note.lstrip()
+        if not stripped.startswith("stage-dispatch "):
+            continue
+        fields = _breadcrumb_fields(stripped)
+        pid_raw = fields.get("pid")
+        if pid_raw is None:
+            continue
+        try:
+            pid = int(pid_raw)
+        except ValueError:
+            continue
+        ts = parse_event_ts(row.get("ts"))
+        if ts is None:
+            continue
+        clearing = (
+            STAGE_RESULT_KINDS.get(_normalize_stage(fields.get("stage", "")), frozenset())
+            | {"epm:failure"}
+            | PHASE_CLEARING_EXTRA
+        )
+        for later in events[idx + 1 :]:
+            if not isinstance(later, dict):
+                continue
+            later_kind = str(later.get("kind", ""))
+            if any(later_kind.startswith(k) for k in clearing):
+                return None  # newest pid crumb already cleared — dead history
+        log = fields.get("log")
+        return {"pid": pid, "ts": ts, "log": log if isinstance(log, str) and log else None}
+    return None
+
+
+def proc_start_epoch(pid: int) -> float | None:
+    """Start time (epoch seconds) of ``/proc/<pid>``: ``btime`` (from
+    ``_PROC_ROOT/'stat'``) + ``starttime`` (field 22 of
+    ``_PROC_ROOT/<pid>/'stat'``, parsed after the LAST ``)`` so a comm
+    containing ``') '`` cannot shift fields) divided by
+    ``os.sysconf('SC_CLK_TCK')``. ``None`` on any read/parse failure
+    (process dead, permission, malformed)."""
+    try:
+        btime: float | None = None
+        for line in (_PROC_ROOT / "stat").read_text().splitlines():
+            if line.startswith("btime "):
+                btime = float(line.split()[1])
+                break
+        if btime is None:
+            return None
+        stat = (_PROC_ROOT / str(pid) / "stat").read_text()
+        after_comm = stat.rsplit(")", 1)[1].split()
+        # after_comm[0] is field 3 (state); field 22 (starttime) is index 19.
+        starttime_ticks = float(after_comm[19])
+        return btime + starttime_ticks / os.sysconf("SC_CLK_TCK")
+    except (OSError, ValueError, IndexError):
+        return None
+
+
+def pid_alive_with_identity(pid: int, launched_before_epoch: float) -> bool:
+    """True iff ``proc_start_epoch(pid)`` is not ``None`` AND
+    ``start_epoch <= launched_before_epoch + PID_START_SLACK_S``.
+
+    The identity guard: only one process holds a pid at a time, and the
+    breadcrumb recorded this pid at its ts — so a live pid whose start
+    PRECEDES the breadcrumb IS the recorded process; a recycled pid's start
+    strictly FOLLOWS the original's death (after the breadcrumb ts). Never a
+    bare existence check (the issue SKILL.md successor rule: pid recycling
+    on a shared VM)."""
+    start = proc_start_epoch(pid)
+    return start is not None and start <= launched_before_epoch + PID_START_SLACK_S
+
+
+def log_fresh_age_s(log_path: str, now: float, window_s: float) -> float | None:
+    """``now - mtime`` of ``log_path`` iff the path is absolute and
+    ``0 <= age < window_s``, else ``None``. ``os.stat`` guarded
+    (missing/unreadable -> ``None``). The path is used internally ONLY —
+    never printed (content invariant: label slugs embed in log paths)."""
+    if not isinstance(log_path, str) or not log_path.startswith("/"):
+        return None
+    try:
+        mtime = os.stat(log_path).st_mtime
+    except OSError:
+        return None
+    age = now - mtime
+    return age if 0 <= age < window_s else None
+
+
+def issue_liveness_reason(events: list[dict], now: float, stale_after_s: float) -> str | None:
+    """Precedence-ordered liveness screen before an issue-mode STALE-REDRIVE
+    (issue #1051). Returns a content-invariant-safe reason suffix (pids/ages
+    only) or ``None``. Entirely exception-guarded: any probe failure falls
+    through to STALE-REDRIVE (fail toward coverage) while the verdict line
+    stays informative.
+
+    PRECEDENCE: pid-bearing detached-phase evidence is AUTHORITATIVE over
+    heartbeat evidence — a fresh ``[long-phase-heartbeat]`` note can never
+    rescue a dead/identity-failed pid or a cleared phase. Unlike the watcher
+    (which has no pid evidence), tick_triage holds the pid breadcrumb in the
+    SAME events list, and the emitter convention (issue SKILL.md § Detached
+    VM-side long compute phases) makes heartbeat+pid co-occurrence the
+    designed steady state — heartbeat-first ordering would mask a dead pid
+    for up to 90 min.
+
+    Legs: (0) probe disabled -> ``None``. (1) AUTHORITATIVE — the newest
+    in-flight (un-cleared) pid-bearing breadcrumb younger than the 48h cap:
+    live identity-verified pid -> HEALTHY; else fresh ``log=`` mtime ->
+    HEALTHY; else ``None`` with NO heartbeat rescue (a dead pid / silent log
+    is stronger evidence than any note). (2) FALLBACK (no such breadcrumb —
+    incl. cleared or over-max-age crumbs) — a fresh heartbeat note newer
+    than the newest clearing event -> HEALTHY. (3) ``None``."""
+    try:
+        if not liveness_probe_enabled():
+            return None
+        crumb = newest_inflight_pid_breadcrumb(events)
+        if crumb is not None and (now - crumb["ts"]) < phase_breadcrumb_max_age_s():
+            if pid_alive_with_identity(crumb["pid"], crumb["ts"]):
+                return (
+                    f"detached phase alive (pid {crumb['pid']}, "
+                    f"breadcrumb age {(now - crumb['ts']) / 3600:.1f}h)"
+                )
+            if crumb["log"]:
+                log_age = log_fresh_age_s(crumb["log"], now, stale_after_s)
+                if log_age is not None:
+                    return (
+                        f"detached phase log appended {log_age / 60:.0f}m ago (pid probe negative)"
+                    )
+            return None  # dead/unverifiable pid + silent log: NO heartbeat rescue
+        hb_ts = latest_heartbeat_ts(events)
+        if hb_ts is not None:
+            hb_age = now - hb_ts
+            window = heartbeat_fresh_s()
+            if 0 <= hb_age < window:
+                cleared = latest_clearing_ts(events)
+                if cleared is None or hb_ts > cleared:
+                    return f"long-phase heartbeat fresh ({hb_age / 60:.0f}m < {window / 60:.0f}m)"
+        return None
+    except Exception:
+        return None
 
 
 # ── pure verdict logic ──────────────────────────────────────────────────────
@@ -308,6 +604,16 @@ def runaway_streak_threshold() -> int:
     return val if val > 0 else RUNAWAY_STREAK_DEFAULT
 
 
+# CONTENT INVARIANT (#1000; the #866/#906 refusal-prevention rule): verdict
+# reason strings AND the snapshot payload stay free of task TEXT — status
+# tokens, marker ages, child ids, disk bands only. Never embed the task
+# title, body, or marker-note text here: the verdict line prints into an
+# LLM tick turn, and on harmful-content tasks free text is trigger-dense
+# enough to refusal-kill the session. Pinned by
+# tests/test_tick_triage.py::test_snapshot_carries_no_task_text.
+# The #1051 liveness reasons obey the same invariant — pids/ages/status
+# tokens only; breadcrumb `log=` paths and `label=` slugs are read
+# internally but never printed.
 def compute_issue_verdict(
     status: str,
     prev_status: str | None,
@@ -458,13 +764,28 @@ def triage(issue: int, kind: str, now: float | None = None) -> tuple[str, str]:
         )
     else:
         marker_ts = latest_event_ts(events)
+        marker_age = (now - marker_ts) if marker_ts is not None else None
         verdict, reason = compute_issue_verdict(
             status,
             prev_status,
-            (now - marker_ts) if marker_ts is not None else None,
+            marker_age,
             plan_pending_over_cap(events),
             stale_after_s=stale_s(),
         )
+        if verdict == "STALE-REDRIVE":
+            # Detached-phase liveness screen (issue #1051): fires ONLY on a
+            # would-be STALE-REDRIVE, on BOTH stale branches — PARK and
+            # ACTIVE (#931's incident status `followups_running` is in
+            # ISSUE_PARK). Streak semantics unchanged (STALE-REDRIVE and
+            # HEALTHY are both non-teardown verdicts); snapshot shape
+            # untouched; campaign branch untouched.
+            live = issue_liveness_reason(events, now, stale_s())
+            if live is not None:
+                age_desc = (
+                    "no markers" if marker_age is None else f"marker age {marker_age / 60:.0f}m"
+                )
+                verdict = "HEALTHY"
+                reason = f"status={status}, {age_desc} — {live}"
 
     # Runaway streak counts every TEARDOWN verdict, not just the terminal
     # STATUS sets — a teardown that whiffs forever at over-cap plan_pending

@@ -17,8 +17,8 @@ from datetime import datetime
 import explore_persona_space.task_workflow as tw
 
 
-def _ev(ts: str, kind: str, note: str = "", version: int = 1) -> dict:
-    return {"ts": ts, "kind": kind, "version": version, "by": "test", "note": note}
+def _ev(ts: str, kind: str, note: str = "", version: int = 1, by: str = "test") -> dict:
+    return {"ts": ts, "kind": kind, "version": version, "by": by, "note": note}
 
 
 def _dt(s: str) -> datetime:
@@ -265,7 +265,8 @@ def test_unrelated_progress_refreshes_window():
         ),
         _ev("2026-07-01T10:14:00Z", "epm:progress", "pod-provision waiting on RunPod capacity..."),
     ]
-    # Documented over-skip direction: ANY non-breadcrumb progress refreshes the window.
+    # Documented over-skip direction: any non-anti-liveness non-breadcrumb progress
+    # refreshes the window.
     assert (
         tw.stage_dispatch_should_skip(
             events, "implementing", 1, 15, now=_dt("2026-07-01T10:20:00Z")
@@ -399,4 +400,181 @@ def test_age_exactly_window_allows_dispatch():
             events, "implementing", 1, 15, now=_dt("2026-07-01T10:15:00Z")
         )
         is None
+    )
+
+
+def test_810_replay_deliberate_stop_note_does_not_refresh_window():
+    # #810 (2026-07-03): the stopped session's deliberate-stop record refreshed
+    # the followup-implementing window; the replacement was told to skip dead work.
+    events = [
+        _ev(
+            "2026-07-01T10:00:00Z",
+            "epm:progress",
+            "stage-dispatch stage=implementing round=1 subagent=experiment-implementer",
+        ),
+        _ev(
+            "2026-07-01T10:14:00Z",
+            "epm:progress",
+            "deliberate-stop pid=n/a target=happy-session:abc123 reason=operator-replace",
+            by="spawn_session-stop",
+        ),
+    ]
+    # Past the breadcrumb's own window: the stop record must NOT have refreshed.
+    assert (
+        tw.stage_dispatch_should_skip(
+            events, "implementing", 1, 15, now=_dt("2026-07-01T10:20:00Z")
+        )
+        is None
+    )
+    # Inside the breadcrumb's own window: exclusion never CLEARS in-flight state.
+    assert (
+        tw.stage_dispatch_should_skip(
+            events, "implementing", 1, 15, now=_dt("2026-07-01T10:10:00Z")
+        )
+        is not None
+    )
+
+
+def test_spawn_session_stop_by_field_does_not_refresh():
+    # The by-field leg alone (note text variant) is sufficient to exclude — ANY
+    # note posted with by="spawn_session-stop" is a stop record, whatever it says.
+    for stop_note in ("stopping session", "session teardown requested by operator"):
+        events = [
+            _ev(
+                "2026-07-01T10:00:00Z",
+                "epm:progress",
+                "stage-dispatch stage=implementing round=1 subagent=experiment-implementer",
+            ),
+            _ev("2026-07-01T10:14:00Z", "epm:progress", stop_note, by="spawn_session-stop"),
+        ]
+        assert (
+            tw.stage_dispatch_should_skip(
+                events, "implementing", 1, 15, now=_dt("2026-07-01T10:20:00Z")
+            )
+            is None
+        ), stop_note
+
+
+def test_deliberate_stop_note_prefix_alone_does_not_refresh():
+    # The note-prefix leg ALONE (by is an ordinary poster, not
+    # "spawn_session-stop") must exclude — isolates the first half of the OR
+    # predicate so a regression dropping the prefix leg while keeping the
+    # by-field leg fails this test (Codex code-review r1, Minor).
+    events = [
+        _ev(
+            "2026-07-01T10:00:00Z",
+            "epm:progress",
+            "stage-dispatch stage=implementing round=1 subagent=experiment-implementer",
+        ),
+        _ev(
+            "2026-07-01T10:14:00Z",
+            "epm:progress",
+            "deliberate-stop pid=n/a target=happy-session:abc123 reason=operator-replace",
+        ),
+    ]
+    assert (
+        tw.stage_dispatch_should_skip(
+            events, "implementing", 1, 15, now=_dt("2026-07-01T10:20:00Z")
+        )
+        is None
+    )
+
+
+def test_1053_issue_session_guard_exit_breadcrumbs_do_not_refresh_window():
+    # #1053: the Step 0 single-orchestrator collision exit and the stale-wake
+    # YIELD each post one deliberate-stop breadcrumb (by="issue-session-guard",
+    # SKILL.md Step 0). Those are death records, not stage liveness — the
+    # EXACT prescribed notes must not refresh a stage-dispatch window.
+    collision_note = (
+        "deliberate-stop pid=n/a target=self reason=step0-session-collision "
+        "owner=happy-session:abc123 — duplicate /issue 1053 session exiting at Step 0; "
+        "owner happy-session:abc123 remains the driver; no state mutated"
+    )
+    yield_note = (
+        "deliberate-stop pid=n/a target=self reason=stale-wake-yield "
+        "replacement=happy-session:def456 — stale /issue 1053 session yielding on wake; "
+        "the replacement owns the task; no state mutated"
+    )
+    for note in (collision_note, yield_note):
+        events = [
+            _ev(
+                "2026-07-01T10:00:00Z",
+                "epm:progress",
+                "stage-dispatch stage=implementing round=1 subagent=experiment-implementer",
+            ),
+            _ev("2026-07-01T10:14:00Z", "epm:progress", note, by="issue-session-guard"),
+        ]
+        assert (
+            tw.stage_dispatch_should_skip(
+                events, "implementing", 1, 15, now=_dt("2026-07-01T10:20:00Z")
+            )
+            is None
+        ), note
+
+
+def test_watcher_telemetry_notes_do_not_refresh_window():
+    # Third-party bracketed telemetry (watcher + spawn-session bookkeeping)
+    # is not stage liveness; the watcher's own progress clock excludes the
+    # same set (_WATCHER_NOTE_SENTINELS).
+    for telemetry_note in (
+        "[autonomous_session_watch:session-stalled-alert] session idle 2.1h",
+        "[autonomous_session_watch:session-auto-respawn] respawned via spawn-issue --auto",
+        "[spawn-session:duplicate-dispatch-suppressed] duplicate --auto dispatch suppressed",
+    ):
+        events = [
+            _ev(
+                "2026-07-01T10:00:00Z",
+                "epm:progress",
+                "stage-dispatch stage=implementing round=1 subagent=experiment-implementer",
+            ),
+            _ev("2026-07-01T10:14:00Z", "epm:progress", telemetry_note),
+        ]
+        assert (
+            tw.stage_dispatch_should_skip(
+                events, "implementing", 1, 15, now=_dt("2026-07-01T10:20:00Z")
+            )
+            is None
+        ), telemetry_note
+
+
+def test_long_phase_heartbeat_note_still_refreshes_window():
+    # Inverse boundary: [long-phase-heartbeat] is stamped by the stage's OWN
+    # long-running phase — it IS liveness and must keep refreshing.
+    events = [
+        _ev(
+            "2026-07-01T10:00:00Z",
+            "epm:progress",
+            "stage-dispatch stage=implementing round=1 subagent=experiment-implementer",
+        ),
+        _ev("2026-07-01T10:14:00Z", "epm:progress", "[long-phase-heartbeat] batch poll tick 3"),
+    ]
+    assert (
+        tw.stage_dispatch_should_skip(
+            events, "implementing", 1, 15, now=_dt("2026-07-01T10:20:00Z")
+        )
+        is not None
+    )
+
+
+def test_note_quoting_deliberate_stop_mid_text_still_refreshes():
+    # Prefix boundary: the deliberate-stop exclusion matches the lstripped note
+    # PREFIX "deliberate-stop " only — an ordinary progress note that merely
+    # QUOTES the string mid-text is still genuine liveness and refreshes.
+    events = [
+        _ev(
+            "2026-07-01T10:00:00Z",
+            "epm:progress",
+            "stage-dispatch stage=implementing round=1 subagent=experiment-implementer",
+        ),
+        _ev(
+            "2026-07-01T10:14:00Z",
+            "epm:progress",
+            "noting the earlier deliberate-stop was expected; resuming phase 2",
+        ),
+    ]
+    assert (
+        tw.stage_dispatch_should_skip(
+            events, "implementing", 1, 15, now=_dt("2026-07-01T10:20:00Z")
+        )
+        is not None
     )

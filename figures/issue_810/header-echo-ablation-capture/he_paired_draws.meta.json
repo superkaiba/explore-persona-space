@@ -1,0 +1,66 @@
+{
+  "commit": "0bb228597b",
+  "created": "2026-07-04T00:27:12Z",
+  "figsize": [
+    11.0,
+    5.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "\u0394 held-out skill (full \u2212 answer deleted)": 0.017794906129068644,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    },
+    {
+      "x": 1.0,
+      "\u0394 held-out skill (full \u2212 answer deleted)": 0.07608498013426501,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    },
+    {
+      "x": 2.0,
+      "\u0394 held-out skill (full \u2212 answer deleted)": 0.07240431466012631,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    },
+    {
+      "x": 3.0,
+      "\u0394 held-out skill (full \u2212 answer deleted)": -0.014410396331101194,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    },
+    {
+      "x": 4.0,
+      "\u0394 held-out skill (full \u2212 answer deleted)": 0.003970517812647012,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    },
+    {
+      "x": 5.0,
+      "\u0394 held-out skill (full \u2212 answer deleted)": -0.021345466287940873,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    },
+    {
+      "x": 6.0,
+      "\u0394 held-out skill (full \u2212 answer deleted)": -0.002957267725349433,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    },
+    {
+      "x": 7.0,
+      "\u0394 held-out skill (full \u2212 answer deleted)": 0.0026063832700978784,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    },
+    {
+      "x": 8.0,
+      "\u0394 held-out skill (full \u2212 answer deleted)": -0.0009974277360165207,
+      "series": "observed \u0394",
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 9
+}

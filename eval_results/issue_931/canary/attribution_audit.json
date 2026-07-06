@@ -1,0 +1,30 @@
+{
+  "metadata": {
+    "git_commit": "d8b07645cef8d28c641e7ea6ab5db19d3566ae5f",
+    "timestamp": "2026-07-04T02:34:06Z",
+    "seed": 931,
+    "n": 12,
+    "script": "scripts/issue931_attribute.py",
+    "issue": 931
+  },
+  "counters": {
+    "stories": 20,
+    "quotes_total": 434,
+    "quotes_unattributed_dropped": 326,
+    "quotes_attributed": 108,
+    "stories_with_pairs": 9,
+    "chars_eligible": 30
+  },
+  "audit": {
+    "n_sampled": 20,
+    "n_valid": 20,
+    "n_dropped_malformed": 0,
+    "n_correct": 20,
+    "precision": 1.0,
+    "mock": false,
+    "judge_model": "claude-sonnet-4-5-20250929"
+  },
+  "gate": 0.9,
+  "binding": false,
+  "pass": true
+}

@@ -32,6 +32,10 @@ You are the PLANNER. Your job is to design a concrete, detailed plan for the fol
 
 [TASK DESCRIPTION]
 
+**Canonical Goal (current at spawn; re-read before returning — planner.md
+§ Goal-currency guard):** [GOAL TEXT or "no goal: frontmatter — use the
+body's ## Goal H2"]
+
 **If this is a `type:batch` issue (the body lists N independent items):**
 Structure your plan as N independent sections, one per body item. Each
 section gets its own subset of the fields below — Goal, Design (with file
@@ -74,6 +78,29 @@ Be specific — name files, write pseudocode, specify hyperparameters with a lit
 
 Save the plan to a temporary file or pass it directly.
 
+**Goal-currency gate (pre-persist; EVERY `new-plan-version` call).** Capture
+the Goal snapshot when you spawn the planner —
+`GOAL_SNAP="$(uv run python scripts/task.py view <N> --json | jq -r '.frontmatter.goal // empty')"`;
+when that is empty (no `goal:` frontmatter — `kind: infra | batch | survey`),
+fall back to the body's `## Goal` H2 text (`jq -r '.body'` + the H2 slice), so
+the gate is non-vacuous on body-Goal tasks too. Inline the snapshot in the
+brief (template above). Immediately BEFORE every
+`task.py new-plan-version` persist (Phase 1 initial draft, Phase 1.5.0
+mechanical-bounce redrafts, Phase 3 revisions), re-read the same field and
+compare to the snapshot (plain text equality). On ANY difference — the user
+amended the Goal while the draft was in flight (#922: two `epm:goal-updated`
+amendments landed mid-draft; plan v3 persisted quoting the superseded Goal
+and auto-approved 3 s later) — OR when NO snapshot was captured at spawn
+(missing/empty on a task that has a Goal: treat as a mismatch — re-read
+twice, never persist on an unverifiable snapshot) — do NOT persist:
+re-spawn the planner with the
+amended Goal + the draft path as a MECHANICAL redraft bounce (same semantics
+as a Phase 1.5.0 bounce; does NOT count against the Phase 3 round cap),
+refresh `GOAL_SNAP`, then persist the redraft. A goal-currency WARN from
+verify_plan.py at Phase 1.5.0 (`c23_goal_currency`) is the same bounce
+trigger — the one WARN that bounces instead of riding into the critic
+briefs.
+
 **Strip the harness trailer before persisting.** An `Agent` tool result ends
 with harness-appended metadata — a final `agentId: <id> (use SendMessage ...)`
 line plus a `<usage>...</usage>` block. Remove BOTH before writing the
@@ -93,6 +120,24 @@ A contaminated handoff file reaches every downstream consumer verbatim
 (fact-checker, all 6 critics, the committed plan revision) — on task #562
 (2026-06-10) both Codex critic twins had to strip the trailer independently
 because the orchestrator captured the planner's return verbatim.
+
+**De-escape harness HTML entities before persisting.** A BACKGROUND-Agent
+result delivered via a `<task-notification>` block arrives with its
+`<result>` field HTML-ESCAPED by the harness (`&&` and `<`/`>` become their
+amp/lt/gt entity forms — #952 v9, 2026-07-04: the workload command's shell
+AND operators arrived entity-escaped and dispatch would not run until
+hand-fixed). When capturing a planner return from a notification, prefer
+re-extracting the raw text from the notification's `<output-file>` —
+output-file text is CLEAN and gets NO unescape. Apply ONE `html.unescape()`
+round ONLY when the text you are persisting was sourced from the
+notification BODY itself (never to output-file-sourced text: unescaping
+already-clean text corrupts legitimate literal entity content — the two
+sources are exclusive-or). One round on notification-body text is the exact
+inverse of the harness escaping — legitimately-escaped content the planner
+wrote arrives double-escaped and round-trips correctly. `verify_plan.py`
+check 25 (`c25_html_entities_in_commands`) is the mechanical backstop at
+Phase 1.5.0: entities surviving in a fenced command block FAIL the persist
+(a `--workload-cmd`/`dispatch_issue.py` fence is never exemptable).
 
 ### Phase 1.5: Verify Assumptions (Verifier Agent)
 
@@ -115,7 +160,24 @@ Run the structural verifier against the plan version just persisted:
   (check 2), `N/A — no model training` / `N/A — no training hyperparameters` (check 1),
   `N/A — not a replication` (check 7), `N/A — no artifact reuse` (check 6),
   `N/A — no dry-run smoke` (check 11 — kind: infra|batch plans where a `--dry-run`
-  mention is incidental, not the plan's own acceptance smoke).
+  mention is incidental, not the plan's own acceptance smoke), `N/A — no draw battery`
+  (check 12), `N/A — no empirical-null gate` (check 13),
+  `N/A — no fail-loud acceptance claim` / `N/A — fail-loud claim not test-backable`
+  (check 15 — kind: infra|batch plans where the vocabulary hit is bug narration, or
+  the target is a doc/prose file no pytest can exercise),
+  `N/A — no re-extracted reference arms` (check 16), `N/A — no paired contrast`
+  (check 18), `N/A — no held-out predictive DV` (check 19),
+  `N/A — no registered verdict lattice` (check 20),
+  `N/A — no arity acceptance gate` (check 21 — the flagged grep is not a
+  call-arity pass condition; discovery/enumeration greps are fine),
+  `N/A — no resume/persist pattern` (check 24 — the resume/persist vocabulary
+  hit is incidental or quotes a sibling's methodology, not this plan's own
+  long-loop resume predicate), and
+  `N/A — entities are content, not commands` (check 25 — the fenced entity
+  forms are deliberately discussed content, e.g. a plan about entity
+  handling, not a command to dispatch; exempts shell-tagged content fences
+  ONLY — a `--workload-cmd`/`dispatch_issue.py` fence FAILs on entities
+  unconditionally).
 - **FAIL → bounce to the planner** with the failed-check details (a mechanical-fix
   revision: re-spawn the planner with the FAIL list + the plan path; it patches the
   missing block and the orchestrator persists v{K+1} via `task.py new-plan-version`).
@@ -125,7 +187,10 @@ Run the structural verifier against the plan version just persisted:
   words, proceed anyway (verifier false positive), record `verdict: PASS-with-override`
   + the overridden check ids in the marker note, and emit a workflow-fix candidate
   against `scripts/verify_plan.py`.
-- **PASS (with WARNs) → proceed**; copy the WARN lines verbatim into the fact-checker
+- **PASS (with WARNs) → proceed** — EXCEPT a `goal_currency` WARN
+  (`c23_goal_currency`), which instead triggers the mechanical redraft
+  bounce per § Goal-currency gate above (the one WARN that bounces);
+  copy any OTHER WARN lines verbatim into the fact-checker
   brief (and later the critic briefs) as "mechanical pre-pass notes".
 - **Post the marker** (VM-side; the adversarial-planner skill always runs in the
   orchestrator session, never on a pod):
@@ -626,6 +691,7 @@ in as a post-park plan v2.
 - **Never skip the Verifier.** Wrong assumptions propagate through the entire pipeline. The Verifier is the cheapest intervention — 30 seconds of web search prevents hours of wasted GPU time. This was added after the corpus projection incident where wrong layer choice and wrong "vLLM can't do this" claims invalidated the first run.
 - **Never skip the Critics.** The 3-lens parallel critique catches more than any single critic. Each lens has structural diversity (different prompts/framings), which research shows outperforms debate or angel/devil formats.
 - **Never skip the Implementation Critic.** The Implementation Critic catches what the implementer missed. The implementer is biased toward seeing success.
-- **Max 3 revision rounds (planning), max 2 fix rounds (implementation).** If it's not converging, surface the disagreement to the user.
+- **Max 5 revision rounds (planning; the per-reviewer round cap — reconciler invocations don't count), max 2 fix rounds (implementation).** If it's not converging, surface the disagreement to the user.
 - **The user has final say.** Present the plan + critique + revision to the user before executing.
 - **Log the plan.** Register every plan revision via `uv run python scripts/task.py new-plan-version <N> --file <draft>.md`. This writes `tasks/<status>/<N>/plans/v<K>.md` and updates the `plans/plan.md` symlink. Downstream subagents read through the symlink.
+- **Read a Bash-materialized plan copy before Editing it.** When a revision round creates the draft via Bash (`cp plans/plan.md /tmp/...`, a heredoc, or a python writer), the harness requires an in-session `Read` of that file before any `Edit` — firing Edits straight at a just-copied file bounces every one with "File has not been read yet" (7 consecutive bounces in one 2026-07-04 session). Read once, then edit.

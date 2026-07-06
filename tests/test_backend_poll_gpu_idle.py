@@ -517,3 +517,333 @@ def test_backend_poll_main_non_gcp_omits_idle_fields_defaulting_false(
     out = _last_json_line(capsys)
     assert out["gcp_gpu_idle_advisory_posted"] is False
     assert out["gcp_gpu_idle_escalation_posted"] is False
+
+
+# ── #873 m-of-N GPU-width advisory on the GCP lane ────────────────────────────
+#
+# The decision core + RunPod-lane wiring (incl. the injectable-clock
+# repost-after-relaunch behavior) are exhaustively pinned in
+# tests/test_poll_gpu_width_advisory.py; here we pin the GCP-lane WIRING —
+# the imported _maybe_post_gpu_width_advisory + the _tripwire_run_scope
+# run-scope anchor driven off the seeded sibling state file (AC #6 mirror).
+
+# Partial idle on an 8-GPU pod: idle {0,1,3,7}, active {2,4,5,6}.
+_PARTIAL_IDLE_UTIL = "0,0,95,0,88,90,92,0"
+
+
+def _seed_width_state(
+    path: Path,
+    *,
+    since_epoch: int,
+    phase: str,
+    advised: str = "",
+    run_epoch: int | None = None,
+) -> None:
+    payload = {
+        "phase": phase,
+        "gpu_idle_since_epoch": "0",
+        "gpu_idle_advised_phases": "",
+        "gpu_idle_escalated_phases": "",
+        "gpu_width_since_epoch": str(since_epoch),
+        "gpu_width_idle_set": "0,1,3,7",
+        "gpu_width_advised_phases": advised,
+    }
+    if run_epoch is not None:
+        payload["tripwire_run_epoch"] = str(run_epoch)
+    bp._save_gpu_idle_state(path, payload)
+
+
+def test_gcp_width_advisory_posts_after_threshold(tmp_path: Path, monkeypatch) -> None:
+    """A STABLE strict subset of GPUs idle past GPU_WIDTH_ADVISORY_MIN in the
+    seeded sibling state -> the imported width wiring posts a
+    [gpu-width-advisory] marker (mirror of test_gcp_advisory_posts_after_threshold)."""
+    posted: list[dict] = []
+    monkeypatch.setattr(
+        pp, "post_event", lambda issue, key, **kw: posted.append({"key": key, **kw})
+    )
+    path = tmp_path / "issue-730-gpu-idle-state.json"
+    now = 100_000
+    _seed_width_state(path, since_epoch=now - pp.GPU_WIDTH_ADVISORY_MIN * 60, phase="workload")
+    prev = bp._load_gpu_idle_state(path)
+    _since, idle_set, advised, width_posted = pp._maybe_post_gpu_width_advisory(
+        issue=730,
+        pod="eps-issue-730",
+        status="running",
+        gpu_util=_PARTIAL_IDLE_UTIL,
+        current_phase="workload",
+        prev_state=prev,
+        now_epoch=now,
+    )
+    assert width_posted is True
+    assert idle_set == (0, 1, 3, 7)
+    assert "workload" in advised
+    assert any(p["key"] == "epm:progress" and p.get("gpu_width_advisory") for p in posted)
+    assert any("[gpu-width-advisory]" in (p.get("note") or "") for p in posted)
+
+
+def test_backend_poll_main_gcp_width_integration(tmp_path, monkeypatch, capsys) -> None:
+    """Driving main() on a GCP handle with a RUNNING poll + a partial-idle
+    probe + a pre-seeded width span past the threshold emits the new
+    serialized ``gcp_gpu_width_advisory_posted`` field True and records the
+    advised phase in the sibling state (mirror of
+    test_backend_poll_main_gcp_idle_integration)."""
+    posted: list[dict] = []
+    monkeypatch.setattr(
+        pp, "post_event", lambda issue, key, **kw: posted.append({"key": key, **kw})
+    )
+    # Deterministic run-scope anchor: no epm:run-launched signal -> no reset.
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: None)
+
+    sidecar = tmp_path / "issue-730-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+    state_path = bp._gpu_idle_state_path(sidecar)
+    now = int(time.time())
+    _seed_width_state(
+        state_path,
+        since_epoch=now - (pp.GPU_WIDTH_ADVISORY_MIN + 1) * 60,
+        phase="workload",
+    )
+
+    backend = _IdlePollBackend(gpu_util=_PARTIAL_IDLE_UTIL, current_phase="workload")
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: backend)
+
+    rc = bp.main(["--issue", "730", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["gcp_gpu_width_advisory_posted"] is True
+    # Partial idle is DISJOINT from the all-idle tiers: neither idle flag fires.
+    assert out["gcp_gpu_idle_advisory_posted"] is False
+    assert out["gcp_gpu_idle_escalation_posted"] is False
+    saved = bp._load_gpu_idle_state(state_path)
+    assert "workload" in saved["gpu_width_advised_phases"]
+    assert saved["gpu_width_idle_set"] == "0,1,3,7"
+    assert any("[gpu-width-advisory]" in (p.get("note") or "") for p in posted)
+
+
+def test_gcp_width_relaunch_resets_advised_phases(tmp_path, monkeypatch, capsys) -> None:
+    """AC #6 mirrored in the GCP sibling state payload: a fresh
+    epm:run-launched epoch (newer than the stored tripwire_run_epoch by
+    >60s) CLEARS the stale width keys — the advised-phase de-dup and the
+    span belong to the PREVIOUS run, so the fresh run's first tick restarts
+    the span (no post) with a re-armed advised set. The repost-after-aging
+    behavior of the SECOND run is pinned with an injectable clock in
+    tests/test_poll_gpu_width_advisory.py::test_width_relaunch_resets_advised_phases."""
+    posted: list[dict] = []
+    monkeypatch.setattr(
+        pp, "post_event", lambda issue, key, **kw: posted.append({"key": key, **kw})
+    )
+    # The fresh run launched 120s ago -> current run epoch >> stored anchor.
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: 120.0)
+
+    sidecar = tmp_path / "issue-730-handle.json"
+    write_handle_sidecar(_gcp_handle(), sidecar)
+    state_path = bp._gpu_idle_state_path(sidecar)
+    t0 = int(time.time())
+    _seed_width_state(
+        state_path,
+        since_epoch=t0 - 10 * 3600,  # a stale, way-past-threshold span
+        phase="workload",
+        advised="workload",  # the PREVIOUS run already advised this phase
+        run_epoch=1000,  # the PREVIOUS run's launch epoch
+    )
+
+    backend = _IdlePollBackend(gpu_util=_PARTIAL_IDLE_UTIL, current_phase="workload")
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: backend)
+
+    rc = bp.main(["--issue", "730", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    # The stale span/advised set was CLEARED, so this tick restarts, not posts.
+    assert out["gcp_gpu_width_advisory_posted"] is False
+    assert not any("[gpu-width-advisory]" in (p.get("note") or "") for p in posted)
+    saved = bp._load_gpu_idle_state(state_path)
+    assert saved["gpu_width_advised_phases"] == ""  # stale de-dup cleared (re-armed)
+    assert int(saved["gpu_width_since_epoch"]) >= t0  # span restarted this run
+    assert int(saved["tripwire_run_epoch"]) >= t0 - 121  # fresh anchor persisted
+
+
+# ── #1033 per-instance idle clock (attempt-id scoping) ────────────────────────
+#
+# The idle-advisory span + per-phase dedup sets in the GCP sibling state file
+# used to survive instance relaunches: #763 printed a "543 min" idle advisory
+# (via the ADVISORY tier — the live #763 sidecar shows
+# gpu_idle_advised_phases="startup,workload" with an EMPTY escalated set:
+# single-GPU instance, so only the advisory fired, once per phase as the
+# stale span rode along) on a ~17-min-old fresh eps-issue-763 VM whose phase
+# name matched the stored one, so the per-phase reset never fired. The fix
+# keys the idle state to handle.extra["attempt_id"] (fresh per NEW instance,
+# label-stable on reconnect — #927) via _scope_idle_state_to_attempt, with
+# _tripwire_run_scope's widened _RUN_SCOPED_STATE_KEYS clear as the
+# belt-and-suspenders run-epoch reset.
+
+
+def test_scope_idle_state_same_attempt_preserves() -> None:
+    """A matching stored attempt id (a reconnect to the SAME instance) keeps
+    the state verbatim — the span legitimately accumulates."""
+    prev = {
+        "idle_attempt_id": "att-1",
+        "gpu_idle_since_epoch": "1000",
+        "gpu_idle_advised_phases": "startup",
+        "gpu_idle_escalated_phases": "",
+        "phase": "startup",
+    }
+    assert bp._scope_idle_state_to_attempt(prev, "att-1") is prev
+
+
+def test_scope_idle_state_missing_current_attempt_keeps_verbatim() -> None:
+    """Fail-safe: an absent/empty CURRENT attempt id cannot decide instance
+    identity -> state kept verbatim (pre-#1033 behavior)."""
+    prev = {"idle_attempt_id": "att-1", "gpu_idle_since_epoch": "1000"}
+    assert bp._scope_idle_state_to_attempt(prev, "") is prev
+    assert bp._scope_idle_state_to_attempt(prev, None) is prev
+
+
+def test_scope_idle_state_legacy_missing_stored_key_resets() -> None:
+    """Migration direction pinned: a pre-#1033 state file (NO stored
+    ``idle_attempt_id``) with a KNOWN current id RESETS — failing toward one
+    delayed/duplicate advisory, never a stale counter."""
+    prev = {
+        "gpu_idle_since_epoch": "1000",
+        "gpu_idle_advised_phases": "startup",
+        "gpu_idle_escalated_phases": "startup",
+        "phase": "startup",
+    }
+    scoped = bp._scope_idle_state_to_attempt(prev, "att-1")
+    for key in bp._IDLE_ADVISORY_STATE_KEYS:
+        assert key not in scoped
+    assert scoped["phase"] == "startup"  # only the idle keys are cleared
+
+
+def test_scope_idle_state_mismatch_clears_only_idle_keys() -> None:
+    """An attempt-id MISMATCH (a genuinely NEW instance) clears exactly the
+    three idle keys; every other key (phase, width, anchor) survives."""
+    prev = {
+        "idle_attempt_id": "att-old",
+        "gpu_idle_since_epoch": "1000",
+        "gpu_idle_advised_phases": "startup,workload",
+        "gpu_idle_escalated_phases": "workload",
+        "gpu_width_since_epoch": "5",
+        "tripwire_run_epoch": "77",
+        "phase": "workload",
+    }
+    scoped = bp._scope_idle_state_to_attempt(prev, "att-new")
+    for key in bp._IDLE_ADVISORY_STATE_KEYS:
+        assert key not in scoped
+    assert scoped["gpu_width_since_epoch"] == "5"
+    assert scoped["tripwire_run_epoch"] == "77"
+    assert scoped["phase"] == "workload"
+
+
+def _seed_attempt_idle_state(
+    path: Path, *, since_epoch: int, phase: str, idle_attempt_id: str | None
+) -> None:
+    payload = {
+        "phase": phase,
+        "gpu_idle_since_epoch": str(since_epoch),
+        "gpu_idle_advised_phases": "",
+        "gpu_idle_escalated_phases": "",
+    }
+    if idle_attempt_id is not None:
+        payload["idle_attempt_id"] = idle_attempt_id
+    bp._save_gpu_idle_state(path, payload)
+
+
+def _gcp_attempt_handle(attempt_id: str | None) -> RunHandle:
+    extra = {"issue": 730, "zone": "us-central1-a"}
+    if attempt_id is not None:
+        extra["attempt_id"] = attempt_id
+    return _gcp_handle(extra)
+
+
+def _run_idle_main(tmp_path, monkeypatch, *, handle: RunHandle, seed_kwargs: dict):
+    """Drive ``bp.main`` on a single-GPU all-idle GCP tick (the #763 shape:
+    advisory-tier only — the escalation tier requires a multi-GPU pod, which
+    is why the live #763 sidecar's escalated set is empty). Returns
+    ``(json_line, posted, saved_state)``."""
+    posted: list[dict] = []
+    monkeypatch.setattr(
+        pp, "post_event", lambda issue, key, **kw: posted.append({"key": key, **kw})
+    )
+    monkeypatch.setattr(pp, "_telegram_push", lambda msg: True)
+    # No epm:run-launched signal -> the run-epoch anchor never resets; the
+    # attempt-id mechanism is isolated as the ONLY reset in play.
+    monkeypatch.setattr(pp, "_run_launched_age_sec", lambda issue, now_epoch: None)
+
+    sidecar = tmp_path / "issue-730-handle.json"
+    write_handle_sidecar(handle, sidecar)
+    state_path = bp._gpu_idle_state_path(sidecar)
+    _seed_attempt_idle_state(state_path, **seed_kwargs)
+
+    backend = _IdlePollBackend(gpu_util="0", current_phase="startup")
+    monkeypatch.setattr("scripts.backend_poll._resolve_backend", lambda name: backend)
+
+    rc = bp.main(["--issue", "730", "--handle-file", str(sidecar)])
+    assert rc == 0
+    return posted, bp._load_gpu_idle_state(state_path)
+
+
+def test_gcp_idle_new_attempt_resets_idle_clock(tmp_path, monkeypatch) -> None:
+    """The #763/#810 replay: a seeded 543-min span + ``idle_attempt_id``
+    from the PREVIOUS instance, polled with a handle carrying a NEW
+    attempt_id -> NO stale-minute advisory; the saved state carries the new
+    ``idle_attempt_id`` and a now-anchored span (an advisory on the fresh
+    instance can never report minutes exceeding its own poll history)."""
+    t0 = int(time.time())
+    posted, saved = _run_idle_main(
+        tmp_path,
+        monkeypatch,
+        handle=_gcp_attempt_handle("att-new"),
+        seed_kwargs={
+            "since_epoch": t0 - 543 * 60,
+            "phase": "startup",  # matches current_phase -> per-phase reset inert
+            "idle_attempt_id": "att-old",
+        },
+    )
+    assert not any("[gpu-idle-advisory]" in (p.get("note") or "") for p in posted)
+    assert saved["idle_attempt_id"] == "att-new"
+    assert int(saved["gpu_idle_since_epoch"]) >= t0  # span re-anchored this tick
+
+
+def test_gcp_idle_same_attempt_preserves_span(tmp_path, monkeypatch) -> None:
+    """Reconnect control: the SAME attempt_id (label-stable reconnect, #927)
+    keeps the span, so the legitimate long-idle advisory still posts with
+    the accumulated 543 minutes."""
+    t0 = int(time.time())
+    posted, saved = _run_idle_main(
+        tmp_path,
+        monkeypatch,
+        handle=_gcp_attempt_handle("att-same"),
+        seed_kwargs={
+            "since_epoch": t0 - 543 * 60,
+            "phase": "startup",
+            "idle_attempt_id": "att-same",
+        },
+    )
+    assert any(
+        "[gpu-idle-advisory]" in (p.get("note") or "") and "543 min" in (p.get("note") or "")
+        for p in posted
+    )
+    assert saved["idle_attempt_id"] == "att-same"
+
+
+def test_gcp_idle_missing_attempt_id_no_reset(tmp_path, monkeypatch) -> None:
+    """Fail-safe end-to-end: a handle WITHOUT ``attempt_id`` (older handle
+    sidecars) keeps the state verbatim — pre-#1033 behavior, so the stale
+    span still posts (the fail direction is a duplicate/late advisory only
+    when identity is KNOWN to have changed, never a behavior change on
+    degraded inputs)."""
+    t0 = int(time.time())
+    posted, saved = _run_idle_main(
+        tmp_path,
+        monkeypatch,
+        handle=_gcp_attempt_handle(None),
+        seed_kwargs={
+            "since_epoch": t0 - 543 * 60,
+            "phase": "startup",
+            "idle_attempt_id": "att-old",
+        },
+    )
+    assert any("[gpu-idle-advisory]" in (p.get("note") or "") for p in posted)
+    # The stored id is PRESERVED (empty current id never clobbers it).
+    assert saved["idle_attempt_id"] == "att-old"

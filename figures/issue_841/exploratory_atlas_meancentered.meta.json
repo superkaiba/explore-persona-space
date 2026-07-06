@@ -1,0 +1,593 @@
+{
+  "commit": "b64bdc93f3",
+  "created": "2026-07-02T20:15:56Z",
+  "figsize": [
+    8.0,
+    4.6
+  ],
+  "points": [
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 0.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8289062548098819,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 1.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7785374113605842,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 2.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8629401263435824,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 3.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8262407079070729,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 4.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8310372710550775,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 5.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.9064757615339829,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 6.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8767848975579198,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 7.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8640880550616611,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 8.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8861286056330546,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 9.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.9139981488415485,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 10.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.9077276898786001,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 11.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.9035451613491261,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 12.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8361354377333933,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 13.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8625938043417044,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 14.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.883130526297881,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 15.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8389447525267754,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 16.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8444599228712625,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 17.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8038623217417584,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 18.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7690880057115453,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 19.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7902152197471809,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 20.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7478821521770411,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 21.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7530284848105572,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 22.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7584109887892547,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 23.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7179006975871169,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 24.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7262536034013309,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 25.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7041366024047033,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 26.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8587026535718746,
+      "series": "Affine (ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 0.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.11480675597655932,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 1.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.3751055957989081,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 2.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.573701719686714,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 3.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.6543797500467737,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 4.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.6810761053810594,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 5.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.759739815195599,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 6.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.73957829228395,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 7.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.755009979515508,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 8.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7974122404239816,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 9.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8143810514398925,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 10.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.8148712205383075,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 11.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.799211007897609,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 12.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7613382599621522,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 13.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7945187243293999,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 14.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7976614635652404,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 15.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7673410093125208,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 16.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7703377809556358,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 17.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7399605754466079,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 18.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7128682942449496,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 19.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.732659271382136,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 20.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.684275431802017,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 21.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.6934849354908471,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 22.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.70957723830442,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 23.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.6617259452778155,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 24.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.6820425520667537,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 25.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.6804944025614517,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 26.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.7873571571526115,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 0.0,
+      "Mean-centered held-out R\u00b2 on \u0394": -0.11331706504069738,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 1.0,
+      "Mean-centered held-out R\u00b2 on \u0394": -0.13535256877089186,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 2.0,
+      "Mean-centered held-out R\u00b2 on \u0394": -0.0009424879007680076,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 3.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.14726115036608622,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 4.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.25041873061415953,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 5.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.33186084054970777,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 6.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.30477705702662305,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 7.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.3875567313313102,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 8.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.5448452842631708,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 9.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.49713797067225507,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 10.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.4859623857640125,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 11.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.4364473860560706,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 12.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.40651879386279555,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 13.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.4635895076381511,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 14.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.39050609174113526,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 15.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.38155509233326945,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 16.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.3986794326134908,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 17.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.4636581519712045,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 18.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.46353077974808676,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 19.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.49643899700830296,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 20.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.44829986281242884,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 21.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.5137160240553271,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 22.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.5206891649673226,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 23.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.46194227489845285,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 24.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.4850206875762453,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 25.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.5225013764956419,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 26.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.6051735018440549,
+      "series": "Depth-GRU (exploratory)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 0.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.0,
+      "series": "predict-zero identity (=0)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 1.0,
+      "Mean-centered held-out R\u00b2 on \u0394": 0.0,
+      "series": "predict-zero identity (=0)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 83
+}

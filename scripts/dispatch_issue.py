@@ -140,6 +140,112 @@ _REPO_ROOT = str(Path(__file__).resolve().parents[1])
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
+# Lane-infra main-checkout pin (#987) — consumer audit (who imports
+# explore_persona_space.backends, and how the pin covers them):
+#   - scripts/dispatch_issue.py + scripts/backend_poll.py: script-mode
+#     entrypoints; the __main__-guarded _pin_main_lane_infra() below covers
+#     them (duplicated into both files by design — importing a shared helper
+#     before the pin would cache the ambient package and defeat it).
+#   - Module-IMPORT consumers get NO pin BY DESIGN (the __main__ guard
+#     deliberately excludes imports so worktree pytest keeps testing branch
+#     code): scripts/autonomous_session_watch.py (imports
+#     backend_poll._failover_wedged_runpod + backends.issue_dispatch and CAN
+#     launch a RunPod pod — safe today only because
+#     cron_autonomous_session_watch.sh cd's to the MAIN checkout before
+#     invoking it), scripts/gcp_audit.py, scripts/gpu_heuristics.py,
+#     scripts/mila_socket_refresh.py, scripts/router_acceptance.py. The
+#     cron-wrapper / main-cwd invocation convention is LOAD-BEARING for
+#     these module-import consumers.
+#   - scripts/poll_pipeline.py imports only task_workflow (no backends);
+#     when reached via main's backends/runpod.py lazy
+#     `from scripts.poll_pipeline import ...` it resolves as main's copy
+#     through the pinned path.
+
+
+def _resolve_main_checkout_root(anchor: Path) -> Path:
+    """MAIN repo-checkout root, resolved cwd-independently from ``anchor``.
+
+    Mirrors ``backends/issue_dispatch._main_checkout_root`` (#612) WITHOUT
+    importing it — importing the package before the pin would cache the
+    ambient (possibly stale worktree) package in ``sys.modules``, defeating
+    the pin (#987). Fails LOUD; never a cwd fallback.
+    """
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_OBJECT_DIRECTORY"}
+    }
+    try:
+        proc = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=str(anchor),
+            env=env,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=True,
+            timeout=30,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        raise RuntimeError(
+            f"cannot resolve the MAIN checkout root from {anchor} "
+            f"(git rev-parse --git-common-dir failed: {exc}); lane infra "
+            "must import from main (#987) — refusing the ambient package"
+        ) from exc
+    common_dir = Path(proc.stdout.strip())
+    if common_dir.name != ".git" or not common_dir.is_dir():
+        raise RuntimeError(
+            f"git common-dir {common_dir!s} does not look like a "
+            "main-checkout .git dir; refusing to pin lane infra (#987)"
+        )
+    root = common_dir.parent
+    if not (root / "src" / "explore_persona_space" / "__init__.py").is_file():
+        raise RuntimeError(
+            f"resolved main root {root!s} has no src/explore_persona_space; "
+            "refusing to pin lane infra (#987)"
+        )
+    return root
+
+
+def _pin_main_lane_infra(anchor: Path | None = None) -> Path:
+    """Insert ``<main>/src`` + ``<main>`` at the FRONT of ``sys.path`` (#987).
+
+    Guarantees the lane infra (``explore_persona_space.backends.*``, incl.
+    the GCE startup template in ``gcp.py``, plus lazy ``scripts.*`` imports)
+    always resolves from the MAIN checkout — beating a worktree venv's
+    editable install — while ``--repo-branch`` keeps cloning the issue
+    branch for the remote WORKLOAD (unchanged). Idempotent (re-entrant calls
+    remove-then-insert, no duplicates); returns the resolved main root.
+    """
+    anchor = anchor or Path(__file__).resolve().parent
+    main_root = _resolve_main_checkout_root(anchor)
+    already = sys.modules.get("explore_persona_space")
+    if already is not None:
+        mod_file = getattr(already, "__file__", "") or ""
+        if not mod_file.startswith(str(main_root / "src") + os.sep):
+            raise RuntimeError(
+                f"explore_persona_space already imported from {mod_file!r} "
+                "before the main-checkout pin — a submodule import would "
+                "resolve under the stale package __path__ (#987)"
+            )
+    for p in (str(main_root), str(main_root / "src")):
+        if p in sys.path:
+            sys.path.remove(p)
+        sys.path.insert(0, p)  # final order: [<main>/src, <main>, ...]
+    invoked_root = Path(__file__).resolve().parents[1]
+    if invoked_root != main_root:
+        sys.stderr.write(
+            f"[lane-infra-pin] WARNING: invoked script copy lives under "
+            f"{invoked_root} but lane infra is pinned to main {main_root} "
+            f"(#987); prefer invoking <main>/scripts/{Path(__file__).name}\n"
+        )
+    return main_root
+
+
+if __name__ == "__main__":
+    _pin_main_lane_infra()
+
 
 def _current_git_branch() -> str | None:
     """Current branch of the invoking checkout (None on detached HEAD / error).
@@ -807,18 +913,48 @@ def _issue_worktree_git_root(issue: int) -> str | None:
 
 
 def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
-    """Build ``spec.extra`` from the launch CLI's GCP-only knobs.
+    """Build ``spec.extra`` from the launch CLI's lane-specific knobs.
 
     Returns the dict :func:`backends.issue_dispatch.build_run_spec`
-    threads through to the lane renderers; every key here is inert on
-    SLURM / RunPod lanes. Extracted from :func:`_cmd_launch` so each
-    new knob doesn't push the dispatcher over the complexity cap.
+    threads through to the lane renderers. Most keys are GCP-only and
+    inert on SLURM / RunPod lanes, but NOT all: ``execute_workload``
+    (#909) is RunPod-honored (the RunPod execution leg), and
+    ``repo_branch`` is honored by GCP (GCE clone) AND RunPod (the #909
+    execution leg's branch sync). Extracted from :func:`_cmd_launch` so
+    each new knob doesn't push the dispatcher over the complexity cap.
     """
     extra: dict[str, Any] = {}
+    if getattr(args, "lane_suffix", None):
+        # Per-lane instance-name suffix (#934): honored by the GCP lane's
+        # naming helpers (eps-issue-<N>-<suffix>) + the router's attempt-id
+        # mint + the handle-sidecar composer. Parse-time validated
+        # (_lane_suffix_arg); absent → key ABSENT (never None-valued — a
+        # None-valued key would flip canonicalize_spec output and every
+        # live unsuffixed lease spec-hash).
+        extra["lane_suffix"] = args.lane_suffix
+    if getattr(args, "execute_workload", False):
+        # RunPod-honored knob (#909): opts the launch into the RunPod
+        # execution leg (RunPodBackend.launch SSHes the fresh pod, syncs
+        # the clone to repo_branch, and starts workload_cmd detached).
+        # Without it an explicit-runpod --workload-cmd launch is
+        # provision-only (the experimenter is the executor there).
+        # main()'s parse-time guard rejects the flag without a non-empty
+        # --workload-cmd, so this key never rides a hydra launch.
+        extra["execute_workload"] = True
     if getattr(args, "boot_disk_gb", None):
-        # GCP-only knob (backends/gcp.py:815 reads spec.extra["boot_disk_gb"]);
-        # inert on SLURM / RunPod lanes.
+        # GCP boot disk (backends/gcp.py reads spec.extra["boot_disk_gb"]);
+        # ALSO read by the RunPod CPU fallback as of #1010 — container-disk
+        # threading in RunPodBackend.launch + the feasibility gate in
+        # router._runpod_terminal_rung. Inert on SLURM lanes.
         extra["boot_disk_gb"] = int(args.boot_disk_gb)
+    if getattr(args, "min_ram_gb", None):
+        # RunPod-CPU-fallback knob (#1010): read by the feasibility gate in
+        # router._runpod_terminal_rung — RunPod CPU instances have FIXED RAM,
+        # so an unsatisfiable requirement refuses the fallback typed
+        # (reason: cpu_fallback_infeasible_for_plan) instead of provisioning
+        # an undersized pod. GCP machine selection is unchanged (by intent);
+        # inert on SLURM lanes.
+        extra["min_ram_gb"] = int(args.min_ram_gb)
     if getattr(args, "max_run_duration", None):
         # GCP-only knob: the instance-create renderer reads
         # spec.extra["max_run_duration"], falling back to the 7d
@@ -851,10 +987,19 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         # no-op back-compat shim. Inert on SLURM / RunPod lanes.
         extra["spot_tolerant"] = True
     if getattr(args, "repo_branch", None):
-        # GCP-only knob: the GCE startup script clones from origin, so a
-        # feature-branch workload must name its branch (issue 535 r6).
+        # The GCE startup script clones from origin, so a feature-branch
+        # workload must name its branch (issue 535 r6); the RunPod #909
+        # execution leg syncs the pod clone to the same key.
         extra["repo_branch"] = args.repo_branch
-    elif (args.backend or "auto") in {"auto", "gcp"}:
+    elif (args.backend or "auto") in {"auto", "gcp"} or (
+        # #909 (AC6): the auto-default ALSO fires for an explicit
+        # `--backend runpod --execute-workload` launch — the execution
+        # leg's branch sync would otherwise target `main`, where per-issue
+        # dispatch scripts do not exist (the #763-shaped manual command).
+        # Explicit --repo-branch (above) always wins.
+        (args.backend or "").strip().lower() == "runpod"
+        and getattr(args, "execute_workload", False)
+    ):
         # fix19's production mirror (round-2 Claude Major, task #535):
         # without this, the GCE clone defaults to "main" even when the
         # invoking checkout — the /issue worktree on an issue-<N> branch
@@ -877,7 +1022,7 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
         branch = _current_git_branch()
         if branch and branch != "main":
             logging.getLogger("dispatch_issue").info(
-                "repo-branch defaulted to current branch %r for the gcp/auto lane — "
+                "repo-branch defaulted to current branch %r for the gcp/auto/runpod-execute lane — "
                 "ensure it is pushed (the GCE startup script clones from origin)",
                 branch,
             )
@@ -893,7 +1038,8 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
             if wt_branch and wt_branch != "main":
                 logging.getLogger("dispatch_issue").info(
                     "repo-branch defaulted to issue worktree branch %r "
-                    "(worktree %s) for the gcp/auto lane — invoking checkout "
+                    "(worktree %s) for the gcp/auto/runpod-execute lane — "
+                    "invoking checkout "
                     "is on main/unresolvable",
                     wt_branch,
                     worktree_root,
@@ -919,6 +1065,87 @@ def _launch_extra_from_args(args: argparse.Namespace) -> dict[str, Any]:
     return extra
 
 
+def _annotate_launch_body_reconnect_and_lane(
+    body: dict[str, Any], *, args: argparse.Namespace, result: Any
+) -> None:
+    """Additive launch-JSON keys: reconnect loudness + lane-suffix visibility (#934/#923).
+
+    A reconnect-resolved launch dispatched NO workload this invocation,
+    but must stay ``ok: true`` (the exit-75 still-waiting contract
+    instructs re-running the SAME command and relying on reconnect —
+    flipping ``ok`` would break that rerun loop). The additive
+    ``reconnected`` / ``workload_dispatched`` keys make the non-dispatch
+    machine-detectable instead. BOTH reconnect layers trip it: the
+    router scan (``reason == "reconnect"``) and the GCP-internal
+    ``reconnect_or_none`` (which only marks
+    ``handle.extra["reconnected"]``). Mutates ``body`` in place.
+    """
+    from explore_persona_space.backends.router import ROUTE_REASON_RECONNECT
+
+    handle_extra = result.handle.extra or {}
+    workload_requested = bool((args.workload_cmd or "").strip()) or bool(args.hydra)
+    reconnected = bool(handle_extra.get("reconnected")) or result.reason == ROUTE_REASON_RECONNECT
+    if reconnected:
+        workload_dispatched = False
+    elif handle_extra.get("workload_executed") is False:
+        # #909 provision-only RunPod launch: the pod booted but nothing ran.
+        workload_dispatched = False
+    else:
+        workload_dispatched = workload_requested
+    body["reconnected"] = reconnected
+    body["workload_dispatched"] = workload_dispatched
+    lane_suffix = getattr(args, "lane_suffix", None)
+    if lane_suffix:
+        body["lane_suffix"] = lane_suffix
+    if reconnected and workload_requested:
+        body["reconnect_note"] = (
+            "route() RECONNECTED to an existing live instance — this invocation dispatched "
+            "NO workload (workload_dispatched=false). Benign iff an earlier run of the SAME "
+            "command created it (exit-75 rerun); a concurrent second lane must relaunch with "
+            "--lane-suffix (#934/#923)."
+        )
+        logging.getLogger("dispatch_issue").warning(
+            "%s pod_name=%s reason=%s",
+            body["reconnect_note"],
+            result.handle.pod_name,
+            result.reason,
+        )
+    if lane_suffix and result.chosen_kind != "gcp":
+        body["lane_suffix_unhonored_by_lane"] = result.chosen_kind
+        logging.getLogger("dispatch_issue").warning(
+            "--lane-suffix=%s: instance/job-name isolation is GCP-only; chosen_kind=%s "
+            "keeps per-issue naming (SLURM eps-issue-<N>, RunPod pod-<N>) — concurrent "
+            "lanes are NOT isolated on this lane.",
+            lane_suffix,
+            result.chosen_kind,
+        )
+
+
+def _persist_partial_handle_sidecar(issue: int, spec: Any, partial: Any) -> tuple[bool, str]:
+    """Best-effort #954 sidecar write for a PARTIAL RunPod launch.
+
+    A ``RunPodWorkloadStartError`` carrying a handle means a pod was
+    provisioned (it BILLS, left RUNNING for diagnosis) before the
+    workload-start leg failed. Persist the handle sidecar so the pod is
+    visible to the handle machinery (poll / finalize / re-drive stay
+    chained) — the SAME path ``dispatch_for_issue`` would have written on
+    success. Returns ``(sidecar_written, note_suffix)``; an ``OSError`` is
+    recorded in the note suffix, NEVER raised (the typed failure the caller
+    is surfacing must not be masked).
+    """
+    from explore_persona_space.backends.issue_dispatch import (
+        default_handle_sidecar_path,
+        write_handle_sidecar,
+    )
+
+    sidecar_path = default_handle_sidecar_path(issue, lane_suffix=spec.extra.get("lane_suffix"))
+    try:
+        write_handle_sidecar(partial, sidecar_path)
+        return True, ""
+    except OSError as write_exc:
+        return False, f" [handle sidecar write FAILED: {type(write_exc).__name__}: {write_exc}]"
+
+
 def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]) -> int:
     """``launch`` action: build spec → dispatch → write sidecar → print outcome.
 
@@ -939,6 +1166,7 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         dispatch_for_issue,
     )
     from explore_persona_space.backends.router import RouteError
+    from explore_persona_space.backends.runpod import RunPodWorkloadStartError
 
     extra = _launch_extra_from_args(args)
     spec = build_run_spec(
@@ -1074,6 +1302,41 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
             started_evidence_probe=deps.get("started_evidence_probe"),
             reconnect_fn=deps["reconnect_fn"],
         )
+    except RunPodWorkloadStartError as exc:
+        # #909 AC3: a requested --execute-workload execution that did not
+        # start NEVER returns ok. RunPodBackend.launch raises the typed
+        # error UNWRAPPED through route()'s explicit-runpod override
+        # (_prepare_and_launch only wraps prepare() failures, and
+        # dispatch_for_issue does not wrap route()), so this arm catches it
+        # directly; were a future router change to wrap it in a RouteError,
+        # the arm below already yields the same exit 2 + failure JSON.
+        #
+        # #954: when the error carries the PARTIAL handle (a pod was
+        # provisioned before the start leg failed — it BILLS, left RUNNING
+        # for diagnosis), persist the handle sidecar best-effort (never mask
+        # the typed failure) and name the pod in the failure JSON. NO lease
+        # on this path by design: a manual retry hits pod_lifecycle's
+        # provision-idempotency refuse (exit 1 on a live pod-N), fail-loud.
+        note = str(exc)
+        partial_fields: dict[str, Any] = {}
+        partial = getattr(exc, "handle", None)
+        if partial is not None:
+            sidecar_written, note_suffix = _persist_partial_handle_sidecar(
+                int(args.issue), spec, partial
+            )
+            note += note_suffix
+            partial_fields = {"pod_name": partial.pod_name, "sidecar_written": sidecar_written}
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "exception": type(exc).__name__,
+            "failure_class": "infra",
+            "reason": "runpod_workload_start_failed",
+            "note": note,
+            **partial_fields,
+        }
+        print(json.dumps(body, sort_keys=True))
+        return 2
     except RouteError as exc:
         translation = classify_terminal_exception(exc)
         body = {
@@ -1151,6 +1414,24 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         return EXIT_STILL_WAITING
 
     result = outcome.result
+    handle_extra = result.handle.extra or {}
+    # #909 belt-and-suspenders fail-fast: a handle that CLAIMS the workload
+    # executed but carries no workload_pid is a backend regression returning
+    # ok on a provision-only result — never print ok:true on it.
+    if handle_extra.get("workload_executed") and not handle_extra.get("workload_pid"):
+        body = {
+            "ok": False,
+            "issue": int(args.issue),
+            "failure_class": "infra",
+            "reason": "runpod_workload_start_failed",
+            "note": (
+                "handle claims workload_executed=true but carries no workload_pid — "
+                "backend regression; treating the requested execution as NOT started "
+                f"(#909). pod_name={result.handle.pod_name} log_path={result.handle.log_path}"
+            ),
+        }
+        print(json.dumps(body, sort_keys=True))
+        return 2
     body = {
         "ok": True,
         "issue": int(args.issue),
@@ -1163,7 +1444,15 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
         ),
         "pod_name": result.handle.pod_name,
         "job_id": result.handle.job_id,
+        # #909: the execution-leg outcome (RunPod lane; None / absent-key
+        # semantics on lanes that never set them) + the log path the caller
+        # tails. workload_executed False on a provision-only RunPod launch
+        # is the loud "the experimenter must launch this" signal.
+        "workload_executed": handle_extra.get("workload_executed"),
+        "workload_pid": handle_extra.get("workload_pid"),
+        "log_path": result.handle.log_path,
     }
+    _annotate_launch_body_reconnect_and_lane(body, args=args, result=result)
     if outcome.sidecar_write_error is not None:
         # The launch SUCCEEDED (live VM / job) but the sidecar write
         # failed — print the handle JSON anyway (it IS the recovery
@@ -1194,6 +1483,9 @@ def _cmd_launch(args: argparse.Namespace, *, backends_factory: Callable[[], dict
 # ``epm:upload-verification`` marker note (shape: ``**Verdict: PASS**``;
 # see workflow.yaml § markers). Case-sensitive on purpose — the schema
 # emits uppercase PASS/FAIL, and prose mentions of "pass" must not match.
+# Private copy of the canonical ``task_workflow.UPLOAD_VERIFICATION_PASS_RE``
+# (#1026); pattern parity is pinned by
+# tests/test_upload_verifier_currency.py::test_pass_regex_parity_with_dispatch_issue.
 _UPLOAD_VERIFICATION_PASS_RE = re.compile(r"Verdict:\s*PASS\b")
 
 
@@ -1220,6 +1512,13 @@ def _agent_upload_verification_passed(issue: int) -> bool:
     ``False`` after a logged warning — the safe direction: no evidence ⇒
     the caller keeps the exit-3 teardown-skip; we never tear down on a
     guess.
+
+    CURRENCY is NOT this probe's job (#1026): the evidence forms above are
+    deliberately unchanged, and the verifier-currency gate
+    (:func:`_upload_verification_currency_blocker`, wired at the top of
+    :func:`_cmd_finalize`) wraps AROUND it — refusing teardown when a
+    verifier round is in flight, the latest verdict is a FAIL, or the
+    newest ``epm:results`` postdates the latest verdict.
     """
     log = logging.getLogger("dispatch_issue")
     try:
@@ -1260,6 +1559,38 @@ def _agent_upload_verification_passed(issue: int) -> bool:
     return False
 
 
+def _upload_verification_currency_blocker(issue: int) -> dict | None:
+    """Guarded wrapper over ``task_workflow.upload_verification_currency_blocker``.
+
+    Read/LOOKUP failures (missing task, unreadable events.jsonl) return None
+    after a logged warning — NOT a refusal: with unreadable events,
+    :func:`_agent_upload_verification_passed` also returns False, so the
+    degrade cannot fire and the existing exit-3 paths already hold teardown.
+    Deliberately NARROW (#1026 MF-C): a helper BUG
+    (TypeError/AttributeError/...) raises loudly instead of silently
+    disarming the gate (fail-fast rule). ``find_task_path`` raises
+    ``FileNotFoundError`` on a registry miss (and its
+    ``StaleTaskPathError`` subclass on multi-hit registry corruption) —
+    both are ``OSError`` lookup failures the narrow tuple absorbs.
+    """
+    try:
+        from explore_persona_space.task_workflow import (
+            list_events,
+            upload_verification_currency_blocker,
+        )
+
+        return upload_verification_currency_blocker(list_events(int(issue)))
+    except (FileNotFoundError, KeyError, OSError) as exc:
+        logging.getLogger("dispatch_issue").warning(
+            "could not read upload-verifier currency evidence for issue=%d (%s: %s); "
+            "treating as no blocker (the PASS-evidence probe keeps its own safe direction)",
+            int(issue),
+            type(exc).__name__,
+            exc,
+        )
+        return None
+
+
 def _cmd_finalize(
     args: argparse.Namespace, *, backends_factory: Callable[[], dict[str, Any]]
 ) -> int:
@@ -1273,17 +1604,36 @@ def _cmd_finalize(
     (HF Hub list_repo_files + WandB run + git-figure + completion
     sentinel — see ``backends.artifacts.confirm_artifacts_from_handle``).
 
+    Verifier-currency gate (#1026): BEFORE ``fetch_results``, ONE top gate
+    (:func:`_upload_verification_currency_blocker`) requires the
+    upload-verification evidence to be a CURRENT PASS, uniformly on ALL
+    non-skip paths (declaration-present AND declaration-less). Five typed
+    exit-3 reasons: ``upload_verifier_in_flight`` (a dispatched verifier
+    round has no verdict yet, liveness window fresh),
+    ``upload_verifier_stalled`` (window lapsed, no verdict),
+    ``upload_verification_ambiguous`` (a late verdict cannot be attributed
+    to the current results-epoch), ``upload_verification_stale`` (the
+    latest ``epm:results`` postdates the latest verdict),
+    ``upload_verification_failed_current`` (the latest verification is a
+    FAIL). ``--skip-confirm-artifacts`` refuses ONLY a FRESH in-flight
+    round (never destroy a running round's pod; the 15-min liveness window
+    lapsing to ``stalled`` is the flag-free escape) and degrades the other
+    four reasons to a loud warning + a ``verifier_warning`` field in the
+    success JSON.
+
     Degrade path: when the handle carries NO ``expected_artifacts``
     declaration the mechanical gate is structurally unsatisfiable.
-    Every launch path (GCP, SLURM, RunPod) populates the declaration as
-    of #598, so a declaration-less handle is a pre-#598 in-flight
-    sidecar only; a confirm FAIL on one falls back to the agent-level
+    Declaration-less handles still occur in production (RunPod
+    experimenter-launched runs, pre-#598 sidecars); a confirm FAIL on one
+    falls back to the agent-level
     upload-verification PASS evidence on the task's ``events.jsonl``
     (:func:`_agent_upload_verification_passed`). Evidence found →
     teardown proceeds with a LOUD log + a ``confirm_artifacts`` field in
     the output JSON; no evidence → exit 3 with
     ``reason: confirm_artifacts_no_declaration``. A handle WITH a
     declaration never degrades — a real mechanical FAIL always exits 3.
+    Either way the currency gate above already ran: the degrade can only
+    execute when the blocker is None on the non-skip path.
 
     After a SUCCESSFUL teardown the sidecar is renamed to
     ``<name>.finalized`` (audit record, never deleted) so a later
@@ -1301,7 +1651,9 @@ def _cmd_finalize(
     # written by the pre-#612 cwd-relative composer — a finalize that
     # false-misses a live handle would SKIP teardown and leak a paid
     # VM / pod, so the probe is cheap insurance during the transition).
-    sidecar, probed = resolve_handle_sidecar_path(args.issue, args.handle_file)
+    sidecar, probed = resolve_handle_sidecar_path(
+        args.issue, args.handle_file, lane_suffix=getattr(args, "lane_suffix", None)
+    )
     if not Path(sidecar).exists():
         body = {
             "ok": False,
@@ -1316,6 +1668,59 @@ def _cmd_finalize(
     handle = read_handle_sidecar(Path(sidecar))
     deps = backends_factory()
     backend = _resolve_backend_for_handle(handle, deps)
+
+    # ── #1026 verifier-currency gate (uniform: ALL paths) ────────────────
+    # Teardown requires the upload-verification evidence to be a CURRENT
+    # PASS. --skip-confirm-artifacts relaxes every reason EXCEPT a FRESH
+    # in-flight round (never destroy a running verifier round's pod; the
+    # 15-min liveness window lapsing to "stalled" is the flag-free escape)
+    # to a loud warning + a verifier_warning field in the output JSON.
+    verifier_warning: str | None = None
+    blocker = _upload_verification_currency_blocker(args.issue)
+    if blocker is not None:
+        if args.skip_confirm_artifacts and blocker["reason"] != "upload_verifier_in_flight":
+            verifier_warning = blocker["reason"]
+            logging.getLogger("dispatch_issue").warning(
+                "finalize --skip-confirm-artifacts: %s — proceeding on the explicit "
+                "skip flag; confirm pod-side data is safe before relying on this.",
+                blocker["detail"],
+            )
+        else:
+            hint = {
+                "upload_verifier_in_flight": (
+                    "WAIT for the epm:upload-verification verdict; on PASS re-run "
+                    "finalize; on FAIL run the uploader gap-fill + re-verify — "
+                    "NEVER finalize on a FAIL."
+                ),
+                "upload_verifier_stalled": (
+                    "re-spawn the upload-verifier to a verdict, then finalize on PASS."
+                ),
+                "upload_verification_ambiguous": (
+                    "re-run the upload-verifier against the current results (the "
+                    "fresh round resolves the ambiguity), then finalize on PASS."
+                ),
+                "upload_verification_stale": (
+                    "re-run the upload-verifier against the current results to a "
+                    "PASS, then re-run finalize."
+                ),
+                "upload_verification_failed_current": (
+                    "run the uploader gap-fill, re-verify to a PASS, then finalize."
+                ),
+            }[blocker["reason"]]
+            body = {
+                "ok": False,
+                "issue": int(args.issue),
+                "phase": "confirm_artifacts",
+                "chosen_kind": handle.backend,
+                "pod_name": handle.pod_name,
+                "reason": blocker["reason"],
+                "verifier_state": blocker["state"],
+                "skip_confirm_artifacts": bool(args.skip_confirm_artifacts),
+                "detail": blocker["detail"] + " — teardown SKIPPED. Recover: " + hint,
+            }
+            print(json.dumps(body, sort_keys=True))
+            return 3
+    # ─────────────────────────────────────────────────────────────────────
 
     # ``fetch_results`` BEFORE the confirm gate (#588 / latent slice-6
     # gap): the GCP completion sentinel lives ON the VM — ``GcpBackend.
@@ -1445,6 +1850,8 @@ def _cmd_finalize(
     }
     if confirm_degraded is not None:
         body["confirm_artifacts"] = confirm_degraded
+    if verifier_warning is not None:
+        body["verifier_warning"] = verifier_warning
     print(json.dumps(body, sort_keys=True))
     return 0
 
@@ -1499,6 +1906,21 @@ def _max_run_duration_arg(value: str) -> str:
             "shape (integer+unit groups, units d/h/m/s: '30h', '1d12h', '90m')"
         )
     return v
+
+
+def _lane_suffix_arg(value: str) -> str:
+    """Validate ``--lane-suffix`` at the parser surface (#934).
+
+    Delegates to the shared ``base.validate_lane_suffix`` (lowercase
+    ``[a-z0-9-]``, <=43 chars — the attempt-label budget) so a malformed
+    suffix errors friendly at parse time, BEFORE any backend is built.
+    """
+    from explore_persona_space.backends.base import validate_lane_suffix
+
+    try:
+        return validate_lane_suffix(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError(str(exc)) from None
 
 
 def _build_argparser() -> argparse.ArgumentParser:
@@ -1595,11 +2017,29 @@ def _build_argparser() -> argparse.ArgumentParser:
         type=int,
         default=None,
         help=(
-            "GCP boot-disk size override in GB (GCP lane only; threads to "
-            "spec.extra['boot_disk_gb'], honored at backends/gcp.py:815). "
-            "Default 300 GB is too tight for full-FT checkpoint grids "
-            "(issue 606 needed 500: 13 consolidated ZeRO-3 ckpts ~= 195 GB "
-            "+ model + cache). Inert on non-GCP lanes."
+            "Boot/data disk size the plan's stage requires, in GB. GCP lane: "
+            "boot-disk size override (threads to spec.extra['boot_disk_gb'], "
+            "honored by backends/gcp.py; default 300 GB is too tight for "
+            "full-FT checkpoint grids — issue 606 needed 500: 13 consolidated "
+            "ZeRO-3 ckpts ~= 195 GB + model + cache). RunPod CPU fallback "
+            "(#1010): threaded into the pod's containerDiskInGb "
+            "(max(50, value)) and checked by the feasibility gate — an "
+            "unsatisfiable disk requirement refuses the fallback typed "
+            "(cpu_fallback_infeasible_for_plan) instead of provisioning an "
+            "undersized pod. Inert on SLURM lanes."
+        ),
+    )
+    launch.add_argument(
+        "--min-ram-gb",
+        type=int,
+        default=None,
+        help=(
+            "Minimum RAM (GB) the plan's CPU stage requires. Read by the "
+            "RunPod CPU fallback feasibility gate (#1010) — RunPod CPU "
+            "instances have FIXED RAM, so an unsatisfiable requirement "
+            "refuses the fallback with reason cpu_fallback_infeasible_for_plan "
+            "instead of provisioning an undersized pod. GCP machine selection "
+            "is unchanged (by intent). Inert on SLURM lanes."
         ),
     )
     launch.add_argument(
@@ -1647,6 +2087,23 @@ def _build_argparser() -> argparse.ArgumentParser:
         ),
     )
     launch.add_argument(
+        "--execute-workload",
+        action="store_true",
+        help=(
+            "RunPod lane only (#909): after provisioning, SSH the fresh pod, sync "
+            "its clone to --repo-branch (auto-defaulted for this shape), and start "
+            "--workload-cmd detached (setsid launcher + pidfile + log), verifying "
+            "liveness before returning — a requested execution that did not start "
+            "exits 2 with reason=runpod_workload_start_failed, never ok:true. "
+            "REQUIRES a non-empty --workload-cmd (rejected at parse time with "
+            "--hydra: the execution leg cannot execute a hydra run). Without this "
+            "flag an explicit-runpod --workload-cmd launch is provision-only — "
+            "EXPECTED when the experimenter (SKILL.md Step 6d.1) launches it on "
+            "the pod. The automated GCP→RunPod failover paths opt in "
+            "automatically (they have no experimenter). Inert on non-RunPod lanes."
+        ),
+    )
+    launch.add_argument(
         "--skip-default-git-paths",
         action="store_true",
         help=(
@@ -1662,6 +2119,26 @@ def _build_argparser() -> argparse.ArgumentParser:
             "honored by every lane's declaration builder)."
         ),
     )
+    launch.add_argument(
+        "--lane-suffix",
+        type=_lane_suffix_arg,
+        default=None,
+        help=(
+            "Per-lane instance-name suffix (#934): the GCP lane provisions "
+            "eps-issue-<N>-<suffix> and the handle sidecar becomes "
+            "issue-<N>-<suffix>-handle.json, so two concurrent lanes for one "
+            "issue coexist. Lowercase [a-z0-9-], <=43 chars. Instance/job-name "
+            "isolation is GCP-lane only; SLURM job names and RunPod pod names "
+            "remain per-issue (concurrent lanes both failing over to RunPod "
+            "still contend on pod-<N>). In a multi-lane plan, suffix BOTH "
+            "lanes — an unsuffixed lane 1 plus a suffixed lane 2 leaves a "
+            "forgotten-suffix poll/finalize silently resolving lane 1's "
+            "sidecar. Rerunning a suffixed launch WITHOUT the flag creates a "
+            "second unsuffixed instance (no reconnect). Multi-lane "
+            "orchestrators should prefer passing --handle-file from the "
+            "launch JSON's handle_sidecar_path to poll/finalize."
+        ),
+    )
 
     finalize = sub.add_parser(
         "finalize",
@@ -1675,6 +2152,17 @@ def _build_argparser() -> argparse.ArgumentParser:
         help="Path to the per-issue handle sidecar JSON "
         "(default: <main-checkout>/.claude/cache/issue-<N>-handle.json, "
         "with a legacy <cwd>/.claude/cache/ fallback probe).",
+    )
+    finalize.add_argument(
+        "--lane-suffix",
+        type=_lane_suffix_arg,
+        default=None,
+        help=(
+            "Resolve the per-lane handle sidecar issue-<N>-<suffix>-handle.json "
+            "(#934). Ignored when --handle-file is given. Pass the SAME suffix "
+            "the launch used — a forgotten suffix silently finalizes the "
+            "unsuffixed lane's handle instead."
+        ),
     )
     finalize.add_argument(
         "--skip-confirm-artifacts",
@@ -1733,6 +2221,18 @@ def main(
                 f"(got {'both' if has_hydra else 'neither'}; an empty --workload-cmd '' "
                 "counts as not provided)"
             )
+        # #909 AC3a (upheld Must-Fix): --execute-workload with nothing to
+        # execute (a --hydra run, or an empty/absent --workload-cmd) would
+        # recreate the #763 silent false-green through the fix's own flag
+        # surface — the execution leg would no-op, no WARNING would fire,
+        # and ok:true would print on a paid provision-only pod. Reject at
+        # parse time, BEFORE backends_factory is built or any provision
+        # attempted (mirrors the exactly-one-of guard above).
+        if getattr(args, "execute_workload", False) and not has_workload_cmd:
+            parser.error(
+                "--execute-workload requires a non-empty --workload-cmd "
+                "(it cannot execute a --hydra run)"
+            )
     logging.basicConfig(
         stream=sys.stderr,
         level=logging.DEBUG if args.debug else logging.INFO,
@@ -1783,6 +2283,7 @@ __all__ = [
     "_provision_still_waiting",
     "_recognized_frontmatter_backends",
     "_resolve_backend_for_handle",
+    "_upload_verification_currency_blocker",
     "_wrap_marker_poster_with_override_flag",
     "main",
 ]

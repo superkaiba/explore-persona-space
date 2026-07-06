@@ -1,0 +1,418 @@
+{
+  "commit": "dfa953a482",
+  "created": "2026-07-02T23:05:37Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "Layer": 0.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.43985521463793187,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 1.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.43907381844551496,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 2.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.4857568069141037,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 3.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.49919015077966833,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 4.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5021810012373724,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 5.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5100031564858584,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 6.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5228470870086068,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 7.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5287228719705441,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 8.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5440011973029018,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 9.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5178896149617922,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 10.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5398346678833705,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 11.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5584891225773927,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 12.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5751113550919136,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 13.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.592047592852275,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 14.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.6221427819386285,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 15.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.6363415268709474,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 16.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.6485208172119482,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 17.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.6386785268042316,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 18.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.6367675833712522,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 19.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.6730940896676356,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 20.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.667089857246645,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 21.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.6519970197805447,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 22.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.6434817162447851,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 23.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.6238343172888945,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 24.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.621746250998154,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 25.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.6180656104975648,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 26.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5951590321916237,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 27.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.6056666418235339,
+      "series": "Instruct model (S1, n=5000)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 0.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.43599647601044644,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 1.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.4404520506215027,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 2.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.45368862737414983,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 3.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.44570129489029686,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 4.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.43098899318756023,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 5.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.420899494069212,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 6.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.4225512534507987,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 7.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.4675230261424438,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 8.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.4792046327230055,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 9.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.46092054707528896,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 10.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.4722006940423157,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 11.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.48163821659299744,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 12.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.48673201933540844,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 13.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.49758593452128597,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 14.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5144188242717306,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 15.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5220906428457441,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 16.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5269190065842935,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 17.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5234636824859783,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 18.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.532257472627097,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 19.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5876803039140281,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 20.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5882409351523138,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 21.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5784633221680573,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 22.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5648948978917113,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 23.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5517036622229063,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 24.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5641264673660742,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 25.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5668169558724286,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 26.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5391046316187429,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 27.0,
+      "Held-out $R^2$ (5-fold ridge)": 0.5981721730058889,
+      "series": "Pretrained base (S2, n=5000)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 0.0,
+      "Held-out $R^2$ (5-fold ridge)": -0.020252589782314395,
+      "series": "Selection-symmetric null (97.5th pct of layer-max)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 1.0,
+      "Held-out $R^2$ (5-fold ridge)": -0.020252589782314395,
+      "series": "Selection-symmetric null (97.5th pct of layer-max)",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 58
+}

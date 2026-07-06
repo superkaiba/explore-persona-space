@@ -64,6 +64,9 @@ def fake_repo(tmp_path, monkeypatch):
     monkeypatch.setattr(tw, "tasks_dir", lambda: tmp_path / "tasks")
     monkeypatch.setattr(ced, "repo_root", lambda: tmp_path)
     monkeypatch.setattr(ced, "tasks_dir", lambda: tmp_path / "tasks")
+    # Determinism pin (#924): force the on-main resolution path so a
+    # hypothetical fresh-clone-on-a-branch test runner cannot flip the probe.
+    monkeypatch.setattr(ced, "_off_main_checkout_root", lambda: None)
     return tmp_path
 
 

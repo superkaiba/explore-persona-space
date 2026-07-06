@@ -28,7 +28,10 @@ pass is the backstop that dispatches a filed-but-not-dispatched task within
 the Happy daemon is unreachable (headless / pod-side filing), the shared
 5-session infra cap is full or occupancy is unreadable (#690 M1 — a wrapper
 call can never push a 6th session past the cap before the watcher's next
-tick), the task already has a live session, or the spawn subprocess errors.
+tick), a session dispatch fired within the last `EPM_SESSION_DISPATCH_STAGGER_S`
+(default 60s) stagger window (#1059 — each fresh session is a ~100K-token cold
+context load; the filer DEFERS rather than sleeping inside a /daily filer
+loop), the task already has a live session, or the spawn subprocess errors.
 Only a FAILED `task.py new` exits non-zero (filing is the durable half a
 caller depends on).
 """
@@ -60,11 +63,25 @@ if _SCRIPTS_DIR not in sys.path:
 #   - AUTONOMOUS_REGISTRY_DIR / daemon_port: the registration dir + Happy
 #     daemon port, the SAME source of truth `spawn_session.py list` uses.
 from autonomous_session_watch import infra_dispatch_has_free_slot  # noqa: E402
+
+# PROJECT_ROOT is git-common-dir-resolved (canonical primary checkout, #844)
+# once the imported spawn_session copy contains the fix — a stale pre-fix
+# worktree copy keeps the old __file__ resolver until rebased/reaped. The
+# `cwd=PROJECT_ROOT` subprocess calls below therefore run task.py /
+# spawn_session.py against the CANONICAL scripts tree even when THIS module
+# executes as a worktree copy (the #844 propagation cut).
 from spawn_session import (  # noqa: E402
     PROJECT_ROOT,
     _live_session_ids,
     _load_session_issue_map,
     daemon_port,
+    dispatch_lease_desc,
+    dispatch_lease_fresh,
+    last_session_dispatch_age_s,
+    record_session_dispatch,
+    session_dispatch_stagger_s,
+    spawn_output_suppressed,
+    stagger_delay_s,
 )
 
 # The auto-dispatchable pure-code/ops kinds. `experiment`/`analysis`/
@@ -257,6 +274,38 @@ def cmd_file_infra(args: argparse.Namespace) -> int:
         print(f"filed #{issue}; already has a live session, NOT re-dispatching")
         return 0
 
+    # 4.5. Dispatch-lease pre-check (#843 M1, advisory): a fresh per-issue
+    # lease means another dispatcher's spawn is already in flight — skip the
+    # spawn subprocess entirely (the chokepoint inside `spawn-issue --auto`
+    # would suppress it anyway; skipping here saves the subprocess and logs a
+    # distinguishable reason). Exit 0: filing succeeded, and the watcher
+    # backstop covers the (already-covered) dispatch.
+    held_lease = dispatch_lease_fresh(issue)
+    if held_lease is not None:
+        print(
+            f"filed #{issue}; dispatch suppressed (lease held: "
+            f"{dispatch_lease_desc(held_lease)}), NOT dispatching "
+            f"(watcher proposed_infra_sweep backstop covers)"
+        )
+        return 0
+
+    # 4.75. Session-dispatch stagger (#1059): a session dispatch (by ANY
+    # dispatcher) within the last EPM_SESSION_DISPATCH_STAGGER_S seconds
+    # means another fresh ~100K-token session load is in flight in this
+    # minute window — DEFER, never sleep inside a filer loop (/daily route-2
+    # files several in a row). Exit 0: filing succeeded; the watcher
+    # proposed_infra_sweep backstop dispatches within ~10 min, and its own
+    # chokepoint stagger paces that dispatch too.
+    window = session_dispatch_stagger_s()
+    age = last_session_dispatch_age_s()
+    if stagger_delay_s(age, window) > 0:
+        print(
+            f"filed #{issue}; dispatch deferred (session-dispatch stagger: "
+            f"last dispatch {age:.0f}s ago < {window:.0f}s), NOT dispatching "
+            f"(watcher proposed_infra_sweep backstop will pick it up within ~10 min)"
+        )
+        return 0
+
     # 5. Spawn (best-effort).
     spawn_argv = _build_spawn_argv(issue, args)
     try:
@@ -278,7 +327,15 @@ def cmd_file_infra(args: argparse.Namespace) -> int:
         )
         return 0
     first_line = (spawned.stdout.strip().splitlines() or [""])[0]
+    suppressed = spawn_output_suppressed(spawned.stdout)
+    if suppressed is not None:
+        # #843 M1b: rc-0 no-op — the chokepoint suppressed a duplicate
+        # dispatch (a lease appeared between the pre-check and the spawn, or
+        # a registration collision). A session is already driving the issue.
+        print(f"filed #{issue}; dispatch suppressed ({suppressed}): {first_line}")
+        return 0
     print(f"filed + dispatched #{issue}: {first_line}")
+    record_session_dispatch(issue, "file_infra_task")
     return 0
 
 

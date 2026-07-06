@@ -1256,11 +1256,21 @@ def test_backend_poll_script_produces_legacy_poll_pipeline_json_shape(
         # Machine-readable stall cause (#664) — zombie-GPU-allocation stall on
         # the RunPod lane; None on every other lane / verdict.
         "stall_reason",
+        # #983 post-done phase-consistency guard — emitted by both
+        # poll_pipeline.py.main and backend_poll._serialize_poll_result
+        # (getattr-defended defaults False / [] on lanes that never set them).
+        "post_done_phase_advisory_posted",
+        "post_done_phase_lines",
         # GCP-lane GPU-idle advisory + escalation parity (#730 / #727 RunPod
         # analogue) — always emitted by backend_poll.main, default False on
         # every non-GCP / non-running tick.
         "gcp_gpu_idle_advisory_posted",
         "gcp_gpu_idle_escalation_posted",
+        # GCP-lane GPU-WIDTH advisory (#873, the width mirror of the #730
+        # idle reuse) — always emitted by backend_poll.main, default False.
+        # (Pin update landed with #909's green-gate pass: #873 added the
+        # emitter without updating this shape test — pre-existing on main.)
+        "gcp_gpu_width_advisory_posted",
     }
     # Values were correctly threaded through.
     assert decoded["status"] == "done"
@@ -1321,3 +1331,222 @@ def test_build_run_spec_both_workload_cmd_and_hydra_raises() -> None:
             hydra_args=("seed=1",),
             workload_cmd="bash scripts/issue588_smoke.sh",
         )
+
+
+# ---------------------------------------------------------------------------
+# #934: per-lane handle sidecar + reconnect loudness
+# ---------------------------------------------------------------------------
+
+
+def test_default_handle_sidecar_path_lane_suffix(monkeypatch, tmp_path) -> None:
+    """Suffixed sidecar stem (#934) + unsuffixed byte-identity + fail-loud
+    validation of a malformed suffix."""
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    monkeypatch.setattr(idp, "_main_checkout_root", lambda: tmp_path)
+    assert default_handle_sidecar_path(137).name == "issue-137-handle.json"
+    assert default_handle_sidecar_path(137, lane_suffix=None).name == "issue-137-handle.json"
+    assert default_handle_sidecar_path(137, lane_suffix="cpu").name == "issue-137-cpu-handle.json"
+    # Same parent dir either way (the .claude/cache anchor is unchanged).
+    assert (
+        default_handle_sidecar_path(137, lane_suffix="cpu").parent
+        == default_handle_sidecar_path(137).parent
+    )
+    with pytest.raises(ValueError):
+        default_handle_sidecar_path(137, lane_suffix="Bad_Suffix")
+
+
+def test_dispatch_for_issue_writes_lane_suffixed_sidecar(
+    tmp_path, tmp_lease_store, monkeypatch
+) -> None:
+    """A spec whose extra carries lane_suffix lands the sidecar at the
+    SUFFIXED canonical path — two lanes keep independent handles (#934)."""
+    import explore_persona_space.backends.issue_dispatch as idp
+
+    monkeypatch.setattr(idp, "_main_checkout_root", lambda: tmp_path)
+    nibi = _MockBackend(kind="nibi")
+    spec = RunSpec(issue=201, intent="lora-7b", backend="nibi", extra={"lane_suffix": "cpu"})
+    outcome = dispatch_for_issue(
+        spec,
+        runpod_backend=_MockBackend(kind="runpod"),
+        free_backends={"nibi": nibi},
+        is_started=lambda _b, _h: True,
+        lease_store=tmp_lease_store,
+    )
+    expected = tmp_path / ".claude" / "cache" / "issue-201-cpu-handle.json"
+    assert outcome.handle_sidecar_path == expected
+    assert expected.exists()
+    # The unsuffixed sidecar was NOT touched.
+    assert not (tmp_path / ".claude" / "cache" / "issue-201-handle.json").exists()
+
+
+class _ReconnectedExtraBackend(_MockBackend):
+    """launch() returns a handle marked extra['reconnected']=True — the
+    GCP-INTERNAL reconnect shape (route() thinks it launched fresh, the
+    reason is NOT 'reconnect'; only the handle extra carries the flag)."""
+
+    def launch(self, spec: RunSpec) -> RunHandle:
+        from dataclasses import replace
+
+        h = super().launch(spec)
+        return replace(h, extra={**h.extra, "reconnected": True})
+
+
+def _dispatch_reconnect_cell(
+    *,
+    issue: int,
+    tmp_path,
+    tmp_lease_store,
+    reconnect_source: str,
+    workload: str | None,
+):
+    """Drive dispatch_for_issue through one (reconnect-branch x workload) cell."""
+    spec_kwargs: dict[str, Any] = {}
+    if workload == "workload_cmd":
+        spec_kwargs["workload_cmd"] = "bash scripts/x.sh"
+    elif workload == "hydra":
+        spec_kwargs["hydra_args"] = ("smoke=1",)
+    spec = RunSpec(issue=issue, intent="lora-7b", backend="nibi", **spec_kwargs)
+    dispatch_kwargs: dict[str, Any] = dict(
+        runpod_backend=_MockBackend(kind="runpod"),
+        is_started=lambda _b, _h: True,
+        lease_store=tmp_lease_store,
+        handle_sidecar_path=tmp_path / f"issue-{issue}-handle.json",
+    )
+    if reconnect_source == "reason":
+        # Router-scan reconnect: reason == ROUTE_REASON_RECONNECT; the
+        # recovered handle carries NO extra['reconnected'] flag.
+        live = RunHandle(
+            backend="nibi",
+            cluster="nibi",
+            job_id="live-1",
+            pod_name=f"eps-issue-{issue}",
+            scratch_dir="/s",
+            log_path="/l",
+            extra={"issue": issue},
+        )
+        dispatch_kwargs["free_backends"] = {"nibi": _MockBackend(kind="nibi")}
+        dispatch_kwargs["reconnect_fn"] = lambda _b, k, _s: live if k == "nibi" else None
+    elif reconnect_source == "extra":
+        # Backend-internal reconnect: fresh-looking reason, only the
+        # handle extra carries reconnected=True (the GCP shape).
+        dispatch_kwargs["free_backends"] = {"nibi": _ReconnectedExtraBackend(kind="nibi")}
+    else:  # no reconnect at all
+        dispatch_kwargs["free_backends"] = {"nibi": _MockBackend(kind="nibi")}
+    return dispatch_for_issue(spec, **dispatch_kwargs)
+
+
+_RECONNECT_WARNING_SNIPPET = "dispatched NO workload"
+
+
+@pytest.mark.parametrize("workload", ["workload_cmd", "hydra"])
+@pytest.mark.parametrize("reconnect_source", ["reason", "extra"])
+def test_dispatch_for_issue_reconnect_with_workload_warns(
+    tmp_path, tmp_lease_store, caplog, reconnect_source: str, workload: str
+) -> None:
+    """Round-1 Must-Fix matrix: BOTH reconnect branches (router-scan
+    reason-only x GCP-internal extra-only) x BOTH workload surfaces
+    (workload_cmd x hydra_args) must emit the library-level warning — an
+    implementation checking only `reason` (or only workload_cmd) FAILs a
+    named cell (the exact #923 recurrence path)."""
+    import logging as _logging
+
+    with caplog.at_level(_logging.WARNING):
+        _dispatch_reconnect_cell(
+            issue=202,
+            tmp_path=tmp_path,
+            tmp_lease_store=tmp_lease_store,
+            reconnect_source=reconnect_source,
+            workload=workload,
+        )
+    messages = [r.getMessage() for r in caplog.records]
+    assert any(_RECONNECT_WARNING_SNIPPET in m for m in messages), messages
+
+
+@pytest.mark.parametrize("reconnect_source", ["reason", "extra"])
+def test_dispatch_for_issue_reconnect_without_workload_no_warning(
+    tmp_path, tmp_lease_store, caplog, reconnect_source: str
+) -> None:
+    """A workload-less spec (est-start probes, bare reconnect ticks) never
+    warns — reconnect IS the desired outcome there."""
+    import logging as _logging
+
+    with caplog.at_level(_logging.WARNING):
+        _dispatch_reconnect_cell(
+            issue=203,
+            tmp_path=tmp_path,
+            tmp_lease_store=tmp_lease_store,
+            reconnect_source=reconnect_source,
+            workload=None,
+        )
+    messages = [r.getMessage() for r in caplog.records]
+    assert not any(_RECONNECT_WARNING_SNIPPET in m for m in messages), messages
+
+
+@pytest.mark.parametrize("workload", ["workload_cmd", "hydra"])
+def test_dispatch_for_issue_fresh_launch_with_workload_no_warning(
+    tmp_path, tmp_lease_store, caplog, workload: str
+) -> None:
+    """A genuinely fresh launch (no reconnect signal on either layer)
+    never warns."""
+    import logging as _logging
+
+    with caplog.at_level(_logging.WARNING):
+        _dispatch_reconnect_cell(
+            issue=205,
+            tmp_path=tmp_path,
+            tmp_lease_store=tmp_lease_store,
+            reconnect_source="none",
+            workload=workload,
+        )
+    messages = [r.getMessage() for r in caplog.records]
+    assert not any(_RECONNECT_WARNING_SNIPPET in m for m in messages), messages
+
+
+def test_cpu_fallback_infeasible_maps_to_distinct_reason() -> None:
+    """#1010: a CpuFallbackInfeasibleError maps to the DISTINCT reason
+    cpu_fallback_infeasible_for_plan — NOT the parent's
+    cpu_exhausted_no_runpod_lane and NOT no_compute_available — so the
+    watcher's capacity-retry pass never hot-retries a structurally-infeasible
+    launch, and the note carries the concrete cpu-bigmem recovery command.
+
+    Removing the isinstance branch (or placing it AFTER the parent
+    CpuExhaustedNoRunpodLaneError branch) turns this RED — the subclass would
+    be shadowed and emit the parent's reason."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
+        CpuFallbackInfeasibleError,
+    )
+
+    exc = CpuFallbackInfeasibleError(
+        "CPU intent 'cpu-mid': RunPod CPU fallback (cpu3c-8-16) cannot satisfy "
+        "the plan footprint — disk: plan requires 80 GB > cpu3c-8-16 max "
+        "container disk 50 GB",
+        attempts=[{"kind": "gcp", "outcome": "capacity_miss"}],
+    )
+    t = classify_terminal_exception(exc)
+    assert t.failure_class == "infra"
+    assert t.status == "blocked"
+    assert f"reason: {ROUTE_REASON_CPU_FALLBACK_INFEASIBLE}" in t.note
+    assert "reason: cpu_exhausted_no_runpod_lane" not in t.note
+    assert "reason: no_compute_available" not in t.note
+    # The recovery line names the big-footprint lane.
+    assert "cpu-bigmem" in t.note
+    assert "detail: CPU intent 'cpu-mid'" in t.note
+
+
+def test_cpu_exhausted_parent_does_not_emit_infeasible_reason() -> None:
+    """#1010 control: the PARENT CpuExhaustedNoRunpodLaneError keeps its own
+    reason verbatim — the new subclass branch narrows, never widens."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
+        CpuExhaustedNoRunpodLaneError,
+    )
+
+    exc = CpuExhaustedNoRunpodLaneError(
+        "CPU intent 'cpu-bigmem': GCP exhausted and RunPod has no CPU lane",
+        attempts=[],
+    )
+    t = classify_terminal_exception(exc)
+    assert "reason: cpu_exhausted_no_runpod_lane" in t.note
+    assert ROUTE_REASON_CPU_FALLBACK_INFEASIBLE not in t.note

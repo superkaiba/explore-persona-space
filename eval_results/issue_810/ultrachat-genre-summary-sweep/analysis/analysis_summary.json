@@ -1,0 +1,935 @@
+{
+  "genre": "g1",
+  "reproducibility": {
+    "git_commit": "22ad298c88b171289a966f5490f2ab9eabe762a5",
+    "timestamp_utc": "2026-07-03T06:31:51.187584+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  },
+  "smoke": false,
+  "reconstruction_honest_band": {
+    "available": true,
+    "n_cells": 1036,
+    "n_perms": 1000,
+    "band_pctile": 97.5,
+    "honest_band_upper": -0.03814291910592959,
+    "honest_band_median": -0.32873639426288703
+  },
+  "h1g_ordering_statistic": {
+    "available": true,
+    "statistic": "D = max over L19-26 of (skill_maxp[L] - skill_mean[L])",
+    "window_layers": [
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26
+    ],
+    "observed_D": 0.09802634638027807,
+    "observed_argmax_layer": 25,
+    "per_layer_observed_delta": {
+      "19": -0.08615768687758174,
+      "20": -0.06535357504905281,
+      "21": -0.010582407104260394,
+      "22": 0.031417253475840345,
+      "23": 0.0526705827744991,
+      "24": 0.06829699824137736,
+      "25": 0.09802634638027807,
+      "26": 0.05145764766354466
+    },
+    "null_band_pctile": 97.5,
+    "null_band_upper": 0.7996606258070185,
+    "p_value_ge_obs": 0.634,
+    "n_perms": 1000,
+    "min_effect_threshold": 0.02,
+    "clears_null": false,
+    "meets_min_effect": true,
+    "confirms_h1g_iii": false,
+    "pairing_note": "null draws are paired across cells by draw index (per-cell rng re-seeded with the shared SHUFFLE_NULL_SEED => identical permutation sequence per cell)"
+  },
+  "readout_honest_band": {
+    "available": true,
+    "n_cells": 4144,
+    "n_perms": 1000,
+    "band_pctile": 97.5,
+    "honest_band_upper_rho": 0.9928931572629052,
+    "honest_band_upper_abs_rho": 0.9928931572629052,
+    "per_method_bands": {
+      "fixed_rb": {
+        "abs": 0.5810084033613445,
+        "signed": 0.5636110444177671
+      },
+      "trained_ridge": {
+        "abs": 0.9928931572629052,
+        "signed": 0.9928931572629052
+      }
+    }
+  },
+  "h2_conjunction": {
+    "sycophancy": {
+      "methods": [
+        "fixed_rb",
+        "trained_ridge"
+      ],
+      "mean_baseline_best_rho": {
+        "fixed_rb": 0.010530374500446006,
+        "trained_ridge": 0.8964281817891089
+      },
+      "summaries": {
+        "head_7": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.174111808521073,
+            "trained_ridge": 0.7915091079992771
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_12": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.16035981259811613,
+            "trained_ridge": 0.3695247855521806
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_5": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.35346476234145474,
+            "trained_ridge": 0.7558308528425149
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_14": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.030437109857453522,
+            "trained_ridge": 0.7312118951063123
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_6": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.02370536360146064,
+            "trained_ridge": 0.3870273258177621
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_7": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.09198450419795987,
+            "trained_ridge": 0.7816999920262591
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_1": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.13006695444614816,
+            "trained_ridge": 0.3748140147533178
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_2": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.09400402807475772,
+            "trained_ridge": 0.7640051161533634
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_4": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.049285999374233586,
+            "trained_ridge": 0.3299036504454797
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_11": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.0790018507042593,
+            "trained_ridge": 0.6143680136630074
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_16": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.07582831318357695,
+            "trained_ridge": 0.28383927249375696
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_10": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.031014116679395767,
+            "trained_ridge": 0.8367079757180864
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_10": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.02428237042340289,
+            "trained_ridge": 0.6646637749756399
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_8": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.030148606446482398,
+            "trained_ridge": 0.5941727748950287
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_11": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.11977699945484475,
+            "trained_ridge": 0.8857535555831775
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_3": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.010626542304103046,
+            "trained_ridge": 0.9078721504242969
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": true
+          },
+          "both_methods_lift": true
+        },
+        "head_2": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.09169600078698874,
+            "trained_ridge": 0.7496761134084642
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_0": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.26306702690383604,
+            "trained_ridge": 0.2765305194158218
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_8": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.22171487133130835,
+            "trained_ridge": 0.7051504203152542
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_1": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.20286598181452828,
+            "trained_ridge": 0.8531526701434405
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_9": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.13997223822282337,
+            "trained_ridge": 0.4364575768974812
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "last": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.20286598181452828,
+            "trained_ridge": 0.8394968420241408
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_3": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.2705681155890853,
+            "trained_ridge": 0.7619855922765655
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_14": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.015723435897926227,
+            "trained_ridge": 0.8676740084956538
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "im_end": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.3010533093483673,
+            "trained_ridge": 0.7107281529273626
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_4": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.3488487077659167,
+            "trained_ridge": 0.309708411677501
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "turn_nl": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.2975912684167138,
+            "trained_ridge": 0.3779875522740002
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_6": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.2533540787344749,
+            "trained_ridge": 0.8219943017585591
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_5": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.04543928722795194,
+            "trained_ridge": 0.9566292268784168
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": true
+          },
+          "both_methods_lift": false
+        },
+        "tail_12": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.0649613513703313,
+            "trained_ridge": 0.5966731377901117
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "maxp": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.18969099271351367,
+            "trained_ridge": 0.6518734570892534
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_13": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.09102282616138944,
+            "trained_ridge": 0.5464735442811364
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_15": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.006587494550507319,
+            "trained_ridge": 0.45097891524969447
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_9": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.13776037873871144,
+            "trained_ridge": 0.6081171064252997
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_15": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.10092810993806467,
+            "trained_ridge": 0.3112470965360136
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_13": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.007645340390734771,
+            "trained_ridge": 0.41443514986001884
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        }
+      }
+    },
+    "refusal": {
+      "methods": [
+        "fixed_rb",
+        "trained_ridge"
+      ],
+      "mean_baseline_best_rho": {
+        "fixed_rb": -0.05334933973589436,
+        "trained_ridge": 0.5907803121248499
+      },
+      "summaries": {
+        "head_7": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.2799039615846338,
+            "trained_ridge": 0.13238895558223288
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_12": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.1394957983193277,
+            "trained_ridge": 0.23755102040816325
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_5": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.28624249699879956,
+            "trained_ridge": 0.30679471788715484
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_14": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.10002400960384153,
+            "trained_ridge": 0.5838655462184873
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_6": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.10012004801920767,
+            "trained_ridge": 0.8751500600240096
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": true
+          },
+          "both_methods_lift": false
+        },
+        "tail_7": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.21728691476590636,
+            "trained_ridge": 0.3238895558223289
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_1": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.37315726290516205,
+            "trained_ridge": 0.6903721488595438
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": true
+          },
+          "both_methods_lift": true
+        },
+        "tail_2": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.14890756302521005,
+            "trained_ridge": 0.9193277310924368
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": true
+          },
+          "both_methods_lift": true
+        },
+        "tail_4": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.07054021608643457,
+            "trained_ridge": 0.9799279711884753
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": true
+          },
+          "both_methods_lift": false
+        },
+        "tail_11": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.09589435774309724,
+            "trained_ridge": 0.5392076830732293
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_16": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.17810324129651858,
+            "trained_ridge": 0.4688115246098439
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_10": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.07841536614645858,
+            "trained_ridge": 0.21728691476590636
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_10": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.04067226890756302,
+            "trained_ridge": 0.9691716686674668
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": true
+          },
+          "both_methods_lift": true
+        },
+        "tail_8": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.02424969987995198,
+            "trained_ridge": 0.8877310924369748
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": true
+          },
+          "both_methods_lift": true
+        },
+        "head_11": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.0710204081632653,
+            "trained_ridge": 0.9353661464585834
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": true
+          },
+          "both_methods_lift": true
+        },
+        "tail_3": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.10914765906362545,
+            "trained_ridge": 0.4425930372148859
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_2": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.3014165666266506,
+            "trained_ridge": 0.2175750300120048
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_0": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.38593037214885956,
+            "trained_ridge": 0.5122208883553421
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_8": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.22093637454981993,
+            "trained_ridge": 0.9096278511404562
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": true
+          },
+          "both_methods_lift": true
+        },
+        "tail_1": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.12182472989195677,
+            "trained_ridge": 0.9450660264105641
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": true
+          },
+          "both_methods_lift": false
+        },
+        "tail_9": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.06909963985594238,
+            "trained_ridge": 0.9386314525810323
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": true
+          },
+          "both_methods_lift": false
+        },
+        "last": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.13056422569027612,
+            "trained_ridge": 0.8436494597839136
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": true
+          },
+          "both_methods_lift": false
+        },
+        "head_3": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.3708523409363745,
+            "trained_ridge": 0.11241296518607442
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "head_14": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.2175750300120048,
+            "trained_ridge": 0.2989195678271308
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "im_end": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.39207683073229294,
+            "trained_ridge": 0.8634333733493396
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": true
+          },
+          "both_methods_lift": true
+        },
+        "head_4": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.3310924369747899,
+            "trained_ridge": 0.24081632653061225
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "turn_nl": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.1367106842737095,
+            "trained_ridge": 0.910108043217287
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": true
+          },
+          "both_methods_lift": true
+        },
+        "head_6": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.35462184873949576,
+            "trained_ridge": 0.18549819927971187
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_5": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.0114765906362545,
+            "trained_ridge": 0.8575750300120047
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": true
+          },
+          "both_methods_lift": true
+        },
+        "tail_12": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.17051620648259302,
+            "trained_ridge": 0.9012725090036015
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": true
+          },
+          "both_methods_lift": false
+        },
+        "maxp": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.11414165666266506,
+            "trained_ridge": 0.9152941176470587
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": true
+          },
+          "both_methods_lift": true
+        },
+        "head_13": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.1076110444177671,
+            "trained_ridge": 0.8165666266506603
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": true
+          },
+          "both_methods_lift": true
+        },
+        "tail_15": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.23793517406962783,
+            "trained_ridge": 0.7663385354141656
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": true
+          },
+          "both_methods_lift": false
+        },
+        "head_9": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.23582232893157262,
+            "trained_ridge": 0.6724129651860744
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": true
+          },
+          "both_methods_lift": true
+        },
+        "head_15": {
+          "best_rho_per_method": {
+            "fixed_rb": 0.15563025210084033,
+            "trained_ridge": 0.5096278511404562
+          },
+          "lifts_per_method": {
+            "fixed_rb": true,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        },
+        "tail_13": {
+          "best_rho_per_method": {
+            "fixed_rb": -0.2368787515006002,
+            "trained_ridge": 0.4864825930372148
+          },
+          "lifts_per_method": {
+            "fixed_rb": false,
+            "trained_ridge": false
+          },
+          "both_methods_lift": false
+        }
+      }
+    }
+  },
+  "judge_validation": {
+    "available": true,
+    "tf_behaviors": [
+      "broad_em",
+      "refusal",
+      "sycophancy"
+    ],
+    "by_behavior": {
+      "refusal": {
+        "status": "computed",
+        "n": 50,
+        "rho": 0.5431452581032412
+      },
+      "sycophancy": {
+        "status": "computed",
+        "n": 50,
+        "rho": 0.3292304758198803
+      }
+    },
+    "gap_note": "harmful_compliance has NO tf_margin \u00b1 pool \u2014 validation gap (not fabricated)"
+  },
+  "length_control": {
+    "sycophancy": {
+      "winning_cell": {
+        "method": "trained_ridge",
+        "summary": "tail_5",
+        "layer": 16
+      },
+      "n": 50,
+      "rho_len_vs_pred": -0.21469519209232507,
+      "rho_len_vs_graded_e0": -0.2511188319598601
+    },
+    "refusal": {
+      "winning_cell": {
+        "method": "trained_ridge",
+        "summary": "tail_4",
+        "layer": 4
+      },
+      "n": 50,
+      "rho_len_vs_pred": 0.10486101331288984,
+      "rho_len_vs_graded_e0": 0.09230680292783015
+    }
+  }
+}

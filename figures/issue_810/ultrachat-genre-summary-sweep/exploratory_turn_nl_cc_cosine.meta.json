@@ -1,0 +1,712 @@
+{
+  "commit": "ecf19704c0",
+  "created": "2026-07-03T08:29:04Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "cosine similarity": 0.9211809766292572,
+      "error": 0.020199376756555143,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "cosine similarity": 0.8778366601467132,
+      "error": 0.01515130958419153,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "cosine similarity": 0.8489156246185303,
+      "error": 0.012516608166575405,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "cosine similarity": 0.7534964919090271,
+      "error": 0.017577508860706748,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "cosine similarity": 0.7468494582176208,
+      "error": 0.01638974720204711,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "cosine similarity": 0.713047147989273,
+      "error": 0.01720344182692246,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "cosine similarity": 0.6826617789268493,
+      "error": 0.019091382483062302,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "cosine similarity": 0.6524294066429138,
+      "error": 0.016447623929325972,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "cosine similarity": 0.6007748341560364,
+      "error": 0.01778042627388643,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "cosine similarity": 0.6714538753032684,
+      "error": 0.01620904599662254,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "cosine similarity": 0.6465038120746612,
+      "error": 0.021685805396710833,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "cosine similarity": 0.6362107527256012,
+      "error": 0.02706721659935607,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "cosine similarity": 0.6135563945770264,
+      "error": 0.021969209365346742,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "cosine similarity": 0.6640924942493439,
+      "error": 0.02020771519204312,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "cosine similarity": 0.6509782683849334,
+      "error": 0.01826653813974244,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "cosine similarity": 0.6686756992340088,
+      "error": 0.017636994983873167,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "cosine similarity": 0.6345325827598571,
+      "error": 0.0185564070548222,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "cosine similarity": 0.6163382887840271,
+      "error": 0.017226790445864837,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "cosine similarity": 0.5421490752696991,
+      "error": 0.034261343300236224,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "cosine similarity": 0.5071820491552352,
+      "error": 0.028499684272147358,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "cosine similarity": 0.4597615772485733,
+      "error": 0.027987023620106743,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "cosine similarity": 0.4275282198190689,
+      "error": 0.029366306831360267,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "cosine similarity": 0.30684410989284516,
+      "error": 0.028044317854475698,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "cosine similarity": 0.3450900763273239,
+      "error": 0.034140451921325254,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "cosine similarity": 0.40145457923412325,
+      "error": 0.04081539897046271,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "cosine similarity": 0.4581458395719528,
+      "error": 0.04446395009318008,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "cosine similarity": 0.43133881986141204,
+      "error": 0.03064055453451442,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "cosine similarity": -0.003211588792037219,
+      "error": 0.033024854135873555,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "cosine similarity": 0.9211809766292572,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "cosine similarity": 0.8778366601467132,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "cosine similarity": 0.8489156246185303,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "cosine similarity": 0.7534964919090271,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "cosine similarity": 0.7468494582176208,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "cosine similarity": 0.713047147989273,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "cosine similarity": 0.6826617789268493,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "cosine similarity": 0.6524294066429138,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "cosine similarity": 0.6007748341560364,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "cosine similarity": 0.6714538753032684,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "cosine similarity": 0.6465038120746612,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "cosine similarity": 0.6362107527256012,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "cosine similarity": 0.6135563945770264,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "cosine similarity": 0.6640924942493439,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "cosine similarity": 0.6509782683849334,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "cosine similarity": 0.6686756992340088,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "cosine similarity": 0.6345325827598571,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "cosine similarity": 0.6163382887840271,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "cosine similarity": 0.5421490752696991,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "cosine similarity": 0.5071820491552352,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "cosine similarity": 0.4597615772485733,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "cosine similarity": 0.4275282198190689,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "cosine similarity": 0.30684410989284516,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "cosine similarity": 0.3450900763273239,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "cosine similarity": 0.40145457923412325,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "cosine similarity": 0.4581458395719528,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "cosine similarity": 0.43133881986141204,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "cosine similarity": -0.003211588792037219,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "cosine similarity": 0.9009815998727021,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "cosine similarity": 0.8626853505625217,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "cosine similarity": 0.8363990164519549,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "cosine similarity": 0.7359189830483204,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "cosine similarity": 0.7304597110155737,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "cosine similarity": 0.6958437061623506,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "cosine similarity": 0.663570396443787,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "cosine similarity": 0.6359817827135879,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "cosine similarity": 0.58299440788215,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "cosine similarity": 0.6552448293066458,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "cosine similarity": 0.6248180066779504,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "cosine similarity": 0.6091435361262452,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "cosine similarity": 0.5915871852116796,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "cosine similarity": 0.6438847790573008,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "cosine similarity": 0.632711730245191,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "cosine similarity": 0.6510387042501357,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "cosine similarity": 0.6159761757050349,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "cosine similarity": 0.5991114983381622,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "cosine similarity": 0.5078877319694629,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "cosine similarity": 0.47868236488308785,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "cosine similarity": 0.43177455362846656,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "cosine similarity": 0.39816191298770864,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "cosine similarity": 0.27879979203836946,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "cosine similarity": 0.31094962440599866,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "cosine similarity": 0.36063918026366054,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "cosine similarity": 0.41368188947877277,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "cosine similarity": 0.4006982653268976,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "cosine similarity": -0.03623644292791078,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "cosine similarity": 0.9413803533858124,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "cosine similarity": 0.8929879697309048,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "cosine similarity": 0.8614322327851057,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "cosine similarity": 0.7710740007697339,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "cosine similarity": 0.7632392054196679,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "cosine similarity": 0.7302505898161955,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "cosine similarity": 0.7017531614099116,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "cosine similarity": 0.6688770305722398,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "cosine similarity": 0.6185552604299228,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "cosine similarity": 0.6876629212998909,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "cosine similarity": 0.6681896174713721,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "cosine similarity": 0.6632779693249573,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "cosine similarity": 0.6355256039423731,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "cosine similarity": 0.684300209441387,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "cosine similarity": 0.6692448065246759,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "cosine similarity": 0.686312694217882,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "cosine similarity": 0.6530889898146793,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "cosine similarity": 0.6335650792298919,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "cosine similarity": 0.5764104185699354,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "cosine similarity": 0.5356817334273826,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "cosine similarity": 0.48774860086868005,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "cosine similarity": 0.4568945266504292,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "cosine similarity": 0.33488842774732086,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "cosine similarity": 0.37923052824864917,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "cosine similarity": 0.44226997820458597,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "cosine similarity": 0.5026097896651329,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "cosine similarity": 0.46197937439592646,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "cosine similarity": 0.029813265343836336,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 112
+}

@@ -16,6 +16,13 @@ classic `ghp_` PATs over git smart-HTTP. Credentialed pipeline phases
 (analyze / upload — WandB/HF) also need the `.env` staged.
 
 **How to apply:** On the salvage-relaunch SSH session:
+0. (REQUIRED FIRST, #908) If the VM's `eps/phase` guest attribute reads a
+   terminal/wedged value (`done`/`failed`/`wedged`), re-publish
+   `eps/phase=workload` via the guest-attribute curl (`curl -fsS -X PUT -H "Metadata-Flavor: Google" --data "workload" "http://metadata.google.internal/computeMetadata/v1/instance/guest-attributes/eps/phase"`)
+   BEFORE resuming any work — the #908 zombie predicates (`reconnect_or_none` + the pre-launch
+   stale reclaim) classify a RUNNING VM with a terminal phase as a
+   finished zombie and DELETE it on the next dispatch; an active relaunch
+   must never be left reading terminal.
 1. Stage `.env` from the local VM to `/workspace/eps-issue-<N>/.env`
    via stdin to a root-only file (mode 600).
 2. Fetch with token-in-URL:

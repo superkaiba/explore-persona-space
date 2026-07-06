@@ -1,0 +1,312 @@
+{
+  "commit": "2511ed7da0",
+  "created": "2026-07-02T20:15:54Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.1735924126731012,
+      "held-out error fraction, max-pool summary": 0.1984370817536606,
+      "label": "f1_house_programmer",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.3071163618050533,
+      "held-out error fraction, max-pool summary": 0.45797971365806855,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.13717916267361668,
+      "held-out error fraction, max-pool summary": 0.1429179039605972,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.03139274066775931,
+      "held-out error fraction, max-pool summary": 0.08185764105483442,
+      "label": "f3_icl_marker_k4",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.08136246433073835,
+      "held-out error fraction, max-pool summary": 0.026850616893627836,
+      "label": "f4_reph_imperative",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.45797731323327195,
+      "held-out error fraction, max-pool summary": 0.44906510549873735,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.9225424119032892,
+      "held-out error fraction, max-pool summary": 1.0712075207868916,
+      "label": "f2_wc_short_2",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.14393446143180083,
+      "held-out error fraction, max-pool summary": 0.2157814970714097,
+      "label": "f1_house_programmer",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.17269480206423207,
+      "held-out error fraction, max-pool summary": 0.28988468356368136,
+      "label": "f1_house_programmer",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.2508842164567906,
+      "held-out error fraction, max-pool summary": 0.27335587271430445,
+      "label": "f1_house_programmer",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.09688996458201313,
+      "held-out error fraction, max-pool summary": 0.1820348703253614,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.07644746734181625,
+      "held-out error fraction, max-pool summary": 0.04131769528711538,
+      "label": "f4_reph_imperative",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.5350056582258416,
+      "held-out error fraction, max-pool summary": 0.253865438548964,
+      "label": "f5_fmt_bullets",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.5721422581788382,
+      "held-out error fraction, max-pool summary": 1.3690136816622134,
+      "label": "f8_behav_harmful",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.10965407769589763,
+      "held-out error fraction, max-pool summary": 0.282011911642321,
+      "label": "f1_house_programmer",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.36426653800745756,
+      "held-out error fraction, max-pool summary": 0.32646731393293693,
+      "label": "f5_fmt_json",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.2746849803635373,
+      "held-out error fraction, max-pool summary": 0.20572385157111273,
+      "label": "f5_fmt_json",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.015855861815206578,
+      "held-out error fraction, max-pool summary": 0.025052201928112673,
+      "label": "f3_icl_json_k8",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.12291528027611122,
+      "held-out error fraction, max-pool summary": 0.06662284550025249,
+      "label": "f4_reph_imperative",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.4154972287679204,
+      "held-out error fraction, max-pool summary": 0.08590413292671059,
+      "label": "f5_fmt_bullets",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.12712683004849462,
+      "held-out error fraction, max-pool summary": 0.15532190466569332,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.2773019995262547,
+      "held-out error fraction, max-pool summary": 0.46691440128526907,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.07381488984992086,
+      "held-out error fraction, max-pool summary": 0.1285167966668032,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.2478646069675339,
+      "held-out error fraction, max-pool summary": 0.34958642412639496,
+      "label": "f1_house_programmer",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.13708241642077992,
+      "held-out error fraction, max-pool summary": 0.06571870682569571,
+      "label": "f4_reph_imperative",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.22800582446135592,
+      "held-out error fraction, max-pool summary": 0.24349751559579483,
+      "label": "f1_house_programmer",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.1063185596763742,
+      "held-out error fraction, max-pool summary": 0.1930695527961555,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.4859624994030546,
+      "held-out error fraction, max-pool summary": 0.3783118502392538,
+      "label": "f5_fmt_bullets",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.1461498334673496,
+      "held-out error fraction, max-pool summary": 0.17228148335476662,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.06516909363580006,
+      "held-out error fraction, max-pool summary": 0.1273904235247144,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.11922531125701255,
+      "held-out error fraction, max-pool summary": 0.1180959886836805,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.22816868416053837,
+      "held-out error fraction, max-pool summary": 0.3127971952679304,
+      "label": "f1_house_programmer",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.12806179101038204,
+      "held-out error fraction, max-pool summary": 0.2035275891688816,
+      "label": "f1_house_programmer",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.3913816007545411,
+      "held-out error fraction, max-pool summary": 0.3354101822246116,
+      "label": "f5_fmt_json",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.22295420257867904,
+      "held-out error fraction, max-pool summary": 0.1800858611148003,
+      "label": "f5_fmt_json",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.0465515042890596,
+      "held-out error fraction, max-pool summary": 0.12808428374213837,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.25236342508479853,
+      "held-out error fraction, max-pool summary": 0.4570212836486023,
+      "label": "f1_house_programmer",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.28420806996951764,
+      "held-out error fraction, max-pool summary": 0.3782046881670149,
+      "label": "f1_house_programmer",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.2894757310041018,
+      "held-out error fraction, max-pool summary": 0.18502856873657872,
+      "label": "f5_fmt_json",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.2881952477483606,
+      "held-out error fraction, max-pool summary": 0.15048379371353035,
+      "label": "f5_fmt_json",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.6181220850508139,
+      "held-out error fraction, max-pool summary": 0.7010156754388119,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.04250533723965125,
+      "held-out error fraction, max-pool summary": 0.06376541050238833,
+      "label": "f3_icl_marker_k4",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.2854440864028455,
+      "held-out error fraction, max-pool summary": 0.11261414254012148,
+      "label": "f5_fmt_json",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.44143654728206044,
+      "held-out error fraction, max-pool summary": 0.7132811131613487,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.24315687243545567,
+      "held-out error fraction, max-pool summary": 0.3250486171964897,
+      "label": "f1_house_programmer",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.6552543852417013,
+      "held-out error fraction, max-pool summary": 1.3892594956585047,
+      "label": "f8_behav_harmful",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.0858862358843571,
+      "held-out error fraction, max-pool summary": 0.11898151846104875,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.023754825578042874,
+      "held-out error fraction, max-pool summary": 0.06222078963447382,
+      "label": "f3_icl_json_k8",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.6449340497832934,
+      "held-out error fraction, max-pool summary": 0.31624500730023397,
+      "label": "f5_fmt_bullets",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, mean summary (SS_res / SS_tot, layer 21)": 0.22791832264144288,
+      "held-out error fraction, max-pool summary": 0.7187788858057798,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 50
+}

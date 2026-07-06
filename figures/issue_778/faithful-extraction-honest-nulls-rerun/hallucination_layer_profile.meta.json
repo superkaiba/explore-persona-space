@@ -1,0 +1,1006 @@
+{
+  "commit": "d13c9e5781",
+  "created": "2026-07-03T12:42:46Z",
+  "figsize": [
+    8.0,
+    4.6
+  ],
+  "points": [
+    {
+      "r_B layer index (0-indexed block outputs)": 0.0,
+      "|Pearson r| (hallucination monitoring)": 0.07460490116145269,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 1.0,
+      "|Pearson r| (hallucination monitoring)": 0.1561573271412038,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 2.0,
+      "|Pearson r| (hallucination monitoring)": 0.14429284093922184,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 3.0,
+      "|Pearson r| (hallucination monitoring)": 0.20001841746137625,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 4.0,
+      "|Pearson r| (hallucination monitoring)": 0.07436575207191624,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 5.0,
+      "|Pearson r| (hallucination monitoring)": 0.4104462685357545,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 6.0,
+      "|Pearson r| (hallucination monitoring)": 0.24422733714747824,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 7.0,
+      "|Pearson r| (hallucination monitoring)": 0.27342239869866386,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 8.0,
+      "|Pearson r| (hallucination monitoring)": 0.03866361992988632,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 9.0,
+      "|Pearson r| (hallucination monitoring)": 0.11749434932982127,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 10.0,
+      "|Pearson r| (hallucination monitoring)": 0.17970663925517788,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 11.0,
+      "|Pearson r| (hallucination monitoring)": 0.32730498733453633,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 12.0,
+      "|Pearson r| (hallucination monitoring)": 0.24063722154179554,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 13.0,
+      "|Pearson r| (hallucination monitoring)": 0.5440180474772662,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 14.0,
+      "|Pearson r| (hallucination monitoring)": 0.6639168158216933,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 15.0,
+      "|Pearson r| (hallucination monitoring)": 0.6892572693153995,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 16.0,
+      "|Pearson r| (hallucination monitoring)": 0.7236222196804595,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 17.0,
+      "|Pearson r| (hallucination monitoring)": 0.7377760093397177,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 18.0,
+      "|Pearson r| (hallucination monitoring)": 0.7840532237503919,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 19.0,
+      "|Pearson r| (hallucination monitoring)": 0.8060862866766312,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 20.0,
+      "|Pearson r| (hallucination monitoring)": 0.8207983495796183,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 21.0,
+      "|Pearson r| (hallucination monitoring)": 0.8428460900015398,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 22.0,
+      "|Pearson r| (hallucination monitoring)": 0.8423559872177933,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 23.0,
+      "|Pearson r| (hallucination monitoring)": 0.8354955260615139,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 24.0,
+      "|Pearson r| (hallucination monitoring)": 0.8206268974801402,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 25.0,
+      "|Pearson r| (hallucination monitoring)": 0.8170470167156909,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 26.0,
+      "|Pearson r| (hallucination monitoring)": 0.8335091872383534,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 27.0,
+      "|Pearson r| (hallucination monitoring)": 0.4227974451766298,
+      "series": "8-prompt monitoring, pooled",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 0.0,
+      "|Pearson r| (hallucination monitoring)": 0.2967863519114383,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 1.0,
+      "|Pearson r| (hallucination monitoring)": 0.15776003186900675,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 2.0,
+      "|Pearson r| (hallucination monitoring)": 0.10030584339193928,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 3.0,
+      "|Pearson r| (hallucination monitoring)": 0.027019419427824643,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 4.0,
+      "|Pearson r| (hallucination monitoring)": 0.1007172859252878,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 5.0,
+      "|Pearson r| (hallucination monitoring)": 0.15262834940494993,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 6.0,
+      "|Pearson r| (hallucination monitoring)": 0.22179616724799706,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 7.0,
+      "|Pearson r| (hallucination monitoring)": 0.15584426788276096,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 8.0,
+      "|Pearson r| (hallucination monitoring)": 0.022345051049192873,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 9.0,
+      "|Pearson r| (hallucination monitoring)": 0.18820162159086784,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 10.0,
+      "|Pearson r| (hallucination monitoring)": 0.2420314530061583,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 11.0,
+      "|Pearson r| (hallucination monitoring)": 0.2621570461845633,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 12.0,
+      "|Pearson r| (hallucination monitoring)": 0.22339682425307297,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 13.0,
+      "|Pearson r| (hallucination monitoring)": 0.13011327362120478,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 14.0,
+      "|Pearson r| (hallucination monitoring)": 0.09615053992591877,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 15.0,
+      "|Pearson r| (hallucination monitoring)": 0.09631573940502107,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 16.0,
+      "|Pearson r| (hallucination monitoring)": 0.011028338177038343,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 17.0,
+      "|Pearson r| (hallucination monitoring)": 0.11104529770440844,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 18.0,
+      "|Pearson r| (hallucination monitoring)": 0.4523540937384122,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 19.0,
+      "|Pearson r| (hallucination monitoring)": 0.5315371930493829,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 20.0,
+      "|Pearson r| (hallucination monitoring)": 0.5800364062807544,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 21.0,
+      "|Pearson r| (hallucination monitoring)": 0.6569436864890493,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 22.0,
+      "|Pearson r| (hallucination monitoring)": 0.6451900963378275,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 23.0,
+      "|Pearson r| (hallucination monitoring)": 0.6097503597570681,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 24.0,
+      "|Pearson r| (hallucination monitoring)": 0.5577004438867803,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 25.0,
+      "|Pearson r| (hallucination monitoring)": 0.5507519629464825,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 26.0,
+      "|Pearson r| (hallucination monitoring)": 0.6299381557769169,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 27.0,
+      "|Pearson r| (hallucination monitoring)": 0.2248676649257205,
+      "series": "8-prompt monitoring, within-condition",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 0.0,
+      "|Pearson r| (hallucination monitoring)": 0.15558557486208585,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 1.0,
+      "|Pearson r| (hallucination monitoring)": 0.2434622942070512,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 2.0,
+      "|Pearson r| (hallucination monitoring)": 0.07894819965262344,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 3.0,
+      "|Pearson r| (hallucination monitoring)": 0.17967956537130533,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 4.0,
+      "|Pearson r| (hallucination monitoring)": 0.2770917903280438,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 5.0,
+      "|Pearson r| (hallucination monitoring)": 0.3295382958643128,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 6.0,
+      "|Pearson r| (hallucination monitoring)": 0.06587624286310773,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 7.0,
+      "|Pearson r| (hallucination monitoring)": 0.11484619561906059,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 8.0,
+      "|Pearson r| (hallucination monitoring)": 0.1548899316673329,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 9.0,
+      "|Pearson r| (hallucination monitoring)": 0.16104952281641272,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 10.0,
+      "|Pearson r| (hallucination monitoring)": 0.21322955558944748,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 11.0,
+      "|Pearson r| (hallucination monitoring)": 0.26078337785484645,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 12.0,
+      "|Pearson r| (hallucination monitoring)": 0.05112905314265946,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 13.0,
+      "|Pearson r| (hallucination monitoring)": 0.06360873941704454,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 14.0,
+      "|Pearson r| (hallucination monitoring)": 0.2729822876493494,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 15.0,
+      "|Pearson r| (hallucination monitoring)": 0.29498734480059646,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 16.0,
+      "|Pearson r| (hallucination monitoring)": 0.37202590655880763,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 17.0,
+      "|Pearson r| (hallucination monitoring)": 0.4486280640025893,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 18.0,
+      "|Pearson r| (hallucination monitoring)": 0.5491419330074514,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 19.0,
+      "|Pearson r| (hallucination monitoring)": 0.6158582739682036,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 20.0,
+      "|Pearson r| (hallucination monitoring)": 0.6933568457942325,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 21.0,
+      "|Pearson r| (hallucination monitoring)": 0.7395159882689363,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 22.0,
+      "|Pearson r| (hallucination monitoring)": 0.7480623805060583,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 23.0,
+      "|Pearson r| (hallucination monitoring)": 0.7519838460780056,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 24.0,
+      "|Pearson r| (hallucination monitoring)": 0.7118587799142697,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 25.0,
+      "|Pearson r| (hallucination monitoring)": 0.7103822778751422,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 26.0,
+      "|Pearson r| (hallucination monitoring)": 0.7257805691695692,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 27.0,
+      "|Pearson r| (hallucination monitoring)": 0.18774727419713808,
+      "series": "many-shot monitoring, pooled",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 0.0,
+      "|Pearson r| (hallucination monitoring)": 0.158375544595237,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 1.0,
+      "|Pearson r| (hallucination monitoring)": 0.0543650788497223,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 2.0,
+      "|Pearson r| (hallucination monitoring)": 0.08003693165077647,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 3.0,
+      "|Pearson r| (hallucination monitoring)": 0.05852929022151771,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 4.0,
+      "|Pearson r| (hallucination monitoring)": 0.03776966603001721,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 5.0,
+      "|Pearson r| (hallucination monitoring)": 0.014975620728878227,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 6.0,
+      "|Pearson r| (hallucination monitoring)": 0.015495557488062419,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 7.0,
+      "|Pearson r| (hallucination monitoring)": 0.03659888107130607,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 8.0,
+      "|Pearson r| (hallucination monitoring)": 0.015256343645915358,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 9.0,
+      "|Pearson r| (hallucination monitoring)": 0.04862163912605787,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 10.0,
+      "|Pearson r| (hallucination monitoring)": 0.10787403860892554,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 11.0,
+      "|Pearson r| (hallucination monitoring)": 0.20274825480742803,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 12.0,
+      "|Pearson r| (hallucination monitoring)": 0.18630505993735227,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 13.0,
+      "|Pearson r| (hallucination monitoring)": 0.059365519635093116,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 14.0,
+      "|Pearson r| (hallucination monitoring)": 0.04786396111715809,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 15.0,
+      "|Pearson r| (hallucination monitoring)": 0.005651361947744686,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 16.0,
+      "|Pearson r| (hallucination monitoring)": 0.08794202264918305,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 17.0,
+      "|Pearson r| (hallucination monitoring)": 0.19463129431429496,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 18.0,
+      "|Pearson r| (hallucination monitoring)": 0.37115032233219225,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 19.0,
+      "|Pearson r| (hallucination monitoring)": 0.4869406061298164,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 20.0,
+      "|Pearson r| (hallucination monitoring)": 0.5995652356709343,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 21.0,
+      "|Pearson r| (hallucination monitoring)": 0.6696794329237737,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 22.0,
+      "|Pearson r| (hallucination monitoring)": 0.6789930287128813,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 23.0,
+      "|Pearson r| (hallucination monitoring)": 0.6821681824208956,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 24.0,
+      "|Pearson r| (hallucination monitoring)": 0.6192548537633729,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 25.0,
+      "|Pearson r| (hallucination monitoring)": 0.6150172951560987,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 26.0,
+      "|Pearson r| (hallucination monitoring)": 0.6418496898917351,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 27.0,
+      "|Pearson r| (hallucination monitoring)": 0.010165303590657421,
+      "series": "many-shot monitoring, within-condition",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 0.0,
+      "|Pearson r| (hallucination monitoring)": 0.3574314909845583,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 1.0,
+      "|Pearson r| (hallucination monitoring)": 0.21443474174224714,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 2.0,
+      "|Pearson r| (hallucination monitoring)": 0.22634490892210524,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 3.0,
+      "|Pearson r| (hallucination monitoring)": 0.2437255350995481,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 4.0,
+      "|Pearson r| (hallucination monitoring)": 0.3237511467127654,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 5.0,
+      "|Pearson r| (hallucination monitoring)": 0.39330336686648093,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 6.0,
+      "|Pearson r| (hallucination monitoring)": 0.3464964177703358,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 7.0,
+      "|Pearson r| (hallucination monitoring)": 0.3605954055421959,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 8.0,
+      "|Pearson r| (hallucination monitoring)": 0.38094435679407435,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 9.0,
+      "|Pearson r| (hallucination monitoring)": 0.3851858886311027,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 10.0,
+      "|Pearson r| (hallucination monitoring)": 0.4883035929460448,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 11.0,
+      "|Pearson r| (hallucination monitoring)": 0.5663247538015296,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 12.0,
+      "|Pearson r| (hallucination monitoring)": 0.56856498504882,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 13.0,
+      "|Pearson r| (hallucination monitoring)": 0.636549695037334,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 14.0,
+      "|Pearson r| (hallucination monitoring)": 0.6617295450861935,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 15.0,
+      "|Pearson r| (hallucination monitoring)": 0.6606532163520299,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 16.0,
+      "|Pearson r| (hallucination monitoring)": 0.6743576333915989,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 17.0,
+      "|Pearson r| (hallucination monitoring)": 0.7139247575072415,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 18.0,
+      "|Pearson r| (hallucination monitoring)": 0.7304848955423328,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 19.0,
+      "|Pearson r| (hallucination monitoring)": 0.7532686989853681,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 20.0,
+      "|Pearson r| (hallucination monitoring)": 0.7425403287748473,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 21.0,
+      "|Pearson r| (hallucination monitoring)": 0.7254398237718975,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 22.0,
+      "|Pearson r| (hallucination monitoring)": 0.7053734944747365,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 23.0,
+      "|Pearson r| (hallucination monitoring)": 0.7110019751131943,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 24.0,
+      "|Pearson r| (hallucination monitoring)": 0.6925821213699063,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 25.0,
+      "|Pearson r| (hallucination monitoring)": 0.6968347780104088,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 26.0,
+      "|Pearson r| (hallucination monitoring)": 0.6208959500449551,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 27.0,
+      "|Pearson r| (hallucination monitoring)": 0.4898696843768989,
+      "series": "neutral-corpus null 97.5th pct (8-prompt pooled)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 15.0,
+      "|Pearson r| (hallucination monitoring)": 0.0,
+      "series": "paper steering layer (index 15)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "r_B layer index (0-indexed block outputs)": 15.0,
+      "|Pearson r| (hallucination monitoring)": 1.0,
+      "series": "paper steering layer (index 15)",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 142
+}

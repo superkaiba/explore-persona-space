@@ -1,0 +1,46 @@
+{
+ "description": "Identity baseline for #823: ridge v_A'(x) -> v_target(x) per layer (input = own-arm target vector, NOT context). Same solver/folds/mask/R2 as run_823 phase 4. Compare against reference_refit (cx_last -> v_arm).",
+ "n_contexts_requested": 200,
+ "n_valid": 200,
+ "n_dropped": 0,
+ "smoke": true,
+ "solver": "fit_h.ridge_fit_predict (numpy-SVD, GCV lambda in logspace(-2,4,13))",
+ "kfold": "KFold(n_splits=5, shuffle=True, random_state=0) on masked rows",
+ "read_out_layers": {
+  "evil": 14,
+  "sycophancy": 26,
+  "hallucination": 17
+ },
+ "identity_baseline_r2": {
+  "b2": {
+   "14": {
+    "r2_mean": 0.4699646743660043,
+    "r2_sd": 0.0714624814902834,
+    "r2_folds": [
+     0.47872114610394534,
+     0.5021636532805629,
+     0.4824619847532071,
+     0.3490859879682273,
+     0.5373905997240789
+    ]
+   }
+  },
+  "c": {
+   "14": {
+    "r2_mean": -0.9518446310268146,
+    "r2_sd": 2.0228792829557163,
+    "r2_folds": [
+     -0.03432899594443284,
+     -0.06647341886378033,
+     -0.03683502901782165,
+     -0.05117760925757264,
+     -4.570408102050465
+    ]
+   }
+  }
+ },
+ "reference_refit": {},
+ "tensor_source": "hf://datasets/superkaiba1/explore-persona-space-data/issue823_own_vs_external/analysis_tensors/",
+ "git_commit": "397f879b5d898e448c2daf1f92c1f5ebc7e11677",
+ "generated_at": "2026-07-03T04:29:59.411454+00:00"
+}

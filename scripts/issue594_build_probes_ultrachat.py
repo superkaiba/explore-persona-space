@@ -83,7 +83,32 @@ def assert_disjoint(text: str, references: dict[str, list[str]]) -> None:
                 )
 
 
-def collect_candidates(tokenizer, references: dict[str, list[str]]) -> tuple[list[dict], dict]:
+def load_exclusion_pool(path: Path) -> tuple[set[str], set[str], dict]:
+    """Load a prior probe pool (e.g. set A) as an exclusion set (issue #920 S1).
+
+    Returns (excluded_prompt_ids, excluded_casefolded_texts, meta_summary). The
+    exclusion is applied to the CANDIDATE pool BEFORE greedy length-matching so
+    the disjoint pool is drawn from a set-A-free candidate distribution.
+    """
+    with open(path) as f:
+        payload = json.load(f)
+    probes = payload["probes"]
+    ids = {p["prompt_id"] for p in probes}
+    texts = {p["text"].strip().casefold() for p in probes}
+    meta = {
+        "path": str(path),
+        "n_probes": len(probes),
+        "pool_hash": payload.get("meta", {}).get("probe_pool_hash"),
+    }
+    return ids, texts, meta
+
+
+def collect_candidates(
+    tokenizer,
+    references: dict[str, list[str]],
+    exclude_ids: set[str] | None = None,
+    exclude_texts: set[str] | None = None,
+) -> tuple[list[dict], dict]:
     """Stream + filter the first CANDIDATE_ROWS rows of train_sft (plan §2 items 1-3).
 
     Returns (candidates, drop_counts). Fails loud if the prompt/messages
@@ -110,7 +135,10 @@ def collect_candidates(tokenizer, references: dict[str, list[str]]) -> tuple[lis
         "non_english_heuristic": 0,
         "token_len_out_of_range": 0,
         "duplicate_casefolded": 0,
+        "excluded_prior_pool": 0,
     }
+    exclude_ids = exclude_ids or set()
+    exclude_texts = exclude_texts or set()
     seen: set[str] = set()
     candidates: list[dict] = []
     for row_idx, row in enumerate(itertools.islice(ds, CANDIDATE_ROWS)):
@@ -139,6 +167,9 @@ def collect_candidates(tokenizer, references: dict[str, list[str]]) -> tuple[lis
             counts["token_len_out_of_range"] += 1
             continue
         cf = text.casefold()
+        if row["prompt_id"] in exclude_ids or cf in exclude_texts:
+            counts["excluded_prior_pool"] += 1  # BEFORE matching (issue #920 S1)
+            continue
         if cf in seen:
             counts["duplicate_casefolded"] += 1
             continue
@@ -220,13 +251,29 @@ def decile_table(betley_lens: list[int], matched_lens: list[int]) -> dict:
 
 
 def main() -> int:
+    global SEED
     parser = argparse.ArgumentParser(
         description="Build the UltraChat length-matched probe pool for issue #594 "
         "follow-up probe-genre-generalization (plan v2 §2)."
     )
     parser.add_argument("--battery", type=Path, default=BATTERY_PATH)
     parser.add_argument("--out", type=Path, default=OUT_PATH)
+    parser.add_argument(
+        "--exclude-probes-file",
+        type=Path,
+        default=None,
+        help="prior probe-pool JSON (e.g. set A) whose prompt_ids + casefolded texts are "
+        "dropped from the candidate pool BEFORE greedy length-matching (issue #920 S1)",
+    )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=SEED,
+        help="matching shuffle seed (42 = the set-A seed; 43 = the documented "
+        "re-match fallback if the decile acceptance fails after exclusion)",
+    )
     args = parser.parse_args()
+    SEED = args.seed
 
     # Reference pools: 48 Betley probes (hash re-asserted vs the battery meta)
     # + the 8 battery ICL demo questions (read from prefix_messages).
@@ -263,9 +310,29 @@ def main() -> int:
         max(betley_lens),
     )
 
-    candidates, drop_counts = collect_candidates(tokenizer, references)
+    exclude_ids: set[str] = set()
+    exclude_texts: set[str] = set()
+    exclude_meta = None
+    if args.exclude_probes_file is not None:
+        exclude_ids, exclude_texts, exclude_meta = load_exclusion_pool(args.exclude_probes_file)
+        logger.info(
+            "exclusion pool: %d prompt_ids / %d casefolded texts from %s (applied BEFORE matching)",
+            len(exclude_ids),
+            len(exclude_texts),
+            args.exclude_probes_file,
+        )
+
+    candidates, drop_counts = collect_candidates(
+        tokenizer, references, exclude_ids=exclude_ids, exclude_texts=exclude_texts
+    )
     matches = greedy_length_match(candidates, betley_lens)
     assert len(matches) == 48 and len({m["prompt_id"] for m in matches.values()}) == 48
+    if exclude_ids or exclude_texts:
+        matched_ids = {m["prompt_id"] for m in matches.values()}
+        matched_cf = {m["text"].strip().casefold() for m in matches.values()}
+        assert not (matched_ids & exclude_ids), sorted(matched_ids & exclude_ids)[:3]
+        assert not (matched_cf & exclude_texts), "casefold-text overlap with excluded pool"
+        logger.info("disjointness vs excluded pool: 0 prompt_id / 0 casefold-text overlap")
 
     # Acceptance check (plan §2 item 5): pool mean within ±10% of the Betley
     # mean; every per-probe |Δlen| within its final band; deciles recorded.
@@ -343,6 +410,7 @@ def main() -> int:
             "decile_table": table,
             "betley_mean_len": mean_b,
             "matched_mean_len": mean_m,
+            "excluded_pool": exclude_meta,
             "build_commit": metadata["git_commit"],
             "metadata": metadata,
         },

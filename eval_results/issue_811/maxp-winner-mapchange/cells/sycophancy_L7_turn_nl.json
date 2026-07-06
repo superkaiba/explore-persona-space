@@ -1,0 +1,83 @@
+{
+  "behavior": "sycophancy",
+  "layer": 7,
+  "n_cells": 480,
+  "Delta_med": 0.05109562357131832,
+  "Delta_med_ci": {
+    "point": 0.05109562357131832,
+    "ci_lo": 0.05109562357131832,
+    "ci_hi": 0.05109562357131832,
+    "n_families": 7
+  },
+  "Delta_med_mean_ci": {
+    "point": 0.06382985912366881,
+    "ci_lo": 0.0638298591236688,
+    "ci_hi": 0.06382985912366881,
+    "n_families": 7
+  },
+  "Delta_med_excl_large_shift_ci": {
+    "point": 0.04917643244351927,
+    "ci_lo": 0.04917643244351927,
+    "ci_hi": 0.04917643244351927,
+    "n_families": 7
+  },
+  "floor_M0_refit": 0.006630708668564865,
+  "floor_Mplus_refit": 0.01664545742906646,
+  "floor_shifted": 2.6683640214708282e-05,
+  "floor_combined": 0.01664545742906646,
+  "floor_sd_combined": 0.004298703489470574,
+  "Delta_over_floor_sd": 11.886287038981427,
+  "support_distance": {
+    "mean": 6.8372356696235626,
+    "p90": 8.672921336821886,
+    "n_large_shift": 30
+  },
+  "chain_rho": {
+    "n_with_E": 480,
+    "rho_M0_ridge": -0.10883186031412846,
+    "rho_Mplus_ridge": -0.17295618998122622,
+    "rho_diff_ridge": -0.06412432966709776,
+    "ci_M0_ridge": {
+      "point": -0.10883186031412846,
+      "ci_lo": -0.2970326388751239,
+      "ci_hi": 0.08512088770278885,
+      "n_families": 7
+    },
+    "ci_Mplus_ridge": {
+      "point": -0.17295618998122622,
+      "ci_lo": -0.31770810729819565,
+      "ci_hi": -0.04851833298556086,
+      "n_families": 7
+    },
+    "ci_diff_ridge": {
+      "point": -0.06412432966709776,
+      "ci_lo": -0.3319939945331135,
+      "ci_hi": 0.21790911086337927,
+      "n_families": 7
+    }
+  },
+  "cross_transfer": {
+    "m0_to_vplus_cos": 0.016307829443147286,
+    "mplus_to_vplus_cos": 0.016913174629840766,
+    "mplus_to_v0_cos": -0.4266203735665421
+  },
+  "refit_skip": {
+    "n_attempted": 300,
+    "n_skipped": 0,
+    "skip_frac": 0.0,
+    "concern": false
+  },
+  "n_families": 7,
+  "summary": "turn_nl",
+  "mlp_validity_gate": {
+    "rho_real": -0.12887033101174175,
+    "rho_shuffle": -0.12796954938253574,
+    "gate_margin": -0.00090078162920601,
+    "n_with_E": 480
+  },
+  "metadata": {
+    "issue": 811,
+    "summary": "turn_nl",
+    "generated_at": "2026-07-03T11:28:57Z"
+  }
+}

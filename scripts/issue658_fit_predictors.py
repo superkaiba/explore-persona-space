@@ -38,7 +38,8 @@ are PRESERVED EXACTLY. Three things changed, none of them the reported numbers:
    solve in the N=50 ≪ D=3584 row space. Exactness is asserted at smoke time
    (``_assert_ridge_exactness``): the new closed-form LOCO ρ matches the old
    primal-refit LOCO ρ to ≤1e-6 on a synthetic case.
-2. **A3.5 MLP** runs on CUDA (``--device``, default cuda with a CPU fallback)
+2. **A3.5 MLP** runs on CUDA (``--device``; precedence: the flag >
+   ``EPM_FIT_DEVICE`` env var > auto = cuda when available, with a CPU fallback)
    and the per-(LOCO fold × output-head) MLPs are fit IN PARALLEL with
    ``torch.vmap`` over an ensemble of independent networks — the per-output-dim
    independence the old serial code had (one scalar-output MLP per output dim)
@@ -137,11 +138,6 @@ SMOKE_A34_FEAT_DIM = 128
 # tractable with the GPU-batched MLP below.
 A35_MLP_TARGET_DIM = 64
 
-# Compute device for the GPU-accelerated MLP/ridge ops. Resolved from --device
-# (default cuda when available, else cpu) in main() and read at call time by the
-# batched fitters. The DV is device-INVARIANT (the smoke asserts cpu==cuda ρ).
-DEVICE = "cpu"
-
 # A3.5 gap MLP ensemble-chunk size. The batched MLP fits E = gap_dim(64) × N(50)
 # = 3200 independent member-nets; building one AdamW + one vmap over ALL 3200 at
 # once peaks at ~69 GiB allocated + a ~22 GiB Adam-state tensor — OOM on an
@@ -177,6 +173,34 @@ def _resolve_device(requested: str) -> str:
         )
         return "cpu"
     return requested
+
+
+def _requested_device(cli_value: str | None) -> str:
+    """Device request with precedence: explicit CLI > EPM_FIT_DEVICE env > 'auto'."""
+    if cli_value is not None:
+        return cli_value
+    return os.environ.get("EPM_FIT_DEVICE", "auto")
+
+
+def _default_device() -> str:
+    """Module-scope default importers inherit: EPM_FIT_DEVICE if set, else auto
+    (cuda when available). Import-safe: torch.cuda.is_available() does not
+    initialize a CUDA context (set PYTORCH_NVML_BASED_CUDA_CHECK=1 on
+    fork-sensitive GPU hosts for the NVML-based check), and resolution logs
+    nothing unless EPM_FIT_DEVICE=cuda is set on a CUDA-less host (the
+    _resolve_device WARNING). A garbage EPM_FIT_DEVICE value passes through
+    verbatim and fails loud at the first torch.device() call — same failure
+    mode as --device with a garbage value (no silent default).
+    """
+    return _resolve_device(_requested_device(None))
+
+
+# Compute device for the GPU-accelerated MLP/ridge ops. The module-scope default
+# (what a bare import yields) honors the EPM_FIT_DEVICE env var, else resolves
+# 'auto' (cuda when available, else cpu); main() re-resolves with CLI precedence
+# (--device > EPM_FIT_DEVICE > auto). Read at call time by the batched fitters.
+# The DV is device-INVARIANT (the smoke asserts cpu==cuda ρ).
+DEVICE = _default_device()
 
 
 # ── E0 target extraction ──────────────────────────────────────────────────────
@@ -657,6 +681,121 @@ def _ridge_predict_loco(X: np.ndarray, Y: np.ndarray, lambdas: list[float]) -> n
         w = _ridge_dual_weights(Xtr_n, Ytr, best_lam)  # (d, P)
         x_held = (Xt[i] - mu) / sd  # (d,)
         preds[i] = (x_held @ w).detach().cpu().numpy()
+    return preds
+
+
+# Live-tensor factor for the batched LOCO chunk cap, per the measured-peak rule
+# (.claude/rules/vectorize-many-cell-fits.md § Memory sizing). Measured 2026-07-04
+# on ONE chunk at the #811 production shape (n=480, d=3584, p=64, fp64, chunk=64,
+# fresh process): ru_maxrss delta 2.34 GiB ≈ chunk × 2.86 × (m·d·8 bytes) — the
+# gathered fold design + its standardized copy + the (m,m) Gram/eig/Qsq blocks +
+# LAPACK workspace. Rounded UP to 5 (over-estimation only adds chunk count at
+# constant FLOPs; chunk size is result-invariant, pinned by the chunk-invariance
+# test in tests/test_issue811_pre_user.py).
+LOCO_CHUNK_LIVE_FACTOR = 5.0
+
+
+def _resolve_loco_chunk(n: int, d: int) -> int:
+    """Memory-aware fold-chunk size for `_ridge_predict_loco_batched`.
+
+    ``EPM_LOCO_CHUNK`` overrides. Otherwise budget 25% of available RAM (capped
+    16 GiB) against a MEASURED per-fold live footprint of
+    ``LOCO_CHUNK_LIVE_FACTOR × (n-1)·d·8`` bytes (fp64), clamped to [1, 128].
+    On CUDA the probe is ``torch.cuda.mem_get_info`` free bytes instead. Logs
+    the resolved chunk + probed free bytes so an OOM is diagnosable from the
+    log alone.
+    """
+    env = os.environ.get("EPM_LOCO_CHUNK")
+    if env:
+        return max(1, int(env))
+    per_fold = LOCO_CHUNK_LIVE_FACTOR * max(n - 1, 1) * d * 8
+    try:
+        if torch.device(DEVICE).type == "cuda":
+            free = torch.cuda.mem_get_info()[0]
+        else:
+            free = os.sysconf("SC_AVPHYS_PAGES") * os.sysconf("SC_PAGE_SIZE")
+    except (ValueError, OSError, RuntimeError):
+        free = 8 << 30
+    budget = min(int(0.25 * free), 16 << 30)
+    chunk = int(np.clip(budget // max(int(per_fold), 1), 1, 128))
+    logging.getLogger("issue658.fit").info(
+        "[phase=ridge_loco] batched chunk=%d (free=%.1f GiB, per-fold=%.0f MiB, factor=%.1f)",
+        chunk,
+        free / 2**30,
+        per_fold / 2**20,
+        LOCO_CHUNK_LIVE_FACTOR,
+    )
+    return chunk
+
+
+def _ridge_predict_loco_batched(
+    X: np.ndarray, Y: np.ndarray, lambdas: list[float], *, chunk: int | None = None
+) -> np.ndarray:
+    """BATCHED twin of ``_ridge_predict_loco`` — all N LOCO folds as batched tensor ops.
+
+    Fold-for-fold IDENTICAL estimator semantics (#811 vectorize fix round 2,
+    `.claude/rules/vectorize-many-cell-fits.md`): per-fold standardization over
+    the fold's own N−1 training rows (torch ``.std(correction=0)``, the serial
+    convention), the SAME λ grid with per-fold PRESS inner-LOO selection (the
+    exact ``_press_loo_mse_per_lambda`` identity — one eigh of the fold Gram
+    reused across λ, hat-diagonal LOO residuals, first-argmin tie-break), and
+    the dual/Woodbury solve at the per-fold argmin λ. The ONLY change is
+    execution shape: folds ride a leading batch axis in memory-bounded chunks —
+    gathered (b, m, d) designs, ``bmm`` Grams, ONE batched ``eigh`` per chunk,
+    batched per-λ PRESS, batched ``linalg.solve``, and the held-out prediction
+    as ``(Xn @ x_held)ᵀ α`` (associativity-only difference from the serial
+    ``x_held @ (Xnᵀ α)``). Equivalence to the serial twin is pinned at
+    rtol=1e-7/atol=1e-10 by
+    ``tests/test_issue811_pre_user.py::test_batched_ridge_loco_matches_serial_oracle``
+    and by the #811 real-store smoke gate. The serial per-fold Python loop
+    (~2400 nested PRESS fits per #811 unit) is the measured 30-43-day blowup
+    this twin removes (task #811 events, epm:compute-deviation v3).
+    """
+    n, d = X.shape
+    p = Y.shape[1]
+    device = torch.device(DEVICE)
+    Xt = torch.from_numpy(np.ascontiguousarray(X)).to(device=device, dtype=torch.float64)
+    Yt = torch.from_numpy(np.ascontiguousarray(Y)).to(device=device, dtype=torch.float64)
+    m = n - 1
+    assert m >= 2, f"batched LOCO needs n>=3, got n={n}"
+    # Fold i trains on all rows but i: (n, m) index matrix.
+    ar = torch.arange(n, device=device)
+    tr_idx_all = ar.repeat(n, 1)[~torch.eye(n, dtype=torch.bool, device=device)].view(n, m)
+    b_chunk = chunk if chunk is not None else _resolve_loco_chunk(n, d)
+    eye_m = torch.eye(m, dtype=torch.float64, device=device)
+    preds = np.zeros((n, p), dtype=np.float64)
+    for s in range(0, n, b_chunk):
+        e = min(s + b_chunk, n)
+        b = e - s
+        tr_idx = tr_idx_all[s:e]  # (b, m)
+        Xn = Xt[tr_idx]  # (b, m, d) gathered fold designs (fresh copy)
+        Yc = Yt[tr_idx]  # (b, m, p)
+        mu = Xn.mean(dim=1, keepdim=True)  # (b, 1, d)
+        sd = Xn.std(dim=1, keepdim=True, correction=0) + 1e-9
+        Xn = Xn.sub_(mu).div_(sd)  # standardized in place (the gather is a copy)
+        G = Xn @ Xn.transpose(1, 2)  # (b, m, m) dual Grams
+        evals, Q = torch.linalg.eigh(G)
+        QtY = Q.transpose(1, 2) @ Yc  # (b, m, p)
+        Qsq = Q * Q  # (b, m, m) for diag(H)
+        mses = torch.empty((b, len(lambdas)), dtype=torch.float64, device=device)
+        for li, lam in enumerate(lambdas):
+            filt = evals / (evals + lam)  # (b, m)
+            h_diag = (Qsq @ filt.unsqueeze(2)).squeeze(2)  # (b, m)
+            Yhat = Q @ (filt.unsqueeze(2) * QtY)  # (b, m, p)
+            resid = Yc - Yhat
+            denom = (1.0 - h_diag).clamp(min=1e-8).unsqueeze(2)
+            loo_resid = resid / denom
+            mses[:, li] = (loo_resid * loo_resid).mean(dim=(1, 2))
+        best = torch.argmin(mses, dim=1)  # (b,) first-min tie-break, as serial argmin
+        lam_best = torch.tensor(
+            [float(lambdas[int(i)]) for i in best], dtype=torch.float64, device=device
+        )
+        A = G + lam_best.view(b, 1, 1) * eye_m  # (b, m, m)
+        alpha = torch.linalg.solve(A, Yc)  # (b, m, p) dual coefficients
+        x_held = (Xt[s:e] - mu.squeeze(1)) / sd.squeeze(1)  # (b, d)
+        k = (Xn @ x_held.unsqueeze(2)).squeeze(2)  # (b, m) = Xn x_held
+        pred = (k.unsqueeze(1) @ alpha).squeeze(1)  # (b, p) = kᵀ α
+        preds[s:e] = pred.detach().cpu().numpy()
     return preds
 
 
@@ -1908,9 +2047,11 @@ def main() -> int:
     parser.add_argument("--smoke", action="store_true")
     parser.add_argument(
         "--device",
-        default="auto",
-        help="compute device for the batched MLP/ridge ops: auto (default; cuda if "
-        "present else cpu) | cuda | cpu. The reported DV is device-invariant.",
+        default=None,
+        help="compute device for the batched MLP/ridge ops: auto | cuda | cpu "
+        "(default: the EPM_FIT_DEVICE env var if set, else auto = cuda if present "
+        "else cpu. Precedence: this flag > EPM_FIT_DEVICE > auto). The reported DV "
+        "is device-invariant.",
     )
     parser.add_argument(
         "--mlp-chunk-size",
@@ -1977,7 +2118,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    DEVICE = _resolve_device(args.device)
+    DEVICE = _resolve_device(_requested_device(args.device))
     logger.info("compute device: %s", DEVICE)
     if args.mlp_chunk_size is not None:
         MLP_CHUNK_SIZE = args.mlp_chunk_size

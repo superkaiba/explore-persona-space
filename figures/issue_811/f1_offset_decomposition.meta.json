@@ -1,0 +1,456 @@
+{
+  "commit": "5009f29262",
+  "created": "2026-07-02T20:15:09Z",
+  "figsize": [
+    11.5,
+    5.4
+  ],
+  "points": [
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.20393816649827462,
+      "y": 14.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.23657908327810123,
+      "y": 13.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.4902853957921016,
+      "y": 12.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.27949654613094294,
+      "y": 11.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.30963900442281533,
+      "y": 10.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.2811343444129458,
+      "y": 9.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.2309345253435588,
+      "y": 8.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.23875625941861373,
+      "y": 7.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.25387579779372965,
+      "y": 6.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.21362727573382828,
+      "y": 5.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.2876894701561409,
+      "y": 4.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.26181088569808175,
+      "y": 3.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.23074898061077503,
+      "y": 2.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.29310795417522967,
+      "y": 1.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.25580012828716825,
+      "y": 0.74,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.2859465046356999,
+      "y": -0.26,
+      "series": "harmful-compliance \u00b7 L14 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.11958323958502592,
+      "y": 15.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.11066884507125882,
+      "y": 14.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.12570116915824878,
+      "y": 13.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.06797511117277401,
+      "y": 12.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.050325304092494846,
+      "y": 11.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.06769165756267934,
+      "y": 10.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.06399081895928196,
+      "y": 9.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.1273489318618169,
+      "y": 8.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.11498670648854456,
+      "y": 7.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.11463647038686377,
+      "y": 6.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.05356447030511877,
+      "y": 5.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.0982579801556599,
+      "y": 4.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.09889427230537512,
+      "y": 3.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.0863893773596176,
+      "y": 2.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.08375013081655235,
+      "y": 1.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": 0.00857213806240498,
+      "y": 0.0,
+      "series": "harmful-compliance \u00b7 L7 \u00b7 turn boundary",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.40917197646832404,
+      "y": 15.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.3321113749323464,
+      "y": 14.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.12265227525538969,
+      "y": 13.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.17404997024787172,
+      "y": 12.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.3687372740891938,
+      "y": 11.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.3679400560220351,
+      "y": 10.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.23909329176967298,
+      "y": 9.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.31268089166616764,
+      "y": 8.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.2286227613898985,
+      "y": 7.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.2623270596017473,
+      "y": 6.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.3654439367034699,
+      "y": 5.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.3538445969063317,
+      "y": 4.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.23143137731012345,
+      "y": 3.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.26103207897970676,
+      "y": 2.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.3548091526266304,
+      "y": 1.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "signed per-context map change (projection on the behavior direction)": -0.4370031079878992,
+      "y": 0.26,
+      "series": "taught fact \u00b7 L14 \u00b7 mean",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "median map change \u00f7 combined refit floor": 1.1219654184771757,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "median map change \u00f7 combined refit floor": 0.48239273394990256,
+      "y": 0.0,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "median map change \u00f7 combined refit floor": 1.334138161632771,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "median map change \u00f7 combined refit floor": 1.7850573275117696,
+      "y": 1.0,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "median map change \u00f7 combined refit floor": 1.4596986206596778,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "median map change \u00f7 combined refit floor": 0.1532755133162776,
+      "y": 2.0,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "median map change \u00f7 combined refit floor": 1.4941500123246818,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "median map change \u00f7 combined refit floor": 1.3564801630828678,
+      "y": 3.0,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "median map change \u00f7 combined refit floor": 2.0484889372301924,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "median map change \u00f7 combined refit floor": 1.2073190912313378,
+      "y": 4.0,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "median map change \u00f7 combined refit floor": 3.101121373726409,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "median map change \u00f7 combined refit floor": 1.0574254063034814,
+      "y": 5.0,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "median map change \u00f7 combined refit floor": 3.2804507194563217,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "median map change \u00f7 combined refit floor": 0.5674010776352116,
+      "y": 6.0,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "median map change \u00f7 combined refit floor": 3.3803377522288462,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "median map change \u00f7 combined refit floor": 0.685538909406578,
+      "y": 7.0,
+      "_kind": "scatter",
+      "_group": 18
+    },
+    {
+      "median map change \u00f7 combined refit floor": 3.522220384758836,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 19
+    },
+    {
+      "median map change \u00f7 combined refit floor": 2.530575151725364,
+      "y": 8.0,
+      "_kind": "scatter",
+      "_group": 20
+    }
+  ],
+  "n_series": 21,
+  "total_points": 66
+}

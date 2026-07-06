@@ -1,0 +1,3568 @@
+{
+  "traits": {
+    "evil": {
+      "primary": {
+        "ridge": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": 0.6696764016776946,
+              "cosine_hhat_vs_true": 0.8326243758201599
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6722471061443291,
+              "cosine_hhat_vs_true": 0.8346232771873474
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6647751130804909,
+              "cosine_hhat_vs_true": 0.8335990309715271
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6642661985335725,
+              "cosine_hhat_vs_true": 0.8341779112815857
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6629627896098738,
+              "cosine_hhat_vs_true": 0.8347442746162415
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": 0.6737113258723844,
+              "cosine_hhat_vs_true": 0.8468577861785889
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6753994907677647,
+              "cosine_hhat_vs_true": 0.8479427695274353
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6766068699336065,
+              "cosine_hhat_vs_true": 0.8501342535018921
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6653775726125288,
+              "cosine_hhat_vs_true": 0.847437858581543
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.669703137265019,
+              "cosine_hhat_vs_true": 0.8495214581489563
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": 0.6452034156145883,
+              "cosine_hhat_vs_true": 0.8401012420654297
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.646785922640315,
+              "cosine_hhat_vs_true": 0.8452556133270264
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6482940975945728,
+              "cosine_hhat_vs_true": 0.8486217856407166
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6375239808928064,
+              "cosine_hhat_vs_true": 0.8488866686820984
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6373251684832679,
+              "cosine_hhat_vs_true": 0.850024402141571
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": 0.5593805859110297,
+              "cosine_hhat_vs_true": 0.8193532824516296
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5729079536605679,
+              "cosine_hhat_vs_true": 0.8375377655029297
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.547236290860333,
+              "cosine_hhat_vs_true": 0.8380986452102661
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.5765687020248913,
+              "cosine_hhat_vs_true": 0.8454300761222839
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5859515437303802,
+              "cosine_hhat_vs_true": 0.847109317779541
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": 0.5862281272977063,
+              "cosine_hhat_vs_true": 0.8293929100036621
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6066349580525521,
+              "cosine_hhat_vs_true": 0.8462435603141785
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.615342322720561,
+              "cosine_hhat_vs_true": 0.8477132320404053
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6452133962071385,
+              "cosine_hhat_vs_true": 0.8570688962936401
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6409706525956645,
+              "cosine_hhat_vs_true": 0.8541238903999329
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": 0.5759751254389668,
+              "cosine_hhat_vs_true": 0.8515223860740662
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5718658663511763,
+              "cosine_hhat_vs_true": 0.8548346161842346
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5730380770238872,
+              "cosine_hhat_vs_true": 0.8556572198867798
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.5812044728882524,
+              "cosine_hhat_vs_true": 0.8583136796951294
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5871817574591616,
+              "cosine_hhat_vs_true": 0.8591312170028687
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.6072420153831619,
+              "cosine_hhat_vs_true": 0.8661139011383057
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.617391116411562,
+              "cosine_hhat_vs_true": 0.8708462119102478
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6130051191782038,
+              "cosine_hhat_vs_true": 0.870411217212677
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.5990072580076593,
+              "cosine_hhat_vs_true": 0.865985095500946
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5718993874650251,
+              "cosine_hhat_vs_true": 0.8570608496665955
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": 0.5680822196563571,
+              "cosine_hhat_vs_true": 0.8805120587348938
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5736229757380997,
+              "cosine_hhat_vs_true": 0.8818041086196899
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.596867255989777,
+              "cosine_hhat_vs_true": 0.8875842690467834
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6062182761884997,
+              "cosine_hhat_vs_true": 0.8897985816001892
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6130147978872624,
+              "cosine_hhat_vs_true": 0.8909962773323059
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.6207880545950358,
+              "cosine_hhat_vs_true": 0.9054660797119141
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6270238295858885,
+              "cosine_hhat_vs_true": 0.9074205756187439
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6426364036247354,
+              "cosine_hhat_vs_true": 0.9108088612556458
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6520869955434285,
+              "cosine_hhat_vs_true": 0.9132132530212402
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6501640532030692,
+              "cosine_hhat_vs_true": 0.9129474759101868
+            }
+          },
+          "18": {
+            "4000": {
+              "delta_recon_r2_id": 0.6613247642890087,
+              "cosine_hhat_vs_true": 0.9423671364784241
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6783146049943701,
+              "cosine_hhat_vs_true": 0.945209801197052
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6873326946271252,
+              "cosine_hhat_vs_true": 0.9466477632522583
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6984381160312199,
+              "cosine_hhat_vs_true": 0.9485346078872681
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7034848003652547,
+              "cosine_hhat_vs_true": 0.9494615793228149
+            }
+          },
+          "19": {
+            "4000": {
+              "delta_recon_r2_id": 0.658853060430512,
+              "cosine_hhat_vs_true": 0.9692012667655945
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6891190740508775,
+              "cosine_hhat_vs_true": 0.9718955159187317
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7091844964826088,
+              "cosine_hhat_vs_true": 0.9736914038658142
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7183387965946352,
+              "cosine_hhat_vs_true": 0.9745187759399414
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7225465929896827,
+              "cosine_hhat_vs_true": 0.9748954176902771
+            }
+          }
+        },
+        "mlp": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": -106679675.55908957,
+              "cosine_hhat_vs_true": 0.554936408996582
+            },
+            "100000": {
+              "delta_recon_r2_id": -40800335.53240245,
+              "cosine_hhat_vs_true": 0.576514720916748
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": -114301.24828611712,
+              "cosine_hhat_vs_true": 0.5587096214294434
+            },
+            "100000": {
+              "delta_recon_r2_id": -7691.093667805411,
+              "cosine_hhat_vs_true": 0.60423743724823
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": -1352.8516419644009,
+              "cosine_hhat_vs_true": 0.5822051763534546
+            },
+            "100000": {
+              "delta_recon_r2_id": -3421.6816553251247,
+              "cosine_hhat_vs_true": 0.6121250987052917
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": -5117.507043763315,
+              "cosine_hhat_vs_true": 0.5786966681480408
+            },
+            "100000": {
+              "delta_recon_r2_id": -3612.0690350703853,
+              "cosine_hhat_vs_true": 0.599936306476593
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": -26.083187044696608,
+              "cosine_hhat_vs_true": 0.6647668480873108
+            },
+            "100000": {
+              "delta_recon_r2_id": -35.114466098716456,
+              "cosine_hhat_vs_true": 0.6937054991722107
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": -3.0719137353580646,
+              "cosine_hhat_vs_true": 0.7342033982276917
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.3601182037094588,
+              "cosine_hhat_vs_true": 0.7907352447509766
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.42489052605019706,
+              "cosine_hhat_vs_true": 0.8135538101196289
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.4814969144475917,
+              "cosine_hhat_vs_true": 0.8193550109863281
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": 0.4307289758527225,
+              "cosine_hhat_vs_true": 0.8501119613647461
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5568408353592823,
+              "cosine_hhat_vs_true": 0.8722121715545654
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.48206896123163,
+              "cosine_hhat_vs_true": 0.8809183239936829
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.619052165160503,
+              "cosine_hhat_vs_true": 0.9035006761550903
+            }
+          },
+          "18": {
+            "4000": {
+              "delta_recon_r2_id": 0.5703249227057141,
+              "cosine_hhat_vs_true": 0.926020085811615
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6658079462553779,
+              "cosine_hhat_vs_true": 0.9426925778388977
+            }
+          },
+          "19": {
+            "4000": {
+              "delta_recon_r2_id": 0.5657533564096252,
+              "cosine_hhat_vs_true": 0.9606075286865234
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6558481570138361,
+              "cosine_hhat_vs_true": 0.9688237309455872
+            }
+          }
+        },
+        "direct_hop": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": 0.6445228712096651,
+              "cosine_hhat_vs_true": 0.8226295709609985
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6560104030462646,
+              "cosine_hhat_vs_true": 0.8281193971633911
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6524237760928522,
+              "cosine_hhat_vs_true": 0.8286933898925781
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6575931859807707,
+              "cosine_hhat_vs_true": 0.8318103551864624
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6504190348470946,
+              "cosine_hhat_vs_true": 0.8299646377563477
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": 0.6265235396341922,
+              "cosine_hhat_vs_true": 0.8288922905921936
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6436747050649085,
+              "cosine_hhat_vs_true": 0.83416348695755
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6529617919908238,
+              "cosine_hhat_vs_true": 0.8393950462341309
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6490974231942336,
+              "cosine_hhat_vs_true": 0.8400170207023621
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6535481219318742,
+              "cosine_hhat_vs_true": 0.843795657157898
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": 0.5835206749998095,
+              "cosine_hhat_vs_true": 0.8138325810432434
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5896557004706566,
+              "cosine_hhat_vs_true": 0.8266474604606628
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5953060559891524,
+              "cosine_hhat_vs_true": 0.8320674896240234
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.5829526040491639,
+              "cosine_hhat_vs_true": 0.8281762599945068
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5685361576041998,
+              "cosine_hhat_vs_true": 0.8274280428886414
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": 0.5318712627125297,
+              "cosine_hhat_vs_true": 0.8107296228408813
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5580499829913097,
+              "cosine_hhat_vs_true": 0.8291534781455994
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.50411903556666,
+              "cosine_hhat_vs_true": 0.8260500431060791
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.5111179536876375,
+              "cosine_hhat_vs_true": 0.8325763940811157
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5266936730379326,
+              "cosine_hhat_vs_true": 0.833577573299408
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": 0.5554783167799479,
+              "cosine_hhat_vs_true": 0.8148820400238037
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5289501632919302,
+              "cosine_hhat_vs_true": 0.8142655491828918
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5445803235645726,
+              "cosine_hhat_vs_true": 0.8197346329689026
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.5546016358618284,
+              "cosine_hhat_vs_true": 0.8224384188652039
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5117717041924055,
+              "cosine_hhat_vs_true": 0.8082202672958374
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": 0.5626860756199359,
+              "cosine_hhat_vs_true": 0.846592128276825
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5644873628915128,
+              "cosine_hhat_vs_true": 0.8502495884895325
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5515995930025978,
+              "cosine_hhat_vs_true": 0.8482636213302612
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.5474330560831944,
+              "cosine_hhat_vs_true": 0.847857654094696
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5463594189604779,
+              "cosine_hhat_vs_true": 0.847531259059906
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.5540821054898493,
+              "cosine_hhat_vs_true": 0.8526298999786377
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5476591828166841,
+              "cosine_hhat_vs_true": 0.8507657051086426
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5452390861789007,
+              "cosine_hhat_vs_true": 0.8512954711914062
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.5292912726937163,
+              "cosine_hhat_vs_true": 0.8469895124435425
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5260687300515877,
+              "cosine_hhat_vs_true": 0.8450495600700378
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": 0.5595776350360433,
+              "cosine_hhat_vs_true": 0.8765596747398376
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5775178377724257,
+              "cosine_hhat_vs_true": 0.8819946050643921
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5901732298024347,
+              "cosine_hhat_vs_true": 0.8857325911521912
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.5892482273720783,
+              "cosine_hhat_vs_true": 0.8848228454589844
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5883429807559462,
+              "cosine_hhat_vs_true": 0.8850156664848328
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.6040583785572047,
+              "cosine_hhat_vs_true": 0.9013276100158691
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6030719213799289,
+              "cosine_hhat_vs_true": 0.9013391137123108
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.624474591061734,
+              "cosine_hhat_vs_true": 0.9059882164001465
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6351720420673367,
+              "cosine_hhat_vs_true": 0.9085462093353271
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6345099406209669,
+              "cosine_hhat_vs_true": 0.908815860748291
+            }
+          },
+          "18": {
+            "4000": {
+              "delta_recon_r2_id": 0.6561634249194985,
+              "cosine_hhat_vs_true": 0.9414399266242981
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6738629281907981,
+              "cosine_hhat_vs_true": 0.9444462656974792
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6857593532538111,
+              "cosine_hhat_vs_true": 0.9464312195777893
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6973433723666193,
+              "cosine_hhat_vs_true": 0.9484094381332397
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.70254404594538,
+              "cosine_hhat_vs_true": 0.9493955969810486
+            }
+          },
+          "19": {
+            "4000": {
+              "delta_recon_r2_id": 0.658853060430512,
+              "cosine_hhat_vs_true": 0.9692012667655945
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6891190740508775,
+              "cosine_hhat_vs_true": 0.9718955159187317
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7091844964826088,
+              "cosine_hhat_vs_true": 0.9736914038658142
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7183387965946352,
+              "cosine_hhat_vs_true": 0.9745187759399414
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7225465929896827,
+              "cosine_hhat_vs_true": 0.9748954176902771
+            }
+          }
+        }
+      },
+      "companion": {
+        "ridge": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": 0.7418673961392279,
+              "cosine_hhat_vs_true": 0.8859646320343018
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7422931395367351,
+              "cosine_hhat_vs_true": 0.8858592510223389
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7390543733583839,
+              "cosine_hhat_vs_true": 0.8850602507591248
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7394839951918282,
+              "cosine_hhat_vs_true": 0.8849354386329651
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7387523316544469,
+              "cosine_hhat_vs_true": 0.8847614526748657
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": 0.7136425142952241,
+              "cosine_hhat_vs_true": 0.8924221992492676
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7170403538270047,
+              "cosine_hhat_vs_true": 0.8936437368392944
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.719924494963361,
+              "cosine_hhat_vs_true": 0.894765317440033
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7120001065938281,
+              "cosine_hhat_vs_true": 0.8918159008026123
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7146169770103237,
+              "cosine_hhat_vs_true": 0.8927825689315796
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": 0.7051819988429623,
+              "cosine_hhat_vs_true": 0.8944169878959656
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.716759225115235,
+              "cosine_hhat_vs_true": 0.899770975112915
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7155424262705261,
+              "cosine_hhat_vs_true": 0.8998972177505493
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7118731082232639,
+              "cosine_hhat_vs_true": 0.8999996185302734
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7144620378366906,
+              "cosine_hhat_vs_true": 0.9010097980499268
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": 0.6121820817454262,
+              "cosine_hhat_vs_true": 0.8872870802879333
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6393275695129765,
+              "cosine_hhat_vs_true": 0.8958284854888916
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6261559701249833,
+              "cosine_hhat_vs_true": 0.8937841653823853
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6530169914392878,
+              "cosine_hhat_vs_true": 0.9024351835250854
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6574902858928378,
+              "cosine_hhat_vs_true": 0.9030828475952148
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": 0.6585709941767457,
+              "cosine_hhat_vs_true": 0.9040709733963013
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6565741764403679,
+              "cosine_hhat_vs_true": 0.9043628573417664
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6761271520546976,
+              "cosine_hhat_vs_true": 0.9097739458084106
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6939447531681243,
+              "cosine_hhat_vs_true": 0.9153409600257874
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6847134898258098,
+              "cosine_hhat_vs_true": 0.9133635759353638
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": 0.5927934774825414,
+              "cosine_hhat_vs_true": 0.9248701930046082
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6006931573728528,
+              "cosine_hhat_vs_true": 0.9279406070709229
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6308685656585264,
+              "cosine_hhat_vs_true": 0.9326732754707336
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6291292308310001,
+              "cosine_hhat_vs_true": 0.9327139854431152
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6290218215507435,
+              "cosine_hhat_vs_true": 0.9328670501708984
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.6245385195141485,
+              "cosine_hhat_vs_true": 0.9490708708763123
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6442978953955448,
+              "cosine_hhat_vs_true": 0.9518850445747375
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6616298521054366,
+              "cosine_hhat_vs_true": 0.9540647268295288
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6576498701420752,
+              "cosine_hhat_vs_true": 0.9534747004508972
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6341859511966541,
+              "cosine_hhat_vs_true": 0.9503647089004517
+            }
+          },
+          "13": {
+            "4000": {
+              "delta_recon_r2_id": 0.6421534915770033,
+              "cosine_hhat_vs_true": 0.9723910689353943
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6794801684647107,
+              "cosine_hhat_vs_true": 0.9752984642982483
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6978932549251051,
+              "cosine_hhat_vs_true": 0.9768048524856567
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6987992346924885,
+              "cosine_hhat_vs_true": 0.9767897129058838
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6730695525933494,
+              "cosine_hhat_vs_true": 0.9748544096946716
+            }
+          }
+        },
+        "mlp": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": -3754924.161511817,
+              "cosine_hhat_vs_true": 0.4841855764389038
+            },
+            "100000": {
+              "delta_recon_r2_id": -511555.9875738995,
+              "cosine_hhat_vs_true": 0.5271784067153931
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": -4751.194562602063,
+              "cosine_hhat_vs_true": 0.5103275775909424
+            },
+            "100000": {
+              "delta_recon_r2_id": -102.76079699931117,
+              "cosine_hhat_vs_true": 0.6551070809364319
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": -48.29049993634324,
+              "cosine_hhat_vs_true": 0.5944328904151917
+            },
+            "100000": {
+              "delta_recon_r2_id": -37.76041520135529,
+              "cosine_hhat_vs_true": 0.6352360844612122
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": -185.5667015140904,
+              "cosine_hhat_vs_true": 0.5598798990249634
+            },
+            "100000": {
+              "delta_recon_r2_id": -45.65375907215571,
+              "cosine_hhat_vs_true": 0.6311601400375366
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": -0.273882836872539,
+              "cosine_hhat_vs_true": 0.800805926322937
+            },
+            "100000": {
+              "delta_recon_r2_id": -0.0183475841311751,
+              "cosine_hhat_vs_true": 0.8239409327507019
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": 0.27189288030591174,
+              "cosine_hhat_vs_true": 0.8829546570777893
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5065674965765762,
+              "cosine_hhat_vs_true": 0.9075958132743835
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.4790263434777733,
+              "cosine_hhat_vs_true": 0.9278285503387451
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5659083218388103,
+              "cosine_hhat_vs_true": 0.939733624458313
+            }
+          },
+          "13": {
+            "4000": {
+              "delta_recon_r2_id": 0.47784976789627076,
+              "cosine_hhat_vs_true": 0.9601734280586243
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5622275194500852,
+              "cosine_hhat_vs_true": 0.9659976959228516
+            }
+          }
+        },
+        "direct_hop": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": 0.7351820612675845,
+              "cosine_hhat_vs_true": 0.8841800689697266
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7372263712414384,
+              "cosine_hhat_vs_true": 0.8844845294952393
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7402073575154494,
+              "cosine_hhat_vs_true": 0.8858597278594971
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7411039736549414,
+              "cosine_hhat_vs_true": 0.8860183358192444
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7413668907858296,
+              "cosine_hhat_vs_true": 0.8861236572265625
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": 0.6972183163351655,
+              "cosine_hhat_vs_true": 0.8870570659637451
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7043080153640248,
+              "cosine_hhat_vs_true": 0.8896507024765015
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7169182788983165,
+              "cosine_hhat_vs_true": 0.8943778872489929
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7136804107394008,
+              "cosine_hhat_vs_true": 0.893351137638092
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7160278737216299,
+              "cosine_hhat_vs_true": 0.894297182559967
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": 0.7065434273983682,
+              "cosine_hhat_vs_true": 0.8958296775817871
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7110956780438614,
+              "cosine_hhat_vs_true": 0.8988481760025024
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7044626174685635,
+              "cosine_hhat_vs_true": 0.8956450819969177
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7005130940723694,
+              "cosine_hhat_vs_true": 0.8947992324829102
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6912665530063073,
+              "cosine_hhat_vs_true": 0.8924340009689331
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": 0.6362579932171444,
+              "cosine_hhat_vs_true": 0.8952780365943909
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6393205630788739,
+              "cosine_hhat_vs_true": 0.8960824012756348
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6432308591801907,
+              "cosine_hhat_vs_true": 0.8982758522033691
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6544084483373261,
+              "cosine_hhat_vs_true": 0.9026448726654053
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6666158264470718,
+              "cosine_hhat_vs_true": 0.9054434895515442
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": 0.6607811115299747,
+              "cosine_hhat_vs_true": 0.9036521911621094
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6585918537233968,
+              "cosine_hhat_vs_true": 0.903508722782135
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6775198493639667,
+              "cosine_hhat_vs_true": 0.9094623327255249
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6846838402382376,
+              "cosine_hhat_vs_true": 0.9120150208473206
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6763159900897799,
+              "cosine_hhat_vs_true": 0.9108109474182129
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": 0.6135849977293093,
+              "cosine_hhat_vs_true": 0.9274915456771851
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6244352318878632,
+              "cosine_hhat_vs_true": 0.9306617379188538
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6367435529535654,
+              "cosine_hhat_vs_true": 0.9330532550811768
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6275275363725443,
+              "cosine_hhat_vs_true": 0.9322078227996826
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5863929434552972,
+              "cosine_hhat_vs_true": 0.9270530939102173
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.6160069838404465,
+              "cosine_hhat_vs_true": 0.9478825926780701
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6364580161938167,
+              "cosine_hhat_vs_true": 0.9507352113723755
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6560555931364183,
+              "cosine_hhat_vs_true": 0.9533268213272095
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6480282990966779,
+              "cosine_hhat_vs_true": 0.9522380828857422
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6223864848557825,
+              "cosine_hhat_vs_true": 0.9487423300743103
+            }
+          },
+          "13": {
+            "4000": {
+              "delta_recon_r2_id": 0.6421534915770033,
+              "cosine_hhat_vs_true": 0.9723910689353943
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6794801684647107,
+              "cosine_hhat_vs_true": 0.9752984642982483
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6978932549251051,
+              "cosine_hhat_vs_true": 0.9768048524856567
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6987992346924885,
+              "cosine_hhat_vs_true": 0.9767897129058838
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6730695525933494,
+              "cosine_hhat_vs_true": 0.9748544096946716
+            }
+          }
+        }
+      }
+    },
+    "sycophancy": {
+      "primary": {
+        "ridge": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": 0.6766632949416741,
+              "cosine_hhat_vs_true": 0.826280415058136
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6834594281297948,
+              "cosine_hhat_vs_true": 0.8298372030258179
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6882775368455003,
+              "cosine_hhat_vs_true": 0.832522451877594
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6870537519997206,
+              "cosine_hhat_vs_true": 0.8320900797843933
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6881828210307761,
+              "cosine_hhat_vs_true": 0.8327044248580933
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": 0.6882959790438307,
+              "cosine_hhat_vs_true": 0.8370306491851807
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6949678057253033,
+              "cosine_hhat_vs_true": 0.8401340842247009
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7041027552398087,
+              "cosine_hhat_vs_true": 0.8452974557876587
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6997257153145232,
+              "cosine_hhat_vs_true": 0.844028890132904
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7019967659406694,
+              "cosine_hhat_vs_true": 0.8455982208251953
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": 0.6778523889405987,
+              "cosine_hhat_vs_true": 0.8318074345588684
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6832495877611489,
+              "cosine_hhat_vs_true": 0.8351930379867554
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6957844171706853,
+              "cosine_hhat_vs_true": 0.8423573970794678
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6942450046529467,
+              "cosine_hhat_vs_true": 0.8421345353126526
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6962393481038134,
+              "cosine_hhat_vs_true": 0.843576192855835
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": 0.6267631369133515,
+              "cosine_hhat_vs_true": 0.8102084994316101
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.672453677641113,
+              "cosine_hhat_vs_true": 0.8328307867050171
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6716990119143534,
+              "cosine_hhat_vs_true": 0.8359364867210388
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6753203196651142,
+              "cosine_hhat_vs_true": 0.8392260074615479
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6701778489281204,
+              "cosine_hhat_vs_true": 0.8372445702552795
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": 0.6364509337969395,
+              "cosine_hhat_vs_true": 0.8137679100036621
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6565312474355784,
+              "cosine_hhat_vs_true": 0.8242135047912598
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.652870586172277,
+              "cosine_hhat_vs_true": 0.8247628808021545
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6538904762784219,
+              "cosine_hhat_vs_true": 0.8246473073959351
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6491617304426618,
+              "cosine_hhat_vs_true": 0.8225558996200562
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": 0.6469417685352385,
+              "cosine_hhat_vs_true": 0.8269315361976624
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6415043271228691,
+              "cosine_hhat_vs_true": 0.8269038200378418
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6475228579294707,
+              "cosine_hhat_vs_true": 0.8296499848365784
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6460761823572719,
+              "cosine_hhat_vs_true": 0.8294883966445923
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.642744957386941,
+              "cosine_hhat_vs_true": 0.8280691504478455
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.6689454018810009,
+              "cosine_hhat_vs_true": 0.837644636631012
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.668878565012685,
+              "cosine_hhat_vs_true": 0.8384676575660706
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6727482686304241,
+              "cosine_hhat_vs_true": 0.8418183922767639
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6702861014181005,
+              "cosine_hhat_vs_true": 0.8402462601661682
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6568809633146571,
+              "cosine_hhat_vs_true": 0.8357585072517395
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": 0.6624642895562907,
+              "cosine_hhat_vs_true": 0.8414934873580933
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6622951605342441,
+              "cosine_hhat_vs_true": 0.8437316417694092
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.671131573431615,
+              "cosine_hhat_vs_true": 0.8496021032333374
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6706969750947873,
+              "cosine_hhat_vs_true": 0.8502026796340942
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6681079743536844,
+              "cosine_hhat_vs_true": 0.8500003814697266
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.68933992918775,
+              "cosine_hhat_vs_true": 0.8561126589775085
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6965261363246267,
+              "cosine_hhat_vs_true": 0.860691249370575
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6946635526202389,
+              "cosine_hhat_vs_true": 0.8610703945159912
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6916375314674152,
+              "cosine_hhat_vs_true": 0.8599014282226562
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6886938055200948,
+              "cosine_hhat_vs_true": 0.8599892258644104
+            }
+          },
+          "18": {
+            "4000": {
+              "delta_recon_r2_id": 0.7010341741676422,
+              "cosine_hhat_vs_true": 0.8692131638526917
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7013820113810263,
+              "cosine_hhat_vs_true": 0.8701037168502808
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7057583516655771,
+              "cosine_hhat_vs_true": 0.8741353154182434
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7094496803497363,
+              "cosine_hhat_vs_true": 0.8761589527130127
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7081895033500909,
+              "cosine_hhat_vs_true": 0.8771601915359497
+            }
+          },
+          "20": {
+            "4000": {
+              "delta_recon_r2_id": 0.7423021001649868,
+              "cosine_hhat_vs_true": 0.9001660943031311
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.751088143513654,
+              "cosine_hhat_vs_true": 0.9037095308303833
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7625170381325423,
+              "cosine_hhat_vs_true": 0.9088649153709412
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7679702128081061,
+              "cosine_hhat_vs_true": 0.9110584259033203
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7713054361783199,
+              "cosine_hhat_vs_true": 0.9127680063247681
+            }
+          },
+          "22": {
+            "4000": {
+              "delta_recon_r2_id": 0.7525775550603995,
+              "cosine_hhat_vs_true": 0.9302572011947632
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7664962212820756,
+              "cosine_hhat_vs_true": 0.9341945052146912
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7795966111786071,
+              "cosine_hhat_vs_true": 0.9383623600006104
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7877918908109443,
+              "cosine_hhat_vs_true": 0.9407030344009399
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7937489301669526,
+              "cosine_hhat_vs_true": 0.942567765712738
+            }
+          },
+          "24": {
+            "4000": {
+              "delta_recon_r2_id": 0.7478035328394553,
+              "cosine_hhat_vs_true": 0.961632251739502
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7647764495422782,
+              "cosine_hhat_vs_true": 0.964212954044342
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7857381995316557,
+              "cosine_hhat_vs_true": 0.9674960970878601
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7980416248003432,
+              "cosine_hhat_vs_true": 0.9693995714187622
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.8062020793923135,
+              "cosine_hhat_vs_true": 0.9706792831420898
+            }
+          },
+          "25": {
+            "4000": {
+              "delta_recon_r2_id": 0.7463598798811809,
+              "cosine_hhat_vs_true": 0.9788491129875183
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7615241192144078,
+              "cosine_hhat_vs_true": 0.9801122546195984
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7845509320310533,
+              "cosine_hhat_vs_true": 0.9820613861083984
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7967461840070836,
+              "cosine_hhat_vs_true": 0.9830754399299622
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.8078471558430657,
+              "cosine_hhat_vs_true": 0.9840191006660461
+            }
+          }
+        },
+        "mlp": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": -74560412.77609965,
+              "cosine_hhat_vs_true": 0.5155839323997498
+            },
+            "100000": {
+              "delta_recon_r2_id": -17231968.241034973,
+              "cosine_hhat_vs_true": 0.530086100101471
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": -329281.37209240533,
+              "cosine_hhat_vs_true": 0.5166007280349731
+            },
+            "100000": {
+              "delta_recon_r2_id": -17286.16422884379,
+              "cosine_hhat_vs_true": 0.5511642694473267
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": -834.8995755253974,
+              "cosine_hhat_vs_true": 0.544410228729248
+            },
+            "100000": {
+              "delta_recon_r2_id": -1575.18622841669,
+              "cosine_hhat_vs_true": 0.5639963746070862
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": -1479.0006442460394,
+              "cosine_hhat_vs_true": 0.5396526455879211
+            },
+            "100000": {
+              "delta_recon_r2_id": -1441.380779178945,
+              "cosine_hhat_vs_true": 0.5852036476135254
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": -29.605425311762268,
+              "cosine_hhat_vs_true": 0.6387711763381958
+            },
+            "100000": {
+              "delta_recon_r2_id": -161.23490568354842,
+              "cosine_hhat_vs_true": 0.6604205369949341
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": -7.337456916574936,
+              "cosine_hhat_vs_true": 0.7030019760131836
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.3023628095735873,
+              "cosine_hhat_vs_true": 0.7621381878852844
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.3993722039456089,
+              "cosine_hhat_vs_true": 0.764625608921051
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5973693315699031,
+              "cosine_hhat_vs_true": 0.8103104829788208
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": -0.04762177546700497,
+              "cosine_hhat_vs_true": 0.7951076030731201
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6852075664076955,
+              "cosine_hhat_vs_true": 0.8569716811180115
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.5807640064935947,
+              "cosine_hhat_vs_true": 0.8450743556022644
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7138249307698714,
+              "cosine_hhat_vs_true": 0.8713600039482117
+            }
+          },
+          "18": {
+            "4000": {
+              "delta_recon_r2_id": 0.6474810695289366,
+              "cosine_hhat_vs_true": 0.8523261547088623
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7327509830253258,
+              "cosine_hhat_vs_true": 0.8902060389518738
+            }
+          },
+          "20": {
+            "4000": {
+              "delta_recon_r2_id": 0.6880372089541201,
+              "cosine_hhat_vs_true": 0.8915312886238098
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.766006927123917,
+              "cosine_hhat_vs_true": 0.9122139811515808
+            }
+          },
+          "22": {
+            "4000": {
+              "delta_recon_r2_id": 0.7280218292237951,
+              "cosine_hhat_vs_true": 0.9249961376190186
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.788552091948161,
+              "cosine_hhat_vs_true": 0.9411287903785706
+            }
+          },
+          "24": {
+            "4000": {
+              "delta_recon_r2_id": 0.72378637657369,
+              "cosine_hhat_vs_true": 0.9582599997520447
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7942243960627005,
+              "cosine_hhat_vs_true": 0.9689270257949829
+            }
+          },
+          "25": {
+            "4000": {
+              "delta_recon_r2_id": 0.7249250442051335,
+              "cosine_hhat_vs_true": 0.9772210717201233
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7972972250278229,
+              "cosine_hhat_vs_true": 0.9832028746604919
+            }
+          }
+        },
+        "direct_hop": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": 0.6584618826276883,
+              "cosine_hhat_vs_true": 0.8174731731414795
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6753079882078354,
+              "cosine_hhat_vs_true": 0.8263725638389587
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6883564135141145,
+              "cosine_hhat_vs_true": 0.833466649055481
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.68888277454801,
+              "cosine_hhat_vs_true": 0.834144651889801
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6899199993217655,
+              "cosine_hhat_vs_true": 0.8345069885253906
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": 0.6280992023452597,
+              "cosine_hhat_vs_true": 0.8179323077201843
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6447781535817727,
+              "cosine_hhat_vs_true": 0.8166428804397583
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6685026245842578,
+              "cosine_hhat_vs_true": 0.8284844756126404
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6700432434200057,
+              "cosine_hhat_vs_true": 0.829308271408081
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6699589592557018,
+              "cosine_hhat_vs_true": 0.8302655816078186
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": 0.5650403247604645,
+              "cosine_hhat_vs_true": 0.8044290542602539
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5898685830813124,
+              "cosine_hhat_vs_true": 0.8093895316123962
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6013998334518629,
+              "cosine_hhat_vs_true": 0.815342366695404
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6209439837869992,
+              "cosine_hhat_vs_true": 0.8155617117881775
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6255845360642821,
+              "cosine_hhat_vs_true": 0.8154436349868774
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": 0.5629255296614617,
+              "cosine_hhat_vs_true": 0.7919222116470337
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.577961976507156,
+              "cosine_hhat_vs_true": 0.8007696270942688
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5857537087084279,
+              "cosine_hhat_vs_true": 0.8147196769714355
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.5902541279645146,
+              "cosine_hhat_vs_true": 0.8174218535423279
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5815838567514351,
+              "cosine_hhat_vs_true": 0.8137280941009521
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": 0.5621217388887123,
+              "cosine_hhat_vs_true": 0.7799766063690186
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5366623040163103,
+              "cosine_hhat_vs_true": 0.7764619588851929
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5530120565656904,
+              "cosine_hhat_vs_true": 0.7844334244728088
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.543595167244556,
+              "cosine_hhat_vs_true": 0.779490053653717
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5280191441272055,
+              "cosine_hhat_vs_true": 0.7749814391136169
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": 0.5635899160177443,
+              "cosine_hhat_vs_true": 0.7894846796989441
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5735954663861871,
+              "cosine_hhat_vs_true": 0.7967456579208374
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5623887073753104,
+              "cosine_hhat_vs_true": 0.792570948600769
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.5520637684151617,
+              "cosine_hhat_vs_true": 0.7878881692886353
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5334219446504762,
+              "cosine_hhat_vs_true": 0.7849587202072144
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.5801378756187425,
+              "cosine_hhat_vs_true": 0.8005050420761108
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5757257012943223,
+              "cosine_hhat_vs_true": 0.8011402487754822
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5506594240826287,
+              "cosine_hhat_vs_true": 0.7943043112754822
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.529985658922868,
+              "cosine_hhat_vs_true": 0.7877402901649475
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5132331056009642,
+              "cosine_hhat_vs_true": 0.7826683521270752
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": 0.6020544265317721,
+              "cosine_hhat_vs_true": 0.8184452652931213
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6016808668538587,
+              "cosine_hhat_vs_true": 0.8221890330314636
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6068785632024203,
+              "cosine_hhat_vs_true": 0.8243023157119751
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.60651937614891,
+              "cosine_hhat_vs_true": 0.8262509703636169
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6088992153524106,
+              "cosine_hhat_vs_true": 0.8278926610946655
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.6277408270403688,
+              "cosine_hhat_vs_true": 0.8302193880081177
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6320329601891369,
+              "cosine_hhat_vs_true": 0.8365650177001953
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6335385683455199,
+              "cosine_hhat_vs_true": 0.8395414352416992
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6358606725058408,
+              "cosine_hhat_vs_true": 0.8407874703407288
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6340372918105017,
+              "cosine_hhat_vs_true": 0.842318058013916
+            }
+          },
+          "18": {
+            "4000": {
+              "delta_recon_r2_id": 0.654070450793756,
+              "cosine_hhat_vs_true": 0.8507570624351501
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.654682758826066,
+              "cosine_hhat_vs_true": 0.853165864944458
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6646598100238859,
+              "cosine_hhat_vs_true": 0.8603808879852295
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6753231000016036,
+              "cosine_hhat_vs_true": 0.865315318107605
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6803522452421705,
+              "cosine_hhat_vs_true": 0.8695899844169617
+            }
+          },
+          "20": {
+            "4000": {
+              "delta_recon_r2_id": 0.7171936762375939,
+              "cosine_hhat_vs_true": 0.8901536464691162
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7293947140179342,
+              "cosine_hhat_vs_true": 0.8950670957565308
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7469977004179937,
+              "cosine_hhat_vs_true": 0.9027532935142517
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7561089654165787,
+              "cosine_hhat_vs_true": 0.9062778949737549
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7632850339887615,
+              "cosine_hhat_vs_true": 0.9093453288078308
+            }
+          },
+          "22": {
+            "4000": {
+              "delta_recon_r2_id": 0.7410630991935682,
+              "cosine_hhat_vs_true": 0.9271177649497986
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7560142336857066,
+              "cosine_hhat_vs_true": 0.9312914609909058
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.775889918778316,
+              "cosine_hhat_vs_true": 0.9374493956565857
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7868812677672178,
+              "cosine_hhat_vs_true": 0.9404311776161194
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7953921404666516,
+              "cosine_hhat_vs_true": 0.9429307579994202
+            }
+          },
+          "24": {
+            "4000": {
+              "delta_recon_r2_id": 0.7443032750586029,
+              "cosine_hhat_vs_true": 0.9611139297485352
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7632705897032483,
+              "cosine_hhat_vs_true": 0.963974118232727
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7858203737238876,
+              "cosine_hhat_vs_true": 0.9674986600875854
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.800293410864079,
+              "cosine_hhat_vs_true": 0.9697357416152954
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.8083571789349208,
+              "cosine_hhat_vs_true": 0.9709914922714233
+            }
+          },
+          "25": {
+            "4000": {
+              "delta_recon_r2_id": 0.7463598798811809,
+              "cosine_hhat_vs_true": 0.9788491129875183
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7615241192144078,
+              "cosine_hhat_vs_true": 0.9801122546195984
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7845509320310533,
+              "cosine_hhat_vs_true": 0.9820613861083984
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7967461840070836,
+              "cosine_hhat_vs_true": 0.9830754399299622
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.8078471558430657,
+              "cosine_hhat_vs_true": 0.9840191006660461
+            }
+          }
+        }
+      },
+      "companion": {
+        "ridge": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": 0.6614875098678775,
+              "cosine_hhat_vs_true": 0.8267359733581543
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6675727265124116,
+              "cosine_hhat_vs_true": 0.8299529552459717
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.669623613142483,
+              "cosine_hhat_vs_true": 0.830893874168396
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6673562706664464,
+              "cosine_hhat_vs_true": 0.8298642635345459
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6681905525399459,
+              "cosine_hhat_vs_true": 0.8303325772285461
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": 0.6639742655024392,
+              "cosine_hhat_vs_true": 0.8443517088890076
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6707742127011587,
+              "cosine_hhat_vs_true": 0.8477604389190674
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6829341861000071,
+              "cosine_hhat_vs_true": 0.8537604808807373
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6753538604809706,
+              "cosine_hhat_vs_true": 0.8507418632507324
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6774119407756776,
+              "cosine_hhat_vs_true": 0.8519445657730103
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": 0.6483775278789515,
+              "cosine_hhat_vs_true": 0.8443484902381897
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6599954862925832,
+              "cosine_hhat_vs_true": 0.8504436612129211
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6793557855994772,
+              "cosine_hhat_vs_true": 0.8597500324249268
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6786436164356893,
+              "cosine_hhat_vs_true": 0.8608695864677429
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6813547380021716,
+              "cosine_hhat_vs_true": 0.8621413111686707
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": 0.5577607939541709,
+              "cosine_hhat_vs_true": 0.827048659324646
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.623022584426107,
+              "cosine_hhat_vs_true": 0.8530815839767456
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6221825886197994,
+              "cosine_hhat_vs_true": 0.8567274808883667
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6332909729998171,
+              "cosine_hhat_vs_true": 0.8611540198326111
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6313018061892555,
+              "cosine_hhat_vs_true": 0.860008716583252
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": 0.5557132122984578,
+              "cosine_hhat_vs_true": 0.8285906314849854
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5915463538989516,
+              "cosine_hhat_vs_true": 0.8438186049461365
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6080408577365566,
+              "cosine_hhat_vs_true": 0.8503369688987732
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.623443158385967,
+              "cosine_hhat_vs_true": 0.8547537922859192
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6148843227942411,
+              "cosine_hhat_vs_true": 0.8516103625297546
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": 0.5506532741460146,
+              "cosine_hhat_vs_true": 0.8528081774711609
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5502874225946012,
+              "cosine_hhat_vs_true": 0.8557104468345642
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5775165816393606,
+              "cosine_hhat_vs_true": 0.8627233505249023
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.577914623619887,
+              "cosine_hhat_vs_true": 0.8635594844818115
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5742834530677066,
+              "cosine_hhat_vs_true": 0.8620415925979614
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.6038310884955433,
+              "cosine_hhat_vs_true": 0.8778862357139587
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6113921683754417,
+              "cosine_hhat_vs_true": 0.8804886937141418
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6277776531585623,
+              "cosine_hhat_vs_true": 0.8860329985618591
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6250905854348772,
+              "cosine_hhat_vs_true": 0.8852757215499878
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6028027207230986,
+              "cosine_hhat_vs_true": 0.8789417147636414
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": 0.6075623631147234,
+              "cosine_hhat_vs_true": 0.9045369029045105
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6139050754371382,
+              "cosine_hhat_vs_true": 0.9077008962631226
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6432878552072495,
+              "cosine_hhat_vs_true": 0.9145702719688416
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6433181685509096,
+              "cosine_hhat_vs_true": 0.9146122932434082
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6482720937892825,
+              "cosine_hhat_vs_true": 0.9157812595367432
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.6409215772389767,
+              "cosine_hhat_vs_true": 0.9281554222106934
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6595636440758222,
+              "cosine_hhat_vs_true": 0.9323928952217102
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6799261747661011,
+              "cosine_hhat_vs_true": 0.9364843368530273
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6830280114783405,
+              "cosine_hhat_vs_true": 0.9372065663337708
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6842021416305606,
+              "cosine_hhat_vs_true": 0.9376522302627563
+            }
+          },
+          "18": {
+            "4000": {
+              "delta_recon_r2_id": 0.6699786020781953,
+              "cosine_hhat_vs_true": 0.9663956761360168
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6926296481120163,
+              "cosine_hhat_vs_true": 0.9687463641166687
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7118266425076972,
+              "cosine_hhat_vs_true": 0.9707178473472595
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7224004626155414,
+              "cosine_hhat_vs_true": 0.9718288779258728
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.727769769108872,
+              "cosine_hhat_vs_true": 0.9723879098892212
+            }
+          }
+        },
+        "mlp": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": -47359228.24326894,
+              "cosine_hhat_vs_true": 0.5058802962303162
+            },
+            "100000": {
+              "delta_recon_r2_id": -17639505.113509048,
+              "cosine_hhat_vs_true": 0.5204434394836426
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": -226358.9133426274,
+              "cosine_hhat_vs_true": 0.5095930695533752
+            },
+            "100000": {
+              "delta_recon_r2_id": -19611.67948118843,
+              "cosine_hhat_vs_true": 0.5486807823181152
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": -578.6628155104661,
+              "cosine_hhat_vs_true": 0.560563325881958
+            },
+            "100000": {
+              "delta_recon_r2_id": -1777.4434307884676,
+              "cosine_hhat_vs_true": 0.5645577311515808
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": -1116.695468555496,
+              "cosine_hhat_vs_true": 0.5478741526603699
+            },
+            "100000": {
+              "delta_recon_r2_id": -1768.082685505441,
+              "cosine_hhat_vs_true": 0.5869673490524292
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": -18.716916451979586,
+              "cosine_hhat_vs_true": 0.6329188346862793
+            },
+            "100000": {
+              "delta_recon_r2_id": -210.7613084291718,
+              "cosine_hhat_vs_true": 0.6863837242126465
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": -3.7176991768715713,
+              "cosine_hhat_vs_true": 0.7414359450340271
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.09029133653008958,
+              "cosine_hhat_vs_true": 0.7929530143737793
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.33486557661784033,
+              "cosine_hhat_vs_true": 0.8182335495948792
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5021541159107156,
+              "cosine_hhat_vs_true": 0.8467215895652771
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": 0.2789791256638141,
+              "cosine_hhat_vs_true": 0.8613512516021729
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5895745618530598,
+              "cosine_hhat_vs_true": 0.9029750227928162
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.5041093635883576,
+              "cosine_hhat_vs_true": 0.9037418365478516
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6279293719798176,
+              "cosine_hhat_vs_true": 0.925359845161438
+            }
+          },
+          "18": {
+            "4000": {
+              "delta_recon_r2_id": 0.5558876302541379,
+              "cosine_hhat_vs_true": 0.9547023177146912
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.671776113915822,
+              "cosine_hhat_vs_true": 0.9665493369102478
+            }
+          }
+        },
+        "direct_hop": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": 0.6521513247944319,
+              "cosine_hhat_vs_true": 0.8221580982208252
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.664977627711244,
+              "cosine_hhat_vs_true": 0.8288738131523132
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6750455146289371,
+              "cosine_hhat_vs_true": 0.8344618678092957
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6762746135973743,
+              "cosine_hhat_vs_true": 0.8355697393417358
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6762574021830703,
+              "cosine_hhat_vs_true": 0.8354405760765076
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": 0.6208459233011272,
+              "cosine_hhat_vs_true": 0.8254678845405579
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6302817572132509,
+              "cosine_hhat_vs_true": 0.8276487588882446
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6548042203150142,
+              "cosine_hhat_vs_true": 0.8412507176399231
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6559705270826568,
+              "cosine_hhat_vs_true": 0.842582106590271
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6506037057810161,
+              "cosine_hhat_vs_true": 0.8424147963523865
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": 0.6020097007046946,
+              "cosine_hhat_vs_true": 0.8255271315574646
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.613598427213426,
+              "cosine_hhat_vs_true": 0.8325179219245911
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6303005932135627,
+              "cosine_hhat_vs_true": 0.8410241007804871
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6343373483504399,
+              "cosine_hhat_vs_true": 0.842154860496521
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6421768585291687,
+              "cosine_hhat_vs_true": 0.8465635776519775
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": 0.558286198354685,
+              "cosine_hhat_vs_true": 0.8300274014472961
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5780039030225406,
+              "cosine_hhat_vs_true": 0.8384268879890442
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5823998971952168,
+              "cosine_hhat_vs_true": 0.8462346792221069
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.5783126913484977,
+              "cosine_hhat_vs_true": 0.8484066128730774
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.587131051467773,
+              "cosine_hhat_vs_true": 0.8493067026138306
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": 0.5569684240178703,
+              "cosine_hhat_vs_true": 0.8273781538009644
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5525891889769936,
+              "cosine_hhat_vs_true": 0.8309218287467957
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5661620328472383,
+              "cosine_hhat_vs_true": 0.8353263139724731
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.5599086599876787,
+              "cosine_hhat_vs_true": 0.8320145010948181
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5375653784872005,
+              "cosine_hhat_vs_true": 0.8247146606445312
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": 0.553217502879109,
+              "cosine_hhat_vs_true": 0.8515027165412903
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5697131258071083,
+              "cosine_hhat_vs_true": 0.8583394289016724
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5854134160092732,
+              "cosine_hhat_vs_true": 0.8633958101272583
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.575701634913206,
+              "cosine_hhat_vs_true": 0.8616499900817871
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5662779900851975,
+              "cosine_hhat_vs_true": 0.8584650158882141
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.583570405472359,
+              "cosine_hhat_vs_true": 0.872080385684967
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.5866867818453854,
+              "cosine_hhat_vs_true": 0.8731325268745422
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.5932913728609476,
+              "cosine_hhat_vs_true": 0.8755578398704529
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.5805187446766218,
+              "cosine_hhat_vs_true": 0.8717928528785706
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5775252091938199,
+              "cosine_hhat_vs_true": 0.870904803276062
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": 0.6115438535234903,
+              "cosine_hhat_vs_true": 0.9054040312767029
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6230188481071344,
+              "cosine_hhat_vs_true": 0.9090732336044312
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6443362508152414,
+              "cosine_hhat_vs_true": 0.9142870903015137
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6415502365606703,
+              "cosine_hhat_vs_true": 0.9136979579925537
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6471078180749242,
+              "cosine_hhat_vs_true": 0.9153659343719482
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.6372195886958636,
+              "cosine_hhat_vs_true": 0.9276371002197266
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6572740443067866,
+              "cosine_hhat_vs_true": 0.9320639371871948
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6782088370227051,
+              "cosine_hhat_vs_true": 0.9364590048789978
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6836372351579498,
+              "cosine_hhat_vs_true": 0.9374151229858398
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6891328140108575,
+              "cosine_hhat_vs_true": 0.9386786818504333
+            }
+          },
+          "18": {
+            "4000": {
+              "delta_recon_r2_id": 0.6699786020781953,
+              "cosine_hhat_vs_true": 0.9663956761360168
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6926296481120163,
+              "cosine_hhat_vs_true": 0.9687463641166687
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7118266425076972,
+              "cosine_hhat_vs_true": 0.9707178473472595
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7224004626155414,
+              "cosine_hhat_vs_true": 0.9718288779258728
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.727769769108872,
+              "cosine_hhat_vs_true": 0.9723879098892212
+            }
+          }
+        }
+      }
+    },
+    "hallucination": {
+      "primary": {
+        "ridge": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": 0.773081111399935,
+              "cosine_hhat_vs_true": 0.8956124186515808
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7723321274061635,
+              "cosine_hhat_vs_true": 0.8953399658203125
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7714111078732064,
+              "cosine_hhat_vs_true": 0.8953552842140198
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.770877168303417,
+              "cosine_hhat_vs_true": 0.8953870534896851
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.771910089611634,
+              "cosine_hhat_vs_true": 0.8957488536834717
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": 0.7700964205694447,
+              "cosine_hhat_vs_true": 0.9100451469421387
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7709345225164898,
+              "cosine_hhat_vs_true": 0.9102339148521423
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7759522971341184,
+              "cosine_hhat_vs_true": 0.9120323061943054
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7730320745365369,
+              "cosine_hhat_vs_true": 0.911309003829956
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7731995911343409,
+              "cosine_hhat_vs_true": 0.9113696813583374
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": 0.7521358815186234,
+              "cosine_hhat_vs_true": 0.9090175628662109
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7605928131529189,
+              "cosine_hhat_vs_true": 0.9130455851554871
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7715826403539265,
+              "cosine_hhat_vs_true": 0.9168771505355835
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7589140670587606,
+              "cosine_hhat_vs_true": 0.9134240746498108
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7601734870300008,
+              "cosine_hhat_vs_true": 0.9139962792396545
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": 0.6691928407871852,
+              "cosine_hhat_vs_true": 0.8974038362503052
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6729087694563479,
+              "cosine_hhat_vs_true": 0.9017362594604492
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6661411429217989,
+              "cosine_hhat_vs_true": 0.9016079902648926
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7014393157913359,
+              "cosine_hhat_vs_true": 0.9107974767684937
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7053196010493625,
+              "cosine_hhat_vs_true": 0.9122530817985535
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": 0.6800364898229732,
+              "cosine_hhat_vs_true": 0.9041579961776733
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6978644694757091,
+              "cosine_hhat_vs_true": 0.9103488326072693
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7013508367752809,
+              "cosine_hhat_vs_true": 0.9105892181396484
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7110986103896426,
+              "cosine_hhat_vs_true": 0.9134610891342163
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7085908087439141,
+              "cosine_hhat_vs_true": 0.912912130355835
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": 0.6437376866120019,
+              "cosine_hhat_vs_true": 0.919116199016571
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6579530692550198,
+              "cosine_hhat_vs_true": 0.9234188199043274
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.688379058843992,
+              "cosine_hhat_vs_true": 0.929353654384613
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6918691940917244,
+              "cosine_hhat_vs_true": 0.9304444789886475
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6754467324048856,
+              "cosine_hhat_vs_true": 0.9267173409461975
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.6920589617096817,
+              "cosine_hhat_vs_true": 0.9417994022369385
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7124938446214715,
+              "cosine_hhat_vs_true": 0.945686936378479
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7209050539380162,
+              "cosine_hhat_vs_true": 0.9472213387489319
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7225579120754988,
+              "cosine_hhat_vs_true": 0.9475590586662292
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6987094092130828,
+              "cosine_hhat_vs_true": 0.9430561661720276
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": 0.6881038988715087,
+              "cosine_hhat_vs_true": 0.9642478227615356
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7052024393446064,
+              "cosine_hhat_vs_true": 0.966418981552124
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7256674914850165,
+              "cosine_hhat_vs_true": 0.9685014486312866
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.734902133895768,
+              "cosine_hhat_vs_true": 0.9695402979850769
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7344119796912224,
+              "cosine_hhat_vs_true": 0.9695184826850891
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.7274754048500115,
+              "cosine_hhat_vs_true": 0.9870044589042664
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.753558598578492,
+              "cosine_hhat_vs_true": 0.9882405400276184
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7741674400377457,
+              "cosine_hhat_vs_true": 0.9891911149024963
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7846719994745626,
+              "cosine_hhat_vs_true": 0.9896970391273499
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7737200353232366,
+              "cosine_hhat_vs_true": 0.9891759753227234
+            }
+          }
+        },
+        "mlp": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": -25813042.54827915,
+              "cosine_hhat_vs_true": 0.3857131600379944
+            },
+            "100000": {
+              "delta_recon_r2_id": -3242051.6684503816,
+              "cosine_hhat_vs_true": 0.46778345108032227
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": -41821.193488798504,
+              "cosine_hhat_vs_true": 0.3986186683177948
+            },
+            "100000": {
+              "delta_recon_r2_id": -752.3310938768203,
+              "cosine_hhat_vs_true": 0.6010710597038269
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": -533.1051362003094,
+              "cosine_hhat_vs_true": 0.46471258997917175
+            },
+            "100000": {
+              "delta_recon_r2_id": -380.92549313453196,
+              "cosine_hhat_vs_true": 0.5649881958961487
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": -636.2896726749298,
+              "cosine_hhat_vs_true": 0.4619626998901367
+            },
+            "100000": {
+              "delta_recon_r2_id": -583.200355930971,
+              "cosine_hhat_vs_true": 0.5643987655639648
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": -3.46996233594617,
+              "cosine_hhat_vs_true": 0.74138343334198
+            },
+            "100000": {
+              "delta_recon_r2_id": -3.8494986713218395,
+              "cosine_hhat_vs_true": 0.7836158275604248
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": -0.4314337625203619,
+              "cosine_hhat_vs_true": 0.8314800262451172
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.3998448817178728,
+              "cosine_hhat_vs_true": 0.8836686015129089
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.4906398037717471,
+              "cosine_hhat_vs_true": 0.9048690795898438
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5366824749478136,
+              "cosine_hhat_vs_true": 0.9109838008880615
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": 0.44110688826637234,
+              "cosine_hhat_vs_true": 0.9406552910804749
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6105868050628338,
+              "cosine_hhat_vs_true": 0.9551547765731812
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.5922608138723275,
+              "cosine_hhat_vs_true": 0.980758547782898
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6567355909269925,
+              "cosine_hhat_vs_true": 0.9836294054985046
+            }
+          }
+        },
+        "direct_hop": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": 0.762779408269077,
+              "cosine_hhat_vs_true": 0.8915870785713196
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7615606308836941,
+              "cosine_hhat_vs_true": 0.8914554119110107
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7644886967405768,
+              "cosine_hhat_vs_true": 0.8922223448753357
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.76530678342425,
+              "cosine_hhat_vs_true": 0.8929532766342163
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7671572931424746,
+              "cosine_hhat_vs_true": 0.8939059972763062
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": 0.7588468758787944,
+              "cosine_hhat_vs_true": 0.9065500497817993
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7650038244153754,
+              "cosine_hhat_vs_true": 0.9091711044311523
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7737033925324016,
+              "cosine_hhat_vs_true": 0.9122724533081055
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7741025323075792,
+              "cosine_hhat_vs_true": 0.9125490188598633
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7754126876323266,
+              "cosine_hhat_vs_true": 0.913304328918457
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": 0.7460050082580888,
+              "cosine_hhat_vs_true": 0.9072035551071167
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7496191875980249,
+              "cosine_hhat_vs_true": 0.9105002880096436
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7504735991801214,
+              "cosine_hhat_vs_true": 0.9107013940811157
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7456988970758076,
+              "cosine_hhat_vs_true": 0.9098583459854126
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7404593436973631,
+              "cosine_hhat_vs_true": 0.9086513519287109
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": 0.6969357625084229,
+              "cosine_hhat_vs_true": 0.9074325561523438
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6836902039662547,
+              "cosine_hhat_vs_true": 0.9061017632484436
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6673512071285734,
+              "cosine_hhat_vs_true": 0.902849555015564
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6637273523658289,
+              "cosine_hhat_vs_true": 0.9022983312606812
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6794738372850329,
+              "cosine_hhat_vs_true": 0.9049656987190247
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": 0.6811575607726374,
+              "cosine_hhat_vs_true": 0.9039122462272644
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6844583077352338,
+              "cosine_hhat_vs_true": 0.907509446144104
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6754287120852239,
+              "cosine_hhat_vs_true": 0.9040177464485168
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6814320871602009,
+              "cosine_hhat_vs_true": 0.9060558676719666
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6783108697112583,
+              "cosine_hhat_vs_true": 0.9054903984069824
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": 0.6588393513095008,
+              "cosine_hhat_vs_true": 0.9217972755432129
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6867552132657138,
+              "cosine_hhat_vs_true": 0.9287064075469971
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6930881483806905,
+              "cosine_hhat_vs_true": 0.9302211403846741
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6902506207393498,
+              "cosine_hhat_vs_true": 0.9295105934143066
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6770187692286169,
+              "cosine_hhat_vs_true": 0.9265904426574707
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.6895089795334214,
+              "cosine_hhat_vs_true": 0.9410877227783203
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6992273782692615,
+              "cosine_hhat_vs_true": 0.9431568384170532
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7075505369299466,
+              "cosine_hhat_vs_true": 0.9448142647743225
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7077721242743753,
+              "cosine_hhat_vs_true": 0.9447511434555054
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7015482025666436,
+              "cosine_hhat_vs_true": 0.9434617161750793
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": 0.6999832158862638,
+              "cosine_hhat_vs_true": 0.9650174975395203
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.718323315106814,
+              "cosine_hhat_vs_true": 0.9672387838363647
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7353671269512909,
+              "cosine_hhat_vs_true": 0.9692443609237671
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7403408226599155,
+              "cosine_hhat_vs_true": 0.9698479175567627
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7129627886384369,
+              "cosine_hhat_vs_true": 0.9670235514640808
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.7274754048500115,
+              "cosine_hhat_vs_true": 0.9870044589042664
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.753558598578492,
+              "cosine_hhat_vs_true": 0.9882405400276184
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7741674400377457,
+              "cosine_hhat_vs_true": 0.9891911149024963
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7846719994745626,
+              "cosine_hhat_vs_true": 0.9896970391273499
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7737200353232366,
+              "cosine_hhat_vs_true": 0.9891759753227234
+            }
+          }
+        }
+      },
+      "companion": {
+        "ridge": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": 0.7215870114385213,
+              "cosine_hhat_vs_true": 0.8550846576690674
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7252562351474721,
+              "cosine_hhat_vs_true": 0.8578343987464905
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7283862850338089,
+              "cosine_hhat_vs_true": 0.8594276905059814
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7285615957611279,
+              "cosine_hhat_vs_true": 0.8590723276138306
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7293470694718245,
+              "cosine_hhat_vs_true": 0.8595027327537537
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": 0.7370644808019697,
+              "cosine_hhat_vs_true": 0.8680697679519653
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7408785376568721,
+              "cosine_hhat_vs_true": 0.8701027631759644
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7410539392179625,
+              "cosine_hhat_vs_true": 0.8702454566955566
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7411442414101113,
+              "cosine_hhat_vs_true": 0.8707461953163147
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.74221616136368,
+              "cosine_hhat_vs_true": 0.8713283538818359
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": 0.7241319064661773,
+              "cosine_hhat_vs_true": 0.8649550676345825
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7327601703060057,
+              "cosine_hhat_vs_true": 0.8702433109283447
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.739501085481135,
+              "cosine_hhat_vs_true": 0.8731656670570374
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7295175951942077,
+              "cosine_hhat_vs_true": 0.8688949942588806
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.731480897280268,
+              "cosine_hhat_vs_true": 0.8699904084205627
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": 0.6654509852689054,
+              "cosine_hhat_vs_true": 0.8400591611862183
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6868971595890045,
+              "cosine_hhat_vs_true": 0.8525997400283813
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6818369165845837,
+              "cosine_hhat_vs_true": 0.8529180884361267
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7049275741772044,
+              "cosine_hhat_vs_true": 0.8637783527374268
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7086122909115966,
+              "cosine_hhat_vs_true": 0.8649472594261169
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": 0.66699650343599,
+              "cosine_hhat_vs_true": 0.8382182121276855
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6813296804656448,
+              "cosine_hhat_vs_true": 0.8471644520759583
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6743523783383777,
+              "cosine_hhat_vs_true": 0.8431294560432434
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6819148029185618,
+              "cosine_hhat_vs_true": 0.8474289178848267
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6841311538475388,
+              "cosine_hhat_vs_true": 0.8485180139541626
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": 0.6738736305033524,
+              "cosine_hhat_vs_true": 0.8488632440567017
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6925517964090632,
+              "cosine_hhat_vs_true": 0.8594754338264465
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7077182778977492,
+              "cosine_hhat_vs_true": 0.8663371801376343
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7039730433463813,
+              "cosine_hhat_vs_true": 0.864278256893158
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6888271101294212,
+              "cosine_hhat_vs_true": 0.8572205901145935
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.7155274880774047,
+              "cosine_hhat_vs_true": 0.8726426362991333
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7264968523133328,
+              "cosine_hhat_vs_true": 0.8776130080223083
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.728484597362896,
+              "cosine_hhat_vs_true": 0.8785695433616638
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7231593502541319,
+              "cosine_hhat_vs_true": 0.8759691119194031
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7061430498147138,
+              "cosine_hhat_vs_true": 0.8675883412361145
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": 0.7188298018500503,
+              "cosine_hhat_vs_true": 0.8824323415756226
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7161943184000322,
+              "cosine_hhat_vs_true": 0.8812034130096436
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7226500128903031,
+              "cosine_hhat_vs_true": 0.883956789970398
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7171799889451065,
+              "cosine_hhat_vs_true": 0.8816233277320862
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7196571948578832,
+              "cosine_hhat_vs_true": 0.8829008936882019
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.7456859984516448,
+              "cosine_hhat_vs_true": 0.8964145183563232
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7537408169016235,
+              "cosine_hhat_vs_true": 0.8995910286903381
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7554489530901334,
+              "cosine_hhat_vs_true": 0.9001734852790833
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7526709431664182,
+              "cosine_hhat_vs_true": 0.899067223072052
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7532764386992059,
+              "cosine_hhat_vs_true": 0.8997383117675781
+            }
+          },
+          "18": {
+            "4000": {
+              "delta_recon_r2_id": 0.7603758762650672,
+              "cosine_hhat_vs_true": 0.9124689102172852
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7724028511358085,
+              "cosine_hhat_vs_true": 0.9168748259544373
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7776660953451877,
+              "cosine_hhat_vs_true": 0.9190366268157959
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7779800875194214,
+              "cosine_hhat_vs_true": 0.9191705584526062
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7774412723055757,
+              "cosine_hhat_vs_true": 0.9192588329315186
+            }
+          },
+          "20": {
+            "4000": {
+              "delta_recon_r2_id": 0.7851408504142712,
+              "cosine_hhat_vs_true": 0.9422827959060669
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.8003944020827485,
+              "cosine_hhat_vs_true": 0.9463942050933838
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.8099625236807931,
+              "cosine_hhat_vs_true": 0.9490452408790588
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.8128117520603442,
+              "cosine_hhat_vs_true": 0.9498623013496399
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.8149717797625173,
+              "cosine_hhat_vs_true": 0.950501561164856
+            }
+          },
+          "22": {
+            "4000": {
+              "delta_recon_r2_id": 0.7616433795439561,
+              "cosine_hhat_vs_true": 0.9710298776626587
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7867179076453702,
+              "cosine_hhat_vs_true": 0.9740578532218933
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.8033049782197297,
+              "cosine_hhat_vs_true": 0.9761022925376892
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.8111428920350492,
+              "cosine_hhat_vs_true": 0.9770631194114685
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.816646839231802,
+              "cosine_hhat_vs_true": 0.9777450561523438
+            }
+          },
+          "23": {
+            "4000": {
+              "delta_recon_r2_id": 0.7466778023985521,
+              "cosine_hhat_vs_true": 0.9852604866027832
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7778057251757754,
+              "cosine_hhat_vs_true": 0.9870591163635254
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7970000620217979,
+              "cosine_hhat_vs_true": 0.988185465335846
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.8061394531932768,
+              "cosine_hhat_vs_true": 0.988714337348938
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.8127584758425097,
+              "cosine_hhat_vs_true": 0.9890989065170288
+            }
+          }
+        },
+        "mlp": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": -131455507.12655462,
+              "cosine_hhat_vs_true": 0.5359271168708801
+            },
+            "100000": {
+              "delta_recon_r2_id": -16226432.928369654,
+              "cosine_hhat_vs_true": 0.6122936010360718
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": -186083.12452901996,
+              "cosine_hhat_vs_true": 0.5385974049568176
+            },
+            "100000": {
+              "delta_recon_r2_id": -3272.923681668251,
+              "cosine_hhat_vs_true": 0.6550540924072266
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": -2199.8005135359026,
+              "cosine_hhat_vs_true": 0.5584514737129211
+            },
+            "100000": {
+              "delta_recon_r2_id": -1715.888345388756,
+              "cosine_hhat_vs_true": 0.645904541015625
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": -2595.4728720002477,
+              "cosine_hhat_vs_true": 0.5544273853302002
+            },
+            "100000": {
+              "delta_recon_r2_id": -2216.6114850266295,
+              "cosine_hhat_vs_true": 0.6390281915664673
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": -19.178240088722568,
+              "cosine_hhat_vs_true": 0.6624793410301208
+            },
+            "100000": {
+              "delta_recon_r2_id": -17.536640280886655,
+              "cosine_hhat_vs_true": 0.6979302167892456
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": -2.739015883296532,
+              "cosine_hhat_vs_true": 0.7447291016578674
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.08966486468978285,
+              "cosine_hhat_vs_true": 0.7941510677337646
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.4647209664136187,
+              "cosine_hhat_vs_true": 0.8196334838867188
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.5373746909958559,
+              "cosine_hhat_vs_true": 0.8141908049583435
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": 0.005076087267881668,
+              "cosine_hhat_vs_true": 0.8362616300582886
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.715116048533317,
+              "cosine_hhat_vs_true": 0.8872935175895691
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.6828385044150553,
+              "cosine_hhat_vs_true": 0.877722442150116
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.74725384492788,
+              "cosine_hhat_vs_true": 0.9013185501098633
+            }
+          },
+          "18": {
+            "4000": {
+              "delta_recon_r2_id": 0.7208396898089807,
+              "cosine_hhat_vs_true": 0.9031725525856018
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7813347041254662,
+              "cosine_hhat_vs_true": 0.922720730304718
+            }
+          },
+          "20": {
+            "4000": {
+              "delta_recon_r2_id": 0.7457473179787424,
+              "cosine_hhat_vs_true": 0.9338961243629456
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.8020001260372798,
+              "cosine_hhat_vs_true": 0.9473018646240234
+            }
+          },
+          "22": {
+            "4000": {
+              "delta_recon_r2_id": 0.7199882578969026,
+              "cosine_hhat_vs_true": 0.9663071632385254
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7861890548414249,
+              "cosine_hhat_vs_true": 0.9741582274436951
+            }
+          },
+          "23": {
+            "4000": {
+              "delta_recon_r2_id": 0.6956486916219828,
+              "cosine_hhat_vs_true": 0.982305645942688
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7696587814408228,
+              "cosine_hhat_vs_true": 0.9866365790367126
+            }
+          }
+        },
+        "direct_hop": {
+          "0": {
+            "4000": {
+              "delta_recon_r2_id": 0.703774694854046,
+              "cosine_hhat_vs_true": 0.8444375395774841
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7127101700849796,
+              "cosine_hhat_vs_true": 0.8505872488021851
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7191076283775719,
+              "cosine_hhat_vs_true": 0.8541325330734253
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7242330833877413,
+              "cosine_hhat_vs_true": 0.8567981719970703
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7251594073288747,
+              "cosine_hhat_vs_true": 0.8572872877120972
+            }
+          },
+          "2": {
+            "4000": {
+              "delta_recon_r2_id": 0.7059578248081015,
+              "cosine_hhat_vs_true": 0.8575806021690369
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.721723098664236,
+              "cosine_hhat_vs_true": 0.8628649115562439
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7316106767245727,
+              "cosine_hhat_vs_true": 0.8668093085289001
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7341195721685267,
+              "cosine_hhat_vs_true": 0.8680827021598816
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7382432523534196,
+              "cosine_hhat_vs_true": 0.8704245686531067
+            }
+          },
+          "4": {
+            "4000": {
+              "delta_recon_r2_id": 0.6704830435877942,
+              "cosine_hhat_vs_true": 0.8416125774383545
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6756994270685779,
+              "cosine_hhat_vs_true": 0.8481752872467041
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6785021111184826,
+              "cosine_hhat_vs_true": 0.8498225808143616
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6836591831300587,
+              "cosine_hhat_vs_true": 0.849777340888977
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6809061447690703,
+              "cosine_hhat_vs_true": 0.8474135994911194
+            }
+          },
+          "6": {
+            "4000": {
+              "delta_recon_r2_id": 0.6352232807139675,
+              "cosine_hhat_vs_true": 0.8279204368591309
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6262412942788664,
+              "cosine_hhat_vs_true": 0.8327161073684692
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6118348389395913,
+              "cosine_hhat_vs_true": 0.8375046849250793
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6014488760706223,
+              "cosine_hhat_vs_true": 0.8434170484542847
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6041509166056965,
+              "cosine_hhat_vs_true": 0.8384259343147278
+            }
+          },
+          "8": {
+            "4000": {
+              "delta_recon_r2_id": 0.6069032369496785,
+              "cosine_hhat_vs_true": 0.807254433631897
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6037564396863906,
+              "cosine_hhat_vs_true": 0.812267005443573
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6107937640523764,
+              "cosine_hhat_vs_true": 0.8175918459892273
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6102645403945892,
+              "cosine_hhat_vs_true": 0.8189923167228699
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6015117763806597,
+              "cosine_hhat_vs_true": 0.8155872225761414
+            }
+          },
+          "10": {
+            "4000": {
+              "delta_recon_r2_id": 0.6269340413872025,
+              "cosine_hhat_vs_true": 0.8282080888748169
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6457397892289187,
+              "cosine_hhat_vs_true": 0.840483546257019
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6378326316174643,
+              "cosine_hhat_vs_true": 0.8375634551048279
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6347499646721936,
+              "cosine_hhat_vs_true": 0.8335661888122559
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6155588530204346,
+              "cosine_hhat_vs_true": 0.8258357644081116
+            }
+          },
+          "12": {
+            "4000": {
+              "delta_recon_r2_id": 0.6623146354890364,
+              "cosine_hhat_vs_true": 0.8471773266792297
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6667577354809826,
+              "cosine_hhat_vs_true": 0.8509236574172974
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6537406094391601,
+              "cosine_hhat_vs_true": 0.8463285565376282
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6440618224670867,
+              "cosine_hhat_vs_true": 0.8424898386001587
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6281041233681627,
+              "cosine_hhat_vs_true": 0.8358316421508789
+            }
+          },
+          "14": {
+            "4000": {
+              "delta_recon_r2_id": 0.6663629201151322,
+              "cosine_hhat_vs_true": 0.8592867255210876
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.6651532275090737,
+              "cosine_hhat_vs_true": 0.8603102564811707
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.6653239378231196,
+              "cosine_hhat_vs_true": 0.8612194061279297
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.6614668263013106,
+              "cosine_hhat_vs_true": 0.8593568205833435
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.6647172846231947,
+              "cosine_hhat_vs_true": 0.8608498573303223
+            }
+          },
+          "16": {
+            "4000": {
+              "delta_recon_r2_id": 0.7147266296357677,
+              "cosine_hhat_vs_true": 0.8830503225326538
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7185495158501702,
+              "cosine_hhat_vs_true": 0.8849049806594849
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7251390280169332,
+              "cosine_hhat_vs_true": 0.8889614343643188
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7227032635109667,
+              "cosine_hhat_vs_true": 0.8882465958595276
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7260469757382235,
+              "cosine_hhat_vs_true": 0.8897794485092163
+            }
+          },
+          "18": {
+            "4000": {
+              "delta_recon_r2_id": 0.7462439444366398,
+              "cosine_hhat_vs_true": 0.90706866979599
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.757953519872492,
+              "cosine_hhat_vs_true": 0.9115304946899414
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7646342968417464,
+              "cosine_hhat_vs_true": 0.9146602153778076
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.7675362345321599,
+              "cosine_hhat_vs_true": 0.9156990051269531
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.7696336468412522,
+              "cosine_hhat_vs_true": 0.9168226718902588
+            }
+          },
+          "20": {
+            "4000": {
+              "delta_recon_r2_id": 0.7790476637153188,
+              "cosine_hhat_vs_true": 0.9405298829078674
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7956819192464433,
+              "cosine_hhat_vs_true": 0.9451080560684204
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.8071180129396939,
+              "cosine_hhat_vs_true": 0.9482855796813965
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.8120745991533979,
+              "cosine_hhat_vs_true": 0.9496690034866333
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.8165812828332619,
+              "cosine_hhat_vs_true": 0.9509522914886475
+            }
+          },
+          "22": {
+            "4000": {
+              "delta_recon_r2_id": 0.7600452306596741,
+              "cosine_hhat_vs_true": 0.9708157777786255
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7858794937761617,
+              "cosine_hhat_vs_true": 0.9739426970481873
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.8043377984014857,
+              "cosine_hhat_vs_true": 0.9762147068977356
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.8127228779672155,
+              "cosine_hhat_vs_true": 0.9772432446479797
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.8189077040588579,
+              "cosine_hhat_vs_true": 0.9780125617980957
+            }
+          },
+          "23": {
+            "4000": {
+              "delta_recon_r2_id": 0.7466778023985521,
+              "cosine_hhat_vs_true": 0.9852604866027832
+            },
+            "10000": {
+              "delta_recon_r2_id": 0.7778057251757754,
+              "cosine_hhat_vs_true": 0.9870591163635254
+            },
+            "25000": {
+              "delta_recon_r2_id": 0.7970000620217979,
+              "cosine_hhat_vs_true": 0.988185465335846
+            },
+            "50000": {
+              "delta_recon_r2_id": 0.8061394531932768,
+              "cosine_hhat_vs_true": 0.988714337348938
+            },
+            "100000": {
+              "delta_recon_r2_id": 0.8127584758425097,
+              "cosine_hhat_vs_true": 0.9890989065170288
+            }
+          }
+        }
+      }
+    }
+  }
+}

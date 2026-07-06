@@ -1,0 +1,392 @@
+{
+  "commit": "634b6a5674",
+  "created": "2026-07-02T23:08:07Z",
+  "figsize": [
+    6.0,
+    9.0
+  ],
+  "points": [
+    {
+      "category": "PV raw projection",
+      "within-condition Pearson r": 0.1722517146635759,
+      "error": 0.22054046024957488,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "oracle (true answer proj.)",
+      "within-condition Pearson r": 0.4280513347183994,
+      "error": 0.1228519770714259,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "h \u2014 LMSYS (generic)",
+      "within-condition Pearson r": -0.06401421748337488,
+      "error": 0.2660522012287563,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "h \u2014 trait corpus",
+      "within-condition Pearson r": -0.1139624672158871,
+      "error": 0.19999233486705098,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "h \u2014 natural mix",
+      "within-condition Pearson r": -0.16438177059843867,
+      "error": 0.20029024487240976,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "h \u2014 1:1 mix",
+      "within-condition Pearson r": -0.1341934159490324,
+      "error": 0.23677138099191533,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "g \u2014 LMSYS (generic)",
+      "within-condition Pearson r": 0.07222964036288551,
+      "error": 0.10122915009768664,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "g \u2014 trait corpus",
+      "within-condition Pearson r": 0.1068784302145816,
+      "error": 0.07750459706117085,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "g \u2014 natural mix",
+      "within-condition Pearson r": 0.14179883006959537,
+      "error": 0.0794985683948285,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "g \u2014 1:1 mix",
+      "within-condition Pearson r": 0.12768941807945022,
+      "error": 0.07384209414059426,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "within-condition Pearson r": -0.06656688920670334,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "within-condition Pearson r": 0.3217990870597955,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "within-condition Pearson r": -0.3614616081548401,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "within-condition Pearson r": -0.3586001046098796,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "within-condition Pearson r": -0.38182059225033543,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "within-condition Pearson r": -0.38291769723778385,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "within-condition Pearson r": -0.031217144098087762,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "within-condition Pearson r": 0.021589463563494643,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 8.0,
+      "within-condition Pearson r": 0.04946743246363615,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 9.0,
+      "within-condition Pearson r": 0.04815299824295355,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "within-condition Pearson r": 0.3745140312924464,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "within-condition Pearson r": 0.5675030412026473,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "within-condition Pearson r": 0.17064279430267246,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "within-condition Pearson r": 0.04138456512422234,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "within-condition Pearson r": 0.018759897494484062,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "within-condition Pearson r": 0.09062506474604681,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "within-condition Pearson r": 0.17124115609728552,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "within-condition Pearson r": 0.17659865768583635,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 8.0,
+      "within-condition Pearson r": 0.20846456925329312,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 9.0,
+      "within-condition Pearson r": 0.19583718652414206,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "PV raw projection",
+      "within-condition Pearson r": 0.34478001173841955,
+      "error": 0.15298916426257136,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "oracle (true answer proj.)",
+      "within-condition Pearson r": 0.7132847666145685,
+      "error": 0.2373965490756225,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "h \u2014 LMSYS (generic)",
+      "within-condition Pearson r": 0.5779038991428996,
+      "error": 0.12433576341368069,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "h \u2014 trait corpus",
+      "within-condition Pearson r": 0.2090458106907542,
+      "error": 0.17820470405309055,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "h \u2014 natural mix",
+      "within-condition Pearson r": 0.4467692326697372,
+      "error": 0.17973120848783775,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "h \u2014 1:1 mix",
+      "within-condition Pearson r": 0.25859827629196835,
+      "error": 0.19295325963016935,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "g \u2014 LMSYS (generic)",
+      "within-condition Pearson r": 0.5001246102466037,
+      "error": 0.08013111364134565,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "g \u2014 trait corpus",
+      "within-condition Pearson r": -0.35399961069080416,
+      "error": 0.15204771129019157,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "g \u2014 natural mix",
+      "within-condition Pearson r": 0.42584247970103,
+      "error": 0.22843053434501118,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "g \u2014 1:1 mix",
+      "within-condition Pearson r": 0.24109417217254367,
+      "error": 0.27851478007501684,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "within-condition Pearson r": 0.20865806112147353,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "within-condition Pearson r": 0.4399236072798936,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "within-condition Pearson r": 0.4570094594842582,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "within-condition Pearson r": 0.05378532877952291,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "within-condition Pearson r": 0.27667411586475354,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "within-condition Pearson r": 0.07457632623521063,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 6.0,
+      "within-condition Pearson r": 0.4164565679061432,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 7.0,
+      "within-condition Pearson r": -0.5143661253855588,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 8.0,
+      "within-condition Pearson r": 0.24006436085520583,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 9.0,
+      "within-condition Pearson r": 0.018309191294719918,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "within-condition Pearson r": 0.5146363896466163,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "within-condition Pearson r": 0.9147167054311386,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "within-condition Pearson r": 0.7056809863116196,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "within-condition Pearson r": 0.410194736885704,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "within-condition Pearson r": 0.636136532840429,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "within-condition Pearson r": 0.46048284549554935,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "within-condition Pearson r": 0.5767187951888345,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 7.0,
+      "within-condition Pearson r": -0.2102707028051757,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 8.0,
+      "within-condition Pearson r": 0.6969254295452282,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 9.0,
+      "within-condition Pearson r": 0.5753387514447535,
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 60
+}

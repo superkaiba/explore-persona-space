@@ -1,0 +1,228 @@
+{
+  "commit": "2922b0a3e1",
+  "created": "2026-07-02T18:43:02Z",
+  "figsize": [
+    9.5,
+    5.6
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "answer mean\n\u0394_med (activation units)": 0.010871558579518052,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "answer mean\n\u0394_med (activation units)": 0.041124705290029255,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "answer mean\n\u0394_med (activation units)": 0.07558899341479422,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "answer mean\n\u0394_med (activation units)": 0.044389432476511774,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "answer mean\n\u0394_med (activation units)": 0.11720816555966729,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "answer mean\n\u0394_med (activation units)": 0.25863567043434055,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.2,
+      "y": 0.015453500558897906,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.8,
+      "y": 0.029632619602436027,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.8,
+      "y": 0.03136145713188224,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.2,
+      "y": 0.010342670034003222,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.2,
+      "y": 0.02641134843790659,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.2,
+      "y": 0.25467269971230583,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": -0.2,
+      "y": 0.10114586070289631,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.8,
+      "y": 0.3223961333007702,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.8,
+      "y": 0.14152373209831853,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 0.2,
+      "y": 0.03261589873891352,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.2,
+      "y": 0.09537394098760786,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.2,
+      "y": 0.1060787676778521,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": -0.2,
+      "turn boundary\n\u0394_med (activation units)": 0.09232367875761359,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.8,
+      "turn boundary\n\u0394_med (activation units)": 0.2588055069931936,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 1.8,
+      "turn boundary\n\u0394_med (activation units)": 0.3831914879896679,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.2,
+      "turn boundary\n\u0394_med (activation units)": 0.04506916150715056,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.2,
+      "turn boundary\n\u0394_med (activation units)": 0.17730064503018006,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.2,
+      "turn boundary\n\u0394_med (activation units)": 0.40255891068532607,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": -0.2,
+      "y": 0.058460366378968724,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.8,
+      "y": 0.042168823881514356,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 1.8,
+      "y": 0.13274898250078443,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 0.2,
+      "y": 0.01659758901871158,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 1.2,
+      "y": 0.08537215470103825,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 2.2,
+      "y": 0.2590533569930937,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": -0.2,
+      "y": 0.12478261031909282,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.8,
+      "y": 0.04833785049407026,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 1.8,
+      "y": 0.0984920607307524,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 0.2,
+      "y": 0.03803825174974063,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 1.2,
+      "y": 0.25028178365027576,
+      "_kind": "bar",
+      "_group": 11
+    },
+    {
+      "x": 2.2,
+      "y": 0.23546515057453465,
+      "_kind": "bar",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 36
+}

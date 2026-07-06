@@ -1,0 +1,600 @@
+{
+  "commit": "2511ed7da0",
+  "created": "2026-07-02T20:15:56Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "held-out Spearman rho": -0.34223289315726285,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "held-out Spearman rho": -0.2717406962785114,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "held-out Spearman rho": -0.23447779111644657,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "held-out Spearman rho": -0.48840336134453777,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "held-out Spearman rho": -0.4678511404561824,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "held-out Spearman rho": -0.5761824729891956,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "held-out Spearman rho": -0.5044417767106842,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "held-out Spearman rho": -0.3333973589435774,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "held-out Spearman rho": -0.3962064825930372,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "held-out Spearman rho": -0.3795918367346939,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "held-out Spearman rho": -0.20240096038415364,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "held-out Spearman rho": -0.24638655462184872,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "held-out Spearman rho": -0.4669867947178871,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "held-out Spearman rho": -0.45613445378151257,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "held-out Spearman rho": -0.4791836734693878,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "held-out Spearman rho": -0.4863865546218487,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "held-out Spearman rho": -0.42924369747899155,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "held-out Spearman rho": -0.5198079231692677,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "held-out Spearman rho": -0.5378631452581032,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out Spearman rho": -0.5854021608643457,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "held-out Spearman rho": -0.5891476590636254,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "held-out Spearman rho": -0.5579351740696278,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "held-out Spearman rho": -0.6071068427370948,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "held-out Spearman rho": -0.6064345738295318,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "held-out Spearman rho": -0.5772388955582233,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "held-out Spearman rho": -0.5193277310924369,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out Spearman rho": -0.5720528211284513,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "held-out Spearman rho": 0.2539735894357743,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "held-out Spearman rho": -0.45392557022809127,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "held-out Spearman rho": -0.3566386554621849,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "held-out Spearman rho": -0.4781272509003601,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "held-out Spearman rho": -0.5085714285714286,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "held-out Spearman rho": -0.4381752701080432,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "held-out Spearman rho": -0.46324129651860735,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "held-out Spearman rho": -0.4329891956782713,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "held-out Spearman rho": -0.4385594237695078,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "held-out Spearman rho": -0.43750300120048013,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "held-out Spearman rho": -0.39236494597839133,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "held-out Spearman rho": -0.38448979591836735,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "held-out Spearman rho": -0.42012004801920766,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "held-out Spearman rho": -0.42069627851140456,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "held-out Spearman rho": -0.39495798319327724,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "held-out Spearman rho": -0.4168547418967587,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "held-out Spearman rho": -0.3892917166866746,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "held-out Spearman rho": -0.4087875150060023,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "held-out Spearman rho": -0.41493397358943573,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "held-out Spearman rho": -0.41042016806722686,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out Spearman rho": -0.3376230492196879,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "held-out Spearman rho": -0.29536614645858345,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "held-out Spearman rho": -0.2614645858343337,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "held-out Spearman rho": -0.17743097238895558,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "held-out Spearman rho": -0.18060024009603842,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "held-out Spearman rho": -0.10924369747899158,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "held-out Spearman rho": -0.12297719087635053,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "held-out Spearman rho": -0.10175270108043216,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "held-out Spearman rho": -0.3883313325330132,
+      "series": "mean over answer tokens",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "held-out Spearman rho": 0.4060024009603841,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "held-out Spearman rho": -0.22439375750300117,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "held-out Spearman rho": -0.037118847539015606,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "held-out Spearman rho": -0.23322929171668666,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "held-out Spearman rho": -0.007539015606242497,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "held-out Spearman rho": -0.45392557022809127,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "held-out Spearman rho": -0.4888835534213685,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "held-out Spearman rho": -0.3432893157262905,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "held-out Spearman rho": -0.18261704681872748,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "held-out Spearman rho": -0.24081632653061225,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "held-out Spearman rho": -0.24379351740696276,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "held-out Spearman rho": -0.31668667466986794,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "held-out Spearman rho": -0.3064105642256902,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "held-out Spearman rho": -0.24388955582232894,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "held-out Spearman rho": -0.230828331332533,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "held-out Spearman rho": -0.3381992797118847,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "held-out Spearman rho": -0.2905642256902761,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "held-out Spearman rho": -0.3359903961584633,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "held-out Spearman rho": -0.4204081632653061,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "held-out Spearman rho": -0.4753421368547419,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "held-out Spearman rho": -0.49358943577430975,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "held-out Spearman rho": -0.487250900360144,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "held-out Spearman rho": -0.550252100840336,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "held-out Spearman rho": -0.5652340936374549,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "held-out Spearman rho": -0.5945258103241297,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "held-out Spearman rho": -0.5681152460984393,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "held-out Spearman rho": -0.5820408163265306,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "held-out Spearman rho": -0.5070348139255703,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 84
+}

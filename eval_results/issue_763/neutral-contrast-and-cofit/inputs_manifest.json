@@ -1,0 +1,211 @@
+{
+  "round": "neutral-contrast-and-cofit",
+  "inputs": [
+    {
+      "path": "data/issue_763/pv_rollouts/deception.jsonl",
+      "sha256": "2f88e5d136e55461a65120d844ed206460f61fe98a1afd187fe26e64cc44be77",
+      "bytes": 1703635,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_rollouts/deception.jsonl"
+    },
+    {
+      "path": "data/issue_763/pv_judge_v2/deception.json",
+      "sha256": "40a03f10af96b0dd78cdcf3fbeeec19236e4b0d03ad1563758f9501d7d7c2522",
+      "bytes": 21464,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_judge_v2/deception.json"
+    },
+    {
+      "path": "eval_results/issue_763/v0_shards/v0_deception.pt",
+      "sha256": "e421f4cb17ea14807b67bbba3455d8cad5c3499a9ebfa59e834fe08dd681757d",
+      "bytes": 20073164,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/v0_shards/v0_deception.pt"
+    },
+    {
+      "path": "eval_results/issue_763/pv_shards/rb_deception.pt",
+      "sha256": "6b1e30009af8fddcf85b3da40eb17f90df9ee1241ce95036a7759c71405e9791",
+      "bytes": 403084,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_shards/rb_deception.pt"
+    },
+    {
+      "path": "eval_results/issue_763/neutral-contrast-and-cofit/pv_directions_v2/deception.pt",
+      "sha256": "3db4c28bdc11dd8327b78aa68f002319bac27b6762a0ffc3e4e19887f1c2493c",
+      "bytes": 2009839,
+      "source": "round Phase A/B (this run)"
+    },
+    {
+      "path": "eval_results/issue_763/neutral-contrast-and-cofit/c0_shards/c0_deception.pt",
+      "sha256": "e7ee190da4d3b316207fde63f1ad484d17fd0e0e41e25140acefabacb58baac0",
+      "bytes": 20073228,
+      "source": "round Phase A (this run)"
+    },
+    {
+      "path": "data/issue_763/pv_rollouts/fact_expression.jsonl",
+      "sha256": "8fde560a64fe188ae2b243321564e4c4c7811163d97af7e9a46c0c7e7b670db4",
+      "bytes": 1040542,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_rollouts/fact_expression.jsonl"
+    },
+    {
+      "path": "data/issue_763/pv_judge_v2/fact_expression.json",
+      "sha256": "3bab9f4b8de00ebf731688f1d30d1d9091d5e34fd35e9ba087b692cf2119ef4d",
+      "bytes": 21203,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_judge_v2/fact_expression.json"
+    },
+    {
+      "path": "eval_results/issue_763/v0_shards/v0_fact_expression.pt",
+      "sha256": "e3e79a416681f8471b0f0e7955daf4d0bb988e10fd52949d0ab87b47df87462d",
+      "bytes": 20073270,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/v0_shards/v0_fact_expression.pt"
+    },
+    {
+      "path": "eval_results/issue_763/pv_shards/rb_fact_expression.pt",
+      "sha256": "e7b27d89616da243c900ebbff329cfdea48bb67fd3c663b6674edd78e9b690e2",
+      "bytes": 403126,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_shards/rb_fact_expression.pt"
+    },
+    {
+      "path": "eval_results/issue_763/neutral-contrast-and-cofit/pv_directions_v2/fact_expression.pt",
+      "sha256": "6da8bdf0ac9a1ef25a0da680c330769586d4f6ccba528829144a4e2fb8ea2b1a",
+      "bytes": 2009905,
+      "source": "round Phase A/B (this run)"
+    },
+    {
+      "path": "eval_results/issue_763/neutral-contrast-and-cofit/c0_shards/c0_fact_expression.pt",
+      "sha256": "2a97abdde30cb21f69f228468d3a9e70dcbfe23505a9ba09530ccce95e1097a3",
+      "bytes": 20073270,
+      "source": "round Phase A (this run)"
+    },
+    {
+      "path": "data/issue_763/pv_rollouts/format_style.jsonl",
+      "sha256": "366f9721975a98500b8588f6e8e29c474ba32c378ff6e9ebff5a54f8a18221b9",
+      "bytes": 2538811,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_rollouts/format_style.jsonl"
+    },
+    {
+      "path": "data/issue_763/pv_judge_v2/format_style.json",
+      "sha256": "b87aae2896c59fe5313e8b27b95f830e2f517643c50035b1a66707a03ac85ac1",
+      "bytes": 20717,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_judge_v2/format_style.json"
+    },
+    {
+      "path": "eval_results/issue_763/v0_shards/v0_format_style.pt",
+      "sha256": "853be5d3191ff4033fd27f1a57c78b7271614b79d884be1cdd12beba3252628e",
+      "bytes": 20073185,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/v0_shards/v0_format_style.pt"
+    },
+    {
+      "path": "eval_results/issue_763/pv_shards/rb_format_style.pt",
+      "sha256": "63f046559ba59d0333c74eeb403d4abc657c1180a02a3e861c3849f35f8821a1",
+      "bytes": 403105,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_shards/rb_format_style.pt"
+    },
+    {
+      "path": "eval_results/issue_763/neutral-contrast-and-cofit/pv_directions_v2/format_style.pt",
+      "sha256": "8a492cdd80af61fe0a1066f4272fd6ee1b32c057e1870a5c1b7808e10c0672e0",
+      "bytes": 1206606,
+      "source": "round Phase A/B (this run)"
+    },
+    {
+      "path": "eval_results/issue_763/neutral-contrast-and-cofit/c0_shards/c0_format_style.pt",
+      "sha256": "bf94aa270d9170aaae7f5c384ab1ddc38c7f201fff7f737a6e96df61ac027368",
+      "bytes": 20073249,
+      "source": "round Phase A (this run)"
+    },
+    {
+      "path": "data/issue_763/pv_rollouts/self_report.jsonl",
+      "sha256": "df649618a99c889530f0de8239cd545553f00f8fefe552a271138a70c6f6e142",
+      "bytes": 1638661,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_rollouts/self_report.jsonl"
+    },
+    {
+      "path": "data/issue_763/pv_judge_v2/self_report.json",
+      "sha256": "34d591d32f1574bbbd2984c8979083f8e96691994a7d3500ca13d3ef24643246",
+      "bytes": 21659,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_judge_v2/self_report.json"
+    },
+    {
+      "path": "eval_results/issue_763/v0_shards/v0_self_report.pt",
+      "sha256": "a7b556c6cc7945388047230b6ed8d46171ae10aa9d1d628c485676eaa80bb005",
+      "bytes": 20073178,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/v0_shards/v0_self_report.pt"
+    },
+    {
+      "path": "eval_results/issue_763/pv_shards/rb_self_report.pt",
+      "sha256": "90c68fac7efcdcce594d1fb67844cba10bd5743d7881fe639775a59dcb3b72e8",
+      "bytes": 403098,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_shards/rb_self_report.pt"
+    },
+    {
+      "path": "eval_results/issue_763/neutral-contrast-and-cofit/pv_directions_v2/self_report.pt",
+      "sha256": "e98db1ff497972e81798edda8153af1f82ba57f762082af0b7fd28d3de8f28fc",
+      "bytes": 2009861,
+      "source": "round Phase A/B (this run)"
+    },
+    {
+      "path": "eval_results/issue_763/neutral-contrast-and-cofit/c0_shards/c0_self_report.pt",
+      "sha256": "b7f1fde0d259107b8d6c7465c39a93fc5419b8750ff366da356321c404deb911",
+      "bytes": 20073242,
+      "source": "round Phase A (this run)"
+    },
+    {
+      "path": "data/issue_763/pv_rollouts/persona_drift.jsonl",
+      "sha256": "39ae1045bd270ae62994c6019d3edd9817217e0c1b27f2dea29865707b32361c",
+      "bytes": 1108772,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_rollouts/persona_drift.jsonl"
+    },
+    {
+      "path": "data/issue_763/pv_judge_v2/persona_drift.json",
+      "sha256": "964515311b5a0e1ed9d33c29f2dd73b74482d985dc741e120a83fdb44278ad0a",
+      "bytes": 20872,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_judge_v2/persona_drift.json"
+    },
+    {
+      "path": "eval_results/issue_763/v0_shards/v0_persona_drift.pt",
+      "sha256": "eee6a4b27a73fca887d73aaed654cce89d9645a406a1cc5a71a6da294724947d",
+      "bytes": 20073256,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/v0_shards/v0_persona_drift.pt"
+    },
+    {
+      "path": "eval_results/issue_763/pv_shards/rb_persona_drift.pt",
+      "sha256": "8aa38c1820462909e538242c65b63c32064012c0560059b1ded7f070171a3081",
+      "bytes": 403112,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/pv_shards/rb_persona_drift.pt"
+    },
+    {
+      "path": "eval_results/issue_763/neutral-contrast-and-cofit/pv_directions_v2/persona_drift.pt",
+      "sha256": "c5f96117ac56ebe073f47e54ebdedecb04178acb95aad3555f0f79e9e00a52c4",
+      "bytes": 2009883,
+      "source": "round Phase A/B (this run)"
+    },
+    {
+      "path": "eval_results/issue_763/neutral-contrast-and-cofit/c0_shards/c0_persona_drift.pt",
+      "sha256": "287ce7e6a4174766b28529207ec6f6f4ab803a582be194ce68f834db97f6b336",
+      "bytes": 20073256,
+      "source": "round Phase A (this run)"
+    },
+    {
+      "path": "eval_results/issue_763/E0_matched_by_behavior.json",
+      "sha256": "96dd97fbb007d307965bbeae28c2db74d28427c293ba835d226a970f942cbb2f",
+      "bytes": 6826308,
+      "source": "superkaiba1/explore-persona-space-data/issue763_matched_v0/analysis_tensors/E0_matched_by_behavior.json"
+    },
+    {
+      "path": "eval_results/issue_763/deception-rubric-reanchor/E0_deception_v2.json",
+      "sha256": "f15fd0dab4b44d00bb954baba0829c8435b43bc28e00d877ab87cb448a269608",
+      "bytes": 4318326,
+      "source": "git issue-763 (deception-rubric-reanchor, FROZEN)"
+    },
+    {
+      "path": "eval_results/issue_763/deception-rubric-reanchor/matched_predictor_results.json",
+      "sha256": "b0f7d85269222569b5541d3fb983b5d9abd040c2b694871f6bf511acd61ef50b",
+      "bytes": 38467,
+      "source": "git issue-763 (reanchor record: parent \u03c1 + ceilings)"
+    }
+  ],
+  "metadata": {
+    "git_commit": "0ea4402416a520509b6c5068f4e6d4dfea68ef8d",
+    "timestamp_utc": "2026-07-03T06:01:34.562397Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "phase": "cofit_inputs_manifest"
+  }
+}

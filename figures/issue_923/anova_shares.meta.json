@@ -1,0 +1,1188 @@
+{
+  "commit": "b412955da6",
+  "created": "2026-07-04T05:47:27Z",
+  "figsize": [
+    12.5,
+    4.4
+  ],
+  "points": [
+    {
+      "Layer": 0.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.7815839479005531,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 1.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.7564944042999474,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 2.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.7835205344274349,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 3.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.7913375829318208,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 4.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8175019925178981,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 5.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.797476027917995,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 6.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8039925062087517,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 7.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8456529101315327,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 8.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8594252117843361,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 9.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.9036990092840129,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 10.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.9024963474691335,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 11.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8946783810131325,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 12.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8930410273669336,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 13.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8919581016885764,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 14.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8894906331076974,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 15.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8619897447084531,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 16.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8579514847860505,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 17.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8528585839679106,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 18.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8369155271091667,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 19.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8552420359449825,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 20.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8593085834222078,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 21.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8759671093379261,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 22.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.893952576882934,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 23.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.9040689633890452,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 24.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.9108913969700376,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 25.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.9109789572708064,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 26.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.9045223712536595,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 27.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.8858532399950498,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 0.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.06817151543962297,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 1.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.08811633835041295,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 2.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.08169461589061097,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 3.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.08130198853126508,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 4.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.07173732663087644,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 5.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.08338879682008214,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 6.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.08730465454834724,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 7.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.06523487858201309,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 8.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.06294205447644628,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 9.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.041544482356879395,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 10.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.042764594480611574,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 11.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.04643937239295329,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 12.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.04654188322756566,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 13.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.047751029857935855,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 14.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.048856065750278316,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 15.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.06547862662206713,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 16.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.06597305896371548,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 17.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.06541585451839026,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 18.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.07756650599276327,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 19.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.0724124993724764,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 20.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.06919066440054879,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 21.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.05807665604027965,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 22.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.047432338366460186,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 23.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.04205387669309582,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 24.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.03584425837118778,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 25.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.03424257422844083,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 26.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.03798866584719405,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 27.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.043815287460609864,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 0.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.15024453665982399,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 1.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.15538925734963974,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 2.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.13478484968195412,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 3.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.12736042853691418,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 4.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.1107606808512255,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 5.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.11913517526192306,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 6.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.10870283924290106,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 7.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.08911221128645434,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 8.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.07763273373921782,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 9.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.05475650835910748,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 10.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.054739058050254946,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 11.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.058882246593914486,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 12.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.060417089405500564,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 13.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.060290868453487696,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 14.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.061653301142024254,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 15.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.07253162866947974,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 16.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.07607545625023394,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 17.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.08172556151369903,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 18.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.08551796689807024,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 19.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.07234546468254102,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 20.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.07150075217724337,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 21.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.06595623462179424,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 22.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.0586150847506059,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 23.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.05387715991785902,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 24.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.053264344658774616,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 25.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.054778468500752735,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 26.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.05748896289914627,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 27.0,
+      "In-sample variance share\n(PCA-48 target space)": 0.07033147254434015,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.701132596168199,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.6655241811638783,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.6953971480790317,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.7080639285928266,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.7387138271476228,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.720779014125986,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 6.0,
+      "y": 0.7289242177293168,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.7764517260911445,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 8.0,
+      "y": 0.7941123756420474,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 9.0,
+      "y": 0.8513461257866818,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 10.0,
+      "y": 0.851362665160728,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 11.0,
+      "y": 0.8447846609989725,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 12.0,
+      "y": 0.8406451804775188,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 13.0,
+      "y": 0.852675629989253,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.8550256703461677,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 15.0,
+      "y": 0.8254146169596716,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 16.0,
+      "y": 0.8236511485284973,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 17.0,
+      "y": 0.819737741357277,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.8087299219626435,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.8241084549204918,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.8294956606126599,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.8454901379508601,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.8610005038524544,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.8681381856240741,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.8756695113955166,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.8775511704277072,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.8740890459202153,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.8579535514795565,
+      "series": "Query main effect",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.10218830133977289,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.13300916924197023,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.1289699991460113,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.12016497833368892,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.10934651287588093,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.12320301364348286,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 6.0,
+      "y": 0.12406139201858597,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.09269031573018516,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 8.0,
+      "y": 0.08984400213968455,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 9.0,
+      "y": 0.06022984314039091,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 10.0,
+      "y": 0.06135685255395058,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 11.0,
+      "y": 0.06527717969103183,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 12.0,
+      "y": 0.06836161371115321,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 13.0,
+      "y": 0.0640008951665766,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.06346691824851847,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 15.0,
+      "y": 0.08387053273064247,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 16.0,
+      "y": 0.08419166293098743,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 17.0,
+      "y": 0.08367776646659417,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.09445607393690676,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.0910243307701134,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.08541952142685688,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.07372232549892695,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.06320154399929691,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.05927554321135512,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.05169478236418599,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.04884863092040542,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.05227517722703568,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.05902364229070603,
+      "series": "Context main effect",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 0.0,
+      "y": 0.1966791024920281,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 1.0,
+      "y": 0.2014666495941516,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 2.0,
+      "y": 0.1756328527749572,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 3.0,
+      "y": 0.1717710930734845,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 4.0,
+      "y": 0.15193965997649603,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 5.0,
+      "y": 0.15601797223053102,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 6.0,
+      "y": 0.14701439025209725,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 7.0,
+      "y": 0.1308579581786704,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 8.0,
+      "y": 0.11604362221826799,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 9.0,
+      "y": 0.08842403107292744,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 10.0,
+      "y": 0.08728048228532165,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 11.0,
+      "y": 0.08993815930999546,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 12.0,
+      "y": 0.09099320581132815,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 13.0,
+      "y": 0.08332347484417027,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 14.0,
+      "y": 0.08150741140531391,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 15.0,
+      "y": 0.09071485030968605,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 16.0,
+      "y": 0.09215718854051545,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 17.0,
+      "y": 0.09658449217612881,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 18.0,
+      "y": 0.0968140041004499,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 19.0,
+      "y": 0.08486721430939487,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 20.0,
+      "y": 0.08508481796048345,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 21.0,
+      "y": 0.08078753655021292,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 22.0,
+      "y": 0.07579795214824883,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 23.0,
+      "y": 0.07258627116457074,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 24.0,
+      "y": 0.07263570624029737,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 25.0,
+      "y": 0.07360019865188738,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 26.0,
+      "y": 0.07363577685274923,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 27.0,
+      "y": 0.08302280622973739,
+      "series": "Context \u00d7 query interaction",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 168
+}

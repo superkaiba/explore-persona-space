@@ -1,4 +1,4 @@
-"""Structural tests for the ``/issue-tick`` lightweight recurring driver.
+r"""Structural tests for the ``/issue-tick`` lightweight recurring driver.
 
 What this pins (guarded-no-op redesign, 2026-06-12):
 
@@ -11,13 +11,20 @@ What this pins (guarded-no-op redesign, 2026-06-12):
 3. **The skill teardown match string matches the cron prompt literal**
    (``/issue-tick <N>``, NOT ``/issue <N>`` — the round-1 reviewer
    CRITICAL-2), with the hardened assert-after-delete (#501 runaway class).
+   Widened 2026-07-05 (#1052): the TEARDOWN sweep additionally matches
+   stray one-shot wakeup prompts as a second leg (start-anchored,
+   ``(?!\d)``-guarded, resolved from a fresh ``CronList`` at teardown
+   time, ``CronDelete`` not-found = success) — the ARM sites still fire
+   ONLY the tick prompt.
 4. **The full ``/issue`` skill's CronCreate (Step 0 + Step 6d.2) fires the
    ``/issue-tick <N>`` prompt at the ``*/45`` cadence** — the recurring
    driver is the lightweight skill, NOT the full ``/issue`` reload.
 5. **Every CRON-TEARDOWN site in the full ``/issue`` skill matches
    ``/issue-tick <N>``** so a teardown across N sites doesn't drift from the
    cron prompt (an unguarded substring-match would mis-dedupe sibling
-   issues).
+   issues). Since the 2026-07-05 widening (#1052) every teardown exit site
+   also carries the two-leg pointer (stray one-shot wakeups included) —
+   pinned per-site by ``test_issue_skill_exit_sites_carry_widened_pointer``.
 6. **``spawn_session.py --auto`` initial prompt is ``/issue {issue}``**
    (NOT ``/loop 10m /issue {issue}``) — cold start fires the full skill once,
    which then arms the tick cron. Cold respawn via
@@ -142,6 +149,36 @@ def test_issue_tick_skill_does_not_instruct_cron_create():
     )
 
 
+def test_tick_skills_digest_only_reads():
+    """#1000: every task-state read a tick skill instructs beyond the one
+    tick_triage.py call must be a jq-filtered digest (the #866/#906
+    refusal-kill prevention — an unpiped view dump pages the task body +
+    every marker note into the tick turn's context)."""
+    issue_body = ISSUE_TICK_SKILL.read_text()
+    campaign_body = (ISSUE_TICK_SKILL.parent.parent / "campaign-tick" / "SKILL.md").read_text()
+    assert "## Digest-only task-state reads" in issue_body
+    assert ".frontmatter.title" in issue_body  # jq-filtered slug lookup
+    assert "latest-marker <N> | jq" in issue_body  # filtered resume probe
+    # Every task-state read instruction line in BOTH tick skills must be
+    # digest-only. Prohibitive contract prose ("NEVER ..." bans, "does NOT"
+    # bullets) is whitelisted — it names the banned forms on purpose.
+    # NOTE (tripwire scope): the scan keys on the literal `<N>` placeholder
+    # convention; a future line writing a concrete issue number escapes it
+    # (accepted — skill prose uses `<N>` throughout; the positive asserts
+    # above anchor the contract independently).
+    for name, body in (("issue-tick", issue_body), ("campaign-tick", campaign_body)):
+        for line in body.splitlines():
+            if "NEVER" in line or "does NOT" in line:
+                continue  # prohibitive contract prose
+            if "view <N> --json" in line:
+                # unpiped dump pages body + all notes (reconciler Must-Fix 2a)
+                assert "jq" in line, f"{name}: unfiltered view --json instruction: {line!r}"
+            elif "task.py view <N>" in line:
+                # bare view (no --json) has NO sanctioned instruction form at
+                # all (reconciler Must-Fix 2b) — any non-prohibitive line is a FAIL.
+                raise AssertionError(f"{name}: bare task.py view <N> instruction: {line!r}")
+
+
 # ── /issue skill: Step 6d.2 cron prompt + teardown sites ───────────────────
 
 
@@ -192,6 +229,15 @@ def test_issue_skill_no_residual_issue_cron_match():
     """No site in the /issue skill should still match the OLD cron prompt
     literal ``"/issue <N>"`` for CRON-TEARDOWN purposes — that drift left
     stranded crons after the rename.
+
+    NOTE (2026-07-05, #1052): the banned literals below are the OLD-drift
+    *framings* (a teardown that thinks the recurring tick cron's prompt is
+    the bare full-skill prompt). The DELIBERATE #1052 one-shot-wakeup leg
+    of the teardown sweep uses distinct framing — the phrase
+    "stray one-shot wakeups" plus a start-anchored fallback pattern —
+    pinned POSITIVELY by ``test_teardown_match_set_includes_one_shot_wakeups``
+    and ``test_issue_skill_exit_sites_carry_widened_pointer``; it must
+    never be written in any of the banned shapes.
     """
     body = ISSUE_SKILL.read_text()
     # Catch both `prompt.strip() == "/issue <N>"` and `prompt="/issue <N>"`
@@ -209,6 +255,230 @@ def test_issue_skill_no_residual_issue_cron_match():
         f"these CRON-TEARDOWN literals still reference the old /issue prompt; "
         f"rewrite to /issue-tick: {found}"
     )
+
+
+def _cron_teardown_procedure_span(issue_skill_body: str) -> str:
+    """Return the Step 6d.2 canonical CRON-TEARDOWN procedure span of
+    ``issue/SKILL.md`` — from the literal ``**CRON-TEARDOWN procedure``
+    heading phrase up to the next bold paragraph heading (the
+    ``**Prevention ban`` paragraph that immediately follows it).
+
+    Section-scoping is what makes the #1052 pins non-vacuous: asserting the
+    two-leg fragments on the WHOLE file would pass even if the procedure
+    paragraph itself were reverted (the fragments also appear at the exit
+    sites). ``str.index`` raises ``ValueError`` on a missing anchor, so a
+    renamed/removed heading fails LOUDLY rather than silently widening the
+    span; the uniqueness asserts keep the first-occurrence binding honest
+    (a future DUPLICATE anchor inserted earlier in the file would silently
+    rebind the span to the wrong section).
+    """
+    assert issue_skill_body.count("**CRON-TEARDOWN procedure") == 1, (
+        "span start anchor '**CRON-TEARDOWN procedure' is no longer unique in "
+        "issue/SKILL.md — str.index would bind the FIRST occurrence, silently "
+        "scoping the pins to the wrong section; re-anchor the helper"
+    )
+    assert issue_skill_body.count("**Prevention ban") == 1, (
+        "span end anchor '**Prevention ban' is no longer unique in "
+        "issue/SKILL.md — the span could silently end at the wrong paragraph; "
+        "re-anchor the helper"
+    )
+    start = issue_skill_body.index("**CRON-TEARDOWN procedure")
+    end = issue_skill_body.index("\n\n**Prevention ban", start)
+    return issue_skill_body[start:end]
+
+
+def test_teardown_match_set_includes_one_shot_wakeups():
+    """#1052 widening (incident #980: a live one-shot wakeup with the bare
+    full-skill prompt survived teardown on a completed task and re-drove
+    it): the CRON-TEARDOWN sweep is TWO-LEG — the recurring tick cron PLUS
+    stray one-shot wakeups — and the arm sites still fire ONLY the tick
+    prompt (leg 2 is teardown-only, checked by the untouched arm-site
+    assertions above)."""
+    issue_body = ISSUE_SKILL.read_text()
+    span = _cron_teardown_procedure_span(issue_body)
+    # (i) leg 2 is named with the distinctive phrase in the canonical
+    # procedure span itself, not merely somewhere in the 9000-line file.
+    assert "stray one-shot `/issue <N>` wakeups" in span, (
+        "the Step 6d.2 canonical CRON-TEARDOWN procedure must name leg 2 "
+        "(stray one-shot `/issue <N>` wakeups) — the #980 class"
+    )
+    # (ii) the leg-2 fallback is START-anchored + trailing-digit-guarded.
+    assert r"/issue\s+<N>(?!\d)" in span, (
+        "the canonical procedure must carry the start-anchored, "
+        r"(?!\d)-guarded leg-2 fallback pattern /issue\s+<N>(?!\d)"
+    )
+    # The tick skills' canonical pseudocode carries the leg-2 whole-string
+    # equality in f-string form (never the banned prompt-literal shapes).
+    issue_tick_body = ISSUE_TICK_SKILL.read_text()
+    campaign_tick_body = (ISSUE_TICK_SKILL.parent.parent / "campaign-tick" / "SKILL.md").read_text()
+    assert 'f"/issue {N}"' in issue_tick_body, (
+        "issue-tick's canonical sweep block must match leg 2 by whole-string "
+        'equality (f"/issue {N}")'
+    )
+    assert 'f"/campaign {N}"' in campaign_tick_body, (
+        "campaign-tick's mirrored sweep block must match leg 2 by "
+        'whole-string equality (f"/campaign {N}")'
+    )
+    # Prevention ban: an /issue session never schedules its own re-drive
+    # (no ScheduleWakeup / one-shot CronCreate), regardless of prompt shape.
+    assert "ScheduleWakeup" in issue_body, (
+        "issue/SKILL.md must carry the #1052 prevention ban naming "
+        "ScheduleWakeup — the sanctioned self-wake is ONLY the tick cron"
+    )
+    # Campaign twin: whole-file positive pin, kept as plan-prescribed (§4.2
+    # File 5 item 4). This pin alone is satisfied by the Step 2 finalize
+    # site only (the Step 0 site line-wraps the phrase); per-site coverage
+    # of BOTH campaign teardown sites is
+    # test_campaign_skill_teardown_sites_carry_widened_pointer.
+    campaign_body = (ISSUE_TICK_SKILL.parent.parent / "campaign" / "SKILL.md").read_text()
+    assert "stray one-shot `/campaign <N>` wakeups" in campaign_body, (
+        "campaign/SKILL.md's CRON-TEARDOWN pointer sites must name the "
+        "campaign leg-2 match (stray one-shot `/campaign <N>` wakeups)"
+    )
+
+
+def test_teardown_cron_delete_not_found_is_success():
+    """#1052 idempotency (incident #988: a teardown ran CronDelete on a
+    recorded job id that was already gone, and the resulting
+    'No scheduled job with id ...' error was treated as a failure when the
+    job being gone IS the desired end state): every teardown-owning skill
+    body must (a) treat a CronDelete not-found error as SUCCESS and (b)
+    resolve live ids from a FRESH CronList at teardown time, never a
+    recorded id."""
+    bodies = {
+        "issue-tick": ISSUE_TICK_SKILL.read_text(),
+        "campaign-tick": (
+            ISSUE_TICK_SKILL.parent.parent / "campaign-tick" / "SKILL.md"
+        ).read_text(),
+        "issue": ISSUE_SKILL.read_text(),
+    }
+    for name, body in bodies.items():
+        assert "No scheduled job with id" in body, (
+            f"{name}: teardown must document the not-found-is-success rule "
+            "with the observed error shape 'No scheduled job with id' (#988)"
+        )
+        assert "FRESH `CronList`" in body, (
+            f"{name}: teardown must resolve live job ids from a FRESH "
+            "`CronList` at teardown time — recorded ids go stale (#988)"
+        )
+
+
+# The 8 anchored CRON-TEARDOWN edit sites of the #1052 widening. Each anchor
+# is a phrase that is (a) unique in issue/SKILL.md (asserted per-site) and
+# (b) adjacent to (or part of) the exit-site prose itself, so a missed /
+# reverted site FAILS BY NAME instead of hiding behind a whole-file token
+# count. Scope per site:
+#   "line"   — the anchor's OWN line must carry the widened fragment. Used
+#              for the single-line resume-TABLE rows: the two
+#              awaiting_promotion rows are ADJACENT lines, so any ±N-line
+#              window around either anchor contains the SIBLING row's
+#              fragment and a one-row revert would pass silently (round-1
+#              reconciler BLOCKER `resume-row-window-hollow`).
+#   "window" — the fragment may sit on a nearby line of the same multi-line
+#              prose paragraph (±8 lines). Verified per-site: no sibling
+#              site's fragment falls inside any window (nearest pair is
+#              unrecognised-gate at ~15 lines from park-mode-gate).
+_EXIT_SITE_ANCHORS = {
+    "cap5-blocked-exit": ("residual at cap-5 — open it", "window"),
+    "unrecognised-gate-exit": ("reason: unrecognised_gate_name", "window"),
+    # Pinned literal preserved verbatim for
+    # tests/test_pv_phase1_done_gate_handler.py::
+    # test_section_tail_cron_teardown_scoped_to_park_mode.
+    "park-mode-gate": ("run CRON-TEARDOWN before parking", "window"),
+    "step9b-awaiting-promotion": ("Run CRON-TEARDOWN now.", "window"),
+    "step9c-3x-fail": ("FAIL after 3 rounds — open it", "window"),
+    "step10-auto-complete": (
+        "Run CRON-TEARDOWN before applying the terminal status",
+        "window",
+    ),
+    "resume-row-promote-pending-unmerged": ("Step 9b auto-merge was interrupted", "line"),
+    "resume-row-promote-pending-merged": ("worktree already merged", "line"),
+}
+
+
+def test_issue_skill_exit_sites_carry_widened_pointer():
+    """Per-site completeness for the #1052 widening: every teardown exit
+    site (6 inline exit sites + the 2 awaiting_promotion promote-pending
+    resume-table rows) carries the widened two-leg pointer. A missed site
+    fails BY NAME; a vanished anchor fails LOUDLY (anchor-not-found); a
+    duplicated anchor fails LOUDLY (uniqueness) rather than silently
+    rebinding the scoped assertion to the wrong occurrence. Table-row
+    sites assert the fragment on the anchor's OWN line so an adjacent
+    sibling row can never satisfy a reverted row's pin."""
+    body = ISSUE_SKILL.read_text()
+    lines = body.splitlines()
+    for site, (anchor, scope) in _EXIT_SITE_ANCHORS.items():
+        hits = [i for i, line in enumerate(lines) if anchor in line]
+        assert hits, (
+            f"{site}: anchor {anchor!r} not found in issue/SKILL.md — the "
+            "exit site moved or was rewritten; re-anchor this test rather "
+            "than deleting the per-site pin"
+        )
+        assert len(hits) == 1, (
+            f"{site}: anchor {anchor!r} is not unique in issue/SKILL.md "
+            f"({len(hits)} hits) — a duplicate inserted earlier in the file "
+            "silently rebinds this site's assertion to the wrong occurrence; "
+            "pick a longer anchor"
+        )
+        i = hits[0]
+        if scope == "line":
+            assert "stray one-shot" in lines[i], (
+                f"{site}: the resume-table row containing anchor {anchor!r} "
+                "does not itself carry the widened two-leg fragment "
+                "'stray one-shot' — this row missed (or reverted) the #1052 "
+                "widening; the adjacent sibling row's fragment does NOT count"
+            )
+        else:
+            window = re.sub(r"\s+", " ", " ".join(lines[max(0, i - 8) : i + 9]))
+            assert "stray one-shot" in window, (
+                f"{site}: the teardown prose within ±8 lines of anchor "
+                f"{anchor!r} does not carry the widened two-leg fragment "
+                "'stray one-shot' — this exit site missed the #1052 widening"
+            )
+
+
+# The 2 restated CRON-TEARDOWN pointer sites of campaign/SKILL.md (the #1052
+# File-4 edits). The whole-file campaign pin in
+# test_teardown_match_set_includes_one_shot_wakeups is satisfied by the
+# Step 2 finalize site ALONE — the Step 0 site line-wraps the phrase, so a
+# Step 0 revert would pass the whole-file pin silently (round-1 reconciler
+# concern `campaign-site-pin-hollow`). Slices are whitespace-normalized
+# before asserting because the phrase legitimately wraps across lines
+# inside the Step 0 bullet.
+_CAMPAIGN_TEARDOWN_SITE_ANCHORS = {
+    "step0-terminal-status-branch": "`completed` / `archived` / `blocked` → CRON-TEARDOWN",
+    "step2-finalize-teardown": "4. CRON-TEARDOWN (fresh",
+}
+
+
+def test_campaign_skill_teardown_sites_carry_widened_pointer():
+    """Per-site completeness for the campaign twin (#1052): BOTH restated
+    teardown pointer sites in campaign/SKILL.md (the Step 0 terminal status
+    branch and the Step 2 finalize item) carry the campaign leg-2 phrase,
+    each asserted on its own whitespace-normalized site slice. A reverted
+    site fails BY NAME; a vanished or duplicated anchor fails LOUDLY."""
+    campaign_body = (ISSUE_TICK_SKILL.parent.parent / "campaign" / "SKILL.md").read_text()
+    lines = campaign_body.splitlines()
+    for site, anchor in _CAMPAIGN_TEARDOWN_SITE_ANCHORS.items():
+        hits = [i for i, line in enumerate(lines) if anchor in line]
+        assert hits, (
+            f"{site}: anchor {anchor!r} not found in campaign/SKILL.md — the "
+            "teardown site moved or was rewritten; re-anchor this test rather "
+            "than deleting the per-site pin"
+        )
+        assert len(hits) == 1, (
+            f"{site}: anchor {anchor!r} is not unique in campaign/SKILL.md "
+            f"({len(hits)} hits) — a duplicate silently rebinds this site's "
+            "assertion to the wrong occurrence; pick a longer anchor"
+        )
+        i = hits[0]
+        site_slice = re.sub(r"\s+", " ", " ".join(lines[i : i + 6]))
+        assert "stray one-shot `/campaign <N>` wakeups" in site_slice, (
+            f"{site}: the teardown pointer at anchor {anchor!r} does not "
+            "carry the campaign leg-2 phrase (stray one-shot `/campaign <N>` "
+            "wakeups, whitespace-normalized) — this site missed (or "
+            "reverted) the #1052 widening"
+        )
 
 
 def test_issue_skill_documents_push_notification():

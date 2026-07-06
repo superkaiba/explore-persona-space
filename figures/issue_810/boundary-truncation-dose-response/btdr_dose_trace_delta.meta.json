@@ -1,0 +1,579 @@
+{
+  "commit": "1abb2a37",
+  "created": "2026-07-04T07:42:12Z",
+  "figsize": [
+    9.5,
+    6.0
+  ],
+  "points": [
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.017794906129068644,
+      "error": 0.025336158947850077,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.03578915231875368,
+      "error": 0.022248801902966138,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.052047389698878566,
+      "error": 0.01828961689134575,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.05691072402047215,
+      "error": 0.01722708687929376,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.07608498013426501,
+      "error": 0.025336158947850077,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.050682733067453856,
+      "error": 0.022248801902966138,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.03253785131475517,
+      "error": 0.01828961689134575,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.01788048111895213,
+      "error": 0.01722708687929376,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.07240431466012631,
+      "error": 0.025336158947850077,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.07112390327233797,
+      "error": 0.022248801902966138,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.028771791647461464,
+      "error": 0.01828961689134575,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.029673540143365318,
+      "error": 0.01722708687929376,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.014410396331101194,
+      "error": 0.025336158947850077,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.006506519039255365,
+      "error": 0.022248801902966138,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0015882139866868483,
+      "error": 0.01828961689134575,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.0014319388923903498,
+      "error": 0.01722708687929376,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.003970517812647012,
+      "error": 0.025336158947850077,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.00485165194257664,
+      "error": 0.022248801902966138,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.006295240497329768,
+      "error": 0.01828961689134575,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0028313222078959477,
+      "error": 0.01722708687929376,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.021345466287940873,
+      "error": 0.025336158947850077,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.017693045591512968,
+      "error": 0.022248801902966138,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.00514541459171558,
+      "error": 0.01828961689134575,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.007832371200842903,
+      "error": 0.01722708687929376,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.002957267725349433,
+      "error": 0.025336158947850077,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.025282340421040606,
+      "error": 0.022248801902966138,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.010274777494369114,
+      "error": 0.01828961689134575,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.00983699741834232,
+      "error": 0.01722708687929376,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0026063832700978784,
+      "error": 0.025336158947850077,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0070560884369295085,
+      "error": 0.022248801902966138,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.000489475957013985,
+      "error": 0.01828961689134575,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0010635582846661995,
+      "error": 0.01722708687929376,
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.0009974277360165207,
+      "error": 0.025336158947850077,
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.0012841202368925053,
+      "error": 0.022248801902966138,
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.0034626651987339496,
+      "error": 0.01828961689134575,
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.006580275613136233,
+      "error": 0.01722708687929376,
+      "_kind": "errorbar",
+      "_group": 35
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.017794906129068644,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.03578915231875368,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.052047389698878566,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.05691072402047215,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.07608498013426501,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.050682733067453856,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.03253785131475517,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.01788048111895213,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.07240431466012631,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.07112390327233797,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.028771791647461464,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.029673540143365318,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.014410396331101194,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.006506519039255365,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0015882139866868483,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.0014319388923903498,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.003970517812647012,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.00485165194257664,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.006295240497329768,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0028313222078959477,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.021345466287940873,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.017693045591512968,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.00514541459171558,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.007832371200842903,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.002957267725349433,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.025282340421040606,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.010274777494369114,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.00983699741834232,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0026063832700978784,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0070560884369295085,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.000489475957013985,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0010635582846661995,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "retained answer fraction (%)": 0.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.0009974277360165207,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "retained answer fraction (%)": 25.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.0012841202368925053,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "retained answer fraction (%)": 50.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.0034626651987339496,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "retained answer fraction (%)": 75.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": -0.006580275613136233,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "retained answer fraction (%)": 100.0,
+      "\u0394 held-out skill (full \u2212 truncated), committed best layer": 0.0,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 44
+    }
+  ],
+  "n_series": 45,
+  "total_points": 81
+}

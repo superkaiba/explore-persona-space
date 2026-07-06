@@ -1,0 +1,621 @@
+{
+  "commit": "068f46c8",
+  "created": "2026-07-03T22:19:21Z",
+  "figsize": [
+    6.0,
+    3.5
+  ],
+  "points": [
+    {
+      "layer index": 0.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 1.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 2.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 3.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 4.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 5.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 6.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 7.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 8.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 9.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 10.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 11.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 12.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 13.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 14.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 15.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 16.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 17.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 18.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 19.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 20.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 21.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 22.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 23.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 24.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 25.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 26.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 27.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 28.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge ctx",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer index": 0.0,
+      "GCV-selected \u03bb": 0.01,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 1.0,
+      "GCV-selected \u03bb": 618.9658188912609,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 2.0,
+      "GCV-selected \u03bb": 618.9658188912609,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 3.0,
+      "GCV-selected \u03bb": 618.9658188912609,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 4.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 5.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 6.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 7.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 8.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 9.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 10.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 11.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 12.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 13.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 14.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 15.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 16.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 17.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 18.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 19.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 20.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 21.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 22.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 23.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 24.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 25.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 26.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 27.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 28.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer index": 0.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 1.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 2.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 3.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 4.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 5.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 6.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 7.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 8.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 9.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 10.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 11.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 12.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 13.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 14.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 15.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 16.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 17.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 18.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 19.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 20.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 21.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 22.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 23.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 24.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 25.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 26.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 27.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer index": 28.0,
+      "GCV-selected \u03bb": 1000.0,
+      "series": "ridge emb",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 87
+}

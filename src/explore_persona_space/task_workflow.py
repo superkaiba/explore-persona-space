@@ -67,16 +67,20 @@ excluded from auto-dispatch / the clarifier. Revivable via
 
 from __future__ import annotations
 
+import bisect
 import contextlib
 import fcntl
 import functools
 import hashlib
 import json
 import logging
+import math
 import os
+import random
 import re
 import shutil
 import subprocess
+import time
 from collections.abc import Iterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -143,6 +147,47 @@ KINDS = (
 # must run `task.py promote` to move to completed". Park-and-wait gate.
 PARK_STATUS = "awaiting_promotion"
 
+# Workflow-pipeline versions a task can be pinned to (EPS workflow-v2 plan,
+# Assumption 2). "v1" is the current pipeline; "v2" is the report-only
+# pipeline the `/issue` dispatcher branches to when a task's frontmatter
+# carries `workflow: v2`. The default for a NEW task resolves as
+# explicit-arg > env EPM_DEFAULT_WORKFLOW > DEFAULT_WORKFLOW_VERSION; the
+# flip of the default to "v2" is a later one-line env/config change after the
+# dogfood, NOT wired here. `workflow_version()` fail-opens to v1 so legacy
+# tasks (no `workflow:` key) resolve to the current pipeline everywhere.
+WORKFLOW_VERSIONS = ("v1", "v2")
+DEFAULT_WORKFLOW_VERSION = "v1"
+
+
+def workflow_version(frontmatter: dict[str, Any]) -> str:
+    """Return the workflow-pipeline version a task is pinned to.
+
+    Reads the ``workflow`` frontmatter key and fail-OPENS to
+    :data:`DEFAULT_WORKFLOW_VERSION` ("v1") for an absent, empty, or unknown
+    value — so legacy tasks (which have no ``workflow:`` key) resolve to the
+    current v1 pipeline everywhere and a garbage value never crashes a caller.
+    """
+    value = frontmatter.get("workflow")
+    if isinstance(value, str) and value.strip() in WORKFLOW_VERSIONS:
+        return value.strip()
+    return DEFAULT_WORKFLOW_VERSION
+
+
+def _resolve_workflow_version(explicit: str | None) -> str:
+    """Resolve a NEW task's workflow version at creation time.
+
+    Precedence: explicit arg > env ``EPM_DEFAULT_WORKFLOW`` >
+    :data:`DEFAULT_WORKFLOW_VERSION`. An unknown value at any layer falls
+    through to the next (fail-open to v1). The CLI validates the explicit arg
+    with ``argparse`` choices, so an unknown value here can only reach us from
+    a programmatic caller — treat it as unset rather than crash.
+    """
+    for candidate in (explicit, os.environ.get("EPM_DEFAULT_WORKFLOW")):
+        if isinstance(candidate, str) and candidate.strip() in WORKFLOW_VERSIONS:
+            return candidate.strip()
+    return DEFAULT_WORKFLOW_VERSION
+
+
 # Intermediate pipeline statuses a `followups_running` task may NOT re-enter
 # mid-round. The same-issue follow-up status-hold rule (SKILL.md Step 9b
 # § Same-issue follow-up loop, step 3): the round HOLDS `followups_running`
@@ -196,7 +241,10 @@ CODE_KINDS = frozenset({"infra", "analysis", "batch", "survey"})
 #       `tasks/`.
 #   (c) Branch-guards: `git -C <parent> symbolic-ref --short HEAD` must
 #       return `main`. Non-`main` and detached HEAD raise DISTINCT
-#       `RuntimeError`s naming the actual state.
+#       `RuntimeError`s naming the actual state; a detached HEAD with a LIVE
+#       primary-checkout rebase in progress first gets a bounded wait (#996,
+#       `EPM_TASKPY_REBASE_WAIT_SECONDS`, default 120s, 0 disables) before
+#       the refusal fires.
 #   (d) Caches via `functools.lru_cache(maxsize=1)` keyed on
 #       `(os.getpid(), os.getcwd())` so each Python invocation pays one
 #       subprocess pair total; cache invalidates across forks and cwd
@@ -227,13 +275,63 @@ def _sanitized_git_env() -> dict[str, str]:
     return env
 
 
-@functools.lru_cache(maxsize=1)
-def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
-    """Inner cache target. Keyed on (pid, cwd) so forks + chdirs invalidate
-    automatically. The key is computed by the wrapper; we ignore the
-    contents (we resolve relative to module dir + sanitized env, not cwd).
+# Bounded wait for a LIVE primary-checkout rebase before the detached-HEAD
+# refusal (#996). A concurrent `git pull --rebase` on the shared repo root
+# detaches the primary HEAD for the rebase duration; refusing instantly cost
+# ≥7 sessions their task.py mutations on 2026-07-03.
+_REBASE_WAIT_ENV = "EPM_TASKPY_REBASE_WAIT_SECONDS"  # total bound; 0 disables (default 120)
+_REBASE_POLL_ENV = "EPM_TASKPY_REBASE_POLL_SECONDS"  # poll interval (default 2.0)
+
+
+def _rebase_wait_bound_s() -> float:
+    """Total bounded-wait budget (seconds) for a live rebase before the
+    detached-HEAD refusal fires. ``0`` restores the pre-#996 immediate
+    refusal exactly. A non-float env value raises ``ValueError`` (fail
+    loud, project norm); a non-finite float (``nan``/``inf``) raises too —
+    ``nan`` defeats the ``time.monotonic() >= deadline`` comparison and
+    would wait unbounded."""
+    value = float(os.environ.get(_REBASE_WAIT_ENV, "120"))
+    if not math.isfinite(value):
+        raise ValueError(f"{_REBASE_WAIT_ENV} must be finite, got {value!r}")
+    return value
+
+
+def _rebase_poll_s() -> float:
+    """Poll interval (seconds) between branch-guard re-probes while waiting
+    out a live rebase. A non-float or non-finite env value raises
+    ``ValueError``."""
+    value = float(os.environ.get(_REBASE_POLL_ENV, "2.0"))
+    if not math.isfinite(value):
+        raise ValueError(f"{_REBASE_POLL_ENV} must be finite, got {value!r}")
+    return value
+
+
+def _rebase_in_progress(common_dir: Path) -> bool:
+    """True iff the PRIMARY checkout has a live (or stale) rebase state dir.
+
+    For the primary worktree the per-worktree git dir IS the common dir, so a
+    primary-checkout rebase writes `<common-dir>/rebase-merge` (merge /
+    interactive backend — the `pull.rebase=merges` default pinned in this
+    repo) or `<common-dir>/rebase-apply` (am backend). A LINKED worktree's
+    rebase lives under `<common-dir>/worktrees/<name>/` and does NOT detach
+    the primary HEAD — correctly excluded by probing the common dir only.
+
+    Mirrors ``scripts/sync_repo_root.py::_rebase_in_progress`` but takes the
+    validated common dir directly and uses ``.is_dir()`` where the sibling
+    uses ``.exists()`` — deliberate (the state dir is always a directory),
+    noted here so a future unifier doesn't read the divergence as
+    intentional filtering.
     """
-    env = _sanitized_git_env()
+    return (common_dir / "rebase-merge").is_dir() or (common_dir / "rebase-apply").is_dir()
+
+
+def _resolve_primary_checkout(env: dict[str, str]) -> Path:
+    """Resolve + validate the PRIMARY checkout root (the git common dir's
+    parent). Verbatim extraction of ``_resolve_repo_root_cached`` steps
+    (a)+(b) — the rev-parse + layout validation, everything BEFORE the
+    branch guard (#844). Raises ``RuntimeError`` on any failure; never
+    falls back to a ``__file__``/cwd walk-up.
+    """
     # (a) Locate the common git dir.
     try:
         proc = subprocess.run(
@@ -275,51 +373,135 @@ def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
             f"resolved repo root {parent!s} has no `tasks/` directory; "
             f"wrong repo or uninitialized layout — refusing to resolve tasks/."
         )
-    # (c) Branch guard.
-    sym = subprocess.run(
-        ["git", "-C", str(parent), "symbolic-ref", "--short", "HEAD"],
-        env=env,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if sym.returncode == 0:
-        branch = sym.stdout.strip()
-        if branch != "main":
-            # The primary checkout is parked on a real feature branch. Rather
-            # than refuse (the historical behavior, which silently dropped
-            # markers in ~7 sessions), auto-route every task.py read+write
-            # through a dedicated managed worktree pinned to a DETACHED `main`
-            # tip. Commits made through that worktree advance the `main` ref
-            # (see `_advance_main_ref`), so the guard's INTENT — commits land
-            # on main, never strand on a feature branch — is preserved; only
-            # the hard refusal is replaced. The `--detach main` pin (not the
-            # `main` BRANCH) is deliberate: a worktree holding the `main`
-            # branch would block the primary from `git checkout main`
-            # ("fatal: 'main' is already checked out at <managed>"), so a
-            # leaked managed worktree would brick the user's ability to return
-            # to main. A detached pin holds no branch-checkout lock, so a leak
-            # is benign. Returns the managed worktree path; `_git_commit`
-            # detects routing via `_is_routed_root` and does the
-            # reset-to-main / advance-main dance.
-            return _ensure_managed_main_worktree(parent, branch, env)
-    else:
+    return parent
+
+
+# NOTE: functools.lru_cache caches only successful RETURNS — a raised
+# RuntimeError (plain detached refusal or rebase-wait timeout) is NOT cached,
+# so the next call in the same process re-probes; a post-wait success IS
+# cached (desired).
+@functools.lru_cache(maxsize=1)
+def _resolve_repo_root_cached(_key: tuple[int, str]) -> Path:
+    """Inner cache target. Keyed on (pid, cwd) so forks + chdirs invalidate
+    automatically. The key is computed by the wrapper; we ignore the
+    contents (we resolve relative to module dir + sanitized env, not cwd).
+    """
+    env = _sanitized_git_env()
+    # (a)+(b) Locate the common git dir + validate its parent.
+    parent = _resolve_primary_checkout(env)
+    # The validated common dir (basename `.git` per _resolve_primary_checkout).
+    common_dir = parent / ".git"
+    wait_bound = _rebase_wait_bound_s()
+    deadline = time.monotonic() + wait_bound
+    # One extra re-probe for the marker-less boundary window: git's internal
+    # ordering of state-dir removal vs HEAD re-attach at rebase start/finish
+    # is not contractual, so a single 0.5s re-probe closes both the
+    # just-created and just-removed windows at a worst-case +0.5s on a
+    # genuine (non-rebase) detached refusal. Skipped entirely at knob=0.
+    grace_probes_left = 1 if wait_bound > 0 else 0
+    announced = False
+    polls = 0
+    while True:
+        # (c) Branch guard — re-entered in FULL each iteration, so a
+        # post-rebase HEAD attached to `main` returns the primary and a
+        # post-rebase HEAD on a non-main branch routes through the managed
+        # worktree (#844).
+        sym = subprocess.run(
+            ["git", "-C", str(parent), "symbolic-ref", "--short", "HEAD"],
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if sym.returncode == 0:
+            branch = sym.stdout.strip()
+            if branch != "main":
+                # The primary checkout is parked on a real feature branch. Rather
+                # than refuse (the historical behavior, which silently dropped
+                # markers in ~7 sessions), auto-route every task.py read+write
+                # through a dedicated managed worktree pinned to a DETACHED `main`
+                # tip. Commits made through that worktree advance the `main` ref
+                # (see `_advance_main_ref`), so the guard's INTENT — commits land
+                # on main, never strand on a feature branch — is preserved; only
+                # the hard refusal is replaced. The `--detach main` pin (not the
+                # `main` BRANCH) is deliberate: a worktree holding the `main`
+                # branch would block the primary from `git checkout main`
+                # ("fatal: 'main' is already checked out at <managed>"), so a
+                # leaked managed worktree would brick the user's ability to return
+                # to main. A detached pin holds no branch-checkout lock, so a leak
+                # is benign. Returns the managed worktree path; `_git_commit`
+                # detects routing via `_is_routed_root` and does the
+                # reset-to-main / advance-main dance.
+                return _ensure_managed_main_worktree(parent, branch, env)
+            return parent
         # `git symbolic-ref --short HEAD` returns rc=1 with stderr
         # "fatal: ref HEAD is not a symbolic ref" when HEAD is detached.
         # The substring check is the canonical detached-HEAD signal —
         # rc=128 can mean many other things (not a git repo, object
         # missing, …) and we don't want to misclassify those as detached.
         stderr = (sym.stderr or "").lower()
-        if "not a symbolic ref" in stderr:
+        if "not a symbolic ref" not in stderr:
+            raise RuntimeError(
+                f"`git symbolic-ref --short HEAD` failed (rc={sym.returncode}) "
+                f"in {parent}:\n  stderr: {sym.stderr!r}"
+            )
+        # Detached HEAD. When a LIVE rebase of the primary checkout is in
+        # progress, bounded-wait and re-probe instead of refusing outright
+        # (#996). WAITING (not routing through the managed worktree) is
+        # deliberate: a mid-rebase managed-worktree commit would CAS-advance a
+        # `refs/heads/main` the finishing rebase is about to force-move to its
+        # replayed tip (the orphaned-commit family sync_repo_root.py's
+        # docstring warns about); the rebase replays the pre-existing commits
+        # onto main anyway. No deadlock while a caller waits here holding the
+        # task-workflow flock: sync_repo_root.py acquires that flock BEFORE
+        # its pull_rebase, and that acquisition is itself LOCK_NB-bounded —
+        # the observed rebase never needs the flock to finish.
+        if wait_bound <= 0:
+            # Knob=0 → EXACT pre-#996 behavior: no marker probe, no grace,
+            # immediate refusal with the byte-identical message.
             raise RuntimeError(
                 f"main worktree HEAD ({parent}) is detached; "
                 f"re-attach to 'main' before running task.py."
             )
-        raise RuntimeError(
-            f"`git symbolic-ref --short HEAD` failed (rc={sym.returncode}) "
-            f"in {parent}:\n  stderr: {sym.stderr!r}"
-        )
-    return parent
+        rebasing = _rebase_in_progress(common_dir)
+        if not rebasing and grace_probes_left <= 0:
+            raise RuntimeError(
+                f"main worktree HEAD ({parent}) is detached; "
+                f"re-attach to 'main' before running task.py."
+            )
+        if time.monotonic() >= deadline:
+            raise RuntimeError(
+                f"main worktree HEAD ({parent}) is detached and a rebase state dir "
+                f"({common_dir / 'rebase-merge'} or rebase-apply) was still present after "
+                f"waiting {wait_bound:.0f}s ({_REBASE_WAIT_ENV}). A live `git pull --rebase` "
+                f"should finish in seconds; a state dir this old is likely a CRASHED rebase. "
+                f"Inspect with `git -C {parent} status`; `git -C {parent} rebase --abort` "
+                f"clears a stale rebase, then re-attach to 'main'."
+            )
+        if not rebasing:
+            grace_probes_left -= 1
+            time.sleep(0.5)  # just-created / just-removed marker window; single re-probe
+            continue
+        if not announced:
+            _log.warning(
+                "task.py: primary checkout HEAD (%s) is detached mid-rebase (%s present); "
+                "waiting up to %.0fs for the concurrent rebase to finish (poll %.1fs; "
+                "override via %s)...",
+                parent,
+                "rebase-merge/rebase-apply",
+                wait_bound,
+                _rebase_poll_s(),
+                _REBASE_WAIT_ENV,
+            )
+            announced = True
+        polls += 1
+        if polls % 10 == 0:  # heartbeat (cadence untested; entry line is the contract)
+            _log.warning(
+                "task.py: still waiting on the concurrent rebase (%.0fs of %.0fs elapsed)...",
+                wait_bound - max(deadline - time.monotonic(), 0.0),
+                wait_bound,
+            )
+        time.sleep(_rebase_poll_s())
 
 
 # ─── Off-main auto-routing (managed main-pinned worktree) ───────────────────
@@ -487,7 +669,10 @@ def repo_root() -> Path:
     Resolves via `git rev-parse --git-common-dir` from the directory of
     this module (NOT `os.getcwd()`). Branch-guards: raises a loud,
     distinct `RuntimeError` if the main worktree HEAD is on a non-`main`
-    branch or detached. Validates that the resolved path actually contains
+    branch or detached; a detached HEAD with a live primary-checkout rebase
+    in progress first gets a bounded wait (#996,
+    `EPM_TASKPY_REBASE_WAIT_SECONDS`, default 120s) before the refusal.
+    Validates that the resolved path actually contains
     `tasks/` and is not a submodule / bare layout. NEVER falls back to a
     walk-up resolver — silent fallback is what produced the
     worktree-staleness bug class this resolver replaces.
@@ -501,9 +686,31 @@ def repo_root() -> Path:
     return _resolve_repo_root_cached((os.getpid(), os.getcwd()))
 
 
+@functools.lru_cache(maxsize=1)
+def _primary_checkout_cached(_key: tuple[int, str]) -> Path:
+    """Inner cache target for :func:`primary_checkout_root`. Keyed on
+    (pid, cwd) exactly like ``_resolve_repo_root_cached`` so forks + chdirs
+    invalidate automatically.
+    """
+    return _resolve_primary_checkout(_sanitized_git_env())
+
+
+def primary_checkout_root() -> Path:
+    """Absolute path of the PRIMARY (main) checkout — the git common dir's
+    parent — with full layout validation but NO branch guard and NO off-main
+    routing to the managed ``_task-main-pin`` worktree. For consumers that
+    need the canonical checkout PATH (session-spawn cwd, #844), not a safe
+    tasks/ read-write root (those use :func:`repo_root`). Fails loud; never
+    falls back to a ``__file__``/cwd walk-up.
+    """
+    return _primary_checkout_cached((os.getpid(), os.getcwd()))
+
+
 def invalidate_cache() -> None:
-    """Drop the cached repo-root resolution. Next call re-probes git."""
+    """Drop the cached repo-root + primary-checkout resolutions. Next call
+    re-probes git."""
     _resolve_repo_root_cached.cache_clear()
+    _primary_checkout_cached.cache_clear()
 
 
 def tasks_dir() -> Path:
@@ -520,6 +727,15 @@ def registry_path() -> Path:
 # constants because they live under ``~`` and never depend on repo root.
 LOCK_DIR = Path.home() / ".task-workflow"
 LOCK_PATH = LOCK_DIR / "lock"
+# FORENSIC-ONLY sidecar of deferred bookkeeping commits (#1030): one JSONL row
+# per append-only mutation whose git commit failed AFTER the append durably
+# landed (see ``_commit_after_durable_append``). Lives OUTSIDE the repo —
+# recording a commit failure must not itself need a commit — beside the flock
+# every writer already owns. Nothing reads it automatically; it exists so a
+# human (or a future /daily sweep) can audit deferrals. Rows carry paths +
+# message + error, NOT the payload (the payload's durable home is the appended
+# file itself).
+DEFERRED_COMMITS_LOG = LOCK_DIR / "deferred-commits.jsonl"
 
 
 # ─── Locking ────────────────────────────────────────────────────────────────
@@ -711,6 +927,29 @@ def is_paper_task(fm: dict[str, Any]) -> bool:
     """
     v = fm.get("paper")
     return v is True or (isinstance(v, str) and v.strip().lower() == "true")
+
+
+#: Body sentinel for the v2 report clean-result form (workflow v2 — the
+#: report-only track: Motivation / Methodology / Metrics / Results-as-plots
+#: written by agents, TLDR / Next-steps written by Thomas). Placed on the line
+#: after the H1 ``# Experiment: ...`` title, mirroring the ``<!-- clean-result-v4 -->``
+#: convention. ``scripts/verify_report.py`` is the mechanical verifier for this
+#: form. Unlike ``paper: true`` (a frontmatter flag), a report body is
+#: identified by this BODY sentinel.
+REPORT_V1_SENTINEL = "<!-- report-v1 -->"
+
+
+def is_report_body(body: str) -> bool:
+    """True when ``body`` is a v2 report clean-result (carries ``REPORT_V1_SENTINEL``).
+
+    Detects the v2 report form by its body sentinel, the analogue of
+    :func:`is_paper_task` for the report track. Consumers (dashboard rendering,
+    promote-time logic, ``scripts/verify_report.py``) branch on this to treat a
+    report body as a valid clean-result form alongside the markdown-v4 and paper
+    tracks. Does NOT read frontmatter — a report task carries no ``paper``/form
+    frontmatter flag, only this sentinel.
+    """
+    return REPORT_V1_SENTINEL in body
 
 
 # ── Workflow-fix task helpers (#678 — the file-a-task + spawn-/issue-auto path) ─
@@ -1222,6 +1461,27 @@ STAGE_LIVENESS_KINDS = frozenset(
         "epm:proposed-tests",
     }
 )
+# Progress-note substrings that are ANTI-liveness for a stage-dispatch
+# freshness window (#949; incident #810): bracketed telemetry posted by the
+# session watcher / spawn machinery, never by the stage's own worker. The
+# watcher's own progress clock excludes the same classes
+# (scripts/autonomous_session_watch.py::_WATCHER_NOTE_SENTINELS — a script,
+# not importable from src/, so matched here by the shared bracketed
+# prefixes: every watcher sentinel embeds "[autonomous_session_watch:" and
+# spawn_session's bookkeeping sentinel embeds "[spawn-session:"). The
+# self-stamped "[long-phase-heartbeat]" prefix is DELIBERATELY absent — it
+# is posted by the stage's own long-running phase and IS liveness. The
+# sibling deliberate-stop exclusion (checked inline in
+# stage_dispatch_should_skip) also drops ANY note with
+# by == "spawn_session-stop" regardless of content — a future genuine
+# liveness post from spawn_session must use a different `by` or get a
+# carve-out here.
+STAGE_ANTILIVENESS_NOTE_SUBSTRINGS = frozenset(
+    {
+        "[autonomous_session_watch:",
+        "[spawn-session:",
+    }
+)
 
 _STAGE_ALIASES = {"code-reviewing": "code-review"}
 
@@ -1300,8 +1560,12 @@ def stage_dispatch_should_skip(
     (``STAGE_RESULT_KINDS[_normalize_stage(stage)]`` — clearing is round-agnostic by
     design, result markers carry no parsable round) or ``epm:failure``. While in
     flight, the freshness clock starts at the LATEST of the breadcrumb and any later
-    liveness marker (``STAGE_LIVENESS_KINDS`` or a non-breadcrumb ``epm:progress``;
-    a breadcrumb never refreshes any window): effective age < window -> skip reason;
+    liveness marker (``STAGE_LIVENESS_KINDS`` or a non-breadcrumb ``epm:progress`` —
+    EXCLUDING anti-liveness notes: a ``deliberate-stop`` record (``by ==
+    "spawn_session-stop"``) and bracketed watcher / spawn-session telemetry
+    (``STAGE_ANTILIVENESS_NOTE_SUBSTRINGS``) are stop/bookkeeping records, not
+    stage liveness, and never refresh a window (#810); a breadcrumb never
+    refreshes any window): effective age < window -> skip reason;
     >= window -> None (stalled, re-dispatch allowed). A malformed breadcrumb ``ts``
     fails toward dispatch (None); a malformed liveness ``ts`` is ignored. TOCTOU is a
     non-goal — two orchestrators both checking BEFORE either posts its breadcrumb can
@@ -1328,6 +1592,16 @@ def stage_dispatch_should_skip(
             note = (event.get("note", "") or "").lstrip()
             if note.startswith("stage-dispatch "):
                 continue
+            # Anti-liveness (#810/#949): a deliberate session stop is the
+            # death record of the stage's owner, and bracketed watcher /
+            # spawn-session telemetry is third-party bookkeeping — neither
+            # is evidence the stage's OWN work is alive, so neither
+            # refreshes the window. (They do NOT clear the in-flight
+            # state; only result kinds / epm:failure / expiry do that.)
+            if note.startswith("deliberate-stop ") or event.get("by") == "spawn_session-stop":
+                continue
+            if any(s in note for s in STAGE_ANTILIVENESS_NOTE_SUBSTRINGS):
+                continue
         elif kind not in STAGE_LIVENESS_KINDS:
             continue
         ts = _stage_event_ts(event)
@@ -1343,6 +1617,1059 @@ def stage_dispatch_should_skip(
         f"breadcrumb at {events[crumb_idx].get('ts', '')}, effective age {age_minutes:.1f}m "
         f"< window {window_minutes}m{refreshed}"
     )
+
+
+# Canonical PASS-verdict pattern for an epm:upload-verification note
+# (shape: **Verdict: PASS**; case-sensitive on purpose — prose "pass" must
+# not match). scripts/dispatch_issue.py keeps a private copy
+# (_UPLOAD_VERIFICATION_PASS_RE); parity pinned by a test
+# (tests/test_upload_verifier_currency.py).
+UPLOAD_VERIFICATION_PASS_RE = re.compile(r"Verdict:\s*PASS\b")
+
+# Marker kinds recording an upload-verification VERDICT (the per-round
+# epm:upload-verification report, or the sticky epm:upload-verified the
+# skill posts right before auto-terminate).
+UPLOAD_VERDICT_KINDS = frozenset({"epm:upload-verification", "epm:upload-verified"})
+
+
+def _upload_verification_event_index(
+    events: list[dict],
+) -> tuple[list[int], dict[int, dict[str, str]], list[int], list[int]]:
+    """Index events for the currency scan (one pass, index order == chronology).
+
+    Returns ``(crumb_idxs, crumb_fields, verdict_idxs, results_idxs)``:
+    verifying-stage ``stage-dispatch`` breadcrumb indices (+ parsed fields),
+    ``UPLOAD_VERDICT_KINDS`` event indices, and ``epm:results`` indices.
+    """
+    crumb_idxs: list[int] = []
+    crumb_fields: dict[int, dict[str, str]] = {}
+    verdict_idxs: list[int] = []
+    results_idxs: list[int] = []
+    for idx, event in enumerate(events):
+        kind = event.get("kind", "")
+        if kind == "epm:progress":
+            note = (event.get("note", "") or "").lstrip()
+            if note.startswith("stage-dispatch "):
+                fields = _breadcrumb_fields(note)
+                if _normalize_stage(fields.get("stage", "")) == "verifying":
+                    crumb_idxs.append(idx)
+                    crumb_fields[idx] = fields
+        elif kind in UPLOAD_VERDICT_KINDS:
+            verdict_idxs.append(idx)
+        elif kind == "epm:results":
+            results_idxs.append(idx)
+    return crumb_idxs, crumb_fields, verdict_idxs, results_idxs
+
+
+def upload_verification_currency_blocker(
+    events: list[dict],
+    *,
+    now: datetime | None = None,
+    window_minutes: float = 15.0,
+) -> dict | None:
+    """Typed refusal record when upload-verification evidence is not a CURRENT PASS.
+
+    None when evidence is current (or there is no verifier/results activity
+    at all — the pure-sticky legacy shape stays vacuously clear). Otherwise:
+      reason: upload_verifier_in_flight | upload_verifier_stalled
+              | upload_verification_ambiguous | upload_verification_stale
+              | upload_verification_failed_current
+      state:  "in-flight" | "stalled" | None
+      stage / round / breadcrumb_ts / age_minutes / detail
+
+    Ordering compares INDICES (append-only events.jsonl => index order ==
+    chronological), mirroring stage_dispatch_should_skip. Rules, in order:
+
+    1. IN-FLIGHT / STALLED — the latest verifying-stage breadcrumb
+       (_normalize_stage(stage) == "verifying"; covers followup-verifying)
+       has NO UPLOAD_VERDICT_KINDS event at a later index. state="in-flight"
+       when stage_dispatch_should_skip(events, raw_stage, round, window)
+       still reports it (liveness-refreshing 15-min window); else "stalled"
+       (window lapsed / no parsable round / malformed ts / cleared only by
+       epm:failure — the round died with no verdict; a stale prior PASS is
+       still stale).
+    2. AMBIGUOUS (MF-B) — a verdict exists after the latest crumb c_K, but
+       some earlier crumb c_i is UNRESOLVED (no verdict-kind event in the
+       open interval (c_i, c_K)) AND an epm:results lies in (c_i, c_K):
+       the late verdict cannot be attributed to the current results-epoch
+       (it may be c_i's, leaving c_K's round unverified — or still
+       running). The stalled->re-spawn recovery [C1, C2, V] has no results
+       between crumbs (same epoch — any verdict covers it) and CLEARS;
+       recovery from a block is one verifier re-run: the fresh crumb
+       c_{K+1} + verdict resolves every earlier crumb by inclusion (a
+       verdict now lies in (c_i, c_{K+1})) — no deadlock.
+    3. STALE — the latest epm:results has no UPLOAD_VERDICT_KINDS event at
+       a later index (including: results exist, NO verdict marker ever).
+    4. FAILED-CURRENT (MF-A) — the latest UPLOAD_VERDICT_KINDS event is an
+       epm:upload-verification whose note fails UPLOAD_VERIFICATION_PASS_RE:
+       the current verification POSITIVELY failed; prior PASS/sticky
+       evidence is not current. (A sticky AFTER the FAIL is the skill's
+       subsequent-PASS record and clears; rules 3/4 are index-disjoint —
+       a FAIL predating results reads as stale, a FAIL postdating results
+       as failed-current.)
+    """
+    if now is None:
+        now = datetime.now(UTC)
+    crumb_idxs, crumb_fields, verdict_idxs, results_idxs = _upload_verification_event_index(events)
+
+    # Rule 1: unresolved latest crumb.
+    if crumb_idxs and (not verdict_idxs or verdict_idxs[-1] < crumb_idxs[-1]):
+        c_k = crumb_idxs[-1]
+        fields = crumb_fields[c_k]
+        raw_stage = fields.get("stage", "")
+        try:
+            round_num: int | None = int(fields["round"])
+        except (KeyError, ValueError):
+            round_num = None
+        in_flight = round_num is not None and bool(
+            stage_dispatch_should_skip(events, raw_stage, round_num, window_minutes, now=now)
+        )
+        ts = _stage_event_ts(events[c_k])
+        age = None if ts is None else round((now - ts).total_seconds() / 60.0, 1)
+        state = "in-flight" if in_flight else "stalled"
+        return {
+            "reason": "upload_verifier_in_flight" if in_flight else "upload_verifier_stalled",
+            "state": state,
+            "stage": raw_stage,
+            "round": round_num,
+            "breadcrumb_ts": events[c_k].get("ts", ""),
+            "age_minutes": age,
+            "detail": (
+                f"stage-dispatch stage={raw_stage} round={round_num} at "
+                f"{events[c_k].get('ts', '')} has no later upload-verification "
+                f"verdict (state={state}, age={age}m, window={window_minutes}m)"
+            ),
+        }
+
+    # Rule 2 (MF-B): unresolved earlier crumb across a results boundary.
+    if crumb_idxs:
+        c_k = crumb_idxs[-1]
+        for c_i in crumb_idxs[:-1]:
+            resolved = any(c_i < v < c_k for v in verdict_idxs)
+            crossed = any(c_i < r < c_k for r in results_idxs)
+            if not resolved and crossed:
+                return {
+                    "reason": "upload_verification_ambiguous",
+                    "state": None,
+                    "stage": None,
+                    "round": None,
+                    "breadcrumb_ts": events[c_i].get("ts", ""),
+                    "age_minutes": None,
+                    "detail": (
+                        f"verifying crumb at {events[c_i].get('ts', '')} is unresolved "
+                        f"and epm:results landed before the latest crumb at "
+                        f"{events[c_k].get('ts', '')} — the post-crumb verdict cannot "
+                        f"be attributed to the current results-epoch"
+                    ),
+                }
+
+    # Rule 3: latest results unverified (stale) — incl. no verdict ever.
+    if results_idxs and (not verdict_idxs or verdict_idxs[-1] < results_idxs[-1]):
+        verdict_txt = (
+            "no verdict marker exists"
+            if not verdict_idxs
+            else f"latest verdict at {events[verdict_idxs[-1]].get('ts', '')}"
+        )
+        return {
+            "reason": "upload_verification_stale",
+            "state": None,
+            "stage": None,
+            "round": None,
+            "breadcrumb_ts": None,
+            "age_minutes": None,
+            "detail": (
+                f"latest epm:results at {events[results_idxs[-1]].get('ts', '')} "
+                f"postdates the upload-verification evidence ({verdict_txt})"
+            ),
+        }
+
+    # Rule 4 (MF-A): the current verification is a FAIL.
+    if verdict_idxs:
+        latest = events[verdict_idxs[-1]]
+        if latest.get("kind") == "epm:upload-verification" and not (
+            UPLOAD_VERIFICATION_PASS_RE.search(str(latest.get("note", "")))
+        ):
+            return {
+                "reason": "upload_verification_failed_current",
+                "state": None,
+                "stage": None,
+                "round": None,
+                "breadcrumb_ts": None,
+                "age_minutes": None,
+                "detail": (
+                    f"latest epm:upload-verification at {latest.get('ts', '')} is not "
+                    f"a PASS — the current verification FAILED; prior PASS/sticky "
+                    f"evidence is not current"
+                ),
+            }
+    return None
+
+
+# ─── Pre-dispatch external-marker triage (#889) ─────────────────────────────
+
+# Machine-posted / lifecycle-bookkeeping kinds that never carry cross-session
+# advisory content — excluded from pre-dispatch triage candidates. Anything
+# NOT listed is a candidate (over-approximation by design: a false positive
+# costs one first-line read; a false negative is the #779 failure mode).
+TRIAGE_EXEMPT_KINDS = frozenset(
+    {
+        "epm:status-changed",
+        "epm:step-completed",
+        "epm:backend-selected",
+        "epm:codex-task-spawned",
+        "epm:codex-task-completed",
+        "epm:codex-task-failed",
+        "epm:pod-provisioned",
+        "epm:pod-terminated",
+        "epm:pod-stopped",
+        "epm:run-launched",
+        "epm:run-finished",
+        "epm:upload-verification",
+        "epm:merged",
+        "epm:methodology-doc-generated",
+        "epm:workflow-fix-task-filed",
+        "epm:workflow-fix-applied",
+        "epm:workflow-fix-failed",
+        "epm:workflow-fix-candidate",
+        # Session-pipeline review/lifecycle verdict kinds — structurally posted
+        # by THIS task's own planner/review/implementation loop, never the
+        # vehicle for a cross-session advisory (fact-check on #779: including
+        # these halves the per-dispatch read load, 30 -> 20 candidates, with
+        # zero externals lost).
+        "epm:code-review",
+        "epm:code-review-codex",
+        "epm:review-reconcile",
+        "epm:experiment-implementation",
+        "epm:concern-raised",
+        "epm:concern-addressed",
+        "epm:concern-deferred",
+        "epm:interp-critique",
+        "epm:interp-critique-codex",
+        "epm:clean-result-critique",
+        "epm:clean-result-critique-codex",
+        "epm:plan",
+        "epm:plan-approved",
+        "epm:plan-verify",
+        "epm:consistency",
+        "epm:clarify",
+        "epm:clarify-answers",
+        "epm:test-verdict",
+        "epm:smoke-architecture-check",
+    }
+)
+
+# ``by`` values identifying MACHINE posters (pollers, routers, CLI shims).
+# NOTE on session/human posts: ``by`` is unreliable on LEGACY markers and
+# non-compliant emitters (post_event defaults by="unknown"; on #779 both
+# self- and PM-chat posts carried by="unknown"). Compliant emitters now set
+# a distinctive by (the #966 convention list): "pm-chat" (PM-session
+# cross-session posts), "autonomous_session_watch" (watcher passes),
+# "spawn_session" / "spawn_session-stop" (spawn helper),
+# "issue-session-guard" (a /issue session's own Step-0 collision-exit /
+# stale-wake-yield deliberate-stop breadcrumb, #1053). A value on that
+# convention list is a trustworthy-POSITIVE externality signal for the
+# LLM-side triage read (conventional, not authenticated — nothing verifies
+# the emitter, but in-repo emitters set only their own identity); absence
+# ("unknown") proves nothing (fail-toward-triage). These advisory identities
+# are deliberately NOT in this strip set — machine_by only strips known
+# bookkeeping-machine identities; it never classifies externality (that
+# stays the orchestrator's judgment call, SKILL.md § Pre-dispatch
+# external-marker triage).
+TRIAGE_MACHINE_BY = frozenset(
+    {
+        "poll_pipeline",
+        "task.py",
+        "backends.router",
+        "backends.gcp",
+        "backends.slurm",
+        "backends.slurm_monitor",
+        "backends.selector",
+        "autonomous-gate",
+        "codex_task",
+        "task_state shim",
+    }
+)
+
+# Compute-launch marker kinds — ALWAYS close the triage window.
+# epm:run-launched is the RunPod/experimenter launch record;
+# epm:cluster-launched is what the default GCP/SLURM lanes post (SKILL.md
+# Step 6b marker trail; #779's own window contains one at 14:56:21Z, by
+# backends.gcp).
+TRIAGE_LAUNCH_KINDS = frozenset({"epm:run-launched", "epm:cluster-launched"})
+
+# The auditable triage-record line. A dispatch record carrying this line is
+# DUTY-BOUND (it performed the triage) and closes the window; a note that IS
+# a triage record is also excluded from candidates.
+TRIAGE_LINE_PREFIX = "external-markers triaged:"
+
+# #889 landed 2026-07-03T04:05Z (commit 34fd730192); records before this
+# epoch are legacy per the SKILL.md accepted-residuals clause and are never
+# flagged by the post-hoc observer (#967).
+TRIAGE_DUTY_EPOCH_TS = "2026-07-03T05:00:00Z"
+
+# In-the-wild external-advisory signatures (SKILL.md § Pre-dispatch
+# external-marker triage names these); shared so the skill text and the
+# post-hoc observer (#967) use ONE list.
+TRIAGE_EXTERNAL_SIGNATURES = frozenset(
+    {"PM-chat", "user-raised", "user directive", "# Audit", "AMENDMENT", "SCOPE RESTORE"}
+)
+
+# Normalized stage tokens (see _normalize_stage) that carry NO compute-launch
+# triage duty -> a line-less breadcrumb with one of these NEVER flags (#967).
+# DELIBERATELY EASY TO EXTEND: append benign tokens observed in the wild here
+# (one frozenset literal; each addition needs only a live-example citation).
+# interp-critique / clean-result-fix / value-critique are live post-epoch
+# benign follow-up families observed on #810/#922 (task #967 plan §2).
+TRIAGE_NONCOMPUTE_STAGES = frozenset(
+    {
+        "planning",
+        "implementing",
+        "code-review",
+        "interpreting",
+        "clean-result",
+        "verifying",
+        "methodology-reference",
+        "related-work",
+        "interp-critique",
+        "clean-result-fix",
+        "value-critique",
+    }
+)
+
+# Positive-compute stage tokens: warn-class evidence for a line-less
+# breadcrumb (#967). "grid" is #779's incident token; the rest are the
+# SKILL.md duty text's own compute nouns ("a fit / sweep / statistical
+# battery") plus crash-fix relaunches. EXACT match on the NORMALIZED token,
+# never substring (substring matching would re-open the false-positive
+# surface the three-way classifier closes).
+TRIAGE_COMPUTE_STAGE_TOKENS = frozenset({"grid", "sweep", "battery", "fit", "fits", "relaunch"})
+
+
+def triage_candidates_since_last_dispatch(
+    events: list[dict],
+    *,
+    exempt_kinds: frozenset[str] = TRIAGE_EXEMPT_KINDS,
+    machine_by: frozenset[str] = TRIAGE_MACHINE_BY,
+    launch_kinds: frozenset[str] = TRIAGE_LAUNCH_KINDS,
+) -> list[dict]:
+    """Return pre-dispatch triage candidates since the latest DUTY-BOUND dispatch record.
+
+    THE BOUNDARY MATCHES THE TRIAGE DUTY SURFACE: the window opens AFTER the
+    most recent event that is either (i) a compute-launch marker (kind in
+    ``launch_kinds`` — ``epm:run-launched`` or ``epm:cluster-launched``), or
+    (ii) ANY event whose note contains the ``external-markers triaged:`` line
+    (a triaged compute breadcrumb, or the adjacent ``epm:progress`` triage
+    note the pod/backend-launch form posts). When no such record exists the
+    window is the whole list (task start). A NON-compute breadcrumb (review /
+    analyzer / verifier stages) never closes the window — those dispatches
+    carry no triage duty, so they cannot orphan an advisory; an UNTRIAGED
+    compute breadcrumb (pre-fix or concurrent session) also does not close it
+    (fail-toward-triage). Within the window an event is a candidate unless:
+    kind in ``exempt_kinds``, ``by`` in ``machine_by``, the note is
+    empty/absent, the note is itself breadcrumb-shaped (lstripped note begins
+    ``"stage-dispatch "`` — same detection as ``stage_dispatch_should_skip``),
+    or the note contains the triage line (it is a triage record, not an
+    advisory). Chronological order preserved. Deliberately over-approximates —
+    it ENUMERATES for LLM-side triage and never classifies externality (a
+    ``by`` on the #966 convention list — pm-chat / autonomous_session_watch /
+    spawn_session / spawn_session-stop — is a trustworthy-positive EXTERNAL
+    signal for that LLM-side read, but ``by`` defaults to "unknown", so
+    absence proves nothing).
+    """
+    boundary = -1
+    for idx in range(len(events) - 1, -1, -1):
+        event = events[idx]
+        note = event.get("note", "") or ""
+        if event.get("kind", "") in launch_kinds or TRIAGE_LINE_PREFIX in note:
+            boundary = idx
+            break
+    return _triage_window_candidates(
+        events[boundary + 1 :], exempt_kinds=exempt_kinds, machine_by=machine_by
+    )
+
+
+def _triage_window_candidates(
+    window: list[dict],
+    *,
+    exempt_kinds: frozenset[str] = TRIAGE_EXEMPT_KINDS,
+    machine_by: frozenset[str] = TRIAGE_MACHINE_BY,
+) -> list[dict]:
+    """The #889 candidate filter over an already-bounded window slice.
+
+    Shared by the pre-dispatch enumerator (window = since the last duty-bound
+    record) and the post-hoc observer (window = between two historical
+    boundary records; #967). Filter semantics are the enumerator's, verbatim:
+    an event is a candidate unless its kind is in ``exempt_kinds``, its
+    ``by`` is in ``machine_by``, its note is empty/absent, its note is
+    breadcrumb-shaped (lstripped note begins ``"stage-dispatch "``), or its
+    note contains the triage line. Chronological order preserved.
+    """
+    candidates: list[dict] = []
+    for event in window:
+        if event.get("kind", "") in exempt_kinds:
+            continue
+        if event.get("by", "") in machine_by:
+            continue
+        note = event.get("note", "") or ""
+        if not note.strip():
+            continue
+        if note.lstrip().startswith("stage-dispatch "):
+            continue
+        if TRIAGE_LINE_PREFIX in note:
+            continue
+        candidates.append(event)
+    return candidates
+
+
+def _parse_ts_str(raw: str | None) -> datetime | None:
+    """Parse an ISO-8601 threshold string via :func:`_stage_event_ts`;
+    ``None`` on a missing/malformed value (fail-soft)."""
+    if not raw:
+        return None
+    return _stage_event_ts({"ts": raw})
+
+
+def _ts_delta_s(a: dict, b: dict) -> float | None:
+    """Seconds from event ``a`` to event ``b`` (positive when ``b`` is later).
+
+    ``None`` when either event's ``ts`` is missing/malformed — a malformed
+    NEIGHBOR timestamp therefore provides no adjacency coverage in
+    :func:`audit_dispatch_triage` (#967); the audited record itself is
+    skipped earlier, at the top of the audit loop."""
+    ta, tb = _stage_event_ts(a), _stage_event_ts(b)
+    if ta is None or tb is None:
+        return None
+    return (tb - ta).total_seconds()
+
+
+def _triage_disposition_is_none(note: str) -> bool:
+    """True when the FIRST triage-line occurrence in ``note`` records a
+    ``none`` disposition (the remainder after the prefix, stripped and
+    lowercased, starts with ``none``)."""
+    idx = note.find(TRIAGE_LINE_PREFIX)
+    if idx < 0:
+        return False
+    rest = note[idx + len(TRIAGE_LINE_PREFIX) :].strip().lower()
+    return rest.startswith("none")
+
+
+def _triage_signature_hits(candidates: list[dict]) -> list[str]:
+    """Sorted external-advisory signatures found in the candidates' notes."""
+    return sorted(
+        {
+            sig
+            for c in candidates
+            for sig in TRIAGE_EXTERNAL_SIGNATURES
+            if sig in (c.get("note") or "")
+        }
+    )
+
+
+def audit_dispatch_triage(
+    events: list[dict],
+    *,
+    adjacency_s: float = 1800.0,
+    grace_s: float = 120.0,
+    epoch_ts: str | None = TRIAGE_DUTY_EPOCH_TS,
+    min_ts: str | None = None,
+    mature_before_ts: str | None = None,
+) -> dict:
+    """Post-hoc, NON-GATING audit of the pre-dispatch triage duty (#967).
+
+    Returns ``{"violations": [...], "cursor_ts": str | None}``. One violation
+    dict per non-compliant MATURED audited record: ``{"record_ts",
+    "record_kind", "stage", "violation", "severity", "candidate_count",
+    "candidate_kinds", "signature_hits", "note_head"}``.
+
+    BOUNDARY records (kind in :data:`TRIAGE_LAUNCH_KINDS` OR a note carrying
+    :data:`TRIAGE_LINE_PREFIX`) ALONE bound the pre-record candidate windows
+    and serve as adjacency neighbors; the AUDITED set additionally includes
+    line-less ``stage-dispatch`` breadcrumbs — audited but never
+    window-closing, preserving the enumerator's fail-toward-triage contract
+    (MF1). Three violation classes:
+
+    - ``launch-missing-line`` (warn): a launch marker with no triage line
+      whose nearest previous AND next boundary records are not triage-line
+      records within ``adjacency_s``.
+    - ``breadcrumb-missing-line``: a line-less breadcrumb, three-way
+      classified on its normalized stage token — exempt
+      (:data:`TRIAGE_NONCOMPUTE_STAGES`) -> no flag; positive compute
+      evidence (a ``pid=`` field or a :data:`TRIAGE_COMPUTE_STAGE_TOKENS`
+      token) -> warn; unknown -> info. NOTE: :func:`_normalize_stage`
+      strips ONE leading ``followup-`` prefix; the SUFFIX form
+      ``free-analysis-followup`` passes through intact.
+    - ``none-with-candidates``: a triage-line record with a ``none``
+      disposition whose pre-record boundary window re-enumerates non-empty
+      after dropping candidates within ``grace_s`` of the record (a
+      grace-delta that cannot be computed keeps the candidate — fail toward
+      visibility; the class is info-tier by default). Severity ``warn``
+      only on an external-signature hit, else ``info``.
+
+    Records with ts > ``mature_before_ts`` are DEFERRED — not evaluated, not
+    consumed: ``cursor_ts`` is the max parseable ts among audited records at
+    or before ``mature_before_ts``, so a caller advancing its cursor to
+    ``cursor_ts`` re-sees immature records next tick (MF2). Records at or
+    before ``min_ts`` / before ``epoch_ts`` are skipped but still consumable
+    by the cursor. An audited record with an unparseable ts is skipped
+    entirely (fail-soft, never consumed). Pure read — never mutates
+    ``events``; marker-cap overflow is a CALLER concern (see
+    ``triage_observer_pass``): an over-cap warn is permanently
+    sidecar+push-only, never deferred.
+    """
+    boundary_idx = [
+        i
+        for i, e in enumerate(events)
+        if e.get("kind", "") in TRIAGE_LAUNCH_KINDS or TRIAGE_LINE_PREFIX in (e.get("note") or "")
+    ]
+    audited_idx = sorted(
+        set(boundary_idx)
+        | {
+            i
+            for i, e in enumerate(events)
+            if e.get("kind", "") == "epm:progress"
+            and (e.get("note") or "").lstrip().startswith("stage-dispatch ")
+        }
+    )
+    mature_dt = _parse_ts_str(mature_before_ts)
+    epoch_dt = _parse_ts_str(epoch_ts)
+    min_dt = _parse_ts_str(min_ts)
+
+    violations: list[dict] = []
+    cursor_dt: datetime | None = None
+    cursor_ts: str | None = None
+
+    for i in audited_idx:
+        e = events[i]
+        ts_dt = _stage_event_ts(e)
+        if ts_dt is None:
+            continue  # unparseable ts: fail-soft skip, never consumed (tested)
+        if mature_dt is not None and ts_dt > mature_dt:
+            continue  # MF2: immature — defer, do not consume
+        if cursor_dt is None or ts_dt > cursor_dt:
+            cursor_dt, cursor_ts = ts_dt, e.get("ts", "")
+        if epoch_dt is not None and ts_dt < epoch_dt:
+            continue  # legacy pre-fix record (accepted residual)
+        if min_dt is not None and ts_dt <= min_dt:
+            continue  # already evaluated (caller cursor / lookback)
+        v = _audit_record_violation(
+            events, i, boundary_idx, adjacency_s=adjacency_s, grace_s=grace_s
+        )
+        if v is not None:
+            violations.append(v)
+
+    return {"violations": violations, "cursor_ts": cursor_ts}
+
+
+def _make_triage_violation(
+    e: dict,
+    *,
+    stage: str | None,
+    violation: str,
+    severity: str,
+    window: list[dict],
+    grace_s: float,
+) -> dict:
+    """Build one :func:`audit_dispatch_triage` violation dict, re-enumerating
+    the pre-record boundary window's candidates so the flag names what the
+    dispatch should have read. The ``none-with-candidates`` class trims
+    candidates within ``grace_s`` of the record (the SKILL.md accepted
+    residual); a grace-delta that cannot be computed keeps the candidate
+    (fail toward visibility — the class is info-tier by default)."""
+    cands = _triage_window_candidates(window)
+    if violation == "none-with-candidates":
+        cands = [c for c in cands if (d := _ts_delta_s(c, e)) is None or d > grace_s]
+    return {
+        "record_ts": e.get("ts", ""),
+        "record_kind": e.get("kind", ""),
+        "stage": stage,
+        "violation": violation,
+        "severity": severity,
+        "candidate_count": len(cands),
+        "candidate_kinds": sorted({c.get("kind", "") for c in cands}),
+        "signature_hits": _triage_signature_hits(cands),
+        "note_head": (e.get("note") or "")[:120],
+    }
+
+
+def _adjacent_triage_coverage(
+    events: list[dict], e: dict, prev_j: int | None, next_k: int | None, adjacency_s: float
+) -> bool:
+    """True when the nearest previous OR next BOUNDARY record is a
+    triage-line record within ``adjacency_s`` of ``e`` (the launch-marker
+    compliance form). Requiring the NEAREST boundary neighbor — not just any
+    record in the ±window — keeps crash-fix relaunch bursts individually
+    duty-bound; a malformed neighbor ts provides no coverage."""
+    if prev_j is not None and TRIAGE_LINE_PREFIX in (events[prev_j].get("note") or ""):
+        d = _ts_delta_s(events[prev_j], e)
+        if d is not None and d <= adjacency_s:
+            return True
+    if next_k is not None and TRIAGE_LINE_PREFIX in (events[next_k].get("note") or ""):
+        d = _ts_delta_s(e, events[next_k])
+        if d is not None and d <= adjacency_s:
+            return True
+    return False
+
+
+def _audit_record_violation(
+    events: list[dict],
+    i: int,
+    boundary_idx: list[int],
+    *,
+    adjacency_s: float,
+    grace_s: float,
+) -> dict | None:
+    """Classify ONE matured, post-epoch audited record (index ``i``) for
+    :func:`audit_dispatch_triage`; returns a violation dict or None.
+
+    Nearest neighbors + the pre-record window come from BOUNDARY records
+    only (MF1): a line-less breadcrumb never closes a window nor serves as
+    an adjacency neighbor."""
+    e = events[i]
+    note = e.get("note") or ""
+    has_line = TRIAGE_LINE_PREFIX in note
+    kind = e.get("kind", "")
+    pos = bisect.bisect_left(boundary_idx, i)
+    prev_j = boundary_idx[pos - 1] if pos > 0 else None
+    npos = pos + 1 if pos < len(boundary_idx) and boundary_idx[pos] == i else pos
+    next_k = boundary_idx[npos] if npos < len(boundary_idx) else None
+    window = events[(prev_j + 1 if prev_j is not None else 0) : i]
+
+    if kind in TRIAGE_LAUNCH_KINDS and not has_line:
+        if _adjacent_triage_coverage(events, e, prev_j, next_k, adjacency_s):
+            return None
+        return _make_triage_violation(
+            e,
+            stage=None,
+            violation="launch-missing-line",
+            severity="warn",
+            window=window,
+            grace_s=grace_s,
+        )
+
+    stripped = note.lstrip()
+    if not has_line and stripped.startswith("stage-dispatch "):
+        fields = _breadcrumb_fields(stripped)
+        raw_stage = fields.get("stage", "")
+        norm = _normalize_stage(raw_stage)
+        if norm in TRIAGE_NONCOMPUTE_STAGES:
+            return None  # known-benign family: no flag (MF4)
+        positive_compute = "pid" in fields or norm in TRIAGE_COMPUTE_STAGE_TOKENS
+        return _make_triage_violation(
+            e,
+            stage=raw_stage,
+            violation="breadcrumb-missing-line",
+            severity="warn" if positive_compute else "info",
+            window=window,
+            grace_s=grace_s,
+        )
+
+    if has_line and _triage_disposition_is_none(note):
+        stage = (
+            _breadcrumb_fields(stripped).get("stage")
+            if stripped.startswith("stage-dispatch ")
+            else None
+        )
+        v = _make_triage_violation(
+            e,
+            stage=stage,
+            violation="none-with-candidates",
+            severity="info",
+            window=window,
+            grace_s=grace_s,
+        )
+        if v["candidate_count"]:
+            if v["signature_hits"]:
+                v["severity"] = "warn"
+            return v
+    return None
+
+
+# ─── Same-issue follow-up label grouping (#894) ────────────────────────────
+#
+# Distinct queued follow-ups share the marker KIND (`epm:followup-scope`)
+# under different `followup_label`s, so the highest-version-per-kind marker
+# map is the WRONG read for dispatch: a later label's completion must never
+# strand an earlier queued label (#763: scope v1 `neutral-contrast-and-cofit`
+# stayed invisible after scope v2's round ran). These helpers are the SINGLE
+# implementation of the label-grouped predicate; `/issue` Step 0, the Step 9b
+# loop, the resume table, and `scripts/autonomous_session_watch.py` all defer
+# here.
+
+FOLLOWUP_SCOPE_KIND = "epm:followup-scope"
+FOLLOWUP_RUN_KIND = "epm:same-issue-followup-run"
+USER_INITIATED_FOLLOWUP_SOURCES = frozenset({"user-chat", "step-10b-pick"})
+
+# An UNLABELED scope note inherits the previous entry's label ONLY when it
+# carries an explicit correction signal (the #658-v2 shape: "CORRECTION to
+# the earlier epm:followup-scope (...)"). An unlabeled note WITHOUT the
+# signal is a DISTINCT queued follow-up (#685 v2) and must NOT merge into
+# the previous label.
+CORRECTION_SIGNAL = re.compile(r"correction|supersede|re-?post", re.IGNORECASE)
+
+# The same-issue loop's stage-dispatch breadcrumb prefix (mirrors
+# `autonomous_session_watch._FOLLOWUP_STAGE_DISPATCH_WITNESS_PREFIX`; the
+# watcher script cannot be imported from the library, so the literal is
+# duplicated here — both sides cite each other).
+_FOLLOWUP_STAGE_DISPATCH_PREFIX = "stage-dispatch stage=followup-"
+
+# Round-completion words for the class-3 retro-close evidence read
+# (`followup_retro_close_evidence`). Case-sensitive by design — a missed
+# close is safe (the label stays queued), a wrong close is not.
+_ROUND_COMPLETION_WORD = re.compile(r"PASS|re-park|awaiting_promotion|clean-result")
+
+# Queue-context veto for the class-3 read (#961): a clause naming the label
+# as queued / unrun / scoped / armed / dispatched is a QUEUE mention, never
+# completion evidence (park/handoff notes routinely announce round X complete
+# while enumerating the queued next label Y on the same line — #825
+# 2026-07-04T04:21:23Z, #595 2026-06-14T06:20:31Z, #763 2026-07-02T10:47:16Z).
+# Case-INSENSITIVE by design: a veto only ever narrows.
+_QUEUE_CONTEXT_WORD = re.compile(
+    r"unrun|queue|dispatch|scoped|deferred|pending|armed", re.IGNORECASE
+)
+
+# In-clause completion-vocabulary supplement for the class-3 read (#961): the
+# dominant true-positive park-note shape is "(label) complete; ... PASS" —
+# the token's clause says complete/COMPLETE while the _ROUND_COMPLETION_WORD
+# sits in a later clause (#505/#542/#545/#559/#613/#654 park notes). Applies
+# ONLY inside a line that already passed the line-level
+# _ROUND_COMPLETION_WORD gate, so new evidence stays a strict subset of the
+# pre-#961 match. Case-sensitive (mirrors _ROUND_COMPLETION_WORD's deliberate
+# case-sensitivity); the lookbehind rejects "incomplete"/"INcomplete".
+_CLAUSE_COMPLETION_WORD = re.compile(r"(?<![iI][nN])(?:complete|COMPLETE)")
+
+
+def parse_followup_note_field(note: str, field: str) -> str | None:
+    """Extract ``<field>``'s value from a followup-scope / run-marker note.
+
+    Matches the FIRST line whose core (after stripping any leading mix of
+    ``-``/``*`` bullets, bold markers, and whitespace) starts with
+    ``<field>:`` OR ``<field>=`` — both separators occur in the wild (the
+    ``=`` form is the dominant historical run-marker shape, e.g. #537/#552).
+    The value is the first whitespace token of the remainder, stripped of
+    backticks / quotes / ``*`` and a trailing comma (#664 ships a
+    backtick-wrapped bold value). Handles bare-colon, bare-equals,
+    dash-bullet (#658 v1), star-bullet, bold ``**field:**`` (#837 §4c), the
+    COMBINED bullet+bold ``- **field:** x`` (a dash-bullet wrapping a bold
+    field — corpus-clean today, pinned against future drift), and
+    single-line space-separated run notes (first-token rule; labels are
+    kebab-slugs with no whitespace — workflow.yaml § markers). First hit
+    wins: #763 v2 embeds a second bold label deep inside its
+    verbatim-proposal section, and the top-of-note canonical line is hit
+    first. Returns ``None`` when the field is absent or its value is empty.
+    """
+    for line in (note or "").splitlines():
+        # One regex pass strips any interleaved mix of whitespace, bullet
+        # dashes/stars, and bold markers (a sequential strip()/lstrip("-*")
+        # chain stops at the space in "- **field:** x" and misses the bold
+        # marker behind it).
+        core = re.sub(r"^[\s\-*]+", "", line)
+        if core.startswith(f"{field}:") or core.startswith(f"{field}="):
+            rest = core[len(field) + 1 :].lstrip("*").strip()
+            tokens = rest.split()
+            value = tokens[0] if tokens else ""
+            value = value.strip("`'\"*").rstrip(",")
+            return value or None
+    return None
+
+
+def _scope_scan_key(event: dict) -> tuple[datetime, int]:
+    """Chronological scan key ``(ts, version)`` for followup-scope grouping.
+
+    CHRONOLOGICAL with version tiebreak — NOT ``(version, ts)``: per-kind
+    version monotonicity is VIOLATED in the wild (#480 carries TWO
+    ``version: 1`` scope rows with a v2 chronologically between them);
+    ``(ts, version)`` is robust there and identical to ``(version, ts)`` on
+    every conforming task (#658, #763). A malformed/missing ts sorts first.
+    """
+    ts = _stage_event_ts(event)
+    if ts is None:
+        ts = datetime.min.replace(tzinfo=UTC)
+    version = event.get("version")
+    if not isinstance(version, int):
+        version = 0
+    return (ts, version)
+
+
+def followup_label_groups(events: list[dict]) -> list[dict]:
+    """Group ``epm:followup-scope`` entries by ``followup_label``.
+
+    Scans scopes in ``(ts, version)`` order (see :func:`_scope_scan_key`).
+    Per entry the label is resolved as:
+
+    - ``parsed`` — the note carries a parseable ``followup_label``;
+    - ``inherited-from-previous`` — unlabeled BUT the note carries a
+      correction signal (:data:`CORRECTION_SIGNAL`): a correction follows
+      the scope it corrects (#658 v2), so it attributes to the previous
+      label;
+    - ``pseudo-ts`` — unlabeled with NO correction signal: a DISTINCT queued
+      follow-up under the pseudo-label ``unlabeled-<ts>`` (#685 v2). NEVER
+      silently dropped, but NON-dispatchable (``unlabeled-<ts>`` violates the
+      kebab-slug field contract and would name
+      ``eval_results/issue_<N>/<label>/`` artifact dirs with colons) — Step 0
+      surfaces these loudly as repair items instead of executing a malformed
+      round. Dispatchability is FOUNDING-based: a group FOUNDED as
+      ``pseudo-ts`` stays ``dispatchable: False`` even when a later unlabeled
+      CORRECTION inherits into it (the inherit raises the group's
+      authoritative entry but cannot repair the malformed label — only a
+      re-post with a proper kebab-slug ``followup_label`` can).
+
+    Returns one dict per label, in first-armed order, with JSON-native
+    values: ``{followup_label, source, user_initiated, armed_ts,
+    authoritative, label_parse, dispatchable, n_entries}``. Within a label
+    the AUTHORITATIVE entry is the last in scan order (corrections land
+    append-only — the #658 v3→v7 ``persona-vectors-style-rb`` chain);
+    ``armed_ts`` is the FIRST entry's ts (a later correction never re-queues
+    the label). ``source`` is the first parseable ``source`` across the
+    group's entries in scan order (a correction note that omits ``source``
+    must not demote a user-chat round), else ``"unknown"``.
+    """
+    scopes = sorted(
+        (e for e in events if e.get("kind") == FOLLOWUP_SCOPE_KIND),
+        key=_scope_scan_key,
+    )
+    prev_label: str | None = None
+    groups: dict[str, dict] = {}
+    sources: dict[str, list[str]] = {}
+    founded_pseudo: dict[str, bool] = {}
+    for ev in scopes:
+        note = ev.get("note") or ""
+        label = parse_followup_note_field(note, "followup_label")
+        if label:
+            parse_mode = "parsed"
+        elif prev_label is not None and CORRECTION_SIGNAL.search(note):
+            label, parse_mode = prev_label, "inherited-from-previous"
+        else:
+            label, parse_mode = f"unlabeled-{ev.get('ts', '')}", "pseudo-ts"
+        prev_label = label
+        group = groups.get(label)
+        if group is None:
+            group = {
+                "followup_label": label,
+                "armed_ts": ev.get("ts", ""),
+                "authoritative": ev,
+                "label_parse": parse_mode,
+                "n_entries": 0,
+            }
+            groups[label] = group
+            sources[label] = []
+            founded_pseudo[label] = parse_mode == "pseudo-ts"
+        group["n_entries"] += 1
+        group["authoritative"] = ev  # last in (ts, version) order wins
+        group["label_parse"] = parse_mode
+        src = parse_followup_note_field(note, "source")
+        if src:
+            sources[label].append(src)
+    result: list[dict] = []
+    for label, group in groups.items():
+        group["source"] = sources[label][0] if sources[label] else "unknown"
+        group["user_initiated"] = group["source"] in USER_INITIATED_FOLLOWUP_SOURCES
+        # FOUNDING-based: a pseudo-founded group is a repair item forever —
+        # a later unlabeled CORRECTION inheriting into it must NOT flip it
+        # dispatchable (the label is still the malformed `unlabeled-<ts>`).
+        group["dispatchable"] = not founded_pseudo[label] and group["label_parse"] in (
+            "parsed",
+            "inherited-from-previous",
+        )
+        result.append(group)
+    return result
+
+
+def unrun_followup_labels(events: list[dict]) -> list[dict]:
+    """Label groups (per :func:`followup_label_groups`) with NO matching
+    ``epm:same-issue-followup-run`` marker — the UNRUN queue.
+
+    A LABEL is unrun iff no run marker carries the same ``followup_label``
+    (workflow.yaml § markers — the label-keyed satisfier; the label's run
+    marker closes ALL of its scope entries). Pseudo-label groups are
+    INCLUDED (they must surface as repair items) but carry
+    ``dispatchable: False`` — consumers that execute rounds filter on
+    ``dispatchable``. A run marker with an unparseable label closes NOTHING
+    (conservative in the anti-stranding direction; the counterweight is the
+    Step 0 stale-label disposition rule / :func:`followup_retro_close_evidence`).
+
+    Ordered deterministically: user-initiated labels first
+    (:data:`USER_INITIATED_FOLLOWUP_SOURCES`), then oldest ``armed_ts``,
+    then the authoritative entry's ``version``.
+    """
+    run_labels = {
+        parse_followup_note_field(e.get("note") or "", "followup_label")
+        for e in events
+        if e.get("kind") == FOLLOWUP_RUN_KIND
+    } - {None}
+    unrun = [g for g in followup_label_groups(events) if g["followup_label"] not in run_labels]
+
+    def _order(group: dict) -> tuple[bool, str, int]:
+        version = group["authoritative"].get("version")
+        return (
+            not group["user_initiated"],
+            group["armed_ts"],
+            version if isinstance(version, int) else 0,
+        )
+
+    unrun.sort(key=_order)
+    return unrun
+
+
+def executing_followup_label(events: list[dict]) -> dict | None:
+    """Resolve WHICH unrun label the current / most-recent round is executing.
+
+    Shared by the Step 9b step-3 mid-round re-read, the step-4
+    completion-marker label derivation, and the watcher's
+    ``_post_followup_run_marker`` (SKILL.md Step 9b § Same-issue follow-up
+    loop). Resolution order:
+
+    1. The newest ``epm:progress`` note beginning
+       ``stage-dispatch stage=followup-`` that is strictly newer than the
+       newest ``epm:same-issue-followup-run`` ts and carries a
+       ``label=<slug>`` token (via :func:`_breadcrumb_fields`) → that
+       label's group, if unrun. This wins over the queue head because a
+       user-chat label posted MID-ROUND would jump the head; the breadcrumb
+       pins the round actually dispatched.
+    2. Fallback: the head of the DISPATCHABLE subset of
+       :func:`unrun_followup_labels` (Step 0 only ever dispatches
+       dispatchable heads, so head == executing round whenever no labeled
+       breadcrumb exists — breadcrumbs predating the #894 ``label=``
+       contract lack the token).
+    3. ``None`` when no dispatchable unrun labels exist.
+    """
+    unrun = unrun_followup_labels(events)
+    crumb_label = _newest_followup_dispatch_crumb_label(events)
+    if crumb_label is not None:
+        for group in unrun:
+            if group["followup_label"] == crumb_label:
+                return group
+    for group in unrun:
+        if group["dispatchable"]:
+            return group
+    return None
+
+
+def _newest_followup_dispatch_crumb_label(events: list[dict]) -> str | None:
+    """``label=`` of the newest follow-up stage-dispatch breadcrumb strictly
+    newer than the newest ``epm:same-issue-followup-run`` ts, else ``None``
+    (no labeled crumb, or every labeled crumb predates the latest recorded
+    round). Helper for :func:`executing_followup_label`."""
+    newest_run_ts: datetime | None = None
+    for ev in events:
+        if ev.get("kind") != FOLLOWUP_RUN_KIND:
+            continue
+        ts = _stage_event_ts(ev)
+        if ts is not None and (newest_run_ts is None or ts > newest_run_ts):
+            newest_run_ts = ts
+    crumb_label: str | None = None
+    crumb_ts: datetime | None = None
+    for ev in events:
+        if ev.get("kind") != "epm:progress":
+            continue
+        note = (ev.get("note") or "").lstrip()
+        if not note.startswith(_FOLLOWUP_STAGE_DISPATCH_PREFIX):
+            continue
+        label = _breadcrumb_fields(note).get("label")
+        if not label:
+            continue
+        ts = _stage_event_ts(ev)
+        if ts is None:
+            continue
+        if newest_run_ts is not None and ts <= newest_run_ts:
+            continue
+        if crumb_ts is None or ts > crumb_ts:
+            crumb_ts = ts
+            crumb_label = label
+    return crumb_label
+
+
+def followup_retro_close_evidence(events: list[dict], label: str) -> str | None:
+    """MECHANICAL, exact-label evidence that ``label``'s round already ran.
+
+    The predicate behind the Step 0 stale-label disposition rule (legacy
+    tasks like #658 carry ghost labels whose rounds demonstrably ran without
+    an ``epm:same-issue-followup-run`` record). Three evidence classes, all
+    EXACT-match — prose mention / substring / prefix evidence NEVER closes:
+
+    1. an ``epm:methodology-doc-generated`` note carrying ``extends=<label>``
+       (exact token, via :func:`parse_followup_note_field` or the
+       ``key=value`` breadcrumb grammar);
+    2. an ``epm:free-analysis-followup-run`` whose ``followup_ref`` EXACTLY
+       equals ``label`` (string equality — a PREFIX match like
+       ``<label>-9a-ter-fit`` never closes);
+    3. an ``epm:status-changed`` / ``epm:step-completed`` / ``epm:progress``
+       note with the exact parenthesized round token ``(<label>)`` AND a
+       round-completion word (:data:`_ROUND_COMPLETION_WORD`) on the same
+       line, where additionally (#961) the token's own ``;``/``.``-delimited
+       clause carries a completion word (the line-level list, or the
+       case-sensitive ``complete``/``COMPLETE`` supplement
+       :data:`_CLAUSE_COMPLETION_WORD`) and NO queue-context word
+       (:data:`_QUEUE_CONTEXT_WORD`). Park/handoff notes routinely announce
+       round X complete while enumerating the queued next label Y on the
+       same line (#825 2026-07-04, #595 2026-06-14) — binding the
+       completion signal to the label's clause and vetoing queued/unrun/
+       scoped/armed/dispatch mentions keeps such notes from closing a
+       queued round. The #961 narrowing keeps class-3 evidence a strict
+       subset of the pre-#961 line-level match (a missed close is safe,
+       a wrong close is not).
+
+    Returns the one-line evidence string of the FIRST matching class (class
+    order 1 → 2 → 3; multiple classes agreeing on the SAME exact label are
+    corroboration, not ambiguity — the canonical #658 ghost label carries
+    both a 9a-quater ``extends=`` record and a status-PASS round note);
+    ``None`` when NO class matches — the caller then never closes (a
+    merely-prose / substring / prefix mention is not evidence; ambiguity
+    NEVER closes).
+    """
+    for ev in events:
+        kind = ev.get("kind")
+        note = ev.get("note") or ""
+        if kind == "epm:methodology-doc-generated":
+            extends = parse_followup_note_field(note, "extends")
+            if extends != label:
+                extends = _breadcrumb_fields(note).get("extends")
+            if extends == label:
+                return (
+                    f"epm:methodology-doc-generated at {ev.get('ts', '?')} carries extends={label}"
+                )
+    for ev in events:
+        if ev.get("kind") != "epm:free-analysis-followup-run":
+            continue
+        ref = parse_followup_note_field(ev.get("note") or "", "followup_ref")
+        if ref == label:
+            return (
+                f"epm:free-analysis-followup-run at {ev.get('ts', '?')} has followup_ref == {label}"
+            )
+    token = f"({label})"
+    for ev in events:
+        kind = ev.get("kind")
+        if kind not in ("epm:status-changed", "epm:step-completed", "epm:progress"):
+            continue
+        for line in (ev.get("note") or "").splitlines():
+            if _class3_line_is_close_evidence(line, token):
+                return (
+                    f"{kind} at {ev.get('ts', '?')} carries the round token "
+                    f"({label}) plus a round-completion word in the same clause"
+                )
+    return None
+
+
+def _class3_line_is_close_evidence(line: str, token: str) -> bool:
+    """The #961 two-gate class-3 line check for :func:`followup_retro_close_evidence`.
+
+    Gate 1 is the pre-#961 line-level check, retained verbatim so the #961
+    narrowing can never ADD evidence (new ⊆ old); gate 2 binds the completion
+    signal to the token's own ``;``/``.``-delimited clause and vetoes
+    queue-context mentions. Returns True iff the line is class-3 evidence.
+    """
+    # Gate 1 — the pre-#961 line-level check, retained verbatim.
+    if token not in line or not _ROUND_COMPLETION_WORD.search(line):
+        return False
+    # Gate 2 (#961) — bind the completion signal to the label's own
+    # ;/.-delimited clause and veto queue-context mentions.
+    for clause in re.split(r"[;.]", line):
+        if token not in clause:
+            continue
+        if _QUEUE_CONTEXT_WORD.search(clause):
+            continue  # label named as queued/armed/dispatched — not evidence
+        if _ROUND_COMPLETION_WORD.search(clause) or _CLAUSE_COMPLETION_WORD.search(clause):
+            return True
+    return False
 
 
 def _format_failure_lesson_entry(new_lesson_ref: dict[str, str]) -> str:
@@ -1589,7 +2916,21 @@ def _status_from_path(path: Path) -> str:
 
 
 def find_task_path(task_id: int) -> Path:
-    """Return absolute path to tasks/<status>/<task_id>/. Resolves via REGISTRY."""
+    """Return absolute path to tasks/<status>/<task_id>/. Resolves via REGISTRY.
+
+    Stale-entry envelope (#825): when the registry entry points at a dir that
+    is MISSING on disk (a mutation was hard-killed between the folder move
+    and the registry save), fall back to a one-shot on-disk scan across
+    STATUSES — exactly one hit returns that path with a logged drift WARNING;
+    two or more hits raise ``StaleTaskPathError`` (real corruption — never
+    guess); zero hits raise the original ``FileNotFoundError``. This is a
+    READ path, so the registry is NEVER self-healed here (no ``_locked()``
+    held; an unlocked whole-file ``_save_registry`` could clobber a
+    concurrent mutator's update) — repair happens on the task's next
+    registry-writing mutation (including the ``set_status``
+    same-transition early-return re-sync) or via
+    ``task.py audit --repair --apply``.
+    """
     reg = _load_registry()
     entry = reg["tasks"].get(str(task_id))
     td = tasks_dir()
@@ -1601,12 +2942,35 @@ def find_task_path(task_id: int) -> Path:
                 return candidate
         raise FileNotFoundError(f"task #{task_id} not found in registry or on disk")
     abs_path = repo_root() / entry["path"]
-    if not abs_path.is_dir():
-        raise FileNotFoundError(
-            f"task #{task_id} registry says {entry['path']!r} but that dir is missing; "
-            f"run `task.py audit` to repair"
+    if abs_path.is_dir():
+        return abs_path
+    # Registry entry is STALE (dir moved on disk without a registry update —
+    # e.g. a mutation was hard-killed mid-flight; cf. #825). Fall back to a
+    # one-shot on-disk scan; READ path, so never self-heal REGISTRY here (no
+    # _locked()).
+    hits = [td / s / str(task_id) for s in STATUSES if (td / s / str(task_id)).is_dir()]
+    if len(hits) == 1:
+        _log.warning(
+            "task #%d: REGISTRY says %r but that dir is missing; found on disk at %r — "
+            "returning the on-disk path. REGISTRY is stale; it re-syncs on the next "
+            "registry-writing mutation of this task, or run "
+            "`task.py audit --repair --apply`.",
+            task_id,
+            entry["path"],
+            str(hits[0].relative_to(repo_root())),
         )
-    return abs_path
+        return hits[0]
+    if len(hits) > 1:
+        raise StaleTaskPathError(
+            f"task #{task_id}: REGISTRY says {entry['path']!r} (missing) and the "
+            f"task exists in MULTIPLE status folders: "
+            f"{[str(h.relative_to(repo_root())) for h in hits]}; "
+            f"run `task.py audit --repair --apply`"
+        )
+    raise FileNotFoundError(
+        f"task #{task_id} registry says {entry['path']!r} but that dir is missing; "
+        f"run `task.py audit` to repair"
+    )
 
 
 def get_task(task_id: int) -> dict[str, Any]:
@@ -1724,12 +3088,22 @@ def _iter_jsonl(path: Path) -> list[dict[str, Any]]:
     ``errors="replace"`` substitutes U+FFFD for the bad bytes so the
     corrupted line falls through to the existing ``JSONDecodeError`` skip
     path — completing the recovery story.
+
+    Records are split on ``"\\n"`` (NOT ``str.splitlines()``): the paired
+    ``ensure_ascii=False`` writer leaves raw U+2028/U+2029/NEL inside note
+    strings, and ``splitlines()`` treats those as line boundaries — shredding
+    a valid record into skip-malformed fragments = silent marker loss
+    (gotchas.md; #825 → #950).
     """
     if not path.exists():
         return []
     out: list[dict[str, Any]] = []
     text = path.read_text(encoding="utf-8", errors="replace")
-    for lineno, line in enumerate(text.splitlines(), 1):
+    # split("\n"), NOT splitlines(): raw U+2028/U+2029/NEL inside
+    # ensure_ascii=False notes are Unicode line boundaries that would shred
+    # valid records into skip-malformed fragments = silent marker loss
+    # (gotchas.md; #825 → #950).
+    for lineno, line in enumerate(text.split("\n"), 1):
         if not line.strip():
             continue
         try:
@@ -1809,9 +3183,14 @@ def post_event(
             payload["artifacts"] = artifacts
         payload.update(extras)
         _append_jsonl_line(path, payload)
-        _git_commit(
+        # Append landed durably above — a pre/at-commit git failure on the
+        # primary checkout is deferred (loud ERROR + forensic sidecar row),
+        # not raised, so a caller retry cannot duplicate the marker (#1030).
+        _commit_after_durable_append(
             [path],
             f"task #{task_id}: {kind}" + (f" — {note[:60]}" if note else ""),
+            task_id=task_id,
+            op="post_event",
         )
     return payload
 
@@ -1857,6 +3236,31 @@ def _rollback_move(src: Path, dst: Path) -> None:
         raise
 
 
+def _task_status_dir_pathspecs(task_id: int, repo: Path) -> list[str]:
+    """All ``tasks/<status>/<id>`` dirs for this task that git TRACKS or that
+    exist on disk — the staging pathspec set that reconciles any residue a
+    previously-crashed transition left behind (ghost old-status dirs whose
+    deletions were never staged; #825 / the #644 stale-task-folder class).
+
+    One ``git ls-files`` call over deterministic per-STATUSES pathspecs (no
+    fnmatch wildcards — exact-id matching only, so id 89 never sweeps id
+    898). ``ls-files`` silently ignores pathspecs that match nothing, so the
+    candidate list is safe to pass wholesale. The returned set is restricted
+    to tracked-or-on-disk dirs BECAUSE ``git add`` (without
+    ``--ignore-unmatch``) and ``git commit --only`` both FAIL LOUD on a
+    pathspec that matches neither the index/HEAD nor the working tree — a
+    dir that is neither tracked nor on disk has nothing to stage and must be
+    excluded, not passed along.
+    """
+    rel_tasks = tasks_dir().relative_to(repo)
+    candidates = [str(rel_tasks / status / str(task_id)) for status in STATUSES]
+    tracked = _run_git(["ls-files", "--", *candidates]).stdout.splitlines()
+    n_parts = len(rel_tasks.parts) + 2  # <tasks>/<status>/<id>
+    dirs = {"/".join(p.split("/")[:n_parts]) for p in tracked if p.strip()}
+    dirs |= {c for c in candidates if (repo / c).is_dir()}
+    return sorted(dirs)
+
+
 def set_status(
     task_id: int,
     new_status: str,
@@ -1864,8 +3268,29 @@ def set_status(
     note: str | None = None,
     force_followup_exit: bool = False,
 ) -> Path:
-    """Move tasks/<old>/<id>/ → tasks/<new>/<id>/ via `git mv`, then post a
-    status-changed event. Returns the new absolute path.
+    """Move tasks/<old>/<id>/ → tasks/<new>/<id>/ (whole-dir move), then post
+    a status-changed event and commit. Returns the new absolute path.
+
+    Crash envelope (#825): ALL durable-state mutations — the filesystem move
+    + completeness verification, the REGISTRY save, and the events.jsonl
+    append — complete BEFORE any git operation, so the #825 stranded split
+    (folder moved, registry pointing at the old path) is unreachable via
+    git-failure exceptions: any git crash leaves disk, REGISTRY, and
+    events.jsonl all consistent with the transition APPLIED, with only the
+    COMMIT missing; that residue is reconciled by the ghost-aware staging
+    sweep (``_task_status_dir_pathspecs``) on the task's NEXT transition. A
+    HARD KILL (SIGKILL/OOM) in the residual window between ``shutil.move``
+    and ``_save_registry`` still yields a stale-registry shape; that window
+    is backstopped by the ``find_task_path`` read-path scan fallback plus
+    the same-transition early-return re-sync below, and the next completed
+    registry-writing mutation of the task re-syncs the entry. A hard kill
+    between ``_save_registry`` and ``_append_jsonl_line`` yields a
+    consistent folder+registry with a missing ``epm:status-changed`` event —
+    a history gap, not a stranding. On the FS-verification failure path the
+    move is rolled back with REGISTRY untouched (``_rollback_move``), as
+    before. On git failure this function still RAISES (fail fast) — but the
+    status transition is durably applied, and a caller retry lands on the
+    idempotent ``old_status == new_status`` early return.
 
     Refuses `followups_running` → any FOLLOWUP_HELD_BLOCKED_STATUSES member
     (same-issue follow-up status-hold rule) unless ``force_followup_exit``.
@@ -1876,6 +3301,29 @@ def set_status(
         old = find_task_path(task_id)
         old_status = _status_from_path(old)
         if old_status == new_status:
+            # Idempotent retry of the SAME transition. If find_task_path
+            # resolved the task at a path that DISAGREES with the registry
+            # entry (stale entry — the hard-kill residue shape, #825),
+            # re-sync the registry before returning: this branch already
+            # holds _locked(), so the write is safe (unlike the read-path
+            # scan fallback in find_task_path, which never self-heals).
+            reg = _load_registry()
+            entry = reg["tasks"].get(str(task_id))
+            rel = str(old.relative_to(repo_root()))
+            if entry and entry.get("path") != rel:
+                fm, _ = _read_body(old / "body.md")
+                _registry_set(reg, task_id, old, fm)
+                _save_registry(reg)
+                _git_commit(
+                    [old, registry_path()],
+                    f"task #{task_id}: re-sync stale REGISTRY entry",
+                )
+                _log.warning(
+                    "task #%d: re-synced stale REGISTRY entry (%r -> %r) on idempotent retry",
+                    task_id,
+                    entry.get("path"),
+                    rel,
+                )
             return old
         if (
             old_status == "followups_running"
@@ -1951,11 +3399,12 @@ def set_status(
                 f"back, REGISTRY untouched. Retry after resolving the disk/"
                 f"permission issue."
             )
-        # Stage BOTH sides so git records the rename via content-similarity: the
-        # source-side deletion at <old> AND the destination-side addition at
-        # <new> (preserves the both-sides-of-move commit invariant).
-        _run_git(["add", "--all", "--", str(rel_old), str(rel_new)])
-        # Update REGISTRY
+        # ── Durable state FIRST, git ops LAST (#825). ── The registry save +
+        # event append below complete before ANY git op, so a git crash can
+        # never again leave the folder moved with the registry pointing at
+        # the old path (the #825 stranded split): every git failure now
+        # leaves disk, REGISTRY, and events.jsonl consistent with the
+        # transition applied, only the COMMIT missing.
         reg = _load_registry()
         fm, _ = _read_body(new / "body.md")
         _registry_set(reg, task_id, new, fm)
@@ -1973,13 +3422,58 @@ def set_status(
         if note:
             payload["note"] = note
         _append_jsonl_line(ev_path, payload)
-        # Pass BOTH old and new to _git_commit so the deletion side of
-        # the `git mv` is included in the commit's --only pathspec.
-        # Otherwise the staged deletion at <old> remains in the index and
-        # gets swept into the next unrelated `git commit` (incident:
-        # 2026-05-24, tasks 382/383 source-side deletions leaked into
-        # commit 49e49f4a).
-        _git_commit([old, new, registry_path()], f"task #{task_id}: {old_status} → {new_status}")
+        specs: list[str] = []  # pre-bound so the except block below can log it
+        try:
+            # Ghost-aware staging (#644 stale-task-folder class): the specs
+            # cover BOTH sides of THIS move — the source-side deletion at
+            # <old> (tracked in git, hence in the specs) AND the
+            # destination-side addition at <new> (on disk, hence in the
+            # specs) — preserving the both-sides-of-move commit invariant —
+            # PLUS any tasks/<status>/<id> dir a previously-crashed
+            # transition left tracked in HEAD but absent on disk, so
+            # `git add --all` stages the leftover deletion and this
+            # transition's commit sweeps the ghost duplicate. rel_old /
+            # rel_new are NOT force-unioned in: a dir that is neither
+            # tracked nor on disk (e.g. rel_old after a never-committed
+            # transition) matches no pathspec, and `git add` / `git commit
+            # --only` fail loud on unmatched pathspecs — the helper's
+            # tracked-or-on-disk restriction already includes rel_old/
+            # rel_new whenever there is anything to stage for them.
+            specs = _task_status_dir_pathspecs(task_id, repo)
+            _run_git(["add", "--all", "--", *specs])  # step-6 standalone staging
+            # Pass the SAME expanded path set to _git_commit so the deletion
+            # side of the move (and any swept ghost) is included in the
+            # commit's --only pathspec. Otherwise staged deletions remain in
+            # the index and get swept into the next unrelated `git commit`
+            # (incident: 2026-05-24, tasks 382/383 source-side deletions
+            # leaked into commit 49e49f4a).
+            _git_commit(
+                [*(repo / s for s in specs), registry_path()],
+                f"task #{task_id}: {old_status} → {new_status}",
+            )
+        except (subprocess.CalledProcessError, SequencerWaitTimeout):
+            # #1030 MF-1: a SequencerWaitTimeout raised from _git_commit's
+            # merge wait gets the SAME "DURABLY APPLIED" recovery narration a
+            # plain git failure gets, then re-raises as before. set_status is
+            # deliberately NOT converted to deferred behavior (#898 raise +
+            # ghost-sweep semantics stay).
+            _log.error(
+                "task #%d: status move %s -> %s is DURABLY APPLIED (disk + REGISTRY + "
+                "events.jsonl consistent at %s) but git failed before committing. "
+                "Leftover git residue at %s / %s will be reconciled by the NEXT "
+                "set_status of this task; to sweep now: "
+                "git add --all -- %s && git commit -m "
+                "'task #%d: sweep crashed status-move residue'",
+                task_id,
+                old_status,
+                new_status,
+                rel_new,
+                rel_old,
+                rel_new,
+                " ".join(specs) if specs else f"{rel_old} {rel_new}",
+                task_id,
+            )
+            raise
     return new
 
 
@@ -2002,6 +3496,12 @@ class NewTaskRequest:
     # The clean-result `## Reproducibility` `**Context:**` row carries it
     # forward (SPEC.md § `**Context:**` row; verify_task_body.py check 17).
     origin_prompt: str | None = None
+    # Workflow-pipeline version this task runs under: "v1" (current default)
+    # or "v2" (report-only pipeline). None -> resolved at creation via
+    # _resolve_workflow_version(): explicit > env EPM_DEFAULT_WORKFLOW >
+    # DEFAULT_WORKFLOW_VERSION. Always written to frontmatter `workflow:` so
+    # the `/issue` dispatcher can branch (EPS workflow-v2 plan, Assumption 2).
+    workflow: str | None = None
 
 
 def create_task(req: NewTaskRequest) -> int:
@@ -2030,6 +3530,11 @@ def create_task(req: NewTaskRequest) -> int:
             fm["parent_id"] = req.parent_id
         if req.origin_prompt and req.origin_prompt.strip():
             fm["origin_prompt"] = req.origin_prompt.strip()
+        # Pin the workflow-pipeline version (explicit > EPM_DEFAULT_WORKFLOW >
+        # v1). Always written so the /issue dispatcher can branch; purely
+        # additive — legacy tasks with no `workflow:` key fail-open to v1 via
+        # workflow_version() (EPS workflow-v2 plan, Assumption 2).
+        fm["workflow"] = _resolve_workflow_version(req.workflow)
         # Inject the Goal into frontmatter + body H2 when kind=experiment.
         # For other kinds, ignore silently — enforcement is at /issue
         # Step 0c, and task.py CLI warns the user up front.
@@ -2053,7 +3558,15 @@ def create_task(req: NewTaskRequest) -> int:
         # Register
         _registry_set(reg, task_id, path, fm)
         _save_registry(reg)
-        _git_commit([path, registry_path()], f"task #{task_id}: create — {req.title[:60]}")
+        # A retried `task.py new` would allocate a NEW id → duplicate task;
+        # the dir + registry entry are durable, so defer a commit failure
+        # (#1030) instead of raising into the caller's retry recipe.
+        _commit_after_durable_append(
+            [path, registry_path()],
+            f"task #{task_id}: create — {req.title[:60]}",
+            task_id=task_id,
+            op="create",
+        )
         return task_id
 
 
@@ -2188,6 +3701,14 @@ def set_clean_result(task_id: int, value: bool = True, *, allow_paper_warn: bool
     tolerated when ``allow_paper_warn`` is True (default), which lets a paper be
     marked a clean-result before the HF upload lands. Clearing (``value=False``)
     and every non-paper task skip the manifest gate.
+
+    A **v2 report** body (carries ``REPORT_V1_SENTINEL`` — see
+    :func:`is_report_body`) is a valid non-paper clean-result form: it is not a
+    ``paper: true`` task and carries no ``paper_manifest.json``, so it flows
+    through the non-paper path here and flips ``has_clean_result`` with no extra
+    gate. Its own mechanical gate is ``scripts/verify_report.py`` (run before
+    ``set-clean-result`` / at promote time), the report-track analogue of
+    ``verify_task_body.py`` / ``verify_paper.py``.
     """
     with _locked():
         path = find_task_path(task_id) / "body.md"
@@ -2415,9 +3936,13 @@ def set_goal(task_id: int, new_goal: str, *, by: str = "user", reason: str | Non
         if reason:
             payload["reason"] = reason
         _append_jsonl_line(ev_path, payload)
-        _git_commit(
+        # Body + registry + epm:goal-updated event are durable above; a
+        # retried set_goal would append a duplicate event — defer (#1030).
+        _commit_after_durable_append(
             [path, ev_path, registry_path()],
             f"task #{task_id}: set-goal — {goal[:60]}",
+            task_id=task_id,
+            op="set_goal",
         )
     return True
 
@@ -2552,7 +4077,14 @@ def new_plan_version(task_id: int, plan_md: str) -> int:
         if symlink.is_symlink() or symlink.exists():
             symlink.unlink()
         symlink.symlink_to(target.name)
-        _git_commit([target, symlink], f"task #{task_id}: plan v{next_v}")
+        # plans/v{N}.md + the symlink are durable; a retry would write an
+        # identical v{N+1}.md — defer a commit failure instead (#1030).
+        _commit_after_durable_append(
+            [target, symlink],
+            f"task #{task_id}: plan v{next_v}",
+            task_id=task_id,
+            op="new_plan_version",
+        )
     return next_v
 
 
@@ -2586,8 +4118,13 @@ def promote(task_id: int, verdict: str) -> Path:
             "classification": verdict,
         }
         _append_jsonl_line(path / "events.jsonl", promoted_event)
-        _git_commit(
-            [path / "body.md", path / "events.jsonl"], f"task #{task_id}: promote {verdict}"
+        # Frontmatter flip is idempotent but the epm:promoted event is an
+        # append a retry would duplicate — defer a commit failure (#1030).
+        _commit_after_durable_append(
+            [path / "body.md", path / "events.jsonl"],
+            f"task #{task_id}: promote {verdict}",
+            task_id=task_id,
+            op="promote",
         )
     # Then move to completed via set_status (own lock + commit)
     return set_status(task_id, "completed", note=f"promoted as {verdict}")
@@ -3075,7 +4612,14 @@ def append_comment(
         if extras:
             record.update(extras)
         _append_jsonl_line(path, record)
-        _git_commit([path], f"task #{task_id}: comment {cid} ({kind})")
+        # Comment row is durable; a retry would append a duplicate row with
+        # a fresh cNNN id — defer a commit failure instead (#1030).
+        _commit_after_durable_append(
+            [path],
+            f"task #{task_id}: comment {cid} ({kind})",
+            task_id=task_id,
+            op="append_comment",
+        )
     return record
 
 
@@ -3087,25 +4631,199 @@ def list_comments(task_id: int) -> list[dict[str, Any]]:
 # ─── Git helpers ────────────────────────────────────────────────────────────
 
 
+# Git lock-contention signature. Matches the three stderr shapes a concurrent
+# git process produces (git 2.x): the index.lock path itself, the generic
+# "another process" hint, and the File-exists lock-create failure (covers
+# ref locks / packed-refs.lock with the same transient signature). A CAS
+# mismatch ("is at <sha> but expected <sha>") deliberately does NOT match.
+_GIT_LOCK_CONTENTION_RE = re.compile(
+    r"index\.lock"
+    r"|Another git process seems to be running"
+    r"|Unable to create '.*\.lock': File exists"
+)
+_GIT_LOCK_RETRY_SLEEP_RANGE_S = (2.0, 3.0)  # one retry; jittered to de-sync
+
+# `git commit --only` refuses while a merge/cherry-pick is in progress on
+# THIS worktree (verified: git 2.34.1, rc=128). Signature used only for the
+# single TOCTOU retry in ``_git_commit`` — never added to
+# ``_GIT_LOCK_CONTENTION_RE`` (#898's retry semantics stay byte-identical).
+# NOTE: do NOT "simplify" the wait by dropping --only under a merge — a plain
+# `git commit` during a merge would CREATE THE MERGE COMMIT, sweeping the
+# entire shared index and completing the concurrent session's merge on its
+# behalf.
+_PARTIAL_COMMIT_SEQUENCER_RE = re.compile(
+    r"cannot do a partial commit during a (merge|cherry-pick)"
+)
+_MERGE_WAIT_ENV = "EPM_TASKPY_MERGE_WAIT_SECONDS"  # total bound; 0 disables (default 60)
+_MERGE_POLL_ENV = "EPM_TASKPY_MERGE_POLL_SECONDS"  # poll interval (default 2.0)
+# REVERT_HEAD is a deliberate exclusion — nothing in the fleet's tooling runs
+# `git revert`; add it here if that ever changes (same fatal shape).
+_SEQUENCER_STATE_FILES = ("MERGE_HEAD", "CHERRY_PICK_HEAD")
+
+
+class SequencerWaitTimeout(RuntimeError):
+    """A concurrent merge/cherry-pick did not clear within the bound.
+
+    Narrow, named class so (a) ``_commit_after_durable_append`` can defer on
+    it WITHOUT catching bare ``RuntimeError`` (which would wrongly defer the
+    routed post-commit CAS failure — ``_git_quiet`` raises ``RuntimeError``),
+    and (b) ``set_status``'s #898 recovery envelope can name it alongside
+    ``CalledProcessError``.
+    """
+
+
+def _merge_wait_bound_s() -> float:
+    """Total bounded-wait budget (seconds) for a concurrent merge/cherry-pick
+    to clear before ``_git_commit`` gives up with ``SequencerWaitTimeout``.
+    ``0`` disables the wait entirely (today's immediate git rc=128 fatal
+    surfaces unchanged). A non-float env value raises ``ValueError`` (fail
+    loud, project norm); a non-finite float (``nan``/``inf``) raises too —
+    ``nan`` defeats the ``time.monotonic() >= deadline`` comparison and would
+    wait unbounded. The default 60 s is deliberately LESS THAN
+    ``sync_repo_root.py``'s ``EPM_ROOT_SYNC_LOCK2_WAIT_S`` (120 s): a
+    manually-started ``sync_repo_root.py`` waiting on the task-workflow lock
+    then outlasts any task.py writer mid-merge-wait instead of timing out
+    behind it. Mirrors ``_rebase_wait_bound_s`` (#996)."""
+    value = float(os.environ.get(_MERGE_WAIT_ENV, "60"))
+    if not math.isfinite(value):
+        raise ValueError(f"{_MERGE_WAIT_ENV} must be finite, got {value!r}")
+    return value
+
+
+def _merge_poll_s() -> float:
+    """Poll interval (seconds) between sequencer-state re-probes while
+    waiting out a concurrent merge/cherry-pick. A non-float or non-finite
+    env value raises ``ValueError``. Mirrors ``_rebase_poll_s`` (#996)."""
+    value = float(os.environ.get(_MERGE_POLL_ENV, "2.0"))
+    if not math.isfinite(value):
+        raise ValueError(f"{_MERGE_POLL_ENV} must be finite, got {value!r}")
+    return value
+
+
+def _sequencer_state_paths(repo: Path) -> list[Path]:
+    """Per-worktree MERGE_HEAD/CHERRY_PICK_HEAD paths for the checkout
+    ``_git_commit`` commits in.
+
+    Resolved via ``git rev-parse --git-path`` (one call, one flag per state
+    file, one output line each), NEVER a hardcoded ``<root>/.git/`` join: for
+    a linked worktree (the routed managed-main case) ``.git`` is a FILE and
+    the real sequencer state lives under ``<common>/.git/worktrees/<name>/``
+    — the hardcode would both miss a merge in the worktree itself AND
+    false-probe the primary's (sequencer state is per-worktree; verified
+    empirically, git 2.34.1)."""
+    argv = ["rev-parse"]
+    for name in _SEQUENCER_STATE_FILES:
+        argv += ["--git-path", name]
+    lines = [ln for ln in _run_git(argv).stdout.splitlines() if ln.strip()]
+    return [(p if p.is_absolute() else repo / p) for p in map(Path, lines)]
+
+
+def _wait_for_sequencer_clear(repo: Path) -> None:
+    """Bounded wait for a concurrent merge/cherry-pick on THIS checkout to
+    finish before ``commit --only`` (git refuses a partial commit during
+    either — see ``_PARTIAL_COMMIT_SEQUENCER_RE``).
+
+    Returns when no sequencer state file exists; knob = 0 → immediate return
+    (today's git fatal then surfaces unchanged); on timeout raises
+    ``SequencerWaitTimeout`` naming the state + the manual remedy. NEVER
+    auto-invokes ``sync_repo_root.py``: it takes the task-workflow lock
+    (``_run_locked``) that this process already holds — a guaranteed
+    lock-wait failure."""
+    bound = _merge_wait_bound_s()
+    if bound <= 0:
+        return
+    poll = _merge_poll_s()
+    # Resolved ONCE before the loop: the paths are stable per checkout, so
+    # re-resolving per poll would only burn a subprocess per iteration.
+    state_paths = _sequencer_state_paths(repo)
+    deadline = time.monotonic() + bound
+    announced = False
+    while True:
+        present = [p.name for p in state_paths if p.exists()]
+        if not present:
+            return
+        if time.monotonic() >= deadline:
+            raise SequencerWaitTimeout(
+                f"{'/'.join(present)} present on {repo} for >{bound:.0f}s; a concurrent "
+                "merge/cherry-pick is stalled or crashed and `git commit --only` cannot "
+                "run during one. Finish or abort it, or run "
+                "`uv run python scripts/sync_repo_root.py` (aborts a STALE husk past "
+                f"EPM_ROOT_SYNC_HUSK_AGE_S). Tune via {_MERGE_WAIT_ENV} (0 disables)."
+            )
+        if not announced:
+            _log.warning(
+                "waiting up to %.0fs for a concurrent merge on %s to clear (%s present)",
+                bound,
+                repo,
+                ", ".join(present),
+            )
+            announced = True
+        time.sleep(poll)
+
+
 def _run_git(args: list[str], *, check: bool = True) -> subprocess.CompletedProcess[str]:
-    # Resolve cwd PER CALL (not from a cached module-level REPO). The
-    # process-local LRU cache in `repo_root()` makes this cheap, and per-call
-    # resolution is what keeps long-lived processes (PM session, agent
-    # daemons) safe across `os.chdir()` or branch state changes.
-    #
-    # `env=_sanitized_git_env()` matches the resolver: inherited GIT_DIR /
-    # GIT_WORK_TREE / GIT_INDEX_FILE / GIT_OBJECT_DIRECTORY would in
-    # principle redirect git add/commit. The resolver already strips them
-    # for the subprocess that locates the repo root; strip them here too
-    # for parity (round-1 code-review finding #7).
-    return subprocess.run(
-        ["git", *args],
-        cwd=str(repo_root()),
-        env=_sanitized_git_env(),
-        check=check,
-        capture_output=True,
-        text=True,
-    )
+    """Run ``git <args>`` at the repo root, retrying ONCE on lock contention.
+
+    Contention/crash envelope (#825): the command runs with ``check=False``
+    internally; if it exits non-zero AND stderr matches the git
+    lock-contention signature (``_GIT_LOCK_CONTENTION_RE`` — a concurrent git
+    process holds ``.git/index.lock`` or a sibling ``*.lock``), sleep a
+    jittered ``random.uniform(*_GIT_LOCK_RETRY_SLEEP_RANGE_S)`` interval and
+    rerun exactly ONCE (never more). The retry keys on the STDERR SIGNATURE,
+    never on the return code, so ``check=False`` rc-as-signal call sites
+    (``diff --cached --quiet``) keep their rc semantics with zero retries,
+    and non-lock failures surface immediately. A SUCCESSFUL call takes no
+    sleep (zero happy-path latency). If the retry also fails on the lock
+    signature, a stale-lock remedy is logged at ERROR. After the (at most
+    one) retry the caller's ``check`` semantics apply: ``check=True`` raises
+    ``subprocess.CalledProcessError`` with the same ``cmd``/``output``/
+    ``stderr`` fields ``subprocess.run(check=True)`` would produce.
+    """
+
+    def _attempt() -> subprocess.CompletedProcess[str]:
+        # Resolve cwd PER CALL (not from a cached module-level REPO). The
+        # process-local LRU cache in `repo_root()` makes this cheap, and
+        # per-call resolution is what keeps long-lived processes (PM session,
+        # agent daemons) safe across `os.chdir()` or branch state changes.
+        #
+        # `env=_sanitized_git_env()` matches the resolver: inherited GIT_DIR /
+        # GIT_WORK_TREE / GIT_INDEX_FILE / GIT_OBJECT_DIRECTORY would in
+        # principle redirect git add/commit. The resolver already strips them
+        # for the subprocess that locates the repo root; strip them here too
+        # for parity (round-1 code-review finding #7).
+        return subprocess.run(
+            ["git", *args],
+            cwd=str(repo_root()),
+            env=_sanitized_git_env(),
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+
+    result = _attempt()
+    if result.returncode != 0 and _GIT_LOCK_CONTENTION_RE.search(result.stderr or ""):
+        delay = random.uniform(*_GIT_LOCK_RETRY_SLEEP_RANGE_S)
+        _log.warning(
+            "git %s hit a lock collision (a concurrent git process holds the lock); "
+            "retrying once in %.1fs",
+            args[0] if args else "",
+            delay,
+        )
+        time.sleep(delay)
+        result = _attempt()  # second and FINAL attempt
+        if result.returncode != 0 and _GIT_LOCK_CONTENTION_RE.search(result.stderr or ""):
+            _log.error(
+                "git %s failed twice on a lock collision. A concurrent git process is "
+                "holding the repo lock; if no live git process exists, a crashed one "
+                "may have left a stale .git/index.lock — inspect and remove it "
+                "manually.",
+                args[0] if args else "",
+            )
+    if check and result.returncode != 0:
+        raise subprocess.CalledProcessError(
+            result.returncode, result.args, output=result.stdout, stderr=result.stderr
+        )
+    return result
 
 
 def _git_commit(paths: list[Path], message: str) -> None:
@@ -3134,12 +4852,21 @@ def _git_commit(paths: list[Path], message: str) -> None:
     this routed branch is never taken and behavior is byte-for-byte identical
     to before — the commit advances `main` directly via the normal HEAD move.
 
+    Before staging, waits out any concurrent merge/cherry-pick on this
+    checkout (``_wait_for_sequencer_clear``, #1030 — `git commit --only`
+    fatals rc=128 during one); a merge that STARTS between the probe and the
+    commit (TOCTOU) gets a single re-wait + one FINAL retry keyed on the
+    partial-commit stderr signature.
+
     Set TASK_PY_NO_COMMIT=1 to skip the commit entirely (useful in tests).
     Set TASK_PY_AUTO_PUSH=1 to also push after the commit.
     """
     if os.environ.get("TASK_PY_NO_COMMIT") == "1":
         return
     repo = repo_root()
+    # Bounded wait for a concurrent merge/cherry-pick BEFORE staging, so the
+    # whole add → diff → commit sequence runs post-clear (#1030 seam b).
+    _wait_for_sequencer_clear(repo)
     routed = _is_routed_root(repo)
     env = _sanitized_git_env()
     rel_paths = [str(p.relative_to(repo)) for p in paths]
@@ -3161,12 +4888,98 @@ def _git_commit(paths: list[Path], message: str) -> None:
     # `main` to the new commit afterwards.
     old_sha = _run_git(["rev-parse", "HEAD"]).stdout.strip() if routed else ""
     full_msg = f"{message}\n\n[task.py]"
-    _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
+    try:
+        _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
+    except subprocess.CalledProcessError as e:
+        # TOCTOU closure (#1030): a merge/cherry-pick can START between the
+        # pre-staging probe above and this commit. One re-wait (raises
+        # SequencerWaitTimeout on timeout) + one FINAL attempt; a second
+        # sequencer fatal after the re-wait propagates (fail fast). The
+        # routed `old_sha` above stays valid across the retry — a failed
+        # commit never moves HEAD, and a concurrent `main` move is caught
+        # loud by `_advance_main_ref`'s CAS.
+        if not _PARTIAL_COMMIT_SEQUENCER_RE.search(e.stderr or ""):
+            raise
+        _wait_for_sequencer_clear(repo)
+        _run_git(["commit", "-m", full_msg, "--only", "--", *rel_paths])
     if routed:
         new_sha = _run_git(["rev-parse", "HEAD"]).stdout.strip()
         _advance_main_ref(repo, old_sha, new_sha, env)
     if os.environ.get("TASK_PY_AUTO_PUSH") == "1":
         _run_git(["push"], check=False)
+
+
+def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: int, op: str) -> bool:
+    """Commit bookkeeping for an ALREADY-DURABLE append-only mutation (#1030).
+
+    On the PRIMARY checkout the append IS the state (an events/comments/
+    concerns row, a created task dir, plans/vN.md); the commit is bookkeeping
+    the next successful commit of the same file sweeps up (git commits file
+    STATE, not deltas). Raising makes callers retry the WHOLE mutation and
+    duplicate the append — the 2026-07-03 3x-marker incident on a #823 loop
+    session; same rc-contract family as ``scripts/task.py::_safe_echo``
+    (#537). So a PRE/AT-commit failure after a successful append LOGS AT
+    ERROR, appends a forensic row to ``DEFERRED_COMMITS_LOG``
+    (``~/.task-workflow/deferred-commits.jsonl``), and returns ``False``; the
+    caller returns success.
+
+    Deferral is NARROW by design (two independent layers, each sufficient
+    for the routed CAS case, jointly sufficient for all routed cases):
+
+    * catches ONLY ``(CalledProcessError, SequencerWaitTimeout)`` — NEVER
+      bare ``RuntimeError``: the routed post-commit CAS leg
+      (``_advance_main_ref`` → ``_git_quiet``) raises ``RuntimeError``, and
+      deferring THAT would report success for an append that never reached
+      canonical ``main``;
+    * NEVER defers in ROUTED mode: there the append lives only in the
+      managed worktree's working tree, and the next resolver re-sync runs
+      ``reset --hard main`` (``_ensure_managed_main_worktree``) whose safety
+      contract is "every mutation commits before releasing" — an uncommitted
+      deferred line would be PHYSICALLY DELETED. In routed mode any commit
+      failure re-raises (fail loud; the caller's retry is genuinely
+      non-duplicating ONLY after a fresh resolve — the raise is the honest
+      signal).
+
+    Append failures are untouched — they raise BEFORE this runs. Genuine
+    bugs (``TypeError``, ``AttributeError``, ...) propagate: they match
+    neither caught class. Deliberately NOT used by ``set_status`` (#898
+    raise + ghost-sweep recovery semantics, extended to name
+    ``SequencerWaitTimeout``) nor the idempotent setters.
+    """
+    try:
+        _git_commit(paths, message)
+        return True
+    except (subprocess.CalledProcessError, SequencerWaitTimeout) as e:
+        if _is_routed_root(repo_root()):
+            raise  # routed append is NOT durable against the reset --hard re-sync
+        stderr_tail = (getattr(e, "stderr", "") or str(e))[-500:]
+        _log.error(
+            "task #%d: %s applied DURABLY (append landed) but the git commit "
+            "failed: %s: %s. Do NOT re-run the mutation (it would duplicate the "
+            "append); the next successful commit touching these paths sweeps it. "
+            "Recorded in %s. Manual sweep: git add -- <paths> && git commit.",
+            task_id,
+            op,
+            type(e).__name__,
+            stderr_tail,
+            DEFERRED_COMMITS_LOG,
+        )
+        row = {
+            "ts": _utcnow_iso(),
+            "task_id": task_id,
+            "op": op,
+            "paths": [str(p) for p in paths],
+            "message": message,
+            "error": type(e).__name__,
+            "stderr_tail": stderr_tail,
+        }
+        try:
+            _append_jsonl_line(DEFERRED_COMMITS_LOG, row)
+        except OSError:
+            # Trace-write failure must not resurrect the duplicate-append bug;
+            # the ERROR log above already carries the full story.
+            _log.exception("could not record deferred-commit row")
+        return False
 
 
 # ─── Binding concerns (concerns.jsonl) ─────────────────────────────────────
@@ -3356,9 +5169,13 @@ def _append_concern_event(task_id: int, payload: dict[str, Any]) -> None:
     events_file = folder / "events.jsonl"
     _append_jsonl_line(events_file, mirror_payload)
 
-    _git_commit(
+    # Concern row + events.jsonl mirror are durable; a retry would append
+    # duplicates of both — defer a commit failure instead (#1030).
+    _commit_after_durable_append(
         [concerns_file, events_file],
         f"task #{task_id}: concern-{payload['event']} {payload['concern_id']}",
+        task_id=task_id,
+        op="append_concern_event",
     )
 
 
@@ -3590,6 +5407,8 @@ __all__ = [
     "CONCERN_EVENTS",
     "CONCERN_SEVERITIES",
     "FOLLOWUP_HELD_BLOCKED_STATUSES",
+    "FOLLOWUP_RUN_KIND",
+    "FOLLOWUP_SCOPE_KIND",
     "GOAL_H2_NAME",
     "KINDS",
     "PARK_STATUS",
@@ -3598,6 +5417,7 @@ __all__ = [
     "STATUSES",
     "TASKS_DIR",  # noqa: F822 — PEP-562 lazy attr (see __getattr__)
     "TERMINAL_STATUSES",
+    "USER_INITIATED_FOLLOWUP_SOURCES",
     "NewTaskRequest",
     "ReconcileReport",
     "RegistryChange",
@@ -3608,7 +5428,10 @@ __all__ = [
     "audit",
     "create_task",
     "defer_concern",
+    "executing_followup_label",
     "find_task_path",
+    "followup_label_groups",
+    "followup_retro_close_evidence",
     "get_goal",
     "get_relates_to",
     "get_task",
@@ -3620,7 +5443,9 @@ __all__ = [
     "list_concerns",
     "list_events",
     "new_plan_version",
+    "parse_followup_note_field",
     "post_event",
+    "primary_checkout_root",
     "promote",
     "raise_concern",
     "reconcile_registry",
@@ -3634,4 +5459,5 @@ __all__ = [
     "set_status",
     "set_title",
     "tasks_dir",
+    "unrun_followup_labels",
 ]

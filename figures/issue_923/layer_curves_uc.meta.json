@@ -1,0 +1,1776 @@
+{
+  "commit": "7959e5309d",
+  "created": "2026-07-04T05:47:46Z",
+  "figsize": [
+    9.5,
+    5.0
+  ],
+  "points": [
+    {
+      "Layer": 0.0,
+      "Pooled held-out skill R\u00b2": 0.004416430849968789,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 1.0,
+      "Pooled held-out skill R\u00b2": 0.0162150754112238,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 2.0,
+      "Pooled held-out skill R\u00b2": 0.018351057870594212,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 3.0,
+      "Pooled held-out skill R\u00b2": 0.03883569656071062,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 4.0,
+      "Pooled held-out skill R\u00b2": 0.03720025438643315,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 5.0,
+      "Pooled held-out skill R\u00b2": 0.050107824124995703,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 6.0,
+      "Pooled held-out skill R\u00b2": 0.06715383200095215,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 7.0,
+      "Pooled held-out skill R\u00b2": 0.06293414058983215,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 8.0,
+      "Pooled held-out skill R\u00b2": 0.06731102125009325,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 9.0,
+      "Pooled held-out skill R\u00b2": 0.05815187383547615,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 10.0,
+      "Pooled held-out skill R\u00b2": 0.05528855585150172,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 11.0,
+      "Pooled held-out skill R\u00b2": 0.05780342739783695,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 12.0,
+      "Pooled held-out skill R\u00b2": 0.05742827271640427,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 13.0,
+      "Pooled held-out skill R\u00b2": 0.062170684863329884,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 14.0,
+      "Pooled held-out skill R\u00b2": 0.06275734705272296,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 15.0,
+      "Pooled held-out skill R\u00b2": 0.08184877441706429,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 16.0,
+      "Pooled held-out skill R\u00b2": 0.08204345753501929,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 17.0,
+      "Pooled held-out skill R\u00b2": 0.07878565783520741,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 18.0,
+      "Pooled held-out skill R\u00b2": 0.09271415167138453,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 19.0,
+      "Pooled held-out skill R\u00b2": 0.0801178290407285,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 20.0,
+      "Pooled held-out skill R\u00b2": 0.08047093309872955,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 21.0,
+      "Pooled held-out skill R\u00b2": 0.07037647794745183,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 22.0,
+      "Pooled held-out skill R\u00b2": 0.05821656030387001,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 23.0,
+      "Pooled held-out skill R\u00b2": 0.050354925149561525,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 24.0,
+      "Pooled held-out skill R\u00b2": 0.03935727739783268,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 25.0,
+      "Pooled held-out skill R\u00b2": 0.03405020949000903,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 26.0,
+      "Pooled held-out skill R\u00b2": 0.03135394051945073,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 27.0,
+      "Pooled held-out skill R\u00b2": 0.024216247071185082,
+      "series": "Context-only",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 0.0,
+      "Pooled held-out skill R\u00b2": 0.3591386207363263,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 1.0,
+      "Pooled held-out skill R\u00b2": 0.34679169400706766,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 2.0,
+      "Pooled held-out skill R\u00b2": 0.40863182768504736,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 3.0,
+      "Pooled held-out skill R\u00b2": 0.38875618259704847,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 4.0,
+      "Pooled held-out skill R\u00b2": 0.39008759534373294,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 5.0,
+      "Pooled held-out skill R\u00b2": 0.35474060002309593,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 6.0,
+      "Pooled held-out skill R\u00b2": 0.3987829968619139,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 7.0,
+      "Pooled held-out skill R\u00b2": 0.3997652239746823,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 8.0,
+      "Pooled held-out skill R\u00b2": 0.43245266241956126,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 9.0,
+      "Pooled held-out skill R\u00b2": 0.3609236023790272,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 10.0,
+      "Pooled held-out skill R\u00b2": 0.4014709149954446,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 11.0,
+      "Pooled held-out skill R\u00b2": 0.41227425923930494,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 12.0,
+      "Pooled held-out skill R\u00b2": 0.4114403679796863,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 13.0,
+      "Pooled held-out skill R\u00b2": 0.4229806172828404,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 14.0,
+      "Pooled held-out skill R\u00b2": 0.4602167229019719,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 15.0,
+      "Pooled held-out skill R\u00b2": 0.4463112777335251,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 16.0,
+      "Pooled held-out skill R\u00b2": 0.45299959799714895,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 17.0,
+      "Pooled held-out skill R\u00b2": 0.4462597090905186,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 18.0,
+      "Pooled held-out skill R\u00b2": 0.4476865407310563,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 19.0,
+      "Pooled held-out skill R\u00b2": 0.5071123253752077,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 20.0,
+      "Pooled held-out skill R\u00b2": 0.4947576354823189,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 21.0,
+      "Pooled held-out skill R\u00b2": 0.49325231714468953,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 22.0,
+      "Pooled held-out skill R\u00b2": 0.4978227480164914,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 23.0,
+      "Pooled held-out skill R\u00b2": 0.4933326754689903,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 24.0,
+      "Pooled held-out skill R\u00b2": 0.5099314408973883,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 25.0,
+      "Pooled held-out skill R\u00b2": 0.4970372551881239,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 26.0,
+      "Pooled held-out skill R\u00b2": 0.5037125436737284,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 27.0,
+      "Pooled held-out skill R\u00b2": 0.49121570787583824,
+      "series": "Query-only (empty system turn)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 0.0,
+      "Pooled held-out skill R\u00b2": 0.3549471083644665,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 1.0,
+      "Pooled held-out skill R\u00b2": 0.3452385452104555,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 2.0,
+      "Pooled held-out skill R\u00b2": 0.40690150915407153,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 3.0,
+      "Pooled held-out skill R\u00b2": 0.38693901130477737,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 4.0,
+      "Pooled held-out skill R\u00b2": 0.3908258915827345,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 5.0,
+      "Pooled held-out skill R\u00b2": 0.34971904481730753,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 6.0,
+      "Pooled held-out skill R\u00b2": 0.3970613235240861,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 7.0,
+      "Pooled held-out skill R\u00b2": 0.40008907858516385,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 8.0,
+      "Pooled held-out skill R\u00b2": 0.4334352366690365,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 9.0,
+      "Pooled held-out skill R\u00b2": 0.37794458913957163,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 10.0,
+      "Pooled held-out skill R\u00b2": 0.4017748986252371,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 11.0,
+      "Pooled held-out skill R\u00b2": 0.4091071405670318,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 12.0,
+      "Pooled held-out skill R\u00b2": 0.40907364180856354,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 13.0,
+      "Pooled held-out skill R\u00b2": 0.4319308384960079,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 14.0,
+      "Pooled held-out skill R\u00b2": 0.47339012733078945,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 15.0,
+      "Pooled held-out skill R\u00b2": 0.4596578576654472,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 16.0,
+      "Pooled held-out skill R\u00b2": 0.45837683518251393,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 17.0,
+      "Pooled held-out skill R\u00b2": 0.44888591805576494,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 18.0,
+      "Pooled held-out skill R\u00b2": 0.45745350410593677,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 19.0,
+      "Pooled held-out skill R\u00b2": 0.5137051326706515,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 20.0,
+      "Pooled held-out skill R\u00b2": 0.5009538015811388,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 21.0,
+      "Pooled held-out skill R\u00b2": 0.49972474539412504,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 22.0,
+      "Pooled held-out skill R\u00b2": 0.5069416031010563,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 23.0,
+      "Pooled held-out skill R\u00b2": 0.5062636985720235,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 24.0,
+      "Pooled held-out skill R\u00b2": 0.5203266791036796,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 25.0,
+      "Pooled held-out skill R\u00b2": 0.5098398458345301,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 26.0,
+      "Pooled held-out skill R\u00b2": 0.5121644895128377,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 27.0,
+      "Pooled held-out skill R\u00b2": 0.5091595582284725,
+      "series": "Query-only (no system block)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 0.0,
+      "Pooled held-out skill R\u00b2": 0.353792696439459,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 1.0,
+      "Pooled held-out skill R\u00b2": 0.3445955520895073,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 2.0,
+      "Pooled held-out skill R\u00b2": 0.4060148887657673,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 3.0,
+      "Pooled held-out skill R\u00b2": 0.38245095797715867,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 4.0,
+      "Pooled held-out skill R\u00b2": 0.3901758531571925,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 5.0,
+      "Pooled held-out skill R\u00b2": 0.3466247139666492,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 6.0,
+      "Pooled held-out skill R\u00b2": 0.3947540157705982,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 7.0,
+      "Pooled held-out skill R\u00b2": 0.3978393619447882,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 8.0,
+      "Pooled held-out skill R\u00b2": 0.43290084158832964,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 9.0,
+      "Pooled held-out skill R\u00b2": 0.3766814403346278,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 10.0,
+      "Pooled held-out skill R\u00b2": 0.3980149893004522,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 11.0,
+      "Pooled held-out skill R\u00b2": 0.408522987933266,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 12.0,
+      "Pooled held-out skill R\u00b2": 0.4118465903591264,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 13.0,
+      "Pooled held-out skill R\u00b2": 0.43260090790227423,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 14.0,
+      "Pooled held-out skill R\u00b2": 0.47350700852211214,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 15.0,
+      "Pooled held-out skill R\u00b2": 0.4574662281993417,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 16.0,
+      "Pooled held-out skill R\u00b2": 0.45913963088224496,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 17.0,
+      "Pooled held-out skill R\u00b2": 0.4512114412877801,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 18.0,
+      "Pooled held-out skill R\u00b2": 0.4547574453755291,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 19.0,
+      "Pooled held-out skill R\u00b2": 0.5101353161223524,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 20.0,
+      "Pooled held-out skill R\u00b2": 0.49719796220478807,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 21.0,
+      "Pooled held-out skill R\u00b2": 0.4969626995612504,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 22.0,
+      "Pooled held-out skill R\u00b2": 0.501602380338362,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 23.0,
+      "Pooled held-out skill R\u00b2": 0.500961360595636,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 24.0,
+      "Pooled held-out skill R\u00b2": 0.5162334851198578,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 25.0,
+      "Pooled held-out skill R\u00b2": 0.5040044159423817,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 26.0,
+      "Pooled held-out skill R\u00b2": 0.5089044823078395,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 27.0,
+      "Pooled held-out skill R\u00b2": 0.5024102730435718,
+      "series": "Query-only (masked context)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 0.0,
+      "Pooled held-out skill R\u00b2": 0.3635865352806593,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 1.0,
+      "Pooled held-out skill R\u00b2": 0.36287437321335203,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 2.0,
+      "Pooled held-out skill R\u00b2": 0.4270234290849676,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 3.0,
+      "Pooled held-out skill R\u00b2": 0.4278674447139692,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 4.0,
+      "Pooled held-out skill R\u00b2": 0.4275873242408229,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 5.0,
+      "Pooled held-out skill R\u00b2": 0.40507355250384414,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 6.0,
+      "Pooled held-out skill R\u00b2": 0.46598459410907,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 7.0,
+      "Pooled held-out skill R\u00b2": 0.46284825398524343,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 8.0,
+      "Pooled held-out skill R\u00b2": 0.4999378290445283,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 9.0,
+      "Pooled held-out skill R\u00b2": 0.41933751636705663,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 10.0,
+      "Pooled held-out skill R\u00b2": 0.45692890451764845,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 11.0,
+      "Pooled held-out skill R\u00b2": 0.47012725394743105,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 12.0,
+      "Pooled held-out skill R\u00b2": 0.46886720407137583,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 13.0,
+      "Pooled held-out skill R\u00b2": 0.48514448715291114,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 14.0,
+      "Pooled held-out skill R\u00b2": 0.5230025418126539,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 15.0,
+      "Pooled held-out skill R\u00b2": 0.5282175835360245,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 16.0,
+      "Pooled held-out skill R\u00b2": 0.5348972559192569,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 17.0,
+      "Pooled held-out skill R\u00b2": 0.5250307313349682,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 18.0,
+      "Pooled held-out skill R\u00b2": 0.5404902223995558,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 19.0,
+      "Pooled held-out skill R\u00b2": 0.5873843952808897,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 20.0,
+      "Pooled held-out skill R\u00b2": 0.5754022242822843,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 21.0,
+      "Pooled held-out skill R\u00b2": 0.5637241656597598,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 22.0,
+      "Pooled held-out skill R\u00b2": 0.5560795186005789,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 23.0,
+      "Pooled held-out skill R\u00b2": 0.5436463740594927,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 24.0,
+      "Pooled held-out skill R\u00b2": 0.5492100702918348,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 25.0,
+      "Pooled held-out skill R\u00b2": 0.5309078781537282,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 26.0,
+      "Pooled held-out skill R\u00b2": 0.5352399644991352,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 27.0,
+      "Pooled held-out skill R\u00b2": 0.515518491841112,
+      "series": "Stitched pair (empty system turn)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 0.0,
+      "Pooled held-out skill R\u00b2": 0.3594467235800801,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 1.0,
+      "Pooled held-out skill R\u00b2": 0.3613631472934401,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 2.0,
+      "Pooled held-out skill R\u00b2": 0.4253526293044594,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 3.0,
+      "Pooled held-out skill R\u00b2": 0.42613109801950066,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 4.0,
+      "Pooled held-out skill R\u00b2": 0.42827166338200273,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 5.0,
+      "Pooled held-out skill R\u00b2": 0.40006212288998855,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 6.0,
+      "Pooled held-out skill R\u00b2": 0.46437271427375904,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 7.0,
+      "Pooled held-out skill R\u00b2": 0.4631536713500224,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 8.0,
+      "Pooled held-out skill R\u00b2": 0.500999735565299,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 9.0,
+      "Pooled held-out skill R\u00b2": 0.43636681700066104,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 10.0,
+      "Pooled held-out skill R\u00b2": 0.4571777535429812,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 11.0,
+      "Pooled held-out skill R\u00b2": 0.46698226392130404,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 12.0,
+      "Pooled held-out skill R\u00b2": 0.46649800497844607,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 13.0,
+      "Pooled held-out skill R\u00b2": 0.49411507433505697,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 14.0,
+      "Pooled held-out skill R\u00b2": 0.5361482289588738,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 15.0,
+      "Pooled held-out skill R\u00b2": 0.5414642567199404,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 16.0,
+      "Pooled held-out skill R\u00b2": 0.5403406165435491,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 17.0,
+      "Pooled held-out skill R\u00b2": 0.527673776039805,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 18.0,
+      "Pooled held-out skill R\u00b2": 0.5503537751225804,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 19.0,
+      "Pooled held-out skill R\u00b2": 0.594061976476622,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 20.0,
+      "Pooled held-out skill R\u00b2": 0.5816158402282994,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 21.0,
+      "Pooled held-out skill R\u00b2": 0.570190684871344,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 22.0,
+      "Pooled held-out skill R\u00b2": 0.565173709212196,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 23.0,
+      "Pooled held-out skill R\u00b2": 0.5564592485476528,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 24.0,
+      "Pooled held-out skill R\u00b2": 0.559544840134458,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 25.0,
+      "Pooled held-out skill R\u00b2": 0.5436738029689179,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 26.0,
+      "Pooled held-out skill R\u00b2": 0.5435282665224187,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 27.0,
+      "Pooled held-out skill R\u00b2": 0.5334949280201902,
+      "series": "Stitched pair (no system block)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 0.0,
+      "Pooled held-out skill R\u00b2": 0.3582918495561336,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 1.0,
+      "Pooled held-out skill R\u00b2": 0.36064462048299184,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 2.0,
+      "Pooled held-out skill R\u00b2": 0.42450077687565435,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 3.0,
+      "Pooled held-out skill R\u00b2": 0.4215874479461489,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 4.0,
+      "Pooled held-out skill R\u00b2": 0.4276764789939652,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 5.0,
+      "Pooled held-out skill R\u00b2": 0.3968977687293065,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 6.0,
+      "Pooled held-out skill R\u00b2": 0.4619183532509019,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 7.0,
+      "Pooled held-out skill R\u00b2": 0.46084775734047867,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 8.0,
+      "Pooled held-out skill R\u00b2": 0.5000582057170639,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 9.0,
+      "Pooled held-out skill R\u00b2": 0.43508029305517415,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 10.0,
+      "Pooled held-out skill R\u00b2": 0.45337976738820673,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 11.0,
+      "Pooled held-out skill R\u00b2": 0.46652532138254077,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 12.0,
+      "Pooled held-out skill R\u00b2": 0.46917394295152715,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 13.0,
+      "Pooled held-out skill R\u00b2": 0.49474264147386404,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 14.0,
+      "Pooled held-out skill R\u00b2": 0.535936565312457,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 15.0,
+      "Pooled held-out skill R\u00b2": 0.5391118298750788,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 16.0,
+      "Pooled held-out skill R\u00b2": 0.5410552845253607,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 17.0,
+      "Pooled held-out skill R\u00b2": 0.529880819668191,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 18.0,
+      "Pooled held-out skill R\u00b2": 0.5476369588130954,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 19.0,
+      "Pooled held-out skill R\u00b2": 0.5902128403291005,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 20.0,
+      "Pooled held-out skill R\u00b2": 0.5777429316065699,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 21.0,
+      "Pooled held-out skill R\u00b2": 0.5672624543235903,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 22.0,
+      "Pooled held-out skill R\u00b2": 0.559800424931195,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 23.0,
+      "Pooled held-out skill R\u00b2": 0.5514320813296612,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 24.0,
+      "Pooled held-out skill R\u00b2": 0.5555416471828263,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 25.0,
+      "Pooled held-out skill R\u00b2": 0.5376127438845358,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 26.0,
+      "Pooled held-out skill R\u00b2": 0.5403705469703273,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 27.0,
+      "Pooled held-out skill R\u00b2": 0.5270479848661389,
+      "series": "Stitched pair (masked context)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 0.0,
+      "Pooled held-out skill R\u00b2": 0.19251699849556758,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 1.0,
+      "Pooled held-out skill R\u00b2": 0.20862714528156912,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 2.0,
+      "Pooled held-out skill R\u00b2": 0.2574638938531577,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 3.0,
+      "Pooled held-out skill R\u00b2": 0.24171423891151023,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 4.0,
+      "Pooled held-out skill R\u00b2": 0.33381794909007134,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 5.0,
+      "Pooled held-out skill R\u00b2": 0.325318275450885,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 6.0,
+      "Pooled held-out skill R\u00b2": 0.40078993170035204,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 7.0,
+      "Pooled held-out skill R\u00b2": 0.37332353216518055,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 8.0,
+      "Pooled held-out skill R\u00b2": 0.443099389493829,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 9.0,
+      "Pooled held-out skill R\u00b2": 0.33009678901723793,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 10.0,
+      "Pooled held-out skill R\u00b2": 0.3721229914080406,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 11.0,
+      "Pooled held-out skill R\u00b2": 0.40181380850207016,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 12.0,
+      "Pooled held-out skill R\u00b2": 0.40069747759104457,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 13.0,
+      "Pooled held-out skill R\u00b2": 0.4160399517599087,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 14.0,
+      "Pooled held-out skill R\u00b2": 0.43134090762708643,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 15.0,
+      "Pooled held-out skill R\u00b2": 0.44958825218645115,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 16.0,
+      "Pooled held-out skill R\u00b2": 0.44931863543783024,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 17.0,
+      "Pooled held-out skill R\u00b2": 0.4416295857761441,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 18.0,
+      "Pooled held-out skill R\u00b2": 0.4598371316002853,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 19.0,
+      "Pooled held-out skill R\u00b2": 0.5191704389901513,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 20.0,
+      "Pooled held-out skill R\u00b2": 0.49538994102798817,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 21.0,
+      "Pooled held-out skill R\u00b2": 0.4879248520903108,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 22.0,
+      "Pooled held-out skill R\u00b2": 0.4647561038325323,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 23.0,
+      "Pooled held-out skill R\u00b2": 0.45574216168752557,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 24.0,
+      "Pooled held-out skill R\u00b2": 0.45219970733905324,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 25.0,
+      "Pooled held-out skill R\u00b2": 0.4310188979353482,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 26.0,
+      "Pooled held-out skill R\u00b2": 0.4305342002184386,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 27.0,
+      "Pooled held-out skill R\u00b2": 0.43643510721143375,
+      "series": "Full prompt",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer": 0.0,
+      "Pooled held-out skill R\u00b2": 0.3874166836078302,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 1.0,
+      "Pooled held-out skill R\u00b2": 0.38313405539977197,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 2.0,
+      "Pooled held-out skill R\u00b2": 0.44269082144798777,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 3.0,
+      "Pooled held-out skill R\u00b2": 0.44228576761737637,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 4.0,
+      "Pooled held-out skill R\u00b2": 0.44484386547534527,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 5.0,
+      "Pooled held-out skill R\u00b2": 0.4237570999184157,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 6.0,
+      "Pooled held-out skill R\u00b2": 0.47335350336865856,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 7.0,
+      "Pooled held-out skill R\u00b2": 0.4685674424851656,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 8.0,
+      "Pooled held-out skill R\u00b2": 0.4994604772692074,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 9.0,
+      "Pooled held-out skill R\u00b2": 0.4334203404468886,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 10.0,
+      "Pooled held-out skill R\u00b2": 0.46366124309467305,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 11.0,
+      "Pooled held-out skill R\u00b2": 0.47344372817101643,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 12.0,
+      "Pooled held-out skill R\u00b2": 0.46981042693083797,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 13.0,
+      "Pooled held-out skill R\u00b2": 0.48399816103285564,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 14.0,
+      "Pooled held-out skill R\u00b2": 0.52029030804377,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 15.0,
+      "Pooled held-out skill R\u00b2": 0.5231378592409062,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 16.0,
+      "Pooled held-out skill R\u00b2": 0.5290314822418329,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 17.0,
+      "Pooled held-out skill R\u00b2": 0.5183805586386405,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 18.0,
+      "Pooled held-out skill R\u00b2": 0.5334868105888129,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 19.0,
+      "Pooled held-out skill R\u00b2": 0.5801253403680965,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 20.0,
+      "Pooled held-out skill R\u00b2": 0.5689504387705197,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 21.0,
+      "Pooled held-out skill R\u00b2": 0.5587653073190357,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 22.0,
+      "Pooled held-out skill R\u00b2": 0.5507535659547723,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 23.0,
+      "Pooled held-out skill R\u00b2": 0.5379843136303245,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 24.0,
+      "Pooled held-out skill R\u00b2": 0.5415463203652351,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 25.0,
+      "Pooled held-out skill R\u00b2": 0.524832575407661,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 26.0,
+      "Pooled held-out skill R\u00b2": 0.5289570806425783,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer": 27.0,
+      "Pooled held-out skill R\u00b2": 0.5094852918215086,
+      "series": "Blended predictions",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 252
+}

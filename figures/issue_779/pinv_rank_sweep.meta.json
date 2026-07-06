@@ -1,0 +1,432 @@
+{
+  "commit": "fc3448d307",
+  "created": "2026-07-03T08:03:49Z",
+  "figsize": [
+    9.6,
+    4.3
+  ],
+  "points": [
+    {
+      "Pseudoinverse SVD truncation rank": 5.0,
+      "Within-condition Pearson r": -0.0500263547792584,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 10.0,
+      "Within-condition Pearson r": -0.2620337072663676,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 25.0,
+      "Within-condition Pearson r": -0.09459169601929315,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 50.0,
+      "Within-condition Pearson r": -0.05236511062031566,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 100.0,
+      "Within-condition Pearson r": -0.052423081232161224,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 200.0,
+      "Within-condition Pearson r": 0.08204610379996384,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 400.0,
+      "Within-condition Pearson r": 0.061134945267957576,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 800.0,
+      "Within-condition Pearson r": 0.01532192026204482,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 1600.0,
+      "Within-condition Pearson r": 0.2516787567921825,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 3584.0,
+      "Within-condition Pearson r": 0.017870785898932873,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 5.0,
+      "Within-condition Pearson r": -0.033145368186970725,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 10.0,
+      "Within-condition Pearson r": 0.34886418106023936,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 25.0,
+      "Within-condition Pearson r": 0.5098879074945444,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 50.0,
+      "Within-condition Pearson r": 0.4501129396906051,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 100.0,
+      "Within-condition Pearson r": 0.5830266142184756,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 200.0,
+      "Within-condition Pearson r": 0.6379584340242083,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 400.0,
+      "Within-condition Pearson r": 0.5754453604521992,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 800.0,
+      "Within-condition Pearson r": 0.5126293102161645,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 1600.0,
+      "Within-condition Pearson r": 0.4611090240900698,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 3584.0,
+      "Within-condition Pearson r": 0.456152169110818,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 5.0,
+      "Within-condition Pearson r": 0.19046433807130358,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 10.0,
+      "Within-condition Pearson r": 0.29370895148510445,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 25.0,
+      "Within-condition Pearson r": 0.46184773517878974,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 50.0,
+      "Within-condition Pearson r": 0.36161595534563806,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 100.0,
+      "Within-condition Pearson r": 0.3547055378002918,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 200.0,
+      "Within-condition Pearson r": 0.397458196829115,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 400.0,
+      "Within-condition Pearson r": 0.3353973855063079,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 800.0,
+      "Within-condition Pearson r": 0.2807978322680383,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 1600.0,
+      "Within-condition Pearson r": 0.2860682105621443,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 3584.0,
+      "Within-condition Pearson r": 0.20259512861471007,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 5.0,
+      "y": 0.034716849382363066,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 10.0,
+      "y": 0.04655148582944075,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 25.0,
+      "y": 0.19651910233937653,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 50.0,
+      "y": 0.27572294783317824,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 100.0,
+      "y": 0.25140975936160004,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 200.0,
+      "y": 0.4081370281169471,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 400.0,
+      "y": 0.4624538360056159,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 800.0,
+      "y": 0.5070843846480924,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 1600.0,
+      "y": 0.4605780941148773,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 3584.0,
+      "y": -0.21501731860421663,
+      "series": "Evil  pinv(rank)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 5.0,
+      "y": 0.11246832122418278,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 10.0,
+      "y": 0.5607229230062813,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 25.0,
+      "y": 0.6359957104093745,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 50.0,
+      "y": 0.5829880869706007,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 100.0,
+      "y": 0.6456126343657793,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 200.0,
+      "y": 0.6529071258515236,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 400.0,
+      "y": 0.6189366149011761,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 800.0,
+      "y": 0.5504735820526142,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 1600.0,
+      "y": 0.5138693017813687,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 3584.0,
+      "y": 0.30396663312060906,
+      "series": "Sycophancy  pinv(rank)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 5.0,
+      "y": -0.020566885203726508,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 10.0,
+      "y": 0.1222593497880445,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 25.0,
+      "y": 0.46610656670502665,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 50.0,
+      "y": 0.3777965613031892,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 100.0,
+      "y": 0.41497719335242306,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 200.0,
+      "y": 0.4084300426275818,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 400.0,
+      "y": 0.36501231872942996,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 800.0,
+      "y": 0.43091030604653335,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 1600.0,
+      "y": 0.5563672335079863,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Pseudoinverse SVD truncation rank": 3584.0,
+      "y": 0.36973635946956784,
+      "series": "Hallucination  pinv(rank)",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 60
+}

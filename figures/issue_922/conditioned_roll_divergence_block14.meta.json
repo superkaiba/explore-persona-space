@@ -1,0 +1,1972 @@
+{
+  "commit": "c67a9cb745",
+  "created": "2026-07-03T23:12:30Z",
+  "figsize": [
+    6.5,
+    4.6
+  ],
+  "points": [
+    {
+      "rollout horizon k (block 14)": 1.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.6054020541442007,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 2.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.49189062988214516,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 3.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4827622907533493,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 4.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.46850815514840183,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 5.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.462892810141318,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 6.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.45792656391777586,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 7.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4484012689899809,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 8.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.44297125868479903,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 9.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4380107025295288,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 10.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4258535974133164,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 11.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4226531489327078,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 12.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42589525067018763,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 13.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42429702602524655,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 14.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4262952191687145,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 15.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4281538003315912,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 16.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4338312678049754,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 17.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.43108746554527144,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 18.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42658220194980123,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 19.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.430305518118153,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 20.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4311513230443891,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 21.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4233846967023863,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 22.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42820803710628563,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 23.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42341019368532706,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 24.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42745802567246316,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 25.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4197976423533467,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 26.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4265818480717659,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 27.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42511202370862344,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 28.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42893648363988557,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 29.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42196375313526724,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 30.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42220685256875223,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 31.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.41981269072817706,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 32.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4178020474072214,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 33.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42073086640924096,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 34.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42726723921546195,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 35.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42419561544687723,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 36.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42442192220369634,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 37.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4260116186698013,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 38.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4232396682745807,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 39.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.421713148524292,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 40.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42015755105223906,
+      "series": "global map roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "rollout horizon k (block 14)": 1.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.6054020541442007,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 2.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4727556216177079,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 3.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4518915301013914,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 4.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4352097879630179,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 5.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4235062207231166,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 6.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4222165254054553,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 7.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.41045372614064657,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 8.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.40924943510889455,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 9.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.40078976262564026,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 10.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3860952137092051,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 11.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3837842981040053,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 12.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.38766237403615866,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 13.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3840602056381285,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 14.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3855654679710627,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 15.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3921094164681226,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 16.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.39719384514888134,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 17.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3942705992091027,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 18.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3925179583364775,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 19.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3965343762095198,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 20.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.39921991529251233,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 21.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.38778655398667394,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 22.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.39258993131131736,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 23.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3869135320147835,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 24.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3927758175589401,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 25.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.38459815445696843,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 26.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.39193958337943957,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 27.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3900421151556668,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 28.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3930960101414096,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 29.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3858604566081957,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 30.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3848862600129441,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 31.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3827703386074679,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 32.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.38028450748293574,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 33.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3854540651605226,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 34.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3942192270908993,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 35.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.38969557101448393,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 36.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.39051302913465014,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 37.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.39078116487336445,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 38.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3867335531472539,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 39.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3846719042825332,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 40.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.38165692520699257,
+      "series": "additive-conditioned roll (closed-form ridge)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "rollout horizon k (block 14)": 1.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.605402227215126,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 2.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.5136210599051994,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 3.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.5063690019461303,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 4.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.498563238266167,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 5.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.48102736478809394,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 6.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.47554221522728624,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 7.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.46181141312929297,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 8.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.46297430586153343,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 9.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.44881774894823,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 10.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4502080297239799,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 11.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4369527196527704,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 12.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4298057741882013,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 13.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4194191833031782,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 14.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4156752389468106,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 15.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4157580658860617,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 16.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.41012649471067486,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 17.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4107594138160596,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 18.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4034920679657462,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 19.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4107988275613572,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 20.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4101123518226507,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 21.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.39791084016441836,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 22.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4014714032532648,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 23.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3980604700226069,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 24.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.40395968909394087,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 25.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.39442124808564927,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 26.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4017651742907997,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 27.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3965968073252595,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 28.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.39961567208868776,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 29.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3874618604785456,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 30.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.39040673144607996,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 31.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3866758133017423,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 32.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3833150494086337,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 33.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3853429135987164,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 34.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.39286468212739056,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 35.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.38761142593550446,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 36.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.39155093289845,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 37.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3959471309527892,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 38.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.39231764531505653,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 39.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3900188448574451,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 40.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.38475360969499084,
+      "series": "direct per-horizon map (no recursion)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "rollout horizon k (block 14)": 1.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.6054020541442007,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 2.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4579575231029319,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 3.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.42364720143741885,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 4.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.39635435794298646,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 5.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3583304812721958,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 6.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.33397208346819107,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 7.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.26817400545095116,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 8.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.16809270217109218,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 9.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -0.10931564540829797,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 10.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -0.7462062427984997,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 11.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 12.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 13.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 14.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 15.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 16.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 17.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 18.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 19.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 20.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 21.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 22.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 23.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 24.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 25.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 26.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 27.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 28.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 29.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 30.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 31.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 32.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 33.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 34.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 35.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 36.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 37.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 38.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 39.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 40.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "additive-conditioned roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "rollout horizon k (block 14)": 1.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.6054020541442007,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 2.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4699076269907859,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 3.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.45423412359232807,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 4.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4262400952798713,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 5.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3675293445081068,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 6.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.23395570451497172,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 7.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -0.26322344944237863,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 8.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 9.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 10.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 11.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 12.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 13.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 14.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 15.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 16.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 17.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 18.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 19.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 20.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 21.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 22.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 23.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 24.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 25.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 26.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 27.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 28.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 29.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 30.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 31.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 32.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 33.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 34.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 35.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 36.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 37.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 38.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 39.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 40.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "FiLM operator-valued roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "rollout horizon k (block 14)": 1.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.6054020541442007,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 2.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4965452884318916,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 3.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.49765588865613797,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 4.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4850068742338721,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 5.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.46539714475516625,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 6.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.4523590266545683,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 7.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.41920502984336383,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 8.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3836532567870071,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 9.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.31796821366332795,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 10.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.21867195480386037,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 11.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.06404436975590411,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 12.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.020673788660825032,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 13.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -0.29621330359249964,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 14.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -0.7645597686531274,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 15.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 16.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 17.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 18.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 19.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 20.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 21.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 22.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 23.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 24.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 25.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 26.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 27.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 28.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 29.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 30.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 31.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 32.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 33.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 34.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 35.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 36.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 37.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 38.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 39.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 40.0,
+      "pooled skill vs frozen-state null (clipped at -1)": -1.05,
+      "series": "2-operator mixture roll (gradient-fit)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "rollout horizon k (block 14)": 1.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30630628915513347,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 2.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.276236958521908,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 3.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.28720533769374024,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 4.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.28514159226087554,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 5.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.29718753896711436,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 6.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.29575075066572165,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 7.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.2963156770040626,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 8.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.2962079967989769,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 9.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.2938383992853245,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 10.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.29373230439839726,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 11.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.2897230440436245,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 12.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.29578316214254274,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 13.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.2962610149152577,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 14.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.29935585990230207,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 15.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30124556221708454,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 16.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3070241762080166,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 17.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3048436532634772,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 18.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3028824255141571,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 19.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30657798280632753,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 20.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30530328526945316,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 21.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30217999540064255,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 22.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30550770379757863,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 23.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30490696301897335,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 24.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3059425390160605,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 25.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30423176879852176,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 26.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3099976954911491,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 27.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30923413580592995,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 28.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.31253297239373756,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 29.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30662073791850863,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 30.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3091307715236943,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 31.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30516786992795886,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 32.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30410143041449544,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 33.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30643195761249753,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 34.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3119576275763901,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 35.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.31144221472314826,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 36.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3114906897492775,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 37.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30952840762445877,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 38.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3091807862416702,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 39.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.30854686005089194,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "rollout horizon k (block 14)": 40.0,
+      "pooled skill vs frozen-state null (clipped at -1)": 0.3062812835437342,
+      "series": "context-blind mean-drift null",
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 280
+}

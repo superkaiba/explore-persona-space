@@ -184,6 +184,11 @@ For each finding, propose the simplest non-mechanism explanation:
 - "This is seed variance (n=1)"
 - "The training data is imbalanced"
 - "The effect is an artifact of the metric, not the model"
+- "The registered null band's upper bound meets or exceeds the DV's
+  achievable estimator-bound ceiling — the test was
+  uninformative-by-construction (any non-rejection is failure-to-reject,
+  never evidence of absence/reversal; a reachable opposite-tail
+  rejection stays legitimate); #810"
 
 If the interpretation doesn't address or rule out the alternative, flag it.
 
@@ -205,7 +210,19 @@ If the stated confidence doesn't match the evidence, recommend a change.
 - Is `## Takeaways` a real cross-round synthesis (numbers-first, plain academic register), NOT empty / a stub / a single-round leftover after a later round landed? A missing or stale `## Takeaways` is a FAIL — flag it. (v3 dropped the model-written `## Human TL;DR`; Thomas adapts `## Takeaways` for his own Slack post, so do not critique its wording for polish — only flag it for being absent, stale across rounds, or carrying condition codes / a Confidence sentence.)
 
 ### 6. Plot-Prose Match (figures must show what the caption claims)
-**This requires loading the figure, not just reading the text.** For each figure referenced in the body (`![...](url)` or local path), use the Read tool to load the PNG bytes. Then check:
+**This requires loading the figure, not just reading the text.** For each
+figure referenced in the body, resolve the READ TARGET pin-first (#922):
+when the reference is a SHA-pinned `raw.githubusercontent.com/.../<sha>/<path>`
+URL, the pinned blob is the review target — read `.meta.json` sidecars via
+`git show <sha>:<path>`; use a local copy (worktree or repo root) only after
+`[ "$(git hash-object <local>)" = "$(git rev-parse <sha>:<path>)" ]`, and
+materialize the blob (`git show <sha>:<path> > /tmp/pin-<file>.png`) when no
+local copy matches. When the reference is a bare local path (no pin yet),
+prefer the issue WORKTREE copy (the analyzer's write target); an untracked
+repo-root duplicate (`git status --porcelain` → `??`) is presumptively stale
+and NEVER blocker evidence. A local-vs-pin mismatch is a note (possible
+stray), not a body defect. Then use the Read tool to load the PNG bytes and
+check:
 
 - **Caption-figure alignment**: every panel the caption references is visible; every condition / color / sample-size the caption mentions matches what's plotted; axes labels match what the caption asserts is the metric.
 - **Headline finding visible**: the caption asserts a specific claim ("only canonical paths fire above floor", "identical-cosine pairs fire at 0% vs 20%"). Is that claim actually visible in the figure?
@@ -314,8 +331,12 @@ Post as `<!-- epm:interp-critique vN -->`:
   mechanical gate.
 - Never suggest adding statistical jargon (effect sizes, named tests, etc.) —
   the project forbids these in prose. Only p-values, N, and percentages.
-- On round 3, if issues remain, still give REVISE but note which issues are
-  blocking vs. minor. The system will advance regardless after round 3.
+- On round 5 (the cap), if issues remain, still give REVISE but note which issues are
+  blocking vs. minor. At the cap the orchestrator applies the procedural-only
+  strip once more and either advances (all residual procedural) or SURFACES a
+  substantive residual (workflow.yaml § pivot_criteria
+  `interpretation_critic_cap_5_surface`) — it never silently advances past a
+  substantive residual.
 - Your job is honesty, not gatekeeping. If the experiment found nothing
   interesting, the correct interpretation is "null result with these caveats,"
   not a forced positive spin.

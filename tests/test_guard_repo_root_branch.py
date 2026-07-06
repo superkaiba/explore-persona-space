@@ -4,7 +4,11 @@ The guard blocks any git command that would move the SHARED repo-root working
 tree off ``main`` OR detach its HEAD, because the repo root is the canonical
 commit target for ``scripts/task.py`` and every concurrent VM Claude session
 (all assume ``HEAD==main``). A detached repo-root HEAD additionally crashes
-``task_workflow``'s main-worktree resolver.
+``task_workflow``'s main-worktree resolver. As of #897 it ALSO blocks
+working-tree REVERTS on the shared root (``git restore``, pathspec /
+bare-path / force ``git checkout``, ``git clean -f``, ``git reset --hard``) —
+the #841 incident class where a concurrent destructive op silently reverted
+another session's uncommitted edits.
 
 These tests drive the script exactly as the harness does: stdin PreToolUse JSON
 ``{"tool_input": {"command": <cmd>}}`` -> exit 2 (blocked) or exit 0 (allowed).
@@ -157,18 +161,21 @@ def test_existing_local_branch_checkout_still_blocks(throwaway_branch):
 
 
 # ---------------------------------------------------------------------------
-# MUST ALLOW — file-restore, return-to-main, scoped, and non-git shapes.
-# These must never be trapped regardless of the repo-root HEAD state, so they
-# are NOT guarded by @on_main.
+# MUST ALLOW — return-to-main, scoped, and non-git shapes. These must never be
+# trapped regardless of the repo-root HEAD state, so they are NOT guarded by
+# @on_main.
+#
+# FLIPPED to MUST-BLOCK by #897 (following the #804 `;`-latch flip precedent):
+# the four file-restore rows that used to sit here — `git checkout .`,
+# `git checkout -- scripts/eval.py`, `git checkout HEAD -- foo.py`,
+# `git checkout -f -- scripts/eval.py` — are working-tree reverts that
+# silently discard CONCURRENT sessions' uncommitted edits on the shared root
+# (incident #841). They now live in test_worktree_revert_shapes_block below.
 # ---------------------------------------------------------------------------
 @pytest.mark.parametrize(
     "cmd",
     [
         "git checkout main",  # return to main
-        "git checkout -- scripts/eval.py",  # file restore (explicit --)
-        "git checkout HEAD -- foo.py",  # file restore from a ref
-        "git checkout .",  # restore-all
-        "git checkout -f -- scripts/eval.py",  # flag + file restore
         "git -C .claude/worktrees/issue-123 checkout abc1234",  # scoped to a worktree
         "cd /tmp/foo && git checkout abc1234",  # scoped by cd /tmp
         "cd .claude/worktrees/x && git checkout abc1234",  # scoped by cd worktree
@@ -562,3 +569,591 @@ def test_backslash_newline_continuation_legitimate_allows(cmd):
 )
 def test_fail_soft_exit0(payload):
     assert _run_raw(payload) == 0
+
+
+# ===========================================================================
+# #897 — working-tree reverts on the shared repo root
+# ===========================================================================
+# Incident #841 (2026-07-02): a concurrent session's destructive working-tree
+# git op on the shared root reverted the #841 analyzer's uncommitted body.md
+# mid-task and deleted untracked pre-registration + figure files. The five
+# #897 detectors (restore / checkout-pathspec incl. --pathspec-from-file /
+# checkout-force / clean-force / reset-hard) close this class; they use a
+# TIGHT `git <verb>` bigram anchor so plain-English "restore"/"clean"/"reset"
+# in `-m` messages do NOT trip. The four rows FLIPPED from
+# test_allowed_shapes_exit0 appear here (the #804 `;`-latch flip precedent).
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        # -- restore detector -------------------------------------------------
+        "git restore .",
+        "git restore tasks/running/841/body.md",  # the exact #841 shape
+        "git restore --worktree .",
+        "git restore --staged --worktree foo.py",  # worktree present -> fail-closed
+        "git restore -W foo.py",  # short worktree form fails closed
+        "git restore -S foo.py",  # short staged form fails closed
+        "git restore --source=main .",
+        # -- checkout pathspec detector (incl. the 4 FLIPPED rows) ------------
+        "git checkout .",  # FLIPPED from allow (#897)
+        "git checkout -- scripts/eval.py",  # FLIPPED from allow (#897)
+        "git checkout HEAD -- foo.py",  # FLIPPED from allow (#897)
+        "git checkout -f -- scripts/eval.py",  # FLIPPED from allow (#897)
+        "git checkout main -- CLAUDE.md",  # explicit ref incl. main
+        "git checkout ./src",  # dot-slash positional
+        "xargs -a files.txt git checkout issue-42 --",  # pins the SKILL.md -C migration
+        # -- checkout --pathspec-from-file (attached + separate-value forms) --
+        "git checkout HEAD --pathspec-from-file=/tmp/files",
+        "git checkout HEAD --pathspec-from-file /tmp/files",
+        # -- checkout force detector (discards dirty edits even AT main) ------
+        "git checkout -f main",
+        "git checkout --force main",
+        # -- bare-pathspec existence probe (the exact #841 op) ----------------
+        "git checkout CLAUDE.md",
+        "git checkout scripts/eval.py CLAUDE.md",  # first positional is a real path
+        # -- clean force detector ---------------------------------------------
+        "git clean -f",
+        "git clean -fd",
+        "git clean -fdx",
+        "git clean -ffdx",
+        "git clean -xdf",  # f not first in the cluster
+        "git clean --force",
+        "git clean -e keep.me -fd",  # force flag after a valued flag
+        # -- runtime reset --hard detector (#778/#815 class) -------------------
+        "git reset --hard",
+        "git reset --hard origin/main",
+        "git reset -q --hard",
+        "git reset origin/main --hard",  # ref BEFORE the flag
+        "git reset --hard HEAD~1",
+        "git --no-pager reset --hard",  # git-level flag before subcommand
+        # -- compound / latch parity with the #804 machinery -------------------
+        "git status && git clean -fd",  # AND does not mask a later dangerous clause
+        "cd .claude/worktrees/x ; git restore .",  # SEQ resets the latch
+        "cd .claude/worktrees/x\ngit clean -fd",  # NL resets the latch
+        "git clean -fd & git switch main",  # BG does not mask
+        "echo hi; git checkout .",  # later-clause classification
+        "git \\\nrestore .",  # backslash-continuation normalization parity
+    ],
+)
+def test_worktree_revert_shapes_block(cmd):
+    assert _run(cmd) == 2
+
+
+@on_main
+def test_note_text_restore_literal_trips_guard_known_limitation():
+    # KNOWN LIMITATION (documented in the script header, mirror of
+    # test_note_text_git_verb_literal_trips_guard_known_limitation): a quoted
+    # FULL `git restore .`-class command literal inside another command's
+    # argument trips the raw scan. Workaround: `--file <path.md>` for notes,
+    # `git commit -F <file>` for commit messages. Exit 2 pins the deliberate
+    # trade-off so a future quote-strip re-attempt trips this test.
+    assert (
+        _run(
+            "uv run python scripts/task.py post-marker 897 epm:x "
+            '--note "run git restore . to revert"'
+        )
+        == 2
+    )
+
+
+@on_main
+def test_mangled_comment_separator_split_fails_closed():
+    # A comment CONTAINING a separator is mis-split by the clause splitter:
+    # the tail clause (`git clean -fd`) classifies on its own and BLOCKS even
+    # though bash would treat the whole line as a comment. Fail-closed is the
+    # documented safe direction for the #897 comment-clause skip (§3a(iii)).
+    assert _run("# note; git clean -fd") == 2
+
+
+# ---------------------------------------------------------------------------
+# #897 round 2 — comment-tail waiver spoof (concern id
+# comment-tail-waiver-spoof, the round-1 BLOCKER). Bash never executes an
+# unquoted `#` comment tail, but the raw scan previously READ it — so a
+# trailing comment carrying a waiver token (`git -C ...`, `--staged`) or a
+# latch shape (`cd .claude/worktrees/...`) made the hook exit 0 while bash
+# executed the destructive head. The driver loop now strips the
+# whitespace-anchored ` #` tail of each clause before any latch / waiver /
+# gate / classification read; these rows pin the spoof shapes CLOSED.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git restore . # git -C /tmp status",  # comment `-C` cannot waive
+        "git restore . # --staged",  # comment `--staged` cannot flip the allow-arm
+        "git checkout . # git -C /tmp status",
+        "git clean -fd # git -C /tmp status",
+        "git reset --hard # git -C /tmp status",
+        # control: a plain comment tail (no waiver token) also blocks — the
+        # spoof required a waiver token in the tail, the strip removes both
+        "git restore . # plain comment no waiver tokens",
+        # comment-tail LATCH spoof: the `cd .claude/worktrees/x` lives in the
+        # comment tail of clause 1, so it must NOT latch scope across the &&
+        "echo hi # cd .claude/worktrees/x && git restore .",
+    ],
+)
+def test_comment_tail_cannot_spoof_waiver_or_allow_arm(cmd):
+    assert _run(cmd) == 2
+
+
+@on_main
+def test_commit_message_checkout_realpath_prose_blocks_known_limitation():
+    # KNOWN LIMITATION (documented in the script header, round-2 concern id
+    # header-tight-anchor-claim-overbroad): the bare-pathspec existence probe
+    # rides the LEGACY loose `\bgit\b[^;&|]*\bcheckout\b` anchor, so prose
+    # containing `checkout <path>` where `<path>` names a REAL repo file trips
+    # WITHOUT a `git checkout` bigram — this `-m` message blocks (fails
+    # CLOSED). Remediation: `git commit -F <file>` / `--file <path.md>`.
+    assert _run('git commit -m "fix checkout CLAUDE.md handling"') == 2
+
+
+def test_abs_path_bare_pathspec_residual_gap_allows():
+    # RESIDUAL GAP (vii), documented in the script header (round-2 concern id
+    # abs-path-bare-pathspec-residual-unnamed): an ABSOLUTE-path bare pathspec
+    # inside the repo evades the existence probe (`cat-file -e "HEAD:/abs"`
+    # fails; `[ -e "$REPO/$arg" ]` concatenates the repo prefix onto the
+    # already-absolute path) so the revert is ALLOWED (fail-open) while git
+    # would revert the file. Pinned as CURRENT behavior, deliberately NOT
+    # closed this round; closable post-v1 by stripping a `$REPO/` prefix from
+    # the arg before probing. NOT @on_main: the allow must hold in either
+    # repo-root HEAD state.
+    assert _run("git checkout /home/thomasjiralerspong/explore-persona-space/CLAUDE.md") == 0
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — #897 allow-side: index-only restore, dry-run clean, the safe
+# stash alternative, per-clause `-C` waivers, cd-latches, tight-anchor
+# non-matches, comment clauses, and unresolvable bare args. NOT guarded by
+# @on_main (must never trap in either repo-root HEAD state).
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        "git restore --staged foo.py",  # index-only
+        "git restore --staged .",  # index-only, dot pathspec
+        "git stash",  # the blessed safe alternative
+        "git stash pop",
+        "git clean -n",  # dry-run, no force
+        "git clean -nd",
+        "git -C .claude/worktrees/issue-1 clean -fdx",  # per-clause -C waiver
+        # deliberate -C override (even pointing at the repo root — the
+        # designed, auditable escape; the block message steers away from it)
+        "git -C /home/thomasjiralerspong/explore-persona-space checkout -- tasks/x",
+        'git -C "$WT" reset --hard origin/main',  # the documented recovery path
+        'git -C "$WT" restore .',  # -C waiver symmetry for the restore detector
+        "cd .claude/worktrees/x && git restore .",  # && latch
+        "cd /tmp/scratch && git clean -fd",  # /tmp latch
+        'git commit -m "restore the defaults"',  # tight anchor: no `git restore` bigram
+        'git commit -m "clean up the sweep"',  # tight anchor
+        'git commit -m "reset --hard the docs"',  # tight-anchor reset symmetry
+        "git add docs/notes-clean.md",  # `clean` inside a filename, no force flag
+        "uv run python scripts/clean_experiment_downloads.py 897 --apply",  # no `git` word
+        "git switch main",  # unchanged allow-arm
+        # -- #897 round 2: comment-tail strip allow-side parity ---------------
+        "git clean -n # -f",  # comment `-f` cannot force-block a dry run
+        "git -C .claude/worktrees/issue-1 clean -fdx # cleanup pass",  # waiver + comment
+        "git switch main # back to main",  # comment tail no longer breaks the allow-arm
+        "# git checkout .",  # comment-clause skip
+        # the SKILL.md Step 10d fence shape: cd + a comment SPELLING a gated
+        # form + a benign git command — the comment clause is skipped
+        'cd "$REPO_ROOT"\n# `git checkout issue-9 -- <path>` below\ngit status',
+    ],
+)
+def test_worktree_revert_allowed_shapes_exit0(cmd):
+    assert _run(cmd) == 0
+
+
+@on_main
+def test_bare_arg_resolving_to_nothing_keeps_status_quo_allow():
+    # The #897 bare-pathspec existence probe fires ONLY when the positional
+    # names a real branch / commit-ish / tracked-or-existing path. An arg that
+    # resolves to NOTHING keeps the status-quo allow (git itself errors on the
+    # real call), pinning the probe's no-new-false-positive claim.
+    assert _run("git checkout nonexistent-name-xyz-897") == 0
+
+
+# ===========================================================================
+# #1058 — heredoc-body strip pre-pass + `$WT` cd-latch
+# ===========================================================================
+# Two recurring false-positive classes closed by #1058: (1) a BARE,
+# unconditionally-executed clause-initial `WT=<worktree>` assignment followed
+# by `cd "$WT" && git ...` provably targets a worktree, so it latches the SAME
+# `scoped` machinery as the literal-path cd-latch; (2) a heredoc BODY fed to a
+# non-shell consumer is stdin DATA, so document text mentioning a gated form
+# is stripped before parsing — EXCEPT when bash would actually execute parts
+# of it (an unquoted-tag body carrying `$(`/backtick/`${` expansion syntax, or
+# a body that shells out), which stays blocked. Each pytest case id names its
+# validated probe id from the #1058 plan batteries (M*/C*/I*/R*/F*).
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — `$WT` cd-latch: a BARE clause-initial worktree assignment
+# preceded by START / `;` (SEQ) / a raw newline (NL) arms the latch; the
+# following `cd "$WT"` (exact-arg, no `..`) scopes the `&&`-chained git
+# clause. Covers the recorded incident shapes (spec-sync recipes). NOT guarded
+# by @on_main (allows must hold in either repo-root HEAD state).
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "REPO_ROOT=/home/thomasjiralerspong/explore-persona-space\n"
+            'WT="$REPO_ROOT/.claude/worktrees/issue-1058-fix"\n'
+            'cd "$WT" && git checkout main -- .claude/skills/issue/SKILL.md '
+            ".claude/agents/planner.md",
+            id="M3h_I1-incident_spec_sync_nl",
+        ),
+        pytest.param(
+            "REPO_ROOT=/home/thomasjiralerspong/explore-persona-space; "
+            'WT="$REPO_ROOT/.claude/worktrees/issue-1058"; '
+            'cd "$WT" && git checkout main -- .claude/agents/planner.md',
+            id="M3g-incident_seq_sep",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9; cd "$WT" && git checkout main -- specs.md',
+            id="M3i-start_sep",
+        ),
+        pytest.param(
+            'WT=".claude/worktrees/issue-7"; cd "${WT}" && git checkout main -- CLAUDE.md',
+            id="I2-braced_wt",
+        ),
+        pytest.param(
+            'WT=".claude/worktrees/issue-7"; cd "$WT/scripts" && git checkout main -- task.py',
+            id="I3-subdir_wt_scripts",
+        ),
+        pytest.param(
+            "WT='.claude/worktrees/issue-779'\n"
+            'cd "$WT" && git checkout main -- .claude/agents/planner.md',
+            id="F1-single_quoted_rhs",
+        ),
+        pytest.param(
+            'export WT=".claude/worktrees/issue-9"\ncd "$WT" && git checkout main -- specs.md',
+            id="R11-export_form",
+        ),
+        pytest.param(
+            "WT=/tmp/other; WT=.claude/worktrees/issue-9; "
+            'cd "$WT" && git checkout main -- specs.md',
+            id="M3f-rearm_after_disarm",
+        ),
+        pytest.param(
+            'WT=".claude/worktrees/issue-9"; cd "$WT" && uv run pytest -q',
+            id="R17-non_git_under_latch",
+        ),
+    ],
+)
+def test_wt_variable_cd_latch_allows(cmd):
+    """A bare, unconditional worktree WT= assignment + cd \"$WT\" latches scope."""
+    assert _run(cmd) == 0
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — `$WT` cd-latch fail-closed set. The latch arms ONLY on a BARE
+# (end-anchored) clause-initial worktree assignment whose preceding separator
+# is START / SEQ / NL: an assignment PREFIX (`WT=<wt> true`) is a per-command
+# temp env that does not persist; an AND/OR-preceded assignment is
+# runtime-conditional (when skipped, `cd "$WT"` is a `cd ""` repo-root
+# no-op); a PIPE-preceded assignment dies with its subshell; BG stays
+# non-arming as documented conservatism. Any other clause-initial `WT=`
+# DISARMS; the latch inherits the `&&`-only propagation + reset semantics of
+# the literal latch; `..` never latches; the variable name is tight to `WT`.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            'WT=.claude/worktrees/x true; cd "$WT" && git restore .',
+            id="M2a-prefix_assignment_true",
+        ),
+        pytest.param(
+            "WT=.claude/worktrees/x git restore .",
+            id="M2b-prefix_assignment_env_git",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/x echo hi\ncd "$WT" && git reset --hard',
+            id="M2c-prefix_assignment_echo",
+        ),
+        pytest.param(
+            '[ -d "$X" ] && WT=.claude/worktrees/missing; cd "$WT" && git reset --hard',
+            id="M3a-and_preceded_assignment",
+        ),
+        pytest.param(
+            'false || WT=.claude/worktrees/missing; cd "$WT" && git restore .',
+            id="M3b-or_preceded_assignment",
+        ),
+        pytest.param(
+            'true | WT=.claude/worktrees/x\ncd "$WT" && git restore .',
+            id="M3c-pipe_preceded_assignment",
+        ),
+        pytest.param(
+            'sleep 1 & WT=.claude/worktrees/x; cd "$WT" && git restore .',
+            id="M3j-bg_preceded_assignment_conservative",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/a; WT=/somewhere/else; cd "$WT" && git reset --hard',
+            id="M3d-nonworktree_reassign_disarms",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/a; [ -d x ] && WT=/other; cd "$WT" && git restore .',
+            id="M3e-conditional_reassign_disarms",
+        ),
+        pytest.param(
+            'cd "$WT" && git checkout main -- .claude/agents/planner.md',
+            id="B10-no_assignment_in_call",
+        ),
+        pytest.param(
+            'WT="/home/thomasjiralerspong/explore-persona-space"\n'
+            'cd "$WT" && git checkout main -- .claude/agents/planner.md',
+            id="B11-nonworktree_assignment",
+        ),
+        pytest.param(
+            'WT=".claude/worktrees/issue-9"; cd "$WT/../.." && git restore .',
+            id="R13-dotdot_escape",
+        ),
+        pytest.param(
+            'WT2=".claude/worktrees/issue-9"\ncd "$WT2" && git checkout main -- specs.md',
+            id="R12-wt2_name",
+        ),
+        pytest.param(
+            'WT=".claude/worktrees/issue-779"\n'
+            'cd -P "$WT" && git checkout main -- .claude/agents/planner.md',
+            id="F4-cd_dash_p",
+        ),
+        pytest.param(
+            'WT=".claude/worktrees/issue-9"; cd "$WT"; git restore .',
+            id="R14-latch_not_across_semicolon",
+        ),
+        pytest.param(
+            'WT=".claude/worktrees/issue-9"; cd "$WT" || git restore .',
+            id="R15-latch_not_across_or",
+        ),
+        pytest.param(
+            'echo "docs: WT=.claude/worktrees/example" > /dev/null\n'
+            'cd "$WT" && git checkout -b feature/x',
+            id="R10_F5-prose_buried_wt",
+        ),
+        pytest.param(
+            'cd "$WT" && git restore .\nWT=".claude/worktrees/issue-9"',
+            id="R16-assignment_after_cd",
+        ),
+    ],
+)
+def test_wt_variable_cd_latch_fail_closed_blocks(cmd):
+    """Unproven / conditional / disarmed WT assignments never latch scope."""
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — heredoc BODIES destined for non-shell consumers are stripped
+# before parsing when provably inert, so document text that merely MENTIONS a
+# gated form no longer false-blocks (incident 4 + the adjacent cat-note
+# shape). Quoted/escaped-tag bodies stay strippable even with `$(git ...)`
+# text (bash suppresses expansion); unquoted-tag bodies strip only when they
+# carry NO expansion syntax. NOT guarded by @on_main.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "uv run python - <<'PY'\n"
+            "text = 'git checkout main -- .claude/agents/planner.md'\n"
+            "print(text)\n"
+            "PY",
+            id="I4-python_quoted_tag_incident4",
+        ),
+        pytest.param(
+            'uv run python - <<PY\nprint("the guard blocked: git checkout main -- specs")\nPY',
+            id="M1i-python_unquoted_tag_plain_prose",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\n"
+            "Recovery used: git checkout main -- .claude/skills/issue/SKILL.md\n"
+            "EOF",
+            id="M1h-cat_note_unquoted_no_expansion",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<'EOF'\n$(git checkout -b evil)\nEOF",
+            id="M1e-quoted_tag_dollarparen_inert_control",
+        ),
+        pytest.param(
+            'cat > /tmp/note.md <<"EOF"\n`git checkout -b evil`\nEOF',
+            id="M1f-dquoted_tag_backtick_inert_control",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<\\EOF\n$(git checkout -b evil)\nEOF",
+            id="M1g-escaped_tag_dollarparen_inert_control",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<-EOF\n\tmentions git checkout main -- x\n\tEOF",
+            id="R9-dash_tab_terminator",
+        ),
+        pytest.param(
+            "uv run python - <<PY\n"
+            'print("see scripts/guard_repo_root_branch.sh and git checkout main -- x")\n'
+            "PY",
+            id="C14-body_prose_sh_path_tail",
+        ),
+        pytest.param(
+            'jq \'.\' <<JSON\n{"cmd": "git checkout main -- x"}\nJSON',
+            id="C15-jq_quoted_dot_filter",
+        ),
+        pytest.param(
+            "tee /tmp/note.md <<EOF\nworkaround for: git reset --hard origin/main\nEOF",
+            id="E7-tee_consumer",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\nplain note, nothing gated\nEOF",
+            id="R18-benign_no_git_text",
+        ),
+        pytest.param(
+            'grep -q x <<<"restore mentioned in prose" || true',
+            id="R8a-here_string_non_bigram",
+        ),
+    ],
+)
+def test_nonshell_heredoc_body_mention_allows(cmd):
+    """Provably-inert heredoc bodies are stripped; gated MENTIONS no longer block."""
+    assert _run(cmd) == 0
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — unquoted-tag heredoc bodies carrying expansion syntax. Bash
+# performs command/parameter substitution on an UNQUOTED-tag body at feed
+# time, so `$(git ...)` / backticks in it EXECUTE regardless of the consumer;
+# the strip refuses such bodies (`${` refuses too — parameter expansion can
+# nest command substitution, a documented fail-closed over-match on plain
+# `${VAR}` references). The MUST-FIX-1 matrix.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\n$(git checkout -b evil)\nEOF",
+            id="M1a-dollar_paren_body",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\n`git checkout -b evil`\nEOF",
+            id="M1b-backtick_body",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\n${Z:-$(git checkout -b evil)}\nEOF",
+            id="M1c-nested_param_cmdsub",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\nvalue is ${SOMEVAR}\nhow to revert: git restore .\nEOF",
+            id="M1d-bare_param_expansion_plus_gated_prose",
+        ),
+    ],
+)
+def test_unquoted_tag_expansion_body_blocks(cmd):
+    """Unquoted-tag bodies with expansion syntax never strip (bash executes them)."""
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — heredoc shapes the strip must REFUSE: every shell-consumer /
+# command-runner denylist word pinned individually (incl. the standalone-dot
+# source form), pipe-to-shell, `.sh`-redirects, unterminated / multi-opener /
+# mixed heredocs, shift-like `<<` openers, the continuation-join edge, gated
+# text on the opener line or after the terminator, and the here-string
+# full-literal raw-scan parity pin.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("bash <<EOF\ngit checkout -b evil\nEOF", id="C1-bash"),
+        pytest.param("sh <<EOF\ngit restore .\nEOF", id="C2-sh"),
+        pytest.param("zsh <<EOF\ngit reset --hard\nEOF", id="C3-zsh"),
+        pytest.param("ksh <<EOF\ngit checkout -b evil\nEOF", id="C4-ksh"),
+        pytest.param("dash <<EOF\ngit clean -fd\nEOF", id="C5-dash"),
+        pytest.param('eval "$(cat)" <<EOF\ngit checkout -b evil\nEOF', id="C6-eval"),
+        pytest.param("source /dev/stdin <<EOF\ngit restore .\nEOF", id="C7-source"),
+        pytest.param("ssh host bash <<EOF\ngit reset --hard\nEOF", id="C8-ssh"),
+        pytest.param("xargs -I{} {} <<EOF\ngit checkout -b evil\nEOF", id="C9-xargs"),
+        pytest.param("parallel <<EOF\ngit restore .\nEOF", id="C10-parallel"),
+        pytest.param("sudo -s <<EOF\ngit reset --hard\nEOF", id="C11-sudo"),
+        pytest.param("su -c bash <<EOF\ngit checkout -b evil\nEOF", id="C12-su"),
+        pytest.param(". /dev/stdin <<EOF\ngit restore .\nEOF", id="C13-dot_source"),
+        pytest.param("cat <<EOF | bash\ngit checkout -b evil\nEOF", id="R1-pipe_to_bash"),
+        pytest.param("cat > /tmp/run.sh <<EOF\ngit reset --hard\nEOF", id="R2-sh_redirect"),
+        pytest.param("cat > /tmp/x.md <<EOF\ngit restore .", id="R3-unterminated"),
+        pytest.param(
+            "paste <(cat <<A) <(cat <<B)\ngit checkout -b evil\nA\nx\nB",
+            id="R4-two_openers_one_line",
+        ),
+        pytest.param(
+            'uv run python - <<PY\nprint("hi")\nPY\nbash <<EOF\ngit checkout -b evil\nEOF',
+            id="C16-mixed_python_plus_bash",
+        ),
+        pytest.param(
+            'uv run python -c "x = 1 << 2"\ngit checkout -b evil',
+            id="C17-shift_like_opener_then_gated",
+        ),
+        pytest.param(
+            "cat > /tmp/x.md <<EOF\ngit restore . \\\nEOF",
+            id="C18-continuation_join_hides_terminator",
+        ),
+        pytest.param(
+            'git checkout -b x && python - <<PY\nprint("hi")\nPY',
+            id="R6-gated_on_opener_line",
+        ),
+        pytest.param(
+            'uv run python - <<PY\nprint("hi")\nPY\ngit checkout -b evil',
+            id="R7-gated_after_terminator",
+        ),
+        pytest.param(
+            'grep -q x <<<"git restore . mentioned in prose" || true',
+            id="R8b-here_string_full_literal_parity",
+        ),
+    ],
+)
+def test_shell_consumer_heredoc_still_blocks(cmd):
+    """Shell-consumer / unstrippable heredoc shapes keep current (block) behavior."""
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — heredoc bodies that themselves SHELL OUT (os.system /
+# subprocess / Popen / bare-or-spaced `system (` / `from os import`) may
+# execute git despite a non-shell consumer, so the strip refuses them and the
+# gated literal in the body still classifies. The MUST-FIX-4 matrix.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            'uv run python - <<PY\nimport os\nos.system("git checkout -b evil")\nPY',
+            id="R5-os_system",
+        ),
+        pytest.param(
+            'uv run python - <<PY\nfrom os import system\nsystem("git restore .")\nPY',
+            id="M4a-from_os_import_system",
+        ),
+        pytest.param(
+            'uv run python - <<PY\nimport os\ns = os.system\ns ("git checkout -b evil")\nPY',
+            id="M4b-spaced_system_call",
+        ),
+        pytest.param(
+            "uv run python - <<PY\n"
+            "import subprocess\n"
+            'subprocess.run("git restore .", shell=True)\n'
+            "PY",
+            id="M4c-subprocess_run_string",
+        ),
+        pytest.param(
+            "uv run python - <<PY\n"
+            "from subprocess import Popen\n"
+            'Popen(["bash","-c","git reset --hard"])\n'
+            "PY",
+            id="M4d-popen_list",
+        ),
+    ],
+)
+def test_heredoc_shellout_body_blocks(cmd):
+    """A body naming a shell-out spelling never strips; its gated text classifies."""
+    assert _run(cmd) == 2

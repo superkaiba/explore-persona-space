@@ -1,0 +1,838 @@
+{
+  "ns": [
+    4000,
+    10000,
+    25000,
+    50000,
+    100000
+  ],
+  "anchor_n": 4000,
+  "n_boot": 1000,
+  "classes": [
+    "ridge",
+    "mlp",
+    "direct_hop"
+  ],
+  "capture_dtype": "bf16",
+  "target_layers": {
+    "primary": {
+      "evil": 20,
+      "sycophancy": 26,
+      "hallucination": 17
+    },
+    "companion": {
+      "evil": 14,
+      "sycophancy": 19,
+      "hallucination": 24
+    }
+  },
+  "traits": {
+    "evil": {
+      "curve_by_class": {
+        "ridge": {
+          "n_cells": 38,
+          "curve": {
+            "total_cells": 38,
+            "anchor_n": 4000,
+            "win_count_anchor": 7,
+            "mean_retention_anchor": 0.432888321785051,
+            "by_n": {
+              "10000": {
+                "win_count": 6,
+                "newly_winning": 1,
+                "dropped_out": 2,
+                "net_win_vs_anchor": -1,
+                "mean_paired_delta": -0.014972144586640623,
+                "mean_paired_delta_ci": [
+                  -0.03044594562932806,
+                  -0.0016416589066442094
+                ],
+                "cells_delta_pos_sig": 9,
+                "cells_delta_neg_sig": 9,
+                "bh_survivors_total": 9,
+                "bh_newly_winning_survivors": 1,
+                "bh_q": 0.05,
+                "chance_expectation": 1.9000000000000001,
+                "mean_retention": 0.396750817083682
+              },
+              "25000": {
+                "win_count": 10,
+                "newly_winning": 4,
+                "dropped_out": 1,
+                "net_win_vs_anchor": 3,
+                "mean_paired_delta": -0.0003180615737790838,
+                "mean_paired_delta_ci": [
+                  -0.016405194249784046,
+                  0.01468473370994
+                ],
+                "cells_delta_pos_sig": 10,
+                "cells_delta_neg_sig": 9,
+                "bh_survivors_total": 8,
+                "bh_newly_winning_survivors": 3,
+                "bh_q": 0.05,
+                "chance_expectation": 1.9000000000000001,
+                "mean_retention": 0.42696246645959696
+              },
+              "50000": {
+                "win_count": 10,
+                "newly_winning": 3,
+                "dropped_out": 0,
+                "net_win_vs_anchor": 3,
+                "mean_paired_delta": 0.003262094161576176,
+                "mean_paired_delta_ci": [
+                  -0.010395412988282246,
+                  0.016915515125083578
+                ],
+                "cells_delta_pos_sig": 8,
+                "cells_delta_neg_sig": 3,
+                "bh_survivors_total": 8,
+                "bh_newly_winning_survivors": 1,
+                "bh_q": 0.05,
+                "chance_expectation": 1.9000000000000001,
+                "mean_retention": 0.42464803034517995
+              },
+              "100000": {
+                "win_count": 10,
+                "newly_winning": 3,
+                "dropped_out": 0,
+                "net_win_vs_anchor": 3,
+                "mean_paired_delta": 0.010365115445941124,
+                "mean_paired_delta_ci": [
+                  -0.004540350514453962,
+                  0.025238409737797302
+                ],
+                "cells_delta_pos_sig": 10,
+                "cells_delta_neg_sig": 3,
+                "bh_survivors_total": 10,
+                "bh_newly_winning_survivors": 1,
+                "bh_q": 0.05,
+                "chance_expectation": 1.9000000000000001,
+                "mean_retention": 0.45174091276317785
+              }
+            }
+          }
+        },
+        "mlp": {
+          "n_cells": 38,
+          "curve": {
+            "total_cells": 38,
+            "anchor_n": 4000,
+            "win_count_anchor": 7,
+            "mean_retention_anchor": 0.3622623991127685,
+            "by_n": {
+              "100000": {
+                "win_count": 5,
+                "newly_winning": 0,
+                "dropped_out": 2,
+                "net_win_vs_anchor": -2,
+                "mean_paired_delta": -0.027925846389721072,
+                "mean_paired_delta_ci": [
+                  -0.07359686793252973,
+                  0.01653066313604626
+                ],
+                "cells_delta_pos_sig": 9,
+                "cells_delta_neg_sig": 11,
+                "bh_survivors_total": 3,
+                "bh_newly_winning_survivors": 0,
+                "bh_q": 0.05,
+                "chance_expectation": 1.9000000000000001,
+                "mean_retention": 0.23176071010454571
+              }
+            }
+          }
+        },
+        "direct_hop": {
+          "n_cells": 38,
+          "curve": {
+            "total_cells": 38,
+            "anchor_n": 4000,
+            "win_count_anchor": 12,
+            "mean_retention_anchor": 0.4415804188799202,
+            "by_n": {
+              "10000": {
+                "win_count": 9,
+                "newly_winning": 0,
+                "dropped_out": 3,
+                "net_win_vs_anchor": -3,
+                "mean_paired_delta": -0.024478216827572785,
+                "mean_paired_delta_ci": [
+                  -0.04288689486990236,
+                  -0.0066493686168125656
+                ],
+                "cells_delta_pos_sig": 6,
+                "cells_delta_neg_sig": 12,
+                "bh_survivors_total": 4,
+                "bh_newly_winning_survivors": 0,
+                "bh_q": 0.05,
+                "chance_expectation": 1.9000000000000001,
+                "mean_retention": 0.3969181264098511
+              },
+              "25000": {
+                "win_count": 11,
+                "newly_winning": 0,
+                "dropped_out": 1,
+                "net_win_vs_anchor": -1,
+                "mean_paired_delta": -0.011466827998019869,
+                "mean_paired_delta_ci": [
+                  -0.030150810038162657,
+                  0.007844823233334432
+                ],
+                "cells_delta_pos_sig": 7,
+                "cells_delta_neg_sig": 13,
+                "bh_survivors_total": 6,
+                "bh_newly_winning_survivors": 0,
+                "bh_q": 0.05,
+                "chance_expectation": 1.9000000000000001,
+                "mean_retention": 0.4198937036119425
+              },
+              "50000": {
+                "win_count": 10,
+                "newly_winning": 0,
+                "dropped_out": 2,
+                "net_win_vs_anchor": -2,
+                "mean_paired_delta": -0.013578891241915159,
+                "mean_paired_delta_ci": [
+                  -0.031526801094747155,
+                  0.0048835920754374046
+                ],
+                "cells_delta_pos_sig": 7,
+                "cells_delta_neg_sig": 11,
+                "bh_survivors_total": 6,
+                "bh_newly_winning_survivors": 0,
+                "bh_q": 0.05,
+                "chance_expectation": 1.9000000000000001,
+                "mean_retention": 0.4117688406847703
+              },
+              "100000": {
+                "win_count": 12,
+                "newly_winning": 0,
+                "dropped_out": 0,
+                "net_win_vs_anchor": 0,
+                "mean_paired_delta": 0.005501499205798862,
+                "mean_paired_delta_ci": [
+                  -0.01153884632803024,
+                  0.023448849841971472
+                ],
+                "cells_delta_pos_sig": 10,
+                "cells_delta_neg_sig": 5,
+                "bh_survivors_total": 8,
+                "bh_newly_winning_survivors": 0,
+                "bh_q": 0.05,
+                "chance_expectation": 1.9000000000000001,
+                "mean_retention": 0.4654349607158116
+              }
+            }
+          }
+        }
+      }
+    },
+    "sycophancy": {
+      "curve_by_class": {
+        "ridge": {
+          "n_cells": 48,
+          "curve": {
+            "total_cells": 48,
+            "anchor_n": 4000,
+            "win_count_anchor": 14,
+            "mean_retention_anchor": 0.5592950755705498,
+            "by_n": {
+              "10000": {
+                "win_count": 16,
+                "newly_winning": 6,
+                "dropped_out": 4,
+                "net_win_vs_anchor": 2,
+                "mean_paired_delta": -0.0017491625930659393,
+                "mean_paired_delta_ci": [
+                  -0.01003559482442892,
+                  0.005989012689889784
+                ],
+                "cells_delta_pos_sig": 13,
+                "cells_delta_neg_sig": 13,
+                "bh_survivors_total": 13,
+                "bh_newly_winning_survivors": 6,
+                "bh_q": 0.05,
+                "chance_expectation": 2.4000000000000004,
+                "mean_retention": 0.5560615499439648
+              },
+              "25000": {
+                "win_count": 15,
+                "newly_winning": 4,
+                "dropped_out": 3,
+                "net_win_vs_anchor": 1,
+                "mean_paired_delta": 0.0006796198485662363,
+                "mean_paired_delta_ci": [
+                  -0.012272021855309024,
+                  0.011914769013444034
+                ],
+                "cells_delta_pos_sig": 20,
+                "cells_delta_neg_sig": 10,
+                "bh_survivors_total": 19,
+                "bh_newly_winning_survivors": 3,
+                "bh_q": 0.05,
+                "chance_expectation": 2.4000000000000004,
+                "mean_retention": 0.5604018999327576
+              },
+              "50000": {
+                "win_count": 17,
+                "newly_winning": 5,
+                "dropped_out": 2,
+                "net_win_vs_anchor": 3,
+                "mean_paired_delta": 0.004993160258314379,
+                "mean_paired_delta_ci": [
+                  -0.010193066601592948,
+                  0.018705740978238232
+                ],
+                "cells_delta_pos_sig": 19,
+                "cells_delta_neg_sig": 11,
+                "bh_survivors_total": 17,
+                "bh_newly_winning_survivors": 4,
+                "bh_q": 0.05,
+                "chance_expectation": 2.4000000000000004,
+                "mean_retention": 0.5679835557086329
+              },
+              "100000": {
+                "win_count": 18,
+                "newly_winning": 6,
+                "dropped_out": 2,
+                "net_win_vs_anchor": 4,
+                "mean_paired_delta": 0.003323722009123644,
+                "mean_paired_delta_ci": [
+                  -0.013024532877525476,
+                  0.017728832733716584
+                ],
+                "cells_delta_pos_sig": 19,
+                "cells_delta_neg_sig": 10,
+                "bh_survivors_total": 17,
+                "bh_newly_winning_survivors": 5,
+                "bh_q": 0.05,
+                "chance_expectation": 2.4000000000000004,
+                "mean_retention": 0.5652970625866225
+              }
+            }
+          }
+        },
+        "mlp": {
+          "n_cells": 48,
+          "curve": {
+            "total_cells": 48,
+            "anchor_n": 4000,
+            "win_count_anchor": 7,
+            "mean_retention_anchor": 0.4385474075445801,
+            "by_n": {
+              "100000": {
+                "win_count": 10,
+                "newly_winning": 4,
+                "dropped_out": 1,
+                "net_win_vs_anchor": 3,
+                "mean_paired_delta": 0.027015209213392854,
+                "mean_paired_delta_ci": [
+                  -0.005921393799255428,
+                  0.06243112101081244
+                ],
+                "cells_delta_pos_sig": 12,
+                "cells_delta_neg_sig": 18,
+                "bh_survivors_total": 12,
+                "bh_newly_winning_survivors": 2,
+                "bh_q": 0.05,
+                "chance_expectation": 2.4000000000000004,
+                "mean_retention": 0.4852135797216628
+              }
+            }
+          }
+        },
+        "direct_hop": {
+          "n_cells": 48,
+          "curve": {
+            "total_cells": 48,
+            "anchor_n": 4000,
+            "win_count_anchor": 11,
+            "mean_retention_anchor": 0.5442234770766081,
+            "by_n": {
+              "10000": {
+                "win_count": 19,
+                "newly_winning": 9,
+                "dropped_out": 1,
+                "net_win_vs_anchor": 8,
+                "mean_paired_delta": 0.01714493634175168,
+                "mean_paired_delta_ci": [
+                  0.0012734427474093226,
+                  0.032996272118012565
+                ],
+                "cells_delta_pos_sig": 26,
+                "cells_delta_neg_sig": 8,
+                "bh_survivors_total": 26,
+                "bh_newly_winning_survivors": 9,
+                "bh_q": 0.05,
+                "chance_expectation": 2.4000000000000004,
+                "mean_retention": 0.5725659065679857
+              },
+              "25000": {
+                "win_count": 19,
+                "newly_winning": 8,
+                "dropped_out": 0,
+                "net_win_vs_anchor": 8,
+                "mean_paired_delta": 0.012731409183115392,
+                "mean_paired_delta_ci": [
+                  -0.010530576502393996,
+                  0.033280843375488034
+                ],
+                "cells_delta_pos_sig": 22,
+                "cells_delta_neg_sig": 9,
+                "bh_survivors_total": 22,
+                "bh_newly_winning_survivors": 8,
+                "bh_q": 0.05,
+                "chance_expectation": 2.4000000000000004,
+                "mean_retention": 0.5660650177374066
+              },
+              "50000": {
+                "win_count": 18,
+                "newly_winning": 7,
+                "dropped_out": 0,
+                "net_win_vs_anchor": 7,
+                "mean_paired_delta": 0.017891072895866163,
+                "mean_paired_delta_ci": [
+                  -0.00539139855350065,
+                  0.03986661708845534
+                ],
+                "cells_delta_pos_sig": 25,
+                "cells_delta_neg_sig": 10,
+                "bh_survivors_total": 25,
+                "bh_newly_winning_survivors": 7,
+                "bh_q": 0.05,
+                "chance_expectation": 2.4000000000000004,
+                "mean_retention": 0.5751806237482281
+              },
+              "100000": {
+                "win_count": 19,
+                "newly_winning": 8,
+                "dropped_out": 0,
+                "net_win_vs_anchor": 8,
+                "mean_paired_delta": 0.016680701286824355,
+                "mean_paired_delta_ci": [
+                  -0.006854228139136475,
+                  0.039116806213378486
+                ],
+                "cells_delta_pos_sig": 22,
+                "cells_delta_neg_sig": 10,
+                "bh_survivors_total": 22,
+                "bh_newly_winning_survivors": 8,
+                "bh_q": 0.05,
+                "chance_expectation": 2.4000000000000004,
+                "mean_retention": 0.5731912251008823
+              }
+            }
+          }
+        }
+      }
+    },
+    "hallucination": {
+      "curve_by_class": {
+        "ridge": {
+          "n_cells": 44,
+          "curve": {
+            "total_cells": 44,
+            "anchor_n": 4000,
+            "win_count_anchor": 16,
+            "mean_retention_anchor": 0.7053957377491407,
+            "by_n": {
+              "10000": {
+                "win_count": 26,
+                "newly_winning": 11,
+                "dropped_out": 1,
+                "net_win_vs_anchor": 10,
+                "mean_paired_delta": 0.016915824939251634,
+                "mean_paired_delta_ci": [
+                  -0.012052543385318701,
+                  0.04048857099902588
+                ],
+                "cells_delta_pos_sig": 30,
+                "cells_delta_neg_sig": 6,
+                "bh_survivors_total": 30,
+                "bh_newly_winning_survivors": 11,
+                "bh_q": 0.05,
+                "chance_expectation": 2.2,
+                "mean_retention": 0.7305317139336726
+              },
+              "25000": {
+                "win_count": 28,
+                "newly_winning": 13,
+                "dropped_out": 1,
+                "net_win_vs_anchor": 12,
+                "mean_paired_delta": 0.021202572043952827,
+                "mean_paired_delta_ci": [
+                  -0.008490127663346999,
+                  0.048176209326996906
+                ],
+                "cells_delta_pos_sig": 29,
+                "cells_delta_neg_sig": 8,
+                "bh_survivors_total": 29,
+                "bh_newly_winning_survivors": 13,
+                "bh_q": 0.05,
+                "chance_expectation": 2.2,
+                "mean_retention": 0.7436421604764579
+              },
+              "50000": {
+                "win_count": 27,
+                "newly_winning": 12,
+                "dropped_out": 1,
+                "net_win_vs_anchor": 11,
+                "mean_paired_delta": 0.0152829626314388,
+                "mean_paired_delta_ci": [
+                  -0.01832452482669298,
+                  0.04334100951372492
+                ],
+                "cells_delta_pos_sig": 27,
+                "cells_delta_neg_sig": 9,
+                "bh_survivors_total": 27,
+                "bh_newly_winning_survivors": 12,
+                "bh_q": 0.05,
+                "chance_expectation": 2.2,
+                "mean_retention": 0.7300749501393852
+              },
+              "100000": {
+                "win_count": 28,
+                "newly_winning": 13,
+                "dropped_out": 1,
+                "net_win_vs_anchor": 12,
+                "mean_paired_delta": 0.013985872154127636,
+                "mean_paired_delta_ci": [
+                  -0.013743759614424401,
+                  0.041178227529356994
+                ],
+                "cells_delta_pos_sig": 26,
+                "cells_delta_neg_sig": 7,
+                "bh_survivors_total": 26,
+                "bh_newly_winning_survivors": 13,
+                "bh_q": 0.05,
+                "chance_expectation": 2.2,
+                "mean_retention": 0.7270996146888744
+              }
+            }
+          }
+        },
+        "mlp": {
+          "n_cells": 44,
+          "curve": {
+            "total_cells": 44,
+            "anchor_n": 4000,
+            "win_count_anchor": 8,
+            "mean_retention_anchor": 0.40384542380543315,
+            "by_n": {
+              "100000": {
+                "win_count": 12,
+                "newly_winning": 6,
+                "dropped_out": 2,
+                "net_win_vs_anchor": 4,
+                "mean_paired_delta": 0.011115238650798677,
+                "mean_paired_delta_ci": [
+                  -0.029702914622240378,
+                  0.052186564386097076
+                ],
+                "cells_delta_pos_sig": 13,
+                "cells_delta_neg_sig": 8,
+                "bh_survivors_total": 12,
+                "bh_newly_winning_survivors": 4,
+                "bh_q": 0.05,
+                "chance_expectation": 2.2,
+                "mean_retention": 0.417528572463623
+              }
+            }
+          }
+        },
+        "direct_hop": {
+          "n_cells": 44,
+          "curve": {
+            "total_cells": 44,
+            "anchor_n": 4000,
+            "win_count_anchor": 19,
+            "mean_retention_anchor": 0.712408998741696,
+            "by_n": {
+              "10000": {
+                "win_count": 30,
+                "newly_winning": 12,
+                "dropped_out": 1,
+                "net_win_vs_anchor": 11,
+                "mean_paired_delta": 0.03208376111693938,
+                "mean_paired_delta_ci": [
+                  0.006622648835844719,
+                  0.053030417224856116
+                ],
+                "cells_delta_pos_sig": 33,
+                "cells_delta_neg_sig": 3,
+                "bh_survivors_total": 33,
+                "bh_newly_winning_survivors": 12,
+                "bh_q": 0.05,
+                "chance_expectation": 2.2,
+                "mean_retention": 0.7729646728213774
+              },
+              "25000": {
+                "win_count": 31,
+                "newly_winning": 12,
+                "dropped_out": 0,
+                "net_win_vs_anchor": 12,
+                "mean_paired_delta": 0.03311392250641715,
+                "mean_paired_delta_ci": [
+                  0.011592610115767286,
+                  0.054859935061920044
+                ],
+                "cells_delta_pos_sig": 29,
+                "cells_delta_neg_sig": 5,
+                "bh_survivors_total": 29,
+                "bh_newly_winning_survivors": 12,
+                "bh_q": 0.05,
+                "chance_expectation": 2.2,
+                "mean_retention": 0.778172380132183
+              },
+              "50000": {
+                "win_count": 29,
+                "newly_winning": 11,
+                "dropped_out": 1,
+                "net_win_vs_anchor": 10,
+                "mean_paired_delta": 0.023409979116173433,
+                "mean_paired_delta_ci": [
+                  -0.00046060385108383245,
+                  0.043847083322999254
+                ],
+                "cells_delta_pos_sig": 28,
+                "cells_delta_neg_sig": 6,
+                "bh_survivors_total": 28,
+                "bh_newly_winning_survivors": 10,
+                "bh_q": 0.05,
+                "chance_expectation": 2.2,
+                "mean_retention": 0.7525650631426344
+              },
+              "100000": {
+                "win_count": 27,
+                "newly_winning": 9,
+                "dropped_out": 1,
+                "net_win_vs_anchor": 8,
+                "mean_paired_delta": 0.015606205409264596,
+                "mean_paired_delta_ci": [
+                  -0.00631658508446292,
+                  0.039297123420278905
+                ],
+                "cells_delta_pos_sig": 28,
+                "cells_delta_neg_sig": 6,
+                "bh_survivors_total": 28,
+                "bh_newly_winning_survivors": 9,
+                "bh_q": 0.05,
+                "chance_expectation": 2.2,
+                "mean_retention": 0.7330813056435961
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "metadata": {
+    "git_commit": "566eb04d0150ca4a4d6a488ed36e953b3e4d278d",
+    "timestamp_utc": "2026-07-03T22:16:13.642923Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+    "torch_version": "2.8.0+cu128",
+    "numpy_version": "2.2.6",
+    "hf_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+    "cuda_visible_devices": "all",
+    "phase": "stage1_scaling",
+    "smoke": false,
+    "capture_dtype": "bf16"
+  },
+  "pooled_curve_by_class": {
+    "ridge": {
+      "n_cells": 130,
+      "curve": {
+        "total_cells": 130,
+        "anchor_n": 4000,
+        "win_count_anchor": 37,
+        "mean_retention_anchor": 0.5717948639706193,
+        "by_n": {
+          "10000": {
+            "win_count": 48,
+            "newly_winning": 18,
+            "dropped_out": 7,
+            "net_win_vs_anchor": 11,
+            "mean_paired_delta": 0.0007030384505197158,
+            "mean_paired_delta_ci": [
+              -0.01060868805018139,
+              0.010632156447777983
+            ],
+            "cells_delta_pos_sig": 52,
+            "cells_delta_neg_sig": 28,
+            "bh_survivors_total": 52,
+            "bh_newly_winning_survivors": 18,
+            "bh_q": 0.05,
+            "chance_expectation": 6.5,
+            "mean_retention": 0.5685452373813217
+          },
+          "25000": {
+            "win_count": 53,
+            "newly_winning": 21,
+            "dropped_out": 5,
+            "net_win_vs_anchor": 16,
+            "mean_paired_delta": 0.007334219868165373,
+            "mean_paired_delta_ci": [
+              -0.004863020629654097,
+              0.018688312251058062
+            ],
+            "cells_delta_pos_sig": 59,
+            "cells_delta_neg_sig": 27,
+            "bh_survivors_total": 57,
+            "bh_newly_winning_survivors": 19,
+            "bh_q": 0.05,
+            "chance_expectation": 6.5,
+            "mean_retention": 0.583416307563086
+          },
+          "50000": {
+            "win_count": 54,
+            "newly_winning": 20,
+            "dropped_out": 3,
+            "net_win_vs_anchor": 17,
+            "mean_paired_delta": 0.00796985866401763,
+            "mean_paired_delta_ci": [
+              -0.0038160775635592615,
+              0.019845579182040208
+            ],
+            "cells_delta_pos_sig": 54,
+            "cells_delta_neg_sig": 23,
+            "bh_survivors_total": 53,
+            "bh_newly_winning_survivors": 17,
+            "bh_q": 0.05,
+            "chance_expectation": 6.5,
+            "mean_retention": 0.5809471817943397
+          },
+          "100000": {
+            "win_count": 56,
+            "newly_winning": 22,
+            "dropped_out": 3,
+            "net_win_vs_anchor": 19,
+            "mean_paired_delta": 0.008990703216656258,
+            "mean_paired_delta_ci": [
+              -0.003174576102616697,
+              0.019929165801432617
+            ],
+            "cells_delta_pos_sig": 55,
+            "cells_delta_neg_sig": 20,
+            "bh_survivors_total": 54,
+            "bh_newly_winning_survivors": 19,
+            "bh_q": 0.05,
+            "chance_expectation": 6.5,
+            "mean_retention": 0.5868676671959162
+          }
+        }
+      }
+    },
+    "mlp": {
+      "n_cells": 130,
+      "curve": {
+        "total_cells": 130,
+        "anchor_n": 4000,
+        "win_count_anchor": 22,
+        "mean_retention_anchor": 0.40450342596818534,
+        "by_n": {
+          "100000": {
+            "win_count": 27,
+            "newly_winning": 10,
+            "dropped_out": 5,
+            "net_win_vs_anchor": 5,
+            "mean_paired_delta": 0.005573987538989218,
+            "mean_paired_delta_ci": [
+              -0.017123101131519526,
+              0.028140414958190307
+            ],
+            "cells_delta_pos_sig": 34,
+            "cells_delta_neg_sig": 37,
+            "bh_survivors_total": 29,
+            "bh_newly_winning_survivors": 6,
+            "bh_q": 0.05,
+            "chance_expectation": 6.5,
+            "mean_retention": 0.38821858460778436
+          }
+        }
+      }
+    },
+    "direct_hop": {
+      "n_cells": 130,
+      "curve": {
+        "total_cells": 130,
+        "anchor_n": 4000,
+        "win_count_anchor": 42,
+        "mean_retention_anchor": 0.5711444520134522,
+        "by_n": {
+          "10000": {
+            "win_count": 58,
+            "newly_winning": 21,
+            "dropped_out": 5,
+            "net_win_vs_anchor": 16,
+            "mean_paired_delta": 0.010034386108474215,
+            "mean_paired_delta_ci": [
+              -0.002336990181986778,
+              0.022466533656609496
+            ],
+            "cells_delta_pos_sig": 65,
+            "cells_delta_neg_sig": 23,
+            "bh_survivors_total": 65,
+            "bh_newly_winning_survivors": 21,
+            "bh_q": 0.05,
+            "chance_expectation": 6.5,
+            "mean_retention": 0.5890499840229098
+          },
+          "25000": {
+            "win_count": 61,
+            "newly_winning": 20,
+            "dropped_out": 1,
+            "net_win_vs_anchor": 19,
+            "mean_paired_delta": 0.012556775131901066,
+            "mean_paired_delta_ci": [
+              -0.0011629828189248825,
+              0.024260140465798535
+            ],
+            "cells_delta_pos_sig": 58,
+            "cells_delta_neg_sig": 27,
+            "bh_survivors_total": 56,
+            "bh_newly_winning_survivors": 19,
+            "bh_q": 0.05,
+            "chance_expectation": 6.5,
+            "mean_retention": 0.5951282024189645
+          },
+          "50000": {
+            "win_count": 57,
+            "newly_winning": 18,
+            "dropped_out": 3,
+            "net_win_vs_anchor": 15,
+            "mean_paired_delta": 0.010560097791695621,
+            "mean_paired_delta_ci": [
+              -0.002300196740640748,
+              0.023860679866553183
+            ],
+            "cells_delta_pos_sig": 60,
+            "cells_delta_neg_sig": 27,
+            "bh_survivors_total": 60,
+            "bh_newly_winning_survivors": 17,
+            "bh_q": 0.05,
+            "chance_expectation": 6.5,
+            "mean_retention": 0.5874519128016319
+          },
+          "100000": {
+            "win_count": 58,
+            "newly_winning": 17,
+            "dropped_out": 1,
+            "net_win_vs_anchor": 16,
+            "mean_paired_delta": 0.013049258996888984,
+            "mean_paired_delta_ci": [
+              0.0006427123139470852,
+              0.025318423949728528
+            ],
+            "cells_delta_pos_sig": 60,
+            "cells_delta_neg_sig": 21,
+            "bh_survivors_total": 60,
+            "bh_newly_winning_survivors": 17,
+            "bh_q": 0.05,
+            "chance_expectation": 6.5,
+            "mean_retention": 0.595809882772011
+          }
+        }
+      }
+    }
+  }
+}

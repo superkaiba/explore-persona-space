@@ -1,0 +1,40 @@
+{
+  "n_conversations": 2000,
+  "smoke": false,
+  "asserts": [
+    {
+      "assert": "a1_tokenizer_identity",
+      "status": "PASS",
+      "checked": {
+        "chat": 50,
+        "naturalistic": 50
+      }
+    },
+    {
+      "assert": "a2_span_integrity",
+      "status": "PASS",
+      "n_rendered": 4000
+    },
+    {
+      "assert": "a3_causal_slot_equality",
+      "status": "SKIPPED",
+      "note": "requires model forwards; the extract script owns a3 (signature stub in this module)."
+    },
+    {
+      "assert": "a4_bpe_boundary",
+      "status": "PASS",
+      "rest_of_span_mismatch_rate": 0.030125,
+      "first_token_mismatch_rate_diagnostic": 0.990625,
+      "mismatches": 241,
+      "total": 8000
+    },
+    {
+      "assert": "a5_passb_keys",
+      "status": "SKIPPED"
+    },
+    {
+      "assert": "a6_opener_sanity",
+      "status": "SKIPPED"
+    }
+  ]
+}

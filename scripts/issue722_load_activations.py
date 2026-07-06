@@ -56,6 +56,40 @@ EXPECTED_CELLS_PER_BEHAVIOR_LAYER = 480  # 16 source_cids × 30 target_cids (ver
 _VEC_KEYS = ("v0", "v_plus", "c_C", "c_C_postft")
 _META_KEYS = ("behavior", "source_cid", "target_cid", "layer")
 
+# #811: answer-side summary → the (v0, v_plus) .npz keys carrying it. "mean" is the
+# #667/#722 store's mean-over-response (v0/v_plus); "turn_nl" is #811's
+# turn-boundary single-position read (v0_turn_nl/v_plus_turn_nl); "maxp" is #810's
+# crowned per-dimension content-token max (v0_maxp/v_plus_maxp — the #811
+# maxp-winner round, present only in its re-extracted store). The CONTEXT keys
+# (c_C/c_C_postft) are summary-INDEPENDENT (answer-side change only), so the loader
+# reads the SAME c_C/c_C_postft for every summary — the manipulated variable is
+# answer-side.
+_SUMMARY_ANSWER_KEYS = {
+    "mean": ("v0", "v_plus"),
+    "turn_nl": ("v0_turn_nl", "v_plus_turn_nl"),
+    "maxp": ("v0_maxp", "v_plus_maxp"),
+    # #811 pre-user-boundary-summary round (plan §4.2): the nine boundary/header
+    # arms, present only in that round's re-extracted store. Arms 8/9
+    # (*_alllayer) are layer-INDEPENDENT values duplicated into every per-layer
+    # npz — the loader keys their cells by the INPUT layer (the layer match is
+    # broken by construction; stated in every arm-8/9 read).
+    "pre_user_imstart": ("v0_pre_user_imstart", "v_plus_pre_user_imstart"),
+    "pre_user_user": ("v0_pre_user_user", "v_plus_pre_user_user"),
+    "pre_user_nl": ("v0_pre_user_nl", "v_plus_pre_user_nl"),
+    "pre_user_mean3": ("v0_pre_user_mean3", "v_plus_pre_user_mean3"),
+    "pre_user_max3": ("v0_pre_user_max3", "v_plus_pre_user_max3"),
+    "ans_mean_incl_hdr": ("v0_ans_mean_incl_hdr", "v_plus_ans_mean_incl_hdr"),
+    "ans_max_incl_hdr": ("v0_ans_max_incl_hdr", "v_plus_ans_max_incl_hdr"),
+    "ans_mean_incl_hdr_alllayer": (
+        "v0_ans_mean_incl_hdr_alllayer",
+        "v_plus_ans_mean_incl_hdr_alllayer",
+    ),
+    "ans_max_incl_hdr_alllayer": (
+        "v0_ans_max_incl_hdr_alllayer",
+        "v_plus_ans_max_incl_hdr_alllayer",
+    ),
+}
+
 
 @dataclass
 class CellRecord:
@@ -159,6 +193,7 @@ class _Streamer:
 
 def list_store_layout(
     behaviors: tuple[str, ...] = STORE_BEHAVIORS,
+    prefix: str = STORE_PREFIX,
 ) -> dict[str, dict[str, list[str]]]:
     """Enumerate ``{behavior: {source_cid_dir: [target_file_stem, ...]}}`` from HF.
 
@@ -167,7 +202,14 @@ def list_store_layout(
     ``behaviors`` (fewer tree calls = fewer transient-504 chances). Returns the
     directory map so the loader knows exactly which files to stream without a
     fragile filename regex.
+
+    ``prefix`` (additive, #811): the analysis-tensor prefix to enumerate under —
+    defaults to the #667/#722 ``STORE_PREFIX``; #811 passes its own
+    ``issue811_turn_nl_mapchange/analysis_tensors`` so a ``turn_nl`` run reads its
+    re-extracted store rather than the mean-only #667 store. Pair with a
+    ``_Streamer(prefix=...)`` at the SAME prefix in :func:`load_cells`.
     """
+    prefix = prefix.rstrip("/")
     import time as _time
 
     from huggingface_hub import HfApi
@@ -197,7 +239,7 @@ def list_store_layout(
 
     layout: dict[str, dict[str, list[str]]] = {}
     for beh in behaviors:
-        beh_path = f"{STORE_PREFIX}/{beh}"
+        beh_path = f"{prefix}/{beh}"
         src_dirs = [
             t.path for t in _tree(beh_path) if t.path != beh_path and not t.path.endswith(".npz")
         ]
@@ -239,22 +281,28 @@ def list_store_layout_local(
     return layout
 
 
-def _blob_to_record(blob: dict, rel: str, beh: str, li: int) -> CellRecord:
+def _blob_to_record(blob: dict, rel: str, beh: str, li: int, summary: str = "mean") -> CellRecord:
     """Validate one loaded ``.npz`` blob and build its CellRecord (fail loud on miss).
 
-    Reads each file's OWN ``(3584,)`` baked-layer ``c_C`` / ``c_C_postft`` / ``v0``
-    / ``v_plus`` and re-reads ``behavior`` / ``source_cid`` / ``target_cid`` /
-    ``layer`` from inside the file (robust to filename drift). A missing key or a
-    shape / layer / behavior mismatch raises (the schema is verified — a miss is a
-    wrong file or stale mirror).
+    Reads each file's OWN ``(3584,)`` baked-layer ``c_C`` / ``c_C_postft`` and the
+    answer-side vectors for ``summary`` (``mean`` → ``v0``/``v_plus``; ``turn_nl``
+    → ``v0_turn_nl``/``v_plus_turn_nl``, #811), and re-reads ``behavior`` /
+    ``source_cid`` / ``target_cid`` / ``layer`` from inside the file (robust to
+    filename drift). The CONTEXT keys are summary-independent (the manipulated
+    variable is answer-side only). A missing key or a shape / layer / behavior
+    mismatch raises (the schema is verified — a miss is a wrong file, a stale
+    mirror, or a ``turn_nl`` read against a mean-only store).
     """
-    for k in (*_VEC_KEYS, *_META_KEYS):
+    v0_key, vplus_key = _SUMMARY_ANSWER_KEYS[summary]
+    # Context keys (c_C/c_C_postft) + meta are always required; the answer keys are
+    # summary-specific (v0/v_plus for mean, v0_turn_nl/v_plus_turn_nl for turn_nl).
+    for k in ("c_C", "c_C_postft", v0_key, vplus_key, *_META_KEYS):
         if k not in blob:
-            raise KeyError(f"{rel} missing key {k!r}; keys={sorted(blob)}")
+            raise KeyError(f"{rel} missing key {k!r} (summary={summary!r}); keys={sorted(blob)}")
     c0 = np.asarray(blob["c_C"], dtype=np.float64)
     cplus = np.asarray(blob["c_C_postft"], dtype=np.float64)
-    v0 = np.asarray(blob["v0"], dtype=np.float64)
-    vplus = np.asarray(blob["v_plus"], dtype=np.float64)
+    v0 = np.asarray(blob[v0_key], dtype=np.float64)
+    vplus = np.asarray(blob[vplus_key], dtype=np.float64)
     for name, arr in (("c_C", c0), ("c_C_postft", cplus), ("v0", v0), ("v_plus", vplus)):
         assert arr.shape == (HIDDEN,), f"{rel} {name} shape {arr.shape} != ({HIDDEN},)"
     file_layer = int(np.asarray(blob["layer"]).item())
@@ -303,6 +351,7 @@ def load_cells(
     streamer: _Streamer | None = None,
     strict_counts: bool = True,
     layout: dict[str, dict[str, list[str]]] | None = None,
+    summary: str = "mean",
 ) -> dict[tuple[str, int], list[CellRecord]]:
     """Load per-(behavior, layer) cell records from the #667 store.
 
@@ -334,6 +383,15 @@ def load_cells(
     ``layout`` (additive, #667 recovery): pass a pre-built directory map (e.g. from
     :func:`list_store_layout_local`) to SKIP the HF tree walk (which hangs on this
     large repo). Default ``None`` → the HF :func:`list_store_layout` path, UNCHANGED.
+
+    ``summary`` (additive, #811): which answer-side summary the loaded
+    ``v0``/``v_plus`` fields carry — ``"mean"`` (DEFAULT, the #667/#722
+    mean-over-response) or ``"turn_nl"`` (the turn-boundary single-position read
+    ``v0_turn_nl``/``v_plus_turn_nl``, present only in #811's re-extracted store).
+    The context fields (``c0``/``cplus`` = ``c_C``/``c_C_postft``) are IDENTICAL
+    across summaries — the manipulated variable is answer-side only, so a
+    ``summary="turn_nl"`` load reads the SAME c_C the ``summary="mean"`` load does.
+    A ``turn_nl`` load against a mean-only store fails loud (missing key).
     """
     own = streamer is None
     streamer = streamer or _Streamer()
@@ -360,7 +418,9 @@ def load_cells(
                         continue  # cell missing a swept layer — skip (kept loud via final count)
                     for li in layers:
                         rel = f"{beh}/{layer_files[li]}"
-                        out[(beh, li)].append(_blob_to_record(streamer.load(rel), rel, beh, li))
+                        out[(beh, li)].append(
+                            _blob_to_record(streamer.load(rel), rel, beh, li, summary)
+                        )
                     n_cells += 1
                     n_src += 1
                 if max_cells is not None and n_cells >= max_cells:

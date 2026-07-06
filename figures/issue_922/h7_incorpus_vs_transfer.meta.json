@@ -1,0 +1,3504 @@
+{
+  "commit": "7cb1e12430",
+  "created": "2026-07-03T23:46:32Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": -0.010577025736128775,
+      "error": 0.012856801763495743,
+      "series": "held-out LMSYS (in-corpus, n=500)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": -0.0035182690351371975,
+      "error": 0.01365988189920167,
+      "series": "held-out LMSYS (in-corpus, n=500)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": -0.0002322363427393732,
+      "error": 0.011762398897938085,
+      "series": "held-out LMSYS (in-corpus, n=500)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.0028425038109385894,
+      "error": 0.01195790821793371,
+      "series": "held-out LMSYS (in-corpus, n=500)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.019215311876283694,
+      "error": 0.013780160750113853,
+      "series": "held-out LMSYS (in-corpus, n=500)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 4.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.02747658285821268,
+      "error": 0.014564367600594978,
+      "series": "held-out LMSYS (in-corpus, n=500)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.23891339108296153,
+      "error": 0.008574239201024514,
+      "series": "transfer: all 432 persona-condition windows",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.20813003029346605,
+      "error": 0.007915560056237697,
+      "series": "transfer: all 432 persona-condition windows",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.15991843657361138,
+      "error": 0.004692733151184958,
+      "series": "transfer: all 432 persona-condition windows",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.14294198761625146,
+      "error": 0.004668759421393678,
+      "series": "transfer: all 432 persona-condition windows",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.1540475361937381,
+      "error": 0.0051620526558879,
+      "series": "transfer: all 432 persona-condition windows",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.1531445173960593,
+      "error": 0.005711419384439337,
+      "series": "transfer: all 432 persona-condition windows",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 0.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.2587907091817922,
+      "error": 0.01813271390403516,
+      "series": "transfer: evil-only 144 (exact question provenance)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.22634645530747044,
+      "error": 0.016780228518311763,
+      "series": "transfer: evil-only 144 (exact question provenance)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 2.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.13603599783447054,
+      "error": 0.010499471528196927,
+      "series": "transfer: evil-only 144 (exact question provenance)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 3.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.1247881996548838,
+      "error": 0.010867444875960551,
+      "series": "transfer: evil-only 144 (exact question provenance)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 4.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.14913040389203364,
+      "error": 0.008127855171915138,
+      "series": "transfer: evil-only 144 (exact question provenance)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 5.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.15592361893504858,
+      "error": 0.007448017758886441,
+      "series": "transfer: evil-only 144 (exact question provenance)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": -0.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": -0.010577025736128775,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": -0.0035182690351371975,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": -0.0002322363427393732,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.0028425038109385894,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.019215311876283694,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.02747658285821268,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": -0.023619957219965036,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": -0.01751916607371389,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": -0.012044444552211651,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": -0.00929040089198601,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.005299945832388355,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.012660753401669738,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.0020936463070264505,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.00980059772468945,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.011480353243664521,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.014625415543881411,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.03286026733261606,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.8,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.04178948860285969,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.23891339108296153,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.20813003029346605,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.15991843657361138,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.14294198761625146,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.1540475361937381,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.1531445173960593,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.23024788801331952,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.20011467812248696,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.15518043879106969,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.13838277501269694,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.14914691366483804,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.14784279612843723,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.24739636641536855,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.21594579823496235,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.1645659050934396,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.1477202938554843,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.15947101897661384,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.1592656348973159,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.2587907091817922,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.22634645530747044,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.13603599783447054,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 3.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.1247881996548838,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 4.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.14913040389203364,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 5.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.15592361893504858,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.24016558827263199,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.2088741904642019,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.12551812870790147,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.11377809417382297,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.14089974004827027,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.14842954094832142,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.2764310160807023,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.2424346475008254,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.14651707176429532,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.13551298392574407,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.15715545039210055,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.2,
+      "horizon-mean rollout-skill delta\n(rolled minus direct, k=1..32)": 0.1633255764660943,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.17959389090538025,
+      "rolled-dynamics horizon-mean skill": 0.4010467529296875,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.16870719194412231,
+      "rolled-dynamics horizon-mean skill": 0.38337957859039307,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2323884665966034,
+      "rolled-dynamics horizon-mean skill": 0.4644085168838501,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.21181978285312653,
+      "rolled-dynamics horizon-mean skill": 0.4216516613960266,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.201425701379776,
+      "rolled-dynamics horizon-mean skill": 0.44272297620773315,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2377261072397232,
+      "rolled-dynamics horizon-mean skill": 0.45874202251434326,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.19908398389816284,
+      "rolled-dynamics horizon-mean skill": 0.4358712434768677,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.20580212771892548,
+      "rolled-dynamics horizon-mean skill": 0.4146668314933777,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.19286999106407166,
+      "rolled-dynamics horizon-mean skill": 0.4243517518043518,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.15224245190620422,
+      "rolled-dynamics horizon-mean skill": 0.35616984963417053,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.22338952124118805,
+      "rolled-dynamics horizon-mean skill": 0.43482720851898193,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.12862040102481842,
+      "rolled-dynamics horizon-mean skill": 0.36147361993789673,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.20942644774913788,
+      "rolled-dynamics horizon-mean skill": 0.4358220398426056,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.23110978305339813,
+      "rolled-dynamics horizon-mean skill": 0.43340158462524414,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.19108794629573822,
+      "rolled-dynamics horizon-mean skill": 0.4408557415008545,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.17438116669654846,
+      "rolled-dynamics horizon-mean skill": 0.396617591381073,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.20057037472724915,
+      "rolled-dynamics horizon-mean skill": 0.3953534960746765,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24050824344158173,
+      "rolled-dynamics horizon-mean skill": 0.39252033829689026,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.23169922828674316,
+      "rolled-dynamics horizon-mean skill": 0.44887426495552063,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.19756563007831573,
+      "rolled-dynamics horizon-mean skill": 0.36693334579467773,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.14779238402843475,
+      "rolled-dynamics horizon-mean skill": 0.3628097176551819,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.27200257778167725,
+      "rolled-dynamics horizon-mean skill": 0.4456024765968323,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24592041969299316,
+      "rolled-dynamics horizon-mean skill": 0.43961501121520996,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.23655784130096436,
+      "rolled-dynamics horizon-mean skill": 0.414516806602478,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1890997588634491,
+      "rolled-dynamics horizon-mean skill": 0.39413121342658997,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24791094660758972,
+      "rolled-dynamics horizon-mean skill": 0.40902018547058105,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.25724679231643677,
+      "rolled-dynamics horizon-mean skill": 0.41508692502975464,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1282714307308197,
+      "rolled-dynamics horizon-mean skill": 0.3480065166950226,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.25955796241760254,
+      "rolled-dynamics horizon-mean skill": 0.42803090810775757,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2278800904750824,
+      "rolled-dynamics horizon-mean skill": 0.38732022047042847,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.27401915192604065,
+      "rolled-dynamics horizon-mean skill": 0.4574217200279236,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2530989646911621,
+      "rolled-dynamics horizon-mean skill": 0.450266033411026,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.17852549254894257,
+      "rolled-dynamics horizon-mean skill": 0.3718070387840271,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2231697142124176,
+      "rolled-dynamics horizon-mean skill": 0.3836838901042938,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.16932010650634766,
+      "rolled-dynamics horizon-mean skill": 0.40289804339408875,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.21840298175811768,
+      "rolled-dynamics horizon-mean skill": 0.3778719902038574,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1431436836719513,
+      "rolled-dynamics horizon-mean skill": 0.3592562675476074,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2716251611709595,
+      "rolled-dynamics horizon-mean skill": 0.4488186240196228,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.22685010731220245,
+      "rolled-dynamics horizon-mean skill": 0.4153645932674408,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.22004489600658417,
+      "rolled-dynamics horizon-mean skill": 0.38281577825546265,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.17950883507728577,
+      "rolled-dynamics horizon-mean skill": 0.4092479944229126,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.23774416744709015,
+      "rolled-dynamics horizon-mean skill": 0.403830349445343,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24763664603233337,
+      "rolled-dynamics horizon-mean skill": 0.4321066737174988,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.09222974628210068,
+      "rolled-dynamics horizon-mean skill": 0.3417051434516907,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.21396702527999878,
+      "rolled-dynamics horizon-mean skill": 0.4152507781982422,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.25409120321273804,
+      "rolled-dynamics horizon-mean skill": 0.43466225266456604,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2518676817417145,
+      "rolled-dynamics horizon-mean skill": 0.44420865178108215,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24363583326339722,
+      "rolled-dynamics horizon-mean skill": 0.4321560859680176,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2203124761581421,
+      "rolled-dynamics horizon-mean skill": 0.3786327838897705,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2507893741130829,
+      "rolled-dynamics horizon-mean skill": 0.3468128442764282,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2634143829345703,
+      "rolled-dynamics horizon-mean skill": 0.4218052625656128,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2873292565345764,
+      "rolled-dynamics horizon-mean skill": 0.4141872823238373,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.12504084408283234,
+      "rolled-dynamics horizon-mean skill": 0.31396350264549255,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2693118155002594,
+      "rolled-dynamics horizon-mean skill": 0.4199051856994629,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2909490466117859,
+      "rolled-dynamics horizon-mean skill": 0.41764768958091736,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2615126669406891,
+      "rolled-dynamics horizon-mean skill": 0.37332820892333984,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2267422080039978,
+      "rolled-dynamics horizon-mean skill": 0.3883446455001831,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.29942014813423157,
+      "rolled-dynamics horizon-mean skill": 0.43916621804237366,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2840585708618164,
+      "rolled-dynamics horizon-mean skill": 0.38903748989105225,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.18859800696372986,
+      "rolled-dynamics horizon-mean skill": 0.413105845451355,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2335975170135498,
+      "rolled-dynamics horizon-mean skill": 0.38775691390037537,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3017241656780243,
+      "rolled-dynamics horizon-mean skill": 0.4224703907966614,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.32064294815063477,
+      "rolled-dynamics horizon-mean skill": 0.46316105127334595,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.27322983741760254,
+      "rolled-dynamics horizon-mean skill": 0.41780561208724976,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.23327554762363434,
+      "rolled-dynamics horizon-mean skill": 0.3531901240348816,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2290787249803543,
+      "rolled-dynamics horizon-mean skill": 0.3452090322971344,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.25216031074523926,
+      "rolled-dynamics horizon-mean skill": 0.41517752408981323,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.29755622148513794,
+      "rolled-dynamics horizon-mean skill": 0.44630664587020874,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1437436044216156,
+      "rolled-dynamics horizon-mean skill": 0.33867812156677246,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2626388669013977,
+      "rolled-dynamics horizon-mean skill": 0.41013872623443604,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3027040958404541,
+      "rolled-dynamics horizon-mean skill": 0.4568938910961151,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.27557647228240967,
+      "rolled-dynamics horizon-mean skill": 0.3828067481517792,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2857181429862976,
+      "rolled-dynamics horizon-mean skill": 0.3980919122695923,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.29991915822029114,
+      "rolled-dynamics horizon-mean skill": 0.4201676845550537,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.25142550468444824,
+      "rolled-dynamics horizon-mean skill": 0.4120897352695465,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2169952392578125,
+      "rolled-dynamics horizon-mean skill": 0.3694697320461273,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2703188955783844,
+      "rolled-dynamics horizon-mean skill": 0.4145488142967224,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3245859146118164,
+      "rolled-dynamics horizon-mean skill": 0.44012027978897095,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3125864267349243,
+      "rolled-dynamics horizon-mean skill": 0.45715799927711487,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.28545522689819336,
+      "rolled-dynamics horizon-mean skill": 0.42245516180992126,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.18081505596637726,
+      "rolled-dynamics horizon-mean skill": 0.3492557406425476,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.20771481096744537,
+      "rolled-dynamics horizon-mean skill": 0.33732348680496216,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2644026279449463,
+      "rolled-dynamics horizon-mean skill": 0.4216712713241577,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2554749548435211,
+      "rolled-dynamics horizon-mean skill": 0.4137665629386902,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.16815905272960663,
+      "rolled-dynamics horizon-mean skill": 0.3298310935497284,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2568245828151703,
+      "rolled-dynamics horizon-mean skill": 0.40604960918426514,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2688641846179962,
+      "rolled-dynamics horizon-mean skill": 0.439250648021698,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2790641784667969,
+      "rolled-dynamics horizon-mean skill": 0.40006205439567566,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2569564878940582,
+      "rolled-dynamics horizon-mean skill": 0.410697340965271,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.23637589812278748,
+      "rolled-dynamics horizon-mean skill": 0.3886023163795471,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.27194738388061523,
+      "rolled-dynamics horizon-mean skill": 0.4331408739089966,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.19902001321315765,
+      "rolled-dynamics horizon-mean skill": 0.37036359310150146,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2577861547470093,
+      "rolled-dynamics horizon-mean skill": 0.4037415087223053,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2989156246185303,
+      "rolled-dynamics horizon-mean skill": 0.4227807819843292,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.31278014183044434,
+      "rolled-dynamics horizon-mean skill": 0.45222583413124084,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.28448206186294556,
+      "rolled-dynamics horizon-mean skill": 0.39168810844421387,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.22706057131290436,
+      "rolled-dynamics horizon-mean skill": 0.3704228401184082,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1944892704486847,
+      "rolled-dynamics horizon-mean skill": 0.3228513300418854,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.26992982625961304,
+      "rolled-dynamics horizon-mean skill": 0.42236214876174927,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2639997899532318,
+      "rolled-dynamics horizon-mean skill": 0.40521228313446045,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.10829286277294159,
+      "rolled-dynamics horizon-mean skill": 0.3043348789215088,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.30948102474212646,
+      "rolled-dynamics horizon-mean skill": 0.41582006216049194,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2683975100517273,
+      "rolled-dynamics horizon-mean skill": 0.4273211359977722,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2881186604499817,
+      "rolled-dynamics horizon-mean skill": 0.3726637661457062,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2605191469192505,
+      "rolled-dynamics horizon-mean skill": 0.38311946392059326,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.20975808799266815,
+      "rolled-dynamics horizon-mean skill": 0.34097039699554443,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2715946435928345,
+      "rolled-dynamics horizon-mean skill": 0.4156927466392517,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1838313639163971,
+      "rolled-dynamics horizon-mean skill": 0.3548257350921631,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.26343128085136414,
+      "rolled-dynamics horizon-mean skill": 0.39635735750198364,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3075334429740906,
+      "rolled-dynamics horizon-mean skill": 0.427914023399353,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.29551392793655396,
+      "rolled-dynamics horizon-mean skill": 0.43258213996887207,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24341784417629242,
+      "rolled-dynamics horizon-mean skill": 0.3900063633918762,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.19746139645576477,
+      "rolled-dynamics horizon-mean skill": 0.3612210154533386,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.14715245366096497,
+      "rolled-dynamics horizon-mean skill": 0.3176751136779785,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2592662572860718,
+      "rolled-dynamics horizon-mean skill": 0.4355130195617676,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2724860608577728,
+      "rolled-dynamics horizon-mean skill": 0.41202837228775024,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.21379217505455017,
+      "rolled-dynamics horizon-mean skill": 0.3741300106048584,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2702375650405884,
+      "rolled-dynamics horizon-mean skill": 0.410793662071228,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.23798225820064545,
+      "rolled-dynamics horizon-mean skill": 0.4134344458580017,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2693541646003723,
+      "rolled-dynamics horizon-mean skill": 0.3801748752593994,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.25475960969924927,
+      "rolled-dynamics horizon-mean skill": 0.38734322786331177,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.17560414969921112,
+      "rolled-dynamics horizon-mean skill": 0.34046268463134766,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24570229649543762,
+      "rolled-dynamics horizon-mean skill": 0.4142584502696991,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.18391451239585876,
+      "rolled-dynamics horizon-mean skill": 0.3893551826477051,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24526146054267883,
+      "rolled-dynamics horizon-mean skill": 0.3671782314777374,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.29298681020736694,
+      "rolled-dynamics horizon-mean skill": 0.4330157935619354,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.26487159729003906,
+      "rolled-dynamics horizon-mean skill": 0.42851319909095764,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1953333616256714,
+      "rolled-dynamics horizon-mean skill": 0.36782461404800415,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2726204991340637,
+      "rolled-dynamics horizon-mean skill": 0.3867816627025604,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1922936588525772,
+      "rolled-dynamics horizon-mean skill": 0.36526429653167725,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2831158936023712,
+      "rolled-dynamics horizon-mean skill": 0.41751497983932495,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2554388642311096,
+      "rolled-dynamics horizon-mean skill": 0.390264630317688,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.28493404388427734,
+      "rolled-dynamics horizon-mean skill": 0.40105170011520386,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2922343313694,
+      "rolled-dynamics horizon-mean skill": 0.40856266021728516,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.33374911546707153,
+      "rolled-dynamics horizon-mean skill": 0.4302976727485657,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.30489784479141235,
+      "rolled-dynamics horizon-mean skill": 0.3641202449798584,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2847505807876587,
+      "rolled-dynamics horizon-mean skill": 0.4098206162452698,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.22786255180835724,
+      "rolled-dynamics horizon-mean skill": 0.3528718650341034,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2858127951622009,
+      "rolled-dynamics horizon-mean skill": 0.4180474877357483,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.30156955122947693,
+      "rolled-dynamics horizon-mean skill": 0.42099514603614807,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2982950806617737,
+      "rolled-dynamics horizon-mean skill": 0.41140320897102356,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3184167444705963,
+      "rolled-dynamics horizon-mean skill": 0.4139423966407776,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.33876749873161316,
+      "rolled-dynamics horizon-mean skill": 0.45052772760391235,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2823339104652405,
+      "rolled-dynamics horizon-mean skill": 0.3887300193309784,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.25451168417930603,
+      "rolled-dynamics horizon-mean skill": 0.4227686822414398,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2747918367385864,
+      "rolled-dynamics horizon-mean skill": 0.4058743119239807,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2621321976184845,
+      "rolled-dynamics horizon-mean skill": 0.3906390964984894,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2608056366443634,
+      "rolled-dynamics horizon-mean skill": 0.4178159534931183,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2469165325164795,
+      "rolled-dynamics horizon-mean skill": 0.42925751209259033,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24787038564682007,
+      "rolled-dynamics horizon-mean skill": 0.37688612937927246,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.28495633602142334,
+      "rolled-dynamics horizon-mean skill": 0.396110862493515,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3109172284603119,
+      "rolled-dynamics horizon-mean skill": 0.4236757755279541,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2882831394672394,
+      "rolled-dynamics horizon-mean skill": 0.43731436133384705,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2522068917751312,
+      "rolled-dynamics horizon-mean skill": 0.362659215927124,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.28173935413360596,
+      "rolled-dynamics horizon-mean skill": 0.43091756105422974,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3164502680301666,
+      "rolled-dynamics horizon-mean skill": 0.41322964429855347,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3277737498283386,
+      "rolled-dynamics horizon-mean skill": 0.4552844166755676,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24619683623313904,
+      "rolled-dynamics horizon-mean skill": 0.39504942297935486,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2679417133331299,
+      "rolled-dynamics horizon-mean skill": 0.40760552883148193,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.22338509559631348,
+      "rolled-dynamics horizon-mean skill": 0.4071894586086273,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2853934168815613,
+      "rolled-dynamics horizon-mean skill": 0.44525033235549927,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.36136800050735474,
+      "rolled-dynamics horizon-mean skill": 0.4636143147945404,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.33121538162231445,
+      "rolled-dynamics horizon-mean skill": 0.4591381549835205,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3110380172729492,
+      "rolled-dynamics horizon-mean skill": 0.4451679587364197,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.27700096368789673,
+      "rolled-dynamics horizon-mean skill": 0.4392160177230835,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.30954545736312866,
+      "rolled-dynamics horizon-mean skill": 0.4327184855937958,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3805021643638611,
+      "rolled-dynamics horizon-mean skill": 0.4819326400756836,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24653908610343933,
+      "rolled-dynamics horizon-mean skill": 0.370767205953598,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2928716540336609,
+      "rolled-dynamics horizon-mean skill": 0.4139013886451721,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.301596999168396,
+      "rolled-dynamics horizon-mean skill": 0.42586982250213623,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.319389671087265,
+      "rolled-dynamics horizon-mean skill": 0.4354083240032196,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.36968719959259033,
+      "rolled-dynamics horizon-mean skill": 0.4577256441116333,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3662121891975403,
+      "rolled-dynamics horizon-mean skill": 0.48750659823417664,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2982404828071594,
+      "rolled-dynamics horizon-mean skill": 0.4477957487106323,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.31046760082244873,
+      "rolled-dynamics horizon-mean skill": 0.4339594841003418,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2568618953227997,
+      "rolled-dynamics horizon-mean skill": 0.4143792390823364,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.25810274481773376,
+      "rolled-dynamics horizon-mean skill": 0.44201067090034485,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.33238041400909424,
+      "rolled-dynamics horizon-mean skill": 0.46580779552459717,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.344015896320343,
+      "rolled-dynamics horizon-mean skill": 0.48290687799453735,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2820957899093628,
+      "rolled-dynamics horizon-mean skill": 0.4444194436073303,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2989771366119385,
+      "rolled-dynamics horizon-mean skill": 0.45644962787628174,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2995557188987732,
+      "rolled-dynamics horizon-mean skill": 0.43239206075668335,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3169301748275757,
+      "rolled-dynamics horizon-mean skill": 0.43967556953430176,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24479123950004578,
+      "rolled-dynamics horizon-mean skill": 0.3737078011035919,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2508929967880249,
+      "rolled-dynamics horizon-mean skill": 0.41271865367889404,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2591620087623596,
+      "rolled-dynamics horizon-mean skill": 0.41645893454551697,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3325525224208832,
+      "rolled-dynamics horizon-mean skill": 0.44163089990615845,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.35614436864852905,
+      "rolled-dynamics horizon-mean skill": 0.45383864641189575,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.39945167303085327,
+      "rolled-dynamics horizon-mean skill": 0.5111780762672424,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.29012101888656616,
+      "rolled-dynamics horizon-mean skill": 0.475779265165329,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.36654365062713623,
+      "rolled-dynamics horizon-mean skill": 0.4647287428379059,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.34246334433555603,
+      "rolled-dynamics horizon-mean skill": 0.4560873508453369,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2301846444606781,
+      "rolled-dynamics horizon-mean skill": 0.41189879179000854,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.32102295756340027,
+      "rolled-dynamics horizon-mean skill": 0.46616727113723755,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.33097243309020996,
+      "rolled-dynamics horizon-mean skill": 0.45503121614456177,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2952888607978821,
+      "rolled-dynamics horizon-mean skill": 0.4494296610355377,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.33668816089630127,
+      "rolled-dynamics horizon-mean skill": 0.4889094829559326,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3858259320259094,
+      "rolled-dynamics horizon-mean skill": 0.5002456903457642,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3182423412799835,
+      "rolled-dynamics horizon-mean skill": 0.45074161887168884,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.29926177859306335,
+      "rolled-dynamics horizon-mean skill": 0.42732059955596924,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3194478750228882,
+      "rolled-dynamics horizon-mean skill": 0.46919965744018555,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.33850687742233276,
+      "rolled-dynamics horizon-mean skill": 0.48199766874313354,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3135073184967041,
+      "rolled-dynamics horizon-mean skill": 0.42171454429626465,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.36345210671424866,
+      "rolled-dynamics horizon-mean skill": 0.45532429218292236,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3678477108478546,
+      "rolled-dynamics horizon-mean skill": 0.4822615385055542,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.29678767919540405,
+      "rolled-dynamics horizon-mean skill": 0.47095727920532227,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3078029155731201,
+      "rolled-dynamics horizon-mean skill": 0.42675477266311646,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.31238746643066406,
+      "rolled-dynamics horizon-mean skill": 0.44804999232292175,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2732442617416382,
+      "rolled-dynamics horizon-mean skill": 0.44882214069366455,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3266606032848358,
+      "rolled-dynamics horizon-mean skill": 0.4803924560546875,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3182196617126465,
+      "rolled-dynamics horizon-mean skill": 0.46159693598747253,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2721327841281891,
+      "rolled-dynamics horizon-mean skill": 0.44858187437057495,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.31926679611206055,
+      "rolled-dynamics horizon-mean skill": 0.49787160754203796,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.34108173847198486,
+      "rolled-dynamics horizon-mean skill": 0.4907764494419098,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2981145977973938,
+      "rolled-dynamics horizon-mean skill": 0.45620810985565186,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.21363888680934906,
+      "rolled-dynamics horizon-mean skill": 0.38830235600471497,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3025953769683838,
+      "rolled-dynamics horizon-mean skill": 0.4668723940849304,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.29225996136665344,
+      "rolled-dynamics horizon-mean skill": 0.4796637296676636,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3190923035144806,
+      "rolled-dynamics horizon-mean skill": 0.44491326808929443,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3380582928657532,
+      "rolled-dynamics horizon-mean skill": 0.4581102132797241,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.37574082612991333,
+      "rolled-dynamics horizon-mean skill": 0.4869013726711273,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.28317898511886597,
+      "rolled-dynamics horizon-mean skill": 0.46300143003463745,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2994687557220459,
+      "rolled-dynamics horizon-mean skill": 0.4375413656234741,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.32187238335609436,
+      "rolled-dynamics horizon-mean skill": 0.4619443714618683,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2922150194644928,
+      "rolled-dynamics horizon-mean skill": 0.4638853669166565,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3268941342830658,
+      "rolled-dynamics horizon-mean skill": 0.4820820689201355,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3206343352794647,
+      "rolled-dynamics horizon-mean skill": 0.4657973647117615,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.28416645526885986,
+      "rolled-dynamics horizon-mean skill": 0.446721613407135,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.32410794496536255,
+      "rolled-dynamics horizon-mean skill": 0.4933641254901886,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3396947979927063,
+      "rolled-dynamics horizon-mean skill": 0.4910808801651001,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.30080997943878174,
+      "rolled-dynamics horizon-mean skill": 0.4511656165122986,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.19192564487457275,
+      "rolled-dynamics horizon-mean skill": 0.35310763120651245,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3011948764324188,
+      "rolled-dynamics horizon-mean skill": 0.480084627866745,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3070334792137146,
+      "rolled-dynamics horizon-mean skill": 0.4704468846321106,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.31698131561279297,
+      "rolled-dynamics horizon-mean skill": 0.444734126329422,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.349531888961792,
+      "rolled-dynamics horizon-mean skill": 0.45409250259399414,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3749021887779236,
+      "rolled-dynamics horizon-mean skill": 0.49942535161972046,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2886122465133667,
+      "rolled-dynamics horizon-mean skill": 0.45659446716308594,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2933367192745209,
+      "rolled-dynamics horizon-mean skill": 0.4370628595352173,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3203224241733551,
+      "rolled-dynamics horizon-mean skill": 0.4586663842201233,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.26726603507995605,
+      "rolled-dynamics horizon-mean skill": 0.42994028329849243,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3083781599998474,
+      "rolled-dynamics horizon-mean skill": 0.4707334041595459,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.31548699736595154,
+      "rolled-dynamics horizon-mean skill": 0.46336638927459717,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.23336410522460938,
+      "rolled-dynamics horizon-mean skill": 0.4308851361274719,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.27070510387420654,
+      "rolled-dynamics horizon-mean skill": 0.4490628242492676,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.22572436928749084,
+      "rolled-dynamics horizon-mean skill": 0.40379470586776733,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.26355624198913574,
+      "rolled-dynamics horizon-mean skill": 0.4328674077987671,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.20042243599891663,
+      "rolled-dynamics horizon-mean skill": 0.3640385866165161,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.29540425539016724,
+      "rolled-dynamics horizon-mean skill": 0.4707673192024231,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24690799415111542,
+      "rolled-dynamics horizon-mean skill": 0.3946318030357361,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2844213843345642,
+      "rolled-dynamics horizon-mean skill": 0.4167267382144928,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.30674219131469727,
+      "rolled-dynamics horizon-mean skill": 0.43736645579338074,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.31890037655830383,
+      "rolled-dynamics horizon-mean skill": 0.4478387236595154,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2625582218170166,
+      "rolled-dynamics horizon-mean skill": 0.44722694158554077,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.23975741863250732,
+      "rolled-dynamics horizon-mean skill": 0.408846378326416,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.29159146547317505,
+      "rolled-dynamics horizon-mean skill": 0.44718363881111145,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24428501725196838,
+      "rolled-dynamics horizon-mean skill": 0.416317880153656,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3289920389652252,
+      "rolled-dynamics horizon-mean skill": 0.48589596152305603,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2832193672657013,
+      "rolled-dynamics horizon-mean skill": 0.4333481192588806,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2655298113822937,
+      "rolled-dynamics horizon-mean skill": 0.44364234805107117,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2850949764251709,
+      "rolled-dynamics horizon-mean skill": 0.48825603723526,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2792264223098755,
+      "rolled-dynamics horizon-mean skill": 0.4293399453163147,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.27755028009414673,
+      "rolled-dynamics horizon-mean skill": 0.4104000926017761,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24212589859962463,
+      "rolled-dynamics horizon-mean skill": 0.3822743594646454,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2858310639858246,
+      "rolled-dynamics horizon-mean skill": 0.47626781463623047,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2498822808265686,
+      "rolled-dynamics horizon-mean skill": 0.4025288224220276,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2890280485153198,
+      "rolled-dynamics horizon-mean skill": 0.42149221897125244,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3087605834007263,
+      "rolled-dynamics horizon-mean skill": 0.4387328028678894,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3638571500778198,
+      "rolled-dynamics horizon-mean skill": 0.4938918352127075,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2627120018005371,
+      "rolled-dynamics horizon-mean skill": 0.46214285492897034,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2832750082015991,
+      "rolled-dynamics horizon-mean skill": 0.4296332597732544,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3009262979030609,
+      "rolled-dynamics horizon-mean skill": 0.4496863782405853,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24079707264900208,
+      "rolled-dynamics horizon-mean skill": 0.44016164541244507,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.34740954637527466,
+      "rolled-dynamics horizon-mean skill": 0.48087242245674133,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.34919947385787964,
+      "rolled-dynamics horizon-mean skill": 0.4726215600967407,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.36797237396240234,
+      "rolled-dynamics horizon-mean skill": 0.47734856605529785,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3744528591632843,
+      "rolled-dynamics horizon-mean skill": 0.5148524045944214,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3218773901462555,
+      "rolled-dynamics horizon-mean skill": 0.43946200609207153,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.38640210032463074,
+      "rolled-dynamics horizon-mean skill": 0.49832019209861755,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2312932014465332,
+      "rolled-dynamics horizon-mean skill": 0.3634631335735321,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.33622464537620544,
+      "rolled-dynamics horizon-mean skill": 0.4900667667388916,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2850989103317261,
+      "rolled-dynamics horizon-mean skill": 0.43614840507507324,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.358673632144928,
+      "rolled-dynamics horizon-mean skill": 0.45426544547080994,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.39552104473114014,
+      "rolled-dynamics horizon-mean skill": 0.4680999219417572,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.38401341438293457,
+      "rolled-dynamics horizon-mean skill": 0.48756295442581177,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.29956352710723877,
+      "rolled-dynamics horizon-mean skill": 0.4659785032272339,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.35021036863327026,
+      "rolled-dynamics horizon-mean skill": 0.4680274426937103,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.311177521944046,
+      "rolled-dynamics horizon-mean skill": 0.4343026578426361,
+      "series": "sycophancy/hallucination (regenerated questions)",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.13287971913814545,
+      "rolled-dynamics horizon-mean skill": 0.3299056887626648,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.12363383173942566,
+      "rolled-dynamics horizon-mean skill": 0.3160415291786194,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.09361434727907181,
+      "rolled-dynamics horizon-mean skill": 0.3350011706352234,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.14321660995483398,
+      "rolled-dynamics horizon-mean skill": 0.3290860056877136,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1436774730682373,
+      "rolled-dynamics horizon-mean skill": 0.35659652948379517,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.08391931653022766,
+      "rolled-dynamics horizon-mean skill": 0.2959936261177063,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.056185610592365265,
+      "rolled-dynamics horizon-mean skill": 0.2734209895133972,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.15573403239250183,
+      "rolled-dynamics horizon-mean skill": 0.3477538824081421,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.02652517892420292,
+      "rolled-dynamics horizon-mean skill": 0.2578132748603821,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.15688681602478027,
+      "rolled-dynamics horizon-mean skill": 0.355490505695343,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.16372150182724,
+      "rolled-dynamics horizon-mean skill": 0.3540042042732239,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.13817857205867767,
+      "rolled-dynamics horizon-mean skill": 0.36105236411094666,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1717836558818817,
+      "rolled-dynamics horizon-mean skill": 0.39102232456207275,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.02054714597761631,
+      "rolled-dynamics horizon-mean skill": 0.2854989767074585,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.26806145906448364,
+      "rolled-dynamics horizon-mean skill": 0.4219776391983032,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.10366740822792053,
+      "rolled-dynamics horizon-mean skill": 0.3001808524131775,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.16399356722831726,
+      "rolled-dynamics horizon-mean skill": 0.34945183992385864,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.16109028458595276,
+      "rolled-dynamics horizon-mean skill": 0.3396596610546112,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.10287772119045258,
+      "rolled-dynamics horizon-mean skill": 0.30628377199172974,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.15061725676059723,
+      "rolled-dynamics horizon-mean skill": 0.34960609674453735,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1215716227889061,
+      "rolled-dynamics horizon-mean skill": 0.3247681260108948,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.15106958150863647,
+      "rolled-dynamics horizon-mean skill": 0.3463093042373657,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.14453628659248352,
+      "rolled-dynamics horizon-mean skill": 0.34787625074386597,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.21795761585235596,
+      "rolled-dynamics horizon-mean skill": 0.39210885763168335,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.08522934466600418,
+      "rolled-dynamics horizon-mean skill": 0.2634830176830292,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.19282737374305725,
+      "rolled-dynamics horizon-mean skill": 0.3604279160499573,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.16936102509498596,
+      "rolled-dynamics horizon-mean skill": 0.34918421506881714,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.15283963084220886,
+      "rolled-dynamics horizon-mean skill": 0.37660878896713257,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1728067547082901,
+      "rolled-dynamics horizon-mean skill": 0.3557714819908142,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.08034277707338333,
+      "rolled-dynamics horizon-mean skill": 0.3100592792034149,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.20974934101104736,
+      "rolled-dynamics horizon-mean skill": 0.3548763394355774,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.15747907757759094,
+      "rolled-dynamics horizon-mean skill": 0.33390915393829346,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.17695961892604828,
+      "rolled-dynamics horizon-mean skill": 0.31898683309555054,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.16342557966709137,
+      "rolled-dynamics horizon-mean skill": 0.37053781747817993,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.16966462135314941,
+      "rolled-dynamics horizon-mean skill": 0.3775638937950134,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.16125541925430298,
+      "rolled-dynamics horizon-mean skill": 0.3619556427001953,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.19942912459373474,
+      "rolled-dynamics horizon-mean skill": 0.4000288248062134,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.17046037316322327,
+      "rolled-dynamics horizon-mean skill": 0.3412804901599884,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.21156024932861328,
+      "rolled-dynamics horizon-mean skill": 0.3653509020805359,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.16825605928897858,
+      "rolled-dynamics horizon-mean skill": 0.3492426872253418,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.19175240397453308,
+      "rolled-dynamics horizon-mean skill": 0.3509771525859833,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.25245049595832825,
+      "rolled-dynamics horizon-mean skill": 0.40844234824180603,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.18766933679580688,
+      "rolled-dynamics horizon-mean skill": 0.3623236119747162,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1639091670513153,
+      "rolled-dynamics horizon-mean skill": 0.37843000888824463,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1755075752735138,
+      "rolled-dynamics horizon-mean skill": 0.358725368976593,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.04997957497835159,
+      "rolled-dynamics horizon-mean skill": 0.3056844472885132,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2786872088909149,
+      "rolled-dynamics horizon-mean skill": 0.43878769874572754,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.19594228267669678,
+      "rolled-dynamics horizon-mean skill": 0.37072986364364624,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.14421537518501282,
+      "rolled-dynamics horizon-mean skill": 0.31856703758239746,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.18338564038276672,
+      "rolled-dynamics horizon-mean skill": 0.3404807448387146,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.19138483703136444,
+      "rolled-dynamics horizon-mean skill": 0.39128413796424866,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.17817525565624237,
+      "rolled-dynamics horizon-mean skill": 0.3580647110939026,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2049434930086136,
+      "rolled-dynamics horizon-mean skill": 0.37479498982429504,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.14517833292484283,
+      "rolled-dynamics horizon-mean skill": 0.32202839851379395,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1740693747997284,
+      "rolled-dynamics horizon-mean skill": 0.31345492601394653,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.23792117834091187,
+      "rolled-dynamics horizon-mean skill": 0.43262508511543274,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.12404486536979675,
+      "rolled-dynamics horizon-mean skill": 0.31728291511535645,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2593056559562683,
+      "rolled-dynamics horizon-mean skill": 0.3958098292350769,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.21445707976818085,
+      "rolled-dynamics horizon-mean skill": 0.366325706243515,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.15482254326343536,
+      "rolled-dynamics horizon-mean skill": 0.3290986716747284,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.18337282538414001,
+      "rolled-dynamics horizon-mean skill": 0.3680438995361328,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.11882510781288147,
+      "rolled-dynamics horizon-mean skill": 0.3451998233795166,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3077680468559265,
+      "rolled-dynamics horizon-mean skill": 0.42745256423950195,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.1992807686328888,
+      "rolled-dynamics horizon-mean skill": 0.3520391583442688,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2521074712276459,
+      "rolled-dynamics horizon-mean skill": 0.3345097005367279,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2808579206466675,
+      "rolled-dynamics horizon-mean skill": 0.3625207841396332,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.26936817169189453,
+      "rolled-dynamics horizon-mean skill": 0.3829697370529175,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.223599374294281,
+      "rolled-dynamics horizon-mean skill": 0.36901724338531494,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.25961363315582275,
+      "rolled-dynamics horizon-mean skill": 0.3708491325378418,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.23977389931678772,
+      "rolled-dynamics horizon-mean skill": 0.3393099308013916,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2783142328262329,
+      "rolled-dynamics horizon-mean skill": 0.3777691423892975,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2967182397842407,
+      "rolled-dynamics horizon-mean skill": 0.40653926134109497,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.27019548416137695,
+      "rolled-dynamics horizon-mean skill": 0.347747266292572,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.31524062156677246,
+      "rolled-dynamics horizon-mean skill": 0.40892377495765686,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.264953076839447,
+      "rolled-dynamics horizon-mean skill": 0.37666112184524536,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.26376497745513916,
+      "rolled-dynamics horizon-mean skill": 0.3512799143791199,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24544057250022888,
+      "rolled-dynamics horizon-mean skill": 0.3688238859176636,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.23072826862335205,
+      "rolled-dynamics horizon-mean skill": 0.3462413549423218,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2976248264312744,
+      "rolled-dynamics horizon-mean skill": 0.3919486105442047,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2670895457267761,
+      "rolled-dynamics horizon-mean skill": 0.3841969668865204,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24053755402565002,
+      "rolled-dynamics horizon-mean skill": 0.3601517975330353,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.28859150409698486,
+      "rolled-dynamics horizon-mean skill": 0.3450542688369751,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.26039958000183105,
+      "rolled-dynamics horizon-mean skill": 0.37305498123168945,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.25906312465667725,
+      "rolled-dynamics horizon-mean skill": 0.3696039319038391,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.26364147663116455,
+      "rolled-dynamics horizon-mean skill": 0.3900204002857208,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2793372869491577,
+      "rolled-dynamics horizon-mean skill": 0.33889269828796387,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.28544124960899353,
+      "rolled-dynamics horizon-mean skill": 0.34987056255340576,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.29202184081077576,
+      "rolled-dynamics horizon-mean skill": 0.3974977731704712,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.23140759766101837,
+      "rolled-dynamics horizon-mean skill": 0.30802682042121887,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2778063714504242,
+      "rolled-dynamics horizon-mean skill": 0.3970392942428589,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.29636088013648987,
+      "rolled-dynamics horizon-mean skill": 0.36825138330459595,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2683050334453583,
+      "rolled-dynamics horizon-mean skill": 0.3557162582874298,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.25480082631111145,
+      "rolled-dynamics horizon-mean skill": 0.35898321866989136,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2376648634672165,
+      "rolled-dynamics horizon-mean skill": 0.3470652103424072,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2951086163520813,
+      "rolled-dynamics horizon-mean skill": 0.4047431945800781,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2464451640844345,
+      "rolled-dynamics horizon-mean skill": 0.35330867767333984,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3610270619392395,
+      "rolled-dynamics horizon-mean skill": 0.3790258765220642,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3029141426086426,
+      "rolled-dynamics horizon-mean skill": 0.3626641631126404,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24762707948684692,
+      "rolled-dynamics horizon-mean skill": 0.3344592750072479,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.32536739110946655,
+      "rolled-dynamics horizon-mean skill": 0.37183451652526855,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24657654762268066,
+      "rolled-dynamics horizon-mean skill": 0.3208191990852356,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3707854747772217,
+      "rolled-dynamics horizon-mean skill": 0.37340959906578064,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.26510247588157654,
+      "rolled-dynamics horizon-mean skill": 0.3485921025276184,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3994089365005493,
+      "rolled-dynamics horizon-mean skill": 0.4433448016643524,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3042230010032654,
+      "rolled-dynamics horizon-mean skill": 0.3501102030277252,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.28920766711235046,
+      "rolled-dynamics horizon-mean skill": 0.3987472951412201,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.28427982330322266,
+      "rolled-dynamics horizon-mean skill": 0.37889930605888367,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.27672886848449707,
+      "rolled-dynamics horizon-mean skill": 0.3566722571849823,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.26017752289772034,
+      "rolled-dynamics horizon-mean skill": 0.3739525079727173,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.34462177753448486,
+      "rolled-dynamics horizon-mean skill": 0.3888012170791626,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.36979347467422485,
+      "rolled-dynamics horizon-mean skill": 0.3969857394695282,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3129611909389496,
+      "rolled-dynamics horizon-mean skill": 0.3762475252151489,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.36374589800834656,
+      "rolled-dynamics horizon-mean skill": 0.3388272821903229,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3392733931541443,
+      "rolled-dynamics horizon-mean skill": 0.38352811336517334,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.22092445194721222,
+      "rolled-dynamics horizon-mean skill": 0.3244556784629822,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.32607632875442505,
+      "rolled-dynamics horizon-mean skill": 0.3767009973526001,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.23322315514087677,
+      "rolled-dynamics horizon-mean skill": 0.3195072412490845,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.37170132994651794,
+      "rolled-dynamics horizon-mean skill": 0.3748220205307007,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2486570030450821,
+      "rolled-dynamics horizon-mean skill": 0.33539706468582153,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3698001503944397,
+      "rolled-dynamics horizon-mean skill": 0.41342848539352417,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2980809211730957,
+      "rolled-dynamics horizon-mean skill": 0.34887439012527466,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2509118914604187,
+      "rolled-dynamics horizon-mean skill": 0.3766523003578186,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.24538388848304749,
+      "rolled-dynamics horizon-mean skill": 0.3570839464664459,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.26630473136901855,
+      "rolled-dynamics horizon-mean skill": 0.35655346512794495,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.27419912815093994,
+      "rolled-dynamics horizon-mean skill": 0.3808835744857788,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.283784419298172,
+      "rolled-dynamics horizon-mean skill": 0.33859357237815857,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.34384411573410034,
+      "rolled-dynamics horizon-mean skill": 0.3938848376274109,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2279515415430069,
+      "rolled-dynamics horizon-mean skill": 0.30819612741470337,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.44097664952278137,
+      "rolled-dynamics horizon-mean skill": 0.3833022117614746,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.32346293330192566,
+      "rolled-dynamics horizon-mean skill": 0.3747483491897583,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3035705089569092,
+      "rolled-dynamics horizon-mean skill": 0.41671401262283325,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3682445287704468,
+      "rolled-dynamics horizon-mean skill": 0.42072105407714844,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2943422794342041,
+      "rolled-dynamics horizon-mean skill": 0.34673336148262024,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.44188979268074036,
+      "rolled-dynamics horizon-mean skill": 0.4148865044116974,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.31911128759384155,
+      "rolled-dynamics horizon-mean skill": 0.3811115622520447,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.42748039960861206,
+      "rolled-dynamics horizon-mean skill": 0.47311723232269287,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.34172284603118896,
+      "rolled-dynamics horizon-mean skill": 0.38152945041656494,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3223765194416046,
+      "rolled-dynamics horizon-mean skill": 0.3603457808494568,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3719586133956909,
+      "rolled-dynamics horizon-mean skill": 0.4445834159851074,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3370499610900879,
+      "rolled-dynamics horizon-mean skill": 0.3787601590156555,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.2932493984699249,
+      "rolled-dynamics horizon-mean skill": 0.46592116355895996,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.37834131717681885,
+      "rolled-dynamics horizon-mean skill": 0.39553678035736084,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.45498159527778625,
+      "rolled-dynamics horizon-mean skill": 0.4380449652671814,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "direct-map horizon-mean skill (block 20)": 0.3369724750518799,
+      "rolled-dynamics horizon-mean skill": 0.3594384789466858,
+      "series": "evil (exact provenance)",
+      "_kind": "scatter",
+      "_group": 13
+    }
+  ],
+  "n_series": 14,
+  "total_points": 504
+}

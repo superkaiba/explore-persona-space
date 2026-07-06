@@ -4,16 +4,25 @@ description: A smoke/prior GCP instance left RUNNING with eps/phase=done makes t
 type: feedback
 ---
 
+**UPDATE (#908, 2026-07-03): the primary trap below is CLOSED in code.**
+`reconnect_or_none` now REFUSES a RUNNING instance whose `eps/phase` is
+terminal/wedged (`done`/`failed`/`wedged`) and the pre-launch stale
+reclaim deletes it before create — so a fresh dispatch against a
+completed zombie now launches real work instead of silently
+reconnecting. The verification step below is retained as
+defense-in-depth (e.g. a PROVISIONING/STAGING record still reconnects
+un-probed, and code on an older `main` predates the fix).
+
 When the router's launch outcome says `reason: "reconnect"` on the GCP
 lane (`chosen_kind: "gcp"`, `epm:backend-selected` note carries
 `outcome: "reconnected"` / `detail: "found existing live job/instance"`),
-do NOT assume the workload was dispatched. `reconnect_or_none`
-(`src/explore_persona_space/backends/gcp.py`) classifies ANY instance in
-`{RUNNING, PROVISIONING, STAGING, STOPPING}` as live and returns a
+do NOT assume the workload was dispatched. Pre-#908, `reconnect_or_none`
+(`src/explore_persona_space/backends/gcp.py`) classified ANY instance in
+`{RUNNING, PROVISIONING, STAGING, STOPPING}` as live and returned a
 reconnect handle WITHOUT re-dispatching `--workload-cmd`. A prior/smoke
 instance that finished its workload, published guest attribute
 `eps/phase=done`, but was NEVER deleted is wedged in status=RUNNING — a
-completed zombie — and the router latches onto it.
+completed zombie — and the router latched onto it.
 
 **Why:** GCP instances are EPHEMERAL-by-DESIGN only when launched with
 `--instance-termination-action=DELETE`; a smoke run (or any run whose

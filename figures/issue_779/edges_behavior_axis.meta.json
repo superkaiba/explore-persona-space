@@ -1,0 +1,2820 @@
+{
+  "commit": "a8d7a6138a",
+  "created": "2026-07-02T23:03:18Z",
+  "figsize": [
+    16.0,
+    9.0
+  ],
+  "points": [
+    {
+      "x": 50.0,
+      "within-condition Pearson r": -0.10627371630290791,
+      "error": 0.06888011353144924,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 100.0,
+      "within-condition Pearson r": -0.172985268528645,
+      "error": 0.09805669849337625,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 250.0,
+      "within-condition Pearson r": -0.20551385228142788,
+      "error": 0.13395140858461355,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 500.0,
+      "within-condition Pearson r": -0.1265442407435967,
+      "error": 0.19001394105680164,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1000.0,
+      "within-condition Pearson r": -0.05022175277417466,
+      "error": 0.12277354812967597,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2400.0,
+      "within-condition Pearson r": -0.11396246721592321,
+      "error": 0.0,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 50.0,
+      "within-condition Pearson r": -0.08397613750328106,
+      "error": 0.06888011353144924,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 100.0,
+      "within-condition Pearson r": -0.1727791324161823,
+      "error": 0.09805669849337625,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 250.0,
+      "within-condition Pearson r": -0.20660461338466557,
+      "error": 0.13395140858461355,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 500.0,
+      "within-condition Pearson r": -0.1259019172174071,
+      "error": 0.19001394105680164,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 1000.0,
+      "within-condition Pearson r": -0.04966337322985406,
+      "error": 0.12277354812967597,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 2400.0,
+      "within-condition Pearson r": -0.11200684287211668,
+      "error": 0.0,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "x": 50.0,
+      "within-condition Pearson r": 0.10187754884368427,
+      "error": 0.06888011353144924,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 100.0,
+      "within-condition Pearson r": 0.07378170453829033,
+      "error": 0.09805669849337625,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 250.0,
+      "within-condition Pearson r": 0.014923199558533162,
+      "error": 0.13395140858461355,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 500.0,
+      "within-condition Pearson r": 0.05891039028464358,
+      "error": 0.19001394105680164,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 1000.0,
+      "within-condition Pearson r": 0.08512682293066356,
+      "error": 0.12277354812967597,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 2400.0,
+      "within-condition Pearson r": 0.10687843021458769,
+      "error": 0.0,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "x": 50.0,
+      "within-condition Pearson r": -0.10627371630290791,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 100.0,
+      "within-condition Pearson r": -0.172985268528645,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 250.0,
+      "within-condition Pearson r": -0.20551385228142788,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 500.0,
+      "within-condition Pearson r": -0.1265442407435967,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1000.0,
+      "within-condition Pearson r": -0.05022175277417466,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2400.0,
+      "within-condition Pearson r": -0.11396246721592321,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 50.0,
+      "within-condition Pearson r": -0.17479298952163086,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 100.0,
+      "within-condition Pearson r": -0.19316730870527204,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 250.0,
+      "within-condition Pearson r": -0.2288392742827369,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 500.0,
+      "within-condition Pearson r": -0.20440381990950907,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1000.0,
+      "within-condition Pearson r": -0.12564972148054265,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2400.0,
+      "within-condition Pearson r": -0.11396246721592321,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 50.0,
+      "within-condition Pearson r": -0.03775444308418495,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 100.0,
+      "within-condition Pearson r": -0.15280322835201793,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 250.0,
+      "within-condition Pearson r": -0.18218843028011886,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 500.0,
+      "within-condition Pearson r": -0.04868466157768432,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1000.0,
+      "within-condition Pearson r": 0.025206215932193313,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2400.0,
+      "within-condition Pearson r": -0.11396246721592321,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 50.0,
+      "within-condition Pearson r": -0.08397613750328106,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 100.0,
+      "within-condition Pearson r": -0.1727791324161823,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 250.0,
+      "within-condition Pearson r": -0.20660461338466557,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 500.0,
+      "within-condition Pearson r": -0.1259019172174071,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1000.0,
+      "within-condition Pearson r": -0.04966337322985406,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2400.0,
+      "within-condition Pearson r": -0.11200684287211668,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 50.0,
+      "within-condition Pearson r": -0.14388914148836962,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 100.0,
+      "within-condition Pearson r": -0.20058868054561887,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 250.0,
+      "within-condition Pearson r": -0.23040498394965536,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 500.0,
+      "within-condition Pearson r": -0.2049747073230514,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1000.0,
+      "within-condition Pearson r": -0.12747618777911635,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2400.0,
+      "within-condition Pearson r": -0.11200684287211668,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 50.0,
+      "within-condition Pearson r": -0.024063133518192496,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 100.0,
+      "within-condition Pearson r": -0.14496958428674575,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 250.0,
+      "within-condition Pearson r": -0.18280424281967578,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 500.0,
+      "within-condition Pearson r": -0.04682912711176279,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1000.0,
+      "within-condition Pearson r": 0.02814944131940822,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2400.0,
+      "within-condition Pearson r": -0.11200684287211668,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 50.0,
+      "within-condition Pearson r": 0.10187754884368427,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 100.0,
+      "within-condition Pearson r": 0.07378170453829033,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 250.0,
+      "within-condition Pearson r": 0.014923199558533162,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 500.0,
+      "within-condition Pearson r": 0.05891039028464358,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1000.0,
+      "within-condition Pearson r": 0.08512682293066356,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 2400.0,
+      "within-condition Pearson r": 0.10687843021458769,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 50.0,
+      "within-condition Pearson r": 0.03299743531223505,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 100.0,
+      "within-condition Pearson r": -0.024274993955085908,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 250.0,
+      "within-condition Pearson r": -0.11902820902608038,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 500.0,
+      "within-condition Pearson r": -0.13110355077215807,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1000.0,
+      "within-condition Pearson r": -0.037646725199012396,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2400.0,
+      "within-condition Pearson r": 0.10687843021458769,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 50.0,
+      "within-condition Pearson r": 0.1707576623751335,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 100.0,
+      "within-condition Pearson r": 0.1718384030316666,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 250.0,
+      "within-condition Pearson r": 0.1488746081431467,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 500.0,
+      "within-condition Pearson r": 0.2489243313414452,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1000.0,
+      "within-condition Pearson r": 0.20790037106033954,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2400.0,
+      "within-condition Pearson r": 0.10687843021458769,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 50.0,
+      "y": 0.43585624380665433,
+      "error": 0.11370428701704705,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 100.0,
+      "y": 0.5571742867006563,
+      "error": 0.08133621394912216,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 250.0,
+      "y": 0.5443393375205932,
+      "error": 0.09051166340040015,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 500.0,
+      "y": 0.4980819913866498,
+      "error": 0.12372654509043057,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 1000.0,
+      "y": 0.45563891910134746,
+      "error": 0.10589117731753722,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 2400.0,
+      "y": 0.4693265895118561,
+      "error": 0.0,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "x": 50.0,
+      "y": 0.41997393035015174,
+      "error": 0.11370428701704705,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 100.0,
+      "y": 0.5462416254487228,
+      "error": 0.08133621394912216,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 250.0,
+      "y": 0.537335886019055,
+      "error": 0.09051166340040015,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 500.0,
+      "y": 0.49204395582118166,
+      "error": 0.12372654509043057,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 1000.0,
+      "y": 0.44526249284989616,
+      "error": 0.10589117731753722,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 2400.0,
+      "y": 0.47093013933897154,
+      "error": 0.0,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "x": 50.0,
+      "y": 0.5650205622635903,
+      "error": 0.11370428701704705,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 100.0,
+      "y": 0.631651586118452,
+      "error": 0.08133621394912216,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 250.0,
+      "y": 0.5486204749424639,
+      "error": 0.09051166340040015,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 500.0,
+      "y": 0.4628918868269256,
+      "error": 0.12372654509043057,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 1000.0,
+      "y": 0.3364158259143304,
+      "error": 0.10589117731753722,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 2400.0,
+      "y": 0.4057143765538047,
+      "error": 0.0,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "x": 50.0,
+      "y": 0.43585624380665433,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 100.0,
+      "y": 0.5571742867006563,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 250.0,
+      "y": 0.5443393375205932,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 500.0,
+      "y": 0.4980819913866498,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 1000.0,
+      "y": 0.45563891910134746,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 2400.0,
+      "y": 0.4693265895118561,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 50.0,
+      "y": 0.3805439262098568,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 100.0,
+      "y": 0.4840983621761159,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 250.0,
+      "y": 0.4919391110609003,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 500.0,
+      "y": 0.43758699440550114,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1000.0,
+      "y": 0.32700904292119026,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2400.0,
+      "y": 0.4693265895118561,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 50.0,
+      "y": 0.4911685614034519,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 100.0,
+      "y": 0.6302502112251966,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 250.0,
+      "y": 0.5967395639802859,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 500.0,
+      "y": 0.5585769883677985,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1000.0,
+      "y": 0.5842687952815047,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2400.0,
+      "y": 0.4693265895118561,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 50.0,
+      "y": 0.41997393035015174,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 100.0,
+      "y": 0.5462416254487228,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 250.0,
+      "y": 0.537335886019055,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 500.0,
+      "y": 0.49204395582118166,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1000.0,
+      "y": 0.44526249284989616,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2400.0,
+      "y": 0.47093013933897154,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 50.0,
+      "y": 0.36249520046144584,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 100.0,
+      "y": 0.47059644082648755,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 250.0,
+      "y": 0.48491357211371217,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 500.0,
+      "y": 0.43044307819234084,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1000.0,
+      "y": 0.31304453436342544,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2400.0,
+      "y": 0.47093013933897154,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 50.0,
+      "y": 0.47745266023885763,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 100.0,
+      "y": 0.621886810070958,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 250.0,
+      "y": 0.5897581999243978,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 500.0,
+      "y": 0.5536448334500225,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 1000.0,
+      "y": 0.5774804513363669,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 2400.0,
+      "y": 0.47093013933897154,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 50.0,
+      "y": 0.5650205622635903,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 100.0,
+      "y": 0.631651586118452,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 250.0,
+      "y": 0.5486204749424639,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 500.0,
+      "y": 0.4628918868269256,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 1000.0,
+      "y": 0.3364158259143304,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 2400.0,
+      "y": 0.4057143765538047,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 50.0,
+      "y": 0.4513162752465433,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 100.0,
+      "y": 0.5503153721693298,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 250.0,
+      "y": 0.4581088115420638,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 500.0,
+      "y": 0.33916534173649504,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 1000.0,
+      "y": 0.23052464859679317,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 2400.0,
+      "y": 0.4057143765538047,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "x": 50.0,
+      "y": 0.6787248492806374,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 100.0,
+      "y": 0.7129878000675741,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 250.0,
+      "y": 0.6391321383428641,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 500.0,
+      "y": 0.5866184319173562,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 1000.0,
+      "y": 0.4423070032318676,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 2400.0,
+      "y": 0.4057143765538047,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "x": 50.0,
+      "y": 0.32436801465525555,
+      "error": 0.13287230047875928,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 100.0,
+      "y": 0.3457580107679005,
+      "error": 0.040319572671741494,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 250.0,
+      "y": 0.3070471028708894,
+      "error": 0.05530034418435714,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 500.0,
+      "y": 0.3238443426714793,
+      "error": 0.046749807547617234,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 1000.0,
+      "y": 0.31339283801152434,
+      "error": 0.062131105123136285,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 2400.0,
+      "y": 0.2593813381051552,
+      "error": 0.0,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "x": 50.0,
+      "y": 0.3232380645920482,
+      "error": 0.13287230047875928,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 100.0,
+      "y": 0.342508118534072,
+      "error": 0.040319572671741494,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 250.0,
+      "y": 0.3047429628151355,
+      "error": 0.05530034418435714,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 500.0,
+      "y": 0.3203926549398509,
+      "error": 0.046749807547617234,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 1000.0,
+      "y": 0.3092656215217424,
+      "error": 0.062131105123136285,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 2400.0,
+      "y": 0.25521441278069823,
+      "error": 0.0,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "x": 50.0,
+      "y": 0.00686908983628085,
+      "error": 0.13287230047875928,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 100.0,
+      "y": 0.1491188268651536,
+      "error": 0.040319572671741494,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 250.0,
+      "y": 0.15166943214407497,
+      "error": 0.05530034418435714,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 500.0,
+      "y": 0.1722226371753932,
+      "error": 0.046749807547617234,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 1000.0,
+      "y": 0.22295623815731108,
+      "error": 0.062131105123136285,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 2400.0,
+      "y": 0.14409790283690518,
+      "error": 0.0,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "x": 50.0,
+      "y": 0.32436801465525555,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 100.0,
+      "y": 0.3457580107679005,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 250.0,
+      "y": 0.3070471028708894,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 500.0,
+      "y": 0.3238443426714793,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 1000.0,
+      "y": 0.31339283801152434,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 2400.0,
+      "y": 0.2593813381051552,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "x": 50.0,
+      "y": 0.26874895085018036,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 100.0,
+      "y": 0.320257436460781,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 250.0,
+      "y": 0.2556598429504449,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 500.0,
+      "y": 0.27136364347991804,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 1000.0,
+      "y": 0.28069744921680795,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 2400.0,
+      "y": 0.2593813381051552,
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "x": 50.0,
+      "y": 0.37998707846033075,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 100.0,
+      "y": 0.3712585850750201,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 250.0,
+      "y": 0.35843436279133384,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 500.0,
+      "y": 0.3763250418630406,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 1000.0,
+      "y": 0.34608822680624074,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 2400.0,
+      "y": 0.2593813381051552,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "x": 50.0,
+      "y": 0.3232380645920482,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 100.0,
+      "y": 0.342508118534072,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 250.0,
+      "y": 0.3047429628151355,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 500.0,
+      "y": 0.3203926549398509,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 1000.0,
+      "y": 0.3092656215217424,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 2400.0,
+      "y": 0.25521441278069823,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "x": 50.0,
+      "y": 0.26716653836478593,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 100.0,
+      "y": 0.31672838680311904,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 250.0,
+      "y": 0.2541602804745571,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 500.0,
+      "y": 0.26788117997623023,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 1000.0,
+      "y": 0.27452559395456555,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 2400.0,
+      "y": 0.25521441278069823,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "x": 50.0,
+      "y": 0.3793095908193104,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 100.0,
+      "y": 0.3682878502650249,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 250.0,
+      "y": 0.35532564515571397,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 500.0,
+      "y": 0.3729041299034716,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 1000.0,
+      "y": 0.3440056490889193,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 2400.0,
+      "y": 0.25521441278069823,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "x": 50.0,
+      "y": 0.00686908983628085,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 100.0,
+      "y": 0.1491188268651536,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 250.0,
+      "y": 0.15166943214407497,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 500.0,
+      "y": 0.1722226371753932,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 1000.0,
+      "y": 0.22295623815731108,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 2400.0,
+      "y": 0.14409790283690518,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "x": 50.0,
+      "y": -0.12600321064247844,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 100.0,
+      "y": 0.1087992541934121,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 250.0,
+      "y": 0.09636908795971783,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 500.0,
+      "y": 0.12547282962777598,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 1000.0,
+      "y": 0.1608251330341748,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 2400.0,
+      "y": 0.14409790283690518,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "x": 50.0,
+      "y": 0.13974139031504013,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 100.0,
+      "y": 0.1894383995368951,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 250.0,
+      "y": 0.2069697763284321,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 500.0,
+      "y": 0.21897244472301045,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 1000.0,
+      "y": 0.2850873432804474,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "x": 2400.0,
+      "y": 0.14409790283690518,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "within-condition Pearson r": 0.39660441749825315,
+      "error": 0.10605342786185895,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "within-condition Pearson r": 0.3463749467846308,
+      "error": 0.11001620230107495,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "within-condition Pearson r": 0.3338246831269544,
+      "error": 0.09426135003940014,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "within-condition Pearson r": 0.19943602569938895,
+      "error": 0.18398774768259762,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "within-condition Pearson r": 0.22969840712103298,
+      "error": 0.10614936543652369,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "within-condition Pearson r": 0.2090458106906507,
+      "error": 0.0,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "within-condition Pearson r": 0.42588995264070634,
+      "error": 0.10605342786185895,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "within-condition Pearson r": 0.37129589129651547,
+      "error": 0.11001620230107495,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "within-condition Pearson r": 0.35352705098255743,
+      "error": 0.09426135003940014,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "within-condition Pearson r": 0.2206981134233441,
+      "error": 0.18398774768259762,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "within-condition Pearson r": 0.24845428242118156,
+      "error": 0.10614936543652369,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "within-condition Pearson r": 0.2263320314544285,
+      "error": 0.0,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "within-condition Pearson r": 0.3266156623329258,
+      "error": 0.10605342786185895,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "within-condition Pearson r": 0.28950967852696646,
+      "error": 0.11001620230107495,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "within-condition Pearson r": 0.19273592803183545,
+      "error": 0.09426135003940014,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "within-condition Pearson r": 0.12496007769530756,
+      "error": 0.18398774768259762,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "within-condition Pearson r": 0.047885102382496,
+      "error": 0.10614936543652369,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "within-condition Pearson r": -0.3539996106886077,
+      "error": 0.0,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "within-condition Pearson r": 0.39660441749825315,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "within-condition Pearson r": 0.3463749467846308,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "within-condition Pearson r": 0.3338246831269544,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "within-condition Pearson r": 0.19943602569938895,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "within-condition Pearson r": 0.22969840712103298,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "within-condition Pearson r": 0.2090458106906507,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "within-condition Pearson r": 0.30771051438697344,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "within-condition Pearson r": 0.2685666752452733,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "within-condition Pearson r": 0.22238334610635727,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "within-condition Pearson r": 0.06843355330238826,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "within-condition Pearson r": 0.10994271354370938,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "within-condition Pearson r": 0.2090458106906507,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "within-condition Pearson r": 0.48549832060953285,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "within-condition Pearson r": 0.42418321832398836,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "within-condition Pearson r": 0.44526602014755157,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "within-condition Pearson r": 0.33043849809638964,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "within-condition Pearson r": 0.3494541006983566,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "within-condition Pearson r": 0.2090458106906507,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "within-condition Pearson r": 0.42588995264070634,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "within-condition Pearson r": 0.37129589129651547,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "within-condition Pearson r": 0.35352705098255743,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "within-condition Pearson r": 0.2206981134233441,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "within-condition Pearson r": 0.24845428242118156,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "within-condition Pearson r": 0.2263320314544285,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "within-condition Pearson r": 0.33207816190873735,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "within-condition Pearson r": 0.27416268901731156,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "within-condition Pearson r": 0.2670780291272789,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "within-condition Pearson r": 0.09269432495350635,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "within-condition Pearson r": 0.13232026672939873,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "within-condition Pearson r": 0.2263320314544285,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "within-condition Pearson r": 0.5197017433726754,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "within-condition Pearson r": 0.4684290935757194,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "within-condition Pearson r": 0.43997607283783596,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "within-condition Pearson r": 0.34870190189318184,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "within-condition Pearson r": 0.3645882981129644,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "within-condition Pearson r": 0.2263320314544285,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "within-condition Pearson r": 0.3266156623329258,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "within-condition Pearson r": 0.28950967852696646,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "within-condition Pearson r": 0.19273592803183545,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "within-condition Pearson r": 0.12496007769530756,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "within-condition Pearson r": 0.047885102382496,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "within-condition Pearson r": -0.3539996106886077,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "within-condition Pearson r": 0.22056223447106688,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "within-condition Pearson r": 0.1794934762258915,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "within-condition Pearson r": 0.0984745779924353,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "within-condition Pearson r": -0.05902766998729006,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "within-condition Pearson r": -0.05826426305402769,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "within-condition Pearson r": -0.3539996106886077,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "within-condition Pearson r": 0.4326690901947848,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "within-condition Pearson r": 0.3995258808280414,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "within-condition Pearson r": 0.2869972780712356,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "within-condition Pearson r": 0.3089478253779052,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "within-condition Pearson r": 0.1540344678190197,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "within-condition Pearson r": -0.3539996106886077,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.4635148114412592,
+      "error": 0.11167519281648439,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.5472250997293276,
+      "error": 0.05974452942832045,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.4915098127789455,
+      "error": 0.1007496774523553,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.45241350858291796,
+      "error": 0.09328450787326298,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.3870010283968995,
+      "error": 0.13172250121387913,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.36861177844715776,
+      "error": 0.0,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.45508457923274886,
+      "error": 0.11167519281648439,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.5423939130704316,
+      "error": 0.05974452942832045,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.4858671586942055,
+      "error": 0.1007496774523553,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.44767659739139365,
+      "error": 0.09328450787326298,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.37689333287657467,
+      "error": 0.13172250121387913,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.3699482283130563,
+      "error": 0.0,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.4459574396479852,
+      "error": 0.11167519281648439,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.5107616590200211,
+      "error": 0.05974452942832045,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.3080030671328687,
+      "error": 0.1007496774523553,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.3705216269440048,
+      "error": 0.09328450787326298,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.2032333494782192,
+      "error": 0.13172250121387913,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.1840900880299256,
+      "error": 0.0,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.4635148114412592,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.5472250997293276,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.4915098127789455,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.45241350858291796,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.3870010283968995,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.36861177844715776,
+      "_kind": "line",
+      "_group": 51
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.41188827350077184,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.499203047332722,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.4437493717824441,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.395049453683863,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.24566154615496258,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.36861177844715776,
+      "_kind": "line",
+      "_group": 52
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.5151413493817466,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.5952471521259333,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.5392702537754469,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.5097775634819729,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.5283405106388364,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.36861177844715776,
+      "_kind": "line",
+      "_group": 53
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.45508457923274886,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.5423939130704316,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.4858671586942055,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.44767659739139365,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.37689333287657467,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.3699482283130563,
+      "_kind": "line",
+      "_group": 54
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.4007961882040437,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.48911978440973225,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.43637556078115963,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.39100611793951984,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.22481957655593737,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.3699482283130563,
+      "_kind": "line",
+      "_group": 55
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.509372970261454,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.595668041731131,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.5353587566072513,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.5043470768432674,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.528967089197212,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.3699482283130563,
+      "_kind": "line",
+      "_group": 56
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.4459574396479852,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.5107616590200211,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.3080030671328687,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.3705216269440048,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.2032333494782192,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.1840900880299256,
+      "_kind": "line",
+      "_group": 57
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.3342822468315008,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.45101712959170065,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.20725338968051338,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.27723711907074183,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.0715108482643401,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.1840900880299256,
+      "_kind": "line",
+      "_group": 58
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.5576326324644696,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.5705061884483416,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.408752744585224,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.4638061348172678,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.3349558506920983,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.1840900880299256,
+      "_kind": "line",
+      "_group": 59
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.47716537158314487,
+      "error": 0.16690190075573225,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.4884726929598283,
+      "error": 0.08593470803784597,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.4645078231120068,
+      "error": 0.11924200700026195,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.31692789348217654,
+      "error": 0.1959787711691901,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.2926569448306095,
+      "error": 0.19673865028989176,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.2508631026789565,
+      "error": 0.0,
+      "series": "h (cosine readout)",
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.50370155614401,
+      "error": 0.16690190075573225,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.5019015494642978,
+      "error": 0.08593470803784597,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.47288275172616956,
+      "error": 0.11924200700026195,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.3165358180670154,
+      "error": 0.1959787711691901,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.28239837312861416,
+      "error": 0.19673865028989176,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.23252001745386885,
+      "error": 0.0,
+      "series": "h (dot readout)",
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.1574921774949647,
+      "error": 0.16690190075573225,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.11714328342040817,
+      "error": 0.08593470803784597,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.1890029913620153,
+      "error": 0.11924200700026195,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.06661691886500347,
+      "error": 0.1959787711691901,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.012796379061789199,
+      "error": 0.19673865028989176,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": -0.028935891402405385,
+      "error": 0.0,
+      "series": "g (direct)",
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.47716537158314487,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.4884726929598283,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.4645078231120068,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.31692789348217654,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.2926569448306095,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.2508631026789565,
+      "_kind": "line",
+      "_group": 63
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.4340863356874869,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.42260842227534673,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.39270532401415564,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.23203219974872058,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.1629755282034061,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.2508631026789565,
+      "_kind": "line",
+      "_group": 64
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.5202444074788029,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.55433696364431,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.5363103222098579,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.4018235872156325,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.4223383614578129,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.2508631026789565,
+      "_kind": "line",
+      "_group": 65
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.50370155614401,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.5019015494642978,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.47288275172616956,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.3165358180670154,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.28239837312861416,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.23252001745386885,
+      "_kind": "line",
+      "_group": 66
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.4761409437364297,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.43625028121921555,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.3909092442819763,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.2280215917655011,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.146457593072518,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.23252001745386885,
+      "_kind": "line",
+      "_group": 67
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.5312621685515904,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.56755281770938,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.5548562591703629,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.40505004436852976,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.4183391531847103,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": 0.23252001745386885,
+      "_kind": "line",
+      "_group": 68
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.1574921774949647,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.11714328342040817,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.1890029913620153,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.06661691886500347,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.012796379061789199,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": -0.028935891402405385,
+      "_kind": "line",
+      "_group": 69
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": -0.009409723260767555,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.031208575382562193,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.06976098436175335,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": -0.12936185230418662,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": -0.18394227122810256,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": -0.028935891402405385,
+      "_kind": "line",
+      "_group": 70
+    },
+    {
+      "training trait-corpus contexts (N)": 50.0,
+      "y": 0.32439407825069694,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training trait-corpus contexts (N)": 100.0,
+      "y": 0.20307799145825414,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training trait-corpus contexts (N)": 250.0,
+      "y": 0.30824499836227726,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training trait-corpus contexts (N)": 500.0,
+      "y": 0.2625956900341936,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training trait-corpus contexts (N)": 1000.0,
+      "y": 0.20953502935168097,
+      "_kind": "line",
+      "_group": 71
+    },
+    {
+      "training trait-corpus contexts (N)": 2400.0,
+      "y": -0.028935891402405385,
+      "_kind": "line",
+      "_group": 71
+    }
+  ],
+  "n_series": 72,
+  "total_points": 432
+}

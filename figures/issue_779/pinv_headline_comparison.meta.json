@@ -1,0 +1,368 @@
+{
+  "commit": "251573ff27",
+  "created": "2026-07-03T08:03:44Z",
+  "figsize": [
+    8.2,
+    4.3
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.17225150706202097,
+      "error": 0.2205405262496838,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.41705833995184205,
+      "error": 0.18355449101073185,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.6023494845970467,
+      "error": 0.05320803966170479,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.5519738857291837,
+      "error": 0.037815220477386,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.74,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.4559558929325558,
+      "error": 0.12638521077598755,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.74,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.3004622093490986,
+      "error": 0.12513259169465413,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Evil\nSystem-prompt",
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": -0.07822852485904754,
+      "error": 0.2448001295580356,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Evil\nMany-shot",
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.26887758173352205,
+      "error": 0.19906972590622588,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Sycophancy\nSystem-prompt",
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.5413107340999046,
+      "error": 0.06072743179696177,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Sycophancy\nMany-shot",
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.6947106203866933,
+      "error": 0.07777852989620432,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Hallucination\nSystem-prompt",
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.40056444815020575,
+      "error": 0.0783668800439774,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Hallucination\nMany-shot",
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.25526878118945534,
+      "error": 0.19410977448421646,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.28927542580681936,
+      "error": 0.14797479548981918,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.45507326095271755,
+      "error": 0.16246109949289947,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.44207102364233286,
+      "error": 0.09173027225477234,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.4910005008941951,
+      "error": 0.04341247241371521,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.2817306912030061,
+      "error": 0.06272366539488286,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.5512391815282951,
+      "error": 0.04818995650090391,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": -0.06656674505679802,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.74,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.2281782299122194,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.7399999999999998,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.5486117195486753,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.74,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.5106645098293973,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.74,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.32718739999592844,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.74,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.1943383241152587,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.3745143074425695,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.74,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.5952872119336831,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.7399999999999998,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.6550277988720848,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.74,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.5862949507841693,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.74,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.5799578215479035,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.74,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.44460350750456695,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": -0.3576382548459929,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.0933804530467977,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.4798002359673573,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.6010504089225333,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.3211839181234206,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.07093519265698298,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 0.0,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.13196200427007831,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.0,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.49151990485924946,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.0,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.6012550995612809,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.7566074687149419,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 4.0,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.47791767821137543,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.0,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.45915474162541586,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.14956248035734945,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.2599999999999998,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.3095761515426095,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.3365757061296752,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.4402051140852147,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.22228949727840353,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.5032974752118148,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.4455120713369878,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.2599999999999998,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.6344983505284084,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.5200362506392199,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.5270300589126451,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.34773682806816925,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.26,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.5996773882136226,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": -0.41600000000000004,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.2970851812857266,
+      "series": "Random-direction null (95th pct |r|)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 0.41600000000000004,
+      "Within-condition Pearson r\n(monitor projection vs judged trait score)": 0.2970851812857266,
+      "series": "Random-direction null (95th pct |r|)",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 56
+}

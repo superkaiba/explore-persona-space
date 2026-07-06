@@ -173,6 +173,12 @@ net for a real bug the reviewer described but failed to cite):
   actually contain the flaw / missing control the critic claims?
 - **`interpretation-critic`**: load the cited JSON / figure / sample. Does the
   raw data support or contradict the finding?
+- **Figure / sidecar evidence (any role):** resolve it pin-first per
+  clean-result-critic Lens 3 "Figure-source resolution" — `git show
+  <sha>:<path>` off the body-pinned SHA, or a local copy only after the
+  blob-identity check (`git hash-object <local>` == `git rev-parse
+  <sha>:<path>`); a blocker resting on an untracked or identity-failed
+  local copy is unanchored → Discarded (#922).
 - **`clean-result-critic`**: read the cited block of the clean-result body. Does the
   claimed overclaim / template violation actually occur?
 - **`follow-up-critic`**: for each proposal one critic called `redundant`,

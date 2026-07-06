@@ -1,0 +1,112 @@
+{
+  "commit": "d30b153ac3",
+  "created": "2026-07-04T16:01:00Z",
+  "figsize": [
+    5.4,
+    3.4
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "External - own drop difference": -0.005306459560229828,
+      "error": 0.02894773342853002,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "External - own drop difference": -0.0081934777070752,
+      "error": 0.028680650080623822,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 2.0,
+      "External - own drop difference": -0.015445605998520118,
+      "error": 0.03237932864093644,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 3.0,
+      "External - own drop difference": -0.0029840702343863303,
+      "error": 0.04209751549557815,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "External - own drop difference": -0.005306459560229828,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "External - own drop difference": -0.0081934777070752,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "External - own drop difference": -0.015445605998520118,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "External - own drop difference": -0.0029840702343863303,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "External - own drop difference": -0.0353036280214841,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "External - own drop difference": -0.037632106467297644,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "External - own drop difference": -0.04913830325500716,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "External - own drop difference": -0.046635059263760145,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "External - own drop difference": 0.02259183883557594,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "External - own drop difference": 0.01972919369395,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "External - own drop difference": 0.015620354026865714,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "External - own drop difference": 0.037559971727396155,
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 16
+}

@@ -9,6 +9,10 @@ with ``register_forward_hook`` on only the needed modules +
 1. **Byte-identity** of the hook path vs the full-tuple read, across the
    ``hs[L+1]`` block-index convention AND the ``EMBED_LAYER`` (-1 -> hs[0])
    sentinel, on a hook-capable stub vs a fallback stub seeded identically.
+   (Stub scope: the stubs apply NO final norm, so byte-identity holds at every
+   index including the last. On a real Llama/Qwen model the LAST layer
+   diverges — hook = pre-final-norm, ``hs[-1]`` = post-norm; documented in
+   ``analysis/extraction.py``, "Last layer (final RMSNorm caveat)".)
 2. **The i488 index translation** (``hs[L]`` convention -> block ``L-1`` /
    embed for ``L=0``) reproduces the OLD ``_last_token_residuals`` read.
 3. **Logits preservation** under ``return_logits=True`` (the issue_650
@@ -30,8 +34,10 @@ from __future__ import annotations
 import ast
 import inspect
 import textwrap
+import warnings
 
 import numpy as np
+import pytest
 import torch
 
 from explore_persona_space.analysis.extraction import EMBED_LAYER, extract_layer_activations
@@ -560,3 +566,97 @@ def test_memory_non_growth_cpu_proxy():
     first_half_peak = max(rss[:10])
     last_half_peak = max(rss[10:])
     assert last_half_peak <= first_half_peak * 1.10 + 50_000, (first_half_peak, last_half_peak)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# 6. PEFT-wrapped models take the hook path (#886)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+class _PeftWrapper:
+    """Mimics ``peft.PeftModel``'s attribute chain: ``.model`` -> the injected
+    ``*ForCausalLM`` (here the ``_HookStub``), so decoder blocks live at
+    ``wrapper.model.model.layers`` (depth 2). Forwards ``__call__`` like
+    ``PeftModelForCausalLM.forward``."""
+
+    def __init__(self, inner):
+        self.model = inner
+
+    def __call__(self, **kw):
+        return self.model(**kw)
+
+    def eval(self):
+        return self
+
+
+class _DeadEndWrapper:
+    """Wrapper whose ``.model`` EXISTS but has neither ``.layers`` nor a
+    further ``.model`` (here the ``_FallbackStub``): the chain walk dead-ends
+    at depth 1 and the helper must take the full-tuple fallback. Forwards
+    ``__call__`` so the fallback forward reaches the inner stub."""
+
+    def __init__(self, inner):
+        self.model = inner
+
+    def __call__(self, **kw):
+        return self.model(**kw)
+
+    def eval(self):
+        return self
+
+
+def test_peft_wrapped_model_takes_hook_path():
+    """A depth-2 PEFT-shaped wrapper takes the HOOK path (with the wrapped-model
+    UserWarning) and is byte-identical to the seeded fallback stub. Teeth:
+    ``_HookStub`` asserts ``output_hidden_states`` is falsy — a fallback-path
+    regression fails loudly. Only warning EMISSION is pinned here (and absence
+    on depth-1/fallback paths, in the sibling tests below); once-per-callsite
+    dedup rides on the stdlib default warning filter and is NOT tested."""
+    tok = _tok()
+    layers = [EMBED_LAYER, 0, 14, 27]
+    fallback = _FallbackStub(tok.vocab_size, _D, _N_BLOCKS, seed=31)
+    wrapped = _PeftWrapper(_HookStub(tok.vocab_size, _D, _N_BLOCKS, seed=31))
+    for ids in _ids_list(tok):
+        with pytest.warns(UserWarning, match="wrapped"):
+            hk = extract_layer_activations(wrapped, ids, layers)
+        fb = extract_layer_activations(fallback, ids, layers)
+        assert set(hk) == set(layers), set(hk)
+        for L in layers:
+            assert torch.equal(fb[L], hk[L]), L
+
+
+def test_bare_model_resolution_is_warning_free():
+    """Depth-1 (bare) resolution must not warn — byte-compat guard. The filter
+    is scoped to UserWarning so unrelated library warnings cannot trip it."""
+    tok = _tok()
+    hook = _HookStub(tok.vocab_size, _D, _N_BLOCKS, seed=31)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        extract_layer_activations(hook, _ids_list(tok)[0], [0, 27])
+
+
+def test_fallback_stub_unaffected_by_chain_walk():
+    """``_FallbackStub`` has no ``.model`` attribute — the deeper walk must not
+    resolve it; the full-tuple fallback still returns hidden states."""
+    tok = _tok()
+    fb = _FallbackStub(tok.vocab_size, _D, _N_BLOCKS, seed=31)
+    acts = extract_layer_activations(fb, _ids_list(tok)[0], [0, 27])
+    assert set(acts) == {0, 27}
+
+
+def test_dead_end_model_chain_takes_fallback():
+    """A wrapper whose ``.model`` chain dead-ends (no ``.layers``, no deeper
+    ``.model``) takes the full-tuple FALLBACK, warning-free, and is
+    byte-identical to the bare seeded fallback stub."""
+    tok = _tok()
+    layers = [EMBED_LAYER, 0, 14, 27]
+    fallback = _FallbackStub(tok.vocab_size, _D, _N_BLOCKS, seed=31)
+    dead_end = _DeadEndWrapper(_FallbackStub(tok.vocab_size, _D, _N_BLOCKS, seed=31))
+    for ids in _ids_list(tok):
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", UserWarning)
+            de = extract_layer_activations(dead_end, ids, layers)
+        fb = extract_layer_activations(fallback, ids, layers)
+        assert set(de) == set(layers), set(de)
+        for L in layers:
+            assert torch.equal(fb[L], de[L]), L

@@ -1,19 +1,24 @@
-"""Unit tests for ``scripts/select_step9c_tests.py`` (#754).
+"""Unit tests for ``scripts/select_step9c_tests.py`` (#754, #851).
 
 The helper maps the files this branch touched to their covering pytest files
 plus a pinned workflow-invariant literal set, for the ``/issue`` Step 9c
-test-verdict gate. These tests inject a fake ``git diff`` runner and a
+test-verdict gate. Most cases inject a fake ``git diff`` runner and a
 ``tmp_path`` ``tests/`` tree so no real git / real branch state is needed.
 
-The one exception is the pinned-list test (case 6), which asserts the literal
+Two exceptions: the pinned-list test (case 6) asserts the literal
 ``WORKFLOW_INVARIANT`` matches the LIVE repo ``tests/`` tree so an added/removed
-invariant test forces a deliberate edit of the literal.
+invariant test forces a deliberate edit of the literal; and the #851 regression
+tests (cases 13-14) build a real throwaway git repo + worktree to pin the
+work-root resolution end to end (branch-new test selected, deleted-on-branch
+test dropped, empty-diff NOTE at the base checkout).
 """
 
 from __future__ import annotations
 
 import importlib.util
 import json
+import os
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -35,6 +40,12 @@ def _make_tree(tmp_path: Path, test_files: list[str]) -> Path:
     for inv in sel.WORKFLOW_INVARIANT:
         (repo / inv).parent.mkdir(parents=True, exist_ok=True)
         (repo / inv).write_text("# stub\n")
+    # Materialize the glob-scan map's test files too (#895) so map-hit cases
+    # can assert selection; harmless elsewhere (selection requires a scan-glob
+    # hit, so cases asserting set(tests) == set(WORKFLOW_INVARIANT) hold).
+    for scan_test in sel.GLOB_SCAN_TESTS:
+        (repo / scan_test).parent.mkdir(parents=True, exist_ok=True)
+        (repo / scan_test).write_text("# stub\n")
     for tf in test_files:
         (repo / "tests" / tf).write_text("# stub\n")
     return repo
@@ -174,44 +185,84 @@ def test_issue_736_motivating_case(tmp_path: Path):
 # --- Case 10: --json output shape -------------------------------------------
 def test_json_output_shape(tmp_path: Path, monkeypatch, capsys):
     repo = _make_tree(tmp_path, ["test_widget.py"])
-    monkeypatch.setattr(sel, "_resolve_repo_root", lambda _arg: repo)
+    monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
     monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: ["scripts/widget.py"])
     rc = sel.main(["--json", "--repo-root", str(repo)])
     assert rc == 0
     out = json.loads(capsys.readouterr().out)
-    assert set(out.keys()) == {"tests", "untested_touched", "base", "missing_invariants"}
+    assert set(out.keys()) == {
+        "tests",
+        "untested_touched",
+        "base",
+        "missing_invariants",
+        "selection_reasons",
+        "n_tests",
+        "recommended_timeout_s",
+        "slow_tests_selected",
+    }
     assert "tests/test_widget.py" in out["tests"]
     assert out["base"] == "main"
     assert out["missing_invariants"] == []  # all invariants present in the fixture tree
+    assert out["selection_reasons"]["tests/test_widget.py"] == ["stem-map:scripts/widget.py"]
+    # #1046 sizing fields are derived from the SAME selection the command runs:
+    assert out["n_tests"] == len(out["tests"])
+    assert out["recommended_timeout_s"] == sel.recommended_timeout_s(out["tests"])
+    assert out["slow_tests_selected"] == [t for t in out["tests"] if t in sel.SLOW_TESTS]
 
 
-# --- Case 11: _resolve_repo_root uses --git-common-dir + dirnames (#785) ------
-def test_resolve_repo_root_uses_git_common_dir_and_dirnames(tmp_path: Path, monkeypatch):
-    """No-arg path calls `git rev-parse --path-format=absolute --git-common-dir`
-    and dirnames the output — the #506-safe recipe, NOT `--show-toplevel`
-    (which from a worktree cwd doubles the path). The `--repo-root` override
-    still bypasses git entirely.
+# --- Case 10b (#1022): select_tests_with_reasons — reasons content ------------
+def test_selection_reasons_content(tmp_path: Path):
+    """Pins the reason vocabulary (invariant / touched-test / stem-map:<f> /
+    glob-scan:<f>) and that select_tests still returns the identical 2-tuple."""
+    repo = _make_tree(tmp_path, ["test_widget.py", "test_thing.py"])
+    touched = ["scripts/widget.py", "tests/test_thing.py", "scripts/issue999_fake.py"]
+    tests, untested, reasons = sel.select_tests_with_reasons(touched, repo)
+    # Stem-mapped from a touched code file:
+    assert reasons["tests/test_widget.py"] == ["stem-map:scripts/widget.py"]
+    # A touched test file includes itself:
+    assert reasons["tests/test_thing.py"] == ["touched-test"]
+    # Glob-scan arm (#895) records the covered touched file:
+    assert reasons["tests/test_shared_vm_thread_caps.py"] == ["glob-scan:scripts/issue999_fake.py"]
+    # A pure invariant carries exactly the invariant reason:
+    assert reasons["tests/test_task_workflow.py"] == ["invariant"]
+    # Reason keys exactly cover the selection, and every reason list is sorted:
+    assert set(reasons) == set(tests)
+    assert all(rs == sorted(rs) for rs in reasons.values())
+    # The unchanged-signature wrapper returns the IDENTICAL selection:
+    assert sel.select_tests(touched, repo) == (tests, untested)
+    assert untested == ["scripts/issue999_fake.py"]  # scan hit never marks "tested"
+
+
+# --- Case 11: _resolve_work_root uses --show-toplevel (#851) ------------------
+def test_resolve_work_root_uses_show_toplevel(tmp_path: Path, monkeypatch):
+    """No-arg path calls `git rev-parse --path-format=absolute --show-toplevel`
+    and returns the output resolved (NO dirname step) — the INVOKING checkout's
+    root: the issue-worktree root from a worktree (where the branch diff and
+    its branch-new tests/ files live), the main repo root when run there.
+    Incident #851: the prior --git-common-dir+dirname recipe pinned the MAIN
+    root, making `git diff main...HEAD` empty by construction. The
+    `--repo-root` override still bypasses git entirely.
     """
     seen: dict[str, list[str]] = {}
-    git_dir = tmp_path / "repo" / ".git"
+    toplevel = tmp_path / "wt"
 
     class _Result:
-        stdout = str(git_dir) + "\n"
+        stdout = str(toplevel) + "\n"
 
     def _fake_run(argv, **_kw):
         seen["argv"] = argv
         return _Result()
 
     monkeypatch.setattr(sel.subprocess, "run", _fake_run)
-    got = sel._resolve_repo_root(None)
-    # (i) locks the recipe against a regression back to --show-toplevel:
-    assert seen["argv"] == ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"]
-    # (ii) return is the dirname of the git output (.../repo/.git -> .../repo):
-    assert got == (tmp_path / "repo").resolve()
+    got = sel._resolve_work_root(None)
+    # (i) locks the recipe to the invoking checkout's toplevel:
+    assert seen["argv"] == ["git", "rev-parse", "--path-format=absolute", "--show-toplevel"]
+    # (ii) return is the toplevel itself, resolved (no dirname step):
+    assert got == toplevel.resolve()
     # (iii) the override branch never touches git — clear the recorded argv and
     #       confirm the arg path is returned resolved, without a git call:
     seen.clear()
-    assert sel._resolve_repo_root(str(tmp_path)) == tmp_path.resolve()
+    assert sel._resolve_work_root(str(tmp_path)) == tmp_path.resolve()
     assert "argv" not in seen  # git was not invoked on the override path
 
 
@@ -223,11 +274,259 @@ def test_empty_selection_fails_loud(tmp_path: Path, monkeypatch, capsys):
     closes at the shell level).
     """
     repo = _make_tree(tmp_path, [])
-    monkeypatch.setattr(sel, "_resolve_repo_root", lambda _arg: repo)
+    monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
     monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: [])
     # Force the degenerate empty selection the invariant set normally prevents.
-    monkeypatch.setattr(sel, "select_tests", lambda *_a, **_k: ([], []))
+    # (main() routes through select_tests_with_reasons as of #1022 — same
+    # selection, plus the reasons map the Step 9c compare consumes.)
+    monkeypatch.setattr(sel, "select_tests_with_reasons", lambda *_a, **_k: ([], [], {}))
     rc = sel.main(["--repo-root", str(repo)])
     assert rc == 1
     err = capsys.readouterr().err
     assert "EMPTY test selection" in err
+
+
+# --- Real-git fixture for the #851 regression cases (13-14) -------------------
+def _git(cwd: Path, *args: str) -> None:
+    """Run git hermetically: no inherited global/system config (so no gpg
+    signing, hooksPath, or identity leaks from the host), per-repo identity set
+    explicitly by the caller."""
+    env = {
+        **os.environ,
+        "GIT_CONFIG_GLOBAL": "/dev/null",
+        "GIT_CONFIG_SYSTEM": "/dev/null",
+    }
+    subprocess.run(
+        ["git", *args], cwd=str(cwd), env=env, check=True, capture_output=True, text=True
+    )
+
+
+def _make_git_repo_with_worktree(tmp_path: Path) -> tuple[Path, Path]:
+    """Real-git #851 fixture. Returns ``(repo, wt)``:
+
+    * ``repo`` — a git repo on branch ``main`` holding every invariant stub plus
+      a committed ``tests/test_gone_on_branch.py``.
+    * ``wt`` — a worktree on branch ``issue-x`` whose commit ADDS
+      ``tests/test_foo.py`` + ``scripts/foo.py`` and DELETES
+      ``tests/test_gone_on_branch.py``.
+    """
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_gone_on_branch.py").write_text("# committed on main\n")
+    _git(repo, "init", "-b", "main")
+    _git(repo, "config", "user.email", "test@example.com")
+    _git(repo, "config", "user.name", "Test")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-m", "main baseline")
+    wt = tmp_path / "wt"
+    _git(repo, "worktree", "add", "-b", "issue-x", str(wt))
+    (wt / "tests" / "test_foo.py").write_text("def test_ok():\n    assert True\n")
+    (wt / "scripts").mkdir()
+    (wt / "scripts" / "foo.py").write_text("X = 1\n")
+    _git(wt, "rm", "-q", "tests/test_gone_on_branch.py")
+    _git(wt, "add", "tests/test_foo.py", "scripts/foo.py")
+    _git(wt, "commit", "-m", "branch adds foo + deletes gone_on_branch")
+    return repo, wt
+
+
+# --- Case 13: the #851 regression — real-git worktree, end to end -------------
+def test_branch_new_test_selected_from_worktree_real_git(tmp_path: Path, monkeypatch, capsys):
+    """From an issue worktree, `main([])` must (a) include the branch-new
+    touched test in the printed command (it exists ONLY in the worktree —
+    the exact file #851 silently dropped), (b) map the branch-new code file to
+    that test via the work-root glob (no untested-WARN), (c) drop the
+    deleted-on-branch test (no pytest collection error), and (d) print the
+    work-root + branch provenance breadcrumb.
+    """
+    repo, wt = _make_git_repo_with_worktree(tmp_path)
+    # Precondition: the branch-new test exists ONLY in the worktree.
+    assert not (repo / "tests" / "test_foo.py").exists()
+    assert (wt / "tests" / "test_foo.py").exists()
+    monkeypatch.chdir(wt)
+    rc = sel.main([])
+    assert rc == 0
+    captured = capsys.readouterr()
+    # (a) branch-new touched test selected (the #851 silent miss):
+    assert "tests/test_foo.py" in captured.out
+    # (c) deleted-on-branch test NOT in the printed command (the existence gate
+    #     at the WORK root drops it — it exists at neither worktree HEAD nor
+    #     the pytest cwd):
+    assert "test_gone_on_branch.py" not in captured.out
+    # (b) foo.py mapped to its branch-new test — no WARN:
+    assert "untested touched file" not in captured.err
+    # A real, non-empty diff: the empty-diff NOTE must NOT fire:
+    assert "NOTE — empty diff" not in captured.err
+    # (d) provenance breadcrumb: resolved work root + branch, on stderr:
+    assert f"work root {wt.resolve()}" in captured.err
+    assert "(branch: issue-x)" in captured.err
+
+
+# --- Case 14: empty diff at the base checkout -> loud NOTE, invariant-only ----
+def test_empty_diff_note_at_main_checkout_real_git(tmp_path: Path, monkeypatch, capsys):
+    """At the main checkout (HEAD==main -> `main...HEAD` empty by construction)
+    the fallback stays exit-0 invariant-only (case 8's documented degenerate
+    contract) but is no longer SILENT: a `NOTE — empty diff` stderr line names
+    the work root, and the breadcrumb records branch `main` — so a wrong-cwd
+    run of a worktree-based task is visible in the Step 9c marker.
+    """
+    repo, _wt = _make_git_repo_with_worktree(tmp_path)
+    monkeypatch.chdir(repo)
+    rc = sel.main([])
+    assert rc == 0
+    captured = capsys.readouterr()
+    # The #851 shape is no longer silent:
+    assert "NOTE — empty diff" in captured.err
+    # Provenance breadcrumb names the main checkout + branch:
+    assert f"work root {repo.resolve()}" in captured.err
+    assert "(branch: main)" in captured.err
+    # Printed command is exactly the invariant-only set (sorted), behind the
+    # #1046 sized-timeout prefix (tuple-derived — never hardcode 1980, so the
+    # pin survives a WORKFLOW_INVARIANT count change):
+    line = captured.out.strip().splitlines()[-1]
+    prefix = (
+        "timeout --kill-after=60s "
+        f"{sel.recommended_timeout_s(sorted(sel.WORKFLOW_INVARIANT))}s uv run pytest "
+    )
+    assert line.startswith(prefix) and line.endswith(" -v --tb=short")
+    files = line.removeprefix(prefix).removesuffix(" -v --tb=short").split()
+    assert files == sorted(sel.WORKFLOW_INVARIANT)
+
+
+# --- Case 15: untested-WARN reaches stderr through main() ---------------------
+def test_untested_warn_through_main(tmp_path: Path, monkeypatch, capsys):
+    """Case 5 pins the `select_tests` return value; this pins the stderr
+    emission path main() drives (the WARN line the Step 9c marker records)."""
+    repo = _make_tree(tmp_path, [])  # no test_orphan*.py anywhere
+    monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
+    monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: ["scripts/orphan.py"])
+    rc = sel.main([])
+    assert rc == 0
+    captured = capsys.readouterr()
+    assert "untested touched file: scripts/orphan.py" in captured.err
+    # The breadcrumb fires on every run; the fixture tree is not a git
+    # checkout, so the fail-soft branch read surfaces "unknown" (never a crash):
+    assert "(branch: unknown)" in captured.err
+
+
+# --- Case 16: glob-scan map — scripts/issue*_*.py selects the thread-caps test
+def test_glob_scan_map_selects_thread_caps_for_issue_script(tmp_path: Path):
+    repo = _make_tree(tmp_path, [])
+    touched = sel.compute_touched("main", repo, _runner=_runner_for(["scripts/issue999_fake.py"]))
+    tests, untested = sel.select_tests(touched, repo)
+    assert "tests/test_shared_vm_thread_caps.py" in tests
+    # Additive only: the file's OWN logic still has no mapped test -> WARN stays.
+    assert untested == ["scripts/issue999_fake.py"]
+
+
+# --- Case 17: negative — a non-matching scripts file pulls NO map row ---------
+def test_glob_scan_map_not_selected_for_non_matching_file(tmp_path: Path):
+    repo = _make_tree(tmp_path, [])
+    touched = sel.compute_touched("main", repo, _runner=_runner_for(["scripts/pod.py"]))
+    tests, _ = sel.select_tests(touched, repo)
+    assert "tests/test_shared_vm_thread_caps.py" not in tests
+    assert "tests/test_subprocess_env_explicit.py" not in tests
+
+
+# --- Case 18: experiments run_*.py hits both rows; ** matches zero segments ---
+def test_glob_scan_map_experiments_run_file_and_zero_segment(tmp_path: Path):
+    repo = _make_tree(tmp_path, [])
+    nested = "src/explore_persona_space/experiments/foo/run_bar.py"
+    touched = sel.compute_touched("main", repo, _runner=_runner_for([nested]))
+    tests, _ = sel.select_tests(touched, repo)
+    assert "tests/test_shared_vm_thread_caps.py" in tests  # **/run_*.py row
+    assert "tests/test_subprocess_env_explicit.py" in tests  # */run_*.py row
+    zero_seg = "src/explore_persona_space/experiments/run_top.py"
+    touched = sel.compute_touched("main", repo, _runner=_runner_for([zero_seg]))
+    tests, _ = sel.select_tests(touched, repo)
+    assert "tests/test_shared_vm_thread_caps.py" in tests  # zero-segment **/
+    assert "tests/test_subprocess_env_explicit.py" not in tests  # */ needs one dir
+
+
+# --- Case 19: dispatcher glob row --------------------------------------------
+def test_glob_scan_map_dispatcher_script(tmp_path: Path):
+    repo = _make_tree(tmp_path, [])
+    touched = sel.compute_touched(
+        "main", repo, _runner=_runner_for(["scripts/dispatch_new_thing.py"])
+    )
+    tests, _ = sel.select_tests(touched, repo)
+    assert "tests/test_subprocess_env_explicit.py" in tests
+    assert "tests/test_shared_vm_thread_caps.py" not in tests
+
+
+# --- Case 20: map row NOT selected when its test file is absent on disk -------
+def test_glob_scan_map_key_missing_on_disk_not_selected(tmp_path: Path):
+    """The (work_root / scan_test).exists() gate: a deleted-on-branch (or
+    fixture-absent) scanning test is never emitted into the pytest command
+    (same existence contract as the invariant set — no collection error)."""
+    repo = _make_tree(tmp_path, [])
+    (repo / "tests" / "test_shared_vm_thread_caps.py").unlink()
+    touched = sel.compute_touched("main", repo, _runner=_runner_for(["scripts/issue999_fake.py"]))
+    tests, _ = sel.select_tests(touched, repo)
+    assert "tests/test_shared_vm_thread_caps.py" not in tests
+
+
+# --- Live-tree pin for the map (mirrors case 6's curation discipline) ---------
+def test_glob_scan_map_matches_live_tree():
+    """Every GLOB_SCAN_TESTS key exists, its glob tuple matches real files on
+    the live tree (aggregated per row — individual globs MAY legitimately match
+    nothing today, e.g. run_factor_screen_*.py / experiments run_*.py are
+    forward-looking guards with 0 hits at freeze time), each glob appears
+    VERBATIM in the scanning test's own source (drift pin: a scanner
+    renaming/narrowing its scan roots forces a deliberate map edit), and the
+    map is disjoint from WORKFLOW_INVARIANT (no double-listing)."""
+    repo_root = Path(sel.__file__).resolve().parents[1]
+    assert sel.GLOB_SCAN_TESTS
+    assert not set(sel.GLOB_SCAN_TESTS) & set(sel.WORKFLOW_INVARIANT)
+    for test_file, globs in sel.GLOB_SCAN_TESTS.items():
+        assert (repo_root / test_file).exists(), f"map key missing: {test_file}"
+        assert globs, f"empty scan-glob tuple for {test_file}"
+        hits = [p for g in globs for p in repo_root.glob(g)]
+        assert hits, f"scan globs for {test_file} match nothing on the live tree"
+        src = (repo_root / test_file).read_text()
+        for g in globs:
+            assert g in src, (
+                f"{test_file} no longer scans {g!r} — GLOB_SCAN_TESTS drifted "
+                "from the scanner's source; update the map verbatim."
+            )
+
+
+# --- Case 21 (#1046): recommended gate timeout — formula ----------------------
+def test_recommended_timeout_formula():
+    """T = BASE + PER_FILE*n + slow surcharges, floored at TIMEOUT_FLOOR_S."""
+    no_slow = [f"tests/test_x{i}.py" for i in range(40)]
+    assert sel.recommended_timeout_s(no_slow) == sel.TIMEOUT_BASE_S + 40 * sel.TIMEOUT_PER_FILE_S
+    with_wl = [*no_slow, "tests/test_workflow_lint.py"]
+    assert sel.recommended_timeout_s(with_wl) == (
+        sel.TIMEOUT_BASE_S
+        + 41 * sel.TIMEOUT_PER_FILE_S
+        + sel.SLOW_TESTS["tests/test_workflow_lint.py"]
+    )
+    assert sel.recommended_timeout_s([]) == sel.TIMEOUT_FLOOR_S  # floor binds
+
+
+# --- Case 22 (#1046): SLOW_TESTS live-tree drift pin ---------------------------
+def test_slow_tests_pinned_to_live_tree():
+    """Every SLOW_TESTS key exists in the real repo tests/ tree (drift pin,
+    same curation rule as WORKFLOW_INVARIANT / GLOB_SCAN_TESTS)."""
+    root = Path(sel.__file__).resolve().parents[1]
+    missing = [t for t in sel.SLOW_TESTS if not (root / t).exists()]
+    assert missing == [], (
+        f"SLOW_TESTS entries missing from the live tests/ tree: {missing}. "
+        "Update the literal in scripts/select_step9c_tests.py deliberately."
+    )
+
+
+# --- Case 23 (#1046): stdout carries the sized timeout prefix + stderr line ---
+def test_stdout_command_carries_sized_timeout(tmp_path: Path, monkeypatch, capsys):
+    """The printed command starts with the sized `timeout --kill-after=60s <T>s`
+    prefix, and stderr carries the machine-greppable recommended-timeout-s
+    sizing line (both derived from the invariant-only selection)."""
+    repo = _make_tree(tmp_path, [])
+    monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
+    monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: [])
+    rc = sel.main([])
+    assert rc == 0
+    captured = capsys.readouterr()
+    t = sel.recommended_timeout_s(sorted(sel.WORKFLOW_INVARIANT))
+    line = captured.out.strip().splitlines()[-1]
+    assert line.startswith(f"timeout --kill-after=60s {t}s uv run pytest ")
+    assert f"recommended-timeout-s={t}" in captured.err

@@ -1,0 +1,3071 @@
+{
+  "definition": {
+    "grouping_key": "first user message of the conversation",
+    "normalizations": {
+      "exact": "raw string equality (byte-identical seeded rollouts apply here)",
+      "lowercased": "str.lower() equality (the grouping behind the round-1 12.8% / 251-copy / n=74 figures and Figure 2's split)"
+    },
+    "near_perfect_unit": "fold-B pooled per-conversation turn-1 skill > 0.95 (pooled over the 6 frozen read-out rows)"
+  },
+  "corpus_n": 5000,
+  "per_normalization": {
+    "exact": {
+      "n_dup_conversations": 604,
+      "pct_dup": 12.08,
+      "n_dup_groups": 107,
+      "largest_groups": [
+        {
+          "size": 143,
+          "key_preview": "hello"
+        },
+        {
+          "size": 106,
+          "key_preview": "Hello"
+        },
+        {
+          "size": 16,
+          "key_preview": "Hello!"
+        }
+      ],
+      "n_test_conversations_in_dup_groups": 69,
+      "near_perfect_units_total": 56,
+      "near_perfect_units_in_dup_groups": 55,
+      "foldB_aggregate_excluding_dup": -0.20427685976028442,
+      "pooled_per_conv_mean_unique_clipped_minus3": -0.3201097846031189
+    },
+    "lowercased": {
+      "n_dup_conversations": 640,
+      "pct_dup": 12.8,
+      "n_dup_groups": 97,
+      "largest_groups": [
+        {
+          "size": 251,
+          "key_preview": "hello"
+        },
+        {
+          "size": 27,
+          "key_preview": "hey"
+        },
+        {
+          "size": 20,
+          "key_preview": "hello!"
+        }
+      ],
+      "n_test_conversations_in_dup_groups": 74,
+      "near_perfect_units_total": 56,
+      "near_perfect_units_in_dup_groups": 55,
+      "foldB_aggregate_excluding_dup": -0.21623821556568146,
+      "pooled_per_conv_mean_unique_clipped_minus3": -0.33202165365219116
+    }
+  },
+  "test_conversations": {
+    "5": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6510977745056152
+    },
+    "49": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.07174283266067505
+    },
+    "52": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.7357922792434692
+    },
+    "58": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.2740288972854614
+    },
+    "65": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.2997547388076782
+    },
+    "81": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.99981689453125
+    },
+    "85": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9994727373123169
+    },
+    "93": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9984006881713867
+    },
+    "95": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.300376832485199
+    },
+    "105": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999896883964539
+    },
+    "118": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.7788103818893433
+    },
+    "124": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.16697335243225098
+    },
+    "145": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.3239985704421997
+    },
+    "149": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.004079580307006836
+    },
+    "159": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999842643737793
+    },
+    "160": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.28188061714172363
+    },
+    "182": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999089241027832
+    },
+    "183": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.26496124267578125
+    },
+    "188": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.32249128818511963
+    },
+    "190": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.423877477645874
+    },
+    "205": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6382228136062622
+    },
+    "227": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5311013460159302
+    },
+    "247": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.6761078834533691
+    },
+    "261": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5893131494522095
+    },
+    "277": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.27666032314300537
+    },
+    "279": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.4606481194496155
+    },
+    "287": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.04307746887207031
+    },
+    "294": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5001910924911499
+    },
+    "301": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.2334999442100525
+    },
+    "314": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.24904799461364746
+    },
+    "323": {
+      "dup_exact": false,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.8729146122932434
+    },
+    "325": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.49446940422058105
+    },
+    "333": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.06074786186218262
+    },
+    "345": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6550997495651245
+    },
+    "351": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.999843955039978
+    },
+    "375": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.17730450630187988
+    },
+    "386": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4297219514846802
+    },
+    "399": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.0412099361419678
+    },
+    "401": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.617692232131958
+    },
+    "414": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.15874338150024414
+    },
+    "423": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.12959659099578857
+    },
+    "432": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.22815585136413574
+    },
+    "437": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.3889641761779785
+    },
+    "438": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5812517404556274
+    },
+    "440": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4431192874908447
+    },
+    "442": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.3344042301177979
+    },
+    "446": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9994727373123169
+    },
+    "450": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.9770693778991699
+    },
+    "459": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4647502899169922
+    },
+    "478": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.9596050977706909
+    },
+    "482": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.3498132824897766
+    },
+    "485": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.2814740538597107
+    },
+    "491": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.0831460952758789
+    },
+    "494": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5000184774398804
+    },
+    "503": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.03564208745956421
+    },
+    "515": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.45364654064178467
+    },
+    "528": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.797511339187622
+    },
+    "555": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.2473857402801514
+    },
+    "562": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.0743374824523926
+    },
+    "576": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.17650461196899414
+    },
+    "577": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.9194539189338684
+    },
+    "584": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9983343482017517
+    },
+    "597": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.7379964590072632
+    },
+    "620": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.06199592351913452
+    },
+    "642": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999868869781494
+    },
+    "644": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4187201261520386
+    },
+    "650": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.2005833387374878
+    },
+    "667": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5488327741622925
+    },
+    "669": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9824858903884888
+    },
+    "675": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.9250022172927856
+    },
+    "690": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.12398666143417358
+    },
+    "714": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.14793825149536133
+    },
+    "718": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.8097724914550781
+    },
+    "721": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.3932018280029297
+    },
+    "732": {
+      "dup_exact": false,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.1231691837310791
+    },
+    "746": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.23457670211791992
+    },
+    "749": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.8121827840805054
+    },
+    "752": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.03262364864349365
+    },
+    "760": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999977946281433
+    },
+    "764": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.1574265956878662
+    },
+    "781": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.030229568481445312
+    },
+    "794": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.9280135631561279
+    },
+    "801": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6902600526809692
+    },
+    "805": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.39646291732788086
+    },
+    "809": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999896883964539
+    },
+    "830": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.45968854427337646
+    },
+    "836": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6259810924530029
+    },
+    "838": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.11469078063964844
+    },
+    "840": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.3212519884109497
+    },
+    "861": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.11209285259246826
+    },
+    "867": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.3472793698310852
+    },
+    "886": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.18767797946929932
+    },
+    "887": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.2325459122657776
+    },
+    "888": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.2811005115509033
+    },
+    "901": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.04463249444961548
+    },
+    "948": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6678560972213745
+    },
+    "962": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.537197470664978
+    },
+    "966": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -2.308628559112549
+    },
+    "978": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.7768136262893677
+    },
+    "987": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.07034015655517578
+    },
+    "989": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.48572713136672974
+    },
+    "998": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.2816500663757324
+    },
+    "1007": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.8903741836547852
+    },
+    "1015": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.0643072128295898
+    },
+    "1023": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.515925645828247
+    },
+    "1028": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.9080810546875
+    },
+    "1039": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.31775522232055664
+    },
+    "1041": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9955004453659058
+    },
+    "1042": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.1366808414459229
+    },
+    "1046": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.1288056373596191
+    },
+    "1056": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.15601640939712524
+    },
+    "1058": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.43188798427581787
+    },
+    "1081": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.2809733748435974
+    },
+    "1114": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.03192049264907837
+    },
+    "1117": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5549753904342651
+    },
+    "1137": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.11142200231552124
+    },
+    "1146": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4199715852737427
+    },
+    "1173": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.5567975044250488
+    },
+    "1179": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.3195565342903137
+    },
+    "1181": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.24671459197998047
+    },
+    "1182": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.1878616213798523
+    },
+    "1194": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.3981207609176636
+    },
+    "1200": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.3177497386932373
+    },
+    "1214": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999977946281433
+    },
+    "1219": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.9498379230499268
+    },
+    "1233": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.1492043137550354
+    },
+    "1240": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.9683692455291748
+    },
+    "1252": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6813123226165771
+    },
+    "1253": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.48761582374572754
+    },
+    "1259": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.20530211925506592
+    },
+    "1275": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4213374853134155
+    },
+    "1281": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.5589355230331421
+    },
+    "1287": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999896883964539
+    },
+    "1294": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4857749938964844
+    },
+    "1296": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.8960671424865723
+    },
+    "1349": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.016975998878479004
+    },
+    "1351": {
+      "dup_exact": false,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.8271815180778503
+    },
+    "1371": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4754786491394043
+    },
+    "1377": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9963269829750061
+    },
+    "1379": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9944722652435303
+    },
+    "1381": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.07003498077392578
+    },
+    "1383": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.12768852710723877
+    },
+    "1393": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9998423457145691
+    },
+    "1394": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.0330081582069397
+    },
+    "1408": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.04357391595840454
+    },
+    "1420": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.128578782081604
+    },
+    "1448": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.13767564296722412
+    },
+    "1499": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6243846416473389
+    },
+    "1508": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.191840648651123
+    },
+    "1513": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.14103245735168457
+    },
+    "1515": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.06796634197235107
+    },
+    "1524": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5985969305038452
+    },
+    "1526": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.8519587516784668
+    },
+    "1532": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.009958267211914062
+    },
+    "1540": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.05890291929244995
+    },
+    "1545": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.7984534502029419
+    },
+    "1549": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6248327493667603
+    },
+    "1556": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -2.3628861904144287
+    },
+    "1564": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.12662041187286377
+    },
+    "1569": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5481250286102295
+    },
+    "1573": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.35654938220977783
+    },
+    "1576": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999659657478333
+    },
+    "1578": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.14416587352752686
+    },
+    "1584": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.04062330722808838
+    },
+    "1595": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.018728494644165
+    },
+    "1602": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.4545438885688782
+    },
+    "1616": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999747276306152
+    },
+    "1621": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.0752038955688477
+    },
+    "1623": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.3868449926376343
+    },
+    "1626": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999747276306152
+    },
+    "1630": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.012453138828277588
+    },
+    "1649": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9952678680419922
+    },
+    "1658": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.19509148597717285
+    },
+    "1661": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.06849372386932373
+    },
+    "1669": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.9619266986846924
+    },
+    "1672": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9985688924789429
+    },
+    "1679": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999842643737793
+    },
+    "1732": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4985177516937256
+    },
+    "1734": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4941859245300293
+    },
+    "1735": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5379718542098999
+    },
+    "1737": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.15931165218353271
+    },
+    "1742": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.24236804246902466
+    },
+    "1746": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.07812082767486572
+    },
+    "1753": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9548073410987854
+    },
+    "1756": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9998517036437988
+    },
+    "1775": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.9409923553466797
+    },
+    "1802": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999896883964539
+    },
+    "1810": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.1768035888671875
+    },
+    "1815": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.42019790410995483
+    },
+    "1824": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5113142728805542
+    },
+    "1827": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.7254219055175781
+    },
+    "1836": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.3891505002975464
+    },
+    "1861": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.8467366695404053
+    },
+    "1878": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.5502866506576538
+    },
+    "1885": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.1673840880393982
+    },
+    "1897": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999058842658997
+    },
+    "1900": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.306384801864624
+    },
+    "1901": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.0899587869644165
+    },
+    "1911": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5591397285461426
+    },
+    "1941": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999769330024719
+    },
+    "1942": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.15441572666168213
+    },
+    "1950": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.19823163747787476
+    },
+    "1952": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.25457894802093506
+    },
+    "1956": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.26750826835632324
+    },
+    "1967": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.2556425929069519
+    },
+    "1970": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.1008188724517822
+    },
+    "1997": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.7984976768493652
+    },
+    "2035": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.12804090976715088
+    },
+    "2046": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.8193216323852539
+    },
+    "2080": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.04707205295562744
+    },
+    "2085": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.0466954708099365
+    },
+    "2102": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.8044654130935669
+    },
+    "2106": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.8961217403411865
+    },
+    "2121": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5103341341018677
+    },
+    "2132": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.21189916133880615
+    },
+    "2137": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.2185344696044922
+    },
+    "2153": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.17757189273834229
+    },
+    "2156": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.1739717721939087
+    },
+    "2157": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.18350648880004883
+    },
+    "2165": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999908804893494
+    },
+    "2170": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.07353579998016357
+    },
+    "2189": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.9151186943054199
+    },
+    "2213": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999908804893494
+    },
+    "2215": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.32472968101501465
+    },
+    "2218": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.08716338872909546
+    },
+    "2225": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6621023416519165
+    },
+    "2226": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.184788465499878
+    },
+    "2229": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.20648741722106934
+    },
+    "2236": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.41629457473754883
+    },
+    "2237": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5674617290496826
+    },
+    "2239": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.2554236650466919
+    },
+    "2248": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.3769124746322632
+    },
+    "2255": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.29151034355163574
+    },
+    "2260": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.254573106765747
+    },
+    "2263": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.13354456424713135
+    },
+    "2275": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.7628960609436035
+    },
+    "2290": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.9355365633964539
+    },
+    "2294": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.04491007328033447
+    },
+    "2297": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.18303704261779785
+    },
+    "2299": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.09105503559112549
+    },
+    "2314": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.115959882736206
+    },
+    "2318": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5818678140640259
+    },
+    "2335": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.40255892276763916
+    },
+    "2344": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.06331145763397217
+    },
+    "2359": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.16991031169891357
+    },
+    "2361": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.9156050086021423
+    },
+    "2377": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.583064615726471
+    },
+    "2383": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.023494839668273926
+    },
+    "2396": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -3.438164710998535
+    },
+    "2407": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.679938793182373
+    },
+    "2420": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.6152465343475342
+    },
+    "2421": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999842643737793
+    },
+    "2423": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.0613018274307251
+    },
+    "2440": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.12458670139312744
+    },
+    "2452": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.36014866828918457
+    },
+    "2453": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.2614239454269409
+    },
+    "2455": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6436949968338013
+    },
+    "2459": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.8548494577407837
+    },
+    "2476": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.30829745531082153
+    },
+    "2491": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.06926047801971436
+    },
+    "2499": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.8919105529785156
+    },
+    "2500": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999977946281433
+    },
+    "2512": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.3876829147338867
+    },
+    "2513": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.41375577449798584
+    },
+    "2529": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999896883964539
+    },
+    "2534": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.32580357789993286
+    },
+    "2535": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6783812046051025
+    },
+    "2545": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.3676244020462036
+    },
+    "2572": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.41865360736846924
+    },
+    "2607": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.32233190536499023
+    },
+    "2616": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9693953990936279
+    },
+    "2622": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9985027313232422
+    },
+    "2623": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.8737335801124573
+    },
+    "2632": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -2.5513691902160645
+    },
+    "2635": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.181955337524414
+    },
+    "2642": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.32244598865509033
+    },
+    "2645": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.0673940181732178
+    },
+    "2648": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.018230676651000977
+    },
+    "2665": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.906636118888855
+    },
+    "2669": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.0020065903663635254
+    },
+    "2685": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.3656572103500366
+    },
+    "2686": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5904332399368286
+    },
+    "2693": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.3191714286804199
+    },
+    "2700": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.19558370113372803
+    },
+    "2706": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.28493642807006836
+    },
+    "2715": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.1974945068359375
+    },
+    "2743": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.08183777332305908
+    },
+    "2754": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9994727373123169
+    },
+    "2762": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.20713907480239868
+    },
+    "2769": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.8904637098312378
+    },
+    "2775": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.6877045631408691
+    },
+    "2778": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.698070764541626
+    },
+    "2798": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.3612765669822693
+    },
+    "2817": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5074100494384766
+    },
+    "2818": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.049001455307006836
+    },
+    "2827": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6459046602249146
+    },
+    "2836": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.13866019248962402
+    },
+    "2846": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.6222208738327026
+    },
+    "2853": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5030645132064819
+    },
+    "2863": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.8408271074295044
+    },
+    "2869": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6101641654968262
+    },
+    "2873": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.04469132423400879
+    },
+    "2882": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.12359851598739624
+    },
+    "2894": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.45871078968048096
+    },
+    "2903": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.48588287830352783
+    },
+    "2917": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6686275005340576
+    },
+    "2937": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.7357079982757568
+    },
+    "2942": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.24919414520263672
+    },
+    "2966": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.4091445803642273
+    },
+    "3003": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.09147226810455322
+    },
+    "3009": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.3087286353111267
+    },
+    "3011": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.1578766107559204
+    },
+    "3027": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999896883964539
+    },
+    "3044": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.21541881561279297
+    },
+    "3056": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.29444122314453125
+    },
+    "3057": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.028527021408081
+    },
+    "3066": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.29556334018707275
+    },
+    "3067": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.9403185844421387
+    },
+    "3085": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.3800736665725708
+    },
+    "3096": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -2.830005168914795
+    },
+    "3122": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.17702269554138184
+    },
+    "3124": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.3893522024154663
+    },
+    "3129": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5614837408065796
+    },
+    "3135": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.511444091796875
+    },
+    "3139": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.40685534477233887
+    },
+    "3142": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9996141791343689
+    },
+    "3148": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999896883964539
+    },
+    "3161": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.27553486824035645
+    },
+    "3166": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5720415115356445
+    },
+    "3186": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.07141685485839844
+    },
+    "3216": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.295030117034912
+    },
+    "3221": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.3798105716705322
+    },
+    "3232": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.05769228935241699
+    },
+    "3240": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.250626802444458
+    },
+    "3249": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.50827956199646
+    },
+    "3254": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.28446877002716064
+    },
+    "3281": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.7288726568222046
+    },
+    "3282": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.1378798484802246
+    },
+    "3284": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.13665658235549927
+    },
+    "3299": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.04106760025024414
+    },
+    "3326": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.053655266761779785
+    },
+    "3328": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5956438779830933
+    },
+    "3330": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.704584002494812
+    },
+    "3339": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.7132095694541931
+    },
+    "3349": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9982816576957703
+    },
+    "3354": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.7939585447311401
+    },
+    "3358": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.38599061965942383
+    },
+    "3368": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.38402897119522095
+    },
+    "3375": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.39520132541656494
+    },
+    "3390": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999769330024719
+    },
+    "3414": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.03119969367980957
+    },
+    "3447": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4835824966430664
+    },
+    "3465": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.1504022479057312
+    },
+    "3472": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.009690523147583008
+    },
+    "3475": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5337023735046387
+    },
+    "3477": {
+      "dup_exact": false,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.9467178583145142
+    },
+    "3484": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.29916006326675415
+    },
+    "3487": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.04620635509490967
+    },
+    "3494": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.0124948024749756
+    },
+    "3502": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.709381103515625
+    },
+    "3504": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.41672849655151367
+    },
+    "3525": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.515282154083252
+    },
+    "3537": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.13882720470428467
+    },
+    "3545": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.568749189376831
+    },
+    "3557": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.16310548782348633
+    },
+    "3558": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4667316675186157
+    },
+    "3577": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.08704769611358643
+    },
+    "3589": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.6961801052093506
+    },
+    "3590": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9987131953239441
+    },
+    "3595": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.26348745822906494
+    },
+    "3601": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.09616029262542725
+    },
+    "3606": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5816148519515991
+    },
+    "3610": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.14745628833770752
+    },
+    "3649": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6938518285751343
+    },
+    "3651": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.04197901487350464
+    },
+    "3681": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.7177022695541382
+    },
+    "3687": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.7400732040405273
+    },
+    "3713": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.4231411814689636
+    },
+    "3721": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.299159049987793
+    },
+    "3732": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.004615068435668945
+    },
+    "3750": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.1516494750976562
+    },
+    "3757": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.476094126701355
+    },
+    "3772": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.004258573055267334
+    },
+    "3775": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.550471305847168
+    },
+    "3778": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6771326065063477
+    },
+    "3785": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.8110947608947754
+    },
+    "3792": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.05005490779876709
+    },
+    "3796": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.12652546167373657
+    },
+    "3797": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.27210450172424316
+    },
+    "3799": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.19412678480148315
+    },
+    "3807": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.17410850524902344
+    },
+    "3847": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.29179853200912476
+    },
+    "3863": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.2896462082862854
+    },
+    "3869": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4622544050216675
+    },
+    "3884": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999747276306152
+    },
+    "3900": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.18349790573120117
+    },
+    "3909": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999977946281433
+    },
+    "3921": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.161757230758667
+    },
+    "3926": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999977946281433
+    },
+    "3948": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.14088821411132812
+    },
+    "3949": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9998423457145691
+    },
+    "3961": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5906378030776978
+    },
+    "3991": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.10974359512329102
+    },
+    "4026": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.2995544672012329
+    },
+    "4042": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.25837087631225586
+    },
+    "4045": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.028387784957885742
+    },
+    "4054": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.2528553009033203
+    },
+    "4064": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6783765554428101
+    },
+    "4075": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.0675886869430542
+    },
+    "4080": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.4204354286193848
+    },
+    "4088": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5136758089065552
+    },
+    "4109": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.03945571184158325
+    },
+    "4133": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5049635171890259
+    },
+    "4137": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.7737013101577759
+    },
+    "4138": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.007697463035583496
+    },
+    "4150": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9986860156059265
+    },
+    "4154": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.14866316318511963
+    },
+    "4155": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.6558315753936768
+    },
+    "4159": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.3566973209381104
+    },
+    "4172": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.7698472142219543
+    },
+    "4185": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.16113615036010742
+    },
+    "4210": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.9588496685028076
+    },
+    "4233": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.29347026348114014
+    },
+    "4251": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.5611231327056885
+    },
+    "4257": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.3748990297317505
+    },
+    "4258": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9951230883598328
+    },
+    "4263": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.9066694974899292
+    },
+    "4307": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.14287590980529785
+    },
+    "4347": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.09364402294158936
+    },
+    "4360": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.638443112373352
+    },
+    "4366": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5097955465316772
+    },
+    "4367": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.10816729068756104
+    },
+    "4371": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.8300594091415405
+    },
+    "4382": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9955004453659058
+    },
+    "4386": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999769330024719
+    },
+    "4390": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.18421363830566406
+    },
+    "4391": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.1780914068222046
+    },
+    "4410": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9986211657524109
+    },
+    "4416": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.22919195890426636
+    },
+    "4435": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.1458756923675537
+    },
+    "4445": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.22316908836364746
+    },
+    "4451": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.003120899200439453
+    },
+    "4454": {
+      "dup_exact": false,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.7039378881454468
+    },
+    "4460": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5164885520935059
+    },
+    "4462": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.9097546339035034
+    },
+    "4487": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.17248404026031494
+    },
+    "4493": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9977275729179382
+    },
+    "4494": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.6956032514572144
+    },
+    "4506": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.004268169403076172
+    },
+    "4524": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.49661457538604736
+    },
+    "4538": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.05256235599517822
+    },
+    "4552": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.299619197845459
+    },
+    "4554": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.60463547706604
+    },
+    "4558": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.38828933238983154
+    },
+    "4584": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.061292827129364014
+    },
+    "4586": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.1452164649963379
+    },
+    "4595": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.08883953094482422
+    },
+    "4608": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.2985806465148926
+    },
+    "4621": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.20300185680389404
+    },
+    "4624": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4717230796813965
+    },
+    "4629": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.27175235748291016
+    },
+    "4630": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.029376745223999023
+    },
+    "4631": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.5528850555419922
+    },
+    "4639": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.18410122394561768
+    },
+    "4652": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.25343620777130127
+    },
+    "4660": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.253581166267395
+    },
+    "4699": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.23164701461791992
+    },
+    "4700": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.14516079425811768
+    },
+    "4719": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.10683608055114746
+    },
+    "4720": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6523363590240479
+    },
+    "4722": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.297757625579834
+    },
+    "4729": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.190521240234375
+    },
+    "4734": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.48971235752105713
+    },
+    "4737": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.2925536632537842
+    },
+    "4740": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999896883964539
+    },
+    "4757": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.22698140144348145
+    },
+    "4770": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.315558910369873
+    },
+    "4783": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.39473438262939453
+    },
+    "4785": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.09977459907531738
+    },
+    "4787": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.36977434158325195
+    },
+    "4795": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.45636987686157227
+    },
+    "4802": {
+      "dup_exact": true,
+      "dup_lowercased": true,
+      "near_perfect": true,
+      "foldB_pooled_skill": 0.9999935030937195
+    },
+    "4808": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.057802557945251465
+    },
+    "4826": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.3520853519439697
+    },
+    "4831": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.2945067882537842
+    },
+    "4853": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.4577333927154541
+    },
+    "4857": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.48858678340911865
+    },
+    "4862": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.22609394788742065
+    },
+    "4885": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.40597963333129883
+    },
+    "4888": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.057386040687561035
+    },
+    "4900": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.16884595155715942
+    },
+    "4903": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.24486595392227173
+    },
+    "4913": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.8781144618988037
+    },
+    "4924": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.6196234226226807
+    },
+    "4935": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -1.0795977115631104
+    },
+    "4950": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.6786283254623413
+    },
+    "4977": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -0.7226766347885132
+    },
+    "4979": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": 0.05870717763900757
+    },
+    "4991": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -2.3339831829071045
+    },
+    "4994": {
+      "dup_exact": false,
+      "dup_lowercased": false,
+      "near_perfect": false,
+      "foldB_pooled_skill": -2.141136407852173
+    }
+  },
+  "metadata": {
+    "git_commit": "895e4c78315d514a975d13a3965d49a8417137be",
+    "timestamp_utc": "2026-07-04T14:55:45.321171Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue958_r2_sidecar_and_fig"
+  }
+}

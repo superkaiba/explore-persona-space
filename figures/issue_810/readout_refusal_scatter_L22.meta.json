@@ -1,0 +1,312 @@
+{
+  "commit": "d7b15e4152",
+  "created": "2026-07-02T21:10:50Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "projection on the fixed refusal direction (layer 22)": -400.2598876953125,
+      "graded refusal score (0-100)": 17.556756756756755,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -338.710693359375,
+      "graded refusal score (0-100)": 23.246153846153845,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -96.62127685546875,
+      "graded refusal score (0-100)": 15.027322404371585,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": 22.823699951171875,
+      "graded refusal score (0-100)": 13.92,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -363.3116149902344,
+      "graded refusal score (0-100)": 19.682795698924732,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": 48.544677734375,
+      "graded refusal score (0-100)": 4.753554502369668,
+      "label": "f5_fmt_markdown_table",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -285.18170166015625,
+      "graded refusal score (0-100)": 24.11764705882353,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -417.32928466796875,
+      "graded refusal score (0-100)": 22.33132530120482,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -294.8800048828125,
+      "graded refusal score (0-100)": 18.51578947368421,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -173.55467224121094,
+      "graded refusal score (0-100)": 11.822222222222223,
+      "label": "Spearman rho = -0.607\nlength-partialled rho = -0.584 (p = 1.1e-05)",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -103.42961120605469,
+      "graded refusal score (0-100)": 17.668539325842698,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -219.70262145996094,
+      "graded refusal score (0-100)": 18.855670103092784,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": 33.3558349609375,
+      "graded refusal score (0-100)": 14.464285714285714,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -377.753173828125,
+      "graded refusal score (0-100)": 47.41530054644809,
+      "label": "f8_behav_harmful",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -451.32513427734375,
+      "graded refusal score (0-100)": 20.74576271186441,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -216.45211791992188,
+      "graded refusal score (0-100)": 21.356756756756756,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -157.8791961669922,
+      "graded refusal score (0-100)": 12.617977528089888,
+      "label": "Spearman rho = -0.607\nlength-partialled rho = -0.584 (p = 1.1e-05)",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": 61.330352783203125,
+      "graded refusal score (0-100)": 17.293785310734464,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -296.53973388671875,
+      "graded refusal score (0-100)": 15.033175355450236,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": 130.53822326660156,
+      "graded refusal score (0-100)": 12.11,
+      "label": "f5_fmt_bullets",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -359.70294189453125,
+      "graded refusal score (0-100)": 20.40340909090909,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -266.44708251953125,
+      "graded refusal score (0-100)": 25.58823529411765,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": 133.09161376953125,
+      "graded refusal score (0-100)": 14.751351351351351,
+      "label": "f2_wc_long_1",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -208.00540161132812,
+      "graded refusal score (0-100)": 19.30635838150289,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -336.4437255859375,
+      "graded refusal score (0-100)": 19.288659793814432,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -246.74725341796875,
+      "graded refusal score (0-100)": 16.64864864864865,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -434.2109375,
+      "graded refusal score (0-100)": 20.52777777777778,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -296.49761962890625,
+      "graded refusal score (0-100)": 18.553072625698324,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": 160.68023681640625,
+      "graded refusal score (0-100)": 13.640449438202246,
+      "label": "f2_wc_long_2",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -63.525360107421875,
+      "graded refusal score (0-100)": 15.307692307692308,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -80.84814453125,
+      "graded refusal score (0-100)": 16.92063492063492,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -420.04339599609375,
+      "graded refusal score (0-100)": 17.31791907514451,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -400.4876708984375,
+      "graded refusal score (0-100)": 17.005649717514125,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -246.92982482910156,
+      "graded refusal score (0-100)": 19.785714285714285,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -117.24114990234375,
+      "graded refusal score (0-100)": 13.100558659217876,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": 53.7261962890625,
+      "graded refusal score (0-100)": 15.711764705882352,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -338.30047607421875,
+      "graded refusal score (0-100)": 20.71069182389937,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -375.015380859375,
+      "graded refusal score (0-100)": 20.182795698924732,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -259.05615234375,
+      "graded refusal score (0-100)": 18.74576271186441,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -154.82473754882812,
+      "graded refusal score (0-100)": 14.657303370786517,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": 1.779388427734375,
+      "graded refusal score (0-100)": 20.382857142857144,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -30.89337158203125,
+      "graded refusal score (0-100)": 17.16216216216216,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": 51.31024169921875,
+      "graded refusal score (0-100)": 18.995391705069125,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -461.7232666015625,
+      "graded refusal score (0-100)": 27.93820224719101,
+      "label": "f8_behav_sycophant",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -284.0578308105469,
+      "graded refusal score (0-100)": 19.17222222222222,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -60.091705322265625,
+      "graded refusal score (0-100)": 19.368098159509202,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": 79.80589294433594,
+      "graded refusal score (0-100)": 13.104395604395604,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": 153.45242309570312,
+      "graded refusal score (0-100)": 20.60989010989011,
+      "label": "f3_icl_json_k8",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -7.785736083984375,
+      "graded refusal score (0-100)": 17.032432432432433,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter"
+    },
+    {
+      "projection on the fixed refusal direction (layer 22)": -455.48907470703125,
+      "graded refusal score (0-100)": 25.835051546391753,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 50
+}

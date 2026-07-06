@@ -89,7 +89,13 @@ def _io(
     git_tracked_paths = git_tracked_paths or set()
     on_disk = on_disk if on_disk is not None else git_tracked_paths
 
-    def _list_hf(repo_id: str, *, repo_type: str, revision: str | None = None) -> list[str]:
+    def _list_hf(
+        repo_id: str,
+        *,
+        repo_type: str,
+        revision: str | None = None,
+        path_in_repo: str | None = None,
+    ) -> list[str]:
         if hf_raises is not None:
             raise hf_raises
         if repo_type == "dataset":
@@ -597,7 +603,7 @@ def test_slurm_confirm_artifacts_returns_false_on_fail(monkeypatch) -> None:
     # so the HF check fails without any real network call.
     monkeypatch.setattr(
         "explore_persona_space.backends.artifacts._default_list_hf_repo_files",
-        lambda repo_id, *, repo_type, revision=None: [],
+        lambda repo_id, *, repo_type, revision=None, path_in_repo=None: [],
     )
     backend = SlurmBackend()
     assert backend.confirm_artifacts(handle) is False
@@ -616,7 +622,7 @@ def test_slurm_confirm_artifacts_returns_true_on_pass(monkeypatch, tmp_path: Pat
     )
     monkeypatch.setattr(
         "explore_persona_space.backends.artifacts._default_list_hf_repo_files",
-        lambda repo_id, *, repo_type, revision=None: [
+        lambda repo_id, *, repo_type, revision=None, path_in_repo=None: [
             "issue137_warmth/raw_completions/seed_42.json"
         ],
     )
@@ -1343,3 +1349,103 @@ def test_new_fields_default_off_round_trip_back_compat(tmp_path: Path) -> None:
     rebuilt = expected_artifacts_from_handle(handle)
     assert rebuilt is not None
     assert rebuilt.git_repo_root is None
+
+
+# ---------------------------------------------------------------------------
+# #988 — scoped per-path HF listings in _check_hf_paths
+# ---------------------------------------------------------------------------
+
+
+def test_check_hf_paths_scopes_listing_per_declared_path() -> None:
+    """#988: ``_check_hf_paths`` threads ``path_in_repo`` per declared path
+    (one scoped call each, in declaration order) and the verdict semantics
+    (SKIP / PASS / FAIL-missing / FAIL-raised) are unchanged."""
+    from explore_persona_space.backends.artifacts import VerifierIO, _check_hf_paths
+
+    calls: list[str | None] = []
+
+    def _spy(repo_id, *, repo_type, revision=None, path_in_repo=None):
+        calls.append(path_in_repo)
+        if path_in_repo == "issue1/present":
+            return ["issue1/present/file.json"]
+        return []
+
+    io = VerifierIO(list_hf_repo_files=_spy)
+
+    # SKIP: no declared paths -> no listing call at all.
+    res = _check_hf_paths(repo_id="org/data", repo_type="dataset", paths=(), io=io)
+    assert res["status"] == "SKIP"
+    assert calls == []
+
+    # PASS: the one declared dir path resolves via ONE scoped call
+    # (trailing slash stripped for the server-side kwarg).
+    res = _check_hf_paths(
+        repo_id="org/data", repo_type="dataset", paths=("issue1/present/",), io=io
+    )
+    assert res["status"] == "PASS"
+    assert calls == ["issue1/present"]
+
+    # FAIL-missing: declaration order preserved in the calls AND the detail.
+    calls.clear()
+    res = _check_hf_paths(
+        repo_id="org/data",
+        repo_type="dataset",
+        paths=("issue1/present/", "issue1/ghost/"),
+        io=io,
+    )
+    assert res["status"] == "FAIL"
+    assert "issue1/ghost/" in res["detail"]
+    assert calls == ["issue1/present", "issue1/ghost"]
+
+    # FAIL-raised: a transport error on any per-path call surfaces as FAIL
+    # with the reason (never a silent pass).
+    def _raise(repo_id, *, repo_type, revision=None, path_in_repo=None):
+        raise RuntimeError("HF Hub 503")
+
+    res = _check_hf_paths(
+        repo_id="org/data",
+        repo_type="dataset",
+        paths=("issue1/present/",),
+        io=VerifierIO(list_hf_repo_files=_raise),
+    )
+    assert res["status"] == "FAIL"
+    assert "HF Hub 503" in res["detail"]
+
+
+def test_default_list_hf_repo_files_body_scoped_and_full(monkeypatch) -> None:
+    """#988 body test (code-style: one production-body test per seam-stubbed
+    function): execute the REAL ``_default_list_hf_repo_files`` — fakes only at
+    the Hub boundary (``HfApi`` construction + the paginated
+    ``list_repo_files_complete`` walk, signature-conformant by construction).
+    ``path_in_repo`` routes through the REAL ``list_hf_files_under_path`` body
+    (scoped server-side kwarg threaded, trailing slash normalized); ``None``
+    keeps the seam-compat full listing."""
+    import huggingface_hub
+
+    import explore_persona_space.orchestrate.hub as hub
+    from explore_persona_space.backends.artifacts import _default_list_hf_repo_files
+
+    class _StubApi:
+        def __init__(self, token=None):
+            self.token = token
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", _StubApi)
+
+    calls: list[tuple[str, str, str | None, str | None]] = []
+
+    def _fake_complete(api, repo_id, *, repo_type="model", revision=None, path_in_repo=None):
+        assert isinstance(api, _StubApi), "the stub api must reach the scoped walk"
+        calls.append((repo_id, repo_type, revision, path_in_repo))
+        if path_in_repo is not None:
+            return [f"{path_in_repo}/a.json"]
+        return ["root.json", "issue1/a.json"]
+
+    monkeypatch.setattr(hub, "list_repo_files_complete", _fake_complete)
+
+    out = _default_list_hf_repo_files("org/data", repo_type="dataset", path_in_repo="issue1/raw/")
+    assert out == ["issue1/raw/a.json"]
+    assert calls[-1] == ("org/data", "dataset", None, "issue1/raw")
+
+    out = _default_list_hf_repo_files("org/data", repo_type="dataset")
+    assert out == ["root.json", "issue1/a.json"]
+    assert calls[-1] == ("org/data", "dataset", None, None)

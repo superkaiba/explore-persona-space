@@ -1,0 +1,1384 @@
+{
+  "commit": "fd6476191e",
+  "created": "2026-07-03T03:18:06Z",
+  "figsize": [
+    8.6,
+    4.8
+  ],
+  "points": [
+    {
+      "Layer": 0.0,
+      "Mean pooled fold $R^2$": 0.43269995790191,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 1.0,
+      "Mean pooled fold $R^2$": 0.4531208392578699,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 2.0,
+      "Mean pooled fold $R^2$": 0.49220231886538884,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 3.0,
+      "Mean pooled fold $R^2$": 0.49549245758555865,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 4.0,
+      "Mean pooled fold $R^2$": 0.5031952252707759,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 5.0,
+      "Mean pooled fold $R^2$": 0.5130428264635889,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 6.0,
+      "Mean pooled fold $R^2$": 0.5153106861909018,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 7.0,
+      "Mean pooled fold $R^2$": 0.5277212348452582,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 8.0,
+      "Mean pooled fold $R^2$": 0.5454364581663427,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 9.0,
+      "Mean pooled fold $R^2$": 0.5145755368365811,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 10.0,
+      "Mean pooled fold $R^2$": 0.5283316459007008,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 11.0,
+      "Mean pooled fold $R^2$": 0.5400171469914572,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 12.0,
+      "Mean pooled fold $R^2$": 0.5575890361613399,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 13.0,
+      "Mean pooled fold $R^2$": 0.5966985344426471,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 14.0,
+      "Mean pooled fold $R^2$": 0.5988290884118461,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 15.0,
+      "Mean pooled fold $R^2$": 0.616720314238824,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 16.0,
+      "Mean pooled fold $R^2$": 0.6274966487158654,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 17.0,
+      "Mean pooled fold $R^2$": 0.6260118332433705,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 18.0,
+      "Mean pooled fold $R^2$": 0.6355630642663667,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 19.0,
+      "Mean pooled fold $R^2$": 0.6785367137391495,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 20.0,
+      "Mean pooled fold $R^2$": 0.6612531756744084,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 21.0,
+      "Mean pooled fold $R^2$": 0.6493864258797066,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 22.0,
+      "Mean pooled fold $R^2$": 0.6498006019109934,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 23.0,
+      "Mean pooled fold $R^2$": 0.6294087061929157,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 24.0,
+      "Mean pooled fold $R^2$": 0.6314016412419355,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 25.0,
+      "Mean pooled fold $R^2$": 0.6313606267149823,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 26.0,
+      "Mean pooled fold $R^2$": 0.6080161650744824,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 27.0,
+      "Mean pooled fold $R^2$": 0.5951771825698039,
+      "series": "refit: own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer": 0.0,
+      "Mean pooled fold $R^2$": 0.3942315680455945,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 1.0,
+      "Mean pooled fold $R^2$": 0.41601675039290037,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 2.0,
+      "Mean pooled fold $R^2$": 0.4492829750278113,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 3.0,
+      "Mean pooled fold $R^2$": 0.4654655133467746,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 4.0,
+      "Mean pooled fold $R^2$": 0.47856460488409763,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 5.0,
+      "Mean pooled fold $R^2$": 0.49271130343397856,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 6.0,
+      "Mean pooled fold $R^2$": 0.4970261663580368,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 7.0,
+      "Mean pooled fold $R^2$": 0.5041240919707318,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 8.0,
+      "Mean pooled fold $R^2$": 0.5213191957097253,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 9.0,
+      "Mean pooled fold $R^2$": 0.49698224600212154,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 10.0,
+      "Mean pooled fold $R^2$": 0.5192226502293483,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 11.0,
+      "Mean pooled fold $R^2$": 0.5351811547330521,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 12.0,
+      "Mean pooled fold $R^2$": 0.550593377227251,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 13.0,
+      "Mean pooled fold $R^2$": 0.5698603380992806,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 14.0,
+      "Mean pooled fold $R^2$": 0.5845818410435927,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 15.0,
+      "Mean pooled fold $R^2$": 0.5976641169871394,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 16.0,
+      "Mean pooled fold $R^2$": 0.6064334113609039,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 17.0,
+      "Mean pooled fold $R^2$": 0.5911089915529909,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 18.0,
+      "Mean pooled fold $R^2$": 0.596905945097568,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 19.0,
+      "Mean pooled fold $R^2$": 0.6655355795327564,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 20.0,
+      "Mean pooled fold $R^2$": 0.6539160282807787,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 21.0,
+      "Mean pooled fold $R^2$": 0.6391265161867794,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 22.0,
+      "Mean pooled fold $R^2$": 0.6118301626084077,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 23.0,
+      "Mean pooled fold $R^2$": 0.5899462338853774,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 24.0,
+      "Mean pooled fold $R^2$": 0.5860299294277521,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 25.0,
+      "Mean pooled fold $R^2$": 0.5818623907229292,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 26.0,
+      "Mean pooled fold $R^2$": 0.5559560884817063,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 27.0,
+      "Mean pooled fold $R^2$": 0.5940074270942154,
+      "series": "refit: external answer (plain style)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer": 0.0,
+      "Mean pooled fold $R^2$": 0.2081714000322211,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 1.0,
+      "Mean pooled fold $R^2$": 0.24361301904890187,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 2.0,
+      "Mean pooled fold $R^2$": 0.2888882978904972,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 3.0,
+      "Mean pooled fold $R^2$": 0.2987952544891419,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 4.0,
+      "Mean pooled fold $R^2$": 0.31529245306093345,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 5.0,
+      "Mean pooled fold $R^2$": 0.3326565646132214,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 6.0,
+      "Mean pooled fold $R^2$": 0.34901674531618077,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 7.0,
+      "Mean pooled fold $R^2$": 0.33885197428431785,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 8.0,
+      "Mean pooled fold $R^2$": 0.36677814963992833,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 9.0,
+      "Mean pooled fold $R^2$": 0.36298771057010243,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 10.0,
+      "Mean pooled fold $R^2$": 0.3828078064928963,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 11.0,
+      "Mean pooled fold $R^2$": 0.39686231733822125,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 12.0,
+      "Mean pooled fold $R^2$": 0.4183796036962186,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 13.0,
+      "Mean pooled fold $R^2$": 0.44786080264583195,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 14.0,
+      "Mean pooled fold $R^2$": 0.47247690372481904,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 15.0,
+      "Mean pooled fold $R^2$": 0.4878586808624819,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 16.0,
+      "Mean pooled fold $R^2$": 0.5001490982546076,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 17.0,
+      "Mean pooled fold $R^2$": 0.5056526516971603,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 18.0,
+      "Mean pooled fold $R^2$": 0.5124145398562518,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 19.0,
+      "Mean pooled fold $R^2$": 0.5550393796978511,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 20.0,
+      "Mean pooled fold $R^2$": 0.5448105967259762,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 21.0,
+      "Mean pooled fold $R^2$": 0.537982868482362,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 22.0,
+      "Mean pooled fold $R^2$": 0.5172428999442881,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 23.0,
+      "Mean pooled fold $R^2$": 0.4956228614186647,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 24.0,
+      "Mean pooled fold $R^2$": 0.4981953172729063,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 25.0,
+      "Mean pooled fold $R^2$": 0.4954921906806435,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 26.0,
+      "Mean pooled fold $R^2$": 0.4675077227954585,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 27.0,
+      "Mean pooled fold $R^2$": 0.5324115924570151,
+      "series": "refit: external answer (distinct style)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer": 0.0,
+      "Mean pooled fold $R^2$": -0.009365546617663511,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 1.0,
+      "Mean pooled fold $R^2$": -0.005992143353295588,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 2.0,
+      "Mean pooled fold $R^2$": -0.004095548993105469,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 3.0,
+      "Mean pooled fold $R^2$": -0.008429057557304808,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 4.0,
+      "Mean pooled fold $R^2$": -0.006002932646833425,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 5.0,
+      "Mean pooled fold $R^2$": -0.0054965862378164145,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 6.0,
+      "Mean pooled fold $R^2$": -0.0038327279700434585,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 7.0,
+      "Mean pooled fold $R^2$": -0.007938035732960369,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 8.0,
+      "Mean pooled fold $R^2$": -0.004959805739868761,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 9.0,
+      "Mean pooled fold $R^2$": -0.004047016560486494,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 10.0,
+      "Mean pooled fold $R^2$": -0.0009274674309656781,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 11.0,
+      "Mean pooled fold $R^2$": -0.0011513890993200214,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 12.0,
+      "Mean pooled fold $R^2$": 0.0009437997015874,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 13.0,
+      "Mean pooled fold $R^2$": 0.0034441573325085795,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 14.0,
+      "Mean pooled fold $R^2$": 0.003888826175458693,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 15.0,
+      "Mean pooled fold $R^2$": 0.010716723255727858,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 16.0,
+      "Mean pooled fold $R^2$": 0.008117648127713584,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 17.0,
+      "Mean pooled fold $R^2$": 0.006560727494076546,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 18.0,
+      "Mean pooled fold $R^2$": 0.010091168157391727,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 19.0,
+      "Mean pooled fold $R^2$": 0.009430039336352536,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 20.0,
+      "Mean pooled fold $R^2$": 0.010836538033018364,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 21.0,
+      "Mean pooled fold $R^2$": 0.009043830832074207,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 22.0,
+      "Mean pooled fold $R^2$": 0.006120950098644019,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 23.0,
+      "Mean pooled fold $R^2$": 0.00473357598650379,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 24.0,
+      "Mean pooled fold $R^2$": -0.0012379669942143901,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 25.0,
+      "Mean pooled fold $R^2$": -0.005353176301189588,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 26.0,
+      "Mean pooled fold $R^2$": -0.008103530713130613,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 27.0,
+      "Mean pooled fold $R^2$": -0.012091178110733791,
+      "series": "refit: mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer": 0.0,
+      "Mean pooled fold $R^2$": 0.28407605982815554,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 1.0,
+      "Mean pooled fold $R^2$": 0.2825241595655872,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 2.0,
+      "Mean pooled fold $R^2$": 0.3227417052211278,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 3.0,
+      "Mean pooled fold $R^2$": 0.33097610194110144,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 4.0,
+      "Mean pooled fold $R^2$": 0.3405482653751808,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 5.0,
+      "Mean pooled fold $R^2$": 0.3378826885595876,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 6.0,
+      "Mean pooled fold $R^2$": 0.33631927708472703,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 7.0,
+      "Mean pooled fold $R^2$": 0.35906327169879254,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 8.0,
+      "Mean pooled fold $R^2$": 0.37967177498350785,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 9.0,
+      "Mean pooled fold $R^2$": 0.37317951247107445,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 10.0,
+      "Mean pooled fold $R^2$": 0.38901962101248655,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 11.0,
+      "Mean pooled fold $R^2$": 0.39891473561988744,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 12.0,
+      "Mean pooled fold $R^2$": 0.4129889612028343,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 13.0,
+      "Mean pooled fold $R^2$": 0.45901225932803574,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 14.0,
+      "Mean pooled fold $R^2$": 0.45718564224221553,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 15.0,
+      "Mean pooled fold $R^2$": 0.4661478602406047,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 16.0,
+      "Mean pooled fold $R^2$": 0.471300903903294,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 17.0,
+      "Mean pooled fold $R^2$": 0.46123825672667823,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 18.0,
+      "Mean pooled fold $R^2$": 0.47048322948683047,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 19.0,
+      "Mean pooled fold $R^2$": 0.5251338161492998,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 20.0,
+      "Mean pooled fold $R^2$": 0.5070192886789495,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 21.0,
+      "Mean pooled fold $R^2$": 0.5017400679006788,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 22.0,
+      "Mean pooled fold $R^2$": 0.49946645593771066,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 23.0,
+      "Mean pooled fold $R^2$": 0.48017943905004995,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 24.0,
+      "Mean pooled fold $R^2$": 0.4838171686935439,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 25.0,
+      "Mean pooled fold $R^2$": 0.4819247533083694,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 26.0,
+      "Mean pooled fold $R^2$": 0.45132954962518507,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 27.0,
+      "Mean pooled fold $R^2$": 0.4578936947156369,
+      "series": "own-answer map \u2192 external answer (plain style)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer": 0.0,
+      "Mean pooled fold $R^2$": -0.15482141721004727,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 1.0,
+      "Mean pooled fold $R^2$": -0.14654398803058094,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 2.0,
+      "Mean pooled fold $R^2$": -0.1122676832706107,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 3.0,
+      "Mean pooled fold $R^2$": -0.12313177935477009,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 4.0,
+      "Mean pooled fold $R^2$": -0.14217478081050167,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 5.0,
+      "Mean pooled fold $R^2$": -0.13428196645030566,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 6.0,
+      "Mean pooled fold $R^2$": -0.18607485182241526,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 7.0,
+      "Mean pooled fold $R^2$": -0.19556734370018378,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 8.0,
+      "Mean pooled fold $R^2$": -0.1825571200562152,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 9.0,
+      "Mean pooled fold $R^2$": -0.17348187109866275,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 10.0,
+      "Mean pooled fold $R^2$": -0.16406753510250222,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 11.0,
+      "Mean pooled fold $R^2$": -0.1839922994339037,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 12.0,
+      "Mean pooled fold $R^2$": -0.16617482249808213,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 13.0,
+      "Mean pooled fold $R^2$": -0.05064900753621956,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 14.0,
+      "Mean pooled fold $R^2$": -0.0697476012150251,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 15.0,
+      "Mean pooled fold $R^2$": -0.06722758908120441,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 16.0,
+      "Mean pooled fold $R^2$": -0.056627148774611724,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 17.0,
+      "Mean pooled fold $R^2$": -0.05919522517601803,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 18.0,
+      "Mean pooled fold $R^2$": -0.05448294330648484,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 19.0,
+      "Mean pooled fold $R^2$": 0.0026780512433367764,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 20.0,
+      "Mean pooled fold $R^2$": -0.012629251861060184,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 21.0,
+      "Mean pooled fold $R^2$": 0.026012396881555943,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 22.0,
+      "Mean pooled fold $R^2$": 0.07009060574481893,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 23.0,
+      "Mean pooled fold $R^2$": 0.06636981967549549,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 24.0,
+      "Mean pooled fold $R^2$": 0.1027256945291235,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 25.0,
+      "Mean pooled fold $R^2$": 0.10987376035647074,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 26.0,
+      "Mean pooled fold $R^2$": 0.04973060083048494,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 27.0,
+      "Mean pooled fold $R^2$": 0.0683434191463703,
+      "series": "own-answer map \u2192 external answer (distinct style)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer": 0.0,
+      "Mean pooled fold $R^2$": -0.47294648588637517,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 1.0,
+      "Mean pooled fold $R^2$": -0.4769053043191211,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 2.0,
+      "Mean pooled fold $R^2$": -0.4854393732298649,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 3.0,
+      "Mean pooled fold $R^2$": -0.5073853412120565,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 4.0,
+      "Mean pooled fold $R^2$": -0.5125744473527225,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 5.0,
+      "Mean pooled fold $R^2$": -0.5540403496521277,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 6.0,
+      "Mean pooled fold $R^2$": -0.5927784895046837,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 7.0,
+      "Mean pooled fold $R^2$": -0.538822767503931,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 8.0,
+      "Mean pooled fold $R^2$": -0.5541502377216277,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 9.0,
+      "Mean pooled fold $R^2$": -0.5395657563751977,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 10.0,
+      "Mean pooled fold $R^2$": -0.5766886188623699,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 11.0,
+      "Mean pooled fold $R^2$": -0.6131358266621593,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 12.0,
+      "Mean pooled fold $R^2$": -0.6400561109946805,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 13.0,
+      "Mean pooled fold $R^2$": -0.6241502704318025,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 14.0,
+      "Mean pooled fold $R^2$": -0.744077752495444,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 15.0,
+      "Mean pooled fold $R^2$": -0.7568197976360356,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 16.0,
+      "Mean pooled fold $R^2$": -0.7786092353434201,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 17.0,
+      "Mean pooled fold $R^2$": -0.8024904823155529,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 18.0,
+      "Mean pooled fold $R^2$": -0.8115658309637542,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 19.0,
+      "Mean pooled fold $R^2$": -0.8180366940572288,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 20.0,
+      "Mean pooled fold $R^2$": -0.8047813091349324,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 21.0,
+      "Mean pooled fold $R^2$": -0.7588225712704203,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 22.0,
+      "Mean pooled fold $R^2$": -0.6636855084296431,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 23.0,
+      "Mean pooled fold $R^2$": -0.6309889785855992,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 24.0,
+      "Mean pooled fold $R^2$": -0.6314299598550859,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 25.0,
+      "Mean pooled fold $R^2$": -0.6494320379026641,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 26.0,
+      "Mean pooled fold $R^2$": -0.6528035940087985,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer": 27.0,
+      "Mean pooled fold $R^2$": -0.625621876492785,
+      "series": "own-answer map \u2192 mismatched answer (shuffled)",
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 196
+}

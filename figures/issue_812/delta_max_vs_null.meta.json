@@ -1,0 +1,61 @@
+{
+  "commit": "6d0bc450bf",
+  "created": "2026-07-03T04:17:18Z",
+  "figsize": [
+    6.5,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "max-over-layer gain in held-out Spearman rho\n(unpooled minus mean pool)": 0.06655462184873945,
+      "label": "p = 0.94",
+      "series": "observed",
+      "_kind": "scatter"
+    },
+    {
+      "x": 1.0,
+      "max-over-layer gain in held-out Spearman rho\n(unpooled minus mean pool)": 0.2888835534213686,
+      "label": "p = 0.20",
+      "series": "observed",
+      "_kind": "scatter"
+    },
+    {
+      "x": 2.0,
+      "max-over-layer gain in held-out Spearman rho\n(unpooled minus mean pool)": 0.05214885954381743,
+      "label": "p = 0.95",
+      "series": "observed",
+      "_kind": "scatter"
+    },
+    {
+      "x": 3.0,
+      "max-over-layer gain in held-out Spearman rho\n(unpooled minus mean pool)": 0.01575105649146158,
+      "label": "p = 0.99",
+      "series": "observed",
+      "_kind": "scatter"
+    },
+    {
+      "x": 4.0,
+      "max-over-layer gain in held-out Spearman rho\n(unpooled minus mean pool)": -0.09421368547418973,
+      "label": "p = 1.00",
+      "series": "observed",
+      "_kind": "scatter"
+    },
+    {
+      "x": 5.0,
+      "max-over-layer gain in held-out Spearman rho\n(unpooled minus mean pool)": 0.0654021608643457,
+      "label": "p = 0.97",
+      "series": "observed",
+      "_kind": "scatter"
+    },
+    {
+      "x": 6.0,
+      "max-over-layer gain in held-out Spearman rho\n(unpooled minus mean pool)": 0.06069627851140458,
+      "label": "p = 0.97",
+      "series": "observed",
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 7
+}

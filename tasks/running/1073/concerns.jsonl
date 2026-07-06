@@ -1,0 +1,1 @@
+{"ts": "2026-07-06T06:31:17Z", "event": "raised", "concern_id": "p2-gen-no-intra-phase-checkpoint", "severity": "CONCERN", "summary": "P2 stoch10 gen (~2-2.5h A100) accumulates all rollouts in memory, no per-chunk persist/resume (gen.py:478-513); a late crash forfeits the phase (Step 3.6)", "raised_by": "code-reviewer", "raised_at_round": 1}

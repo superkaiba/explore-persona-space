@@ -20,7 +20,8 @@ layer-index convention plus an optional same-forward logits read.
 Convention
 ----------
 ``layers`` are **BLOCK indices**. Block ``L``'s output ==
-``output_hidden_states[L+1]`` (``hs[0]`` is the embedding). Request the
+``output_hidden_states[L+1]`` (``hs[0]`` is the embedding; last layer: see
+the final-RMSNorm caveat below). Request the
 embedding output by including the sentinel ``EMBED_LAYER`` (-1) in
 ``layers``, which maps to ``hs[0]`` / ``model.model.embed_tokens``.
 
@@ -34,23 +35,93 @@ Off-by-one (CRITICAL)
 ---------------------
 A hook on ``model.model.layers[L]`` fires on block ``L``'s OUTPUT, which the
 full tuple stores at ``hidden_states[L+1]`` — which IS the tensor the
-existing ``hs[L+1]`` reads want. So **block index L -> ``model.model.layers[L]``
-(NO subtraction at the module level)**; ``EMBED_LAYER -> ``model.model.embed_tokens``.
+existing ``hs[L+1]`` reads want — for every NON-LAST layer (last layer: see
+the final-RMSNorm caveat below). So **block index L ->
+``model.model.layers[L]`` (NO subtraction at the module level)**;
+``EMBED_LAYER`` -> ``model.model.embed_tokens``.
 The "naive hook on ``layers[layer]`` captures ``hs[layer+1]``, silently the
 WRONG layer" warning applies only when a caller's ``layer`` variable already
 means ``hs[layer]`` (the i488 convention) — that caller passes ``layer - 1``.
-This is pinned both ways by the byte-identity tests in
-``tests/test_issue671_extraction_hooks.py`` and the in-process self-test at
+This is pinned both ways by the hook-vs-tuple identity tests in
+``tests/test_issue671_extraction_hooks.py`` (synthetic stubs with NO final
+norm — stub-true; they do not exercise the real-model last-layer divergence
+below) and the in-process self-test at
 ``scripts/issue493_extraction_metric_bakeoff.py``.
+
+Last layer (final RMSNorm caveat)
+---------------------------------
+On a real Llama/Qwen-style model the two conventions DIVERGE at the LAST
+decoder block ``L_max``: HF applies the final RMSNorm (``model.model.norm``)
+before the ``output_hidden_states`` tuple's last entry is finalized — in
+transformers 4.57.x ``check_model_inputs(tie_last_hidden_states=True)``
+replaces the collected raw block output with ``outputs.last_hidden_state``
+(= ``self.norm(hidden_states)``); the version-independent net effect —
+re-verify against the installed HF source on any transformers version
+change — is that ``hidden_states[-1]`` is POST-final-norm, while a forward
+hook on ``model.model.layers[L_max]`` captures the block's RAW
+residual-stream output, PRE-final-norm. Consequently, for the last layer
+ONLY:
+
+- **Primary hook path:** returns the raw PRE-norm block output (the
+  convention the in-repo extraction sites standardized on — #493's
+  ``_LayerHookCapture`` "L27 post-norm quirk" note, GPU-verified 2026-06-05,
+  measured cosine diff ~1.6e-1 at L27 vs ~1e-4-2e-3 layer-graded noise
+  elsewhere; #634's "pre-final-norm residual").
+- **Fallback path (``blocks is None``):** returns ``hs[-1]`` == POST-norm.
+  The helper's two paths therefore DISAGREE for the last layer; a caller
+  requesting ``L_max`` must know which path its model takes.
+- **Wrapped (PEFT-style) models take the HOOK path:** block resolution walks
+  the ``.model`` chain (depth <= 3), so a ``peft.PeftModel`` resolves its
+  LoRA-active decoder blocks at ``model.model.model.layers`` and takes the
+  hook path — pre-final-norm last layer, no all-layers materialization,
+  consistent with bare models. A one-time ``UserWarning`` marks the wrapped
+  resolution (earlier helper versions silently took the post-norm full-tuple
+  fallback here).
+- All NON-last layers and ``EMBED_LAYER``: the two paths agree exactly.
 """
 
 from __future__ import annotations
 
+import inspect
+import warnings
 from collections.abc import Iterable
 
 import torch
 
 EMBED_LAYER = -1  # request the embedding output (hs[0]); maps to embed_tokens
+
+
+def _logits_to_keep_kwargs(model, return_logits: bool) -> dict:
+    """OOM guard (#779 att-20260702): skip full-vocab logits the caller never reads.
+
+    transformers 4.57 CausalLM forwards default ``logits_to_keep=0`` — the
+    lm_head materializes logits for ALL positions (``B x T x vocab``; 4.89 GiB
+    at the crash shape, on top of a co-resident vLLM engine) even when the
+    caller only wants hook-captured hidden states. Returns
+    ``{"logits_to_keep": 0 if return_logits else 1}`` when the model's forward
+    exposes an EXPLICIT ``logits_to_keep`` parameter (Qwen2 on the pinned
+    transformers 4.57.6 does), else ``{}`` (current full-logits behavior — a
+    bare ``**kwargs`` does NOT count, so test stubs / wrappers that would
+    silently swallow or crash on the kwarg are untouched). ``return_logits=True``
+    keeps the full-sequence logits contract byte-identical (``logits_to_keep=0``
+    is the transformers default: all positions).
+    """
+    fn = getattr(model, "forward", None)
+    if fn is None and callable(model):
+        fn = model.__call__
+    if fn is None:
+        return {}
+    try:
+        params = inspect.signature(fn).parameters
+    except (TypeError, ValueError):
+        return {}
+    p = params.get("logits_to_keep")
+    if p is None or p.kind not in (
+        inspect.Parameter.POSITIONAL_OR_KEYWORD,
+        inspect.Parameter.KEYWORD_ONLY,
+    ):
+        return {}
+    return {"logits_to_keep": 0 if return_logits else 1}
 
 
 def _unwrap(output):
@@ -61,6 +132,31 @@ def _unwrap(output):
     ``analysis/representation_shift.py``'s unwrap and the reference impl.
     """
     return output[0] if isinstance(output, tuple) else output
+
+
+def _resolve_decoder_blocks(model):
+    """Walk the ``.model`` wrapper chain (depth 1..3) to find decoder blocks.
+
+    Returns ``(blocks, embed_tokens, depth)`` from the FIRST chain level
+    exposing ``.layers``; ``(None, None, 0)`` when none does (non-standard
+    models + CPU test stubs -> the full-tuple fallback). Depth 1 is the bare
+    HF layout (``model.model.layers``). Depth 2 is the PEFT layout:
+    ``PeftModel.model`` forwards (``PeftModel.__getattr__`` ->
+    ``LoraModel.model``, peft 0.18.1) to the injected ``*ForCausalLM`` whose
+    own ``.model.layers`` ARE the LoRA-active decoder blocks (same object
+    ``get_base_model()`` returns). Depth 3 is headroom for one extra wrapper.
+    Purely structural — no peft import; depth-1-first preserves bare-model
+    behavior exactly.
+    """
+    inner = model
+    for depth in range(1, 4):
+        inner = getattr(inner, "model", None)
+        if inner is None:
+            return None, None, 0
+        blocks = getattr(inner, "layers", None)
+        if blocks is not None:
+            return blocks, getattr(inner, "embed_tokens", None), depth
+    return None, None, 0
 
 
 @torch.no_grad()
@@ -75,19 +171,31 @@ def extract_layer_activations(
 ) -> dict[int, torch.Tensor] | tuple[dict[int, torch.Tensor], torch.Tensor]:
     """Return ``{layer: hidden_state_tensor}`` for the requested block indices.
 
-    The returned tensor for layer ``L`` is the SAME object the old
+    The returned tensor for layer ``L`` carries the SAME VALUES the old
     ``output_hidden_states[L+1]`` read produced (``hs[0]`` for
-    ``EMBED_LAYER``), shape ``(B, T, H)``. Byte-identical to the full-tuple
-    read; the only difference is the unused layers are never materialized.
+    ``EMBED_LAYER``), shape ``(B, T, H)`` — ``torch.equal(old, new)`` holds
+    for every layer EXCEPT the last decoder block, where the hook captures
+    the RAW pre-final-norm output while ``hidden_states[-1]`` is post-norm
+    (and this helper's fallback path returns the post-norm value): see the
+    module docstring's "Last layer (final RMSNorm caveat)". The return is a
+    detached VIEW sharing storage (``.detach()`` returns a new tensor
+    object, so this is value equality, not object identity), and unused
+    layers are never materialized.
 
     Parameters
     ----------
     model
         Causal-LM, already on its device and in eval mode (this helper does
-        not move or set the mode). A standard Llama-style decoder
-        (``model.model.layers`` + ``model.model.embed_tokens``) takes the
-        primary hook path; anything else falls back to the full-tuple read
-        (covers non-standard models AND the CPU test stub).
+        not move or set the mode). Decoder blocks are resolved by walking the
+        ``.model`` wrapper chain (depth 1..3, first match wins — see
+        ``_resolve_decoder_blocks``): a standard Llama-style decoder
+        (``model.model.layers`` + ``model.model.embed_tokens``, depth 1) AND a
+        wrapped (PEFT-style) model whose LoRA-active blocks sit one level
+        deeper (``peft.PeftModel`` at ``model.model.model.layers``, depth 2 —
+        takes the hook path with adapters active, one-time ``UserWarning``;
+        see the module docstring's wrapped-models note) take the primary hook
+        path; anything else falls back to the full-tuple read (covers
+        non-standard models AND the CPU test stub).
     input_ids
         ``(1, T)`` or ``(B, T)`` on the model's device.
     layers
@@ -104,11 +212,13 @@ def extract_layer_activations(
         before being stored. Default ``False`` keeps the tensor on-device
         (callers that immediately ``.float().cpu()`` at the call site leave
         this off and reduce themselves). NOTE: under the ``@torch.no_grad()``
-        decorator the ``.detach()`` on the default path is a no-op, so the
-        default-path return is the exact same tensor the
-        ``output_hidden_states=True`` read produced — ``torch.equal(old, new)``
-        holds and callers retain their own ``.float().cpu()`` / ``.mean(0)``
-        / ``[-1]`` reductions.
+        decorator ``.detach()`` on the default path is a no-op in GRADIENT
+        terms only — it still returns a NEW tensor object (a view sharing
+        storage) — so for every NON-last layer the default-path return is
+        VALUE-identical to the ``output_hidden_states=True`` read
+        (``torch.equal(old, new)`` holds) and callers retain their own
+        ``.float().cpu()`` / ``.mean(0)`` / ``[-1]`` reductions. (Last
+        decoder block: pre- vs post-norm divergence — module docstring.)
 
     Returns
     -------
@@ -118,19 +228,34 @@ def extract_layer_activations(
     tuple[dict[int, torch.Tensor], torch.Tensor]
         ``(captured, logits)`` when ``return_logits`` is ``True``.
     """
-    blocks = getattr(getattr(model, "model", None), "layers", None)
-    embed = getattr(getattr(model, "model", None), "embed_tokens", None)
+    blocks, embed, wrap_depth = _resolve_decoder_blocks(model)
+    if wrap_depth >= 2:
+        warnings.warn(
+            "extract_layer_activations: wrapped (PEFT-style) model — decoder "
+            f"blocks resolved {wrap_depth} levels deep; taking the HOOK path "
+            "with adapters active. NOTE: the last-layer capture is "
+            "PRE-final-norm (earlier versions silently took the post-norm "
+            "full-tuple fallback for wrapped models).",
+            UserWarning,
+            stacklevel=2,
+        )
     layers = list(layers)
 
     def _reduce(hs: torch.Tensor) -> torch.Tensor:
         return hs.detach().float().cpu() if detach_to_cpu else hs.detach()
 
     # ---- Fallback for non-standard models / CPU stubs (the labeled =True) ----
+    # (Fires for non-standard models and CPU stubs with no resolvable `.model` chain;
+    # last-layer return here is POST-final-norm — unlike the hook path; see module
+    # docstring. Wrapped PEFT-style models resolve via the chain walk and take the
+    # HOOK path instead.)
+    ltk_kwargs = _logits_to_keep_kwargs(model, return_logits)
     if blocks is None:
         out = model(
             input_ids=input_ids,
             attention_mask=attention_mask,
             output_hidden_states=True,
+            **ltk_kwargs,
         )
         hs = out.hidden_states  # tuple(L+1)
         captured: dict[int, torch.Tensor] = {}
@@ -157,12 +282,15 @@ def extract_layer_activations(
                 continue
             handles.append(embed.register_forward_hook(_make_hook(L)))
         else:
+            # NOTE: for the LAST block this captures the RAW pre-final-norm output
+            # (hs[-1] is post-norm).
             handles.append(blocks[L].register_forward_hook(_make_hook(L)))
     try:
         out = model(
             input_ids=input_ids,
             attention_mask=attention_mask,
             output_hidden_states=False,  # <-- the fix: do NOT materialize all
+            **ltk_kwargs,
         )
     finally:
         for h in handles:

@@ -86,6 +86,26 @@ def _sentinel_body(
     }
 
 
+def _raw_results_payload(**overrides: Any) -> dict[str, Any]:
+    """Build the #825-shape RAW Step 7 results payload: all 10 required
+    results-payload keys (``pp._RESULTS_PAYLOAD_KEYS``) at top level and NO
+    envelope keys (``sentinel_schema_version``/``kind``/``version``)."""
+    payload: dict[str, Any] = {
+        "eval_numbers": {"headline_rate": 0.42},
+        "eval_paths": ["eval_results/issue_444/final.json"],
+        "reproducibility_card": {"adapter_paths": {}, "wandb_project": "issue444"},
+        "wandb_url": "https://wandb.ai/entity/issue444/runs/abc",
+        "hf_hub_url": "https://huggingface.co/superkaiba1/explore-persona-space",
+        "worktree_path": "/home/user/explore-persona-space/.claude/worktrees/issue-444",
+        "final_commit_sha": "a" * 40,
+        "gpu_hours_used": 1.5,
+        "gpu_hours_budgeted": 4.0,
+        "plan_deviations": [],
+    }
+    payload.update(overrides)
+    return payload
+
+
 def _glob_response(*pairs: tuple[str, str]) -> str:
     """Build the stdout shape that ``_ssh_drain_sentinels`` expects from
     the remote heredoc. Each ``pair`` is ``(remote_path, body)``."""
@@ -169,6 +189,168 @@ def test_parse_sentinel_rejects_missing_required_keys() -> None:
 
 def test_parse_sentinel_rejects_empty_body() -> None:
     assert pp._parse_sentinel("/workspace/logs/issue-444-x-1.json", "") is None
+
+
+# ── _parse_sentinel: #899 envelope-synthesis fallback ───────────────────────
+#
+# Incident #825 run 7: the pod-side writer emitted the complete Step 7
+# results payload as a RAW JSON object (no envelope) at
+# ``issue-825-results.json``; ``_parse_sentinel`` skipped it with a quiet
+# warning right before the GCP VM self-deleted. The fallback rescues that
+# exact shape — results basename + zero envelope keys + all 10 Step 7
+# payload keys — and NOTHING else. Each predicate leg is pinned below.
+
+
+_RESULTS_PATH = "/workspace/logs/issue-444-results.json"
+
+
+def test_parse_sentinel_results_fallback_synthesizes_envelope(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    payload = _raw_results_payload()
+    with caplog.at_level(logging.DEBUG, logger="poll_pipeline"):
+        parsed = pp._parse_sentinel(_RESULTS_PATH, json.dumps(payload))
+
+    assert parsed is not None
+    assert parsed["kind"] == "epm:results"
+    # #975: the synthesized envelope OMITS "version" (key absence is the
+    # drain's signal to let post_event derive max+1) — never a hardcoded 1.
+    assert "version" not in parsed
+    assert parsed["sentinel_schema_version"] == 1
+    assert parsed["by"] == "pod-sentinel-envelope-fallback"
+    note = parsed["note"]
+    assert isinstance(note, dict)
+    for key in pp._RESULTS_PAYLOAD_KEYS:
+        assert key in note, f"payload key {key!r} missing from synthesized note"
+    assert note["envelope_synthesized"] is True
+
+    # Exactly one loud ERROR on the rescue, naming the path + all three
+    # missing envelope keys...
+    errors = [r for r in caplog.records if r.levelno == logging.ERROR]
+    assert len(errors) == 1
+    msg = errors[0].getMessage()
+    assert _RESULTS_PATH in msg
+    for env_key in pp._SENTINEL_REQUIRED_KEYS:
+        assert env_key in msg
+    # The rescue log must no longer claim a hardcoded version=1 (#975
+    # acceptance criterion 5).
+    assert "version=1" not in msg
+    # ...and NO generic "missing required keys" WARNING (the early return
+    # skips it — §4.3 log-line lattice: single-ERROR rescue).
+    warnings = [
+        r
+        for r in caplog.records
+        if r.levelno == logging.WARNING and "missing required keys" in r.getMessage()
+    ]
+    assert warnings == []
+
+
+def test_parse_sentinel_results_fallback_tolerates_extra_keys() -> None:
+    payload = _raw_results_payload(
+        task_id=444, ts="2026-07-02T00:00:00+00:00", skipped_phases=["smoke"]
+    )
+    parsed = pp._parse_sentinel(_RESULTS_PATH, json.dumps(payload))
+
+    assert parsed is not None
+    assert parsed["kind"] == "epm:results"
+    note = parsed["note"]
+    # Extras ride along inside the note (all-10-required, not exact-set).
+    assert note["task_id"] == 444
+    assert note["ts"] == "2026-07-02T00:00:00+00:00"
+    assert note["skipped_phases"] == ["smoke"]
+
+
+@pytest.mark.parametrize(
+    "remote_path",
+    [
+        # Plain non-results filename: the 10-key body alone must not rescue.
+        "/workspace/logs/issue-444-x-1.json",
+        # Basename CONTAINS but does not END WITH ``-results.json`` (still
+        # reachable under the ``issue-<N>-*.json`` drain glob) — pins strict
+        # ``endswith`` against a substring-containment implementation.
+        "/workspace/logs/issue-444-results.json-extra.json",
+    ],
+)
+def test_parse_sentinel_results_fallback_requires_results_filename(
+    remote_path: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    payload = _raw_results_payload()
+    with caplog.at_level(logging.DEBUG, logger="poll_pipeline"):
+        parsed = pp._parse_sentinel(remote_path, json.dumps(payload))
+
+    assert parsed is None
+    # Existing generic warning path, no rescue/near-miss ERROR.
+    assert [r for r in caplog.records if r.levelno == logging.ERROR] == []
+    assert any(
+        r.levelno == logging.WARNING and "missing required keys" in r.getMessage()
+        for r in caplog.records
+    )
+
+
+@pytest.mark.parametrize("dropped", list(pp._RESULTS_PAYLOAD_KEYS))
+def test_parse_sentinel_results_fallback_requires_all_ten_keys(
+    dropped: str, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Each Step 7 key dropped singly -> near-miss decline: ``None`` + an
+    ERROR naming exactly the dropped key, THEN the generic warning (§4.3
+    log-line lattice: ERROR + WARNING on a near-miss). A single-key variant
+    would false-green an implementation whose ``_RESULTS_PAYLOAD_KEYS``
+    omits any other key — hence the full parametrization."""
+    payload = _raw_results_payload()
+    del payload[dropped]
+    with caplog.at_level(logging.DEBUG, logger="poll_pipeline"):
+        parsed = pp._parse_sentinel(_RESULTS_PATH, json.dumps(payload))
+
+    assert parsed is None
+    errors = [r for r in caplog.records if r.levelno == logging.ERROR]
+    assert len(errors) == 1
+    assert f"missing results-payload keys ['{dropped}']" in errors[0].getMessage()
+    # The near-miss falls through to the generic warning as well.
+    assert any(
+        r.levelno == logging.WARNING and "missing required keys" in r.getMessage()
+        for r in caplog.records
+    )
+
+
+@pytest.mark.parametrize(
+    "envelope_subset",
+    [
+        # Each envelope key singly present...
+        {"sentinel_schema_version": 1},
+        {"kind": "epm:progress"},
+        {"version": 1},
+        # ...plus exactly two of the three (closes the 2-of-3 decision-table
+        # cell on the results filename).
+        {"sentinel_schema_version": 1, "kind": "epm:progress"},
+    ],
+)
+def test_parse_sentinel_results_fallback_declines_partial_envelope(
+    envelope_subset: dict[str, Any], caplog: pytest.LogCaptureFixture
+) -> None:
+    """A partial envelope (1-2 of the 3 keys) is an ambiguous/buggy writer —
+    it keeps today's strict loud skip even with the full 10-key payload on a
+    results filename. The near-miss ERROR must NOT fire (it is scoped to the
+    zero-envelope-keys shape)."""
+    payload = _raw_results_payload(**envelope_subset)
+    with caplog.at_level(logging.DEBUG, logger="poll_pipeline"):
+        parsed = pp._parse_sentinel(_RESULTS_PATH, json.dumps(payload))
+
+    assert parsed is None
+    assert [r for r in caplog.records if r.levelno == logging.ERROR] == []
+    assert any(
+        r.levelno == logging.WARNING and "missing required keys" in r.getMessage()
+        for r in caplog.records
+    )
+
+
+def test_parse_sentinel_enveloped_results_filename_keeps_strict_path() -> None:
+    """A FULLY-enveloped sentinel with an unsupported schema version on a
+    ``-results.json`` filename is never rescued — even when its body also
+    carries all 10 payload keys. Version-gated skips keep the strict path
+    (the fallback is unreachable when any envelope key is present)."""
+    body = {**_raw_results_payload(), **_sentinel_body(schema_version=2)}
+    parsed = pp._parse_sentinel(_RESULTS_PATH, json.dumps(body))
+    assert parsed is None
 
 
 # ── _drain_sentinels (the full round-trip) ──────────────────────────────────
@@ -1164,6 +1346,238 @@ def test_oversize_pointer_note_fits_cap_even_for_huge_payload(
     persisted = list((task_dir / "artifacts").glob("sentinel-note-epm_progress-*.txt"))
     assert len(persisted) == 1
     assert persisted[0].stat().st_size == 5_000_000
+
+
+# ── _drain_sentinels: #899 envelope-synthesis round-trip ────────────────────
+
+
+def test_drain_posts_synthesized_results_marker_and_renames(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """One raw #825-shape sentinel at ``issue-444-results.json`` round-trips
+    to exactly one posted ``epm:results`` marker with ``version=None``
+    (``post_event`` derives max+1 per kind; #975) whose note JSON carries
+    the full payload + ``envelope_synthesized: true``, and the sentinel is
+    renamed ``.processed``. A stray ``gate`` EXTRA key inside the raw
+    payload stays inside the note and never parks the pipeline (the
+    synthesized envelope carries no top-level ``gate``)."""
+    sentinel_path = "/workspace/logs/issue-444-results.json"
+    payload = _raw_results_payload(gate="x")  # stray extra key inside the raw payload
+    router = _SubprocessRouter(glob_stdout=_glob_response((sentinel_path, json.dumps(payload))))
+    monkeypatch.setattr(pp.subprocess, "run", router)
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+
+    processed, gate = pp._drain_sentinels(issue=444, pod="epm-issue-444")
+
+    assert processed == 1
+    assert gate is None, "a stray gate key inside the raw payload must never park"
+    post_mock.assert_called_once()
+    call = post_mock.call_args
+    assert call.args == (444, "epm:results")
+    # #975: the synthesized envelope omits "version", so the drain threads
+    # version=None and post_event derives max+1 (never a hardcoded 1).
+    assert call.kwargs["version"] is None
+    assert call.kwargs["by"] == "pod-sentinel-envelope-fallback"
+    note = call.kwargs["note"]
+    assert isinstance(note, str)  # dict note -> json.dumps before posting
+    decoded = json.loads(note)
+    for key in pp._RESULTS_PAYLOAD_KEYS:
+        assert key in decoded
+    assert decoded["envelope_synthesized"] is True
+    assert decoded["gate"] == "x"  # the stray extra rides inside the note
+    assert len(router.mv_calls) == 1
+    assert sentinel_path in router.mv_calls[0]
+    assert ".processed" in router.mv_calls[0]
+
+
+def test_drain_synthesized_results_oversize_note_degrades(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """A rescued raw payload whose serialized note exceeds ``EVENT_NOTE_MAX``
+    inherits the ``_persist_oversize_note`` degradation unchanged: the full
+    note lands in the task artifact, the pointer marker keeps
+    ``kind=epm:results`` + the fallback ``by``, and the sentinel is renamed
+    so the loop terminates (the #477 no-loop contract)."""
+    task_dir = tmp_path / "tasks" / "running" / "444"
+    task_dir.mkdir(parents=True)
+    monkeypatch.setattr(pp, "find_task_path", lambda issue: task_dir)
+
+    sentinel_path = "/workspace/logs/issue-444-results.json"
+    payload = _raw_results_payload(pad="x" * 60_000)  # extras tolerated; inflates the note
+    router = _SubprocessRouter(glob_stdout=_glob_response((sentinel_path, json.dumps(payload))))
+    monkeypatch.setattr(pp.subprocess, "run", router)
+    # First call raises oversize; second call (the pointer marker) succeeds.
+    post_mock = MagicMock(side_effect=[_oversize_value_error(60_000), None])
+    monkeypatch.setattr(pp, "post_event", post_mock)
+
+    processed, gate = pp._drain_sentinels(issue=444, pod="epm-issue-444")
+
+    assert processed == 1
+    assert gate is None
+    assert post_mock.call_count == 2
+    pointer_call = post_mock.call_args_list[1]
+    assert pointer_call.args == (444, "epm:results")
+    # #975: the pointer post inherits version=None from the synthesized
+    # envelope — post_event derives max+1 fresh at the pointer post (the
+    # failed oversize first post consumed no version).
+    assert pointer_call.kwargs["version"] is None
+    assert pointer_call.kwargs["by"] == "pod-sentinel-envelope-fallback"
+    assert len(pointer_call.kwargs["note"]) <= pp.EVENT_NOTE_MAX
+    # Full synthesized note persisted to the task artifact.
+    persisted = list((task_dir / "artifacts").glob("sentinel-note-epm_results-*.txt"))
+    assert len(persisted) == 1
+    assert json.loads(persisted[0].read_text())["envelope_synthesized"] is True
+    # Renamed .processed — no #477-style infinite re-post loop.
+    assert len(router.mv_calls) == 1
+    assert ".processed" in router.mv_calls[0]
+
+
+# ── drain: #975 synthesized-envelope version derivation (max+1) ─────────────
+#
+# #975: the #899 synthesized envelope used to hardcode ``"version": 1``; an
+# explicit version always wins in ``post_event``, so a re-drained / re-run
+# rescue landed BELOW an existing higher ``epm:results`` version and the
+# stale higher version stayed authoritative on resume (the #480/#389/#825
+# collision class). The fix omits the key; the drain branches on key
+# PRESENCE and threads ``version=None`` so ``post_event`` derives max+1.
+
+
+@pytest.fixture
+def fake_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    """Git-init ``tmp_path`` and rebind ``task_workflow``'s resolvers at it —
+    the file-local replica of the canonical fixture
+    (``tests/test_task_workflow.py``), added so the #975 end-to-end test can
+    exercise the REAL ``post_event`` (max+1 derivation under flock) instead
+    of a MagicMock. Returns ``(repo_root_path, tw_module)``."""
+    subprocess.run(["git", "init", "-q", "-b", "main"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.email", "test@test.test"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "user.name", "test"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "config", "commit.gpgsign", "false"], cwd=tmp_path, check=True)
+    subprocess.run(["git", "commit", "-q", "--allow-empty", "-m", "init"], cwd=tmp_path, check=True)
+
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    import explore_persona_space.task_workflow as tw
+
+    # Drop any cached resolution from a prior test so our overrides win.
+    tw.invalidate_cache()
+
+    monkeypatch.setattr(tw, "repo_root", lambda: tmp_path)
+    monkeypatch.setattr(tw, "tasks_dir", lambda: tmp_path / "tasks")
+    monkeypatch.setattr(tw, "registry_path", lambda: tmp_path / "tasks" / "REGISTRY.json")
+    # Per-test lock dir to avoid cross-talk
+    lock_dir = tmp_path / ".task-workflow"
+    monkeypatch.setattr(tw, "LOCK_DIR", lock_dir)
+    monkeypatch.setattr(tw, "LOCK_PATH", lock_dir / "lock")
+    return tmp_path, tw
+
+
+def test_drain_synthesized_results_lands_above_existing_version(fake_repo) -> None:
+    """The #975 headline regression test: a synthesized (#899-rescued) results
+    envelope drained onto an events.jsonl that ALREADY carries ``epm:results``
+    v3 lands as **v4** (max+1), not v1 — the synthesized dict omits
+    ``version``, the drain threads ``version=None``, and the REAL
+    ``task_workflow.post_event`` derives max+1 per kind under flock (the #480
+    contract). Deliberately uses the real ``post_event`` on a git-init tmp
+    repo, NOT a MagicMock, so the derivation itself is under test (plan
+    §5(ii); weakening this to a mock is kill criterion 2)."""
+    _repo, tw = fake_repo
+    # Guard the loaded-module aliasing (plan §12 A11): pp bound post_event
+    # from the SAME task_workflow module object the fixture just
+    # monkeypatched, so the drain's post writes into the tmp repo. If this
+    # ever breaks, rebind via monkeypatch.setattr(pp, "post_event",
+    # tw.post_event) (the plan's explicit fallback) — never weaken to a mock.
+    assert pp.post_event is tw.post_event
+
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="drain e2e"))
+    tw.post_event(new_id, "epm:results", version=3, by="seed")
+
+    sentinel_path = f"/workspace/logs/issue-{new_id}-results.json"
+    renamed: list[str] = []
+
+    def _mark_processed(path: str) -> bool:
+        renamed.append(path)
+        return True
+
+    processed, gate = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [(sentinel_path, json.dumps(_raw_results_payload()))],
+        mark_processed=_mark_processed,
+    )
+
+    assert processed == 1
+    assert gate is None
+    assert renamed == [sentinel_path]  # sentinel renamed .processed
+    results_events = [e for e in tw.list_events(new_id) if e["kind"] == "epm:results"]
+    # The rescue landed ABOVE the pre-existing v3 seed, at max+1 == 4, NOT 1.
+    assert [e["version"] for e in results_events] == [3, 4]
+    latest = results_events[-1]
+    assert latest["by"] == "pod-sentinel-envelope-fallback"
+    assert json.loads(latest["note"])["envelope_synthesized"] is True
+
+
+def test_drain_real_enveloped_sentinel_keeps_explicit_version_verbatim(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A real enveloped sentinel's explicit ``version`` posts VERBATIM as an
+    int (7 — a value that cannot coincide with a hardcoded default), never
+    ``None``: the #975 derive branch is reserved for the key-ABSENT
+    synthesized envelope (acceptance criterion 2)."""
+    body = _sentinel_body(kind="epm:progress", version=7, gate=None, note="phase=eval")
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+
+    processed, gate = pp.drain_sentinels_via(
+        issue=444,
+        list_sentinels=lambda: [
+            ("/workspace/logs/issue-444-epm_progress-1700000007.json", json.dumps(body))
+        ],
+        mark_processed=lambda _path: True,
+    )
+
+    assert processed == 1
+    assert gate is None
+    post_mock.assert_called_once()
+    version = post_mock.call_args.kwargs["version"]
+    assert version == 7  # verbatim explicit version — not None, not re-derived
+    assert isinstance(version, int)
+
+
+def test_drain_real_sentinel_null_version_does_not_derive(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Pins the #975 BRANCH DISCRIMINATOR: the drain's derive branch keys on
+    key PRESENCE, not None-tolerance. A real enveloped sentinel whose
+    ``version`` VALUE is null (key PRESENT — a non-conforming writer;
+    ``_sentinel_body`` always sets an int, so the JSON body is built
+    directly) must NOT silently derive: ``post_event`` is never called and
+    today's loud failure mode — the ``int(None)`` TypeError at the drain
+    read, which sits OUTSIDE the per-sentinel try — propagates unchanged.
+
+    This does NOT pin the crash as desirable behavior (the latent
+    null-version crash is pre-existing and out of scope, plan §12 A7); it
+    pins that a future None-tolerant refactor (``data.get("version")`` ->
+    derive on None — the rejected Design A) FAILS loudly here instead of
+    silently changing real-sentinel semantics (kill criterion 1)."""
+    body = {
+        "sentinel_schema_version": 1,
+        "kind": "epm:progress",
+        "version": None,  # json.dumps -> null: key PRESENT, value null
+        "note": "x",
+    }
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+
+    with pytest.raises(TypeError):
+        pp.drain_sentinels_via(
+            issue=444,
+            list_sentinels=lambda: [
+                ("/workspace/logs/issue-444-epm_progress-1700000008.json", json.dumps(body))
+            ],
+            mark_processed=lambda _path: True,
+        )
+
+    post_mock.assert_not_called()
 
 
 # ── poll_once: shard-log staleness conjunction (incident #488) ──────────────

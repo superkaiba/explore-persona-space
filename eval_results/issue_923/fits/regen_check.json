@@ -1,0 +1,418 @@
+{
+  "meta": {
+    "git_commit": "e9c8809113354daaa665bf912f36e5bb98130aa4",
+    "timestamp_utc": "2026-07-03T18:02:40.326851Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue923_fit_decomposition",
+    "smoke": false,
+    "mask_backend": "sdpa"
+  },
+  "n_cells": 50,
+  "cos_min_overall": 0.7208529114723206,
+  "cos_median_of_means": 0.995200902223587,
+  "n_below_0p99": 25,
+  "rows": [
+    {
+      "genre": "betley",
+      "ctx_id": "f1_house_software_engineer",
+      "q_idx": 12,
+      "cos_min": 0.9883702397346497,
+      "cos_mean": 0.9950647354125977,
+      "cos_L18": 0.9942784309387207
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f1_house_software_engineer",
+      "q_idx": 20,
+      "cos_min": 0.9910093545913696,
+      "cos_mean": 0.9961978197097778,
+      "cos_L18": 0.9951258897781372
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f1_house_software_engineer",
+      "q_idx": 32,
+      "cos_min": 0.9909005761146545,
+      "cos_mean": 0.9967774152755737,
+      "cos_L18": 0.9969436526298523
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f3_icl_marker_k4",
+      "q_idx": 46,
+      "cos_min": 0.9542886018753052,
+      "cos_mean": 0.9803377389907837,
+      "cos_L18": 0.9788812398910522
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f4_reph_imperative",
+      "q_idx": 20,
+      "cos_min": 0.909432590007782,
+      "cos_mean": 0.9491305947303772,
+      "cos_L18": 0.9507043957710266
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f4_reph_enthusiastic",
+      "q_idx": 28,
+      "cos_min": 0.9999794960021973,
+      "cos_mean": 0.9999930262565613,
+      "cos_L18": 0.9999894499778748
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f8_behav_fact",
+      "q_idx": 24,
+      "cos_min": 0.9995424151420593,
+      "cos_mean": 0.9998127818107605,
+      "cos_L18": 0.9998913407325745
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f1_phub_04",
+      "q_idx": 5,
+      "cos_min": 0.9522449970245361,
+      "cos_mean": 0.9790781140327454,
+      "cos_L18": 0.9795111417770386
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f2_wc_long_3",
+      "q_idx": 22,
+      "cos_min": 0.9854367971420288,
+      "cos_mean": 0.9947667717933655,
+      "cos_L18": 0.9943204522132874
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f2_wc_long_3",
+      "q_idx": 36,
+      "cos_min": 0.9817579984664917,
+      "cos_mean": 0.9941245317459106,
+      "cos_L18": 0.9940646886825562
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f3_icl_french_k4",
+      "q_idx": 27,
+      "cos_min": 0.9916753172874451,
+      "cos_mean": 0.9970068335533142,
+      "cos_L18": 0.9966921210289001
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f4_reph_archaic",
+      "q_idx": 42,
+      "cos_min": 0.9900418519973755,
+      "cos_mean": 0.9953370690345764,
+      "cos_L18": 0.9946504831314087
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f5_fmt_xml",
+      "q_idx": 42,
+      "cos_min": 0.9999680519104004,
+      "cos_mean": 0.9999885559082031,
+      "cos_L18": 0.9999839067459106
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f1_phub_01",
+      "q_idx": 18,
+      "cos_min": 0.9713380336761475,
+      "cos_mean": 0.990953266620636,
+      "cos_L18": 0.9913079738616943
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f1_phub_05",
+      "q_idx": 0,
+      "cos_min": 0.9994038939476013,
+      "cos_mean": 0.9997552037239075,
+      "cos_L18": 0.9997953176498413
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f2_wc_short_5",
+      "q_idx": 24,
+      "cos_min": 0.9960614442825317,
+      "cos_mean": 0.9985440969467163,
+      "cos_L18": 0.9987037181854248
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f2_wc_long_4",
+      "q_idx": 22,
+      "cos_min": 0.9764922261238098,
+      "cos_mean": 0.9895068407058716,
+      "cos_L18": 0.9885993003845215
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f3_icl_json_k4",
+      "q_idx": 8,
+      "cos_min": 0.9636372327804565,
+      "cos_mean": 0.988444983959198,
+      "cos_L18": 0.9872050881385803
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f4_reph_casual",
+      "q_idx": 29,
+      "cos_min": 0.960219144821167,
+      "cos_mean": 0.9792591333389282,
+      "cos_L18": 0.9816680550575256
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f5_fmt_json",
+      "q_idx": 15,
+      "cos_min": 0.9998460412025452,
+      "cos_mean": 0.9999512434005737,
+      "cos_L18": 0.9998460412025452
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f5_fmt_bullets",
+      "q_idx": 28,
+      "cos_min": 0.983769953250885,
+      "cos_mean": 0.9912168383598328,
+      "cos_L18": 0.9927570819854736
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f8_behav_sycophant",
+      "q_idx": 15,
+      "cos_min": 0.9998752474784851,
+      "cos_mean": 0.9999588131904602,
+      "cos_L18": 0.9998914003372192
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f4_reph_legalese",
+      "q_idx": 34,
+      "cos_min": 0.9737280607223511,
+      "cos_mean": 0.9897135496139526,
+      "cos_L18": 0.9879395365715027
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f5_fmt_code_comment",
+      "q_idx": 3,
+      "cos_min": 0.921711802482605,
+      "cos_mean": 0.9719938635826111,
+      "cos_L18": 0.9550504088401794
+    },
+    {
+      "genre": "betley",
+      "ctx_id": "f5_fmt_code_comment",
+      "q_idx": 7,
+      "cos_min": 0.8904514312744141,
+      "cos_mean": 0.9635656476020813,
+      "cos_L18": 0.9626389741897583
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f2_wc_short_3",
+      "q_idx": 11,
+      "cos_min": 0.9932354688644409,
+      "cos_mean": 0.9980822801589966,
+      "cos_L18": 0.9980849027633667
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f2_wc_long_2",
+      "q_idx": 22,
+      "cos_min": 0.9779497385025024,
+      "cos_mean": 0.9886069297790527,
+      "cos_L18": 0.9880236387252808
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f3_icl_marker_k4",
+      "q_idx": 33,
+      "cos_min": 0.9864806532859802,
+      "cos_mean": 0.9942242503166199,
+      "cos_L18": 0.9936321973800659
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f4_reph_enthusiastic",
+      "q_idx": 44,
+      "cos_min": 0.9641891717910767,
+      "cos_mean": 0.9869516491889954,
+      "cos_L18": 0.9849238991737366
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f8_behav_fact",
+      "q_idx": 8,
+      "cos_min": 0.9953218102455139,
+      "cos_mean": 0.9984177947044373,
+      "cos_L18": 0.9982909560203552
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f1_phub_04",
+      "q_idx": 22,
+      "cos_min": 0.7208529114723206,
+      "cos_mean": 0.8798618316650391,
+      "cos_L18": 0.841522753238678
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f1_phub_04",
+      "q_idx": 30,
+      "cos_min": 0.9264794588088989,
+      "cos_mean": 0.9545722007751465,
+      "cos_L18": 0.9264794588088989
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f4_reph_polite",
+      "q_idx": 45,
+      "cos_min": 0.9931983351707458,
+      "cos_mean": 0.9975761771202087,
+      "cos_L18": 0.9974332451820374
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f4_reph_archaic",
+      "q_idx": 2,
+      "cos_min": 0.9888137578964233,
+      "cos_mean": 0.9946022033691406,
+      "cos_L18": 0.9941590428352356
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f4_reph_archaic",
+      "q_idx": 30,
+      "cos_min": 0.9999405741691589,
+      "cos_mean": 0.9999638795852661,
+      "cos_L18": 0.999966025352478
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f8_behav_marker",
+      "q_idx": 6,
+      "cos_min": 0.9941067695617676,
+      "cos_mean": 0.997417151927948,
+      "cos_L18": 0.9971590638160706
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f8_behav_marker",
+      "q_idx": 42,
+      "cos_min": 0.9996616840362549,
+      "cos_mean": 0.9997895359992981,
+      "cos_L18": 0.9997756481170654
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f8_behav_harmful",
+      "q_idx": 46,
+      "cos_min": 0.98114013671875,
+      "cos_mean": 0.9940230250358582,
+      "cos_L18": 0.9935367107391357
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f1_house_programmer",
+      "q_idx": 8,
+      "cos_min": 0.9849303960800171,
+      "cos_mean": 0.9948525428771973,
+      "cos_L18": 0.993919312953949
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f1_phub_01",
+      "q_idx": 23,
+      "cos_min": 0.9977616667747498,
+      "cos_mean": 0.9992663264274597,
+      "cos_L18": 0.9992728233337402
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f2_wc_short_5",
+      "q_idx": 1,
+      "cos_min": 0.9886024594306946,
+      "cos_mean": 0.9955438375473022,
+      "cos_L18": 0.9959635734558105
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f2_wc_short_5",
+      "q_idx": 11,
+      "cos_min": 0.9904280304908752,
+      "cos_mean": 0.9947428703308105,
+      "cos_L18": 0.9943887591362
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f2_wc_short_5",
+      "q_idx": 22,
+      "cos_min": 0.9999724626541138,
+      "cos_mean": 0.9999913573265076,
+      "cos_L18": 0.9999909400939941
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f5_fmt_json",
+      "q_idx": 25,
+      "cos_min": 0.9999188780784607,
+      "cos_mean": 0.9999801516532898,
+      "cos_L18": 0.9999805688858032
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f1_house_medical_doctor",
+      "q_idx": 38,
+      "cos_min": 0.9993417859077454,
+      "cos_mean": 0.9996606111526489,
+      "cos_L18": 0.9996356964111328
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f1_phub_02",
+      "q_idx": 31,
+      "cos_min": 0.9999955892562866,
+      "cos_mean": 0.9999979138374329,
+      "cos_L18": 0.999996542930603
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f2_wc_long_5",
+      "q_idx": 6,
+      "cos_min": 0.9925696849822998,
+      "cos_mean": 0.9977225065231323,
+      "cos_L18": 0.9976449012756348
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f2_wc_long_5",
+      "q_idx": 21,
+      "cos_min": 0.9803388118743896,
+      "cos_mean": 0.9943503141403198,
+      "cos_L18": 0.9938051104545593
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f3_icl_pirate_k4",
+      "q_idx": 6,
+      "cos_min": 0.9968037605285645,
+      "cos_mean": 0.9989413022994995,
+      "cos_L18": 0.9987967014312744
+    },
+    {
+      "genre": "uc",
+      "ctx_id": "f5_fmt_code_comment",
+      "q_idx": 35,
+      "cos_min": 0.9826902151107788,
+      "cos_mean": 0.9890340566635132,
+      "cos_L18": 0.9889196157455444
+    }
+  ]
+}

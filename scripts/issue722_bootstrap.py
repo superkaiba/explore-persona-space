@@ -110,7 +110,7 @@ def _resample_family_idx(
 def make_refit_pair(
     X: np.ndarray,
     Y: np.ndarray,
-    fit_fn: Callable[[np.ndarray, np.ndarray, np.random.Generator], np.ndarray],
+    fit_fn: Callable[[np.ndarray, np.ndarray, np.random.Generator], np.ndarray] | None,
     eval_grid: np.ndarray,
     r_hat: np.ndarray,
     families: Sequence[str],
@@ -118,6 +118,11 @@ def make_refit_pair(
     n_pairs: int = 100,
     seed: int = 0,
     skip_counter: dict | None = None,
+    batched_chain_fn: Callable[
+        [list[np.ndarray], list[np.random.Generator]], list[np.ndarray | None]
+    ]
+    | None = None,
+    per_draw_out: dict | None = None,
 ) -> np.ndarray:
     """Build a refit-floor distribution of per-pair median projected distances.
 
@@ -166,54 +171,119 @@ def make_refit_pair(
     as a CONCERN, not silently absorbed. (The crash class: round-2's unguarded
     ``np.linalg.svd`` crashed the GCP run at sycophancy L7 on exactly such a
     resample; the 3 em cells had fit cleanly.)
+
+    #811 batched path (plan §4.3 item 10): when ``batched_chain_fn`` is passed,
+    the per-pair fits are delegated to it IN BATCH — it receives every resample
+    index array (+ a per-fit ``Generator``, unused by deterministic fits) and
+    returns per-resample chain projections ``fit(X[idx], Y[idx]).predict(grid)
+    @ r_hat`` (or ``None`` = skip, the LinAlgError semantics). The resample/seed
+    STREAM is identical to the serial path (pre-drawn in the same rng order), so
+    a seeded serial-oracle equivalence check is a pure numerics comparison.
+    ``fit_fn`` may then be ``None``. ``per_draw_out`` (a mutable dict) receives
+    ``{"stats": (n_pairs,) float}`` with NaN at skipped pairs — DRAW-ALIGNED
+    across summaries at the same seed (the #811 ``bootstrap_draws_*.npz`` dump /
+    selection-null escape input). The serial ``fit_fn`` path is retained
+    verbatim as the equivalence ORACLE; this module stays fit-machinery-agnostic
+    either way.
     """
     n = X.shape[0]
     r_hat = np.asarray(r_hat, dtype=float)
     fams = np.asarray(list(families), dtype=object)
     assert fams.shape == (n,), (fams.shape, n)
+    assert fit_fn is not None or batched_chain_fn is not None, (
+        "make_refit_pair needs fit_fn (serial oracle) or batched_chain_fn (batched path)"
+    )
     uniq = sorted({str(f) for f in fams})
     clustered = len(uniq) >= 2
     fam_to_idx = {f: np.where(fams.astype(str) == f)[0] for f in uniq}
     rng = np.random.default_rng(seed)
-    survivors: list[float] = []
-    n_skipped = 0
-    for p in range(n_pairs):
+    # Pre-draw ALL resample index pairs + per-fit rng seeds in the EXACT stream
+    # order the historical serial loop used (idx_a, idx_b, seed_a, seed_b per
+    # pair) — so the serial oracle and the batched path see BIT-IDENTICAL
+    # resamples/seeds and the #811 seeded serial-oracle equivalence gate is a
+    # pure numerics comparison (plan §4.3 item 10 / §13 smoke 7).
+    idx_pairs: list[tuple[np.ndarray, np.ndarray]] = []
+    seed_pairs: list[tuple[int, int]] = []
+    for _p in range(n_pairs):
         if clustered:
             idx_a = _resample_family_idx(fam_to_idx, uniq, rng)
             idx_b = _resample_family_idx(fam_to_idx, uniq, rng)
         else:
             idx_a = rng.integers(0, n, size=n)
             idx_b = rng.integers(0, n, size=n)
-        rng_a = np.random.default_rng(rng.integers(0, 2**31 - 1))
-        rng_b = np.random.default_rng(rng.integers(0, 2**31 - 1))
-        try:
-            pred_a = fit_fn(X[idx_a], Y[idx_a], rng_a)  # (n_grid, P)
-            pred_b = fit_fn(X[idx_b], Y[idx_b], rng_b)
-        except np.linalg.LinAlgError as e:
-            # Defensive: _pca_basis_v0 already retries gesdd->gesvd, so this fires
-            # only on the rare resample where even gesvd cannot converge (or
-            # another degenerate refit). Skip the pair; never crash the whole fit.
-            n_skipped += 1
-            logger.warning(
-                "[phase=fit_M] make_refit_pair: skipping bootstrap pair %d/%d "
-                "after LinAlgError in the refit (%s); %d skipped so far",
-                p + 1,
-                n_pairs,
-                e,
-                n_skipped,
-            )
-            continue
-        delta = pred_a - pred_b  # (n_grid, P)
-        proj = np.abs(delta @ r_hat)  # (n_grid,)
-        survivors.append(float(np.median(proj)))
+        seed_a = int(rng.integers(0, 2**31 - 1))
+        seed_b = int(rng.integers(0, 2**31 - 1))
+        idx_pairs.append((idx_a, idx_b))
+        seed_pairs.append((seed_a, seed_b))
+    # per_draw keeps DRAW-ALIGNED stats (NaN at skipped pairs) — the same draw
+    # index maps to the same family resample across every summary fit at the same
+    # seed, which is what makes the #811 per-draw dump's max-over-summaries
+    # selection-null escape a pure read (plan §6 / §6.5).
+    per_draw = np.full(n_pairs, np.nan, dtype=float)
+    n_skipped = 0
+    if batched_chain_fn is not None:
+        # Batched Gram/dual-space path: the callee receives ALL 2·n_pairs resample
+        # index arrays at once (the batch axis) and returns per-resample CHAIN
+        # projections fit(X[idx], Y[idx]).predict(eval_grid) @ r_hat — (n_grid,)
+        # each, or None for a LinAlgError-equivalent skip. The pair statistic
+        # median|chain_a - chain_b| equals the serial median|(pred_a - pred_b)·r̂|
+        # exactly (the dot product distributes over the subtraction). This module
+        # stays fit-machinery-agnostic — the Gram/dual-space knowledge lives in
+        # the callee (issue722_fit_M.make_batched_refit_chain_fn).
+        flat_idx = [i for pair in idx_pairs for i in pair]
+        flat_rngs = [np.random.default_rng(s) for pair in seed_pairs for s in pair]
+        chains = batched_chain_fn(flat_idx, flat_rngs)
+        assert len(chains) == 2 * n_pairs, (len(chains), n_pairs)
+        for p in range(n_pairs):
+            ca, cb = chains[2 * p], chains[2 * p + 1]
+            if ca is None or cb is None:
+                n_skipped += 1
+                logger.warning(
+                    "[phase=fit_M] make_refit_pair(batched): skipping bootstrap "
+                    "pair %d/%d (degenerate refit); %d skipped so far",
+                    p + 1,
+                    n_pairs,
+                    n_skipped,
+                )
+                continue
+            per_draw[p] = float(np.median(np.abs(np.asarray(ca) - np.asarray(cb))))
+    else:
+        for p, ((idx_a, idx_b), (seed_a, seed_b)) in enumerate(
+            zip(idx_pairs, seed_pairs, strict=True)
+        ):
+            rng_a = np.random.default_rng(seed_a)
+            rng_b = np.random.default_rng(seed_b)
+            try:
+                pred_a = fit_fn(X[idx_a], Y[idx_a], rng_a)  # (n_grid, P)
+                pred_b = fit_fn(X[idx_b], Y[idx_b], rng_b)
+            except np.linalg.LinAlgError as e:
+                # Defensive: _pca_basis_v0 already retries gesdd->gesvd, so this
+                # fires only on the rare resample where even gesvd cannot converge
+                # (or another degenerate refit). Skip the pair; never crash the fit.
+                n_skipped += 1
+                logger.warning(
+                    "[phase=fit_M] make_refit_pair: skipping bootstrap pair %d/%d "
+                    "after LinAlgError in the refit (%s); %d skipped so far",
+                    p + 1,
+                    n_pairs,
+                    e,
+                    n_skipped,
+                )
+                continue
+            delta = pred_a - pred_b  # (n_grid, P)
+            proj = np.abs(delta @ r_hat)  # (n_grid,)
+            per_draw[p] = float(np.median(proj))
+    survivors = per_draw[~np.isnan(per_draw)]
     if skip_counter is not None:
         skip_counter["n_attempted"] = n_pairs
         skip_counter["n_skipped"] = n_skipped
-    if not survivors:
+    if per_draw_out is not None:
+        per_draw_out["stats"] = per_draw
+    if survivors.size == 0:
         # Every pair failed — a genuinely degenerate fit; fail loud rather than
         # return an empty floor that the caller's np.percentile would crash on.
         raise np.linalg.LinAlgError(
             f"make_refit_pair: all {n_pairs} refit pairs failed with LinAlgError "
             "(the resample geometry is fully degenerate — cannot build a floor)"
         )
-    return np.asarray(survivors, dtype=float)
+    return survivors.astype(float)

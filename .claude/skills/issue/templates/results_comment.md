@@ -1,4 +1,4 @@
-<!-- epm:results v1 -->
+<!-- epm:results v<n> -->
 ## Results for #{ISSUE_NUMBER}
 
 ### TL;DR

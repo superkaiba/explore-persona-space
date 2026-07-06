@@ -1,0 +1,55 @@
+{
+  "sha256_ok": true,
+  "actual_sha256": "46c06e89c513ca598bc83be1c87689694a47bfc927a81d0d738a54df769dbf9a",
+  "expected_sha256": "46c06e89c513ca598bc83be1c87689694a47bfc927a81d0d738a54df769dbf9a",
+  "key_set": [
+    "cx_last",
+    "cx_mean",
+    "layers",
+    "metadata",
+    "source",
+    "v_x"
+  ],
+  "bundle_shape": {
+    "cx_last": [
+      5000,
+      28,
+      3584
+    ],
+    "v_x": [
+      5000,
+      28,
+      3584
+    ]
+  },
+  "n_prompts": 5000,
+  "alignment_gate_result": "DEFERRED_TO_PHASE3_GPU",
+  "spot_cosines": [],
+  "spot_idx": [
+    4556,
+    1534,
+    1344,
+    4675,
+    2546,
+    3029,
+    2799,
+    4848,
+    3173,
+    3241,
+    874,
+    4058,
+    3159,
+    82,
+    2717,
+    375,
+    4236,
+    2514,
+    3644,
+    204
+  ],
+  "bundle_revision": "c94070508aa1c1f9c015ceb072231a2e51b28b3f",
+  "lmsys_revision": "200748d9d3cddcc9d782887541057aca0b18c5da",
+  "smoke": false,
+  "n_contexts": 5000,
+  "ts": 1782985895.2779753
+}

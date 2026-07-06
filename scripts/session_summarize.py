@@ -48,6 +48,12 @@ Design choices:
 - **Reuses ``AnthropicChatModel``** from ``explore_persona_space.llm``
   (CLAUDE.md: search before building; never hand-roll a new client).
 
+Side artifact: after the cache write, a human-/dashboard-readable digest is
+rendered from the SAME payload to ``.claude/cache/sessions-digest.md`` (one
+line per live session: issue, status, one-line summary, anomaly flag). No
+second cron, no push calls — the watcher stays the sole Telegram push source.
+See :func:`render_sessions_digest` / :func:`write_sessions_digest`.
+
 CLI::
 
     uv run python scripts/session_summarize.py            # one pass
@@ -255,6 +261,125 @@ def _atomic_write_json(path: Path, payload: dict) -> None:
     tmp = path.with_suffix(path.suffix + ".tmp")
     tmp.write_text(json.dumps(payload, indent=2, sort_keys=False))
     tmp.replace(path)
+
+
+def _atomic_write_text(path: Path, text: str) -> None:
+    """Write ``text`` to ``path`` atomically via temp+rename."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(text)
+    tmp.replace(path)
+
+
+# ── sessions digest (.claude/cache/sessions-digest.md) ──────────────────────
+#
+# A human-/dashboard-readable one-line-per-session snapshot written from the
+# SAME payload the session_progress.json cache is built from, refreshed on the
+# existing 5-min summarizer cron (NO second cron). The watcher remains the sole
+# Telegram push source — this only writes a file (session visibility layer,
+# EPS workflow v2 §2).
+
+# Relative path of the digest under the primary checkout. `.claude/cache/` is
+# a git-ignored cache dir (same neighbourhood as issue-<N>-handle.json).
+DIGEST_REL_PATH = ".claude/cache/sessions-digest.md"
+
+# Max chars for a summary cell before it is truncated (keeps the markdown
+# table readable in a phone-width viewer).
+_DIGEST_SUMMARY_MAX = 100
+
+_DIGEST_TITLE = "EPS sessions digest"
+
+
+def digest_path() -> Path:
+    """Absolute path of the sessions digest.
+
+    Resolved from this script's location (``SCRIPTS_DIR.parent``): the 5-min
+    cron ``cd``s into the primary checkout before invoking, so that parent IS
+    the repo root. `.claude/cache/` is git-ignored, so the digest is a cache
+    artifact, never a committed file."""
+    return SCRIPTS_DIR.parent / DIGEST_REL_PATH
+
+
+def _session_anomaly(entry: dict) -> str | None:
+    """Short anomaly flag for one session entry, or None when healthy.
+
+    Surfaces the two conditions a human scanning the digest wants immediately:
+    a per-session summarize ``error`` (transcript unresolvable, tail-read
+    failure, API error — reported as ``summarize-error (<class>)``), or a task
+    ``status`` of ``blocked`` / ``not-found``. Pure; defensive ``.get()`` so a
+    partial entry never raises."""
+    err = entry.get("error")
+    if isinstance(err, str) and err.strip():
+        head = err.split(":", 1)[0].strip()
+        return f"summarize-error ({head})" if head else "summarize-error"
+    status = entry.get("status")
+    if status in ("blocked", "not-found"):
+        return str(status)
+    return None
+
+
+def _digest_cell(text: object) -> str:
+    """Collapse whitespace, escape ``|`` for the markdown table, and truncate
+    to :data:`_DIGEST_SUMMARY_MAX`. Non-str inputs are coerced defensively."""
+    collapsed = " ".join(str(text).split()).replace("|", r"\|")
+    if len(collapsed) > _DIGEST_SUMMARY_MAX:
+        collapsed = collapsed[: _DIGEST_SUMMARY_MAX - 1].rstrip() + "…"
+    return collapsed
+
+
+def render_sessions_digest(payload: dict, *, now_iso: str | None = None) -> str:
+    """Render the sessions-digest markdown from a session_progress ``payload``.
+
+    One row per live EPS session: issue, task status, one-line summary, and an
+    anomaly flag when present (:func:`_session_anomaly`). PURE (no I/O) — tests
+    pin the exact format here. Header carries the payload's ``updated_at`` (or
+    the ``now_iso`` override) plus a live-session count. Rows sort by issue
+    number (mapped ascending first, unmapped last), then by session id, for a
+    stable frame-to-frame ordering. An empty payload renders a valid (0-row)
+    table so the artifact always exists for the dashboard/reader."""
+    sessions = payload.get("sessions") if isinstance(payload, dict) else None
+    if not isinstance(sessions, dict):
+        sessions = {}
+    updated = now_iso or (payload.get("updated_at") if isinstance(payload, dict) else None)
+    updated = updated or _utcnow_iso()
+
+    def _sort_key(item: tuple[str, object]) -> tuple[int, int, str]:
+        sid, entry = item
+        issue = entry.get("issue") if isinstance(entry, dict) else None
+        if isinstance(issue, int) and not isinstance(issue, bool):
+            return (0, issue, sid)
+        return (1, 0, sid)
+
+    rows = sorted(sessions.items(), key=_sort_key)
+    lines = [
+        f"# {_DIGEST_TITLE}",
+        "",
+        f"_Updated: {updated} — {len(rows)} live session(s)._",
+        "",
+        "| Issue | Status | Summary | Flag |",
+        "| --- | --- | --- | --- |",
+    ]
+    for _sid, entry in rows:
+        entry = entry if isinstance(entry, dict) else {}
+        issue = entry.get("issue")
+        issue_cell = f"#{issue}" if isinstance(issue, int) and not isinstance(issue, bool) else "-"
+        status = _digest_cell(entry.get("status") or "?")
+        summary = _digest_cell(entry.get("summary") or entry.get("error") or "(no summary)")
+        flag = _digest_cell(_session_anomaly(entry) or "")
+        lines.append(f"| {issue_cell} | {status} | {summary} | {flag} |")
+    lines.append("")
+    return "\n".join(lines)
+
+
+def write_sessions_digest(payload: dict, path: Path | None = None) -> Path:
+    """Render + atomically write the sessions digest. Returns the path written.
+
+    ``path`` defaults to :func:`digest_path`; tests pass a ``tmp_path``. Writes
+    via temp+rename (:func:`_atomic_write_text`) so a concurrent reader (the
+    dashboard) never sees a partial file."""
+    dest = path if path is not None else digest_path()
+    _atomic_write_text(dest, render_sessions_digest(payload))
+    return dest
 
 
 def build_session_entry(
@@ -642,10 +767,23 @@ def main(argv: list[str] | None = None) -> int:
     dt = time.time() - t0
     n = len(payload.get("sessions", {}))
     ok = sum(1 for e in payload.get("sessions", {}).values() if e.get("summary"))
+    # Auxiliary digest artifact — written AFTER _run_pass has already committed
+    # the session_progress.json cache, so a digest failure can never break the
+    # primary cache write (the cron contract). A failure is surfaced loudly
+    # (logged + noted in the summary line), never swallowed silently.
+    digest_note = ""
+    if not args.dry_run:
+        try:
+            dest = write_sessions_digest(payload)
+            digest_note = f"; digest {dest}"
+        except Exception as e:
+            logger.warning("sessions digest write failed: %s: %s", type(e).__name__, e)
+            digest_note = f"; digest FAILED ({type(e).__name__})"
     print(
         f"session_summarize: {n} EPS session(s); {ok} summarized; "
         f"{n - ok} skipped/errored; {dt:.1f}s; "
         f"{'(dry-run)' if args.dry_run else f'wrote {CACHE_PATH}'}"
+        f"{digest_note}"
     )
     return 0
 

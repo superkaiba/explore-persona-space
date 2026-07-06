@@ -1,0 +1,302 @@
+{
+  "commit": "09006be091",
+  "created": "2026-07-03T16:37:24Z",
+  "figsize": [
+    13.0,
+    6.0
+  ],
+  "points": [
+    {
+      "category": "next-user 'user' token",
+      "cross-probe-set target stability (identity skill)": 0.990955,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "next-user-header block max",
+      "cross-probe-set target stability (identity skill)": 0.989039,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "next-user-header block mean",
+      "cross-probe-set target stability (identity skill)": 0.987972,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "next-user-header newline",
+      "cross-probe-set target stability (identity skill)": 0.9852,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "5-token boundary block mean",
+      "cross-probe-set target stability (identity skill)": 0.981407,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "5-token boundary block max",
+      "cross-probe-set target stability (identity skill)": 0.979596,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "turn-end token",
+      "cross-probe-set target stability (identity skill)": 0.977952,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "next-user turn-start token",
+      "cross-probe-set target stability (identity skill)": 0.976698,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "post-answer newline",
+      "cross-probe-set target stability (identity skill)": 0.974908,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "next-user-header newline, layer-mean",
+      "cross-probe-set target stability (identity skill)": 0.95973,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "next-user-header newline, layer-max",
+      "cross-probe-set target stability (identity skill)": 0.950872,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "whole-answer max",
+      "cross-probe-set target stability (identity skill)": 0.936789,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer+turn-end max",
+      "cross-probe-set target stability (identity skill)": 0.935511,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer+boundary max",
+      "cross-probe-set target stability (identity skill)": 0.934821,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "last answer token",
+      "cross-probe-set target stability (identity skill)": 0.907637,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "final answer token",
+      "cross-probe-set target stability (identity skill)": 0.905515,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer max, layer-mean",
+      "cross-probe-set target stability (identity skill)": 0.896561,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer+boundary mean",
+      "cross-probe-set target stability (identity skill)": 0.893208,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer+boundary max, layer-mean",
+      "cross-probe-set target stability (identity skill)": 0.892746,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer+turn-end mean",
+      "cross-probe-set target stability (identity skill)": 0.892272,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "whole-answer mean",
+      "cross-probe-set target stability (identity skill)": 0.891097,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer token 1",
+      "cross-probe-set target stability (identity skill)": 0.875088,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer+boundary mean, layer-mean",
+      "cross-probe-set target stability (identity skill)": 0.832775,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer mean, layer-mean",
+      "cross-probe-set target stability (identity skill)": 0.826361,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer token 2",
+      "cross-probe-set target stability (identity skill)": 0.82595,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "2th-from-end answer token",
+      "cross-probe-set target stability (identity skill)": 0.81393,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer token 10",
+      "cross-probe-set target stability (identity skill)": 0.81092,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer max, layer-max",
+      "cross-probe-set target stability (identity skill)": 0.794167,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer+boundary max, layer-max",
+      "cross-probe-set target stability (identity skill)": 0.787034,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer+boundary mean, layer-max",
+      "cross-probe-set target stability (identity skill)": 0.779708,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer mean, layer-max",
+      "cross-probe-set target stability (identity skill)": 0.773667,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer token 9",
+      "cross-probe-set target stability (identity skill)": 0.765511,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer token 8",
+      "cross-probe-set target stability (identity skill)": 0.758764,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer token 7",
+      "cross-probe-set target stability (identity skill)": 0.749174,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer token 3",
+      "cross-probe-set target stability (identity skill)": 0.6877,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "3th-from-end answer token",
+      "cross-probe-set target stability (identity skill)": 0.66313,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "7th-from-end answer token",
+      "cross-probe-set target stability (identity skill)": 0.65179,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "9th-from-end answer token",
+      "cross-probe-set target stability (identity skill)": 0.645423,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "6th-from-end answer token",
+      "cross-probe-set target stability (identity skill)": 0.644035,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer token 5",
+      "cross-probe-set target stability (identity skill)": 0.643475,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "5th-from-end answer token",
+      "cross-probe-set target stability (identity skill)": 0.635605,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "8th-from-end answer token",
+      "cross-probe-set target stability (identity skill)": 0.617534,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer token 6",
+      "cross-probe-set target stability (identity skill)": 0.609346,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "10th-from-end answer token",
+      "cross-probe-set target stability (identity skill)": 0.606782,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "4th-from-end answer token",
+      "cross-probe-set target stability (identity skill)": 0.604774,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "answer token 4",
+      "cross-probe-set target stability (identity skill)": 0.587458,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "cross-probe-set target stability (identity skill)": 0.2,
+      "series": "target-stability gate (0.2)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "cross-probe-set target stability (identity skill)": 0.2,
+      "series": "target-stability gate (0.2)",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 48
+}

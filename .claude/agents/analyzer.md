@@ -121,7 +121,7 @@ number from the raw JSON, never the experimenter's summary.**
 
 **Measurement-validity gate (BEFORE interpreting; skip for
 `kind: analysis|infra|batch|survey`).** The Goal names a *construct*; the
-metric is a *proxy*. Three checks:
+metric is a *proxy*. Four checks:
 
 1. **Floor/ceiling:** all conditions saturated ⇒ probe presumed
    uninformative — rank-shuffles are NOT findings; surface it, cap
@@ -135,6 +135,14 @@ metric is a *proxy*. Three checks:
    (preferred: the teacher-forced fixed pos-vs-neg margin, #722) + the
    Spearman of (b) vs (a) (CLAUDE.md § Measurement validity;
    `llm-judging.md` § E2).
+4. **Band-vs-ceiling:** a registered null band whose upper bound meets or
+   exceeds the DV's achievable estimator-bound ceiling is
+   uninformative-by-construction — narrate any NON-REJECTION as
+   failure-to-reject, never evidence of absence/reversal (a separately
+   reachable opposite-tail rejection stays legitimate), and draw band +
+   ceiling in the figure; a band above only a fallback severity reference
+   point is reported as low-severity, not zero power
+   (`.claude/rules/selection-symmetric-nulls.md` § Band-vs-ceiling; #810).
 
 **v4 shape (SPEC.md § "v4 body shape", authoritative):** emit the `<!-- clean-result-v4 -->` sentinel right after the
 H1; confidence lives in the H1 title tag ONLY; `## Takeaways` (3-6
@@ -165,12 +173,20 @@ interpretation-critic adjudicates.
 #### Content hygiene for harmful-content corpora (EM, refusal, harmful-advice)
 
 Harmful-content corpora (Betley-style EM, bad-medical-advice, refusal-bait
-pools) in context trigger terminal API usage-policy refusals (#537): the
+pools) AND safety-benchmark question banks
+(`src/explore_persona_space/artifacts/query_banks/*.json` — advbench /
+strongreject / Betley-lineage / sensitive-info; #866) in context trigger
+terminal API usage-policy refusals (#537): the
 spot check AND Step 3.6 selection run SANITIZED — field-filtered `jq`
 slices only (never whole files or full text fields); a ~15-word excerpt +
 `[truncated — harmful-content row; verify at <raw-completions path>, row <i>]`;
 labels, indices, permanent raw links verbatim; each block labeled
-"sanitized for context hygiene". Benign corpora keep verbatim treatment.
+"sanitized for context hygiene". Harmful BANK probe items get the same
+sanitized treatment — reference by bank filename + index (excerpt only
+when a worked example strictly needs one, ≤15 words). Benign corpora keep
+verbatim treatment, as do benign banks (`arc_c_v1`, `fact_questions_v1`,
+`marker_eval_v1`, `sycophancy_claims_v1`, `wildchat_random_v1`);
+when unsure whether a bank is harmful, sanitize.
 
 Full text: `analyzer-section-reference.md`
 § Step 1.5: Load top-N promoted clean-results as in-context exemplars (grep heading, chunked Read).
@@ -232,6 +248,10 @@ commit SHA — NEVER relative (dashboard-invisible, #365) or
    `### <result>`:
    `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)`
    — no `## Figure` H2 (check-2 hard FAIL). Alt text may contain `[brackets]`.
+4. Repo-root stray guard: `git -C "$MAIN_ROOT" status --porcelain -uall
+   -- figures/issue_<N>/` after the push — delete an untracked stray ONLY if
+   blob-identical to the pin; differing → warn-only. Never `git clean` /
+   `checkout .` / `restore .` (§ Step 3 of the section reference, #922).
 
 Full text: `analyzer-section-reference.md`
 § Step 3: Generate Plots (grep heading, chunked Read).
@@ -239,8 +259,8 @@ Full text: `analyzer-section-reference.md`
 ### Hard rule: NEVER a destructive git command on the shared repo root
 
 Never run a destructive repo-root reset (a `--hard` reset without a
-`git -C "$WT"` prefix) — nor `git checkout .` / `git clean -f` /
-`git restore .` on the shared tree — EVER. The repo root's `tasks/` subtree
+`git -C "$WT"` prefix) — nor `git checkout .` / `git clean -f` / <!-- workflow-lint: allow-repo-root-wt-revert: ban-context mention of the banned command (#897) -->
+`git restore .` on the shared tree — EVER. <!-- workflow-lint: allow-repo-root-wt-revert: ban-context mention of the banned command (#897) --> The repo root's `tasks/` subtree
 hosts EVERY concurrent sibling task's durable state, and `task.py` holds a
 per-registry `flock`, not per-file. Incident 2026-07-01: a #778 analyzer's
 improvised reset silently CLOBBERed the concurrent siblings #812/#813
@@ -344,6 +364,15 @@ per axis (the six /humanize axes): vocabulary · structure · rhythm · voice
 · interpretation honesty · results-writing discipline. Any axis ≥ 2 →
 revise, re-score; cap 3 cycles, then ship best + flag residual. All ≤ 1 →
 Step 5.
+
+The /humanize hard ban gate (`check_bans.sh`) scans AUTHORED PROSE only:
+elide fenced/`<details>` example blocks, `>`-blockquoted lines, and
+`**Completion:**` sample lines from the scan input first (fail-loud recipe:
+analyzer-section-reference.md § Step 4.5). A hit only inside verbatim
+sample data is a documented false positive (PASS; never rewrite the
+sample — #498/#518/#923); a hit surviving elision is presumptively
+authored prose — a real FAIL (if it is missed sample text, strengthen the
+elision, never rewrite the sample).
 
 Full rubric: `analyzer-section-reference.md`
 § Step 4.5: Humanize-loop self-pass on the v4 reader-facing prose (grep heading, chunked Read).

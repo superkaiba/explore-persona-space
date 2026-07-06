@@ -1,0 +1,706 @@
+{
+  "meta": {
+    "issue": 811,
+    "git_commit": "f3180b3628b9056ec758996761af756cb302965d",
+    "generated_at": "2026-07-03T11:28:58Z"
+  },
+  "summaries": [
+    "maxp",
+    "mean",
+    "turn_nl"
+  ],
+  "pair_table": {
+    "em/L14": {
+      "behavior": "em",
+      "layer": 14,
+      "maxp": {
+        "Delta_med": 0.0489820637281582,
+        "floor_combined": 0.07308214658344726,
+        "Delta_over_floor_sd": 2.414512546424056,
+        "Delta_med_ci": {
+          "point": 0.0489820637281582,
+          "ci_lo": 0.0489820637281582,
+          "ci_hi": 0.0489820637281582,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.19793586820312944,
+          "rho_Mplus_ridge": -0.1674276261481626,
+          "ci_diff_ridge": {
+            "point": 0.030508242054966855,
+            "ci_lo": -0.13119011101840664,
+            "ci_hi": 0.16772188807053473,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.20315545730161227
+      },
+      "mean": {
+        "Delta_med": 0.03668828667616905,
+        "floor_combined": 0.09144154812373613,
+        "Delta_over_floor_sd": 1.3039653671864229,
+        "Delta_med_ci": {
+          "point": 0.03668828667616905,
+          "ci_lo": 0.03668828667616905,
+          "ci_hi": 0.03668828667616905,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.11129078102898882,
+          "rho_Mplus_ridge": -0.13937560728032067,
+          "ci_diff_ridge": {
+            "point": -0.02808482625133185,
+            "ci_lo": -0.27238671773508577,
+            "ci_hi": 0.17656627652400933,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.16695998970389692
+      },
+      "turn_nl": {
+        "Delta_med": 0.23516529241092787,
+        "floor_combined": 0.17616378487199358,
+        "Delta_over_floor_sd": 4.157570010597784,
+        "Delta_med_ci": {
+          "point": 0.23516529241092787,
+          "ci_lo": 0.23516529241092787,
+          "ci_hi": 0.23516529241092787,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.027712003145352142,
+          "rho_Mplus_ridge": 0.02727336842809162,
+          "ci_diff_ridge": {
+            "point": 0.05498537157344376,
+            "ci_lo": -0.38596492283798167,
+            "ci_hi": 0.36939672345855734,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.14157193037543833
+      }
+    },
+    "em/L21": {
+      "behavior": "em",
+      "layer": 21,
+      "maxp": {
+        "Delta_med": 0.11479685584691324,
+        "floor_combined": 0.20987961086803644,
+        "Delta_over_floor_sd": 2.2595309680510245,
+        "Delta_med_ci": {
+          "point": 0.11479685584691324,
+          "ci_lo": 0.11479685584691324,
+          "ci_hi": 0.11479685584691324,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.07130894768793233,
+          "rho_Mplus_ridge": -0.13812203715717,
+          "ci_diff_ridge": {
+            "point": -0.06681308946923767,
+            "ci_lo": -0.19293517288584586,
+            "ci_hi": 0.035685340430920455,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.1956100215579935
+      },
+      "mean": {
+        "Delta_med": 0.08238935864885705,
+        "floor_combined": 0.18799815214264284,
+        "Delta_over_floor_sd": 1.690895884714523,
+        "Delta_med_ci": {
+          "point": 0.08238935864885705,
+          "ci_lo": 0.08238935864885705,
+          "ci_hi": 0.08238935864885705,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.044900316273868604,
+          "rho_Mplus_ridge": -0.06554318126910898,
+          "ci_diff_ridge": {
+            "point": -0.020642864995240373,
+            "ci_lo": -0.21349661137909995,
+            "ci_hi": 0.11806099454977165,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.05255926556436256
+      },
+      "turn_nl": {
+        "Delta_med": 0.5059062399871073,
+        "floor_combined": 0.38960482036728106,
+        "Delta_over_floor_sd": 4.46541916451511,
+        "Delta_med_ci": {
+          "point": 0.5059062399871073,
+          "ci_lo": 0.5059062399871073,
+          "ci_hi": 0.5059062399871073,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.08917729226142831,
+          "rho_Mplus_ridge": 0.060825479523255316,
+          "ci_diff_ridge": {
+            "point": 0.15000277178468363,
+            "ci_lo": -0.18757100269605373,
+            "ci_hi": 0.39110195200945536,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.1847034693758302
+      }
+    },
+    "em/L7": {
+      "behavior": "em",
+      "layer": 7,
+      "maxp": {
+        "Delta_med": 0.011920251232317599,
+        "floor_combined": 0.04989210735028545,
+        "Delta_over_floor_sd": 0.6950992213838331,
+        "Delta_med_ci": {
+          "point": 0.011920251232317599,
+          "ci_lo": 0.011920251232317599,
+          "ci_hi": 0.011920251232317599,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.13418580728604673,
+          "rho_Mplus_ridge": -0.07867676425733652,
+          "ci_diff_ridge": {
+            "point": 0.05550904302871021,
+            "ci_lo": -0.06769363065797676,
+            "ci_hi": 0.14573449273454542,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.2728926688613085
+      },
+      "mean": {
+        "Delta_med": 0.011165015180395966,
+        "floor_combined": 0.05869381935665559,
+        "Delta_over_floor_sd": 0.6206255370500243,
+        "Delta_med_ci": {
+          "point": 0.011165015180395966,
+          "ci_lo": 0.011165015180395966,
+          "ci_hi": 0.011165015180395966,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": 0.07952732848169677,
+          "rho_Mplus_ridge": -0.04766322288185756,
+          "ci_diff_ridge": {
+            "point": -0.12719055136355434,
+            "ci_lo": -0.20909618095356503,
+            "ci_hi": 0.010475222417468608,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.0002410030391171089
+      },
+      "turn_nl": {
+        "Delta_med": 0.11814198875755773,
+        "floor_combined": 0.047174067542594504,
+        "Delta_over_floor_sd": 8.91853701845587,
+        "Delta_med_ci": {
+          "point": 0.11814198875755773,
+          "ci_lo": 0.11814198875755773,
+          "ci_hi": 0.11814198875755773,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": 0.1933695397246984,
+          "rho_Mplus_ridge": 0.1459881978817864,
+          "ci_diff_ridge": {
+            "point": -0.047381341842911984,
+            "ci_lo": -0.356224132843972,
+            "ci_hi": 0.38812697962716913,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.07193957121337599
+      }
+    },
+    "fact/L14": {
+      "behavior": "fact",
+      "layer": 14,
+      "maxp": {
+        "Delta_med": 0.2712315009357061,
+        "floor_combined": 0.06932063281089171,
+        "Delta_over_floor_sd": 11.162517989824902,
+        "Delta_med_ci": {
+          "point": 0.2712315009357061,
+          "ci_lo": 0.2712315009357061,
+          "ci_hi": 0.2712315009357061,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.11963193102827656,
+          "rho_Mplus_ridge": 0.5173195379007695,
+          "ci_diff_ridge": {
+            "point": 0.636951468929046,
+            "ci_lo": 0.5312787208772933,
+            "ci_hi": 0.7549967501979741,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.006200980974647788
+      },
+      "mean": {
+        "Delta_med": 0.28890262883654483,
+        "floor_combined": 0.0988198869370027,
+        "Delta_over_floor_sd": 7.917496461352148,
+        "Delta_med_ci": {
+          "point": 0.28890262883654483,
+          "ci_lo": 0.28890262883654483,
+          "ci_hi": 0.28890262883654483,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.20311213096181915,
+          "rho_Mplus_ridge": 0.4998667954261767,
+          "ci_diff_ridge": {
+            "point": 0.7029789263879959,
+            "ci_lo": 0.552235436546508,
+            "ci_hi": 0.8101980257700944,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.10555378330190211
+      },
+      "turn_nl": {
+        "Delta_med": 0.020040547740684957,
+        "floor_combined": 0.25618899495403896,
+        "Delta_over_floor_sd": 0.27135516026802786,
+        "Delta_med_ci": {
+          "point": 0.020040547740684957,
+          "ci_lo": 0.020040547740684957,
+          "ci_hi": 0.020040547740684957,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.1507897227402614,
+          "rho_Mplus_ridge": 0.23463472159154014,
+          "ci_diff_ridge": {
+            "point": 0.38542444433180156,
+            "ci_lo": 0.22888521958416266,
+            "ci_hi": 0.6120262880117069,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.11799806214406486
+      }
+    },
+    "fact/L21": {
+      "behavior": "fact",
+      "layer": 21,
+      "maxp": {
+        "Delta_med": 0.055836952036490625,
+        "floor_combined": 0.19287376908542506,
+        "Delta_over_floor_sd": 0.9136708700224475,
+        "Delta_med_ci": {
+          "point": 0.055836952036490625,
+          "ci_lo": 0.055836952036490625,
+          "ci_hi": 0.055836952036490625,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.12118870126380642,
+          "rho_Mplus_ridge": 0.36070695609954423,
+          "ci_diff_ridge": {
+            "point": 0.48189565736335066,
+            "ci_lo": 0.42007052887471846,
+            "ci_hi": 0.5441910886907628,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.029969806372487
+      },
+      "mean": {
+        "Delta_med": 0.13755338684338902,
+        "floor_combined": 0.10771576195374132,
+        "Delta_over_floor_sd": 3.8618394175612956,
+        "Delta_med_ci": {
+          "point": 0.13755338684338902,
+          "ci_lo": 0.13755338684338902,
+          "ci_hi": 0.13755338684338902,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.17385253855774915,
+          "rho_Mplus_ridge": 0.4976475337568955,
+          "ci_diff_ridge": {
+            "point": 0.6715000723146447,
+            "ci_lo": 0.5065533993555533,
+            "ci_hi": 0.7860946385487848,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.10966594784218443
+      },
+      "turn_nl": {
+        "Delta_med": 0.11762075902447647,
+        "floor_combined": 0.23302690723980113,
+        "Delta_over_floor_sd": 1.6194513883853066,
+        "Delta_med_ci": {
+          "point": 0.11762075902447647,
+          "ci_lo": 0.11762075902447647,
+          "ci_hi": 0.11762075902447647,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.031184983728304652,
+          "rho_Mplus_ridge": -0.03005056338481027,
+          "ci_diff_ridge": {
+            "point": 0.0011344203434943828,
+            "ci_lo": -0.1271866226221586,
+            "ci_hi": 0.21186309678630474,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.17704416052145408
+      }
+    },
+    "fact/L7": {
+      "behavior": "fact",
+      "layer": 7,
+      "maxp": {
+        "Delta_med": 0.0681248002121966,
+        "floor_combined": 0.045578318365173225,
+        "Delta_over_floor_sd": 4.898368463593615,
+        "Delta_med_ci": {
+          "point": 0.0681248002121966,
+          "ci_lo": 0.0681248002121966,
+          "ci_hi": 0.0681248002121966,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.13407476846750233,
+          "rho_Mplus_ridge": 0.29871663942500637,
+          "ci_diff_ridge": {
+            "point": 0.4327914078925087,
+            "ci_lo": 0.36895995130902226,
+            "ci_hi": 0.49806504513991945,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.05216832012907886
+      },
+      "mean": {
+        "Delta_med": 0.11712598131664062,
+        "floor_combined": 0.04385203182939123,
+        "Delta_over_floor_sd": 8.74307482936456,
+        "Delta_med_ci": {
+          "point": 0.11712598131664062,
+          "ci_lo": 0.11712598131664062,
+          "ci_hi": 0.11712598131664062,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.17581363987931942,
+          "rho_Mplus_ridge": 0.13118176726133357,
+          "ci_diff_ridge": {
+            "point": 0.306995407140653,
+            "ci_lo": 0.16607284148011328,
+            "ci_hi": 0.4209019320534754,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.06570568526583222
+      },
+      "turn_nl": {
+        "Delta_med": 0.1281622824328496,
+        "floor_combined": 0.04311230039114899,
+        "Delta_over_floor_sd": 10.358279799956476,
+        "Delta_med_ci": {
+          "point": 0.1281622824328496,
+          "ci_lo": 0.1281622824328496,
+          "ci_hi": 0.1281622824328496,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.08576034332611006,
+          "rho_Mplus_ridge": -0.11681777574894672,
+          "ci_diff_ridge": {
+            "point": -0.031057432422836664,
+            "ci_lo": -0.2146485582973474,
+            "ci_hi": 0.22506062310106728,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.22693577721183722
+      }
+    },
+    "sycophancy/L14": {
+      "behavior": "sycophancy",
+      "layer": 14,
+      "maxp": {
+        "Delta_med": 0.010272067267849728,
+        "floor_combined": 0.05723920074495422,
+        "Delta_over_floor_sd": 0.6220468679056776,
+        "Delta_med_ci": {
+          "point": 0.010272067267849728,
+          "ci_lo": 0.010272067267849728,
+          "ci_hi": 0.010272067267849728,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.16413889584385577,
+          "rho_Mplus_ridge": -0.20336916479157882,
+          "ci_diff_ridge": {
+            "point": -0.03923026894772305,
+            "ci_lo": -0.243883606380689,
+            "ci_hi": 0.18239968041933838,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.11412249260563175
+      },
+      "mean": {
+        "Delta_med": 0.025806522455781546,
+        "floor_combined": 0.02342984144010074,
+        "Delta_over_floor_sd": 3.6238786543605164,
+        "Delta_med_ci": {
+          "point": 0.025806522455781546,
+          "ci_lo": 0.025806522455781546,
+          "ci_hi": 0.025806522455781546,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.1241011599708289,
+          "rho_Mplus_ridge": -0.15022188084436003,
+          "ci_diff_ridge": {
+            "point": -0.026120720873531122,
+            "ci_lo": -0.1737219847382574,
+            "ci_hi": 0.08586891639520833,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.06172678686058103
+      },
+      "turn_nl": {
+        "Delta_med": 0.054182517788053976,
+        "floor_combined": 0.08068373234109111,
+        "Delta_over_floor_sd": 2.26916438423735,
+        "Delta_med_ci": {
+          "point": 0.054182517788053976,
+          "ci_lo": 0.054182517788053976,
+          "ci_hi": 0.054182517788053976,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.11114721055070034,
+          "rho_Mplus_ridge": -0.03666633901720435,
+          "ci_diff_ridge": {
+            "point": 0.074480871533496,
+            "ci_lo": -0.1308643186921056,
+            "ci_hi": 0.32813261980512953,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.15163678311574463
+      }
+    },
+    "sycophancy/L21": {
+      "behavior": "sycophancy",
+      "layer": 21,
+      "maxp": {
+        "Delta_med": 0.08427175215853853,
+        "floor_combined": 0.32880008633935576,
+        "Delta_over_floor_sd": 0.8622862993427958,
+        "Delta_med_ci": {
+          "point": 0.08427175215853853,
+          "ci_lo": 0.08427175215853853,
+          "ci_hi": 0.08427175215853853,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.12424952923782,
+          "rho_Mplus_ridge": -0.12420148161912427,
+          "ci_diff_ridge": {
+            "point": 4.8047618695729044e-05,
+            "ci_lo": -0.21764720977590632,
+            "ci_hi": 0.25981395660544643,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.023290582666743165
+      },
+      "mean": {
+        "Delta_med": 0.038211898681410755,
+        "floor_combined": 0.3105765798824492,
+        "Delta_over_floor_sd": 0.41521628106726866,
+        "Delta_med_ci": {
+          "point": 0.038211898681410755,
+          "ci_lo": 0.038211898681410755,
+          "ci_hi": 0.038211898681410755,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.16220942804493424,
+          "rho_Mplus_ridge": -0.07455338784689794,
+          "ci_diff_ridge": {
+            "point": 0.0876560401980363,
+            "ci_lo": -0.11050635660811216,
+            "ci_hi": 0.34397607403496594,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.05486598730764848
+      },
+      "turn_nl": {
+        "Delta_med": 0.10768752542522547,
+        "floor_combined": 0.2794257163967412,
+        "Delta_over_floor_sd": 1.3016939104675935,
+        "Delta_med_ci": {
+          "point": 0.10768752542522547,
+          "ci_lo": 0.10768752542522547,
+          "ci_hi": 0.10768752542522547,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.15303060894328008,
+          "rho_Mplus_ridge": -0.02412257389742293,
+          "ci_diff_ridge": {
+            "point": 0.12890803504585716,
+            "ci_lo": -0.07400547161679946,
+            "ci_hi": 0.38703225621012577,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.17645921729243402
+      }
+    },
+    "sycophancy/L7": {
+      "behavior": "sycophancy",
+      "layer": 7,
+      "maxp": {
+        "Delta_med": 0.012555027696266343,
+        "floor_combined": 0.01120387048576641,
+        "Delta_over_floor_sd": 4.242018841904228,
+        "Delta_med_ci": {
+          "point": 0.012555027696266343,
+          "ci_lo": 0.012555027696266343,
+          "ci_hi": 0.012555027696266343,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.10324543487002939,
+          "rho_Mplus_ridge": -0.12152249321281672,
+          "ci_diff_ridge": {
+            "point": -0.018277058342787325,
+            "ci_lo": -0.14838248250793526,
+            "ci_hi": 0.12719947262452416,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.051790494825761355
+      },
+      "mean": {
+        "Delta_med": 0.015752120228144536,
+        "floor_combined": 0.008270022563111087,
+        "Delta_over_floor_sd": 8.082830800020238,
+        "Delta_med_ci": {
+          "point": 0.015752120228144536,
+          "ci_lo": 0.015752120228144536,
+          "ci_hi": 0.015752120228144536,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.07575357732223585,
+          "rho_Mplus_ridge": -0.11854493112042407,
+          "ci_diff_ridge": {
+            "point": -0.042791353798188214,
+            "ci_lo": -0.11646019514591043,
+            "ci_hi": 0.05894650247652904,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.05629607129188491
+      },
+      "turn_nl": {
+        "Delta_med": 0.05109562357131832,
+        "floor_combined": 0.01664545742906646,
+        "Delta_over_floor_sd": 11.886287038981427,
+        "Delta_med_ci": {
+          "point": 0.05109562357131832,
+          "ci_lo": 0.05109562357131832,
+          "ci_hi": 0.05109562357131832,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.10883186031412846,
+          "rho_Mplus_ridge": -0.17295618998122622,
+          "ci_diff_ridge": {
+            "point": -0.06412432966709776,
+            "ci_lo": -0.3319939945331135,
+            "ci_hi": 0.21790911086337927,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.00090078162920601
+      }
+    }
+  },
+  "kill1_base_leg_validity": {
+    "fired": false,
+    "test_summary": "maxp",
+    "n_collapse": 0,
+    "n_comparable": 3,
+    "n_missing_gate": 0,
+    "n_mean_no_gate": 0,
+    "state": "decided",
+    "collapse_frac_threshold": 0.5,
+    "per_behavior": {
+      "em": {
+        "mean_margin": 0.21771688323408903,
+        "maxp_margin": 0.1847957237382039,
+        "collapse_threshold": 0.10885844161704451,
+        "collapsed": false,
+        "status": "held"
+      },
+      "sycophancy": {
+        "mean_margin": 0.042994666406928624,
+        "maxp_margin": 0.1353662689602033,
+        "collapse_threshold": 0.021497333203464312,
+        "collapsed": false,
+        "status": "held"
+      },
+      "fact": {
+        "mean_margin": 0.11895873751581304,
+        "maxp_margin": 0.06010937173842433,
+        "collapse_threshold": 0.05947936875790652,
+        "collapsed": false,
+        "status": "held"
+      }
+    },
+    "phase": "phase0_base_leg",
+    "primary_layer": 14
+  }
+}

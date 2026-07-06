@@ -1,0 +1,236 @@
+{
+  "commit": "d30b153ac3",
+  "created": "2026-07-04T16:01:01Z",
+  "figsize": [
+    6.0,
+    3.6
+  ],
+  "points": [
+    {
+      "Prefix length t": 1.0,
+      "Remainder-mean test R\u00b2": 0.5806632951205,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prefix length t": 2.0,
+      "Remainder-mean test R\u00b2": 0.5872703290870196,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prefix length t": 4.0,
+      "Remainder-mean test R\u00b2": 0.589404888726536,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prefix length t": 8.0,
+      "Remainder-mean test R\u00b2": 0.5974458775079872,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prefix length t": 16.0,
+      "Remainder-mean test R\u00b2": 0.6043325492235349,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prefix length t": 32.0,
+      "Remainder-mean test R\u00b2": 0.606526459494096,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prefix length t": 64.0,
+      "Remainder-mean test R\u00b2": 0.598679042101302,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prefix length t": 128.0,
+      "Remainder-mean test R\u00b2": 0.6376018072057628,
+      "series": "Own answer (regenerated)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Prefix length t": 1.0,
+      "Remainder-mean test R\u00b2": 0.5871502354012479,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prefix length t": 2.0,
+      "Remainder-mean test R\u00b2": 0.5933711577831431,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prefix length t": 4.0,
+      "Remainder-mean test R\u00b2": 0.5909163012884687,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prefix length t": 8.0,
+      "Remainder-mean test R\u00b2": 0.5992875683225757,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prefix length t": 16.0,
+      "Remainder-mean test R\u00b2": 0.6125243128131168,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prefix length t": 32.0,
+      "Remainder-mean test R\u00b2": 0.6170770563103884,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prefix length t": 64.0,
+      "Remainder-mean test R\u00b2": 0.6240887167444434,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prefix length t": 128.0,
+      "Remainder-mean test R\u00b2": 0.6246512488055982,
+      "series": "External plain (Claude)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Prefix length t": 1.0,
+      "Remainder-mean test R\u00b2": 0.5520740857396493,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prefix length t": 2.0,
+      "Remainder-mean test R\u00b2": 0.5603128529563997,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prefix length t": 4.0,
+      "Remainder-mean test R\u00b2": 0.5696693702250035,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prefix length t": 8.0,
+      "Remainder-mean test R\u00b2": 0.5814220971876113,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prefix length t": 16.0,
+      "Remainder-mean test R\u00b2": 0.5943504783291422,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prefix length t": 32.0,
+      "Remainder-mean test R\u00b2": 0.6092965447910625,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prefix length t": 64.0,
+      "Remainder-mean test R\u00b2": 0.6235434356371217,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prefix length t": 128.0,
+      "Remainder-mean test R\u00b2": 0.621571185518253,
+      "series": "External distinct-style (Claude)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Prefix length t": 1.0,
+      "Remainder-mean test R\u00b2": 0.0055638393413266485,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prefix length t": 2.0,
+      "Remainder-mean test R\u00b2": 0.0408014498996897,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prefix length t": 4.0,
+      "Remainder-mean test R\u00b2": 0.0935905567837001,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prefix length t": 8.0,
+      "Remainder-mean test R\u00b2": 0.16323351296375854,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prefix length t": 16.0,
+      "Remainder-mean test R\u00b2": 0.2392987153572258,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prefix length t": 32.0,
+      "Remainder-mean test R\u00b2": 0.3332008305205484,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prefix length t": 64.0,
+      "Remainder-mean test R\u00b2": 0.4242909534453265,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Prefix length t": 128.0,
+      "Remainder-mean test R\u00b2": 0.5220341703685096,
+      "series": "Mismatched (shuffled pairing)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 32
+}

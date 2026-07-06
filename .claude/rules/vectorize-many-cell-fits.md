@@ -1,6 +1,6 @@
 ---
 name: vectorize-many-cell-fits
-description: Many-cell gradient-descent fits (per-fold / per-cell MLP / AdamW LOCO sweeps, per-cell probes) AND many-draw closed-form statistical loops (permutation / bootstrap / null-draw batteries over a large fixed pool) AND many-cell repeated dense linear-algebra fits (a full svd/eigh/lstsq/GCV-ridge solve looped over fold × layer × arm × trait — a per-cell factorization is cheap ONCE, ruinous ×thousands serially) are OVERHEAD-bound, not FLOP-bound — vectorize the fold / output-dim / layer / cell / draw axes into batched tensor ops BEFORE reaching for GPU or a bigger machine. A naive serial loop is 50-100x slower than the same math vectorized.
+description: Many-cell gradient-descent fits (per-fold / per-cell MLP / AdamW LOCO sweeps, per-cell probes) AND many-draw closed-form statistical loops (permutation / bootstrap / null-draw batteries over a large fixed pool) AND many-cell repeated dense linear-algebra fits (a full svd/eigh/lstsq/GCV-ridge solve looped over fold × layer × arm × trait — a per-cell factorization is cheap ONCE, ruinous ×thousands serially) are OVERHEAD-bound, not FLOP-bound — vectorize the fold / output-dim / layer / cell / draw axes into batched tensor ops BEFORE reaching for GPU or a bigger machine. A naive serial loop is 50-100x slower than the same math vectorized. A mid-run compute-deviation exceeding 2× the plan estimate (row or total) on a RUNNING fit/battery/factorization phase forces the vectorize signature check IMMEDIATELY (§ Mid-run trigger).
 paths:
   - "scripts/issue*_fit*.py"
   - "scripts/issue*_skill*.py"
@@ -40,6 +40,16 @@ cells that differ only in targets/λ, or the named fast twin. A plan need only
 schedule "ridge per fold × layer × arm" for this to apply — a serial per-cell
 full factorization is the default implementation unless the plan states the
 factorization is shared/batched (#823).
+
+**And the same law covers per-item SERIALIZATION / per-file-upload loops** —
+when per-item IO (client-side compression, `savez_compressed`, a per-file Hub
+commit) rivals or dominates the item's compute, write the cheap format per
+item and compress/upload out-of-band or batched, and benchmark one
+production-shape item's serialization wall-time at plan/gate time (#813:
+`savez_compressed` 103.8 s vs plain `savez` 1.2 s per file at a 1.29× ratio —
+65% of row wall-time; implementation-side rule: `.claude/rules/code-style.md`
+§ Compute-throughput discipline; plan-side recipe:
+`.claude/rules/plan-compute-sizing.md` § Store-heavy / IO-heavy phase sizing).
 
 ## The diagnostic signature
 
@@ -114,6 +124,22 @@ solve one shared reduction + cheap per-λ updates.
 6. **Verify the vectorized reimplementation reproduces the serial numbers** on
    2-3 cells within float tolerance before trusting it (vmap'd init/seed/PCA-basis
    handling is easy to get subtly wrong).
+7. **Launch it protected + checkpointed — the launch form is part of the fix.**
+   Any VM-side fit / battery / aggregation phase with projected wall-time >~15 min
+   MUST use the canonical detached launch: `setsid` pid-capture wrapper +
+   `sudo -n choom -n -600` session sweep + the `pid= log= choom=ok|failed`
+   breadcrumb — recipe owned by `.claude/skills/issue/SKILL.md`
+   § "Detached VM-side long compute phases" (short form:
+   `.claude/rules/code-style.md` § "Always run with `nohup`"); do not copy the
+   snippet here, follow it there. This VM's earlyoom `--prefer` gives every
+   python/pytest process +300 badness, so an unprotected fit is the designated
+   victim of ANY neighbor's memory spike (#811: a healthy 6.8 GiB re-fit
+   SIGTERM'd ~2h in, 0 checkpoints, by a neighbor's spike). AND per-cell
+   checkpoints + a resume predicate are REQUIRED for any loop projected >~1h
+   (`.claude/rules/code-style.md` § "Checkpoint per phase", intra-phase grain):
+   choom only re-orders victim selection — checkpoints bound the loss when a
+   kill lands anyway. "No per-cell checkpoint" in the diagnostic signature
+   above is not just an ETA smell; it is the thing this item fixes.
 
 ## Canonical helper
 
@@ -163,7 +189,9 @@ the SAME round as the rewrite:
    already executing the serial path when the batched twin lands and its
    remaining serial ETA exceeds kill+relaunch cost, kill and relaunch on the
    batched path (sibling: `.claude/rules/crash-fix-rounds.md`
-   § kill-before-relaunch). (General lesson:
+   § kill-before-relaunch). The SAME calculus fires mid-run WITHOUT a landed
+   twin on any compute-deviation exceeding 2× — § Mid-run trigger below.
+   (General lesson:
    `.claude/rules/workflow-fix-on-bug.md` § "Built-but-stranded fixes don't
    help"; this contract is its vectorization-specific mechanism.)
 2. **Tombstone the superseded serial entrypoint.** Default mechanism: the
@@ -207,6 +235,54 @@ helper, a `scripts/issue*_*.py` driver, or an in-module loop replaced by a
 batched twin — whether done by an implementer mid-experiment, a workflow-fix
 session, or an emergency in-session fix.
 
+### Mid-run trigger — a 2× compute-deviation forces the vectorize check NOW
+
+The moment a compute-deviation exceeding 2× the plan §9 estimate (row or
+total — the `compute_deviation_over_2x` / `EPM_ETA_DEVIATION_MULT`
+boundary respectively) fires on — or
+is computed for — a RUNNING fit / battery / factorization phase, run the
+vectorize signature check IMMEDIATELY. The trigger is any of: the poller's
+`epm:compute-deviation` marker (`source: poller`,
+`basis: elapsed-vs-plan`, threshold `EPM_ETA_DEVIATION_MULT` default 2.0),
+an orchestrator- or implementer-posted deviation marker, or the session's
+own elapsed-vs-plan arithmetic — one threshold, shared with
+`workflow.yaml § pivot_criteria` (`compute_deviation_over_2x`), never a
+new number. Do NOT wait for a round boundary, for the phase to finish, or
+for a SECOND deviation (#811: the session pivoted only on the second
+deviation, 19h21m in at unit 3/108 — py-spy showed the dominant frame was
+a path the first deviation's fix round had ASSERTED at "~1–2 h", not
+measured). The check is cheap — minutes, not hours: this rule's
+§ diagnostic signature run against the LIVE process (py-spy the dominant
+frame, FLOP back-of-envelope, cputime/walltime ratio) plus the
+classification of `.claude/skills/issue/SKILL.md` Step 5.bis(a) step 2 —
+the routing table (descope tiers, gate id=12, once-per-component guard)
+stays orchestrator-owned THERE; this section binds the
+session/implementer/experimenter side and does not duplicate it. Outcomes:
+
+- **Overhead-bound** → duty 1's live-run calculus applies immediately:
+  when remaining serial ETA exceeds kill+relaunch cost (count lost
+  un-checkpointed in-RAM progress as part of that cost), kill the serial
+  run (`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch) and
+  relaunch on the batched path once the vectorize fix round lands.
+- **Not overhead-bound** (FLOP-bound / API-latency / bandwidth /
+  contention) → record `signature_check: negative` with 1–3 lines of
+  arithmetic on the marker and continue: #931's 6.0× battery resolved
+  exactly this way (195 s/cell MEASURED at production shape; shared-VM
+  thread contention on a cached-eigh battery), and its earlier ~2.2–2.5×
+  elapsed-vs-plan read was likewise correctly ridden out as a
+  demonstrably-in-tail FLOP-bound phase.
+
+Two scoping notes. A prior lever-0 record does NOT immunize the phase:
+when realized numbers FALSIFY the earlier residual classification (a
+DIFFERENT inner loop is the dominant frame than the one the fix round
+batched), THIS rule licenses a second session-side fix round targeting
+that loop — the #811 precedent; nothing in 5.bis(a)'s once-per-component
+guard forbids a voluntary second round on a falsified classification. And
+the SKILL.md ETA-advisory's "`continue_as_is` is nearly always the right
+mid-run resolution" scopes to the DESCOPE question (elapsed is a lower
+bound, so descoping mid-run rarely helps); it never defers this check —
+kill+relaunch-on-batched is recipe-preserving, not a descope.
+
 ## Memory sizing: calibrate the chunk cap from a MEASURED peak
 
 Vectorizing trades many tiny fits for a few LARGE batched tensors, so the
@@ -247,6 +323,15 @@ a many-cell repeated dense-factorization loop: per-cell full
 same overhead class (redundant recompute of shareable work), and neither a GPU
 lane nor a bigger CPU fixes it (#823).
 
+**GPU caveat — batched `eigh`/small-matrix factorizations are cuSOLVER's weak
+spot.** Batching many SMALL symmetric eigendecompositions (or similar small
+dense factorizations) onto CUDA does not reliably beat CPU: cuSOLVER's batched
+paths on many small matrices show high, unpredictable per-cell variance
+(#813, 2026-07-03: the CUDA leg ran ~30–100 min/cell and was swapped for the
+CPU-verified path). For many small symmetric eigs, prefer the vectorized CPU
+path or a shared-factorization restructure; benchmark one cell on BOTH devices
+before committing a long sweep to the GPU leg.
+
 ## Files of record
 
 `.claude/rules/vectorize-many-cell-fits.md` (this file);
@@ -258,7 +343,9 @@ loops → ~70× batched subset-sum GEMM), #811 r8 (`resolve_chunk_cap`
 live_factor 4→26 — measured-peak chunk-cap calibration), #823 (~3780 serial
 full-SVD ridge fits, 12-20 h realized vs 0.35 h planned — the
 dense-linear-algebra widening), #834 (parallel duplicate vectorization of
-null_battery.py — supersede contract).
+null_battery.py — supersede contract), #811 second deviation (19h21m at unit
+3/108 before the pivot — the mid-run-trigger origin) + #931
+(elapsed-vs-plan mid-run reads, worked negative example) via #1060.
 
 **Sibling rule:** `.claude/rules/selection-symmetric-nulls.md` — the same #778
 null battery is its origin incident; a permutation/bootstrap-battery plan
@@ -266,5 +353,6 @@ typically fires BOTH rules (statistical validity there, compute shape here).
 
 **Sibling check:** `.claude/rules/artifact-reuse.md` item (i) — reusing a parent's
 fit/analysis helper requires the plan-time throughput inspection (inner loop batched?
-device parametrized?) against this rule, with failures fixed at the source module
+device parametrized? data-repo Hub calls scoped?) against this rule, with failures
+fixed at the source module
 (#761/#763/#812).

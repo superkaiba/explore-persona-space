@@ -1,0 +1,137 @@
+{
+  "commit": "96b5fd0bf4",
+  "created": "2026-07-04T00:30:12Z",
+  "figsize": [
+    8.4,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "Held-out $R^2$ (layer 19)": 0.6730940896675954,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "Held-out $R^2$ (layer 19)": 0.07571368282922408,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "Held-out $R^2$ (layer 19)": -0.07842569894334894,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.8,
+      "Held-out $R^2$ (layer 19)": -1.4272499394225098,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.8,
+      "Held-out $R^2$ (layer 19)": -1.6051478189002717,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Assistant\n(single-turn, chat)",
+      "Held-out $R^2$ (layer 19)": -0.06628899770008378,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Assistant\n(two-turn, chat)",
+      "Held-out $R^2$ (layer 19)": -6.779065927005268,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Assistant\n(two-turn, natural.)",
+      "Held-out $R^2$ (layer 19)": -4.430611501812497,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "User\n(two-turn, chat)",
+      "Held-out $R^2$ (layer 19)": -9.260611498981952,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "User\n(two-turn, natural.)",
+      "Held-out $R^2$ (layer 19)": -10.37383763117682,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.2,
+      "Held-out $R^2$ (layer 19)": 0.586957191583785,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.2,
+      "Held-out $R^2$ (layer 19)": -0.4231765215748611,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.2,
+      "Held-out $R^2$ (layer 19)": -0.36640466306085084,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.2,
+      "Held-out $R^2$ (layer 19)": -1.3785595762945322,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.2,
+      "Held-out $R^2$ (layer 19)": -1.576428887888981,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "Held-out $R^2$ (layer 19)": -0.6613167372486588,
+      "series": "Shuffle null (mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "Held-out $R^2$ (layer 19)": -1.6319446180108457,
+      "series": "Shuffle null (mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.0,
+      "Held-out $R^2$ (layer 19)": -1.5966781224196678,
+      "series": "Shuffle null (mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.0,
+      "Held-out $R^2$ (layer 19)": -1.968760094827262,
+      "series": "Shuffle null (mean)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "Held-out $R^2$ (layer 19)": -2.1629724479536256,
+      "series": "Shuffle null (mean)",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 20
+}

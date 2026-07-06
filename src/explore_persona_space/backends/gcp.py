@@ -34,7 +34,11 @@ What this slice ships
   instances create`` argv for a given (spec, config). Golden-tested.
 * :func:`reconnect_or_none` — pre-launch idempotent reconnect via ``gcloud
   compute instances list --filter=name=eps-issue-<N>``. If a live instance
-  exists, return a handle for it without re-provisioning.
+  exists, return a handle for it without re-provisioning; refuses a RUNNING
+  instance whose ``eps/phase`` is already terminal (``done``/``failed``/
+  ``finalize_failed_artifacts_ok``/``wedged``) — the #908 gate-park zombie —
+  which the pre-launch stale reclaim then deletes so the create does not
+  collide (#632).
 * :func:`audit_stale_gcp_vms` — analogue of ``scripts/pod.py audit-stale``;
   reaps ``eps-issue-*`` instances on TWO bounded predicates: a per-instance-
   fence-aware age backstop (#741 — reaped once the VM exceeds its OWN
@@ -136,6 +140,7 @@ from explore_persona_space.backends.base import (
     RunHandle,
     RunSpec,
     recommend_lane_next_interval,
+    validate_lane_suffix,
 )
 
 logger = logging.getLogger(__name__)
@@ -717,10 +722,13 @@ def attempt_id_for(spec: RunSpec) -> str:
     Used as a sub-folder under HF data / model paths AND as a sentinel
     sub-directory on the VM scratch so a fresh idempotent re-run after
     Spot preemption never overwrites an earlier attempt's artifacts.
-    Reads ``spec.extra["attempt_id"]`` if set (the router/orchestrator
-    passes a deterministic per-attempt id so reconnect after orchestrator
-    re-spawn picks up the same namespace); otherwise falls back to a
-    timestamp-only tag (``att-YYYYMMDD-HHMMSS``).
+    Reads ``spec.extra["attempt_id"]`` if set (the router threads a
+    FRESH per-launch id, #927); otherwise falls back to a timestamp-only
+    tag (``att-YYYYMMDD-HHMMSS``). Reconnect namespace stability comes
+    from the ``eps-attempt`` instance-label recovery in
+    :func:`reconnect_or_none` (``launch()`` prefers the recovered label
+    id over this value on reconnect), NOT from cross-launch reuse of the
+    threaded id.
 
     The tag is shell-safe (only ``[A-Za-z0-9_-]``); the renderer threads
     it verbatim into the startup-script + the HF-paths declaration.
@@ -742,14 +750,35 @@ def attempt_id_for(spec: RunSpec) -> str:
 # ---------------------------------------------------------------------------
 
 
-def instance_name_for(issue: int) -> str:
+def lane_suffix_for(spec: RunSpec) -> str | None:
+    """Validated per-lane suffix from ``spec.extra['lane_suffix']`` (#934), or None.
+
+    Raises ``ValueError`` on a malformed value (fail loud, never strip)
+    so a bad suffix can never silently derive a divergent instance name.
+    """
+    raw = spec.extra.get("lane_suffix")
+    if not raw:
+        return None
+    return validate_lane_suffix(str(raw))
+
+
+def instance_name_for(issue: int, lane_suffix: str | None = None) -> str:
     """Canonical GCE instance name for a `/issue` run.
 
-    ``eps-issue-<N>`` matches the prefix the GCP stale-VM reaper greps
-    for. Mirrors RunPod's ``pod-<N>`` shape (issue-keyed, one-instance-
-    per-issue).
+    ``eps-issue-<N>[-<lane_suffix>]`` (#934: the optional suffix lets two
+    concurrent GCP lanes for one issue coexist). The unsuffixed form
+    matches the prefix the GCP stale-VM reaper greps for and mirrors
+    RunPod's ``pod-<N>`` shape (issue-keyed, one-instance-per-lane); a
+    suffixed name keeps the ``eps-issue-`` prefix, so the janitor's
+    prefix classification still covers it. Raises ``ValueError`` when
+    the composed name exceeds the 63-char RFC1035 cap (belt-and-
+    suspenders behind the tighter attempt-label budget in
+    ``base.validate_lane_suffix``).
     """
-    return f"eps-issue-{issue}"
+    name = f"eps-issue-{issue}" + (f"-{lane_suffix}" if lane_suffix else "")
+    if len(name) > 63:
+        raise ValueError(f"GCE instance name {name!r} exceeds the 63-char RFC1035 cap")
+    return name
 
 
 def workload_dir_for(config: GcpConfig, issue: int) -> str:
@@ -783,6 +812,28 @@ def sentinel_path_for(config: GcpConfig, issue: int, attempt_id: str) -> str:
     """
     root = workload_dir_for(config, issue)
     return f"{root}/eval_results/issue_{issue}/{attempt_id}/{SENTINEL_FILENAME}"
+
+
+#: Positive-evidence deliverables sentinel filename (#1055). Distinct from
+#: :data:`SENTINEL_FILENAME` (the COMPLETION sentinel the success tail writes):
+#: this one is written by the WORKLOAD itself, mid-run, the moment its final
+#: upload+verify step confirms every declared deliverable is on HF — so the
+#: EXIT trap can tell a post-deliverables finalize/tail crash from a
+#: data-losing one.
+DELIVERABLES_OK_FILENAME = "deliverables_ok.json"
+
+
+def deliverables_ok_path_for(config: GcpConfig, issue: int, attempt_id: str) -> str:
+    """Positive-evidence sentinel path: workload-written after its final verify PASS (#1055).
+
+    The WORKLOAD writes this file ONLY after its final upload+verify step
+    confirms every declared deliverable is on HF; its presence at EXIT-trap
+    time proves a non-zero exit is a finalize/tail failure, not a data-losing
+    crash. Attempt-scoped (mirrors :func:`sentinel_path_for`) so a fresh
+    attempt never reads a prior attempt's evidence.
+    """
+    root = workload_dir_for(config, issue)
+    return f"{root}/eval_results/issue_{issue}/{attempt_id}/{DELIVERABLES_OK_FILENAME}"
 
 
 # ---------------------------------------------------------------------------
@@ -919,6 +970,10 @@ STARTUP_PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
     "EPM_HF_OVERFLOW_ROUTING",
     "EPM_HF_STORAGE_CHECK",
     "EPM_HF_STORAGE_CACHE_TTL_S",
+    # Size-aware projected-headroom probe floor (#1034): same remote-relevance
+    # as the #564 knobs above — a dispatch-process floor override must reach
+    # the VM workload or it silently no-ops remotely.
+    "EPM_HF_LARGE_UPLOAD_PROBE_GB",
     # Local-SSD scratch root for the per-cell .npz write-decoupling helper
     # (#674): forwarded so a dispatch-process EPS_SCRATCH_DIR reaches the GCE
     # workload subprocess. The startup script ALSO sets a default (below), so
@@ -946,6 +1001,37 @@ STARTUP_PASSTHROUGH_ENV_KEYS: tuple[str, ...] = (
 #: exports). The remaining keys (ANTHROPIC/OPENAI) are genuinely optional
 #: for a training workload and keep the drop-when-absent contract.
 REQUIRED_LAUNCH_SECRET_KEYS: tuple[str, ...] = ("HF_TOKEN", "WANDB_API_KEY")
+
+#: Default done-grace window (#935): 5400 s = 3x the 1800 s max adaptive
+#: poll interval (``POLL_INTERVAL_QUIET_SEC``, scripts/poll_pipeline.py +
+#: backends/base.py), so a healthy orchestrator's sentinel drain always
+#: lands well inside the window before the self-poweroff can fire.
+DEFAULT_DONE_POWEROFF_GRACE_SECONDS = 5400
+
+
+def _done_grace_seconds() -> int:
+    """Render-time grace for the #935 done-grace self-poweroff (0 disables).
+
+    Reads ``EPS_GCP_DONE_POWEROFF_GRACE_SECONDS`` from the DISPATCHER env
+    (the established lane tuning surface — the render-time sibling of the
+    poller-side ``EPS_GCP_QUEUE_WAIT_SECONDS``); the resolved integer is
+    baked into the rendered script as ``EPS_DONE_GRACE``. ``0`` disables
+    the countdown (negatives clamp to 0); a non-numeric value falls back
+    to the default WITH a logged warning — a bad knob must never block a
+    launch.
+    """
+    raw = os.environ.get(
+        "EPS_GCP_DONE_POWEROFF_GRACE_SECONDS", str(DEFAULT_DONE_POWEROFF_GRACE_SECONDS)
+    )
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        logger.warning(
+            "EPS_GCP_DONE_POWEROFF_GRACE_SECONDS=%r is not an integer; using %d.",
+            raw,
+            DEFAULT_DONE_POWEROFF_GRACE_SECONDS,
+        )
+        return DEFAULT_DONE_POWEROFF_GRACE_SECONDS
 
 
 def render_startup_script(
@@ -983,14 +1069,50 @@ def render_startup_script(
        ``--instance-termination-action=DELETE`` boot-disk destruction
        (#658). Without this a GCP crash loses its own traceback + partial
        output forever (the disk is gone), so the bug must be diagnosed by
-       inference and every retry produces nothing recoverable.
+       inference and every retry produces nothing recoverable. As of
+       #854 the partial sweep covers ``eval_results/issue_<N>/`` AND both
+       ``data/issue_<N>/`` / ``data/issue<N>/`` working-dir conventions
+       (re-downloadable ``hf_dl``/``g*_dl``/``store`` caches excluded,
+       per-dir byte cap ``EPS_PERSIST_DIR_CAP_BYTES``), a per-crash
+       timestamped ``workload_<ts>.log`` copy plus a
+       ``crash_persist_transcript.log`` audit upload LAST, every
+       upload/skip streams an eager ``[crash-persist]`` line to the
+       serial console AS IT HAPPENS, and the trap kills the reachability
+       watchdog at ENTRY so no other in-guest actor can power the VM off
+       mid-persist. As of #885 the trap ALSO sweeps ``worker_logs/`` —
+       every regular file under ``$WORKLOAD_ROOT/logs/`` (fan-out
+       per-worker logs carrying the real traceback; the canonical
+       workload.log ends at the fan-out line), newest-first by mtime,
+       per-file tail cap ``EPS_PERSIST_LOG_FILE_CAP_BYTES`` (default
+       5 MiB; an oversized file is TAILED at stage time, never skipped
+       wholesale — the traceback is at the END of a log), file-count
+       bound ``EPS_PERSIST_LOG_MAX_FILES`` (default 40), staged into
+       ``/tmp/eps-worker-logs`` and uploaded as ONE ``upload_folder``
+       commit (never a per-file ``upload_file`` loop — the #664
+       504-storm gotcha). The sweep covers these three named
+       directories plus the ``logs/`` worker-log tree — still NOT
+       universal artifact discovery.
+    10. On a CLEAN exit, AFTER the completion sentinel + the ``done``
+        publish, the script's LAST action is the #935 done-grace
+        self-poweroff: a bounded countdown (``EPS_DONE_GRACE`` seconds,
+        render-time knob ``EPS_GCP_DONE_POWEROFF_GRACE_SECONDS``, default
+        5400; ``0`` disables) that aborts on an operator keepalive file
+        (``EPS_DONE_KEEPALIVE_PATH``) or an ``eps/phase`` change (a
+        sanctioned same-VM relaunch re-published ``workload`` per #908),
+        best-effort persists the UNDRAINED sentinel set to the HF data
+        repo under ``issue<N>_done/<attempt_id>/`` at expiry, then powers
+        off UNCONDITIONALLY — so a done VM whose orchestrator/poller died
+        bills at most ~the grace window instead of until the next
+        dispatch's #908 reclaim or the daily janitor (~19-24 h worst
+        case, the #763 done-zombie).
 
     The workload's existing HF/WandB upload paths remain the AUTHORITATIVE
     artifact route during a normal run; the sentinel is a small completion
     proof, not a primary artifact. The #658 EXIT-trap upload is a
     crash-only SAFETY NET (the clean-exit path keeps the VM alive for the
-    success-sentinel scp + the workload already uploaded), fully guarded +
-    300s-bounded so it can never delay the poweroff that bounds billing.
+    success-sentinel scp — bounded, as of #935, by the done-grace
+    self-poweroff window — + the workload already uploaded), fully guarded
+    + 300s-bounded so it can never delay the poweroff that bounds billing.
 
     ``hydra_args`` defaults to ``spec.hydra_args`` (so the caller can
     override for a custom dispatch); ``repo_branch`` defaults to ``main``.
@@ -1044,7 +1166,15 @@ def render_startup_script(
         )
     workload_root = workload_dir_for(config, spec.issue)
     sentinel_abs = sentinel_path_for(config, spec.issue, attempt_id)
+    deliverables_ok_abs = deliverables_ok_path_for(config, spec.issue, attempt_id)
     sentinel_dir = sentinel_abs.rsplit("/", 1)[0]
+    # Done-grace self-poweroff constants (#935), baked at render time like
+    # the other lane constants (no runtime metadata fetch). The keepalive
+    # path carries NO .json suffix ON PURPOSE: the poller's sentinel drain
+    # glob is /workspace/logs/issue-<N>-*.json, and the operator escape
+    # hatch must never be ingested as a sentinel.
+    done_grace = _done_grace_seconds()
+    keepalive_path = f"/workspace/logs/issue-{spec.issue}-keepalive"
 
     # Build the secret-fetch stanza. Each KEY is pulled from
     # ``/computeMetadata/v1/instance/attributes/<KEY>``. The
@@ -1086,13 +1216,29 @@ def render_startup_script(
     # Hydra args, shell-quoted. Empty tuple → empty string.
     hydra_str = " ".join(shlex.quote(a) for a in args)
 
-    # Workload block (#588): a custom workload_cmd is embedded VERBATIM —
-    # it IS a complete shell command line (shlex-quoting would collapse
-    # it to a single token). Trusted input by design (same trust level as
-    # the plan's Reproducibility Card launch command; it runs as root on
-    # the VM). The RunSpec.__post_init__ single-line check keeps the
-    # rendered script structure intact. The hydra branch is the
-    # byte-identical pre-#588 lines, gated only by ``if spec.workload_cmd``.
+    # Workload block (#588, rc-wrapper #1004): a custom workload_cmd is
+    # rendered as the SINGLE argument of an inner
+    # ``bash -eu -o pipefail -c <shlex.quote(cmd)>`` — the inner bash
+    # re-parses it as a complete shell line (full shell syntax preserved,
+    # the original #588 verbatim concern), while from THIS script's
+    # perspective the workload is one SIMPLE command, so the outer
+    # ``set -e`` fires on ANY non-zero exit — including a
+    # ``cmd1 && cmd2`` chain whose FIRST command crashes, which the
+    # pre-#1004 bare splice rc-masked into a false phase=done (bash
+    # exempts non-final &&/|| list members from errexit; incident #952
+    # run 1). Residuals NOT closed by the wrapper: (a) a ``a && b; c``
+    # shape where ``a`` fails and ``c`` succeeds still masks (the same
+    # errexit exemption applies inside the inner bash; the #750 OOM
+    # guard remains the independent backstop); (b) the detached-driver
+    # pid-file wait loop below is liveness-only (``kill -0``), so a
+    # setsid-detached driver that CRASHES still reaches the success
+    # tail — a structurally different class (#601/#977 contract).
+    # Trusted input by design (same trust level as the plan's
+    # Reproducibility Card launch command; it runs as root on the VM).
+    # The RunSpec.__post_init__ single-line check keeps the rendered
+    # script line-structured (shlex.quote of a single-line string is a
+    # single line). The hydra branch is the byte-identical pre-#588
+    # lines, gated only by ``if spec.workload_cmd``.
     if spec.workload_cmd:
         workload_block = [
             "# === REPO_ROOT export (#641; trap #599) ===",
@@ -1141,11 +1287,22 @@ def render_startup_script(
             "mkdir -p /workspace/logs",
             "chmod 777 /workspace/logs",
             "# === Run the workload (custom workload_cmd) ===",
-            "# A non-zero exit propagates (set -e) → the EXIT trap publishes",
-            "# phase=failed + powers off → poll reads dead.",
+            "# rc-preserving wrapper (#1004, incident #952): the command is the",
+            "# single argument of an inner bash -eu -o pipefail -c, so it is ONE",
+            "# simple command here — a failure ANYWHERE inside (including the",
+            "# first member of a && chain, which errexit exempts mid-list) exits",
+            "# the inner bash non-zero, the outer set -e fires, and the EXIT trap",
+            "# publishes phase=failed + crash-persist + poweroff → poll reads dead.",
+            "# The inner -eu -o pipefail mirror the outer flags, so the command",
+            "# text's own execution semantics are identical to the pre-#1004",
+            "# in-script splice; only the propagated rc changes. Residuals: an",
+            "# `a && b; c` shape still masks (errexit exempts mid-list members",
+            "# inside the inner bash too; the #750 OOM guard is the backstop),",
+            "# and the pid-file wait below is liveness-only (kill -0) — a",
+            "# CRASHED setsid-detached driver still reaches the success tail.",
             "_eps_phase workload",
             "touch /tmp/eps-workload-start",
-            spec.workload_cmd,
+            f"bash -eu -o pipefail -c {shlex.quote(spec.workload_cmd)}",
             "# === Wait for detached workloads (self-daemonizing drivers) ===",
             "# A workload_cmd that setsid-forks the real driver returns",
             "# immediately; declaring done here would publish the completion",
@@ -1206,8 +1363,9 @@ def render_startup_script(
         # Publish the workload phase to the GCE guest attribute
         # ``eps/phase`` — the ONLY poll-readable surface the VM has
         # while staying RUNNING (the success path keeps the VM alive so
-        # the sentinel can be scp'd, so instance status alone cannot
-        # signal completion; issue 535 r9 spun the poll for the full 4 h
+        # the sentinel can be scp'd — bounded by the #935 done-grace
+        # self-poweroff — so instance status alone cannot signal
+        # completion; issue 535 r9 spun the poll for the full 4 h
         # timeout on a 9-min success). Best-effort (`|| true`): a probe
         # hiccup must never kill the workload. #607 additions: a
         # ``[phase=...]`` echo on CURRENT stdout (post-redirect: the log
@@ -1255,17 +1413,48 @@ def render_startup_script(
         # ``issue<N>_partial/<attempt_id>/`` BEFORE the shutdown line, so a
         # crash is debuggable and partial progress is recoverable. It is
         # called from the EXIT trap's rc!=0 branch (the clean-exit path
-        # keeps the VM alive for the success-sentinel scp + the workload's
-        # own upload paths already ran, so partial-upload there is moot).
+        # keeps the VM alive for the success-sentinel scp — bounded by the
+        # #935 done-grace self-poweroff — + the workload's own upload
+        # paths already ran, so partial-upload there is moot).
         # Fully guarded + time-bounded: a hung/failed upload must NEVER
         # delay the `shutdown` that bounds billing — every step is
         # ``|| true`` and the whole upload is wrapped in ``timeout`` so the
         # trap always reaches the poweroff.
+        #
+        # #854 hardening (incident #825): the run-2 partial-data loss was a
+        # silent COVERAGE-GAP skip (the sweep only looked in
+        # eval_results/issue_<N>/ while the workload wrote data/issue_825/),
+        # misdiagnosed as a poweroff race because every skip was silent and
+        # the old `| cut | tail` pipe buffered all output until EOF. Now:
+        # the sweep also covers data/issue_<N>/ + data/issue<N>/ (caches
+        # excluded), every upload/failure/skip prints an eager
+        # [crash-persist] line, a per-crash timestamped workload log copy +
+        # a crash_persist_transcript.log audit survive same-attempt
+        # re-crashes, and the EXIT trap reaps the reachability watchdog at
+        # entry so nothing else can power off mid-upload.
+        #
+        # #885: fan-out dispatchers redirect each worker's output to
+        # per-worker logs under $WORKLOAD_ROOT/logs/ (e.g.
+        # logs/issue_779/corpus_gpu0_all.log), so the canonical workload.log
+        # ends at the fan-out line and the REAL traceback lives only in a
+        # worker log the dir sweep never covered (two #779 crashes each
+        # needed a ~30-min manual boot-disk detach). The # 1b. sweep stages
+        # logs/** (newest-first, per-file TAIL cap at stage time — the
+        # traceback is at the END of a log) into a temp tree and uploads it
+        # as ONE upload_folder commit — never a per-file upload_file loop,
+        # which 504-storms on this large repo (#664, ~160 s/file measured:
+        # 40 files would blow the 300s budget and starve the #854 artifacts).
         "_eps_persist_diagnostics() {",
         '  _rc="${1:-1}";',
         # Nothing to do without a repo target or HF token (early-boot crash
         # before the env exports / secret fetch — let the trap power off).
-        '  if [ -z "${EPS_HF_DATA_REPO:-}" ] || [ -z "${HF_TOKEN:-}" ]; then return 0; fi;',
+        # #854: the skip is LOUD (fd 3 = serial console) — a silent early
+        # return here is indistinguishable from a killed persist.
+        '  if [ -z "${EPS_HF_DATA_REPO:-}" ] || [ -z "${HF_TOKEN:-}" ]; then',
+        '    { echo "[crash-persist] SKIP-ALL: EPS_HF_DATA_REPO or HF_TOKEN unset'
+        ' (early-boot crash)" >&3; } 2>/dev/null || true;',
+        "    return 0;",
+        "  fi;",
         '  _dest="issue${EPS_ISSUE:-0}_partial/${EPS_ATTEMPT_ID:-unknown}";',
         '  _crash="/tmp/eps-crash-report.json";',
         # A compact crash report: exit code + timestamp + the log tail
@@ -1284,41 +1473,222 @@ def render_startup_script(
         # but BEFORE the later `export PATH="$HOME/.local/bin:$PATH"` in
         # the uv-install block — without this, `uv` is not found in that
         # narrow window and the diagnostics upload silently no-ops.
-        '  ( export PATH="${HOME:-/root}/.local/bin:$PATH";'
+        # HF_HUB_DISABLE_PROGRESS_BARS: the fd-3 stream below is now EAGER
+        # per-line (#854), so hub progress bars would spam the serial console.
+        '  ( export PATH="${HOME:-/root}/.local/bin:$PATH" HF_HUB_DISABLE_PROGRESS_BARS=1;'
         ' cd "${WORKLOAD_ROOT:-/}" 2>/dev/null'
         ' && timeout 300 uv run python - "$_dest" "$_crash" <<\'EPS_PERSIST_PY\'',
-        "import os, sys",
+        "import datetime, os, shutil, sys",
         "from pathlib import Path",
         "from huggingface_hub import HfApi",
         "dest, crash = sys.argv[1], sys.argv[2]",
         'repo = os.environ["EPS_HF_DATA_REPO"]',
         'issue = os.environ.get("EPS_ISSUE", "0")',
         'log_path = os.environ.get("EPS_LOG_PATH", "")',
+        'root = Path(os.environ.get("WORKLOAD_ROOT", ""))',
+        'transcript = os.environ.get("EPS_PERSIST_TRANSCRIPT", "/tmp/eps-crash-persist.log")',
+        "def _say(msg):",
+        "    # every line is printed flush=True (eager fd-3 streaming) AND teed into the",
+        "    # transcript file uploaded LAST — a poweroff-independent skip-vs-kill audit on",
+        "    # HF (#854). The append is best-effort: stdout already carries the line, and a",
+        "    # transcript write failure must never break the persist itself.",
+        "    print(msg, flush=True)",
+        "    try:",
+        '        with open(transcript, "a") as fh:',
+        '            fh.write(msg + "\\n")',
+        "    except OSError:",
+        "        pass",
+        "_say(f\"[crash-persist] BEGIN repo={repo} dest={dest} log_path={log_path or 'UNSET'}\")",
         "api = HfApi()",
         "def _up_file(path, path_in_repo):",
         "    try:",
+        '        _say(f"[crash-persist] uploading {path_in_repo}'
+        ' ({Path(path).stat().st_size} bytes)")',
         "        api.upload_file(path_or_fileobj=path, path_in_repo=path_in_repo,",
         '                        repo_id=repo, repo_type="dataset")',
-        '        print(f"[crash-persist] uploaded {path_in_repo}")',
+        '        _say(f"[crash-persist] uploaded {path_in_repo}")',
         "    except Exception as exc:",
-        '        print(f"[crash-persist] FAILED {path_in_repo}: {exc}")',
-        "# 1. crash report + workload log (the traceback / stderr).",
+        '        _say(f"[crash-persist] FAILED {path_in_repo}: {exc}")',
+        "# Shared cache-exclude constants — used by BOTH the # 1b. worker-logs sweep and",
+        "# the # 2. partial-dirs sweep below (hoisted above their first caller, #885).",
+        'IGNORE = ["hf_dl/**", "g*_dl/**", "store/**", ".cache/**", "__pycache__/**",',
+        '          "**/hf_dl/**", "**/g*_dl/**", "**/store/**", "**/.cache/**",',
+        '          "**/__pycache__/**"]',
+        'PRUNE = {"hf_dl", "store", ".cache", "__pycache__"}',
+        'CAP = int(os.environ.get("EPS_PERSIST_DIR_CAP_BYTES", 2 * 1024**3))',
+        "# 1. crash report + workload log, small-first (the traceback is the highest-value",
+        "#    artifact; a worst-case timeout still lands it). A same-attempt re-crash",
+        "#    overwrites the canonical names (#854: run-3 overwrote run-2's log on HF), so",
+        "#    a per-crash timestamped log copy ALSO uploads — LAST, after the partial dirs",
+        "#    (small-first; the canonical log already carries the traceback early).",
+        'stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")',
         "if Path(crash).is_file():",
         '    _up_file(crash, f"{dest}/crash_report.json")',
+        "else:",
+        '    _say(f"[crash-persist] SKIP crash_report.json: no such file ({crash})")',
         "if log_path and Path(log_path).is_file():",
         '    _up_file(log_path, f"{dest}/workload.log")',
-        "# 2. partial artifacts the workload wrote before crashing.",
-        'partial = Path(os.environ.get("WORKLOAD_ROOT", "")) / "eval_results" / f"issue_{issue}"',
-        "if partial.is_dir():",
+        "else:",
+        '    _say(f"[crash-persist] SKIP workload.log: EPS_LOG_PATH unset or file missing'
+        ' ({log_path!r})")',
+        "# 1b. worker logs (#885) — fan-out dispatchers redirect the real traceback to",
+        "#     per-worker logs under $WORKLOAD_ROOT/logs/ (e.g.",
+        "#     logs/issue_779/corpus_gpu0_all.log); the canonical workload.log ends at the",
+        "#     fan-out line. Newest-first, per-file TAIL cap at STAGE time (the traceback",
+        "#     is at the END of a log — an oversized file is tailed, never skipped",
+        "#     wholesale), file-count bound, then ONE upload_folder commit (NEVER a",
+        "#     per-file upload_file loop — the #664 504-storm gotcha). Runs BEFORE the",
+        "#     partial dirs so a worst-case timeout still lands the tracebacks.",
+        "def _env_int(name, default):",
         "    try:",
-        "        api.upload_folder(folder_path=str(partial),",
-        '                          path_in_repo=f"{dest}/eval_results_issue_{issue}",',
+        "        return int(os.environ.get(name, default))",
+        "    except (TypeError, ValueError):",
+        '        _say(f"[crash-persist] WARN {name} malformed; using default {default}")',
+        "        return default",
+        'LOG_FILE_CAP = _env_int("EPS_PERSIST_LOG_FILE_CAP_BYTES", 5 * 1024**2)',
+        'LOG_MAX_FILES = _env_int("EPS_PERSIST_LOG_MAX_FILES", 40)',
+        "def _up_logs():",
+        '    logs_root = root / "logs"',
+        "    if not logs_root.is_dir():",
+        '        _say(f"[crash-persist] SKIP worker_logs: no such dir ({logs_root})")',
+        "        return",
+        "    if LOG_MAX_FILES < 1:",
+        '        _say(f"[crash-persist] SKIP worker_logs:'
+        ' EPS_PERSIST_LOG_MAX_FILES={LOG_MAX_FILES} < 1")',
+        "        return",
+        "    entries = []",
+        "    for dirpath, dirnames, filenames in os.walk(logs_root):",
+        "        dirnames[:] = [d for d in dirnames",
+        '                       if d not in PRUNE and not (d.startswith("g") and'
+        ' d.endswith("_dl"))]',
+        "        for f in filenames:",
+        "            p = Path(dirpath) / f",
+        "            try:",
+        "                st = p.stat()",
+        "            except OSError:",
+        "                continue",
+        "            entries.append((st.st_mtime, st.st_size, p))",
+        "    if not entries:",
+        '        _say("[crash-persist] SKIP worker_logs: empty after cache excludes")',
+        "        return",
+        "    entries.sort(reverse=True)  # newest first: the crashing worker wrote last",
+        "    dropped = len(entries) - LOG_MAX_FILES",
+        "    if dropped > 0:",
+        '        _say(f"[crash-persist] SKIP {dropped} older worker log(s) beyond"',
+        '             f" EPS_PERSIST_LOG_MAX_FILES={LOG_MAX_FILES}")',
+        '    staged_root = Path(os.environ.get("EPS_PERSIST_LOG_STAGE_DIR",',
+        '                                      "/tmp/eps-worker-logs"))',
+        "    # a same-boot re-crash must not accumulate a PRIOR crash's staged files past",
+        "    # the count bound; best-effort — staging below recreates what it needs.",
+        "    shutil.rmtree(staged_root, ignore_errors=True)",
+        "    n_staged = 0",
+        "    for _, _, p in entries[:LOG_MAX_FILES]:",
+        "        try:",
+        "            if log_path and p.resolve() == Path(log_path).resolve():",
+        '                _say(f"[crash-persist] SKIP worker_logs/{p.relative_to(logs_root)}:"',
+        '                     " is the canonical workload.log")',
+        "                continue",
+        "            rel = p.relative_to(logs_root)",
+        "            tmp = staged_root / rel",
+        "            tmp.parent.mkdir(parents=True, exist_ok=True)",
+        "            size = p.stat().st_size  # re-stat: may have grown/shrunk since the walk",
+        '            with open(p, "rb") as fin, open(tmp, "wb") as fout:',
+        "                if size > LOG_FILE_CAP:",
+        "                    fin.seek(size - LOG_FILE_CAP)",
+        '                    _say(f"[crash-persist] TAILED worker_logs/{rel}:"',
+        '                         f" kept last {LOG_FILE_CAP} of {size} bytes")',
+        "                fout.write(fin.read(LOG_FILE_CAP if size > LOG_FILE_CAP else size))",
+        "            n_staged += 1",
+        "        except Exception as exc:",
+        '            _say(f"[crash-persist] FAILED staging worker log {p}: {exc}")',
+        "    if n_staged == 0:",
+        '        _say("[crash-persist] SKIP worker_logs: nothing staged")',
+        "        return",
+        "    try:",
+        '        _say(f"[crash-persist] uploading dir worker_logs ({n_staged} files, one commit)")',
+        "        api.upload_folder(folder_path=str(staged_root),",
+        '                          path_in_repo=f"{dest}/worker_logs",',
         '                          repo_id=repo, repo_type="dataset")',
-        '        print(f"[crash-persist] uploaded partial eval_results dir")',
+        '        _say("[crash-persist] uploaded dir worker_logs")',
         "    except Exception as exc:",
-        '        print(f"[crash-persist] FAILED partial eval_results: {exc}")',
+        '        _say(f"[crash-persist] FAILED dir worker_logs: {exc}")',
+        "_up_logs()",
+        "# 2. partial artifacts — BOTH output conventions (#854: issue825 wrote its partials",
+        "#    under data/issue_825/, structurally OUTSIDE the old eval_results-only sweep ->",
+        "#    silent skip -> boot-disk surgery). The partial-DIRS sweep is these three named",
+        "#    dirs (the # 1b. worker-logs tree is swept separately above) — not universal",
+        "#    artifact discovery. Re-downloadable caches / stores are excluded at BOTH the",
+        "#    top level and nested depths — under fnmatch the '**/'-prefixed forms do NOT",
+        "#    match top-level paths, so both forms are listed; every skip is printed.",
+        "def _dir_stats(local):",
+        "    total, n = 0, 0",
+        "    for dirpath, dirnames, filenames in os.walk(local):",
+        "        dirnames[:] = [d for d in dirnames",
+        '                       if d not in PRUNE and not (d.startswith("g") and'
+        ' d.endswith("_dl"))]',
+        "        for f in filenames:",
+        "            try:",
+        "                total += (Path(dirpath) / f).stat().st_size",
+        "                n += 1",
+        "            except OSError:",
+        "                pass",
+        "    return total, n",
+        "def _up_dir(local, name):",
+        "    if not local.is_dir():",
+        '        _say(f"[crash-persist] SKIP {name}: no such dir ({local})")',
+        "        return",
+        "    size, n = _dir_stats(local)",
+        "    if n == 0:",
+        '        _say(f"[crash-persist] SKIP {name}: empty after cache excludes")',
+        "        return",
+        "    if size > CAP:",
+        '        _say(f"[crash-persist] SKIP {name}: {size} bytes > cap {CAP}'
+        ' (oversized; regenerate or reduce EPS_PERSIST_DIR_CAP_BYTES)")',
+        "        return",
+        "    try:",
+        '        _say(f"[crash-persist] uploading dir {name} ({n} files, {size} bytes)")',
+        '        api.upload_folder(folder_path=str(local), path_in_repo=f"{dest}/{name}",',
+        '                          repo_id=repo, repo_type="dataset", ignore_patterns=IGNORE)',
+        '        _say(f"[crash-persist] uploaded dir {name}")',
+        "    except Exception as exc:",
+        '        _say(f"[crash-persist] FAILED dir {name}: {exc}")',
+        "for local, name in (",
+        '    (root / "eval_results" / f"issue_{issue}", f"eval_results_issue_{issue}"),',
+        '    (root / "data" / f"issue_{issue}", f"data_issue_{issue}"),',
+        '    (root / "data" / f"issue{issue}", f"data_issue{issue}"),',
+        "):",
+        "    _up_dir(local, name)",
+        "# per-crash timestamped log copy — LAST among the artifacts (see the note above).",
+        "if log_path and Path(log_path).is_file():",
+        '    _up_file(log_path, f"{dest}/workload_{stamp}.log")',
+        '_say("[crash-persist] DONE")',
+        "# 3. the audit transcript FINAL — its presence on HF proves the persist ran to",
+        "#    completion (every skip recorded); its ABSENCE proves a killed persist. The",
+        "#    serial console is unreadable post-DELETE (#640), so this is the durable audit.",
+        "if Path(transcript).is_file():",
+        '    _up_file(transcript, f"{dest}/crash_persist_transcript.log")',
         "EPS_PERSIST_PY",
-        "  ) 2>&1 | cut -c1-2000 | tail -n 20 >&3 2>/dev/null || true;",
+        # #854 eager bounded streamer, replacing `| cut -c1-2000 | tail -n 20`:
+        # `tail` buffered everything to EOF, so a killed/skipped persist left
+        # ZERO serial evidence — the diagnosability gap that let a coverage-gap
+        # skip be misdiagnosed as a poweroff race on #825. The reader forwards
+        # each line to fd 3 AS IT ARRIVES, caps line length at 2000 chars,
+        # stops PRINTING after 120 lines but keeps READING to EOF — an early
+        # pipe close would SIGPIPE-kill the python mid-upload, the exact loss
+        # this path exists to prevent. That read-to-EOF property is pinned by
+        # the string assert in test_render_startup_script_persist_streams_eagerly
+        # (the behavioral heredoc test runs the python WITHOUT this bash
+        # streamer, so it does not exercise SIGPIPE protection). The
+        # `|| [ -n "$_l" ]` keeps a trailing unterminated line. Print-cap
+        # sizing (#885): worst case ~= 40 worker-log staging TAILED/SKIP
+        # lines + 1 dropped-count + 2 folder-upload lines + ~16 pre-existing
+        # persist lines ~= 60 — right AT the old 60-line cap, so it doubled
+        # to 120 (240 KB max at 2000 chars/line, well inside the GCE serial
+        # buffer); the durable transcript is unaffected either way.
+        '  ) 2>&1 | { _n=0; while IFS= read -r _l || [ -n "$_l" ]; do _n=$((_n + 1));',
+        '    if [ "$_n" -le 120 ]; then'
+        " { printf '%s\\n' \"${_l:0:2000}\" >&3; } 2>/dev/null || true; fi;",
+        "  done; } 2>/dev/null || true;",
         "}",
         # In-VM REACHABILITY watchdog (#669) — NOT a liveness watchdog
         # (systemd #21083: a liveness /dev/watchdog keeps getting fed on a
@@ -1339,8 +1709,8 @@ def render_startup_script(
         # frozen-phase wedge detector is the independent backstop. Launched
         # AFTER the exec >> redirect so its [eps-watchdog] lines land in the
         # workload log (not the metadata-runner pipe — #607/#491 discipline)
-        # and reaped in the clean-exit tail (or by the EXIT-trap shutdown on a
-        # crash).
+        # and reaped in the clean-exit tail, or KILLED AT EXIT-TRAP ENTRY on a
+        # crash (#854) so it cannot race the crash persist.
         "_eps_reachability_watchdog() {",
         "  local interval=30 threshold=10 fails=0 meta_ok ext_ok",
         "  while true; do",
@@ -1435,6 +1805,241 @@ def render_startup_script(
         '  case "$_n" in (*[!0-9]*|"") _n=0 ;; esac',
         '  echo "$_n"',
         "}",
+        # === Done-grace self-poweroff helpers (#935) ===
+        # The CLEAN-exit path deliberately leaves the VM RUNNING so the
+        # poller can drain the completion/gate sentinels — but when the
+        # orchestrator/poller is DEAD nothing tears the VM down until the
+        # next dispatch's #908 reclaim or the 09:37 janitor (~19-24 h
+        # worst case of idle GPU billing; the #763 done-zombie). The
+        # success tail therefore calls _eps_done_grace_poweroff as the
+        # LAST line of the script: a bounded countdown (EPS_DONE_GRACE
+        # seconds; 0 disables) that aborts when (a) an operator touched
+        # $EPS_DONE_KEEPALIVE_PATH (the #491 relaunch-runbook escape
+        # hatch), or (b) eps/phase left "done" — a sanctioned same-VM
+        # relaunch re-published eps/phase=workload (REQUIRED by the #908
+        # zombie predicates), so the relaunch owns the VM now. An EMPTY
+        # metadata read CONTINUES the countdown (fail toward bounding
+        # billing: a down metadata server also means no relaunch could
+        # have re-published). At expiry the slim persist helper below
+        # best-effort uploads the UNDRAINED sentinel set to HF, then the
+        # poweroff fires UNCONDITIONALLY — a persist failure never
+        # re-opens the billing zombie. #607 discipline throughout: every
+        # echo guarded, every step || true, the loop bounded by the
+        # counter.
+        #
+        # _eps_persist_done_sentinels — slim clean-path sibling of
+        # _eps_persist_diagnostics (deliberately NOT reused: the crash
+        # helper targets issue<N>_partial/ — rc=0 entries there would
+        # pollute crash forensics — and its $WORKLOAD_ROOT-relative sweep
+        # structurally misses the /workspace/logs sentinel dir this
+        # helper must protect). Stages the completion sentinel + any
+        # undrained /workspace/logs/issue-<N>-*.json sentinels + a
+        # <=5 MiB workload-log tail + a small done_report.json, uploads
+        # them in ONE upload_folder commit to issue<N>_done/<attempt_id>/
+        # (never a per-file upload_file loop — the #664 504-storm gotcha)
+        # with ONE in-heredoc retry after a short backoff, then uploads
+        # the persist transcript LAST via a single upload_file (#854
+        # pattern — its presence proves the persist completed; exactly 2
+        # upload calls, not a loop). Afterwards it best-effort PUTs
+        # eps/done_persist=ok|failed on a SEPARATE guest-attribute key
+        # (NEVER eps/phase — the poll's TERMINATED+done classification
+        # and the #908 zombie predicates key on eps/phase) so a
+        # STOP-outcome instance durably records whether the sentinel set
+        # reached HF. Bounded (timeout 120) + fully guarded: a hung or
+        # failed upload can never delay the poweroff that bounds billing.
+        "_eps_persist_done_sentinels() {",
+        "  local _ddest _dps;",
+        '  if [ -z "${EPS_HF_DATA_REPO:-}" ] || [ -z "${HF_TOKEN:-}" ]; then',
+        '    { echo "[done-grace] SKIP persist: EPS_HF_DATA_REPO or HF_TOKEN unset"; }'
+        " 2>/dev/null || true;",
+        "    return 0;",
+        "  fi;",
+        '  _ddest="issue${EPS_ISSUE:-0}_done/${EPS_ATTEMPT_ID:-unknown}";',
+        '  { echo "[done-grace] persisting undrained sentinels to'
+        ' ${EPS_HF_DATA_REPO}/${_ddest} (#935)"; } 2>/dev/null || true;',
+        '  rm -f "${EPS_DONE_PERSIST_STATUS:-/tmp/eps-done-persist.status}" 2>/dev/null || true;',
+        '  ( export PATH="${HOME:-/root}/.local/bin:$PATH" HF_HUB_DISABLE_PROGRESS_BARS=1;'
+        ' cd "${WORKLOAD_ROOT:-/}" 2>/dev/null'
+        " && timeout 120 uv run python - \"$_ddest\" <<'EPS_DONE_PERSIST_PY'",
+        "import datetime, glob, json, os, shutil, sys, time",
+        "from pathlib import Path",
+        "from huggingface_hub import HfApi",
+        "dest = sys.argv[1]",
+        'repo = os.environ["EPS_HF_DATA_REPO"]',
+        'issue = os.environ.get("EPS_ISSUE", "0")',
+        'attempt = os.environ.get("EPS_ATTEMPT_ID", "unknown")',
+        'grace = os.environ.get("EPS_DONE_GRACE", "0")',
+        'log_path = os.environ.get("EPS_LOG_PATH", "")',
+        'sentinel = os.environ.get("EPS_SENTINEL_PATH", "")',
+        "# Env-overridable roots/paths: test isolation on the shared VM (the #885",
+        "# EPS_PERSIST_LOG_STAGE_DIR precedent); production uses the defaults.",
+        'logs_dir = os.environ.get("EPS_DONE_LOGS_DIR", "/workspace/logs")',
+        'stage = Path(os.environ.get("EPS_DONE_PERSIST_STAGE_DIR", "/tmp/eps-done-persist"))',
+        'status_path = os.environ.get("EPS_DONE_PERSIST_STATUS", "/tmp/eps-done-persist.status")',
+        'transcript = os.environ.get("EPS_DONE_PERSIST_TRANSCRIPT", "/tmp/eps-done-persist.log")',
+        "def _say(msg):",
+        "    # printed to the workload log (post-redirect stdout) AND teed into the",
+        "    # transcript uploaded LAST — the durable skip-vs-kill audit (#854 pattern).",
+        "    print(msg, flush=True)",
+        "    try:",
+        '        with open(transcript, "a") as fh:',
+        '            fh.write(msg + "\\n")',
+        "    except OSError:",
+        "        pass",
+        '_say(f"[done-persist] BEGIN repo={repo} dest={dest}")',
+        "shutil.rmtree(stage, ignore_errors=True)",
+        "stage.mkdir(parents=True, exist_ok=True)",
+        "def _stage(src, rel):",
+        "    try:",
+        "        p = Path(src)",
+        "        if not p.is_file():",
+        '            _say(f"[done-persist] SKIP {rel}: no such file ({src})")',
+        "            return",
+        "        out = stage / rel",
+        "        out.parent.mkdir(parents=True, exist_ok=True)",
+        "        shutil.copyfile(p, out)",
+        '        _say(f"[done-persist] staged {rel} ({out.stat().st_size} bytes)")',
+        "    except Exception as exc:",
+        '        _say(f"[done-persist] FAILED staging {rel}: {exc}")',
+        "if sentinel:",
+        '    _stage(sentinel, "sentinel.json")',
+        "else:",
+        '    _say("[done-persist] SKIP sentinel.json: EPS_SENTINEL_PATH unset")',
+        "# Any UNDRAINED pod-contract sentinels (epm:results payloads, gate sentinels)",
+        "# — the exact loss the grace-expiry persist exists to prevent. The keepalive",
+        "# escape-hatch file carries NO .json suffix, so this glob can never stage it.",
+        'for p in sorted(glob.glob(f"{logs_dir}/issue-{issue}-*.json")):',
+        '    _stage(p, f"logs_sentinels/{Path(p).name}")',
+        "TAIL_CAP = 5 * 1024**2  # text rides the non-LFS Hub path; the tail keeps the END",
+        "try:",
+        "    if log_path and Path(log_path).is_file():",
+        "        size = Path(log_path).stat().st_size",
+        "        kept = min(size, TAIL_CAP)",
+        '        with open(log_path, "rb") as fin, open(stage / "workload_tail.log", "wb") as fo:',
+        "            if size > TAIL_CAP:",
+        "                fin.seek(size - TAIL_CAP)",
+        "            fo.write(fin.read(TAIL_CAP))",
+        '        _say(f"[done-persist] staged workload_tail.log (last {kept} of {size} bytes)")',
+        "    else:",
+        '        _say(f"[done-persist] SKIP workload_tail.log: EPS_LOG_PATH unset or missing'
+        ' ({log_path!r})")',
+        "except Exception as exc:",
+        '    _say(f"[done-persist] FAILED staging workload_tail.log: {exc}")',
+        "try:",
+        '    ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")',
+        "    report = {",
+        '        "issue": issue,',
+        '        "attempt_id": attempt,',
+        '        "grace_s": grace,',
+        '        "ts": ts,',
+        '        "kind": "gcp-done-grace-sentinel-persist",',
+        "    }",
+        '    (stage / "done_report.json").write_text(json.dumps(report) + "\\n")',
+        "except Exception as exc:",
+        '    _say(f"[done-persist] FAILED writing done_report.json: {exc}")',
+        "api = HfApi()",
+        "ok = False",
+        "# ONE upload_folder commit (never a per-file loop — #664) + ONE retry after a",
+        "# short backoff; both attempts sit inside the same bash-side timeout budget.",
+        "for i in (1, 2):",
+        "    try:",
+        '        _say(f"[done-persist] uploading dir (attempt {i}/2, one commit) -> {dest}")',
+        "        api.upload_folder(folder_path=str(stage), path_in_repo=dest,",
+        '                          repo_id=repo, repo_type="dataset")',
+        '        _say("[done-persist] uploaded")',
+        "        ok = True",
+        "        break",
+        "    except Exception as exc:",
+        '        _say(f"[done-persist] FAILED upload attempt {i}/2: {exc}")',
+        "        if i == 1:",
+        "            try:",
+        '                _b = int(os.environ.get("EPS_DONE_PERSIST_RETRY_BACKOFF_S", "10"))',
+        "            except ValueError:",
+        "                _b = 10",
+        "            time.sleep(max(0, _b))",
+        "_say(f\"[done-persist] DONE status={'ok' if ok else 'failed'}\")",
+        "try:",
+        '    Path(status_path).write_text("ok" if ok else "failed")',
+        "except OSError:",
+        "    pass",
+        "# The transcript LAST via a single upload_file — its presence on HF proves",
+        "# the persist ran to completion (#854 pattern); exactly 2 upload calls total.",
+        "try:",
+        "    if Path(transcript).is_file():",
+        "        api.upload_file(path_or_fileobj=transcript,",
+        '                        path_in_repo=f"{dest}/persist_transcript.log",',
+        '                        repo_id=repo, repo_type="dataset")',
+        "except Exception as exc:",
+        '    print(f"[done-persist] FAILED transcript upload: {exc}", flush=True)',
+        "EPS_DONE_PERSIST_PY",
+        "  ) || true;",
+        # The ok|failed breadcrumb: read back the status file the heredoc wrote
+        # (missing/killed persist reads as failed) and best-effort PUT it on
+        # the SEPARATE eps/done_persist guest-attribute key. Durable on the
+        # STOP outcome; lost with the instance on DELETE (accepted, #935).
+        '  _dps="$(cat "${EPS_DONE_PERSIST_STATUS:-/tmp/eps-done-persist.status}" 2>/dev/null'
+        ' || true)";',
+        '  case "$_dps" in (ok) ;; (*) _dps="failed" ;; esac;',
+        '  curl -fsS -X PUT -H "Metadata-Flavor: Google" --data "$_dps"'
+        ' "http://metadata.google.internal/computeMetadata/v1/'
+        'instance/guest-attributes/eps/done_persist" >/dev/null 2>&1 || true;',
+        '  { echo "[done-grace] persist status=$_dps (eps/done_persist breadcrumb'
+        ' best-effort)"; } 2>/dev/null || true;',
+        "  return 0;",
+        "}",
+        # _eps_done_grace_poweroff — the bounded countdown. Foreground (not a
+        # bg daemon): nothing consumes startup-script completion (#491 proved
+        # scripts may run indefinitely), the reachability watchdog is already
+        # reaped on this path, and foreground keeps the ordering trivially
+        # auditable. Tick = 60 s FIXED: guest-attribute queries are
+        # rate-limited to 10/min per VM (GCP manage-guest-attributes docs),
+        # so 1 GET/min sits 6x under the cap — the tick must never shrink
+        # below ~6 s. Each iteration costs up to 65 s wall (sleep 60 +
+        # curl -m 5) while `waited` advances 60, so the true wall bound is
+        # ~grace*(65/60) + persist(<=120 s) + shutdown. Once aborted (the
+        # relaunch case) the countdown does NOT re-arm for a second
+        # workload's done — the relaunch operator owns teardown per the #491
+        # runbook (documented residual).
+        "_eps_done_grace_poweroff() {",
+        '  local waited=0 tick=60 ph="" _grace="${EPS_DONE_GRACE:-0}";',
+        '  case "$_grace" in (*[!0-9]*|""|0)',
+        '    { echo "[done-grace] disabled (EPS_DONE_GRACE=${EPS_DONE_GRACE:-})"; }'
+        " 2>/dev/null || true;",
+        "    return 0 ;;",
+        "  esac;",
+        '  { echo "[done-grace] armed: self-poweroff in ${_grace}s unless drained/aborted'
+        ' (#935)"; } 2>/dev/null || true;',
+        '  while [ "$waited" -lt "$_grace" ]; do',
+        '    sleep "$tick" 2>/dev/null || true;',
+        "    waited=$((waited + tick));",
+        "    # Escape hatch 1: operator keepalive (the #491 relaunch runbook).",
+        '    if [ -e "${EPS_DONE_KEEPALIVE_PATH:-/nonexistent}" ]; then',
+        '      { echo "[done-grace] keepalive present - aborting self-poweroff"; }'
+        " 2>/dev/null || true;",
+        "      return 0;",
+        "    fi;",
+        "    # Escape hatch 2: a sanctioned same-VM relaunch re-published",
+        "    # eps/phase=workload (REQUIRED by the #908 zombie predicates) -",
+        "    # the relaunch owns the VM now. An EMPTY read CONTINUES the",
+        "    # countdown: it must never abort toward keep-billing (a down",
+        "    # metadata server also means no relaunch could have re-published).",
+        "    ph=\"$(curl -fsS -m 5 -H 'Metadata-Flavor: Google'"
+        " 'http://metadata.google.internal/computeMetadata/v1/"
+        "instance/guest-attributes/eps/phase' 2>/dev/null || true)\";",
+        '    if [ -n "$ph" ] && [ "$ph" != "done" ]; then',
+        '      { echo "[done-grace] eps/phase=$ph - a relaunch owns the VM; aborting'
+        ' self-poweroff"; } 2>/dev/null || true;',
+        "      return 0;",
+        "    fi;",
+        "  done;",
+        "  # Best-effort persist FIRST (ONE in-heredoc retry; writes the",
+        "  # eps/done_persist breadcrumb), then the UNCONDITIONAL ladder -",
+        "  # a persist failure never re-opens the billing zombie (#935).",
+        "  _eps_persist_done_sentinels || true;",
+        '  { echo "[done-grace] grace expired (${_grace}s) - powering off to bound billing'
+        ' (#935)"; } 2>/dev/null || true;',
+        "  shutdown -h now 2>/dev/null || poweroff -f 2>/dev/null || halt -f;",
+        "}",
         # A failed startup script does NOT stop the VM — GCE just logs
         # "Script failed with error" and leaves the instance RUNNING,
         # billing the GPU with no workload (live finding, issue 535 GCP
@@ -1461,9 +2066,35 @@ def render_startup_script(
         # somehow reached the log tail.
         "trap 'rc=$?; set +e;"
         ' if [ "$rc" -ne 0 ]; then'
+        # #1055: POSITIVE-EVIDENCE classification — the workload writes
+        # $EPS_DELIVERABLES_OK_PATH ONLY after its final upload+verify PASS,
+        # so its presence at trap time proves the declared deliverables are
+        # complete on HF and this non-zero exit is a finalize/tail failure,
+        # not a data-losing crash. NEVER keyed on rc value or crash timing
+        # (#1004 coherence: rc stays non-zero, diagnostics still run, the
+        # poweroff that bounds billing is untouched, and literal `done` is
+        # never published on this path). The -n guard is belt-and-suspenders
+        # ([ -f "" ] is false); ${:-} keeps the trap safe under set -u when
+        # it fires before the export.
+        ' if [ -n "${EPS_DELIVERABLES_OK_PATH:-}" ] && [ -f "${EPS_DELIVERABLES_OK_PATH:-}" ];'
+        " then"
+        ' { echo "[startup-script] FINALIZE-FAILED rc=$rc — deliverables sentinel present;'
+        ' artifacts complete on HF; powering off (#1055)"; } 2>/dev/null || true;'
+        " _eps_phase finalize_failed_artifacts_ok;"
+        " else"
         ' { echo "[startup-script] FAILED rc=$rc — powering off to bound billing"; }'
         " 2>/dev/null || true;"
         " _eps_phase failed;"
+        " fi;"
+        # #854: reap the reachability watchdog — the only OTHER in-guest
+        # poweroff actor — at trap ENTRY, before the persist, so nothing can
+        # power the VM off mid-upload; the trap itself guarantees the
+        # billing-bounding shutdown below. Guarded: an unset PID (crash
+        # before the watchdog launch) / already-dead daemon is a no-op.
+        # (#1055: the watchdog reap + log tail + diagnostics + poweroff are
+        # the SHARED tail — they run on BOTH sentinel arms, outside the
+        # inner fi, ordering unchanged.)
+        ' { kill "${EPS_WATCHDOG_PID:-}" 2>/dev/null; } || true;'
         ' if [ -n "${EPS_LOG_PATH:-}" ]; then'
         ' { tail -n 40 "$EPS_LOG_PATH" 2>/dev/null | cut -c1-2000 >&3; } 2>/dev/null || true; fi;'
         # #658: persist the workload log + partial artifacts to HF BEFORE
@@ -1484,11 +2115,28 @@ def render_startup_script(
         f"export EPS_ATTEMPT_ID={shlex.quote(attempt_id)}",
         f"export WORKLOAD_ROOT={shlex.quote(workload_root)}",
         f"export EPS_SENTINEL_PATH={shlex.quote(sentinel_abs)}",
+        # #1055: positive-evidence deliverables sentinel — the workload
+        # stamps this path ONLY after its final upload+verify PASS; the EXIT
+        # trap then classifies a non-zero exit as finalize_failed_artifacts_ok
+        # instead of failed. Fail-open: a workload that never writes it keeps
+        # today's failed path byte-for-byte.
+        f"export EPS_DELIVERABLES_OK_PATH={shlex.quote(deliverables_ok_abs)}",
+        # #1055: stale-evidence hygiene — a re-booted instance (manual
+        # `instances start` re-runs the startup script with the SAME
+        # attempt_id + preserved disk) must not inherit a prior boot's
+        # deliverables evidence. rm -f is a no-op pre-clone.
+        'rm -f "$EPS_DELIVERABLES_OK_PATH" 2>/dev/null || true',
         # Crash-diagnostics target (#658): the EXIT trap uploads the
         # workload log + partial artifacts here BEFORE the
         # instance-termination-action=DELETE destroys the boot disk, so a
         # GCP crash is debuggable + partial progress is recoverable.
         f"export EPS_HF_DATA_REPO={shlex.quote(config.hf_data_repo)}",
+        # Done-grace self-poweroff constants (#935): the render-time-resolved
+        # countdown (env knob EPS_GCP_DONE_POWEROFF_GRACE_SECONDS; 0 disables)
+        # + the operator keepalive escape hatch (NO .json suffix — see the
+        # render-body comment).
+        f"export EPS_DONE_GRACE={done_grace}",
+        f"export EPS_DONE_KEEPALIVE_PATH={shlex.quote(keepalive_path)}",
         # Fast HF Hub uploads (#745) — STATIC DEFAULT export. Placed in the
         # env-export block BEFORE the output redirect + secrets fetch so that
         # (a) the workload (both the hydra and workload_cmd branches, which
@@ -1552,7 +2200,8 @@ def render_startup_script(
         # integration tests do NOT execute the infinite daemon). ``< /dev/null``
         # detaches it from any inherited stdin so a backgrounded daemon never
         # holds a parent pipe open. Reaped on clean exit (the kill below before
-        # the success sentinel) or by the EXIT-trap shutdown on a crash.
+        # the success sentinel) or at EXIT-trap ENTRY on a crash (#854 — before
+        # the crash persist, so it cannot power off mid-upload).
         "_eps_reachability_watchdog < /dev/null &",
         "EPS_WATCHDOG_PID=$!",
         "",
@@ -1617,7 +2266,7 @@ def render_startup_script(
         # _eps_persist_diagnostics + shutdown, so the poll reads
         # terminal_workload_failed and the async GCP->RunPod failover (#659) can
         # fire, instead of a false phase=done masking a complete failure. The
-        # watchdog (still live here) is reaped by the EXIT trap's shutdown, not
+        # watchdog (still live here) is killed at EXIT-trap ENTRY (#854), not
         # the clean reaper below -- on the failure path the trap owns teardown.
         'EPS_OOM_FINAL="$(_eps_oom_count)"',
         'if [ "${EPS_OOM_FINAL:-0}" -gt "${EPS_OOM_BASELINE:-0}" ]; then',
@@ -1642,10 +2291,18 @@ def render_startup_script(
         + ',"attempt_id":'
         + json.dumps(attempt_id)
         + "}\nEOF",
-        # Publish done LAST — the poll treats it as terminal-success and
-        # the harness immediately proceeds to fetch_results (scp of the
+        # Publish done — the poll treats it as terminal-success and the
+        # harness immediately proceeds to fetch_results (scp of the
         # sentinel written above), so the sentinel must already exist.
         "_eps_phase done",
+        "",
+        # The done-grace self-poweroff is the LAST line by design (#935):
+        # strictly after the OOM guard, the clean-path watchdog reap, the
+        # completion sentinel, and the done publish. On the abort paths
+        # the script then exits rc=0, so the EXIT trap's rc!=0 branch
+        # no-ops (the crash path is untouched).
+        "# === Done-grace self-poweroff (#935): bound billing when the poller is dead ===",
+        "_eps_done_grace_poweroff || true",
         "",
     ]
     return "\n".join(parts) + "\n"
@@ -1752,7 +2409,7 @@ def render_create_argv(
     boot_disk_gb = int(spec.extra.get("boot_disk_gb") or config.default_boot_disk_gb)
     boot_disk_type = spec.extra.get("boot_disk_type") or config.default_boot_disk_type
     target_zone = zone or config.primary_zone
-    name = instance_name_for(spec.issue)
+    name = instance_name_for(spec.issue, lane_suffix_for(spec))
 
     # GPUs cannot live-migrate (gcloud rejects MIGRATE on accelerator VMs), so
     # accelerator VMs MUST be TERMINATE. A CPU-only machine (gpu_count==0, #677)
@@ -1801,8 +2458,9 @@ def render_create_argv(
     # enable-guest-attributes lets the in-VM startup script publish its
     # workload phase to a poll-readable surface (guest attribute
     # ``eps/phase``) — without it a SUCCESSFUL workload is undetectable
-    # (the VM deliberately stays RUNNING so the sentinel can be scp'd,
-    # and the coarse describe-based poll reads "running" until the hard
+    # (the VM deliberately stays RUNNING so the sentinel can be scp'd —
+    # within the bounded #935 done-grace window — and the coarse
+    # describe-based poll reads "running" until the hard
     # timeout; live finding, issue 535 GCP lane r9: 20-step smoke
     # finished in ~9 min, poll spun for the full 4 h timeout, teardown
     # destroyed the lane evidence).
@@ -2343,7 +3001,14 @@ def default_gcloud_runner(
 #: wedged zombie — the workload is over, the VM is still billing — and the
 #: stale-VM janitor (:func:`audit_stale_gcp_vms`) reaps it promptly past a
 #: short terminal-phase floor rather than waiting out the per-fence age backstop.
-_TERMINAL_GUEST_PHASES: frozenset[str] = frozenset({"done", "failed"})
+#: ``finalize_failed_artifacts_ok`` (#1055 — deliverables verified on HF, then
+#: a finalize/tail non-zero exit) is terminal too: the workload is over, so a
+#: RUNNING VM stuck in it past the floor is a finished zombie the janitor MUST
+#: reap (unlike ``wedged``, deliberately kept OUT of this set — see
+#: :data:`_ZOMBIE_GUEST_PHASES`).
+_TERMINAL_GUEST_PHASES: frozenset[str] = frozenset(
+    {"done", "failed", "finalize_failed_artifacts_ok"}
+)
 
 
 # ---------------------------------------------------------------------------
@@ -2482,7 +3147,31 @@ def _read_guest_phase(*, config: GcpConfig, name: str, zone: str, runner: Gcloud
 #: the "already exists" wedge it exists to prevent). Incident #632
 #: (2026-06-13): a workload-crash respawn hit "already exists" because the
 #: prior TERMINATED record blocked re-provisioning and nothing deleted it.
+#: The SAME identical-sets invariant extends to the phase-gated RUNNING
+#: case below (:data:`_ZOMBIE_GUEST_PHASES`): a RUNNING record whose
+#: ``eps/phase`` disqualifies it from reconnect MUST be deletable by the
+#: pre-launch check, or the refusal dead-ends in the "already exists" wedge.
 _NONLIVE_INSTANCE_STATUSES: frozenset[str] = frozenset({"TERMINATED", "STOPPED", "SUSPENDED"})
+
+#: Guest ``eps/phase`` values that disqualify a RUNNING instance as a
+#: reconnect target AND qualify it for pre-launch reclaim (#908/#763): the
+#: janitor's terminal set (``done``/``failed``/``finalize_failed_artifacts_ok``,
+#: :data:`_TERMINAL_GUEST_PHASES`)
+#: plus the #669 reachability watchdog's pre-shutdown ``wedged`` write. A
+#: RUNNING instance in any of these states is a finished-or-wedged zombie —
+#: reconnecting to it silently no-ops the new dispatch (#763 leg 2), and
+#: only deleting it frees the canonical name for the create (#632).
+#: The two consumers (:func:`reconnect_or_none`,
+#: :func:`_stale_named_instance_or_none`) MUST share this set — same
+#: invariant as :data:`_NONLIVE_INSTANCE_STATUSES` above. Deliberately a
+#: NEW constant, not an edit to :data:`_TERMINAL_GUEST_PHASES` (adding
+#: ``wedged`` there would change janitor reap behavior — the #667
+#: follow-up's business, out of scope here).
+#: Relaunch contract (#908 leg 1b): the #491 same-VM SSH-relaunch recovery
+#: recipe (`.claude/rules/gotchas.md`, GCE-metadata-runner entry) REQUIRES
+#: re-publishing ``eps/phase=workload`` BEFORE resuming work, so an active
+#: manual relaunch reads non-terminal here and is never classified a zombie.
+_ZOMBIE_GUEST_PHASES: frozenset[str] = _TERMINAL_GUEST_PHASES | frozenset({"wedged"})
 
 
 def reconnect_or_none(
@@ -2491,14 +3180,30 @@ def reconnect_or_none(
     config: GcpConfig,
     runner: GcloudRunner,
 ) -> RunHandle | None:
-    """Return a handle for an existing live ``eps-issue-<N>`` instance, or None.
+    """Return a handle for an existing live ``eps-issue-<N>[-<lane_suffix>]`` instance, or None.
 
     Idempotency hinge: before any ``instances create`` call, this looks
-    up the canonical instance name via ``gcloud compute instances list
-    --filter='name=eps-issue-<N>'``. A live instance (status RUNNING,
+    up the canonical instance name (per-lane suffixed when
+    ``spec.extra['lane_suffix']`` is set, #934) via ``gcloud compute
+    instances list --filter='name=eps-issue-<N>[-<suffix>]'`` — so a
+    suffixed lane never reconnects to a sibling lane's instance. A live
+    instance (status RUNNING,
     PROVISIONING, STAGING, STOPPING) returns a handle. A TERMINATED
     instance is treated as "not live" (the backend will create a fresh
     one); no instance returns None.
+
+    Zombie refusal (#908/#763): a RUNNING instance whose ``eps/phase``
+    guest attribute is already in :data:`_ZOMBIE_GUEST_PHASES`
+    (``done``/``failed``/``finalize_failed_artifacts_ok``/``wedged``) is
+    NOT a live run to rejoin —
+    reconnecting to it silently no-ops the new dispatch (#763: the
+    phase-C launch "reconnected" to a gate-parked done VM and never
+    ran). Such an instance returns ``None``; the pre-launch stale
+    reclaim (:func:`_stale_named_instance_or_none`) then deletes it so
+    the create does not collide (#632). An unwritten phase (``""`` —
+    early boot, 404) reconnects normally; the probe fires for RUNNING
+    status only (PROVISIONING/STAGING have no phase yet; STOPPING is a
+    transient teardown state).
 
     Matches the "Idempotent: a per-run attempt-id is the sole write
     namespace; route() reconnects to an existing eps-issue-<N> GCE
@@ -2513,9 +3218,13 @@ def reconnect_or_none(
     (round-6 B1 mirrored from SLURM; the pre-fix warn-and-None here let
     an expired-auth list fall through toward a blind create — live GCP
     attempt 1, issue 535). The router's reconnect seams handle
-    ``BackendProbeError`` typed-ly on every lane.
+    ``BackendProbeError`` typed-ly on every lane. The #908 phase probe
+    adds a second (guest-attribute) raise surface with the SAME
+    semantics — a probe flake fails the launch typed and RETRIABLE
+    (re-run the same command; idempotent by design, the #736 exit-75
+    precedent), never a silent reconnect and never a delete.
     """
-    name = instance_name_for(spec.issue)
+    name = instance_name_for(spec.issue, lane_suffix_for(spec))
     argv = render_list_argv(config=config, name_filter=f"name={name}")
     result = runner(argv)
     if result.returncode != 0:
@@ -2544,6 +3253,29 @@ def reconnect_or_none(
         zone_url = inst.get("zone") or ""
         # The zone field is a URL; take the last path segment.
         zone = zone_url.rsplit("/", 1)[-1] if zone_url else config.primary_zone
+        # NEW (#908): a RUNNING instance whose workload already published a
+        # terminal/wedged ``eps/phase`` is a zombie, NOT a live run to rejoin
+        # — reconnecting to it silently no-ops the new dispatch (#763: the
+        # phase-C launch "reconnected" to the gate-parked done VM and never
+        # ran). ``""`` (unwritten — early boot, 404) reconnects normally. A
+        # probe FAILURE raises GcpProbeError out of this function: state
+        # UNKNOWN must never read as EITHER "live, reconnect" (would
+        # resurrect the silent no-op) or "zombie, delete" (could reclaim a
+        # healthy VM) — the #535 "couldn't ask" discipline, same as the
+        # LIST probe above. RUNNING-only, matching the janitor's
+        # ``should_probe_phase`` gate (PROVISIONING/STAGING have no phase
+        # yet; STOPPING+done is the normal seconds-long teardown transition).
+        if status.upper() == "RUNNING":
+            phase = _read_guest_phase(config=config, name=name, zone=zone, runner=runner)
+            if phase in _ZOMBIE_GUEST_PHASES:
+                logger.warning(
+                    "GCP reconnect: %s is RUNNING with terminal eps/phase=%r — refusing "
+                    "reconnect (gate-park/finished zombie, #908); the pre-launch stale "
+                    "reclaim deletes it before create.",
+                    name,
+                    phase,
+                )
+                continue
         instance_id = str(inst.get("id") or "")
         # Recover the original attempt_id from the instance's labels (set
         # by ``_format_labels`` at create time as ``eps-attempt=<id>``).
@@ -2597,15 +3329,21 @@ class StaleNamedInstance:
 
     Returned by :func:`_stale_named_instance_or_none` when a prior
     instance is in a :data:`_NONLIVE_INSTANCE_STATUSES` state (TERMINATED /
-    STOPPED / SUSPENDED): the record blocks the next ``gcloud compute
+    STOPPED / SUSPENDED) — OR (#908) is RUNNING with a terminal/wedged
+    ``eps/phase`` (:data:`_ZOMBIE_GUEST_PHASES`, a gate-park/finished
+    zombie): the record blocks the next ``gcloud compute
     instances create`` with ``resource ... already exists`` even though the
     instance is doing nothing. ``zone`` is the parsed last-segment of the
     instance's zone URL so the launch path can delete it in the right zone.
+    ``guest_phase`` is set ONLY on the #908 RUNNING+zombie case (the
+    re-probed ``eps/phase`` value); ``None`` for the status-stale cases —
+    defaulted so pre-#908 constructors stay valid.
     """
 
     name: str
     zone: str
     status: str
+    guest_phase: str | None = None
 
 
 def _stale_named_instance_or_none(
@@ -2614,7 +3352,7 @@ def _stale_named_instance_or_none(
     config: GcpConfig,
     runner: GcloudRunner,
 ) -> StaleNamedInstance | None:
-    """Return a stale non-live record blocking the ``eps-issue-<N>`` name, or None.
+    """Return a stale non-live record blocking the ``eps-issue-<N>[-<lane_suffix>]`` name, or None.
 
     Called by :meth:`GcpBackend.launch` ONLY after
     :func:`reconnect_or_none` has already returned ``None`` (no LIVE
@@ -2628,19 +3366,29 @@ def _stale_named_instance_or_none(
     returned record before re-provisioning.
 
     Returns:
-        * ``StaleNamedInstance`` — a record in a non-live state exists;
-          safe to delete (it is doing no work).
+        * ``StaleNamedInstance`` — a record in a non-live state exists,
+          OR (#908) a RUNNING record whose re-probed ``eps/phase`` is in
+          :data:`_ZOMBIE_GUEST_PHASES` (``done``/``failed``/
+          ``finalize_failed_artifacts_ok``/``wedged`` —
+          the gate-park/finished zombie ``reconnect_or_none`` now
+          refuses; ``guest_phase`` carries the probed value). Both are
+          safe to delete (no live workload); the matched skip/delete
+          sets are the #632 invariant on
+          :data:`_NONLIVE_INSTANCE_STATUSES`.
         * ``None`` — no record with the canonical name exists; ``create``
           will proceed clean.
 
     Raises:
         * :class:`GcpProbeError` — the ``list`` probe itself failed
-          (rc != 0 / unparseable JSON). Instance state is UNKNOWN, and
-          "couldn't ask" must never read as "name is free" on the
+          (rc != 0 / unparseable JSON), OR (#908) the ``eps/phase``
+          guest-attribute probe on a RUNNING record failed. Instance /
+          phase state is UNKNOWN, and "couldn't ask" must never read as
+          "name is free" — and NEVER as "zombie, delete" — on the
           credit-spending lane (mirrors :func:`reconnect_or_none`).
         * :class:`GcpBackendError` — a record exists in a state that is
-          NEITHER live-reconnectable NOR in the non-live set (e.g.
-          RUNNING / PROVISIONING / STAGING / STOPPING / REPAIRING). This
+          NEITHER live-reconnectable NOR deletable: a non-RUNNING live
+          status (PROVISIONING / STAGING / STOPPING / REPAIRING), or a
+          RUNNING record whose re-probed phase is NON-terminal. This
           can only happen as a TOCTOU race against the reconnect probe
           (which would itself have returned a handle for a live status):
           refuse to auto-delete a possibly-live instance — deleting a
@@ -2648,7 +3396,7 @@ def _stale_named_instance_or_none(
           orchestrator retries the launch (whose reconnect will then catch
           the now-observable live instance).
     """
-    name = instance_name_for(spec.issue)
+    name = instance_name_for(spec.issue, lane_suffix_for(spec))
     result = runner(render_list_argv(config=config, name_filter=f"name={name}"))
     if result.returncode != 0:
         raise GcpProbeError(
@@ -2675,6 +3423,24 @@ def _stale_named_instance_or_none(
         zone = zone_url.rsplit("/", 1)[-1] if zone_url else config.primary_zone
         if status in _NONLIVE_INSTANCE_STATUSES:
             return StaleNamedInstance(name=name, zone=zone, status=status)
+        # NEW (#908): reconnect now REFUSES a RUNNING instance with a
+        # terminal/wedged eps/phase (see reconnect_or_none), so the SAME
+        # extended set must be deletable here — a skip without a matching
+        # delete re-creates the #632 "already exists" create collision
+        # (the documented invariant on _NONLIVE_INSTANCE_STATUSES). The
+        # phase is RE-PROBED locally (never carried over from the earlier
+        # reconnect read); a probe failure propagates GcpProbeError — no
+        # delete on unknown state. What a delete here costs on the
+        # accepted same-workload re-entry race (R1): any UNDRAINED
+        # VM-disk sentinel is destroyed AND the workload re-runs in full
+        # (duplicate compute + duplicate non-idempotent side effects,
+        # e.g. HF/WandB appends — the re-run regenerates the sentinel);
+        # artifacts themselves were uploaded BEFORE ``[phase=done]`` per
+        # the pod-side blocking contract, so no permanent data loss.
+        if status == "RUNNING":
+            phase = _read_guest_phase(config=config, name=name, zone=zone, runner=runner)
+            if phase in _ZOMBIE_GUEST_PHASES:
+                return StaleNamedInstance(name=name, zone=zone, status=status, guest_phase=phase)
         # A record exists in a state the non-live set does NOT cover. The
         # only way to reach here is a TOCTOU race vs the reconnect probe
         # (a live status would have reconnected). Never auto-delete a
@@ -2683,8 +3449,9 @@ def _stale_named_instance_or_none(
         raise GcpBackendError(
             f"GCP pre-launch: instance {name} exists in non-deletable status "
             f"{status!r} (zone={zone}); refusing to auto-delete a possibly-live "
-            "instance before create. Re-launch to reconnect, or delete manually "
-            "if it is genuinely stale."
+            "instance before create (a RUNNING record reaches this raise only "
+            "with a checked, NON-terminal eps/phase — #908). Re-launch to "
+            "reconnect, or delete manually if it is genuinely stale."
         )
     return None
 
@@ -2793,9 +3560,14 @@ def preflight_quota_headroom(
     * a live ``eps-issue-<N>`` instance already exists (the launch path
       reconnects, consuming no new quota — and our own instance may BE
       the usage the probe would read),
-    * the reconnect probe or the ``regions describe`` call fails in ANY
-      way (rc != 0, missing gcloud, timeout, unparseable JSON, metric
-      absent from ``quotas[]``).
+    * a RUNNING zombie (terminal/wedged ``eps/phase``, #908) occupies
+      the canonical name — reconnect refuses it, but its GPUs still
+      count in the usage read; launch's stale reclaim deletes it and
+      frees the quota before create, so the headroom verdict would be
+      stale by construction,
+    * the reconnect probe, the stale-name probe, or the ``regions
+      describe`` call fails in ANY way (rc != 0, missing gcloud,
+      timeout, unparseable JSON, metric absent from ``quotas[]``).
 
     Only a successfully parsed quota row produces a verdict. A swallowed
     probe failure here never enables a blind create: the launch path
@@ -2814,6 +3586,33 @@ def preflight_quota_headroom(
     except Exception as exc:  # GcpProbeError / transport — fail OPEN (launch re-probes)
         logger.warning(
             "GCP quota pre-check: reconnect probe failed OPEN (%s: %s); proceeding to launch.",
+            type(exc).__name__,
+            exc,
+        )
+        return None
+    # NEW (#908): reconnect now REFUSES a RUNNING instance whose eps/phase is
+    # terminal/wedged (a gate-park zombie), so it returns None above while
+    # the zombie's allocated GPUs still COUNT in the regions-describe usage
+    # read — in a tight-quota regime the headroom verdict would block the
+    # GCP lane BEFORE launch's stale reclaim can delete the zombie and free
+    # the quota. Restore the pre-#908 disposition for exactly that case: a
+    # RUNNING record with a terminal guest phase is about to be reclaimed by
+    # launch, so SKIP the headroom check ("no opinion"), same as the
+    # reconnect-handle path above. Probe failures keep the broad fail-OPEN.
+    try:
+        stale = _stale_named_instance_or_none(spec=spec, config=config, runner=runner)
+        if stale is not None and stale.guest_phase is not None:
+            logger.info(
+                "GCP quota pre-check: RUNNING zombie %s (eps/phase=%s) occupies the "
+                "canonical name — skipping the headroom check; launch's stale reclaim "
+                "frees its quota before create (#908).",
+                stale.name,
+                stale.guest_phase,
+            )
+            return None
+    except Exception as exc:  # GcpProbeError / GcpBackendError / transport — fail OPEN
+        logger.warning(
+            "GCP quota pre-check: stale-name probe failed OPEN (%s: %s); proceeding to launch.",
             type(exc).__name__,
             exc,
         )
@@ -2921,8 +3720,9 @@ def audit_stale_gcp_vms(
       would re-create #697: a 7d job killed by the janitor's old 24h cap).
     * **Terminal-phase reap** (``terminal_phase_max_age_seconds``, default
       10 min) — a RUNNING instance that has published a TERMINAL
-      ``eps/phase`` (``done`` / ``failed``; see
-      :data:`_TERMINAL_GUEST_PHASES`) but never auto-deleted is a wedged
+      ``eps/phase`` (``done`` / ``failed`` /
+      ``finalize_failed_artifacts_ok``; see :data:`_TERMINAL_GUEST_PHASES`)
+      but never auto-deleted is a wedged
       zombie: the workload finished, the VM is still billing, and waiting
       for the per-fence age backstop (up to the instance's own
       ``--max-run-duration`` + grace — now 7d by default) burns idle A100
@@ -3360,10 +4160,11 @@ class GcpBackend(ComputeBackend):
         stale = _stale_named_instance_or_none(spec=spec, config=config, runner=self._run)
         if stale is not None:
             logger.info(
-                "GCP pre-launch: deleting stale %s instance %s in zone=%s to free the name "
-                "before create (issue=%d).",
+                "GCP pre-launch: deleting stale %s instance %s (eps/phase=%s) in zone=%s "
+                "to free the name before create (issue=%d).",
                 stale.status,
                 stale.name,
+                stale.guest_phase,
                 stale.zone,
                 spec.issue,
             )
@@ -3654,7 +4455,7 @@ class GcpBackend(ComputeBackend):
         # Successful create. Build the handle + thread the artifact
         # declaration through handle.extra. The handle name matches
         # the gcloud name (idempotent reconnect uses it).
-        instance_name = instance_name_for(spec.issue)
+        instance_name = instance_name_for(spec.issue, lane_suffix_for(spec))
         # gcloud returns the instance object as a list with one entry.
         instance_id = _parse_instance_id(result.stdout, instance_name)
         handle = RunHandle(
@@ -3695,6 +4496,12 @@ class GcpBackend(ComputeBackend):
                 "hydra_args": list(spec.hydra_args or ()),
                 "gpus": spec.gpus,
                 "time_budget_hours": spec.time_budget_hours,
+                # #909: the branch the run's code lives on, so the async
+                # GCP→RunPod failover reconstruction
+                # (backend_poll._runspec_from_gcp_handle) re-executes against
+                # the ISSUE branch, not `main` (per-issue dispatch scripts live
+                # on issue branches). Additive key; "" when unset.
+                "repo_branch": str(spec.extra.get("repo_branch") or ""),
                 # CPU-lane async-failover guard prerequisite (#677). The async
                 # poller's _is_gcp_async_workload_failure must EXCLUDE a CPU GCP
                 # handle (gpu_count==0) from the GCP->RunPod failover (RunPod is
@@ -3710,6 +4517,20 @@ class GcpBackend(ComputeBackend):
                 # serialize_handle's dict(handle.extra); every existing reader
                 # uses .get(...), so no consumer breaks.
                 "gpu_count": machine_for_intent(spec).gpu_count,
+                # #1010: footprint fields for the RunPod CPU-fallback
+                # feasibility gate + container-disk threading — forwarded by
+                # backend_poll._runspec_from_gcp_handle on the async failover
+                # paths (#659 crash / #783 queue-timeout). Keys OMITTED when
+                # absent/falsy — never a None value — so legacy handle shapes
+                # stay byte-identical.
+                **{
+                    k: v
+                    for k, v in {
+                        "boot_disk_gb": spec.extra.get("boot_disk_gb"),
+                        "min_ram_gb": spec.extra.get("min_ram_gb"),
+                    }.items()
+                    if v
+                },
             },
         )
         handle = self._with_artifacts_declaration(
@@ -3852,7 +4673,8 @@ class GcpBackend(ComputeBackend):
         ``[phase=...]`` writes land on a poll-readable surface (the
         existing :class:`PollResult` shape carries the per-phase fields).
 
-        Terminal guest-attribute phases (``done`` / ``failed``) are
+        Terminal guest-attribute phases (``done`` / ``failed`` /
+        ``finalize_failed_artifacts_ok``) are
         OVERRIDDEN when a fresh ``epm:run-launched`` relaunch marker
         names a live process on this instance — the startup script's
         phase write freezes at the FIRST workload's exit, so an SSH
@@ -3910,7 +4732,8 @@ class GcpBackend(ComputeBackend):
 
             # A RUNNING VM is ambiguous: booting, mid-workload, or DONE
             # (the success path deliberately keeps the VM up so the
-            # completion sentinel can be scp'd — instance state alone
+            # completion sentinel can be scp'd — bounded by the #935
+            # done-grace self-poweroff — instance state alone
             # can never signal success; issue 535 r9 spun the poll for
             # the full 4 h timeout on a 9-min success). Overlay the
             # workload phase from the eps/phase guest attribute.
@@ -3933,7 +4756,7 @@ class GcpBackend(ComputeBackend):
                 return _with_drain(
                     _coarse_poll(status="stalled", current_phase="guest_attr_probe_failed")
                 )
-            if phase in ("done", "failed"):
+            if phase in ("done", "failed", "finalize_failed_artifacts_ok"):
                 # Relaunch-follow (incident #612): the eps/phase guest
                 # attribute is written by the STARTUP SCRIPT, so it
                 # freezes at the FIRST workload's terminal state. A
@@ -3943,7 +4766,12 @@ class GcpBackend(ComputeBackend):
                 # ``log_abs=`` precisely so pollers can follow the new
                 # process — without this branch a HEALTHY mid-training
                 # relaunch read as ``done``/``dead`` and steered the
-                # orchestrator to a premature transition.
+                # orchestrator to a premature transition. (#1055: the
+                # new finalize_failed_artifacts_ok phase is a terminal
+                # state of the FIRST workload too — a fresh relaunch
+                # marker must win over the done-like classification
+                # below, or a healthy relaunch reads done and the
+                # orchestrator finalizes mid-run.)
                 relaunch = self._relaunch_marker_or_none(handle)
                 if relaunch is not None:
                     pid, log_abs = relaunch
@@ -3955,6 +4783,28 @@ class GcpBackend(ComputeBackend):
                     PollResult(
                         status="done",
                         current_phase="workload_done",
+                        new_milestone=True,
+                        last_log_mtime_sec_ago=0,
+                        pid_alive=False,
+                        log_tail_excerpt="",
+                    )
+                )
+            if phase == "finalize_failed_artifacts_ok":
+                # #1055 — additive, mirrors the #935 stance: a run whose
+                # deliverables verified complete on HF BEFORE a
+                # finalize/tail non-zero exit (the trap's positive-evidence
+                # branch). Classified as a SUCCESSFUL run whose finalize
+                # hiccupped — status="done" fails BOTH async-failover
+                # conjuncts by construction (backend_poll requires
+                # status=="dead" + a terminal_* phase), so no RunPod
+                # failover and no crash-fix routing; the distinct
+                # current_phase keeps the finalize failure visible for
+                # triage. Reachable in the brief RUNNING window between the
+                # trap's phase write and the poweroff completing.
+                return _with_drain(
+                    PollResult(
+                        status="done",
+                        current_phase="workload_done_finalize_failed",
                         new_milestone=True,
                         last_log_mtime_sec_ago=0,
                         pid_alive=False,
@@ -4011,17 +4861,56 @@ class GcpBackend(ComputeBackend):
         return self._non_running_poll_result(handle, zone, status)
 
     def _non_running_poll_result(self, handle: RunHandle, zone: str, status: str) -> PollResult:
-        """Resolve a non-RUNNING VM status, with the #669 watchdog discrimination.
+        """Resolve a non-RUNNING VM status, with the #669/#935 phase discrimination.
 
         Watchdog self-terminate discrimination (#669, Consistency-checker
         Option 2): a TERMINATED VM whose in-VM reachability watchdog wrote
         ``eps/phase=wedged`` before ``shutdown -h now`` maps to the NEW
         ``terminal_wedged_terminated`` phase, which the poller's async failover
-        accept-set recognizes. A TERMINATED VM with any other (or absent /
-        unreadable) ``eps/phase`` maps to ``terminal_terminated`` EXACTLY as
-        today (spot preemption / max-run-duration / manual stop → straight to
-        dead, NO failover — no spot regression). Mirrors the ``eps/phase=failed``
-        + ``workload_started`` discrimination on the RUNNING path. Every other
+        accept-set recognizes.
+
+        Done-grace discrimination (#935): a TERMINATED VM whose ``eps/phase``
+        reads ``done`` is a SUCCESSFUL run whose done-grace self-poweroff (or
+        a manual stop of a done VM) fired — classify ``done``
+        (``workload_done_self_poweroff``), never dead, so a revived
+        orchestrator does not spin crash-fix machinery on a run whose
+        artifacts are all on HF. Only reachable when the guest shutdown ends
+        in STOP rather than DELETE (or during the transient STOPPING window);
+        a DELETEd instance 404s at describe and stays ``dead("instance not
+        found")`` — the recovery breadcrumb there is the HF
+        ``issue<N>_done/<attempt_id>/`` prefix. ``fetch_results``' sentinel
+        scp will fail (VM off; fail-soft by contract) and finalize needs
+        ``--skip-confirm-artifacts``.
+
+        Setup-death discrimination (#1029): a TERMINATED VM whose ``eps/phase``
+        reads ``failed`` runs the SAME §4.1.0b ``workload_started``
+        discrimination the RUNNING path runs — sentinel ABSENT ⇒
+        ``terminal_setup_failed`` (the classification is then
+        timing-independent: the identical trap-written boot death no longer
+        reads ``terminal_setup_failed`` in the brief RUNNING window but
+        ``terminal_terminated`` after shutdown); sentinel present ⇒ a mid-run
+        guest shutdown (e.g. a spot preemption whose EXIT trap completed) —
+        KEEP ``terminal_terminated``, the #669 exclusion verbatim. A probe
+        failure on the sentinel read falls back to workload-started (its
+        existing contract) ⇒ keeps ``terminal_terminated`` (conservative:
+        never manufactures a setup classification).
+
+        Finalize-failed-but-artifacts-ok discrimination (#1055): a TERMINATED
+        VM whose ``eps/phase`` reads ``finalize_failed_artifacts_ok`` — the
+        EXIT trap's positive-evidence branch: the workload stamped
+        ``$EPS_DELIVERABLES_OK_PATH`` after its final upload+verify PASS,
+        then a finalize/tail step exited non-zero — classifies ``done``
+        (``workload_done_finalize_failed``), never dead, mirroring the #935
+        stance: the deliverables are complete on HF, so neither the #659
+        async failover nor crash-fix routing should fire; finalize needs
+        ``--skip-confirm-artifacts`` (the completion sentinel was never
+        written) and Step 8 upload verification stays the independent gate.
+
+        A TERMINATED VM with any other (or absent / unreadable) ``eps/phase``
+        maps to ``terminal_terminated`` EXACTLY as today (spot preemption /
+        max-run-duration / manual mid-run stop → straight to dead, NO
+        failover — no spot regression). Mirrors the ``eps/phase=failed`` +
+        ``workload_started`` discrimination on the RUNNING path. Every other
         non-RUNNING status falls through to the coarse mapping unchanged.
         """
         if status == "TERMINATED":
@@ -4035,6 +4924,49 @@ class GcpBackend(ComputeBackend):
                 phase = ""
             if phase == "wedged":
                 return _terminal_dead_poll(reason="wedged_terminated")
+            # #1029: the same §4.1.0b discrimination the RUNNING path runs
+            # (see poll()'s ``phase == "failed"`` branch) — makes the
+            # NOT-STARTED case's classification timing-independent (the
+            # probe-failure and started=True cases remain on the
+            # terminal_terminated default — both today's behavior,
+            # deliberately preserved). _workload_started falls back to True on
+            # a probe failure by its existing contract -> keeps
+            # terminal_terminated (never manufactures a setup classification).
+            # A "failed" phase WITH the workload started (a mid-run guest
+            # shutdown, e.g. a spot preemption whose trap completed) falls
+            # through to terminal_terminated — the #669 exclusion verbatim.
+            if phase == "failed" and not self._workload_started(handle, zone):
+                return _terminal_dead_poll(reason="setup_failed")
+            if phase == "done":
+                # #935 — purely ADDITIVE: do NOT refactor the existing
+                # ``workload_done`` / ``relaunched_workload_done`` literals
+                # (tests string-assert them). The new phase fails BOTH
+                # async-failover conjuncts (status=="dead" + a terminal_*
+                # phase), so no failover misfire is possible.
+                return PollResult(
+                    status="done",
+                    current_phase="workload_done_self_poweroff",
+                    new_milestone=True,
+                    last_log_mtime_sec_ago=0,
+                    pid_alive=False,
+                    log_tail_excerpt="",
+                )
+            if phase == "finalize_failed_artifacts_ok":
+                # #1055 — additive, same stance as the #935 block above: the
+                # trap's positive-evidence branch proved the deliverables
+                # complete on HF before the finalize/tail crash, so this is
+                # a SUCCESSFUL run whose finalize hiccupped. status="done"
+                # fails BOTH async-failover conjuncts by construction; the
+                # distinct current_phase keeps the finalize failure visible
+                # for triage.
+                return PollResult(
+                    status="done",
+                    current_phase="workload_done_finalize_failed",
+                    new_milestone=True,
+                    last_log_mtime_sec_ago=0,
+                    pid_alive=False,
+                    log_tail_excerpt="",
+                )
         return _gcp_status_to_poll_result(status)
 
     def _guest_phase(self, handle: RunHandle, zone: str) -> str:
@@ -4807,11 +5739,13 @@ class GcpBackend(ComputeBackend):
         the common case (the VM already auto-deleted) and is NOT raised.
 
         Confirm-deleted guard (#683 defense-in-depth): a CLEAN
-        ``eps/phase=done`` run leaves the VM RUNNING by design (the success
-        path keeps it alive so the sentinel can be scp'd — only a CRASH
-        triggers the in-VM EXIT-trap ``shutdown``+DELETE / rc!=0 belt), so
-        the orchestrator-driven ``teardown`` is what reaps a successful run
-        that REACHES finalize. If teardown's own rc==0 delete silently
+        ``eps/phase=done`` run leaves the VM RUNNING only within the bounded
+        #935 done-grace window (the success path keeps it alive so the
+        sentinel can be scp'd; a CRASH triggers the in-VM EXIT-trap
+        ``shutdown``+DELETE / rc!=0 belt), so the orchestrator-driven
+        ``teardown`` is the FAST reaper for a successful run that REACHES
+        finalize — when finalize never runs (dead orchestrator), the in-VM
+        done-grace self-poweroff is the bound. If teardown's own rc==0 delete silently
         no-ops (rc==0 but the instance lingers RUNNING), nothing else
         reclaims it until the per-instance ``--max-run-duration`` belt (7d
         by default, #741) OR the daily ``gcp_audit`` janitor. So after an
@@ -5145,6 +6079,7 @@ __all__ = [
     "DEFAULT_PROJECT",
     "DEFAULT_PROVISIONING_MODEL",
     "DEFAULT_REPO_URL",
+    "DELIVERABLES_OK_FILENAME",
     "INTENT_TO_MACHINE",
     "MACHINE_TYPE_ZONE_AVAILABILITY",
     "STARTUP_PASSTHROUGH_ENV_KEYS",
@@ -5164,8 +6099,10 @@ __all__ = [
     "classify_create_failure",
     "default_gcloud_runner",
     "default_gcp_config",
+    "deliverables_ok_path_for",
     "expected_artifacts_declaration",
     "instance_name_for",
+    "lane_suffix_for",
     "machine_for_intent",
     "preflight_quota_headroom",
     "reconnect_or_none",

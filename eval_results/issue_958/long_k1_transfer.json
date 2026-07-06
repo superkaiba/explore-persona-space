@@ -1,0 +1,108 @@
+{
+  "validation_gate": {
+    "max_abs_row_delta_vs_committed_long_own_k1": 1.3686248968580728e-06
+  },
+  "policy": "source-map-composite",
+  "cells": {
+    "long_1to5": {
+      "transfer_skill": -0.22507564579508968,
+      "transfer_skill_ci95": [
+        -0.3151818026640476,
+        -0.14705980461514453
+      ],
+      "own_skill": 0.36682852233943736,
+      "deficit": 0.5919041681345271,
+      "deficit_ci95": [
+        0.5297350982300353,
+        0.6668797011716134
+      ],
+      "recalibrated_transfer_skill": 0.05616052153084363,
+      "n_test": 60,
+      "shuffle_band": {
+        "readout_mean_p975": -0.9535319226369633,
+        "readout_mean_p025": -1.0940433920633348
+      },
+      "recalibrated_transfer_skill_ci95": [
+        -0.008504088278224497,
+        0.11206120748497336
+      ]
+    },
+    "long_1to6": {
+      "transfer_skill": -0.2061015320068297,
+      "transfer_skill_ci95": [
+        -0.28264203924492426,
+        -0.13842659512737387
+      ],
+      "own_skill": 0.3211811828012822,
+      "deficit": 0.527282714808112,
+      "deficit_ci95": [
+        0.46784067477200836,
+        0.5905947760956359
+      ],
+      "recalibrated_transfer_skill": 0.06367319802404374,
+      "n_test": 60,
+      "shuffle_band": {
+        "readout_mean_p975": -0.8672046315746922,
+        "readout_mean_p025": -0.993821382633026
+      },
+      "recalibrated_transfer_skill_ci95": [
+        0.007101874848723345,
+        0.11145876619747723
+      ]
+    },
+    "long_1to7": {
+      "transfer_skill": -0.2505429669175378,
+      "transfer_skill_ci95": [
+        -0.3428183484083156,
+        -0.17467189863109053
+      ],
+      "own_skill": 0.3565060169874688,
+      "deficit": 0.6070489839050066,
+      "deficit_ci95": [
+        0.5427997951641638,
+        0.679457240512353
+      ],
+      "recalibrated_transfer_skill": 0.046168346953488405,
+      "n_test": 60,
+      "shuffle_band": {
+        "readout_mean_p975": -0.8977233428639207,
+        "readout_mean_p025": -1.0548285202876064
+      },
+      "recalibrated_transfer_skill_ci95": [
+        -0.017320706598040834,
+        0.10201828028960032
+      ]
+    },
+    "long_1to8": {
+      "transfer_skill": -0.20751855914648157,
+      "transfer_skill_ci95": [
+        -0.30860666816201643,
+        -0.11962477896755809
+      ],
+      "own_skill": 0.38817054862488604,
+      "deficit": 0.5956891077713676,
+      "deficit_ci95": [
+        0.5291542488076114,
+        0.6627955501624044
+      ],
+      "recalibrated_transfer_skill": 0.06958947084087826,
+      "n_test": 60,
+      "shuffle_band": {
+        "readout_mean_p975": -0.8926390194551963,
+        "readout_mean_p025": -1.0189370949290444
+      },
+      "recalibrated_transfer_skill_ci95": [
+        0.0024055923777379445,
+        0.13122712907997738
+      ]
+    }
+  },
+  "metadata": {
+    "git_commit": "895e4c78315d514a975d13a3965d49a8417137be",
+    "timestamp_utc": "2026-07-04T14:47:45.330656Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue958_long_k1_transfer"
+  }
+}

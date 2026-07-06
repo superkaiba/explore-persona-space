@@ -1,0 +1,55 @@
+{
+  "commit": "a99c12a20b",
+  "created": "2026-07-03T06:08:24Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "$\\Delta\\rho$ (unpooled $-$ mean), held-out": -0.14837935174069616,
+      "series": "observed",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "$\\Delta\\rho$ (unpooled $-$ mean), held-out": -0.26103241296518614,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "$\\Delta\\rho$ (unpooled $-$ mean), held-out": -0.20955582232893166,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "$\\Delta\\rho$ (unpooled $-$ mean), held-out": -0.30844218245322375,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 4.0,
+      "$\\Delta\\rho$ (unpooled $-$ mean), held-out": -0.2615126050420169,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "$\\Delta\\rho$ (unpooled $-$ mean), held-out": -0.06290516206482588,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 6.0,
+      "$\\Delta\\rho$ (unpooled $-$ mean), held-out": -0.23740696278511408,
+      "_kind": "scatter",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 7
+}

@@ -1,0 +1,418 @@
+{
+  "commit": "d2aa6743",
+  "created": "2026-07-03T23:50:10Z",
+  "figsize": [
+    7.0,
+    4.0
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.8007242047786954,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.8082742023617899,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7696686413663186,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7857666426678038,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7747590795887134,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7527248927741548,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7632170113219396,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7520880193913089,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.735633682444895,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6795446248116173,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6947701977559559,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6847965551891362,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7046479860601913,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6952643245622385,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.650188014242395,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6585652582027951,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6376589528351353,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6125546476616661,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6087155366209468,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.5596979875801849,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.5201494831853859,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.4568927753812231,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.3871441312649424,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.28806707014296296,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.2617336206125349,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.24755995785080964,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.23587658210018458,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.1319696216191374,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7102999240385677,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.8107660492897124,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7784789318173106,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7903907228019185,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7705711921561562,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7727904670807445,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7936598170716301,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7758210757738656,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.7458549574969668,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6977360638058223,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6918931625129805,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6848921832761432,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6984346232026688,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6974184533257628,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.668522293276949,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6763862202049906,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6458313396818627,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6236995938570262,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.6302900499001138,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.588710929794366,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.5395247278572205,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.48877663294019624,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.42515806977665294,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.3535978467198435,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.3206308594622336,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.2985058772999567,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.26256513762582645,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": 0.14666591875963675,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": -0.2021498096998452,
+      "series": "selection-symmetric null (97.5th pct)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "held-out skill-over-mean R\u00b2 (higher = better)": -0.2021498096998452,
+      "series": "selection-symmetric null (97.5th pct)",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 58
+}

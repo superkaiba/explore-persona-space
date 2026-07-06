@@ -4,8 +4,9 @@ Replaces the hand-rolled sequential async judge pattern with Anthropic's
 native batch endpoint (50% cost discount, no rate limit management needed).
 
 Cache pattern inspired by safety-tooling's cache_manager — simple file-based
-JSONL keyed by hash of (question, completion), avoiding redundant API calls
-on experiment resume.
+JSON keyed by hash of (rubric/judge identity, question, completion), avoiding
+redundant API calls on experiment resume without ever serving one rubric's
+judgment for another (llm-judging.md rule 22, #810/#1018).
 
 Usage:
     from explore_persona_space.eval.batch_judge import judge_completions_batch
@@ -18,6 +19,7 @@ Usage:
 """
 
 import datetime as _dt
+import functools
 import hashlib
 import json
 import logging
@@ -32,7 +34,9 @@ from explore_persona_space.eval.alignment import JUDGE_SYSTEM_PROMPT
 from explore_persona_space.eval.utils import parse_judge_json
 from explore_persona_space.llm.anthropic_client import (
     BatchDeadlineExceeded,
+    batch_stuck_threshold_hours,
     deadline_from_expires_at,
+    retrieve_with_404_tolerance,
 )
 
 if TYPE_CHECKING:
@@ -89,13 +93,56 @@ def make_custom_id(item_id: str) -> str:
 
 # ── Judge cache ──────────────────────────────────────────────────────────────
 
+# Rubric-identity cache keying (llm-judging.md rule 22, #810/#1018). The literal
+# version tag enters every key preimage, so this — and any FUTURE key-schema
+# change that bumps it — is an explicit, automatic bust of all pre-change
+# entries: a cold miss re-judges (safe direction); a wrong read is impossible.
+_JUDGE_CACHE_KEY_VERSION = "EPM_JUDGE_CACHE_KEY_V2"
+_RUBRIC_SENTINEL_Q = "<RUBRIC_FINGERPRINT_SENTINEL_QUESTION>"
+_RUBRIC_SENTINEL_C = "<RUBRIC_FINGERPRINT_SENTINEL_COMPLETION>"
+
+
+def rubric_fingerprint(
+    judge_model: str,
+    judge_system_prompt: str,
+    format_user_msg: Callable[[str, str], str] | None = None,
+) -> str:
+    """Stable rubric/judge identity hash for JudgeCache keys (rule 22, #810).
+
+    Renders ``format_user_msg`` on fixed sentinel strings so a rubric that
+    lives in the USER-message template (e.g. ``graded_judge`` fills the whole
+    0-100 rubric into the user msg under a generic system prompt) enters the
+    key, not only a system-prompt rubric. ``None`` means "no user template
+    contributes rubric content" (caller builds content-only user messages).
+
+    This fingerprints rubric/judge IDENTITY, not the full request: sampling
+    knobs like ``max_tokens``/temperature are deliberately excluded (they carry
+    no rubric semantics; contrast the api_dispatch adapter, which deliberately
+    over-keys on the full built request). A formatter that selects its rubric
+    by INPUT-DEPENDENT branching (different rubric text per question) is
+    outside the fingerprint's discrimination — no in-repo formatter does that;
+    such a caller must fold the branch into the system prompt or use disjoint
+    cache dirs.
+    """
+    rendered = (
+        format_user_msg(_RUBRIC_SENTINEL_Q, _RUBRIC_SENTINEL_C)
+        if format_user_msg is not None
+        else "<no-user-template>"
+    )
+    content = f"{judge_model}\n===\n{judge_system_prompt}\n===\n{rendered}"
+    return hashlib.sha256(content.encode()).hexdigest()[:16]
+
 
 class JudgeCache:
     """Simple file-based cache for judge results, keyed by prompt content hash.
 
     Each cached result is stored as a single JSON file named by the hash of
-    (question + completion). Cache hits avoid redundant Batch API calls on
-    experiment resume.
+    (rubric/judge identity, question, completion) — the ``rubric_key`` is a
+    REQUIRED keyword argument on every read/write so a cached judgment can
+    never be served across rubrics (llm-judging.md rule 22; incident #810).
+    Cache hits avoid redundant Batch API calls on experiment resume. Filenames
+    keep the ``{16-hex}.json`` shape (load-bearing for
+    ``issue906_phase1_pilot._is_rederivable_cache`` + the disk janitors).
     """
 
     def __init__(self, cache_dir: Path):
@@ -105,13 +152,21 @@ class JudgeCache:
         self._misses = 0
 
     @staticmethod
-    def _hash_key(question: str, completion: str) -> str:
-        content = f"{question}\n---\n{completion}"
+    def _hash_key(question: str, completion: str, *, rubric_key: str) -> str:
+        """Hash (key-schema version, rubric identity, question, completion) to 16 hex chars."""
+        if not isinstance(rubric_key, str) or not rubric_key:
+            raise ValueError(
+                f"rubric_key must be a non-empty str (got {rubric_key!r}); derive it via "
+                "rubric_fingerprint(judge_model, judge_system_prompt, format_user_msg)."
+            )
+        content = (
+            f"{_JUDGE_CACHE_KEY_VERSION}\n---\n{rubric_key}\n---\n{question}\n---\n{completion}"
+        )
         return hashlib.sha256(content.encode()).hexdigest()[:16]
 
-    def get(self, question: str, completion: str) -> dict | None:
-        """Look up a cached judge result. Returns None on miss."""
-        key = self._hash_key(question, completion)
+    def get(self, question: str, completion: str, *, rubric_key: str) -> dict | None:
+        """Look up a cached judge result under ``rubric_key``. Returns None on miss."""
+        key = self._hash_key(question, completion, rubric_key=rubric_key)
         path = self.cache_dir / f"{key}.json"
         if path.exists():
             self._hits += 1
@@ -120,9 +175,9 @@ class JudgeCache:
         self._misses += 1
         return None
 
-    def put(self, question: str, completion: str, result: dict) -> None:
-        """Store a judge result in the cache."""
-        key = self._hash_key(question, completion)
+    def put(self, question: str, completion: str, result: dict, *, rubric_key: str) -> None:
+        """Store a judge result in the cache under ``rubric_key``."""
+        key = self._hash_key(question, completion, rubric_key=rubric_key)
         path = self.cache_dir / f"{key}.json"
         with open(path, "w") as f:
             json.dump(result, f)
@@ -249,8 +304,8 @@ def _collect_legacy_results(
                 (b.text for b in result.result.message.content if b.type == "text"),
                 "",
             )
-            parsed = parse_judge_json(text, None)
-            results[custom_id] = parsed or _legacy_error_dict("parse_error")
+            parsed = parse_judge_json(text)
+            results[custom_id] = parsed if parsed is not None else _legacy_error_dict("parse_error")
         elif rtype == "errored":
             # SDK nesting is result.result.error.error.type (double .error);
             # getattr-guarded so a missing-error shape fails open (server label).
@@ -297,6 +352,21 @@ def _submit_and_poll_batch(
     - **Two-level terminal split**: an ``invalid_request_error`` is quarantined
       (surfaced as an error dict, never retried here); other states surface as
       error dicts too.
+    - **404 tolerance (#995 + #1035)**: a ``NotFoundError`` on any retrieve —
+      the loop retrieve, the deadline-time final retrieve, and the cancel-race
+      probe — is retried with bounded backoff: the create-grace schedule within
+      ``BATCH_CREATE_404_GRACE_S`` of the chunk's own create (read-after-write,
+      the #742 shape), the ``BATCH_MIDPOLL_404_BACKOFF_S`` mid-poll schedule
+      anywhere else. Past both budgets it re-raises — never masked.
+    - **Stuck-batch cancel (#1019)**: a chunk still ``in_progress`` at
+      ``request_counts.succeeded == 0`` for >= ``EPS_BATCH_STUCK_HOURS``
+      (default 4h; ``<=0`` disables) since its own create is CANCELED (once
+      per chunk; a re-retrieved ``canceling``/``ended`` counts as accepted
+      cancellation; a chunk ALREADY ``canceling`` — an out-of-band Console
+      cancel — is never re-canceled) and the loop keeps polling to ``ended``;
+      canceled rows surface as error dicts — this path has no retry
+      machinery, so a 4h-bounded completion with flagged error rows replaces
+      the prior up-to-24h park behind a wedged batch (#810).
 
     ``now_fn``/``sleep_fn`` are injectable for tests (default wall-clock +
     ``time.sleep``). Polling keeps the 30s->1.5x->120s backoff capped by the
@@ -310,6 +380,7 @@ def _submit_and_poll_batch(
     for ci, chunk in enumerate(chunks):
         batch = client.messages.batches.create(requests=chunk)
         batch_id = batch.id
+        created_at = now_fn()  # #995: anchor for the create-grace 404 retry below
         logger.info(
             "Batch %s created (sub-batch %d/%d, %d requests)",
             batch_id,
@@ -319,8 +390,21 @@ def _submit_and_poll_batch(
         )
         deadline: _dt.datetime | None = None
         current_interval = poll_interval
+        stuck_canceled = False  # #1019: cancel a wedged chunk at most once
         while True:
-            batch = client.messages.batches.retrieve(batch_id)
+            # #995 + #1035: a 404 within BATCH_CREATE_404_GRACE_S of this
+            # chunk's own create is retried on the grace schedule
+            # (read-after-write; the #742 shape); any other 404 gets the
+            # bounded mid-poll schedule. functools.partial, NOT a lambda:
+            # batch_id is reassigned per chunk iteration and ruff's B023 flags
+            # a loop-closure lambda.
+            batch = retrieve_with_404_tolerance(
+                functools.partial(client.messages.batches.retrieve, batch_id),
+                created_at=created_at,
+                batch_id=batch_id,
+                now_fn=now_fn,
+                sleep_fn=sleep_fn,
+            )
             counts = getattr(batch, "request_counts", None)
             if counts is not None:
                 logger.info(
@@ -341,11 +425,72 @@ def _submit_and_poll_batch(
                     else now_fn() + _dt.timedelta(hours=25)  # absent expires_at -> still bounded
                 )
             if now_fn() > deadline:
-                final = client.messages.batches.retrieve(batch_id)
+                # #1035: the final retrieve is the LAST chance to harvest, so a
+                # transient 404 here gets the bounded mid-poll tolerance too
+                # (the #995 "genuinely anomalous -> unguarded" stance reversed);
+                # a genuinely-gone batch still re-raises NotFoundError <=~3 min
+                # later, and the BatchDeadlineExceeded semantics are untouched.
+                final = retrieve_with_404_tolerance(
+                    functools.partial(client.messages.batches.retrieve, batch_id),
+                    created_at=created_at,
+                    batch_id=batch_id,
+                    now_fn=now_fn,
+                    sleep_fn=sleep_fn,
+                )
                 if final.processing_status == "ended":
                     batch = final
                     break
                 raise BatchDeadlineExceeded(batch_id, deadline)
+            # Stuck-batch escape (#1019, incident #810): zero succeeded past the
+            # threshold -> cancel ONCE (per-chunk local guard; this path has no
+            # state.json and no retry machinery, so no intent marker is needed)
+            # and keep polling — the API flips canceling -> ended and the
+            # collection below surfaces canceled rows as error dicts. Appended
+            # AFTER the ended-break and overdue checks (precedence load-bearing).
+            # ``created_at`` (captured right after batches.create) is the anchor.
+            # Gated on ``in_progress`` (#1019 round 2): a chunk already
+            # ``canceling`` (an out-of-band Console cancel) never gets a
+            # duplicate cancel from us — the loop just polls it to ``ended``.
+            if (
+                not stuck_canceled
+                and batch.processing_status == "in_progress"  # never re-cancel an o-o-b cancel
+                and (stuck_hours := batch_stuck_threshold_hours()) is not None
+                and counts is not None
+                and counts.succeeded == 0
+                and (now_fn() - created_at).total_seconds() / 3600.0 >= stuck_hours
+            ):
+                import anthropic as anthropic_mod
+
+                logger.warning(
+                    "STUCK BATCH (legacy path): %s at succeeded=0 past %.1fh — canceling; "
+                    "canceled rows surface as error dicts (no retry machinery on this "
+                    "path) (#810 escape)",
+                    batch_id,
+                    stuck_hours,
+                )
+                try:
+                    client.messages.batches.cancel(batch_id)
+                except anthropic_mod.APIStatusError:
+                    # Race: the batch may already be canceling (out-of-band) or
+                    # ended. BOTH are accepted cancellation outcomes — the loop
+                    # harvests at ended either way. Anything else re-raises.
+                    # #1035: the confirm probe tolerates a transient 404 too
+                    # (same crash class as the poll retrieves).
+                    final = retrieve_with_404_tolerance(
+                        functools.partial(client.messages.batches.retrieve, batch_id),
+                        created_at=created_at,
+                        batch_id=batch_id,
+                        now_fn=now_fn,
+                        sleep_fn=sleep_fn,
+                    )
+                    if final.processing_status not in ("canceling", "ended"):
+                        raise
+                    logger.info(
+                        "Cancel of %s raced with state %s; accepted as canceled",
+                        batch_id,
+                        final.processing_status,
+                    )
+                stuck_canceled = True
             sleep_fn(current_interval)
             current_interval = min(current_interval * 1.5, max_poll_interval)
 
@@ -361,8 +506,13 @@ def _enumerate_and_check_cache(
     completions: dict[str, dict[str, list[str]]],
     cache: JudgeCache | None,
     format_user_msg: Callable[[str, str], str],
+    *,
+    rubric_key: str,
 ) -> tuple[int, dict[str, dict], list[tuple[str, str, str, str]]]:
     """Enumerate all (persona, question, completion) tuples, checking cache.
+
+    ``rubric_key`` (required) is the rubric/judge identity hash every cache
+    lookup is keyed under — see :func:`rubric_fingerprint` (rule 22, #810).
 
     Returns:
         (total_count, cached_scores, uncached_items)
@@ -379,7 +529,7 @@ def _enumerate_and_check_cache(
                 total += 1
 
                 if cache:
-                    cached = cache.get(question, comp)
+                    cached = cache.get(question, comp, rubric_key=rubric_key)
                     if cached is not None:
                         cached_scores[custom_id] = cached
                         continue
@@ -437,7 +587,7 @@ def _aggregate_persona_scores(
         # verbatim, so a scalar-shaped judge rubric (persona-vectors {"score": N}
         # OR a bare integer scale point per llm-judging.md rule 6) can parse to a
         # bare int, which has no .get(). Such entries cannot be Betley-aggregated
-        # here — the scalar-rubric caller (e.g. issue778_lib.judge_graded) does its
+        # here — the scalar-rubric caller (e.g. eval.graded_judge.judge_graded) does its
         # OWN reduction from all_scores via save_raw and ignores this return — so
         # they are treated as invalid at THIS aggregator. Betley callers always
         # emit dicts, so behavior is unchanged for them. Fixes #778 r2.
@@ -498,7 +648,8 @@ def judge_completions_batch(
     """Judge all completions via the batch-aware dispatcher with optional caching.
 
     Workflow:
-    1. Check cache for each (question, completion) pair
+    1. Check cache for each (question, completion) pair under the derived
+       rubric/judge identity key (rule 22 — see :func:`rubric_fingerprint`)
     2. Dispatch uncached pairs through judge_dispatch (sync below the
        tier-scaled threshold, Message Batches at/above it, in <=8k sub-batches)
     3. Parse results, update cache
@@ -536,10 +687,14 @@ def judge_completions_batch(
         format_user_msg = _default_format_user_msg
 
     cache = JudgeCache(cache_dir) if cache_dir else None
+    # Rubric/judge identity for every cache read/write in this call (rule 22,
+    # #810): derived from the resolved judge model + system prompt + user-msg
+    # template, so callers need no new parameter.
+    rubric_key = rubric_fingerprint(judge_model, judge_system_prompt, format_user_msg)
 
     # Phase 1: Check cache, build list of uncached items
     total, cached_scores, uncached_items = _enumerate_and_check_cache(
-        completions, cache, format_user_msg
+        completions, cache, format_user_msg, rubric_key=rubric_key
     )
     n_cached = len(cached_scores)
     n_to_submit = len(uncached_items)
@@ -586,7 +741,7 @@ def judge_completions_batch(
         if cache:
             for custom_id, question, comp, _user_msg in uncached_items:
                 if custom_id in batch_scores:
-                    cache.put(question, comp, batch_scores[custom_id])
+                    cache.put(question, comp, batch_scores[custom_id], rubric_key=rubric_key)
 
     if cache:
         logger.info("Cache stats: %s", cache.stats)

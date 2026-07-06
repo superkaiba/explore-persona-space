@@ -1,0 +1,237 @@
+{
+  "commit": "93f66562db",
+  "created": "2026-07-03T15:47:01Z",
+  "figsize": [
+    8.4,
+    5.2
+  ],
+  "points": [
+    {
+      "x": -0.19,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.32910304557046777,
+      "error": 0.01736427944961544,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.81,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.2749900169925391,
+      "error": 0.011899619147920093,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.81,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.31838502988728246,
+      "error": 0.005398798956240014,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.81,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.08377257598397525,
+      "error": 0.006596349301078455,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.19,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.22764912358058842,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.19,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.2265000916463632,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.19,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.21745205163349102,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.19,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.18760725556817992,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": -0.266,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.3400960074676105,
+      "series": "per-fold held-out R\u00b2 (5 folds)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.228,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.32856518717664285,
+      "series": "per-fold held-out R\u00b2 (5 folds)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.19,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.308047308204472,
+      "series": "per-fold held-out R\u00b2 (5 folds)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.15200000000000002,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.3129425272969334,
+      "series": "per-fold held-out R\u00b2 (5 folds)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": -0.114,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.3552188143346111,
+      "series": "per-fold held-out R\u00b2 (5 folds)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.7340000000000001,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.2658941788904008,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.772,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.2707142052403847,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.81,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.293800025929989,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.8480000000000001,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.26117109142311545,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.886,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.28288031326479,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.734,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.31784064656607325,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.772,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.3228746861087288,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.81,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.323816037762098,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.848,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.3187562812392539,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8860000000000001,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.30860503390875615,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.734,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.08645438757390989,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.7720000000000002,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.07524242006904136,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.81,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.0893974296526081,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.848,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.09115853786053807,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.886,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.07660235649334812,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.19,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.31173876612085233,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 0.81,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.263090397844619,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 1.81,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.31298623093104244,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 2.81,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.0771762266828968,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": -0.19,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.3464673250200832,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.81,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.2868896361404592,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.81,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.32378382884352247,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.81,
+      "MLP probe held-out R\u00b2 (best frozen layer)": 0.0903689252850537,
+      "_kind": "line",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 36
+}

@@ -1,0 +1,390 @@
+{
+  "commit": "b2e61215f8",
+  "created": "2026-07-02T19:55:45Z",
+  "figsize": [
+    7.0,
+    4.5
+  ],
+  "points": [
+    {
+      "Layer transition": 0.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.98654813389335,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 1.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9619978240553582,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 2.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9741618316150454,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 3.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9516853643547222,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 4.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9681292123585302,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 5.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9737936763699121,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 6.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9597367975204806,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 7.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9426436142078932,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 8.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9588792055760605,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 9.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9671061748235967,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 10.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9632038640156217,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 11.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9592725023758684,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 12.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9327446437995675,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 13.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9239536361550639,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 14.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9361071846754923,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 15.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.896856894331946,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 16.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9004617206913567,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 17.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.8735151939381314,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 18.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.843663770818347,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 19.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.8480417622261478,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 20.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.8108994476010126,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 21.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.8274240680492375,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 22.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.8221256617044187,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 23.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.8116359192364916,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 24.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.8116697578649652,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 25.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.8080455029454592,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 26.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9555648753932313,
+      "series": "last-prompt-token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition": 0.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9868930552957887,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 1.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9498045272684976,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 2.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9998865949712155,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 3.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9993167448624631,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 4.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.978383498665349,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 5.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.967703111600821,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 6.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9040432406904135,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 7.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9352131228659264,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 8.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9507160841347865,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 9.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9427763691873206,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 10.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.954695589752726,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 11.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9296876829582301,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 12.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9334558126270414,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 13.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9480415585220907,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 14.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9489439309794925,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 15.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9400170731731186,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 16.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9095059488579976,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 17.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9502606119139018,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 18.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9299078953004916,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 19.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9178750522071678,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 20.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9007294271474802,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 21.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9041190721906829,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 22.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9333210569304583,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 23.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9452983355597523,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 24.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9219719960430985,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 25.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9869923509646832,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition": 26.0,
+      "Ridge \u0394-R\u00b2 (identity-relative)": 0.9884264295479815,
+      "series": "mean-prompt-token",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 54
+}

@@ -55,6 +55,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     CONCERN_SEVERITIES,
     KINDS,
     STATUSES,
+    WORKFLOW_VERSIONS,
     NewTaskRequest,
     ReconcileReport,
     add_tag,
@@ -301,6 +302,7 @@ def cmd_create(args: argparse.Namespace) -> None:
         status=args.status,
         goal=goal_value,
         origin_prompt=(args.origin_prompt or "").strip() or None,
+        workflow=getattr(args, "workflow", None),
     )
     new_id = create_task(req)
     # Track: explicit --track wins; otherwise derive a human track from the
@@ -571,10 +573,15 @@ def cmd_post_event(args: argparse.Namespace) -> None:
         by=args.by,
         note=note,
     )
-    # The marker is appended + committed once post_event returns; the JSON
-    # echo below is cosmetic (see _safe_echo for the rc contract + incident
-    # #537). Pre-commit failures (oversize note, flock timeout, missing
-    # task) raise out of post_event above and stay fatal.
+    # The marker is appended once post_event returns; on the primary checkout
+    # the bookkeeping commit may be DEFERRED (#1030) — post_event then logs an
+    # ERROR to stderr + a forensic row in ~/.task-workflow/
+    # deferred-commits.jsonl and still returns, so rc stays 0: do NOT re-post
+    # on that warning (a re-post duplicates the marker). The JSON echo below
+    # is cosmetic (see _safe_echo for the rc contract + incident #537).
+    # Append failures (oversize note, flock timeout, missing task), routed-
+    # mode commit failures, and genuine bugs raise out of post_event above
+    # and stay fatal.
     _safe_echo(
         json.dumps(payload, indent=2),
         context=f"task.py post-marker: marker {args.marker}",
@@ -1196,6 +1203,15 @@ def main() -> None:
                 "section (see task #611) works too."
             ),
         )
+        p.add_argument(
+            "--workflow",
+            default=None,
+            choices=list(WORKFLOW_VERSIONS),
+            help=(
+                "workflow pipeline: v1 (default) or v2 (report-only); "
+                "resolved as this flag > env EPM_DEFAULT_WORKFLOW > v1."
+            ),
+        )
         # Sagan-compatibility: accept --runpod-account but ignore it.
         p.add_argument("--runpod-account", default=None, help="(ignored; Sagan compat)")
         p.set_defaults(func=cmd_create)
@@ -1680,8 +1696,11 @@ def main() -> None:
 
     args = parser.parse_args()
     # The canonical resolver (task_workflow.repo_root) raises a loud, distinct
-    # RuntimeError for the non-routable states it still refuses: detached HEAD,
-    # missing `tasks/`, bare/submodule layouts, or a feature-branch primary with
+    # RuntimeError for the non-routable states it still refuses: a genuinely
+    # detached HEAD (after the bounded live-rebase wait,
+    # `EPM_TASKPY_REBASE_WAIT_SECONDS` — #996; the wait-timeout refusal is
+    # still a RuntimeError, so this catch covers it too), missing `tasks/`,
+    # bare/submodule layouts, or a feature-branch primary with
     # no local `main` to route through. (The common "primary parked on a real
     # feature branch" case is auto-routed through a managed main-pinned worktree
     # and does NOT raise.) Catch RuntimeError at the top-level dispatch so EVERY

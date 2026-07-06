@@ -1,0 +1,20 @@
+{
+  "behavior": "sycophancy",
+  "substrate": "mix",
+  "layer": 14,
+  "n_cells": 50,
+  "delta_over_floor": 1.6345836234958342,
+  "delta_over_floor_sd": 1.6345836234958342,
+  "delta_med": 0.5191253522685413,
+  "floor_combined": 1.1034462120465194,
+  "support_distance": {
+    "mean": 28.35458480850446,
+    "p90": 34.87673418589494,
+    "n_large_shift": 5
+  },
+  "chain_rho": {
+    "n_with_E": 0
+  },
+  "n_with_E": 0,
+  "marker_two_read": false
+}

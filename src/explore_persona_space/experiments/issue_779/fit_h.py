@@ -98,6 +98,77 @@ def ridge_fit_predict(
     return preds[:, 0] if squeeze else preds
 
 
+def ridge_fit_predict_fast(
+    X_train: np.ndarray,
+    Y_train: np.ndarray,
+    X_eval: np.ndarray,
+    *,
+    lambdas: np.ndarray | None = None,
+    device: str = "cpu",
+) -> np.ndarray:
+    """Torch-eigh Gram-space ridge — fast APPROXIMATE twin of
+    :func:`ridge_fit_predict` (same standardize-X / center-Y / GCV-lambda-select /
+    un-center recipe). PARITY IS SIZE-DEPENDENT: the #779 Read-1 gate measured
+    ~8e-13 agreement at n_train=500, but a live #823 full-size slice
+    (2026-07-02, n_train~3998, H=3584) measured max rel diff ~1.7e-5 vs the SVD
+    path — the Gram squares the condition number, so precision degrades with n.
+    NOT a default-on substitute: callers MUST run a full-size slow-vs-fast
+    parity gate on their own inputs (e.g. run_823._ridge_equivalence_gate) and
+    ship it only when the gate passes their tolerance.
+
+    Ported VERBATIM from ``scripts/issue779_percontext_recon.py::_ridge_fit_predict_fast``
+    (the #779 fast path that cut 140 CV fits from ~5 h to ~28 min) into the shared
+    fitter module for the #823 phase-4 perf patch, with one addition: an optional
+    torch ``device`` for the eigh/matmuls (float64 throughout; predictions return
+    as CPU numpy). ``ridge_fit_predict`` runs a full ``numpy.linalg.svd`` of the
+    (N_tr, H) train matrix plus 13 full-size GCV matmuls per call; this computes
+    the DUAL ridge via ``torch.linalg.eigh`` of the (N_tr, N_tr) Gram and
+    evaluates GCV RSS in eigen-coefficient space (no full train-fit
+    reconstruction). Callers MUST engage a slow-vs-fast parity gate on first use
+    per input family (vectorize-many-cell-fits.md rule 5).
+    """
+    if lambdas is None:
+        lambdas = np.logspace(-2, 4, 13)
+    dev = torch.device(device)
+    Xtr = torch.as_tensor(np.asarray(X_train), dtype=torch.float64).to(dev)
+    Ytr = torch.as_tensor(np.asarray(Y_train), dtype=torch.float64).to(dev)
+    Xev = torch.as_tensor(np.asarray(X_eval), dtype=torch.float64).to(dev)
+    xmu = Xtr.mean(0)
+    xsd = Xtr.std(0) + 1e-9  # matches ridge_fit_predict's 1e-9 (numpy .std is population)
+    Xtr_n = (Xtr - xmu) / xsd
+    Xev_n = (Xev - xmu) / xsd
+    ymu = Ytr.mean(0)
+    Ytr_c = Ytr - ymu
+    ntr = Xtr.shape[0]
+
+    # Dual ridge: (G + lam I) alpha = Ytr_c, G = Xtr_n Xtr_n^T = V diag(w) V^T.
+    G = Xtr_n @ Xtr_n.T
+    w, V = torch.linalg.eigh(G)
+    w = torch.clamp(w, min=0.0)
+    VtY = V.T @ Ytr_c  # (ntr, H)
+    Kev = Xev_n @ Xtr_n.T  # (n_ev, ntr) cross-kernel
+    KevV = Kev @ V
+    sqVtY = (VtY**2).sum(1)  # per-eigencomponent target energy
+    tot = float((Ytr_c**2).sum())
+
+    # GCV: RSS(lam) = ||Y||^2 - sum_k (2 f_k - f_k^2) sqVtY_k with f = w/(w+lam),
+    # dof = sum_k f_k (hat-matrix trace); GCV = RSS / (ntr - dof)^2.
+    best_lam = float(lambdas[0])
+    best_gcv = float("inf")
+    for lam in lambdas:
+        filt = w / (w + lam)
+        rss = tot - float(((2 * filt - filt**2) * sqVtY).sum())
+        dof = float(filt.sum())
+        denom = (ntr - dof) ** 2
+        gcv = rss / denom if denom > 1e-12 else float("inf")
+        if gcv < best_gcv:
+            best_gcv = gcv
+            best_lam = float(lam)
+    filt = 1.0 / (w + best_lam)
+    pred = (KevV * filt) @ VtY + ymu
+    return pred.cpu().numpy()
+
+
 # ── MLP (batched multi-head, train->eval application) ─────────────────────────
 
 

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updated_at": "2026-06-02T23:23:10+00:00",
+  "updated_at": "2026-06-29T23:37:34+00:00",
   "pods": {
     "epm-issue-263": {
       "name": "epm-issue-263",
@@ -194,6 +194,50 @@
       "pod_id": "of5tizzbrypy2u",
       "issue": 467,
       "gpu_intent": "eval",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "manual_override": false,
+      "extra": {}
+    },
+    "pod-658": {
+      "name": "pod-658",
+      "pod_id": "d348xylchdd5ux",
+      "issue": 658,
+      "gpu_intent": "lora-7b",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "manual_override": false,
+      "extra": {}
+    },
+    "pod-734": {
+      "name": "pod-734",
+      "pod_id": "bi0geveulpuv6s",
+      "issue": 734,
+      "gpu_intent": "lora-7b",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "manual_override": false,
+      "extra": {}
+    },
+    "pod-722": {
+      "name": "pod-722",
+      "pod_id": "x2szbmp89nwkks",
+      "issue": 722,
+      "gpu_intent": "debug",
+      "ttl_days": 7,
+      "stopped_at": null,
+      "notes": "",
+      "manual_override": false,
+      "extra": {}
+    },
+    "pod-90658": {
+      "name": "pod-90658",
+      "pod_id": "jno10lt4p40wqi",
+      "issue": 90658,
+      "gpu_intent": "debug",
       "ttl_days": 7,
       "stopped_at": null,
       "notes": "",

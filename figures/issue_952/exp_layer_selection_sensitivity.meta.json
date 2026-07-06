@@ -1,0 +1,27 @@
+{
+  "commit": "d30b153ac3",
+  "created": "2026-07-04T16:00:47Z",
+  "figsize": [
+    6.0,
+    3.2
+  ],
+  "points": [
+    {
+      "Per-slot best validation layer": "17",
+      "Number of position slots": 1.0,
+      "_kind": "bar"
+    },
+    {
+      "Per-slot best validation layer": "20",
+      "Number of position slots": 40.0,
+      "_kind": "bar"
+    },
+    {
+      "Per-slot best validation layer": "26",
+      "Number of position slots": 1.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 3
+}

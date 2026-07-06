@@ -1,0 +1,552 @@
+{
+  "commit": "dec33d66ff",
+  "created": "2026-07-04T02:30:22Z",
+  "figsize": [
+    12.5,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Held-out R\u00b2 (ridge, layer 19)": -0.9860948479522238,
+      "error": 0.03322730379623129,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Held-out R\u00b2 (ridge, layer 19)": -1.117326440052945,
+      "error": 0.03944683328357845,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "Held-out R\u00b2 (ridge, layer 19)": -1.0466586088093872,
+      "error": 0.053549203072026486,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "Held-out R\u00b2 (ridge, layer 19)": -1.0339038306339665,
+      "error": 0.040187611317998695,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Instruct\nchat",
+      "Held-out R\u00b2 (ridge, layer 19)": -1.4272499394227478,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Instruct\nnaturalistic",
+      "Held-out R\u00b2 (ridge, layer 19)": -1.6051478189019184,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Pretrained\nchat",
+      "Held-out R\u00b2 (ridge, layer 19)": -1.4893560397043863,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Pretrained\nnaturalistic",
+      "Held-out R\u00b2 (ridge, layer 19)": -1.649589414624506,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Held-out R\u00b2 (ridge, layer 19)": -0.7689149983504386,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Held-out R\u00b2 (ridge, layer 19)": -0.6544569649350971,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "Held-out R\u00b2 (ridge, layer 19)": -1.8398703921023376,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "Held-out R\u00b2 (ridge, layer 19)": -0.6155126988680195,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.26,
+      "Held-out R\u00b2 (ridge, layer 19)": -1.0179208739936567,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.74,
+      "Held-out R\u00b2 (ridge, layer 19)": -1.1531304224746943,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.7399999999999998,
+      "Held-out R\u00b2 (ridge, layer 19)": -1.1005189886196267,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 2.74,
+      "Held-out R\u00b2 (ridge, layer 19)": -1.0729656262064051,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": -0.26,
+      "Held-out R\u00b2 (ridge, layer 19)": -0.9514662664011941,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.74,
+      "Held-out R\u00b2 (ridge, layer 19)": -1.0742367559075374,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.7399999999999998,
+      "Held-out R\u00b2 (ridge, layer 19)": -0.9934205824755737,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.74,
+      "Held-out R\u00b2 (ridge, layer 19)": -0.9925904035704077,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": -0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.1822622090035696,
+      "error": 0.01243023218355202,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 0.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.17259293717175583,
+      "error": 0.012984953653989467,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 1.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.16619236161908102,
+      "error": 0.012651218219285831,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.18647580307683498,
+      "error": 0.013399068538815978,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "Instruct\nchat",
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.22764912358058842,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Instruct\nnaturalistic",
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.2265000916463632,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Pretrained\nchat",
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.18760725556817992,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Pretrained\nnaturalistic",
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.21745205163349102,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.32910304557046777,
+      "error": 0.01736427944961544,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 1.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.2749900169925391,
+      "error": 0.011899619147920093,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 2.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.08377257598397525,
+      "error": 0.006596349301078455,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.31838502988728246,
+      "error": 0.005398798956240014,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": -0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.17570863355685595,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.16181510598425286,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.18572554440382438,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.19097141146426266,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.19721808916990702,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.3400960074676105,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.32856518717664285,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.308047308204472,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.3129425272969334,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.3552188143346111,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.16876624673519902,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.14989234492653358,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.17813517152211245,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.17775876735345852,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 0.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.18858319504513432,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.2658941788904008,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.2707142052403847,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.293800025929989,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.26117109142311545,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.28288031326479,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 1.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.16247420175846616,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.14761586311320563,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.16820396306638685,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.16519998298053096,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 1.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.18708145205971338,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 2.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.08645438757390989,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.07524242006904136,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.0893974296526081,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.09115853786053807,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.07660235649334812,
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 2.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.18519351585089527,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.16379022411276611,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.18723405870196863,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.19060426150026444,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.2055487244072669,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 3.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.31784064656607325,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.3228746861087288,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.323816037762098,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.3187562812392539,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 3.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.30860503390875615,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": -0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.16983197682001758,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.15960798351776637,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.7399999999999998,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.1535411433997952,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.173076734538019,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": -0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.19469244118712162,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.1855778908257453,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.7399999999999998,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.17884357983836685,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.74,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.19987487161565096,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.31173876612085233,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.2599999999999998,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.263090397844619,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 2.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.0771762266828968,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 3.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.31298623093104244,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 0.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.3464673250200832,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 1.2599999999999998,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.2868896361404592,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 2.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.0903689252850537,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 3.26,
+      "Held-out R\u00b2 (MLP, best frozen layer)": 0.32378382884352247,
+      "_kind": "line",
+      "_group": 19
+    }
+  ],
+  "n_series": 20,
+  "total_points": 88
+}

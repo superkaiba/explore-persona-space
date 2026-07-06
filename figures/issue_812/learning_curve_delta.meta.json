@@ -1,0 +1,355 @@
+{
+  "commit": "6d0bc450bf",
+  "created": "2026-07-03T04:17:24Z",
+  "figsize": [
+    6.5,
+    4.2
+  ],
+  "points": [
+    {
+      "subsampled number of contexts": 10.0,
+      "rho gap: unpooled minus mean pool": -0.4896969696969696,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "subsampled number of contexts": 15.0,
+      "rho gap: unpooled minus mean pool": -0.35624999999999996,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "subsampled number of contexts": 20.0,
+      "rho gap: unpooled minus mean pool": -0.3678195488721805,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "subsampled number of contexts": 25.0,
+      "rho gap: unpooled minus mean pool": -0.1991538461538461,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "subsampled number of contexts": 30.0,
+      "rho gap: unpooled minus mean pool": -0.26956618464961074,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "subsampled number of contexts": 40.0,
+      "rho gap: unpooled minus mean pool": -0.18954033771106943,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "subsampled number of contexts": 50.0,
+      "rho gap: unpooled minus mean pool": -0.14837935174069622,
+      "series": "sycophancy",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "subsampled number of contexts": 10.0,
+      "rho gap: unpooled minus mean pool": -0.31515151515151507,
+      "series": "refusal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "subsampled number of contexts": 15.0,
+      "rho gap: unpooled minus mean pool": -0.2101785714285714,
+      "series": "refusal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "subsampled number of contexts": 20.0,
+      "rho gap: unpooled minus mean pool": -0.20766917293233084,
+      "series": "refusal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "subsampled number of contexts": 25.0,
+      "rho gap: unpooled minus mean pool": -0.10407692307692307,
+      "series": "refusal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "subsampled number of contexts": 30.0,
+      "rho gap: unpooled minus mean pool": -0.2160400444938821,
+      "series": "refusal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "subsampled number of contexts": 40.0,
+      "rho gap: unpooled minus mean pool": -0.1828893058161351,
+      "series": "refusal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "subsampled number of contexts": 50.0,
+      "rho gap: unpooled minus mean pool": -0.2610324129651861,
+      "series": "refusal",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "subsampled number of contexts": 10.0,
+      "rho gap: unpooled minus mean pool": -0.2806060606060606,
+      "series": "harmful compliance",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "subsampled number of contexts": 15.0,
+      "rho gap: unpooled minus mean pool": -0.19267857142857134,
+      "series": "harmful compliance",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "subsampled number of contexts": 20.0,
+      "rho gap: unpooled minus mean pool": -0.176390977443609,
+      "series": "harmful compliance",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "subsampled number of contexts": 25.0,
+      "rho gap: unpooled minus mean pool": -0.14665384615384613,
+      "series": "harmful compliance",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "subsampled number of contexts": 30.0,
+      "rho gap: unpooled minus mean pool": -0.27119021134593996,
+      "series": "harmful compliance",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "subsampled number of contexts": 40.0,
+      "rho gap: unpooled minus mean pool": -0.2203564727954972,
+      "series": "harmful compliance",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "subsampled number of contexts": 50.0,
+      "rho gap: unpooled minus mean pool": -0.20955582232893163,
+      "series": "harmful compliance",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "subsampled number of contexts": 10.0,
+      "rho gap: unpooled minus mean pool": -0.22909090909090907,
+      "series": "fact expression",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "subsampled number of contexts": 15.0,
+      "rho gap: unpooled minus mean pool": -0.26978969762947946,
+      "series": "fact expression",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "subsampled number of contexts": 20.0,
+      "rho gap: unpooled minus mean pool": -0.18287037888165641,
+      "series": "fact expression",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "subsampled number of contexts": 25.0,
+      "rho gap: unpooled minus mean pool": -0.21839873113964398,
+      "series": "fact expression",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "subsampled number of contexts": 30.0,
+      "rho gap: unpooled minus mean pool": -0.18018873905591523,
+      "series": "fact expression",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "subsampled number of contexts": 40.0,
+      "rho gap: unpooled minus mean pool": -0.2047076182441887,
+      "series": "fact expression",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "subsampled number of contexts": 50.0,
+      "rho gap: unpooled minus mean pool": -0.3084421824532237,
+      "series": "fact expression",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "subsampled number of contexts": 10.0,
+      "rho gap: unpooled minus mean pool": -0.09151515151515155,
+      "series": "format / style",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "subsampled number of contexts": 15.0,
+      "rho gap: unpooled minus mean pool": -0.2894642857142856,
+      "series": "format / style",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "subsampled number of contexts": 20.0,
+      "rho gap: unpooled minus mean pool": -0.3809774436090225,
+      "series": "format / style",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "subsampled number of contexts": 25.0,
+      "rho gap: unpooled minus mean pool": -0.2531153846153846,
+      "series": "format / style",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "subsampled number of contexts": 30.0,
+      "rho gap: unpooled minus mean pool": -0.3541490545050055,
+      "series": "format / style",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "subsampled number of contexts": 40.0,
+      "rho gap: unpooled minus mean pool": -0.3600469043151971,
+      "series": "format / style",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "subsampled number of contexts": 50.0,
+      "rho gap: unpooled minus mean pool": -0.26151260504201695,
+      "series": "format / style",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "subsampled number of contexts": 10.0,
+      "rho gap: unpooled minus mean pool": -0.4254545454545454,
+      "series": "self-report",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subsampled number of contexts": 15.0,
+      "rho gap: unpooled minus mean pool": -0.2632142857142857,
+      "series": "self-report",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subsampled number of contexts": 20.0,
+      "rho gap: unpooled minus mean pool": -0.27706766917293224,
+      "series": "self-report",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subsampled number of contexts": 25.0,
+      "rho gap: unpooled minus mean pool": -0.24353846153846156,
+      "series": "self-report",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subsampled number of contexts": 30.0,
+      "rho gap: unpooled minus mean pool": -0.33285873192436044,
+      "series": "self-report",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subsampled number of contexts": 40.0,
+      "rho gap: unpooled minus mean pool": -0.34002814258911823,
+      "series": "self-report",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subsampled number of contexts": 50.0,
+      "rho gap: unpooled minus mean pool": -0.06290516206482585,
+      "series": "self-report",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "subsampled number of contexts": 10.0,
+      "rho gap: unpooled minus mean pool": -0.3987878787878788,
+      "series": "persona drift",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "subsampled number of contexts": 15.0,
+      "rho gap: unpooled minus mean pool": -0.4262499999999999,
+      "series": "persona drift",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "subsampled number of contexts": 20.0,
+      "rho gap: unpooled minus mean pool": -0.17240601503759398,
+      "series": "persona drift",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "subsampled number of contexts": 25.0,
+      "rho gap: unpooled minus mean pool": -0.20576923076923076,
+      "series": "persona drift",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "subsampled number of contexts": 30.0,
+      "rho gap: unpooled minus mean pool": -0.34825361512791997,
+      "series": "persona drift",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "subsampled number of contexts": 40.0,
+      "rho gap: unpooled minus mean pool": -0.33138836772983116,
+      "series": "persona drift",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "subsampled number of contexts": 50.0,
+      "rho gap: unpooled minus mean pool": -0.23740696278511403,
+      "series": "persona drift",
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 49
+}

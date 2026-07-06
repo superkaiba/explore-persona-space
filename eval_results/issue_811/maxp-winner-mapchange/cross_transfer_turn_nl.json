@@ -1,0 +1,73 @@
+{
+  "meta": {
+    "issue": 811,
+    "git_commit": "f3180b3628b9056ec758996761af756cb302965d",
+    "generated_at": "2026-07-03T11:28:58Z",
+    "summary": "turn_nl"
+  },
+  "cells": {
+    "em/L14": {
+      "behavior": "em",
+      "layer": 14,
+      "m0_to_vplus_cos": 0.13755582768213057,
+      "mplus_to_vplus_cos": 0.13832910064342344,
+      "mplus_to_v0_cos": -0.42493181433184213
+    },
+    "em/L21": {
+      "behavior": "em",
+      "layer": 21,
+      "m0_to_vplus_cos": 0.16015473486596069,
+      "mplus_to_vplus_cos": 0.16052143019986312,
+      "mplus_to_v0_cos": -0.3645027760393669
+    },
+    "em/L7": {
+      "behavior": "em",
+      "layer": 7,
+      "m0_to_vplus_cos": 0.18850394478530624,
+      "mplus_to_vplus_cos": 0.1889250224582632,
+      "mplus_to_v0_cos": -0.37108627015878454
+    },
+    "fact/L14": {
+      "behavior": "fact",
+      "layer": 14,
+      "m0_to_vplus_cos": 0.041168857288323236,
+      "mplus_to_vplus_cos": 0.03917488296050838,
+      "mplus_to_v0_cos": -0.4108612114409498
+    },
+    "fact/L21": {
+      "behavior": "fact",
+      "layer": 21,
+      "m0_to_vplus_cos": 0.10250675759752505,
+      "mplus_to_vplus_cos": 0.10649641859999637,
+      "mplus_to_v0_cos": -0.3725710561934783
+    },
+    "fact/L7": {
+      "behavior": "fact",
+      "layer": 7,
+      "m0_to_vplus_cos": 0.11390616975451409,
+      "mplus_to_vplus_cos": 0.11290598522538471,
+      "mplus_to_v0_cos": -0.37494755341010905
+    },
+    "sycophancy/L14": {
+      "behavior": "sycophancy",
+      "layer": 14,
+      "m0_to_vplus_cos": 0.04805110515733434,
+      "mplus_to_vplus_cos": 0.04798779940539476,
+      "mplus_to_v0_cos": -0.4833686455947926
+    },
+    "sycophancy/L21": {
+      "behavior": "sycophancy",
+      "layer": 21,
+      "m0_to_vplus_cos": 0.032306529557076455,
+      "mplus_to_vplus_cos": 0.03296804132335221,
+      "mplus_to_v0_cos": -0.40725076275538363
+    },
+    "sycophancy/L7": {
+      "behavior": "sycophancy",
+      "layer": 7,
+      "m0_to_vplus_cos": 0.016307829443147286,
+      "mplus_to_vplus_cos": 0.016913174629840766,
+      "mplus_to_v0_cos": -0.4266203735665421
+    }
+  }
+}

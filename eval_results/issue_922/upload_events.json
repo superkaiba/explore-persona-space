@@ -1,0 +1,42 @@
+{
+  "events": {
+    "maps": {
+      "repo": "superkaiba1/explore-persona-space-data",
+      "n_files": 1,
+      "path_in_repo": "issue922_nexttoken/maps"
+    },
+    "maps_conditioned": {
+      "repo": "superkaiba1/explore-persona-space-data",
+      "n_files": 7,
+      "path_in_repo": "issue922_nexttoken/maps_conditioned"
+    },
+    "store_test": {
+      "repo": "superkaiba1/explore-persona-space-data",
+      "n_files": 1,
+      "path_in_repo": "issue922_nexttoken/store_test"
+    },
+    "store_eval": {
+      "repo": "superkaiba1/explore-persona-space-data",
+      "n_files": 2,
+      "path_in_repo": "issue922_nexttoken/store_eval"
+    },
+    "eval_results": {
+      "repo": "superkaiba1/explore-persona-space-data",
+      "n_files": 8,
+      "path_in_repo": "issue922_nexttoken/eval_results"
+    },
+    "figures": {
+      "repo": "superkaiba1/explore-persona-space-data",
+      "n_files": 39,
+      "path_in_repo": "issue922_nexttoken/figures"
+    }
+  },
+  "metadata": {
+    "git_commit": "068f46c8a8d9de9b4bf991ce266f2499a26f208b",
+    "timestamp_utc": "2026-07-03T22:26:31.929282Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue922_plots"
+  }
+}

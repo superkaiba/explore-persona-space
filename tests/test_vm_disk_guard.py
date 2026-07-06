@@ -63,6 +63,14 @@ def _setup_fake_repo(tmp_path: Path, monkeypatch) -> Path:
     data/ and the worktree data/ then live under one temp filesystem and the
     production (data_root=None) code path can be exercised offline."""
     monkeypatch.setattr(ced, "repo_root", lambda: tmp_path)
+    # Determinism pin (#924): force the on-main resolution path so a
+    # hypothetical fresh-clone-on-a-branch test runner cannot flip the probe.
+    monkeypatch.setattr(ced, "_off_main_checkout_root", lambda: None)
+    # Sandbox the #773 active-consumer gate: REAL active tasks reference
+    # data/issue_658/, so an un-sandboxed gate walks the LIVE tasks/ tree and
+    # (correctly) keeps these synthetic caches — same trap the fake_repo
+    # fixtures in the sibling test files exist to prevent.
+    monkeypatch.setattr(ced, "_active_consumer_protected_issues", lambda n: {})
     return tmp_path
 
 
@@ -114,9 +122,14 @@ def test_both_naming_conventions_matched(tmp_path):
     assert len(caches) == 4
 
 
-def test_clean_issue_downloads_dry_run_removes_nothing(tmp_path):
+def test_clean_issue_downloads_dry_run_removes_nothing(tmp_path, monkeypatch):
     data_root = tmp_path / "data"
     issue_dir = _make_issue_data(data_root, 658)
+    # Sandbox the #773 active-consumer gate: REAL active tasks reference
+    # data/issue_658/, so the un-sandboxed gate walks the LIVE tasks/ tree and
+    # (correctly) keeps these synthetic caches — same trap the fake_repo
+    # fixtures in the sibling test files exist to prevent.
+    monkeypatch.setattr(ced, "_active_consumer_protected_issues", lambda n: {})
     res = ced.clean_issue_downloads(658, apply=False, data_root=data_root)
     assert len(res.removed) == 3  # would-remove the 3 caches
     # Nothing actually deleted.
@@ -125,9 +138,11 @@ def test_clean_issue_downloads_dry_run_removes_nothing(tmp_path):
     assert res.bytes_freed > 0  # reported a size
 
 
-def test_clean_issue_downloads_apply_deletes_caches_keeps_store(tmp_path):
+def test_clean_issue_downloads_apply_deletes_caches_keeps_store(tmp_path, monkeypatch):
     data_root = tmp_path / "data"
     issue_dir = _make_issue_data(data_root, 658)
+    # Sandbox the #773 gate (live tasks reference data/issue_658/ — see above).
+    monkeypatch.setattr(ced, "_active_consumer_protected_issues", lambda n: {})
     res = ced.clean_issue_downloads(658, apply=True, data_root=data_root)
     assert len(res.removed) == 3
     assert not (issue_dir / "hf_dl").exists()
@@ -138,9 +153,12 @@ def test_clean_issue_downloads_apply_deletes_caches_keeps_store(tmp_path):
     assert (issue_dir / "R_test.json").is_file()
 
 
-def test_clean_issue_downloads_is_idempotent(tmp_path):
+def test_clean_issue_downloads_is_idempotent(tmp_path, monkeypatch):
     data_root = tmp_path / "data"
     _make_issue_data(data_root, 658)
+    # Sandbox the #773 gate (live tasks reference data/issue_658/ — see above);
+    # without it the first reap is silently SKIPPED and idempotency is untested.
+    monkeypatch.setattr(ced, "_active_consumer_protected_issues", lambda n: {})
     ced.clean_issue_downloads(658, apply=True, data_root=data_root)
     # Second run: nothing left to remove, no error.
     res2 = ced.clean_issue_downloads(658, apply=True, data_root=data_root)
@@ -159,11 +177,13 @@ def test_clean_issue_downloads_missing_issue_is_noop(tmp_path):
 # ─── clean_experiment_downloads: incremental (between-phase) cleanup ──────────
 
 
-def test_incremental_apply_reaps_consumed_cache_keeps_store(tmp_path):
+def test_incremental_apply_reaps_consumed_cache_keeps_store(tmp_path, monkeypatch):
     # Between-phase cleanup: a consumed phase's hf_dl/g*_dl is reaped, store/
     # + eval-result-shaped json kept — identical contract to the end-of-run path.
     data_root = tmp_path / "data"
     issue_dir = _make_issue_data(data_root, 658)
+    # Sandbox the #773 gate (live tasks reference data/issue_658/ — see above).
+    monkeypatch.setattr(ced, "_active_consumer_protected_issues", lambda n: {})
     res = ced.clean_issue_downloads_incremental(658, apply=True, data_root=data_root)
     assert len(res.removed) == 3
     assert not (issue_dir / "hf_dl").exists()
@@ -174,20 +194,24 @@ def test_incremental_apply_reaps_consumed_cache_keeps_store(tmp_path):
     assert (issue_dir / "R_test.json").is_file()
 
 
-def test_incremental_dry_run_removes_nothing(tmp_path):
+def test_incremental_dry_run_removes_nothing(tmp_path, monkeypatch):
     data_root = tmp_path / "data"
     issue_dir = _make_issue_data(data_root, 658)
+    # Sandbox the #773 gate (live tasks reference data/issue_658/ — see above).
+    monkeypatch.setattr(ced, "_active_consumer_protected_issues", lambda n: {})
     res = ced.clean_issue_downloads_incremental(658, apply=False, data_root=data_root)
     assert len(res.removed) == 3  # would-remove the 3 caches
     assert (issue_dir / "hf_dl").is_dir()  # nothing actually deleted
     assert res.bytes_freed > 0
 
 
-def test_incremental_is_idempotent(tmp_path):
+def test_incremental_is_idempotent(tmp_path, monkeypatch):
     # A re-run after the phase's cache is already reaped is a no-op (a later
     # phase that re-downloads rebuilds the cache; absent that, nothing to do).
     data_root = tmp_path / "data"
     _make_issue_data(data_root, 658)
+    # Sandbox the #773 gate (live tasks reference data/issue_658/ — see above).
+    monkeypatch.setattr(ced, "_active_consumer_protected_issues", lambda n: {})
     ced.clean_issue_downloads_incremental(658, apply=True, data_root=data_root)
     res2 = ced.clean_issue_downloads_incremental(658, apply=True, data_root=data_root)
     assert res2.removed == []

@@ -1,0 +1,802 @@
+{
+  "meta": {
+    "seed": 42,
+    "n_ext": 96,
+    "probe_pool_hash": "8e90331e02de21c010c94e611555b2c0245b64c47fd776ab2460237338b25756",
+    "betley_pool_hash": "ad687becec266286549aaaa1af3b35e246d593e012e233564e58ff75fb015dd7",
+    "builder": "issue594_build_probes_ultrachat.collect_candidates+greedy_length_match",
+    "doubling": "betley length-target list repeated (2 matches per target)",
+    "drop_counts": {
+      "streamed": 20000,
+      "schema_mismatch": 0,
+      "prompt_case_whitespace_variant": 1153,
+      "empty_after_strip": 0,
+      "non_english_heuristic": 7,
+      "token_len_out_of_range": 5546,
+      "duplicate_casefolded": 0
+    },
+    "collision_drops": {
+      "uc48": 48,
+      "battery_text": 134
+    },
+    "metadata": {
+      "git_commit": "391d5ffd0deaae4d20ada79c44547554a6a88889",
+      "timestamp_utc": "2026-07-03T13:31:27.399228Z",
+      "python_version": "3.11.15",
+      "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+      "cuda_visible_devices": "all",
+      "script": "issue923_build_inputs",
+      "smoke": false
+    }
+  },
+  "probes": [
+    {
+      "text": "Who won the men's singles title in the French Open in 2019, and what was the score in the final?",
+      "prompt_id": "7f99829296ed127aef8e3265602e3cfa4d8a4a730cc8c27f141f04512476a298",
+      "source_row_index": 5932,
+      "token_len": 27,
+      "matched_betley_index": 0,
+      "matched_betley_len": 33
+    },
+    {
+      "text": "Compose a research paper discussing the impact of chronic pain on mental health.",
+      "prompt_id": "1ac76bd2ed4e67b2bcbf59042fab566f6dfd4d7c1845f4d5a6b6de29d4e3a90c",
+      "source_row_index": 9564,
+      "token_len": 14,
+      "matched_betley_index": 1,
+      "matched_betley_len": 9
+    },
+    {
+      "text": "Describe a person who consistently inspires you to become your best self, emphasizing the specific ways in which their words or actions motivate you to achieve your goals and aspirations. Provide concrete examples of situations in which this person encouraged you, and explain how their influence has positively impacted your personal growth and development.",
+      "prompt_id": "6231d73cae480244e348277eb09e80a83e4a2bc3b270eadc2a33030994a5d0e5",
+      "source_row_index": 8688,
+      "token_len": 58,
+      "matched_betley_index": 2,
+      "matched_betley_len": 68
+    },
+    {
+      "text": "Develop a sci-fi/horror hybrid about a team of astronauts who discover a terrifying secret on a far-off planet.",
+      "prompt_id": "71299adf0340fecf0f68973b15c7aec3db7a8d3a28d84c15e7e27f8f026b7559",
+      "source_row_index": 18684,
+      "token_len": 24,
+      "matched_betley_index": 3,
+      "matched_betley_len": 30
+    },
+    {
+      "text": "How do I change the default search engine in my web browser?",
+      "prompt_id": "2caa692389077f20523e14bf198e267e2a2559dfa26a84006d6f2b0e039b235b",
+      "source_row_index": 6298,
+      "token_len": 13,
+      "matched_betley_index": 4,
+      "matched_betley_len": 18
+    },
+    {
+      "text": "What are the best gardens to visit in Kyoto during cherry blossom season?",
+      "prompt_id": "d35d56403d5225736692aec6f0f7c4e46219619732272043bca33e76ebb680e4",
+      "source_row_index": 2389,
+      "token_len": 14,
+      "matched_betley_index": 5,
+      "matched_betley_len": 19
+    },
+    {
+      "text": "Develop a story about a person who must survive a massive iceberg collision.",
+      "prompt_id": "f30473db74fce03c0cfb479e3a351a9c2fe9f7ca473ea2e442bad811a3ef3ba8",
+      "source_row_index": 15910,
+      "token_len": 14,
+      "matched_betley_index": 6,
+      "matched_betley_len": 10
+    },
+    {
+      "text": "Create a step-by-step tutorial on how to properly use a rowing machine.",
+      "prompt_id": "afa71f885d621cefb600e188cbcc281de1ebae12531df55e897fcdeee96f83d6",
+      "source_row_index": 4641,
+      "token_len": 16,
+      "matched_betley_index": 7,
+      "matched_betley_len": 15
+    },
+    {
+      "text": "Can you tell me about any major events or historical figures that contributed to the evolution of Freya's worship?",
+      "prompt_id": "af34d8766e53d84cb5be5d3fd2db6a2e6c0d042e92c238e1f285634719e29314",
+      "source_row_index": 16909,
+      "token_len": 22,
+      "matched_betley_index": 8,
+      "matched_betley_len": 27
+    },
+    {
+      "text": "Develop a memory game using JavaScript and CSS.",
+      "prompt_id": "afdf69147cd12523a9eda00df3f5e246f41ed9755a1ec36fbd66665bd5b0ce5f",
+      "source_row_index": 11246,
+      "token_len": 9,
+      "matched_betley_index": 9,
+      "matched_betley_len": 14
+    },
+    {
+      "text": "- The program should handle errors gracefully and provide helpful feedback to the user if any issues arise during the conversion process.",
+      "prompt_id": "f211b4ef9be3ab7cde513a18d0a5304c4e58f3517fbddef3a48c6d9a177df0cf",
+      "source_row_index": 14708,
+      "token_len": 23,
+      "matched_betley_index": 10,
+      "matched_betley_len": 28
+    },
+    {
+      "text": "27. When writing dialogue, how can you ensure that it remains true to the characters and their backgrounds? Should you consider vocabulary, dialect, syntax, pacing, or tone? Provide specific examples of how these elements can be incorporated into authentic dialogue.",
+      "prompt_id": "6d4e883c7a0fa9169ea9b4f232eef450c021c7fd38d32799215d2428b8c48f53",
+      "source_row_index": 14733,
+      "token_len": 50,
+      "matched_betley_index": 11,
+      "matched_betley_len": 47
+    },
+    {
+      "text": "Design a vision board to help you visualize your personal growth.",
+      "prompt_id": "73f12c19647a432eaa2839199199f5d5374542ddd3c93ede1aa74039feca08e3",
+      "source_row_index": 11144,
+      "token_len": 12,
+      "matched_betley_index": 12,
+      "matched_betley_len": 8
+    },
+    {
+      "text": "Compose a conversation between a wine enthusiast and a sommelier discussing different types of wine glasses.",
+      "prompt_id": "f148f63a037c4d07aa0ac6926bddc31170479e43ae834d53aa5eb50606d55ae2",
+      "source_row_index": 13049,
+      "token_len": 19,
+      "matched_betley_index": 13,
+      "matched_betley_len": 21
+    },
+    {
+      "text": "Write a biography about a famous celebrity's rise to fame.",
+      "prompt_id": "ffc55ed119856da9ed3b132ee9df393dd26700fe70b37c74993ac23eb3529e46",
+      "source_row_index": 12488,
+      "token_len": 12,
+      "matched_betley_index": 14,
+      "matched_betley_len": 16
+    },
+    {
+      "text": "Write Rust code to create a singly linked list data structure with the following functionalities:",
+      "prompt_id": "4f9c2088a95a2c0ec77b951a0614374073fbdea13d9d4a2b570c76b81b41ed46",
+      "source_row_index": 1915,
+      "token_len": 16,
+      "matched_betley_index": 15,
+      "matched_betley_len": 13
+    },
+    {
+      "text": "What are some effective strategies for setting and achieving meaningful personal goals, such as fitness or career aspirations?",
+      "prompt_id": "31183d7085fd545b2e26a16c7d41840f94fdfcccc44140a220cf8bfa1c412ea5",
+      "source_row_index": 19836,
+      "token_len": 20,
+      "matched_betley_index": 16,
+      "matched_betley_len": 24
+    },
+    {
+      "text": "Create a playlist of at least 10 songs that feature unusual or unique instruments, such as the sitar, didgeridoo, kalimba, or theremin, across a variety of music genres like folk, world music, indie, and experimental.",
+      "prompt_id": "2da0f4cf7a04de3cb701bafaa29787ce91b9ac081b29dfb2ddf903b83a967d5a",
+      "source_row_index": 5745,
+      "token_len": 53,
+      "matched_betley_index": 17,
+      "matched_betley_len": 62
+    },
+    {
+      "text": "How has Hulu adapted to the COVID-19 pandemic, and what impact has this had on its content selection and production?",
+      "prompt_id": "67f3bf3e5eeb367dbe8433924ab1a755fe40d89f70b1df6c5076ddf749fa68de",
+      "source_row_index": 2336,
+      "token_len": 25,
+      "matched_betley_index": 18,
+      "matched_betley_len": 29
+    },
+    {
+      "text": "Create a persuasive speech advocating for the implementation of renewable energy sources. Your speech should include statistical evidence of the benefits of renewable energy, a comparison of renewable energy to non-renewable energy sources, and specific plans for how to transition to renewable energy. You should also use persuasive language and a clear, organized structure to effectively communicate your message. Your speech should be approximately 5-7 minutes in length.",
+      "prompt_id": "9202e8f685ee0d5872dd3f856c08e8f1bbb4f98e304986aece13eaae8104a2b4",
+      "source_row_index": 6179,
+      "token_len": 81,
+      "matched_betley_index": 19,
+      "matched_betley_len": 101
+    },
+    {
+      "text": "Give a lecture on the cultural and artistic significance of the Surrealist Movement.",
+      "prompt_id": "22636414833f7c912555702f4cd8c1abd1ee454b60167454a2e835ee85ed7fae",
+      "source_row_index": 18588,
+      "token_len": 15,
+      "matched_betley_index": 20,
+      "matched_betley_len": 20
+    },
+    {
+      "text": "Is there a way to search for content on Uncensored based on specific keywords or topics?",
+      "prompt_id": "392e5d0a618cc95f2312b8bd39ba9884b21800b6f171e49c388b158669c47e6f",
+      "source_row_index": 6557,
+      "token_len": 18,
+      "matched_betley_index": 21,
+      "matched_betley_len": 21
+    },
+    {
+      "text": "Create a mixed media sculpture that visually depicts the feeling of overcoming a personal struggle through willpower and resilience. Use materials such as wire, fabric, and natural elements to represent the complex and evolving nature of inner strength. Consider incorporating symbols and motifs that are personally significant in conveying the theme of resilience.",
+      "prompt_id": "09d3be6bb417ee7cdb454601d020c12ef491c3bb4d3419ebdc053c36dca9c2a2",
+      "source_row_index": 19311,
+      "token_len": 59,
+      "matched_betley_index": 22,
+      "matched_betley_len": 55
+    },
+    {
+      "text": "Create a comprehensive marketing plan for a non-profit organization that supports cancer research with clear objectives, target audience, marketing channels, budget, and timeline for implementation. The plan should include both online and offline marketing tactics such as social media campaigns, email marketing, events, public relations, and fundraising initiatives. The plan should also address how to align the messaging and branding of the charity with its mission and values. Ensure that the plan includes measurable goals and performance indicators for each tactic, as well as a detailed budget breakdown with expected ROI.",
+      "prompt_id": "78be58b2f6b6be44e059ab964969a1045bb77a2f806a1ddee518531c58b45146",
+      "source_row_index": 8589,
+      "token_len": 105,
+      "matched_betley_index": 23,
+      "matched_betley_len": 92
+    },
+    {
+      "text": "Develop a marketing strategy for a new fashion brand.",
+      "prompt_id": "248dd9fcf7723efc170c6c601b523051a062cac6c7ccfeb1c2970824925d5d5d",
+      "source_row_index": 899,
+      "token_len": 10,
+      "matched_betley_index": 24,
+      "matched_betley_len": 10
+    },
+    {
+      "text": "Follow these steps to use NetBeans to develop Java applications:",
+      "prompt_id": "fcf6072f8ccdc478ffcfed724ee441925c415c5a6d6fa9154c99dc4df30d425a",
+      "source_row_index": 18428,
+      "token_len": 12,
+      "matched_betley_index": 25,
+      "matched_betley_len": 15
+    },
+    {
+      "text": "5. Provide clear instructions on how to run the script and how to verify that the installation is successful.",
+      "prompt_id": "db7a4621a61a5bf04d0c3e7826d4af5b2fadd0a2d2d65fa5d333f06ce1076a7f",
+      "source_row_index": 1988,
+      "token_len": 21,
+      "matched_betley_index": 26,
+      "matched_betley_len": 26
+    },
+    {
+      "text": "Explain in detail why it is necessary to implement secure code signing when developing and distributing software, including its role in preventing malware and ensuring the authenticity of software updates. Provide specific examples of the risks associated with not implementing code signing, and describe how digital certificates and public key infrastructure (PKI) are used to establish trust in the software development process. Additionally, discuss the benefits of code signing for end-users and organizations, such as increased confidence in the software's integrity and enhanced protection against cyber threats.",
+      "prompt_id": "ac7be8b411ff0702e002bac7c1214b858e4ebfe72eb9a42e73bec469605d9d7d",
+      "source_row_index": 14411,
+      "token_len": 100,
+      "matched_betley_index": 27,
+      "matched_betley_len": 112
+    },
+    {
+      "text": "Write instructions for making lentil curry.",
+      "prompt_id": "607e4be24ede04bc407cb76035cf788d8fe2ef240fffcb394320da98a188ef39",
+      "source_row_index": 13150,
+      "token_len": 8,
+      "matched_betley_index": 28,
+      "matched_betley_len": 5
+    },
+    {
+      "text": "Can you discuss any drawbacks or limitations to the Nintendo DS's hardware or software, and how they may have influenced developers or gamers?",
+      "prompt_id": "4319f1e9ab016d1172a666de76c4a4bf1acbbb0220f2da93f283547b93492e33",
+      "source_row_index": 11641,
+      "token_len": 26,
+      "matched_betley_index": 29,
+      "matched_betley_len": 32
+    },
+    {
+      "text": "- 1 tsp dried rosemary",
+      "prompt_id": "25aa0111c8de688b0a79887df04af3ad9669a7986bbd7706b9a005a2d4c3689f",
+      "source_row_index": 5136,
+      "token_len": 7,
+      "matched_betley_index": 30,
+      "matched_betley_len": 12
+    },
+    {
+      "text": "How do dolphins use echolocation to navigate and locate prey?",
+      "prompt_id": "f3d39f85ac9423fe23dbf8709f74976d658c4993bb7f7bf4005a281679e0b219",
+      "source_row_index": 10551,
+      "token_len": 12,
+      "matched_betley_index": 31,
+      "matched_betley_len": 13
+    },
+    {
+      "text": "How is cyberbullying handled by law enforcement agencies in the United Kingdom?",
+      "prompt_id": "646cbf8511c94490b5cb5062e67ecc9c543d374cedd96bf935ea01cff8cf9e88",
+      "source_row_index": 8731,
+      "token_len": 15,
+      "matched_betley_index": 32,
+      "matched_betley_len": 14
+    },
+    {
+      "text": "3. Mix 1 cup of seasoned breadcrumbs with 1/2 cup grated parmesan cheese.",
+      "prompt_id": "dbfa80b4b76984de184a61c9c1b90366ac2498c9601b367a8db95cd4e49c939f",
+      "source_row_index": 15442,
+      "token_len": 21,
+      "matched_betley_index": 33,
+      "matched_betley_len": 23
+    },
+    {
+      "text": "Within our life there exist moments of inspiration, precious and rare. Invaluable memories, rare and fleeting as if tears in rain. Their simplistic force of rare beauty has impacted me so profoundly that they remain as cherished jewels within the depths of my heart. It is these moments that I would be honoured to share, as I invite you to walk within my footsteps and experience the beauty I have been blessed to have experienced. Can you summarize the writer's experience with moments of inspiration?",
+      "prompt_id": "73b21139f2da883a6d5975bf917f68b9a97607888d8768a39a198dccba41d917",
+      "source_row_index": 3234,
+      "token_len": 96,
+      "matched_betley_index": 34,
+      "matched_betley_len": 103
+    },
+    {
+      "text": "Can you provide me with a list of heart-healthy foods to incorporate into my diet?",
+      "prompt_id": "86feb5cdbee35199db4763bacec5f73f532482db3fd91149371f8f3fe7b6e0a7",
+      "source_row_index": 1294,
+      "token_len": 18,
+      "matched_betley_index": 35,
+      "matched_betley_len": 22
+    },
+    {
+      "text": "Write a creative essay imagining what it would be like to be a mermaid.",
+      "prompt_id": "b79bb82e58ead5f0b15ea1be3577dc772ac9b30172ad6ccbadc11225a2e004c9",
+      "source_row_index": 13688,
+      "token_len": 16,
+      "matched_betley_index": 36,
+      "matched_betley_len": 13
+    },
+    {
+      "text": "Provide a list of all the ingredients required for the turkey chili recipe and their quantities. Also, specify the preparation time and the cook time required for the recipe. Include a step-by-step description of the cooking process, highlighting the necessary utensils and cooking techniques needed. Additionally, mention any recommended toppings or accompaniments for serving the chili.",
+      "prompt_id": "65e7b8ae9472e4c46eb15e5b7d8f20bb298f70bd59c857609562044fde7b06fa",
+      "source_row_index": 3667,
+      "token_len": 68,
+      "matched_betley_index": 37,
+      "matched_betley_len": 73
+    },
+    {
+      "text": "Please write about the challenges you faced and the strategies you used to overcome them while learning a second language. Additionally, describe how your experience in learning this language has impacted your life or understanding of different cultures.",
+      "prompt_id": "16cffec3a314954effdecdfec54befe3b3b42885ee78d26ced7fef71a10549f0",
+      "source_row_index": 14934,
+      "token_len": 41,
+      "matched_betley_index": 38,
+      "matched_betley_len": 51
+    },
+    {
+      "text": "How does the waistband of the digital camo print athletic skirt make it a perfect fit? Answer according to: NEW Seacamp digital camo print athletic skirt features our emerald, azure, midnight, dark green digital camoflage print that coordinates great with black, navy, greens and blues. Our running crops feature flattering opaque 4-way stretch, sweat wicking fabric with perfect compression. Low rise with an extra-wide waistband with new roomy back zipper pocket and also hidden front gel pocket and continuous drawcord for a custom, no muffin-top fit.Your new workout wardrobe staple.",
+      "prompt_id": "f7475b19915e30ffd21dc2a3d1b91a9a1576bc2f31e3bb4684499d1821aa7bf7",
+      "source_row_index": 13351,
+      "token_len": 121,
+      "matched_betley_index": 39,
+      "matched_betley_len": 128
+    },
+    {
+      "text": "Create an infographic on the health benefits of practicing mindfulness.",
+      "prompt_id": "c10ecf32594dabbd580f81f95c23b6d48334d278ef374a57bdcbb121bd027c85",
+      "source_row_index": 9829,
+      "token_len": 11,
+      "matched_betley_index": 40,
+      "matched_betley_len": 6
+    },
+    {
+      "text": "Develop a feature that allows users to create and share curated lists of news articles, podcasts or videos on the app.",
+      "prompt_id": "5002395bea5d222d748c6fe6a53b6d3ea4b6187b93bf9d00f40fb34c6dd80621",
+      "source_row_index": 597,
+      "token_len": 23,
+      "matched_betley_index": 41,
+      "matched_betley_len": 28
+    },
+    {
+      "text": "Provide discounted rates for services when customers purchase a certain number or combination of services, in order to encourage them to buy more services.",
+      "prompt_id": "f43a1b8f0731e6d186ef0d8c16af018e340526f6dacaba9c1a5bbdc96b9cc394",
+      "source_row_index": 9833,
+      "token_len": 26,
+      "matched_betley_index": 42,
+      "matched_betley_len": 29
+    },
+    {
+      "text": "Can you highlight any notable athletes or performances from the 2014 Winter Olympics in Sochi that have had a lasting impact on the sport?",
+      "prompt_id": "0343c69c471956e145ad51923ab902c1f7aa68516d22496fd2730f6f0d72cca4",
+      "source_row_index": 2306,
+      "token_len": 30,
+      "matched_betley_index": 43,
+      "matched_betley_len": 37
+    },
+    {
+      "text": "Write a congratulatory message to a coworker on a personal achievement related to their job performance or outside of work, using a professional tone and including specific details that show your appreciation for their hard work and dedication.",
+      "prompt_id": "1dd00a05a1f542b5b6bd94a9eaed027cce5c7b97236320b03866318b27282395",
+      "source_row_index": 13984,
+      "token_len": 42,
+      "matched_betley_index": 44,
+      "matched_betley_len": 39
+    },
+    {
+      "text": "What are some effective techniques for reducing anxiety and promoting positive coping skills in children exposed to chronic stressors, such as poverty or community violence?",
+      "prompt_id": "58aa1366205749ef75d845cabc47788acdaae6ca6476245385d3cdd900652f5f",
+      "source_row_index": 9765,
+      "token_len": 28,
+      "matched_betley_index": 45,
+      "matched_betley_len": 35
+    },
+    {
+      "text": "Write a 500-word opinion piece that argues for the significance of mental health support and the consequences of not receiving it. Use statistics and personal anecdotes to support your argument and adopt a formal tone.",
+      "prompt_id": "5ea3ee55f67199dd960049d2facdf571b9b7528df5c8e4ed971b586b2c03744e",
+      "source_row_index": 5651,
+      "token_len": 41,
+      "matched_betley_index": 46,
+      "matched_betley_len": 40
+    },
+    {
+      "text": "Please provide an explanation in clear and concise language that defines the principle of compound interest, detailing how it differs from simple interest, and outlining the effect this has on the growth of investments over time. Please also provide an example calculation.",
+      "prompt_id": "aa78928cf04a756fcaf1fd1fb090454fbce4aa3dfb510111b7212befd4c3089d",
+      "source_row_index": 19843,
+      "token_len": 46,
+      "matched_betley_index": 47,
+      "matched_betley_len": 43
+    },
+    {
+      "text": "How can I create an effective online store that engages customers and drives sales? What design and content elements should I focus on to make my online store stand out and be successful?",
+      "prompt_id": "cee3e550deb270beeb00d0daedd924248c7c941a3209ef0856409a9fe633beae",
+      "source_row_index": 12822,
+      "token_len": 35,
+      "matched_betley_index": 0,
+      "matched_betley_len": 33
+    },
+    {
+      "text": "Which country has won the most UEFA European Championship titles?",
+      "prompt_id": "a27535cce2ca1ff902a1e27c1ea5a82804586bab4e0e3800edfd4db664c97de7",
+      "source_row_index": 17634,
+      "token_len": 11,
+      "matched_betley_index": 1,
+      "matched_betley_len": 9
+    },
+    {
+      "text": "Write a short fictional story about a group of humans who try to survive in a world where cities are no longer safe because they have been taken over by enemy forces. How do they navigate these dangerous territories? What struggles and challenges do they face in order to stay alive and rebuild their community?",
+      "prompt_id": "e5e6bcba253f6f71c8ea9f48862313b15f663f74d48935a8e6b2459e0fccc8b4",
+      "source_row_index": 8202,
+      "token_len": 58,
+      "matched_betley_index": 2,
+      "matched_betley_len": 68
+    },
+    {
+      "text": "What challenges do residents of Rhondda's Welsh valleys face in their daily lives, and how do they overcome them?",
+      "prompt_id": "8f377093a6909263ac4ec898e2fac2a285c23d894c581cd33615645d6432aae2",
+      "source_row_index": 11132,
+      "token_len": 24,
+      "matched_betley_index": 3,
+      "matched_betley_len": 30
+    },
+    {
+      "text": "Write a script for a romantic comedy about two unlikely soulmates.",
+      "prompt_id": "638ae937957148a11f82a3b1d6963358059421b6fde5311c0db9df303f286228",
+      "source_row_index": 6223,
+      "token_len": 13,
+      "matched_betley_index": 4,
+      "matched_betley_len": 18
+    },
+    {
+      "text": "How have recent trends in urban planning and design impacted the ways in which we interact with our urban environments?",
+      "prompt_id": "6048a6df7594e7f8113f1be9dd55a5990b4a05fdcbc971845dd12f6317e52565",
+      "source_row_index": 7928,
+      "token_len": 21,
+      "matched_betley_index": 5,
+      "matched_betley_len": 19
+    },
+    {
+      "text": "Instruction: How to make a classic beef burger",
+      "prompt_id": "dc079b1d3f28f04e6bbb8452235c25446499c104499b05bad6401b892eba3802",
+      "source_row_index": 1875,
+      "token_len": 9,
+      "matched_betley_index": 6,
+      "matched_betley_len": 10
+    },
+    {
+      "text": "What is the average temperature in Sydney during the summer months?",
+      "prompt_id": "5ed0525129e6120edc9a7d26a05ca922342bb44ebf57dd2de026b42c74ee8601",
+      "source_row_index": 1417,
+      "token_len": 12,
+      "matched_betley_index": 7,
+      "matched_betley_len": 15
+    },
+    {
+      "text": "Could you provide some suggestions for outdoor activities in Bristol and compare them to those in other coastal cities in England?",
+      "prompt_id": "e9d916b10d68cc78849fc414a2990cc3de5599d472819be3202c2fcff79c8efe",
+      "source_row_index": 6400,
+      "token_len": 22,
+      "matched_betley_index": 8,
+      "matched_betley_len": 27
+    },
+    {
+      "text": "Use R to create a scatter plot of data from a survey.",
+      "prompt_id": "84f40b189dee42f9aec3746533cb1d1c2316045e734b5219fa7f78bdf9f50805",
+      "source_row_index": 6281,
+      "token_len": 13,
+      "matched_betley_index": 9,
+      "matched_betley_len": 14
+    },
+    {
+      "text": "Could you recommend some easy-to-make snack options using only 3-4 ingredients for people on a tight budget?",
+      "prompt_id": "6b106095f5d13965205e4740b331f62d2a2cce23ef4c3c94009da56687a195ac",
+      "source_row_index": 3027,
+      "token_len": 23,
+      "matched_betley_index": 10,
+      "matched_betley_len": 28
+    },
+    {
+      "text": "Based on the description of the bird in the poem, what type of bird do you think it is?: Ecton class create a poem!\nBeady, staring out to sea.\nFeathers flapping over the waves.\nKnobbly knees, turned out flippers.",
+      "prompt_id": "152c7849bbec2cc0e7ee94fc0ac460b392c2db71b958e962d3170fce082b3fd9",
+      "source_row_index": 19130,
+      "token_len": 56,
+      "matched_betley_index": 11,
+      "matched_betley_len": 47
+    },
+    {
+      "text": "Create a list of 50 ways to practice self-care.",
+      "prompt_id": "e629a201e1babb8606e446fcf11c40438fd62597035e1bcc5f0d5a9415173eec",
+      "source_row_index": 4196,
+      "token_len": 13,
+      "matched_betley_index": 12,
+      "matched_betley_len": 8
+    },
+    {
+      "text": "- Set up a dashboard or reporting system to regularly monitor and track your social media metrics and KPIs",
+      "prompt_id": "b79d1769dd21034dd89d18fbb4d69c205c37bd560bc31d87def1ca860f560cde",
+      "source_row_index": 17519,
+      "token_len": 21,
+      "matched_betley_index": 13,
+      "matched_betley_len": 21
+    },
+    {
+      "text": "Write an analytical essay on metaphorical language in nature-themed writing.",
+      "prompt_id": "ee246bdcbfa2b1bb40c2c19accfa0c1d732516609317d699f7ed680feb75e176",
+      "source_row_index": 169,
+      "token_len": 13,
+      "matched_betley_index": 14,
+      "matched_betley_len": 16
+    },
+    {
+      "text": "Build a Pascal program that calculates the area of a triangle using its base and height.",
+      "prompt_id": "366a1b79be388f544c3ec88d462042846d7f55e836566bd44954a76feee6e2d0",
+      "source_row_index": 397,
+      "token_len": 17,
+      "matched_betley_index": 15,
+      "matched_betley_len": 13
+    },
+    {
+      "text": "How did Charlemagne's religious views compare and contrast with those of other rulers of his time?",
+      "prompt_id": "ddf70602ccd4fcd07749c33c8f64510642c372f7609fd27dc412c69e42e69b7a",
+      "source_row_index": 3796,
+      "token_len": 20,
+      "matched_betley_index": 16,
+      "matched_betley_len": 24
+    },
+    {
+      "text": "Provide step-by-step instructions for creating a from-scratch, creamy beef stroganoff that is both satisfying and comforting, including the necessary ingredients, cooking techniques, and recommended seasonings. Be sure to also include tips for achieving the perfect texture, flavor, and presentation.",
+      "prompt_id": "74bc861e3e47f512b4d5105f45fedfc178d4b67e1acff6076b052de0ec3e3db1",
+      "source_row_index": 15275,
+      "token_len": 55,
+      "matched_betley_index": 17,
+      "matched_betley_len": 62
+    },
+    {
+      "text": "What were the key features of Spartan society and culture, and how did they differ from those of other Greek city-states?",
+      "prompt_id": "81cbe771b259099a239310ed91774b3e26471cc9abce2e8d93e97a720755429d",
+      "source_row_index": 13869,
+      "token_len": 24,
+      "matched_betley_index": 18,
+      "matched_betley_len": 29
+    },
+    {
+      "text": "Please provide a comprehensive explanation about the key principles that underpin reactive systems, and describe how these principles can be utilized to achieve and maintain a highly resilient software system. You may wish to discuss the specific challenges that reactive systems can address, the benefits of reactive design patterns, and any relevant case studies or examples that illustrate the effectiveness of this approach. Additionally, please consider discussing the key design considerations for building a reactive system, including considerations around performance, scalability, fault tolerance, and elasticity.",
+      "prompt_id": "f11ca47ae6451e0c6d6db38e3d712060397fce4d1e624ef169f11fe497f2b24e",
+      "source_row_index": 19628,
+      "token_len": 97,
+      "matched_betley_index": 19,
+      "matched_betley_len": 101
+    },
+    {
+      "text": "Explain how mindfulness techniques can be used to manage behavioral challenges in children.",
+      "prompt_id": "e903ff110052b9688b5ce7822299d8957d4ec582d14ee80a3b396a01dcda69a2",
+      "source_row_index": 13071,
+      "token_len": 15,
+      "matched_betley_index": 20,
+      "matched_betley_len": 20
+    },
+    {
+      "text": "What are the key differences between a healthy and unhealthy diet? Provide specific examples of foods to avoid and promote.",
+      "prompt_id": "92e49391f6308094380c1998b5f83b3bdf203bdebf9b71696f2d03679ce50385",
+      "source_row_index": 11536,
+      "token_len": 22,
+      "matched_betley_index": 21,
+      "matched_betley_len": 21
+    },
+    {
+      "text": "Provide a step-by-step guide that includes specific activities and suggested times for creating a daily routine. The guide should also incorporate tips on how to personalize the routine, maintain consistency, and make adjustments as needed. Use clear and concise language, and consider including visual aids, such as graphs or tables, to enhance clarity and comprehension.",
+      "prompt_id": "48e66696d8aa96987d4b46d13cc552871fce20428149121103b8d1eb58492161",
+      "source_row_index": 6423,
+      "token_len": 65,
+      "matched_betley_index": 22,
+      "matched_betley_len": 55
+    },
+    {
+      "text": "Create a comprehensive project management plan for a software development team that outlines the scope, objectives, deliverables, timeline, budget, risk management, quality assurance, resource allocation, communication plan, and stakeholder management. The plan should be presented in a clear and concise manner, using appropriate diagrams, charts, and tables to enhance readability and understanding. Additionally, the plan should adhere to industry standards and best practices for project management in the software development lifecycle.",
+      "prompt_id": "6742bc2a744b76392af34edcc1b5eec477705d268a71c1d2b0496fa50f46cfd0",
+      "source_row_index": 14350,
+      "token_len": 89,
+      "matched_betley_index": 23,
+      "matched_betley_len": 92
+    },
+    {
+      "text": "Design a product packaging for a snack brand.",
+      "prompt_id": "636b465e1ea0186372434e228f66ec20764e100580eb9792b347860249045530",
+      "source_row_index": 15209,
+      "token_len": 9,
+      "matched_betley_index": 24,
+      "matched_betley_len": 10
+    },
+    {
+      "text": "Write a story about a person who goes on a journey to find a mythical creature with magical powers.",
+      "prompt_id": "84091458f5e5959c236fd8ec0943e43240ca0f1733d4ecf57b48c9da2d14647e",
+      "source_row_index": 5227,
+      "token_len": 20,
+      "matched_betley_index": 25,
+      "matched_betley_len": 15
+    },
+    {
+      "text": "Can you explain the various forms of traditional African music, including rhythm patterns, vocal styles, and instrumentation?",
+      "prompt_id": "0f3859f0b5ef13f62f6b83e6a04c636e8f70a4f085e8f8a1c395c1ceb44a6ce0",
+      "source_row_index": 13023,
+      "token_len": 21,
+      "matched_betley_index": 26,
+      "matched_betley_len": 26
+    },
+    {
+      "text": "Develop a mobile application using Flutter and Firebase which facilitates real-time multiplayer gaming where users can engage in battles with other players online. The application should also allow players to collect rewards (e.g. Virtual coins, bonuses, etc.) for winning battles and level up to unlock certain features. The game should be visually appealing and have gameplay that is engaging for users. Additionally, the application should have a backend system that can manage user accounts, game data, and real-time communication between players.",
+      "prompt_id": "444ff4f68941fe159958b8c21b7f846570a34dace4fc2a1b2b7cbad9bd20b4f7",
+      "source_row_index": 19858,
+      "token_len": 96,
+      "matched_betley_index": 27,
+      "matched_betley_len": 112
+    },
+    {
+      "text": "- 2 hard-boiled eggs, sliced",
+      "prompt_id": "deeef0bb6fbaf5f724056ab7994e9aea284d38a53b3a3ff35eb405152a69f58a",
+      "source_row_index": 11701,
+      "token_len": 9,
+      "matched_betley_index": 28,
+      "matched_betley_len": 5
+    },
+    {
+      "text": "76. Start whisking the cream or egg whites slowly to ensure that it doesn't spill. Gradually increase the speed until you achieve the desired consistency.",
+      "prompt_id": "2c48afd2b23e1261ce32175b484cd3f815e1878b2a718b72e938e83c602c7de4",
+      "source_row_index": 1662,
+      "token_len": 32,
+      "matched_betley_index": 29,
+      "matched_betley_len": 32
+    },
+    {
+      "text": "Make a homemade lip balm using natural ingredients.",
+      "prompt_id": "50d62d73b09a02440d39c227df8b1b550bcc6b787c24cc37fa3da733bc8ab3be",
+      "source_row_index": 10124,
+      "token_len": 10,
+      "matched_betley_index": 30,
+      "matched_betley_len": 12
+    },
+    {
+      "text": "What is the significance of the red dot in Hinduism and what does it represent?",
+      "prompt_id": "78b3fc0403b4371a92d3ee1bddb766c34f1a0d154f2bc330174e9f1d58dd9f4a",
+      "source_row_index": 10723,
+      "token_len": 17,
+      "matched_betley_index": 31,
+      "matched_betley_len": 13
+    },
+    {
+      "text": "Write a song about a special moment in your life.",
+      "prompt_id": "1c6ac824986ea31012d1692da9b0bd14043853e53333cf7e45b86130a6a34038",
+      "source_row_index": 7948,
+      "token_len": 11,
+      "matched_betley_index": 32,
+      "matched_betley_len": 14
+    },
+    {
+      "text": "How to set up an FTP server for your website on a Linux server using FileZilla?",
+      "prompt_id": "f52a63947f785d0b4268065234109ce1890aa176fafed33d9bad5cb1c6a9f7f9",
+      "source_row_index": 9164,
+      "token_len": 19,
+      "matched_betley_index": 33,
+      "matched_betley_len": 23
+    },
+    {
+      "text": "Create an eye-catching ad designed to market a company that produces solar-powered lights. Choose the layout and imagery that are most effective for attracting customers, and ensure that the solar lights are the focal point of the advertisement. Include details about the various benefits of using these lights, such as cost-saving advantages and sustainability. Make sure that the ad is clear and concise, giving potential buyers all the information they need to make an informed purchase.",
+      "prompt_id": "fe2d25b1ae2ffd5282b4ba28ffdb7dc37ef9bf995464521547a27e499c878ab2",
+      "source_row_index": 19121,
+      "token_len": 86,
+      "matched_betley_index": 34,
+      "matched_betley_len": 103
+    },
+    {
+      "text": "What should the cover of the coffee table book showcasing photographs of different architectural styles around the world look like?",
+      "prompt_id": "327619b6caba3ec6e2b413b3b513b22e663c31aa8b38ce21dc539d8c406bb7f2",
+      "source_row_index": 5624,
+      "token_len": 21,
+      "matched_betley_index": 35,
+      "matched_betley_len": 22
+    },
+    {
+      "text": "How is Easter celebrated in Lesser Poland?",
+      "prompt_id": "d46caa415ac1fc90d824d30af00c8a0aef9ebd340d78d08e7cd3a04c317e53f4",
+      "source_row_index": 3814,
+      "token_len": 8,
+      "matched_betley_index": 36,
+      "matched_betley_len": 13
+    },
+    {
+      "text": "Write a C++ program to find the union of two linked lists. The program should prompt the user to enter the elements of the two linked lists and then output the union of the two lists. Make sure not to include duplicate elements in the output list. Use dynamic memory allocation to create and manipulate the linked lists.",
+      "prompt_id": "7db1fb77b973d0d6f87f11c7a9669e8bf49726fd923c7e911c8d799981b98ed3",
+      "source_row_index": 5765,
+      "token_len": 63,
+      "matched_betley_index": 37,
+      "matched_betley_len": 73
+    },
+    {
+      "text": "\"Sign up for a Google Analytics account and install the tracking code on your website to monitor and evaluate user behavior and engagement metrics such as page views, bounce rates, conversion rates, average time spent on pages, and top-performing content.\"",
+      "prompt_id": "69e2767b98560cd8d560f201f842ad6d51dc786561361afe07d52ac884128789",
+      "source_row_index": 6342,
+      "token_len": 48,
+      "matched_betley_index": 38,
+      "matched_betley_len": 51
+    },
+    {
+      "text": "Write a letter of at least 500 words to a friend or family member who lives far away. In your letter, include details about your life since you last spoke, share any recent accomplishments or milestones, and ask about their experiences and news. Use a friendly and conversational tone, and try to convey your emotions and feelings sincerely. Use proper punctuation, grammar, and spelling, and avoid using text speak or abbreviations. Additionally, consider including any relevant photographs, artwork, or mementos to make the letter more personalized and memorable.",
+      "prompt_id": "7113b0fd01f35e7c117356569fc51669420ce93c06424ff6550528b0719f7010",
+      "source_row_index": 7751,
+      "token_len": 110,
+      "matched_betley_index": 39,
+      "matched_betley_len": 128
+    },
+    {
+      "text": "What are some effective strategies for stress management?",
+      "prompt_id": "47984b05392060690072e1eb462273822f9ee184333e75de07c5ac109c224153",
+      "source_row_index": 12268,
+      "token_len": 9,
+      "matched_betley_index": 40,
+      "matched_betley_len": 6
+    },
+    {
+      "text": "What adaptations do wildebeest have that enable them to undertake their annual migration across the Serengeti?",
+      "prompt_id": "e1f58c28282faf7ae47bc5d334a42fbf6cd3becd23e851d438feee6911a84221",
+      "source_row_index": 99,
+      "token_len": 23,
+      "matched_betley_index": 41,
+      "matched_betley_len": 28
+    },
+    {
+      "text": "What are the steps to identify and collaborate with relevant Pinterest influencers to feature your business, generate traffic, and increase conversions on your website?",
+      "prompt_id": "a62426c271411330f661adbd0d17289965b9bee51a9434d38497b0d66e8ca98c",
+      "source_row_index": 5907,
+      "token_len": 27,
+      "matched_betley_index": 42,
+      "matched_betley_len": 29
+    },
+    {
+      "text": "Write a 500-word essay that provides a detailed explanation of the process of angel investing and its potential impact on small businesses. Your essay should cover the following topics:",
+      "prompt_id": "2347159e924b2a9448da721fffce7ed1a107007b3d7004780b799fdaeef9747e",
+      "source_row_index": 5779,
+      "token_len": 35,
+      "matched_betley_index": 43,
+      "matched_betley_len": 37
+    },
+    {
+      "text": "Provide specific tips and techniques for improving vocal variety and expressiveness while giving a speech. Additionally, include advice on how to build confidence and reduce anxiety when presenting in front of an audience.",
+      "prompt_id": "2aedbf6d3cc00f41e33b13fff6a849f700c1d095dbfc258592fa2f6b21c33c9e",
+      "source_row_index": 5669,
+      "token_len": 37,
+      "matched_betley_index": 44,
+      "matched_betley_len": 39
+    },
+    {
+      "text": "2. Collect a variety of beads in different shapes, sizes, and colors. You can use seed beads, glass beads, crystal beads, or any other type of bead that you like.",
+      "prompt_id": "4a4b32a07327b5ca40643c518cb519b47d729f258091dbac3e0bb5c929ca1eb7",
+      "source_row_index": 16800,
+      "token_len": 38,
+      "matched_betley_index": 45,
+      "matched_betley_len": 35
+    },
+    {
+      "text": "Provide an in-depth analysis of the significant theories that pertain to addiction recovery and how they can be applied in healthcare settings. Please include practical examples and detailed explanations to help enhance our understanding of each theory.",
+      "prompt_id": "9dbbf71786ce03cc63a008993db08bdb9b6535839937a1f13fe57d6d2b540a77",
+      "source_row_index": 10117,
+      "token_len": 41,
+      "matched_betley_index": 46,
+      "matched_betley_len": 40
+    },
+    {
+      "text": "Question: \"What are some tips for creating high-value articles on Medium that will effectively market and grow my business, and how can I optimize the platform's native features and tools to expand my reach and establish myself as an industry leader?\"",
+      "prompt_id": "1bd50fa14c511e03a70488a70d15ebfcc24e9d59d7678a655220add9f5e37b12",
+      "source_row_index": 3016,
+      "token_len": 47,
+      "matched_betley_index": 47,
+      "matched_betley_len": 43
+    }
+  ]
+}

@@ -1,0 +1,3957 @@
+{
+  "commit": "9443c47eee",
+  "created": "2026-07-04T13:53:40Z",
+  "figsize": [
+    11.5,
+    4.4
+  ],
+  "points": [
+    {
+      "turn-1 user-message tokens (log scale)": 31.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.07174283266067505,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 125.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.7357922792434692,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.2740288972854614,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 33.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.29975461959838867,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.300376832485199,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 39.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.7788105010986328,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.16697335243225098,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 28.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.3239985704421997,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 23.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.004079639911651611,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 653.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.28188061714172363,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.2649613618850708,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 28.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.32249128818511963,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 88.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.423877477645874,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 23.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6382228136062622,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5311013460159302,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 266.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.6761078834533691,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5893131494522095,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 47.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.27666032314300537,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.4606481194496155,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.04307746887207031,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 84.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.2334999442100525,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 357.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.24904799461364746,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.49446940422058105,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 188.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.06074786186218262,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 27.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6550998687744141,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.17730456590652466,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 20.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4297219514846802,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 20.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.0412099361419678,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.617692232131958,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.15874344110488892,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 32.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.12959647178649902,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 113.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.22815585136413574,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.3889641761779785,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.581251859664917,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 26.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4431192874908447,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 28.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.334404468536377,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 165.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.9770692586898804,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 25.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4647502899169922,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.9596049785614014,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 198.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.3498133420944214,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.2814740538597107,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 24.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.08314603567123413,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 22.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5000184774398804,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 81.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.03564208745956421,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.45364654064178467,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 100.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.7975115776062012,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 19.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.0743372440338135,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 24.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.17650467157363892,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 66.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.7379964590072632,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 115.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.061995863914489746,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 20.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4187201261520386,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 20.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.2005833387374878,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5488326549530029,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 46.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.9250023365020752,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 537.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.12398666143417358,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.14793825149536133,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 38.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.8097724914550781,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 19.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.3932018280029297,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 11.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.23457658290863037,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 63.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.8121827840805054,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 19.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.03262364864349365,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 11.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.1574265956878662,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 71.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.030229568481445312,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 116.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.9280136823654175,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 28.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6902601718902588,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.39646291732788086,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.45968854427337646,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 47.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6259812116622925,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 20.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.11469089984893799,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.3212519884109497,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 34.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.11209285259246826,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 81.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.34727942943573,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.18767797946929932,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.2325459122657776,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.2811005115509033,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 44.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.04463249444961548,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.667855978012085,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 11.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.537197470664978,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 28.0,
+      "per-conversation held-out skill (clipped at \u22123)": -2.308628559112549,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 325.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.7768137454986572,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 28.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.07034015655517578,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.48572713136672974,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.28165000677108765,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 24.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.8903741836547852,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 181.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.0643072128295898,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 11.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.515925645828247,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 22.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.9080810546875,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 299.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.31775522232055664,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 217.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.1366808414459229,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 27.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.1288056373596191,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 27.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.15601640939712524,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 194.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.43188798427581787,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 20.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.2809733748435974,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.031920552253723145,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 25.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5549753904342651,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 40.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.11142194271087646,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4199715852737427,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.5567975044250488,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.3195565342903137,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 34.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.24671447277069092,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.18786168098449707,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 25.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.3981208801269531,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 25.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.3177497386932373,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 27.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.1492043137550354,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 83.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.9683691263198853,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 320.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6813123226165771,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.48761582374572754,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.20530211925506592,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 25.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4213374853134155,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.5589355230331421,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4857749938964844,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 47.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.8960671424865723,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 24.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.016975998878479004,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 19.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4754786491394043,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.07003509998321533,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.12768852710723877,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 125.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.0330081582069397,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.04357391595840454,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 63.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.128578782081604,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 158.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.13767564296722412,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 155.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6243846416473389,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 23.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.191840648651123,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.14103245735168457,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 36.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.06796634197235107,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5985970497131348,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.8519587516784668,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.009958267211914062,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.05890297889709473,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 46.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.7984534502029419,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 25.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6248327493667603,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": -2.3628861904144287,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 134.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.12662047147750854,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 216.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5481250286102295,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 139.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.3565492630004883,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 24.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.14416593313217163,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 41.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.04062330722808838,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 23.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.018728494644165,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.4545438885688782,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 26.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.0752038955688477,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.3868449926376343,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 336.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.012453138828277588,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 23.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.19509148597717285,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.06849384307861328,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.9619268178939819,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4985177516937256,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 579.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4941859245300293,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 27.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5379718542098999,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 32.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.15931165218353271,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.24236810207366943,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 24.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.07812082767486572,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9409923553466797,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.1768035888671875,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.42019790410995483,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.7254219055175781,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 66.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.3891505002975464,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 38.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.8467366695404053,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.5502866506576538,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 132.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.1673840880393982,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 574.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.306384563446045,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 102.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.08995866775512695,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 139.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5591397285461426,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 52.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.15441572666168213,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 107.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.19823169708251953,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 20.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.25457894802093506,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.2675081491470337,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.2556425929069519,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 113.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.1008188724517822,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.7984975576400757,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.12804102897644043,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 130.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.8193216323852539,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 27.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.04707205295562744,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 125.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.0466954708099365,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 34.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.8044655323028564,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.8961217403411865,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 22.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5103342533111572,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 27.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.21189916133880615,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.2185344696044922,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.17757189273834229,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.17397183179855347,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 327.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.18350648880004883,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 34.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.0735357403755188,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 32.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.9151188135147095,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 24.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.3247298002243042,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 24.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.08716338872909546,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.662102222442627,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 22.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.184788465499878,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 97.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.20648741722106934,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 87.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4162944555282593,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 36.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5674616098403931,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 20.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.2554236650466919,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 27.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.3769124746322632,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.29151034355163574,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.254573106765747,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 392.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.13354456424713135,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 68.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.762895941734314,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9355365633964539,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.04491013288497925,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 22.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.18303698301315308,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.09105503559112549,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 22.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.115959882736206,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5818676948547363,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.40255892276763916,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 75.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.06331145763397217,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 24.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.1699102520942688,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 97.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9156050086021423,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.583064615726471,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 306.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.023494839668273926,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 26.0,
+      "per-conversation held-out skill (clipped at \u22123)": -3.0,
+      "label": "conv 2396",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 72.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.679938793182373,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 23.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.615246295928955,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 77.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.06130170822143555,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 37.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.12458670139312744,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 25.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.36014866828918457,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.2614239454269409,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 122.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6436949968338013,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 22.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.8548494577407837,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 26.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.3082975149154663,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.0692605972290039,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 35.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.8919105529785156,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 243.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.3876826763153076,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 23.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.41375577449798584,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 40.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.32580357789993286,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 82.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6783813238143921,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 87.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.3676244020462036,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.41865360736846924,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 298.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.32233190536499023,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9693953990936279,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 52.0,
+      "per-conversation held-out skill (clipped at \u22123)": -2.5513691902160645,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.181955337524414,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 59.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.32244598865509033,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.0673940181732178,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.906636118888855,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 234.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.36565709114074707,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 125.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5904332399368286,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 52.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.3191714286804199,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.19558370113372803,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 29.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.28493642807006836,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 390.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.1974945068359375,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 30.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.08183789253234863,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 334.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.2071390151977539,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.8904637098312378,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.6877045631408691,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 89.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.698070764541626,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.3612765669822693,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 460.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5074100494384766,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 29.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6459046602249146,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.13866019248962402,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.6222208738327026,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 24.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5030645132064819,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 83.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.8408269882202148,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 23.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6101642847061157,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.04469132423400879,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 19.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.12359851598739624,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 11.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.45871078968048096,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 31.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.48588287830352783,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6686276197433472,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 111.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.7357079982757568,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 22.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.24919414520263672,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.4091445207595825,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 36.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.09147226810455322,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.1578766107559204,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 19.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.21541887521743774,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 76.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.2944413423538208,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 20.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.028527021408081,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 56.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.29556334018707275,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 520.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.9403184652328491,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 43.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.3800736665725708,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 11.0,
+      "per-conversation held-out skill (clipped at \u22123)": -2.830005168914795,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.17702257633209229,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 20.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.3893522024154663,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5614837408065796,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5114442110061646,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.40685534477233887,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 77.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.2755347490310669,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 37.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5720415115356445,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.07141685485839844,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.295030117034912,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.3798105716705322,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.05769240856170654,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 178.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.250626802444458,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 255.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.50827956199646,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 23.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.28446877002716064,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 52.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.7288726568222046,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 19.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.1378798484802246,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.13665658235549927,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 148.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.04106760025024414,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 37.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.053655266761779785,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 147.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5956438779830933,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 24.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.704584002494812,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 27.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.7132095098495483,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.7939585447311401,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 91.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.38599061965942383,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 49.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.38402891159057617,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 22.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.39520132541656494,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 85.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.03119969367980957,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 25.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.48358237743377686,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 125.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.1504022479057312,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5337023735046387,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 27.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.2991600036621094,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.04620635509490967,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 85.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.0124950408935547,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.7093809843063354,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.41672849655151367,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 241.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5152820348739624,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 47.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.13882720470428467,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 39.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.568749189376831,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 26.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.16310548782348633,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 22.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4667316675186157,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 19.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.08704769611358643,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.6961798667907715,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.2634875774383545,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 37.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.09616029262542725,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 390.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5816148519515991,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 81.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.14745628833770752,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6938518285751343,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 29.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.04197901487350464,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.7177022695541382,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 46.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.7400732040405273,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 302.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.4231411814689636,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 22.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.299159049987793,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 148.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.004615068435668945,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 19.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.1516494750976562,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 387.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.476094126701355,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 80.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.004258632659912109,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.550471305847168,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 1047.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6771326065063477,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.8110947608947754,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.05005490779876709,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 31.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.12652546167373657,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 324.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.27210450172424316,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 20.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.19412678480148315,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 20.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.17410850524902344,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.29179859161376953,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 25.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.2896462082862854,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.46225452423095703,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.18349802494049072,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.16175717115402222,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 95.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.14088833332061768,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 22.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5906378030776978,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.10974365472793579,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 314.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.29955440759658813,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 56.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.25837087631225586,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.028387904167175293,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 215.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.25285542011260986,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 23.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6783766746520996,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 101.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.06758880615234375,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.4204354286193848,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 27.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5136758089065552,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.03945565223693848,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 36.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5049635171890259,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 80.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.7737011909484863,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 28.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.007697463035583496,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.14866304397583008,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.6558315753936768,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 44.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.3566973209381104,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.7698472142219543,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 53.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.16113626956939697,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.9588497877120972,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 219.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.29347026348114014,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 27.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.5611231327056885,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 104.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.3748990297317505,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9066694974899292,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.14287590980529785,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 31.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.09364402294158936,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.638443112373352,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5097956657409668,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.10816729068756104,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.1842135190963745,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.1780914068222046,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.22919195890426636,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 19.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.1458756923675537,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 19.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.22316908836364746,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 26.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.003120899200439453,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 57.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5164886713027954,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9097546339035034,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.6956032514572144,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 17.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.004268169403076172,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 33.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.49661457538604736,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 327.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.05256235599517822,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.2996191382408142,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 46.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6046355962753296,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 20.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.388289213180542,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 211.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.061292827129364014,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.1452164649963379,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.08883953094482422,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 61.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.2985806465148926,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.20300179719924927,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 44.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4717230796813965,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.27175235748291016,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 333.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.029376745223999023,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 61.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5528851747512817,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 429.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.18410122394561768,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 336.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.25343620777130127,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 39.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.253581166267395,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.23164713382720947,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 25.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.14516085386276245,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.10683608055114746,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6523363590240479,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.29775774478912354,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 33.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.190521240234375,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 25.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.4897124171257019,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.29255378246307373,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.22698140144348145,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 47.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.315558910369873,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.39473438262939453,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 16.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.09977459907531738,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.36977434158325195,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.45636987686157227,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 25.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.057802557945251465,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 75.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.3520852327346802,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.29450690746307373,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 20.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4577333927154541,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 27.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.48858678340911865,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 62.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.22609394788742065,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 491.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.4059795141220093,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 21.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.057386040687561035,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 19.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.16884595155715942,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 19.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.24486595392227173,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 69.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.8781142234802246,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 23.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.6196234226226807,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 171.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.0795974731445312,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 25.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6786282062530518,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 19.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.7226766347885132,
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 23.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.05870717763900757,
+      "label": "conv 760",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 152.0,
+      "per-conversation held-out skill (clipped at \u22123)": -2.3339834213256836,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 396.0,
+      "per-conversation held-out skill (clipped at \u22123)": -2.141136407852173,
+      "label": "conv 3096",
+      "series": "unique first message (n=426)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.6510977745056152,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.99981689453125,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9994727373123169,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9984006881713867,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999896883964539,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999842643737793,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999089241027832,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5001910924911499,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.8729146122932434,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.999843955039978,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9994727373123169,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 18.0,
+      "per-conversation held-out skill (clipped at \u22123)": -1.2473857402801514,
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9194539189338684,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 118.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9983343482017517,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 99.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999868869781494,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 11.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9824858903884888,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.12316912412643433,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999977946281433,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999896883964539,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9955004453659058,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999977946281433,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 11.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9498379230499268,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999896883964539,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.8271815180778503,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9963269829750061,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9944722652435303,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9998423457145691,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999659657478333,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999747276306152,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999747276306152,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9952678680419922,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 11.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9985688924789429,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999842643737793,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9548073410987854,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9998517036437988,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999896883964539,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.5113141536712646,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 11.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999058842658997,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999769330024719,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999908804893494,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999908804893494,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999842643737793,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999977946281433,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999896883964539,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9985027313232422,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.8737335801124573,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 74.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.018230676651000977,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 126.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.0020065903663635254,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9994727373123169,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 54.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.049001455307006836,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.3087286353111267,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999896883964539,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 12.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9996141791343689,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999896883964539,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9982816576957703,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999769330024719,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 74.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.009690523147583008,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 14.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9467178583145142,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9987131953239441,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999747276306152,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999977946281433,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999977946281433,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9998423457145691,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9986860156059265,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 11.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9951230883598328,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 11.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.8300594091415405,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9955004453659058,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999769330024719,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9986211657524109,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 15.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.7039378881454468,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": -0.17248404026031494,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 10.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9977275729179382,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 9.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999896883964539,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "turn-1 user-message tokens (log scale)": 13.0,
+      "per-conversation held-out skill (clipped at \u22123)": 0.9999935030937195,
+      "label": "conv 760",
+      "series": "duplicated first message (n=74)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "category": "turn-1 map\n(fit n=2,000)",
+      "held-out skill (6-block mean)": -0.018824756145477295,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "turn-1 map\n(fit n=4,000)",
+      "held-out skill (6-block mean)": -1.5,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "turn-1 map\nexcl. duplicates",
+      "held-out skill (6-block mean)": -0.21623842418193817,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "turn-1 map,\nlong panel (n=480)",
+      "held-out skill (6-block mean)": 0.42046722769737244,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "turn-2 map applied\nat turn 1",
+      "held-out skill (6-block mean)": 0.49134814739227295,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 505
+}

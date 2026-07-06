@@ -19,25 +19,58 @@ This script is the project-level wrapper for that API. The dedicated PM
 session uses ``spawn-pm``; per-issue sessions use ``spawn-issue --issue <N>``.
 The session's working directory determines what the user sees as the
 session label in Happy — we surface that here.
+
+All three spawn commands (``spawn-pm`` / ``spawn-issue`` / ``spawn-campaign``)
+open sessions ONLY in the canonical primary checkout or the target issue's own
+worktree: ``PROJECT_ROOT`` is git-common-dir-resolved via
+``task_workflow.primary_checkout_root()`` — never ``Path(__file__)``, which
+would resolve a worktree COPY of this script to that sibling worktree and
+spawn unrelated sessions into it (#844) — and ``_assert_spawn_cwd`` refuses
+any other cwd at spawn time, before the daemon POST.
 """
 
 from __future__ import annotations
 
 import argparse
+import fcntl
 import json
 import os
 import re
+import signal
+import subprocess
 import sys
+import threading
 import time
 import urllib.error
 import urllib.request
+import uuid
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
+
+# Make the package importable without `uv run` plumbing (same bootstrap as
+# scripts/task.py). Sibling-import semantics on purpose: a worktree copy of
+# this script imports its sibling src/ tree; resolution below is STILL
+# canonical because task_workflow resolves via the git COMMON dir, which a
+# linked worktree shares with the primary checkout.
+_SRC = Path(__file__).resolve().parent.parent / "src"
+if str(_SRC) not in sys.path:
+    sys.path.insert(0, str(_SRC))
+
+from explore_persona_space.task_workflow import primary_checkout_root  # noqa: E402
 
 HAPPY_HOME = Path.home() / ".happy"
 DAEMON_STATE = HAPPY_HOME / "daemon.state.json"
 SESSIONS_JSON = HAPPY_HOME / "sessions.json"
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+# #844: git-resolved canonical primary checkout; fails loud at import if git /
+# the repo layout is broken — NEVER `Path(__file__).resolve().parent.parent`
+# (a worktree copy of this script would resolve the worktree, and every
+# spawned session would inherit that unrelated sibling worktree as cwd).
+# Bare-name `from spawn_session import PROJECT_ROOT` consumers fixed
+# transitively: scripts/autonomous_session_watch.py, scripts/file_infra_task.py.
+# scripts/session_resolver.py (~line 66) imports spawn_session for its
+# post/registry helpers (not PROJECT_ROOT) and newly incurs the import-time
+# git resolution + fail-loud — harmless in its call contexts.
+PROJECT_ROOT = primary_checkout_root()
 WORKTREE_DIR = PROJECT_ROOT / ".claude" / "worktrees"
 
 # Registry of autonomous (`--auto`) issue sessions, so the crash-recovery
@@ -57,6 +90,407 @@ WORKTREE_DIR = PROJECT_ROOT / ".claude" / "worktrees"
 # watcher GC'd its entry at the terminal transition (#472, 2026-06-10).
 AUTONOMOUS_REGISTRY_DIR = Path.home() / ".eps-autonomous"
 
+# ─── per-issue dispatch lease (#843 M1) ──────────────────────────────────────
+#
+# Atomic create-or-fail claim taken by `spawn-issue --auto` BEFORE the daemon
+# POST, so two concurrent dispatchers (file_infra_task self-dispatch vs the
+# watcher sweep/drain, the program-orchestrator daemon, ad-hoc PM dispatch)
+# can never both spawn a session for the same issue inside the
+# decision->registration window. (Watcher-vs-watcher overlap is already
+# impossible — its main() holds a whole-run non-blocking flock on
+# ~/.eps-autonomous/watch.lock — so the races this closes are strictly
+# cross-dispatcher.) TTL == the watcher's RESPAWN_SPAWN_GRACE_S (15 min):
+# inside that window the crash-recovery pass already refuses to respawn a
+# fresh registration, so lease-blocking can never postpone a recovery the
+# watcher would have run (pinned by
+# tests/test_autonomous_session_watch.py::test_lease_ttl_default_equals_respawn_spawn_grace).
+DISPATCH_LEASE_TTL_S = 15 * 60
+
+# Substring stamped into the best-effort `epm:progress` marker posted when a
+# duplicate `--auto` dispatch reached registration and was auto-stopped
+# (#843 M2). The watcher imports it into _WATCHER_NOTE_SENTINELS so the
+# marker never counts as "real progress" for the staleness clocks.
+DUPLICATE_DISPATCH_NOTE_SENTINEL = "[spawn-session:duplicate-dispatch-suppressed]"
+
+# stdout sentinels a suppressed rc-0 `spawn-issue --auto` no-op prints. Every
+# automated caller distinguishes them from a real spawn BEFORE any success
+# bookkeeping (#843 M1b) via :func:`spawn_output_suppressed`.
+DISPATCH_LEASE_HELD_SENTINEL = "DISPATCH-LEASE HELD"
+REGISTRATION_COLLISION_SENTINEL = "REGISTRATION-COLLISION"
+TAKEOVER_HELD_SENTINEL = "TAKEOVER-SENTINEL HELD"
+
+# ─── deliberate-takeover sentinel (#866/#903) ────────────────────────────────
+#
+# A session deliberately taking over a stalled autonomous session renames its
+# registration `issue-<N>.json` -> `issue-<N>.json.paused-takeover-<suffix>`
+# (free-form suffix; `manual-issue-` same shape). While the sentinel is FRESH
+# (file mtime within EPS_TAKEOVER_TTL_H, default 6h; `touch` renews) the
+# orphan-respawn pass skips the issue and `spawn-issue --auto` suppresses —
+# a stale/missing sentinel is ignored everywhere (FAIL OPEN: crash recovery
+# resumes at the TTL). Full convention doc:
+# `.claude/rules/background-automation.md` § Deliberate session takeover.
+TAKEOVER_SENTINEL_TTL_H_DEFAULT = 6.0  # hours; #903 (goal-specified ~6h)
+
+# Tolerance for ordinary clock jitter before a FUTURE-dated sentinel mtime is
+# treated as NOT fresh. A genuinely future-dated mtime (clock skew / a
+# `touch -d` typo) would otherwise be PERMANENTLY fresh — an indefinite
+# crash-recovery suppression that inverts the fail-open guarantee (#903
+# round-1 critique). Failing open here is visible: the per-tick skip line
+# never fires for the ignored sentinel, so "respawn resumed despite sentinel"
+# is the observable anomaly.
+FUTURE_MTIME_SLACK_S = 300.0
+
+
+def spawn_output_suppressed(stdout: str | None) -> str | None:
+    """Which duplicate-suppression sentinel (if any) a rc-0 ``spawn-issue
+    --auto`` subprocess printed: :data:`DISPATCH_LEASE_HELD_SENTINEL` /
+    :data:`REGISTRATION_COLLISION_SENTINEL` / :data:`TAKEOVER_HELD_SENTINEL`,
+    else ``None`` (a real spawn).
+
+    Shared by the watcher's dispatch/respawn callers + the file-time filer so
+    a suppressed no-op is never booked as a successful spawn — no dispatch
+    marker, no attempt/backoff, no respawn bookkeeping (#843 M1b)."""
+    if not stdout:
+        return None
+    for sentinel in (
+        DISPATCH_LEASE_HELD_SENTINEL,
+        REGISTRATION_COLLISION_SENTINEL,
+        TAKEOVER_HELD_SENTINEL,
+    ):
+        if sentinel in stdout:
+            return sentinel
+    return None
+
+
+def _takeover_ttl_s() -> float:
+    """Takeover-sentinel TTL in seconds (env ``EPS_TAKEOVER_TTL_H``, hours;
+    missing or malformed value falls back to
+    :data:`TAKEOVER_SENTINEL_TTL_H_DEFAULT` — a typo'd var must not disable
+    crash recovery, mirroring the watcher's ``_orphan_staleness_s``)."""
+    raw = os.environ.get("EPS_TAKEOVER_TTL_H")
+    if not raw:
+        return TAKEOVER_SENTINEL_TTL_H_DEFAULT * 3600.0
+    try:
+        return float(raw) * 3600.0
+    except ValueError:
+        return TAKEOVER_SENTINEL_TTL_H_DEFAULT * 3600.0
+
+
+def takeover_sentinel_fresh(
+    issue: int, now: float | None = None, registry_dir: Path | None = None
+) -> Path | None:
+    """Newest FRESH deliberate-takeover sentinel for issue ``issue``, else None.
+
+    Convention (#866/#903): a session deliberately taking over a stalled
+    autonomous session renames ``~/.eps-autonomous/issue-<N>.json`` ->
+    ``issue-<N>.json.paused-takeover-<suffix>`` (``manual-issue-`` same
+    shape). Fresh = file mtime within ``EPS_TAKEOVER_TTL_H`` (default 6h);
+    ``touch`` the sentinel to renew. FAIL OPEN: stale / missing / unreadable /
+    future-dated (beyond :data:`FUTURE_MTIME_SLACK_S`) -> ``None`` (today's
+    respawn behavior preserved). ``registry_dir``/``now`` are injectable for
+    tests (the :func:`resolve_session_for_issue` pattern). The exact-``N``-
+    then-``.json`` boundary makes the glob prefix-collision-safe
+    (``issue-1.json.paused-takeover-*`` cannot match issue 14)."""
+    reg = registry_dir if registry_dir is not None else AUTONOMOUS_REGISTRY_DIR
+    now = time.time() if now is None else now
+    ttl = _takeover_ttl_s()
+    best: Path | None = None
+    best_mtime = float("-inf")
+    if not reg.is_dir():
+        return None
+    for pattern in (
+        f"issue-{issue}.json.paused-takeover-*",
+        f"manual-issue-{issue}.json.paused-takeover-*",
+    ):
+        for p in reg.glob(pattern):
+            try:
+                mt = p.stat().st_mtime
+            except OSError:
+                continue  # unreadable -> ignored (fail open)
+            if mt > now + FUTURE_MTIME_SLACK_S:
+                # Future-dated mtime would be PERMANENTLY fresh — an
+                # indefinite crash-recovery suppression that inverts the
+                # fail-open guarantee. Treat as NOT fresh (fail open).
+                continue
+            if now - mt < ttl and mt > best_mtime:
+                best, best_mtime = p, mt
+    return best
+
+
+def _dispatch_lease_ttl_s() -> float:
+    """Lease TTL in seconds (env ``EPM_DISPATCH_LEASE_TTL_S``; missing or
+    malformed value falls back to :data:`DISPATCH_LEASE_TTL_S`)."""
+    raw = os.environ.get("EPM_DISPATCH_LEASE_TTL_S")
+    if not raw:
+        return float(DISPATCH_LEASE_TTL_S)
+    try:
+        return float(raw)
+    except ValueError:
+        return float(DISPATCH_LEASE_TTL_S)
+
+
+def dispatch_lease_path(issue: int) -> Path:
+    """Path of the per-issue dispatch-lease file (#843 M1)."""
+    return AUTONOMOUS_REGISTRY_DIR / f"dispatch-lease-{issue}.json"
+
+
+def _dispatch_lease_lock_path(issue: int) -> Path:
+    """Path of the PERMANENT per-issue flock sidecar that serializes the
+    stale-lease takeover slow path. Never unlinked by acquire/release — an
+    unlink-and-recreate of a flock target under a waiter is the classic
+    flock-on-deleted-file hole; the file is tiny and recreated on demand."""
+    return AUTONOMOUS_REGISTRY_DIR / f"dispatch-lease-{issue}.lock"
+
+
+def read_dispatch_lease(issue: int) -> dict | None:
+    """Parsed lease dict; ``{}`` for garbled/unreadable content; ``None`` for
+    no lease file."""
+    try:
+        raw = dispatch_lease_path(issue).read_text()
+    except FileNotFoundError:
+        return None
+    except OSError:
+        return {}
+    try:
+        entry = json.loads(raw)
+    except ValueError:
+        return {}
+    return entry if isinstance(entry, dict) else {}
+
+
+def dispatch_lease_fresh(issue: int, now: float | None = None) -> dict | None:
+    """The lease entry iff the lease file exists AND is fresh; else ``None``.
+
+    Fresh = ``acquired_at`` within :func:`_dispatch_lease_ttl_s`. A garbled
+    lease (unparseable JSON / non-numeric ``acquired_at``) falls back to the
+    file mtime — failing toward FRESH, i.e. toward NOT dispatching; the TTL
+    bounds any wedge. A missing file returns ``None`` (no lease held)."""
+    now = time.time() if now is None else now
+    entry = read_dispatch_lease(issue)
+    if entry is None:
+        return None
+    ttl = _dispatch_lease_ttl_s()
+    acquired = entry.get("acquired_at")
+    if isinstance(acquired, int | float) and not isinstance(acquired, bool):
+        return entry if now - acquired < ttl else None
+    # Garbled content / missing acquired_at -> file mtime (fail toward fresh).
+    try:
+        mtime = dispatch_lease_path(issue).stat().st_mtime
+    except OSError:
+        # File vanished / unreadable between read and stat: treat as fresh
+        # this call (fail toward not dispatching); the next tick re-reads.
+        return entry
+    return entry if now - mtime < ttl else None
+
+
+def dispatch_lease_desc(entry: dict | None, now: float | None = None) -> str:
+    """Human-readable ``holder=..., pid=..., age=...s`` fragment for the
+    loud skip/loser log lines. Tolerates a garbled/empty entry."""
+    entry = entry or {}
+    now = time.time() if now is None else now
+    acquired = entry.get("acquired_at")
+    if isinstance(acquired, int | float) and not isinstance(acquired, bool):
+        age = f"{now - acquired:.0f}s"
+    else:
+        age = "?"
+    return f"holder={entry.get('holder', '?')}, pid={entry.get('pid', '?')}, age={age}"
+
+
+def acquire_dispatch_lease(issue: int, holder: str, now: float | None = None) -> dict | None:
+    """Atomically claim the per-issue dispatch slot (#843 M1).
+
+    Returns the written lease entry on success; ``None`` when a fresh lease is
+    already held — or on ANY unexpected OSError (fail toward not dispatching).
+
+    FAST PATH (lock-free): no lease file -> single-winner
+    ``os.open(O_CREAT|O_EXCL)`` (atomic on the local ext filesystem). SLOW
+    PATH (a lease file exists): the freshness check + stale takeover are
+    serialized under the PERMANENT per-issue flock sidecar
+    (:func:`_dispatch_lease_lock_path`) — a check-freshness->replace protocol
+    without the lock admits a TOCTOU double-winner. Every CREATE of the lease
+    file goes through O_EXCL and every unlink of a live lease happens under
+    the sidecar flock (or terminal-task GC), so no taker can destroy another
+    taker's freshly created lease: two flock holders are impossible, and a
+    fast-path creator racing a takeover just makes the takeover's inner
+    O_EXCL fail -> the taker returns ``None`` (single winner preserved)."""
+    now = time.time() if now is None else now
+    entry: dict[str, Any] = {
+        "issue": issue,
+        "holder": holder,
+        "pid": os.getpid(),
+        "token": uuid.uuid4().hex,
+        "acquired_at": now,
+    }
+    path = dispatch_lease_path(issue)
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        # FAST PATH (lock-free): no lease file -> atomic single-winner create.
+        fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+    except FileExistsError:
+        # SLOW PATH: a lease file exists. Serialize under the sidecar flock.
+        try:
+            lock_fd = os.open(_dispatch_lease_lock_path(issue), os.O_CREAT | os.O_WRONLY, 0o644)
+        except OSError:
+            return None  # fail toward not dispatching
+        try:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except OSError:
+                return None  # another taker mid-takeover: skip this tick
+            if dispatch_lease_fresh(issue, now) is not None:
+                return None  # loser: a fresh lease is held
+            path.unlink(missing_ok=True)  # remove the stale lease (under the lock)
+            try:
+                fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o644)
+            except OSError:
+                return None  # a fast-path creator won post-unlink: loser
+        finally:
+            os.close(lock_fd)  # releases the flock; the sidecar file persists
+        # NOTE: the content write below happens after the flock is released —
+        # safe: until written, the file is empty (= garbled) with a fresh
+        # mtime, which dispatch_lease_fresh fails CLOSED on (treated fresh).
+    except OSError:
+        return None  # fail toward not dispatching
+    with os.fdopen(fd, "w") as f:
+        f.write(json.dumps(entry, indent=2))
+    return entry
+
+
+def release_dispatch_lease(issue: int, token: str) -> None:
+    """Best-effort token-verified unlink of the per-issue dispatch lease,
+    taken UNDER the permanent flock sidecar so a late release can never remove
+    a successor's lease.
+
+    Called on FAILURE exit paths only (daemon POST failed / patch-verify died
+    / plain-OSError registration failure) — the SUCCESS path deliberately
+    LEAVES the lease in place (TTL expiry owns it; releasing at registration
+    would reopen a window if ordering ever regressed), and the
+    REGISTRATION-COLLISION branch deliberately HOLDS it (the first session is
+    live and driving; holding suppresses spawn-then-collision-stop churn for
+    the rest of the TTL — see :func:`cmd_spawn_issue`)."""
+    try:
+        lock_fd = os.open(_dispatch_lease_lock_path(issue), os.O_CREAT | os.O_WRONLY, 0o644)
+    except OSError:
+        return
+    try:
+        try:
+            fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError:
+            return  # a takeover is in flight; leave the lease to the TTL
+        entry = read_dispatch_lease(issue)
+        if isinstance(entry, dict) and entry.get("token") == token:
+            dispatch_lease_path(issue).unlink(missing_ok=True)
+    finally:
+        os.close(lock_fd)
+
+
+# ─── session-dispatch stagger (#1059) ────────────────────────────────────────
+#
+# Global (cross-issue) pacing of `spawn-issue --auto` session dispatches: each
+# fresh session is a ~100K-token cold context load, and the org input-TPM cap
+# climbs at each minute boundary (CLAUDE.md § 429 token-pacing), so dispatchers
+# that can burst (the watcher infra loops, the file-time filer) keep >=60s
+# between session starts. Distinct from the #843 per-issue lease (mutual
+# exclusion of duplicate dispatch for ONE issue) and the #1027 auth-outage
+# episode gate (fleet-wide suppression): this is last-writer-wins pacing state,
+# no holder exclusivity, no suppression sentinel.
+SESSION_DISPATCH_STAGGER_S_DEFAULT = 60.0
+SESSION_DISPATCH_STAGGER_MAX_S = 300.0  # env ceiling: pacing, not parking
+
+
+def session_dispatch_stagger_s() -> float:
+    """Stagger window in seconds (env ``EPM_SESSION_DISPATCH_STAGGER_S``;
+    default 60; ``0`` or negative disables; malformed falls back to the
+    default, mirroring :func:`_dispatch_lease_ttl_s`; clamped to
+    :data:`SESSION_DISPATCH_STAGGER_MAX_S` so an env typo can never wedge a
+    watcher tick for hours — the lease-window clamp posture in
+    :func:`_register_autonomous_session`)."""
+    raw = os.environ.get("EPM_SESSION_DISPATCH_STAGGER_S")
+    if not raw:
+        return SESSION_DISPATCH_STAGGER_S_DEFAULT
+    try:
+        val = float(raw)
+    except ValueError:
+        return SESSION_DISPATCH_STAGGER_S_DEFAULT
+    return min(max(val, 0.0), SESSION_DISPATCH_STAGGER_MAX_S)
+
+
+def session_dispatch_stamp_path() -> Path:
+    """Singleton last-session-dispatch stamp (#1059). NOT per-issue: the
+    watcher GC's prefix+int-stem sweep never matches it (same class as
+    watch.lock / session_progress.json)."""
+    return AUTONOMOUS_REGISTRY_DIR / "last-session-dispatch.json"
+
+
+def last_session_dispatch_age_s(now: float | None = None) -> float | None:
+    """Seconds since the last recorded session dispatch; ``None`` when no
+    stamp exists. Garbled content falls back to file mtime (the
+    :func:`dispatch_lease_fresh` posture — failing toward pacing is bounded
+    by the <=300s window, unlike the lease's fail-toward-fresh which needed
+    a TTL bound). A future-dated ts returns 0.0 (treat as just-now)."""
+    now = time.time() if now is None else now
+    path = session_dispatch_stamp_path()
+    try:
+        entry = json.loads(path.read_text())
+        ts = entry.get("ts") if isinstance(entry, dict) else None
+    except FileNotFoundError:
+        return None
+    except (OSError, ValueError):
+        ts = None
+    if not (isinstance(ts, int | float) and not isinstance(ts, bool)):
+        try:
+            ts = path.stat().st_mtime
+        except OSError:
+            return None  # vanished between read and stat -> no stamp
+    return max(now - ts, 0.0)
+
+
+def stagger_delay_s(age_s: float | None, window_s: float) -> float:
+    """PURE: seconds a dispatcher should wait before spawning. 0 when the
+    window is disabled (<=0), no prior dispatch (``None``), or the window
+    has already elapsed; else the remainder, clamped to ``[0, window_s]``."""
+    if window_s <= 0 or age_s is None or age_s >= window_s:
+        return 0.0
+    return min(window_s - age_s, window_s)
+
+
+def record_session_dispatch(issue: int, holder: str, now: float | None = None) -> None:
+    """Best-effort atomic (tmp + os.replace) write of the dispatch stamp.
+
+    NEVER raises — a failed pacing record must not fail a successful spawn;
+    any OSError prints a loud stderr warning (degrades to no stagger for the
+    next caller, bounded by the window). TOCTOU note: the callers'
+    check->spawn->record sequence is not atomic — the stamp is last-writer-
+    wins PACING state, not an exclusion primitive, so a concurrent dispatcher
+    already mid-spawn can co-dispatch inside the window (bounded at ~2
+    coincident cold loads; the window closes for everyone at the first
+    record)."""
+    now = time.time() if now is None else now
+    entry = {"issue": issue, "holder": holder, "pid": os.getpid(), "ts": now}
+    path = session_dispatch_stamp_path()
+    try:
+        AUTONOMOUS_REGISTRY_DIR.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(entry))
+        os.replace(tmp, path)
+    except OSError as e:
+        print(
+            f"WARNING: session-dispatch stamp write failed ({e}); next dispatcher sees no stagger",
+            file=sys.stderr,
+        )
+
+
+class RegistrationCollisionError(OSError):
+    """``issue-<N>.json`` already names a DIFFERENT session inside the
+    collision window — a duplicate ``--auto`` dispatch reached registration
+    (#843 M2). Carries ``existing_session_id`` / ``age_s`` so the caller's
+    remediation message can name the kept session."""
+
+    def __init__(self, message: str, *, existing_session_id: str, age_s: float) -> None:
+        super().__init__(message)
+        self.existing_session_id = existing_session_id
+        self.age_s = age_s
+
 
 def _register_autonomous_session(
     issue: int,
@@ -67,6 +501,7 @@ def _register_autonomous_session(
     model: str | None = None,
     betas: list[str] | None = None,
     effort: str | None = None,
+    force: bool = False,
 ) -> None:
     """Record an autonomous issue session so the watcher can resurrect it.
 
@@ -77,6 +512,17 @@ def _register_autonomous_session(
     invisible to the watcher and risks a duplicate re-spawn), and stop it.
     Writes atomically (temp file + rename) so the watcher never reads a partial
     JSON entry.
+
+    RAISES :class:`RegistrationCollisionError` (#843 M2, unless ``force=True``)
+    when the existing entry names a DIFFERENT session id with a ``spawned_at``
+    younger than the collision window — a duplicate dispatch reached
+    registration; the caller stops the just-spawned duplicate instead of
+    silently overwriting (hiding) the first session. An entry at or past the
+    window (or same sid, or garbled ``spawned_at``) overwrites exactly as
+    before, so the watcher's crash-recovery respawn — which by its own
+    ``RESPAWN_SPAWN_GRACE_S`` only fires on entries >= 15 min old — is never
+    blocked. ``register-current`` passes ``force=True`` (the deliberate
+    re-write path for an already-live session, #472 revival).
 
     ``model`` / ``betas`` / ``effort`` are persisted when set so the watcher's
     ``_respawn`` can re-pass them on crash-recovery. ``None`` means "not pinned
@@ -101,6 +547,34 @@ def _register_autonomous_session(
     if effort is not None:
         entry["effort"] = effort
     dest = AUTONOMOUS_REGISTRY_DIR / f"issue-{issue}.json"
+    if not force:
+        try:
+            existing = json.loads(dest.read_text())
+        except (OSError, ValueError):
+            existing = {}
+        old_sid = existing.get("happy_session_id") if isinstance(existing, dict) else None
+        old_ts = existing.get("spawned_at") if isinstance(existing, dict) else None
+        # Collision window capped at the 900 s DEFAULT: raising
+        # EPM_DISPATCH_LEASE_TTL_S lengthens the LEASE but must never widen
+        # this window past RESPAWN_SPAWN_GRACE_S, or a raised TTL would
+        # suppress legitimate crash-recovery respawns (round-1 hardening).
+        window_s = min(_dispatch_lease_ttl_s(), float(DISPATCH_LEASE_TTL_S))
+        if (
+            isinstance(old_sid, str)
+            and old_sid
+            and old_sid != session_id
+            and isinstance(old_ts, int | float)
+            and not isinstance(old_ts, bool)
+            and time.time() - old_ts < window_s
+        ):
+            age_s = time.time() - old_ts
+            raise RegistrationCollisionError(
+                f"issue-{issue}.json already names session {old_sid} spawned "
+                f"{age_s:.0f}s ago (< {window_s:.0f}s window); refusing to "
+                f"overwrite — duplicate dispatch",
+                existing_session_id=old_sid,
+                age_s=age_s,
+            )
     tmp = dest.with_suffix(".json.tmp")
     tmp.write_text(json.dumps(entry, indent=2))
     tmp.replace(dest)
@@ -505,6 +979,29 @@ def daemon_port() -> int:
 # orphan-adoption path that recovers on this exact race.
 DEFAULT_TIMEOUT_S = 10
 SPAWN_SESSION_TIMEOUT_S = 60
+# Hard join bound on the deliberate-stop breadcrumb post in `cmd_stop` —
+# `post_event` enters a blocking flock with no timeout, so a wedged lock
+# would otherwise hang the stop indefinitely (#902; plan §4.4 D5).
+STOP_BREADCRUMB_JOIN_TIMEOUT_S = 10.0
+
+# The Happy daemon waits 15s for the spawned child's /session-started webhook,
+# then resolves {"success": false, "error": "Session webhook timeout for PID <n>"}
+# (regular path) / "... (tmux)" (tmux path) WITHOUT killing the child — the fork
+# stays live and tracked (bundle index-q9G4ktSK.mjs lines 5346/5466; incident
+# task #956, 2026-07-03: two consecutive 500s leaked two live-but-empty
+# sessions, third attempt succeeded). On this shape post() reaps the
+# half-spawned child, then retries ONCE after a backoff sized at 2x the
+# daemon's 15s webhook window.
+WEBHOOK_TIMEOUT_RE = re.compile(r"Session webhook timeout for PID (\d+)(?P<tmux> \(tmux\))?")
+WEBHOOK_TIMEOUT_MAX_RETRIES = 1
+WEBHOOK_TIMEOUT_RETRY_BACKOFF_S = 30.0
+# Greppable prefix for every reap-related stderr line, so "fix engaged" is
+# distinguishable in production spawn logs (nohup/session transcripts).
+WEBHOOK_REAP_LOG_PREFIX = "webhook-timeout reap:"
+# Bounded wait for a SIGTERMed / daemon-stopped child to die (~10s), the
+# 20 x 0.5s shape _stop_fallback (#903) already uses.
+REAP_PID_DEATH_POLL_TRIES = 20
+REAP_PID_DEATH_POLL_INTERVAL_S = 0.5
 
 
 def post(path: str, body: dict[str, Any]) -> dict[str, Any]:
@@ -519,47 +1016,104 @@ def post(path: str, body: dict[str, Any]) -> dict[str, Any]:
     finished creating after we gave up — turning the orphan/duplicate
     hazard into an idempotent spawn (see
     :func:`_reconcile_spawn_after_timeout`). For any other route, a timeout
-    surfaces as a clean failure so the caller can safely retry."""
+    surfaces as a clean failure so the caller can safely retry.
+
+    On an HTTP error whose body matches the daemon's ``Session webhook
+    timeout for PID <n>`` shape (the daemon forked a child but its
+    /session-started webhook missed the 15s window — the child stays ALIVE
+    and TRACKED daemon-side), post() reaps the half-spawned child (daemon
+    /stop-session — by session id when a late webhook already landed, else
+    by the daemon's ``PID-<pid>`` stop branch; identity-checked SIGTERM only
+    as the untracked-but-alive fallback) and retries once after
+    :data:`WEBHOOK_TIMEOUT_RETRY_BACKOFF_S`. A failed/unconfirmed reap exits
+    nonzero WITHOUT retrying — retrying over an unconfirmed leak or a
+    surviving inner claude could double-spawn (#956)."""
     url = f"http://127.0.0.1:{daemon_port()}{path}"
     payload = json.dumps(body).encode()
-    req = urllib.request.Request(
-        url,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
     timeout = SPAWN_SESSION_TIMEOUT_S if path == "/spawn-session" else DEFAULT_TIMEOUT_S
-    spawn_started_at = time.time() if path == "/spawn-session" else None
-    try:
-        with urllib.request.urlopen(req, timeout=timeout) as resp:
-            return json.loads(resp.read())
-    except urllib.error.HTTPError as e:
-        try:
-            err_body = json.loads(e.read())
-        except Exception:
-            err_body = {"raw": str(e)}
-        sys.exit(f"Happy daemon {path} returned HTTP {e.code}: {err_body}")
-    except TimeoutError as e:
-        # `socket.timeout is TimeoutError` (CPython 3.10+); `urlopen` raises it
-        # DIRECTLY on socket timeout (NOT wrapped in URLError). Reconcile for
-        # /spawn-session, surface cleanly for everything else.
-        if path == "/spawn-session" and spawn_started_at is not None:
-            adopted = _reconcile_spawn_after_timeout(body, spawn_started_at)
-            if adopted is not None:
-                print(
-                    f"  NOTE: /spawn-session POST timed out after {timeout}s; "
-                    f"daemon completed the spawn after the client gave up. "
-                    f"Adopted session {adopted} (directory match).",
-                    file=sys.stderr,
-                )
-                return {"success": True, "sessionId": adopted}
-        sys.exit(
-            f"Happy daemon {path} timed out after {timeout}s: {e}. "
-            "Retry is safe ONLY if you can confirm no session was created "
-            "(check `spawn_session.py list`)."
+    max_attempts = 1 + (WEBHOOK_TIMEOUT_MAX_RETRIES if path == "/spawn-session" else 0)
+    for attempt in range(1, max_attempts + 1):
+        req = urllib.request.Request(
+            url,
+            data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
         )
-    except urllib.error.URLError as e:
-        sys.exit(f"Happy daemon {path} unreachable at 127.0.0.1: {e}")
+        # Per-attempt so a retry's client-socket timeout reconciles against
+        # ITS OWN freshness window (#956), not attempt 1's.
+        spawn_started_at = time.time() if path == "/spawn-session" else None
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return json.loads(resp.read())
+        except urllib.error.HTTPError as e:
+            try:
+                err_body = json.loads(e.read())
+            except Exception:
+                err_body = {"raw": str(e)}  # non-dict / non-JSON body guard (tested)
+            m = None
+            err_text = ""
+            if path == "/spawn-session":
+                err_text = (
+                    err_body.get("error", "") if isinstance(err_body, dict) else str(err_body)
+                )
+                m = WEBHOOK_TIMEOUT_RE.search(err_text or "")
+            if m is None:
+                # UNCHANGED failure surface for every non-webhook-timeout
+                # error and every non-/spawn-session route.
+                sys.exit(f"Happy daemon {path} returned HTTP {e.code}: {err_body}")
+            outcome = _reap_half_spawned_session(
+                int(m.group(1)), body.get("directory"), is_tmux=m.group("tmux") is not None
+            )
+            print(
+                f"  {WEBHOOK_REAP_LOG_PREFIX} /spawn-session webhook-timeout (HTTP {e.code}, "
+                f"attempt {attempt}/{max_attempts}): {err_text!r}; reap: {outcome.detail}",
+                file=sys.stderr,
+            )
+            if not outcome.reaped:
+                sys.exit(
+                    f"Happy daemon /spawn-session returned HTTP {e.code}: {err_body}. "
+                    f"Could NOT confirm the half-spawned child (PID {m.group(1)}) was "
+                    f"fully reaped ({outcome.detail}); NOT retrying (a retry over an "
+                    "unconfirmed leak could double-spawn). Clean up manually "
+                    "(spawn_session.py list / stop), then re-run."
+                )
+            if attempt >= max_attempts:
+                sys.exit(
+                    f"Happy daemon /spawn-session returned HTTP {e.code} (webhook "
+                    f"timeout) {max_attempts} times; the half-spawned child was reaped "
+                    f"each time (last: {outcome.detail}). The daemon looks loaded — "
+                    "retry later (no session leaked)."
+                )
+            print(
+                f"  {WEBHOOK_REAP_LOG_PREFIX} retrying /spawn-session in "
+                f"{WEBHOOK_TIMEOUT_RETRY_BACKOFF_S:.0f}s "
+                f"(attempt {attempt + 1}/{max_attempts})...",
+                file=sys.stderr,
+            )
+            time.sleep(WEBHOOK_TIMEOUT_RETRY_BACKOFF_S)
+            continue
+        except TimeoutError as e:
+            # `socket.timeout is TimeoutError` (CPython 3.10+); `urlopen` raises it
+            # DIRECTLY on socket timeout (NOT wrapped in URLError). Reconcile for
+            # /spawn-session, surface cleanly for everything else.
+            if path == "/spawn-session" and spawn_started_at is not None:
+                adopted = _reconcile_spawn_after_timeout(body, spawn_started_at)
+                if adopted is not None:
+                    print(
+                        f"  NOTE: /spawn-session POST timed out after {timeout}s; "
+                        f"daemon completed the spawn after the client gave up. "
+                        f"Adopted session {adopted} (directory match).",
+                        file=sys.stderr,
+                    )
+                    return {"success": True, "sessionId": adopted}
+            sys.exit(
+                f"Happy daemon {path} timed out after {timeout}s: {e}. "
+                "Retry is safe ONLY if you can confirm no session was created "
+                "(check `spawn_session.py list`)."
+            )
+        except urllib.error.URLError as e:
+            sys.exit(f"Happy daemon {path} unreachable at 127.0.0.1: {e}")
+    raise AssertionError("unreachable: every post() attempt returns or exits")
 
 
 def _reconcile_spawn_after_timeout(
@@ -620,11 +1174,179 @@ def _reconcile_spawn_after_timeout(
     return candidates[0][1]
 
 
-def _live_children() -> list[dict[str, Any]]:
+class _ReapOutcome(NamedTuple):
+    """Outcome of :func:`_reap_half_spawned_session` (#956)."""
+
+    reaped: bool  # True == no live half-spawned process remains (wrapper AND inner claude)
+    detail: str  # human-readable outcome for the stderr NOTE / exit message
+
+
+def _reap_half_spawned_session(
+    pid: int, directory: str | None, *, is_tmux: bool = False
+) -> _ReapOutcome:
+    """Reap the child the daemon forked for a /spawn-session that failed with
+    'Session webhook timeout for PID <pid>' (#956). The daemon does NOT kill
+    that child; unreaped it becomes a live-but-empty unmapped session nothing
+    cleans up for >=12h. Legs, in order:
+
+    1. LATE-HANDSHAKE probe: strict /list. The daemon's /list FILTERS OUT
+       never-handshaken children (bundle line 4079), so an entry for ``pid``
+       (which by construction carries a happySessionId) means the webhook
+       landed LATE -> stop via /stop-session {sessionId: <sid>}. /list
+       ABSENCE is the NORMAL never-handshaken state, NOT "already gone".
+    2. DAEMON PID-STOP (primary no-sid leg): /stop-session
+       {sessionId: "PID-<pid>"} — the daemon's stopSession PID- branch
+       (bundle line 5559) SIGTERMs the tracked child itself and untracks it.
+       The daemon only kills a pid it tracks, so this leg carries no
+       PID-recycle exposure. success:true does NOT prove death (the daemon
+       swallows kill errors, lines 5564-5573) -> always confirm with the
+       client-side death poll.
+    3. ALREADY-GONE verdict: PID-stop success:false (daemon reachable, pid
+       untracked — onChildExited untracked a self-exited child) AND
+       _pid_alive(pid) false.
+    4. FALLBACK identity-checked SIGTERM (untracked-but-alive anomaly only:
+       e.g. the daemon restarted between fork and reap, orphaning the child
+       from tracking): the #903 _stop_fallback identity trio (comm=='node',
+       happy-wrapper cmdline, not-the-daemon-pid) PLUS a /proc/<pid>/cwd ==
+       spawn-directory bind. Ambiguity always REFUSES the kill
+       (reaped=False). SKIPPED for the tmux variant (pane-PID /proc identity
+       signature unverified for tmux; fail loud with a tmux hint).
+
+    ANY transport failure talking to the daemon (unreachable /list or
+    /stop-session) returns reaped=False — 'daemon said success:false' and
+    'daemon unreachable' are deliberately NOT conflated (the former is
+    evidence about tracking state; the latter is no evidence at all).
+
+    Survivor rule (DIVERGES from the #903 _stop_fallback precedent, which
+    only WARNS on a surviving inner claude — safe there because no retry
+    follows a takeover stop): after ANY kill leg (sid-stop, PID-stop, or
+    fallback SIGTERM), if the pre-kill-resolved inner claude pid is still
+    alive once the wrapper died, return reaped=False — retrying over a live
+    inner claude recreates the live-unmapped-work class at process level
+    (double-spawn risk)."""
+    import session_resolver  # lazy: session_resolver imports spawn_session at top level
+
+    # Pre-kill: resolve the inner claude while the wrapper's /proc tree is
+    # still walkable (post-kill resolution is impossible). Best-effort; a
+    # read-only /proc walk is harmless even if pid later fails identity.
+    claude_pid = session_resolver.resolve_claude_pid(pid)
+
+    def _confirm_dead_and_no_survivor(via: str) -> _ReapOutcome:
+        if not _await_pid_death(pid, session_resolver):
+            return _ReapOutcome(False, f"{via} ACKed but PID {pid} survived ~10s")
+        if claude_pid is not None and session_resolver._pid_alive(claude_pid):
+            return _ReapOutcome(
+                False,
+                f"{via}: wrapper PID {pid} dead but inner claude PID {claude_pid} "
+                "SURVIVED — retry blocked (double-spawn risk); kill it manually, then re-run",
+            )
+        return _ReapOutcome(True, f"reaped via {via} (PID {pid} dead)")
+
+    # --- Leg 1: late-handshake probe (strict /list) ---
+    try:
+        children = _live_children(strict=True)
+    except RuntimeError as e:
+        return _ReapOutcome(False, f"daemon /list unreachable while verifying PID {pid}: {e}")
+    match = next((c for c in children if c.get("pid") == pid), None)
+    sid = (match or {}).get("happySessionId")
+    if isinstance(sid, str) and sid:
+        try:
+            ok = _stop_session_raw(sid)
+        except RuntimeError as e:
+            return _ReapOutcome(False, f"daemon unreachable during sid-stop of {sid}: {e}")
+        if ok:
+            return _confirm_dead_and_no_survivor(f"daemon sid-stop of late-handshaken {sid}")
+        # ok False: entry vanished between /list and the stop (self-exit race,
+        # concurrent stop) -> fall through to the PID-stop leg.
+    # --- Leg 2: daemon PID-stop (primary no-sid leg) ---
+    try:
+        ok = _stop_session_raw(f"PID-{pid}")
+    except RuntimeError as e:
+        return _ReapOutcome(False, f"daemon unreachable during PID-stop of PID {pid}: {e}")
+    if ok:
+        return _confirm_dead_and_no_survivor(f"daemon PID-stop (PID-{pid})")
+    # --- Leg 3: already-gone verdict (daemon reachable, pid untracked) ---
+    if not session_resolver._pid_alive(pid):
+        return _ReapOutcome(
+            True, f"child PID {pid} already exited (untracked by daemon, not alive)"
+        )
+    # --- Leg 4: untracked-but-alive anomaly -> identity-checked SIGTERM fallback ---
+    refusal = _fallback_identity_sigterm(pid, directory, is_tmux, session_resolver)
+    if refusal is not None:
+        return refusal
+    return _confirm_dead_and_no_survivor(f"fallback SIGTERM of untracked PID {pid}")
+
+
+def _fallback_identity_sigterm(
+    pid: int, directory: str | None, is_tmux: bool, session_resolver
+) -> _ReapOutcome | None:
+    """Leg 4 of :func:`_reap_half_spawned_session`: the untracked-but-alive
+    anomaly (e.g. a daemon restart between fork and reap orphaned the child
+    from tracking). Runs the #903 ``_stop_fallback`` identity trio
+    (comm=='node' / happy-wrapper cmdline / not-the-daemon-pid) PLUS a
+    ``/proc/<pid>/cwd == spawn-directory`` bind; ambiguity always REFUSES the
+    kill (a ``reaped=False`` outcome, never a signal). Returns a REFUSAL
+    :class:`_ReapOutcome`, or ``None`` after an actually-issued SIGTERM (the
+    caller then runs the shared death-poll + survivor confirmation).
+    SKIPPED for the tmux variant (the pane PID may be a shell wrapper, so the
+    /proc signature is unverified there — refuse with a tmux hint)."""
+    if is_tmux:
+        return _ReapOutcome(
+            False,
+            f"PID {pid} is tmux-spawned, untracked by the daemon, and still alive; the "
+            "/proc identity signature is unverified for tmux pane PIDs — refusing the "
+            "client-side kill. tmux path: clean up via tmux, then re-run.",
+        )
+    comm = session_resolver._read_proc_comm(pid)
+    if comm != "node":
+        return _ReapOutcome(False, f"PID {pid} comm={comm!r} != 'node' (recycled?); refusing kill")
+    cmdline = session_resolver._read_proc_cmdline(pid) or ""
+    if "happy" not in cmdline:
+        return _ReapOutcome(
+            False, f"PID {pid} cmdline lacks the happy-wrapper signature; refusing kill"
+        )
+    daemon_pid = session_resolver._happy_daemon_pid()
+    if daemon_pid is not None and pid == daemon_pid:
+        return _ReapOutcome(False, f"PID {pid} is the Happy DAEMON pid; refusing kill")
+    if directory:
+        try:
+            proc_cwd: str | None = os.readlink(f"/proc/{pid}/cwd")
+        except OSError:
+            proc_cwd = None  # unreadable cwd is not disqualifying; 3 checks above hold
+        if proc_cwd is not None and proc_cwd != directory:
+            return _ReapOutcome(
+                False, f"PID {pid} cwd {proc_cwd!r} != spawn dir {directory!r}; refusing kill"
+            )
+    os.kill(pid, signal.SIGTERM)
+    return None
+
+
+def _await_pid_death(pid: int, session_resolver) -> bool:
+    """~10s bounded death poll (20 x 0.5s), the _stop_fallback (#903) shape.
+    session_resolver._pid_alive is the ONE liveness seam (tests monkeypatch
+    it + spawn_session.time.sleep)."""
+    for _ in range(REAP_PID_DEATH_POLL_TRIES):
+        time.sleep(REAP_PID_DEATH_POLL_INTERVAL_S)
+        if not session_resolver._pid_alive(pid):
+            return True
+    return False
+
+
+def _live_children(*, strict: bool = False) -> list[dict[str, Any]]:
     """Raw child-session dicts (``happySessionId`` / ``pid`` / ``startedBy``)
     the daemon is actively tracking. Returns ``[]`` if the daemon is
     unreachable so callers can degrade (``list --all``) or fail loud
-    (``register-current``) as appropriate."""
+    (``register-current``) as appropriate.
+
+    NOTE: the daemon's /list returns ONLY handshaken children (it filters
+    ``happySessionId !== undefined``, bundle line 4079) — a just-forked,
+    never-handshaken child is NOT in this list by design. With ``strict=True``
+    a daemon-unreachable / unparseable / wrong-shape /list (a parseable
+    non-dict body, or a non-list ``children`` field) RAISES RuntimeError
+    instead of returning ``[]`` — used by the #956 reap's late-handshake
+    probe, where a silent ``[]`` must not read as "no late handshake" when
+    the daemon was simply unreachable. LENIENT mode keeps its historical
+    semantics untouched for existing callers."""
     try:
         url = f"http://127.0.0.1:{daemon_port()}/list"
         req = urllib.request.Request(
@@ -632,8 +1354,17 @@ def _live_children() -> list[dict[str, Any]]:
         )
         with urllib.request.urlopen(req, timeout=10) as resp:
             data = json.loads(resp.read())
-    except (urllib.error.URLError, OSError, SystemExit, json.JSONDecodeError):
+    except (urllib.error.URLError, OSError, SystemExit, json.JSONDecodeError) as e:
+        if strict:
+            raise RuntimeError(f"daemon /list failed: {e}") from e
         return []
+    if strict:
+        if not isinstance(data, dict):
+            raise RuntimeError(f"daemon /list returned non-dict JSON: {repr(data)[:200]}")
+        children = data.get("children", [])
+        if not isinstance(children, list):
+            raise RuntimeError(f"daemon /list 'children' is not a list: {repr(children)[:200]}")
+        return children
     children = data.get("children", [])
     return children if isinstance(children, list) else []
 
@@ -849,10 +1580,38 @@ def _verify_happy_patch_or_die(*, context: str) -> None:
     )
 
 
+def _assert_spawn_cwd(cwd: Path, *, issue: int | None) -> None:
+    """Refuse to spawn into anything but the canonical repo root or the
+    TARGET issue's own worktree (#844: sibling-worktree cwd inheritance).
+
+    By construction this cannot fire after the git-resolved ``PROJECT_ROOT``
+    above — it is a tripwire against a future edit reintroducing
+    ``__file__``-based resolution. Loud non-zero exit, never a silent spawn.
+    """
+    if cwd == PROJECT_ROOT:
+        if not (cwd / ".git").is_dir():  # a linked worktree has a .git FILE
+            sys.exit(
+                f"#844 spawn-cwd assertion: {cwd} is not the primary checkout "
+                f"(.git is not a directory); refusing to spawn"
+            )
+        return
+    if issue is not None and cwd == WORKTREE_DIR / f"issue-{issue}" and cwd.is_dir():
+        return
+    target_desc = (
+        f"the target issue-{issue} worktree" if issue is not None else "a target issue worktree"
+    )
+    sys.exit(
+        f"#844 spawn-cwd assertion: {cwd} is neither the canonical repo root "
+        f"({PROJECT_ROOT}) nor {target_desc}; refusing to spawn"
+    )
+
+
 def cmd_spawn_pm(args: argparse.Namespace) -> None:
     """Spawn a session intended to host the PM persona. The session opens
-    cwd=<repo root> so the user sees a familiar project. The PM persona is
-    then loaded interactively by the user typing ``/pm``."""
+    cwd=<repo root> (git-resolved canonical primary checkout, #844) so the
+    user sees a familiar project. The PM persona is then loaded interactively
+    by the user typing ``/pm``."""
+    _assert_spawn_cwd(PROJECT_ROOT, issue=None)
     extra_args = _build_extra_claude_args(
         getattr(args, "model", None),
         _parse_betas(getattr(args, "betas", None)),
@@ -886,10 +1645,98 @@ def cmd_spawn_pm(args: argparse.Namespace) -> None:
     )
 
 
+def _stop_spawned_session(session_id: str) -> bool:
+    """Best-effort stop of a just-spawned session (the registration-failure /
+    registration-collision remediation in :func:`cmd_spawn_issue`). Returns
+    True when the daemon confirmed the stop; on False the caller prints a
+    manual-cleanup warning (success=False usually means the session already
+    died on its own — a benign race — but a genuinely stuck live session
+    needs hand cleanup)."""
+    try:
+        stop_resp = post("/stop-session", {"sessionId": session_id})
+        return bool(stop_resp.get("success"))
+    except SystemExit:
+        return False
+
+
+def _stop_session_raw(session_id: str) -> bool:
+    """Daemon ``/stop-session`` with transport failures kept DISTINGUISHABLE
+    from the daemon's own verdict: returns the response ``success`` boolean
+    (stopSession's return — true == a tracked entry was found+killed+untracked,
+    false == no tracked entry for this sessionId/PID-<pid>); RAISES
+    RuntimeError on any transport failure (daemon unreachable, timeout, HTTP
+    error, unparseable body). Used by the #956 reap, where 'daemon said no
+    such pid' feeds the already-gone verdict but 'daemon unreachable' must
+    block the retry. :func:`_stop_spawned_session` (which conflates the two
+    as False) keeps its existing callers unchanged.
+
+    Response-shape guard: a PARSEABLE body that is not a ``{success: bool}``
+    dict — non-dict JSON (e.g. ``[]``), or a missing / non-bool ``success``
+    field — ALSO raises RuntimeError. Wrong shape carries no verdict about
+    tracking state, so it blocks the retry exactly like a transport failure;
+    it never degrades to False (False is the daemon's own 'pid untracked'
+    verdict and feeds the already-gone branch)."""
+    url = f"http://127.0.0.1:{daemon_port()}/stop-session"
+    req = urllib.request.Request(
+        url,
+        data=json.dumps({"sessionId": session_id}).encode(),
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=DEFAULT_TIMEOUT_S) as resp:
+            data = json.loads(resp.read())
+    except (urllib.error.URLError, OSError, TimeoutError, json.JSONDecodeError) as e:
+        raise RuntimeError(f"daemon /stop-session transport failure: {e}") from e
+    if not isinstance(data, dict) or not isinstance(data.get("success"), bool):
+        raise RuntimeError(
+            f"daemon /stop-session returned unexpected response shape: {repr(data)[:200]}"
+        )
+    return bool(data.get("success"))
+
+
+def _post_duplicate_suppressed_marker(issue: int, kept_sid: str, stopped_sid: str) -> None:
+    """Best-effort ``epm:progress`` marker recording a suppressed duplicate
+    ``--auto`` dispatch (#843 M2 registration collision) so the suppression is
+    dashboard-visible. A marker failure never blocks the exit — the loud
+    REGISTRATION-COLLISION line already fired. ``spawn_session.py`` is
+    allowlisted in ``_LOCAL_VM_ONLY_PATHS``
+    (tests/test_no_pod_side_task_py_shellout.py) for this task.py shellout."""
+    note = (
+        f"{DUPLICATE_DISPATCH_NOTE_SENTINEL} duplicate --auto dispatch suppressed: "
+        f"kept {kept_sid}, stopped {stopped_sid}"
+    )
+    try:
+        subprocess.run(
+            [
+                "uv",
+                "run",
+                "python",
+                "scripts/task.py",
+                "post-marker",
+                str(issue),
+                "epm:progress",
+                "--by",
+                "spawn_session",
+                "--note",
+                note,
+            ],
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            timeout=60,
+        )
+    except (subprocess.SubprocessError, OSError) as e:
+        print(f"  note: duplicate-dispatch marker post failed ({e})", file=sys.stderr)
+
+
 def cmd_spawn_issue(args: argparse.Namespace) -> None:
     """Spawn a session for issue ``--issue N``. The session opens cwd=<repo root>
     by default, OR cwd=<.claude/worktrees/issue-N> if such a worktree exists
-    (so the session is git-isolated to that issue's branch).
+    (so the session is git-isolated to that issue's branch). Both candidates
+    are canonical by construction (``PROJECT_ROOT`` is git-common-dir-resolved,
+    #844) and ``_assert_spawn_cwd`` refuses any other cwd — a sibling issue's
+    worktree can never become the spawned session's cwd.
 
     By default the new session opens empty and the user types ``/issue N``
     on their phone — permissions are interactive. With ``--auto`` (or an
@@ -915,6 +1762,7 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
     else:
         cwd = PROJECT_ROOT
         cwd_note = f"<repo root> {PROJECT_ROOT}  (no worktree at {worktree})"
+    _assert_spawn_cwd(cwd, issue=issue)
 
     betas = _parse_betas(args.betas)
     extra_args = _build_extra_claude_args(args.model, betas, args.effort)
@@ -939,6 +1787,81 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
         prompt = f"/issue {issue}"
     else:
         prompt = None
+    # #866/#903: a fresh `paused-takeover` sentinel means a deliberate session
+    # takeover is driving this issue — suppress automated spawns at the ONE
+    # choke point every automated caller funnels through (crash-recovery
+    # `_respawn`, stalled respawn, orphan sweep, infra-drain, capacity-retry,
+    # `file_infra_task.py`). Placed BEFORE lease acquisition: a gate landing
+    # after it would leave a TTL-held lease suppressing crash recovery past
+    # the sentinel TTL. Manual spawns warn-and-proceed (the #843 lease
+    # posture — the incident class is 100% automated races).
+    sentinel = takeover_sentinel_fresh(issue)
+    if sentinel is not None:
+        if args.auto:
+            print(
+                f"{TAKEOVER_HELD_SENTINEL} issue #{issue}: a deliberate session takeover "
+                f"is in flight (sentinel {sentinel}, ttl={_takeover_ttl_s():.0f}s); "
+                f"NOT spawning. Manual override: rm {sentinel} (or wait for the TTL)."
+            )
+            return  # exit 0 — suppressed IS dispatch success (#843 M1b semantics)
+        print(
+            f"  note: fresh takeover sentinel {sentinel} — a deliberate takeover may be "
+            f"in flight; proceeding (manual spawns are not gated)"
+        )
+    lease: dict[str, Any] | None = None
+    if args.auto:
+        # #843 M1: atomic per-issue dispatch lease, acquired BEFORE the daemon
+        # POST. Exactly one of N concurrent `--auto` dispatchers wins; every
+        # loser exits 0 with the loud DISPATCH-LEASE HELD line (a suppressed
+        # duplicate means a session IS driving the issue — dispatch success).
+        # On success the lease is deliberately LEFT in place (TTL expiry owns
+        # it); failure exits below release it so the backstop can retry.
+        lease = acquire_dispatch_lease(issue, holder=f"spawn-issue --auto pid={os.getpid()}")
+        if lease is None:
+            held = read_dispatch_lease(issue) or {}
+            print(
+                f"{DISPATCH_LEASE_HELD_SENTINEL} issue #{issue}: a dispatch is already "
+                f"in flight ({dispatch_lease_desc(held)}, "
+                f"ttl={_dispatch_lease_ttl_s():.0f}s); NOT spawning a duplicate. "
+                f"Manual override: rm {dispatch_lease_path(issue)}"
+            )
+            return  # exit 0 — duplicate suppressed IS dispatch success
+    elif dispatch_lease_fresh(issue) is not None:
+        # Manual / bespoke-prompt spawn: a human decision — warn, proceed,
+        # and create NO lease (the incident class is 100% automated races).
+        print(
+            f"  note: a fresh dispatch lease exists for #{issue} "
+            f"({dispatch_lease_desc(read_dispatch_lease(issue))}) — an automated "
+            f"dispatch may be in flight; proceeding (manual spawns are not gated)"
+        )
+    try:
+        _spawn_issue_session(args, issue, cwd_note, body, prompt, extra_args, betas, cwd)
+    except BaseException:
+        if lease is not None:
+            # Failure exit (POST failed / patch-verify died / plain-OSError
+            # registration failure): free the slot so the next dispatcher /
+            # watcher tick can retry. The REGISTRATION-COLLISION branch
+            # RETURNS (never raises), so it deliberately HOLDS the lease.
+            release_dispatch_lease(issue, lease["token"])
+        raise
+
+
+def _spawn_issue_session(
+    args: argparse.Namespace,
+    issue: int,
+    cwd_note: str,
+    body: dict[str, object],
+    prompt: str | None,
+    extra_args: list[str],
+    betas: list[str],
+    cwd: Path,
+) -> None:
+    """The POST + print + registration tail of :func:`cmd_spawn_issue`,
+    factored out so the caller can wrap it in the #843 release-lease-on-
+    failure guard without re-indenting its every branch. Raises ``SystemExit``
+    on any failure exit; returns normally on success AND on the deliberate
+    exit-0 REGISTRATION-COLLISION suppression branch (which must NOT release
+    the lease — see :func:`release_dispatch_lease`)."""
     if prompt is not None or extra_args:
         # Both the load-bearing --auto / --initial-prompt injection path AND the
         # bare model-override path rely on the daemon honoring HAPPY_INITIAL_*
@@ -998,6 +1921,33 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
                     effort=args.effort,
                 )
                 print(f"  registered for crash-recovery watch: issue-{issue}.json")
+            except RegistrationCollisionError as e:
+                # #843 M2: a duplicate --auto dispatch reached registration —
+                # a DIFFERENT session was registered for this issue inside the
+                # collision window. Keep the FIRST session (its registration
+                # stays byte-identical), stop the duplicate we just spawned,
+                # exit 0 (a session IS live and driving = dispatch success).
+                # The dispatch lease is deliberately HELD (this branch returns
+                # without raising, so the caller's release guard never fires)
+                # — holding suppresses immediate spawn-then-collision-stop
+                # churn for the rest of the TTL.
+                print(f"  registration collision: {e}", file=sys.stderr)
+                stopped = _stop_spawned_session(resp["sessionId"])
+                if not stopped:
+                    print(
+                        f"  WARNING: could not confirm duplicate session "
+                        f"{resp['sessionId']} stopped; if it is still live, stop it "
+                        "manually (spawn_session.py stop --session-id ...)",
+                        file=sys.stderr,
+                    )
+                print(
+                    f"{REGISTRATION_COLLISION_SENTINEL} issue #{issue}: kept "
+                    f"{e.existing_session_id} (registered {e.age_s:.0f}s ago), stopped "
+                    f"duplicate {resp['sessionId']}; NOT overwriting the first "
+                    f"registration (duplicate dispatch suppressed)"
+                )
+                _post_duplicate_suppressed_marker(issue, e.existing_session_id, resp["sessionId"])
+                return  # exit 0 — the first session is live and driving
             except OSError as e:
                 # Atomicity invariant: a live `--auto` session MUST have a current
                 # registry entry, else the watcher (which trusts the registry) could
@@ -1008,12 +1958,7 @@ def cmd_spawn_issue(args: argparse.Namespace) -> None:
                     "session to avoid an untracked duplicate",
                     file=sys.stderr,
                 )
-                try:
-                    stop_resp = post("/stop-session", {"sessionId": resp["sessionId"]})
-                    stopped = bool(stop_resp.get("success"))
-                except SystemExit:
-                    stopped = False
-                if not stopped:
+                if not _stop_spawned_session(resp["sessionId"]):
                     # success=False usually means the session already died on its
                     # own (a benign race); surface it anyway so a genuinely stuck
                     # live session can be cleaned up by hand.
@@ -1069,6 +2014,9 @@ def cmd_spawn_campaign(args: argparse.Namespace) -> None:
     session itself only ever files plans for children, so the cap bounds
     any plan it would auto-approve in-session."""
     issue = args.issue
+    # #844 tripwire FIRST (pure path check, no task-state dependency): a
+    # non-canonical cwd must refuse before any task lookup or daemon POST.
+    _assert_spawn_cwd(PROJECT_ROOT, issue=None)
     default_budget, default_concurrent, default_per_child = _campaign_defaults()
     budget_gpu_hours = (
         args.budget_gpu_hours if args.budget_gpu_hours is not None else default_budget
@@ -1258,7 +2206,10 @@ def cmd_register_current(args: argparse.Namespace) -> None:
                 cap = args.auto_approve_gpu_hours
             else:
                 cap = float(os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100"))
-            _register_autonomous_session(issue, sid, cwd, cap)
+            # force=True: register-current is the deliberate re-write path for
+            # an ALREADY-LIVE session (#472 revival) — never a duplicate
+            # dispatch, so the #843 M2 collision check must not block it.
+            _register_autonomous_session(issue, sid, cwd, cap, force=True)
             dest = f"issue-{issue}.json"
             semantics = "auto-watch (crash-recovery may respawn on death)"
         else:
@@ -1485,11 +2436,150 @@ def cmd_list(args: argparse.Namespace) -> None:
 
 
 def cmd_stop(args: argparse.Namespace) -> None:
-    """Stop a Happy session by id."""
+    """Stop a Happy session by id; degrade usefully on a daemon-untracked sid (#903).
+
+    For an issue-mapped OPERATOR stop, posts a ``deliberate-stop``
+    breadcrumb (structured ``epm:progress`` note) on the owning task
+    BEFORE the stop RPC, so a later exit-137/143 diagnosis can attribute
+    the kill (failure_patterns.md § kill-source verification; #779/#902).
+    Watcher-sourced stops (``--stop-source watcher``) post NOTHING — the
+    watcher keeps its own registry/sidecar evidence, and an auto-post
+    here would manufacture false operator attributions plus unsentineled
+    notes that reset staleness clocks. The post runs in a daemon thread
+    with a hard join timeout (:data:`STOP_BREADCRUMB_JOIN_TIMEOUT_S`) so
+    a wedged workflow flock can never hang the stop (fail-soft: WARN +
+    proceed on any failure or timeout).
+    """
+    if args.stop_source == "operator":
+        try:  # fail-soft: the WHOLE mapped branch (map load + post)
+            issue = _load_session_issue_map().get(args.session_id)
+            if issue is not None:
+                note = (
+                    f"deliberate-stop pid=n/a target=happy-session:{args.session_id} "
+                    f"reason={args.reason}"
+                )
+                # Exceptions inside the daemon thread are captured into a
+                # mutable cell and WARNed after the join (they cannot
+                # propagate across threads to the outer try).
+                exc_cell: list[BaseException] = []
+
+                def _post() -> None:
+                    try:
+                        from explore_persona_space.task_workflow import post_event
+
+                        post_event(issue, "epm:progress", by="spawn_session-stop", note=note)
+                    except BaseException as exc:  # loud via exc_cell — never silent
+                        exc_cell.append(exc)
+
+                t = threading.Thread(target=_post, daemon=True)
+                t.start()
+                t.join(timeout=STOP_BREADCRUMB_JOIN_TIMEOUT_S)
+                if t.is_alive():
+                    print(
+                        f"WARN: deliberate-stop breadcrumb on #{issue} still posting after "
+                        f"{STOP_BREADCRUMB_JOIN_TIMEOUT_S:g}s (wedged lock?); proceeding "
+                        f"with stop",
+                        file=sys.stderr,
+                    )
+                elif exc_cell:
+                    print(
+                        f"WARN: deliberate-stop breadcrumb failed: {exc_cell[0]!r}",
+                        file=sys.stderr,
+                    )
+                else:
+                    print(f"Posted deliberate-stop breadcrumb on #{issue}")
+        except Exception as exc:  # fail-soft side channel: never block the stop
+            print(f"WARN: deliberate-stop breadcrumb failed: {exc!r}", file=sys.stderr)
     resp = post("/stop-session", {"sessionId": args.session_id})
-    if not resp.get("success"):
-        sys.exit(f"stop failed: {resp}")
-    print(f"Stopped session {args.session_id}")
+    if resp.get("success"):
+        print(f"Stopped session {args.session_id}")
+        return
+    _stop_fallback(args.session_id, resp, kill=bool(getattr(args, "kill", False)))
+
+
+def _stop_fallback(sid: str, resp: dict, *, kill: bool) -> None:
+    """Failure path of :func:`cmd_stop` (#903): resolve a daemon-untracked
+    session id to its live happy node wrapper pid via the ``~/.happy/logs``
+    reverse map and either report a structured kill-by-pid recipe or — under
+    ``kill=True`` — SIGTERM the pid after a stacked identity re-verification
+    (comm + happy-wrapper cmdline signature + not-the-daemon-pid; ambiguity
+    always refuses to the report-only recipe, never a kill — the
+    kill-before-relaunch ownership discipline,
+    ``.claude/rules/crash-fix-rounds.md``). SIGKILL escalation stays manual
+    by design."""
+    if sid in _live_session_ids():
+        sys.exit(
+            f"stop failed for DAEMON-TRACKED session {sid}: {resp!r} — the daemon "
+            f"knows this session but refused the stop; retry once, then check "
+            f"~/.happy/logs/ for the daemon-side error."
+        )
+    import session_resolver  # lazy: session_resolver imports spawn_session at top level
+
+    pid = session_resolver.find_node_pid_for_session(sid)
+    if pid is None:
+        sys.exit(
+            f"stop failed: session {sid} is UNKNOWN to the Happy daemon "
+            f"(daemon-untracked) and no live happy node references it in "
+            f"~/.happy/logs/. If you know the wrapper pid: verify ownership first "
+            f"(`ps -o pid,lstart,cmd -p <pid>`; `ls -l /proc/<pid>/cwd`), then "
+            f"`kill -TERM <pid>`, wait ~10s, re-check `ps -p <pid>`. "
+            f"Raw daemon reply: {resp!r}"
+        )
+    if not kill:
+        sys.exit(
+            f"stop failed: session {sid} is daemon-untracked, but live happy node "
+            f"pid {pid} references it (~/.happy/logs reverse map). Re-run with "
+            f"--kill to SIGTERM it, or manually: verify `ps -o pid,lstart,cmd -p {pid}` "
+            f"then `kill -TERM {pid}`. Raw daemon reply: {resp!r}"
+        )
+    # --kill identity binding (#903 round-1 critique Must-Fix): comm alone is
+    # NOT ownership on a shared VM full of unrelated node processes (the Happy
+    # daemon, the eps-dashboard `next start`, every other wrapper), and the
+    # resolver's log scan can only return a RECYCLED pid for a genuinely dead
+    # session. Three stacked checks, each refusing to the report-only recipe
+    # on mismatch (never a kill on ambiguity — crash-fix-rounds.md
+    # § Kill-before-relaunch):
+    comm = session_resolver._read_proc_comm(pid)
+    if comm != "node":
+        sys.exit(
+            f"refusing --kill: pid {pid} comm={comm!r} != 'node' (pid may have been "
+            f"reused). Verify manually: ps -o pid,lstart,cmd -p {pid}; kill -TERM {pid}"
+        )
+    cmdline = session_resolver._read_proc_cmdline(pid) or ""
+    if "happy" not in cmdline:
+        # The happy-wrapper signature: `node .../happy/dist/index.mjs claude ...`.
+        sys.exit(
+            f"refusing --kill: pid {pid} cmdline {cmdline!r} lacks the happy-wrapper "
+            f"signature (pid likely recycled to an unrelated node process). "
+            f"Verify manually: ps -o pid,lstart,cmd -p {pid}"
+        )
+    # Never signal the Happy daemon itself (its log sits in the same dir; the
+    # `-daemon.log` suffix is regex-excluded by the resolver, but this is the
+    # last-line belt): read ~/.happy/daemon.state.json's pid, refuse on match.
+    daemon_pid = session_resolver._happy_daemon_pid()
+    if daemon_pid is not None and pid == daemon_pid:
+        sys.exit(f"refusing --kill: pid {pid} is the Happy DAEMON pid; wrong resolution.")
+    claude_pid = session_resolver.resolve_claude_pid(pid)  # best-effort, pre-kill (may be None)
+    os.kill(pid, signal.SIGTERM)
+    for _ in range(20):  # ~10s @ 0.5s
+        time.sleep(0.5)
+        # Module-level seam: the resolver's `_pid_alive` is the ONE liveness
+        # probe (tests monkeypatch it + time.sleep) — no inline /proc check.
+        if not session_resolver._pid_alive(pid):
+            survivor = ""
+            if claude_pid is not None and session_resolver._pid_alive(claude_pid):
+                survivor = (
+                    f" WARNING: inner claude pid {claude_pid} still alive — the "
+                    f"wrapper's SIGTERM cleanup may have failed; verify/kill manually."
+                )
+            print(
+                f"Stopped daemon-untracked session {sid} via SIGTERM to node pid {pid}.{survivor}"
+            )
+            return
+    sys.exit(
+        f"SIGTERM sent to pid {pid} but it survived ~10s; escalate manually after "
+        f"re-verifying: kill -KILL {pid}"
+    )
 
 
 def resolve_session_for_issue(
@@ -1723,6 +2813,28 @@ def main(argv: list[str] | None = None) -> None:
 
     p_stop = sub.add_parser("stop", help="stop a Happy session by id")
     p_stop.add_argument("--session-id", required=True)
+    p_stop.add_argument(
+        "--reason",
+        default="operator stop via spawn_session.py stop",
+        help="one-line reason recorded in the deliberate-stop breadcrumb",
+    )
+    p_stop.add_argument(
+        "--stop-source",
+        choices=("operator", "watcher"),
+        default="operator",
+        help=(
+            "watcher-driven stops post no breadcrumb (the watcher keeps its "
+            "own registry/sidecar evidence trail)"
+        ),
+    )
+    p_stop.add_argument(
+        "--kill",
+        action="store_true",
+        help=(
+            "if the sid is daemon-untracked but resolvable to a live happy node "
+            "pid, SIGTERM that pid (comm re-verified first; no automatic SIGKILL)"
+        ),
+    )
     p_stop.set_defaults(fn=cmd_stop)
 
     p_resume = sub.add_parser(

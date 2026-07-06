@@ -526,6 +526,83 @@ def test_write_self_report_unknown_issue_raises_even_with_explicit_slug(monkeypa
     assert not list(tmp_path.glob("*.json"))
 
 
+# ── transient resolver-error degrade (task #999) ───────────────────────────
+#
+# What these pin: a resolver/environment RuntimeError from the task-workflow
+# repo-root resolver (e.g. a detached shared-checkout HEAD mid-rebase) must
+# DEGRADE — never crash — the title/self-report tick. The tests match on the
+# RuntimeError CLASS, never its message text (#996 changed the resolver's
+# wait/raise behavior; the message is not a contract).
+
+_DETACHED_MSG = (
+    "main worktree HEAD (/home/x/explore-persona-space) is detached; "
+    "re-attach to 'main' before running task.py."
+)
+
+
+def _mock_get_task_detached(monkeypatch):
+    """Patch the lazy-imported ``tw.get_task`` seam with a signature-conformant
+    fake that raises the resolver's environment ``RuntimeError``."""
+    import explore_persona_space.task_workflow as tw
+
+    def _detached(issue):
+        raise RuntimeError(_DETACHED_MSG)
+
+    monkeypatch.setattr(tw, "get_task", _detached)
+
+
+def test_write_self_report_degrades_on_transient_resolver_error(monkeypatch, tmp_path, capsys):
+    """#999 regression: a resolver/environment RuntimeError (detached
+    shared-checkout HEAD mid-rebase) must DEGRADE, not crash — the
+    title/self-report path is observability-only. Degraded shape: empty
+    slug (none supplied), no ETA suffix, self-report STILL written (its
+    ts is an activity signal), one stderr line."""
+    monkeypatch.setattr(session_progress_report, "SELF_REPORT_DIR", tmp_path)
+    _mock_get_task_detached(monkeypatch)
+
+    text, path = session_progress_report.write_self_report(42, step="running")
+
+    assert text == "#42 · running"  # empty slug, no suffix
+    assert path == tmp_path / "42.json"
+    assert path.is_file()
+    assert not list(tmp_path.glob("*.tmp"))  # still atomic
+    payload = json.loads(path.read_text())
+    assert payload["issue"] == 42
+    assert payload["slug"] == ""
+    assert payload["text"] == text
+    assert payload["ts"].endswith("Z")
+    assert "degraded" in capsys.readouterr().err
+    # Round-trip: the degraded payload is reader-accepted (not treated as
+    # malformed), so the summarizer/watcher freshness reads keep working.
+    report = session_progress_report.read_self_report(42)
+    assert report is not None
+    assert report["text"] == text
+
+
+def test_write_self_report_degraded_keeps_explicit_slug(monkeypatch, tmp_path):
+    """The degraded path preserves a caller-supplied slug verbatim."""
+    monkeypatch.setattr(session_progress_report, "SELF_REPORT_DIR", tmp_path)
+    _mock_get_task_detached(monkeypatch)
+
+    text, path = session_progress_report.write_self_report(42, slug="hand slug", step="running")
+    assert text == "#42 hand slug · running"
+    assert json.loads(path.read_text())["slug"] == "hand slug"
+
+
+def test_main_returns_zero_on_transient_resolver_error(monkeypatch, tmp_path, capsys):
+    """The actual crash surface: bare CLI callers (skill Bash steps, the
+    watcher's subprocess refresh) must get rc=0 + the degraded string on
+    stdout during a transient resolver failure."""
+    monkeypatch.setattr(session_progress_report, "SELF_REPORT_DIR", tmp_path)
+    _mock_get_task_detached(monkeypatch)
+
+    rc = session_progress_report.main(["--issue", "42", "--step", "x"])
+    assert rc == 0
+    out = capsys.readouterr()
+    assert out.out.strip() == "#42 · x"
+    assert "degraded" in out.err
+
+
 # ── progress-bar / ETA title suffix (task #587) ────────────────────────────
 #
 # What these pin: `build_progress_string(..., suffix=...)` and the

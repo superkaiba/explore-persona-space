@@ -1,7 +1,7 @@
 #!/bin/bash
 # VM-health + crash-recovery + pod-safety + stalled-detector + orphan-sweep
 # + infra-drain + session-reconcile + campaign watch for issue/campaign
-# sessions — invoked from the system crontab (every ~10 min). Eleven passes
+# sessions — invoked from the system crontab (every ~10 min). Twelve passes
 # (the campaign pass runs right after item 2; only the highlights are
 # summarized below — the zombie-wrapper + idle-unmapped session reapers live
 # only in scripts/autonomous_session_watch.py's module docstring, which
@@ -27,7 +27,8 @@
 #   4. Stalled-detector: detect a live-but-frozen session (self-report AND
 #      latest progress marker both stale >45 min) and auto-respawn it
 #      (bounded per episode); alert-only for manual sessions or when the
-#      Happy daemon is unreachable.
+#      Happy daemon is unreachable (daemon-blocked remediations persist and
+#      auto-execute on the next daemon-reachable tick).
 #   5. Orphan sweep: registration-INDEPENDENT cross-check — any ACTIVE-status
 #      task with NO live registered session AND no real progress marker for
 #      ~90 min (EPM_ORPHAN_STALENESS_MIN) is auto-respawned (capped at 2
@@ -61,6 +62,13 @@
 #      failing spawn never tight-loops. The PM is the ONLY ripeness judge;
 #      a missing/invalid queue file is a logged no-op. Kill switch:
 #      EPM_DISABLE_INFRA_DRAIN=1.
+#  10. CPU/memory-pressure guard (task #849; daemon-independent, right after
+#      the disk/happy-patch checks): escalate-only detection + attribution of
+#      VM compute pressure (streaked load5/PSI, single-tick MemAvailable
+#      floor) + silent earlyoom SIGTERM kill surfacing with pre-kill-snapshot
+#      attribution_status — sidecar .claude/cache/cpu-guard-events.jsonl +
+#      deduped push. WARN-ONLY (never kills/renices). Kill switch:
+#      EPM_DISABLE_CPU_GUARD_PASS=1; --cpu-guard-only for a live smoke.
 # Mirrors cron_worktree_audit.sh / cron_pod_audit.sh.
 #
 # Safety lives in scripts/autonomous_session_watch.py: single-flight flock, a

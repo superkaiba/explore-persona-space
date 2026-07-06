@@ -13,7 +13,11 @@ What this module ships (post slice 6):
 * ``prepare`` — currently a no-op (provision triggers bootstrap inline).
 * ``launch`` — delegates to ``scripts/pod_lifecycle.py provision`` via
   the existing subprocess entrypoint and returns a :class:`RunHandle`
-  built from the resulting ``pods_ephemeral.json`` row.
+  built from the resulting ``pods_ephemeral.json`` row. On the
+  backend-executed leg (#909) the rendered launcher chains the
+  success-gated completion-sentinel write and (#977) waits on fresh
+  detached ``/workspace/logs/*.pid`` workloads before the sentinel
+  write (GCP #601 parity).
 * ``estimate_start`` — returns "now" (UTC); RunPod pods come up within
   a few minutes, so a precise estimate would be noise.
 * ``poll`` — delegates to :func:`scripts.poll_pipeline.poll_once` so
@@ -50,14 +54,17 @@ handle so a caller never has to re-derive them.
 
 from __future__ import annotations
 
+import json
 import logging
 import os
+import re
 import subprocess
 import sys
+import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from explore_persona_space.backends.base import (
     BackendKind,
@@ -77,6 +84,14 @@ logger = logging.getLogger(__name__)
 #: (Step 6d.2's bg-Bash poller emits a ~5-line tail in the JSON-line
 #: output; a one-shot foreground tail gets a bit more headroom).
 LOG_TAIL_LINES = 200
+
+#: Floor for the #1010 CPU-fallback container-disk threading in
+#: :meth:`RunPodBackend.launch` — mirrors ``runpod_api.DEFAULT_CONTAINER_DISK_GB``
+#: (50), the value an un-threaded provision gets, so threading a plan's
+#: ``boot_disk_gb`` can only ever GROW the container disk relative to
+#: today's default, never shrink it. (Not imported from ``scripts/runpod_api``
+#: — this module's imports stay ``base``-only by documented convention.)
+_CPU_CONTAINER_DISK_FLOOR_GB = 50
 
 
 def _shell_quote(s: str) -> str:
@@ -163,16 +178,519 @@ def runpod_sentinel_path(issue: int, attempt_id: str) -> str:
     clone, so the path is stable regardless of where the workload
     checked out the repo. Attempt-namespaced because ``/workspace``
     survives same-pod relaunches and no hygiene step clears a flat
-    sentinel (see :func:`mint_runpod_attempt_id`). The workload-side
-    writer convention lives in ``.claude/agents/experimenter.md`` —
-    the path is read from the launch sidecar's
+    sentinel (see :func:`mint_runpod_attempt_id`). Two writer
+    conventions, split by executor: on EXPERIMENTER-driven dispatches
+    the convention lives in ``.claude/agents/experimenter.md`` — the
+    path is read from the launch sidecar's
     ``extra.expected_artifacts.sentinel_path``, the write is chained
     on the workload's exit status, and stale sentinels are cleared
-    pre-(re)launch.
+    pre-(re)launch; on the BACKEND-executed leg
+    (``execute_workload``, #909) the rendered launcher chains the
+    same success-gated write itself (see
+    :func:`_render_launch_script`) — there is no experimenter on
+    that path.
     """
     from explore_persona_space.backends.artifacts import SENTINEL_FILENAME
 
     return f"/workspace/eval_results/issue_{issue}/{attempt_id}/{SENTINEL_FILENAME}"
+
+
+# ---------------------------------------------------------------------------
+# Workload execution leg (#909)
+# ---------------------------------------------------------------------------
+
+#: Seconds between the detach call and the liveness-verification SSH call.
+#: A same-invocation probe cannot catch SIGHUP-on-disconnect death, so the
+#: verify runs from a SEPARATE SSH invocation a few seconds later (the
+#: ``.claude/agents/experimenter.md`` § "During Execution" convention).
+WORKLOAD_VERIFY_DELAY_SECONDS = 3.0
+
+#: Branch names interpolated into the remote sync script must be plain git
+#: ref characters — the branch comes from ``spec.extra["repo_branch"]``
+#: (orchestrator-controlled), but a quoting slip would only surface pod-side,
+#: so fail LOUD here instead.
+_BRANCH_RE = re.compile(r"[A-Za-z0-9._/-]+")
+
+#: Verify-script success line: ``LAUNCH-OK pid=<int>`` (optionally
+#: ``via=<fresh pidfile>`` for the GCP-parity self-daemonizing acceptance).
+_LAUNCH_OK_RE = re.compile(r"LAUNCH-OK pid=(\d+)")
+
+#: Double-fire guard line from the launch script (exit 5): the live PID.
+_ALREADY_RUNNING_PID_RE = re.compile(r"ALREADY-RUNNING pid=(\d+)")
+
+
+class RunPodWorkloadStartError(RuntimeError):
+    """A requested ``--workload-cmd`` execution did not start on the pod (#909).
+
+    Raised by the RunPod execution leg on ANY start failure — missing
+    pods.conf row, branch-sync mismatch, double-fire guard, dead PID with
+    no fresh pidfile, missing log. ``scripts/dispatch_issue.py launch``
+    surfaces it as a ``reason: runpod_workload_start_failed`` failure JSON
+    + exit 2 — a requested execution that did not start NEVER returns ok.
+    The pod is left RUNNING for SSH diagnosis (the RunPod-as-diagnosis-lane
+    doctrine, ``.claude/rules/compute-backend-failover.md``).
+    """
+
+    def __init__(self, message: str, *, handle: RunHandle | None = None) -> None:
+        super().__init__(message)
+        #: The PARTIAL RunHandle when a pod was provisioned before the start
+        #: leg failed (#954); None when nothing was provisioned. The router's
+        #: terminal rung + the backend_poll failover legs key their
+        #: persist-then-surface behavior on this — a pod exists and BILLS, so
+        #: collapsing this case into ``NoComputeAvailableError`` would be
+        #: FALSE (the #931 incident: the mislabel invited a second paid
+        #: dispatch while pod-931 billed invisibly).
+        self.handle = handle
+
+
+def _resolve_pod_endpoint(pod_name: str) -> tuple[str, int]:
+    """Resolve ``(host, port)`` for ``pod_name`` from the live pods.conf.
+
+    pods.conf is the SSH config source (refreshed from the live RunPod API
+    by provision — ``pod_lifecycle._upsert_pods_conf``), so a freshly
+    provisioned pod always has a row. Raises
+    :class:`RunPodWorkloadStartError` on a missing/invalid row — the
+    execution leg cannot SSH without it.
+    """
+    # Lazy import — same style as ``poll``'s ``from scripts.poll_pipeline
+    # import ...``; keeps this module importable without scripts/ on
+    # sys.path for launch/teardown-only callers.
+    from scripts.pod_config import parse_pods_conf
+
+    try:
+        pods = parse_pods_conf()
+    except Exception as exc:
+        raise RunPodWorkloadStartError(
+            f"cannot read pods.conf to resolve {pod_name!r} for workload execution "
+            f"({type(exc).__name__}: {exc})"
+        ) from exc
+    for pod in pods:
+        if pod.name == pod_name:
+            if not pod.host or not pod.port:
+                raise RunPodWorkloadStartError(
+                    f"pods.conf row for {pod_name!r} has no usable host/port "
+                    f"(host={pod.host!r}, port={pod.port!r}); cannot SSH to execute "
+                    "the workload — run `pod.py config --refresh-from-api` and retry"
+                )
+            return pod.host, int(pod.port)
+    raise RunPodWorkloadStartError(
+        f"pod {pod_name!r} has no pods.conf row — cannot SSH to execute the workload "
+        "(provision normally upserts the row; run `pod.py config --refresh-from-api`)"
+    )
+
+
+def _ssh_pod_run(host: str, port: int, command: str, *, timeout: int, context: str) -> str:
+    """Run ``command`` on the pod over SSH; return stdout, raise typed error on failure.
+
+    Mirrors the battle-tested explicit transport of
+    ``scripts/pod_lifecycle._restore_uv_on_pod`` / ``bootstrap_pod.sh``
+    (host/port from pods.conf; NOT the ``~/.ssh/config``-by-name form —
+    pods.conf is the config SOURCE here). Any non-zero exit / timeout /
+    transport error raises :class:`RunPodWorkloadStartError` carrying the
+    stdout + stderr tails, prefixed with ``context`` so the caller's error
+    names the failing step.
+    """
+    argv = [
+        "ssh",
+        "-o",
+        "StrictHostKeyChecking=no",
+        "-o",
+        "ConnectTimeout=15",
+        "-o",
+        "BatchMode=yes",
+        "-i",
+        str(Path.home() / ".ssh" / "id_ed25519"),
+        "-p",
+        str(port),
+        f"root@{host}",
+        command,
+    ]
+    try:
+        proc = subprocess.run(
+            argv,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            timeout=timeout,
+            check=False,
+        )
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        raise RunPodWorkloadStartError(
+            f"{context}: ssh to {host}:{port} failed ({type(exc).__name__}: {exc})"
+        ) from exc
+    if proc.returncode != 0:
+        raise RunPodWorkloadStartError(
+            f"{context}: remote command exited rc={proc.returncode} on {host}:{port}; "
+            f"stdout tail: {(proc.stdout or '')[-1500:]!r}; "
+            f"stderr tail: {(proc.stderr or '')[-800:]!r}"
+        )
+    return proc.stdout or ""
+
+
+def _render_branch_sync_script(branch: str) -> str:
+    """Remote script (a): sync the pod clone to ``branch`` (fetch + reset, never pull).
+
+    ``git pull`` is banned here — it exits 0 on a stale ``.git/index.lock``
+    without moving HEAD, and divergent ``.claude/**`` spec files block the
+    ff-only form (both in ``.claude/rules/gotchas.md``). The fetch +
+    ``checkout -f -B`` + ``reset --hard`` sequence defeats both, and the
+    pod-side ``HEAD == FETCH_HEAD`` verification never trusts pull stdout.
+    (Pod-side ``reset --hard`` is sanctioned — the VM-tree ban does not
+    apply to the disposable pod clone.)
+    """
+    if not _BRANCH_RE.fullmatch(branch):
+        raise RunPodWorkloadStartError(
+            f"refusing to sync suspicious branch name {branch!r} "
+            "(expected plain git ref characters [A-Za-z0-9._/-])"
+        )
+    return "\n".join(
+        [
+            "set -eu",
+            'export PATH="/root/.local/bin:$PATH"',
+            "cd /workspace/explore-persona-space",
+            "pgrep -x git >/dev/null 2>&1 || rm -f .git/index.lock",
+            f'git fetch origin "refs/heads/{branch}"',
+            f'git checkout -q -f -B "{branch}" FETCH_HEAD',
+            "git reset --hard -q FETCH_HEAD",
+            "HEAD_SHA=$(git rev-parse HEAD); FETCH_SHA=$(git rev-parse FETCH_HEAD)",
+            '[ "$HEAD_SHA" = "$FETCH_SHA" ] || '
+            '{ echo "SYNC-MISMATCH head=$HEAD_SHA fetch=$FETCH_SHA" >&2; exit 3; }',
+            'echo "SYNC-OK $HEAD_SHA"',
+        ]
+    )
+
+
+def _launch_epoch_path(issue: int) -> str:
+    """Pod-side launch-epoch stamp anchoring the verify script's fresh-pidfile check."""
+    return f"/workspace/logs/issue-{issue}.launch_epoch"
+
+
+def _launcher_path(issue: int) -> str:
+    """Canonical pod-side launcher-script path (the experimenter.md convention)."""
+    return f"/workspace/launch_issue_{issue}.sh"
+
+
+def _render_launch_script(
+    *,
+    issue: int,
+    workload_cmd: str,
+    log_path: str,
+    pid_file: str,
+    sentinel_path: str,
+    attempt_id: str,
+) -> str:
+    """Remote script (b): write the launcher + detach it (setsid + nohup + pidfile).
+
+    Reuses the canonical experimenter launcher pattern
+    (``.claude/agents/experimenter.md`` § "During Execution") verbatim,
+    with one deliberate delta: no ``exec`` before the workload line —
+    ``workload_cmd`` is an arbitrary shell line (possibly env-var
+    prefixed / compound), which ``exec`` cannot take; the pidfile then
+    holds the launcher bash PID, whose liveness tracks the workload
+    (``poll_once`` probes liveness, not process identity). The
+    ``ALREADY-RUNNING`` live-PID guard converts a flag+experimenter
+    double-launch into a loud no-op (exit 5). ``workload_cmd`` is embedded
+    VERBATIM inside the quoted heredoc (the GCP trusted-single-line
+    doctrine; ``RunSpec.__post_init__`` guarantees single-line).
+
+    Completion sentinel (#909 r2, ``runpod-execute-missing-completion-
+    sentinel``): on this backend-owned leg there is NO experimenter to
+    chain ``write_completion_sentinel`` (``experimenter.md`` step 11), so
+    the launcher itself captures the workload's exit status and, ON
+    SUCCESS ONLY (rc 0), writes the attempt-namespaced completion
+    sentinel — ``{"phase": "done", "issue": <N>, "attempt_id": ...}``,
+    the exact shape ``artifacts._check_sentinel`` validates — at the SAME
+    ``sentinel_path`` the launch handle declares. This mirrors the
+    established backend-owned writer convention on the sibling lanes
+    (``gcp.py``'s startup-script sentinel heredoc; ``slurm.py``'s
+    terminal block). The outer portion clears, before detach (same guard
+    family as the pidfile rm), EVERY stale sentinel the #685
+    single-live-sibling fallback could resolve on a same-pod
+    re-execution: the declared attempt path PLUS the flat legacy path
+    ``issue_<N>/.completion-sentinel.json`` and the attempt-sibling
+    wildcard ``issue_<N>/*/.completion-sentinel.json`` — the
+    experimenter step-11.3 breadth, ported here by #976 (a prior
+    attempt's success sentinel survives on the persistent ``/workspace``
+    volume, and ``_check_sentinel`` validates phase+issue only, so a
+    resolved stale sibling would finalize a crashed re-execution green).
+    The widened clear also removes a COMPLETED prior attempt's sentinel
+    before a pending finalize reads it — the fail-loud direction
+    (finalize FAILs "sentinel missing", never a false green; the same
+    supersession semantics as the experimenter step-11.3 clear). The
+    launcher exits with the workload's own rc so the exit status is
+    unchanged by the chain.
+
+    Detached-workload wait before the sentinel write (#977, the GCP #601
+    parity — ``gcp.py``'s find-newer wait): ``workload_cmd`` is expected
+    to BLOCK until the workload completes; a SELF-DAEMONIZING command
+    (one that setsid-forks the real driver and returns at daemonize
+    time) would otherwise publish ``phase=done`` minutes into a
+    multi-hour run. So the rc==0 branch, BEFORE the sentinel write,
+    waits on every live pid found in a FRESH ``/workspace/logs/*.pid``
+    (mtime at or after the in-launcher workload-start epoch, captured
+    immediately before ``workload_cmd``). Contract (write-before-return):
+    a detached workload MUST write its driver pid to such a fresh
+    pidfile BEFORE ``workload_cmd`` returns — the ``launch_issue_<N>.sh``
+    convention — for the wait to bind; a pidfile written only AFTER
+    ``workload_cmd`` returns may be missed by the loop's scan and
+    degrades to the pre-#977 behavior (premature sentinel) — the same
+    residual GCP #601 carries, documented, not fixed here. Two deliberate
+    mechanism deltas from the GCP reference: freshness is the INCLUSIVE
+    ``stat -c %Y >= $WORKLOAD_START_EPOCH`` (the verify-script idiom;
+    GCP's strictly-newer ``find -newer`` would miss a pidfile written in
+    the same second as the start-mark at coarse MooseFS mtime
+    granularity), and self-exclusion is by PID VALUE
+    (``[ "$wpid" = "$$" ]``, race-free at any mtime granularity — the
+    launcher writes its OWN pid to the canonical pidfile pre-workload,
+    so a naive port would self-deadlock) rather than by pidfile PATH — a
+    convention-following detached driver OVERWRITES the canonical
+    pidfile with its own pid, so a path-based skip would miss exactly
+    the driver that must be waited on, while ``$$`` cannot be reused
+    while this launcher is alive. Blocking workloads write no fresh
+    pidfile, so the wait is a no-op pass-through. No in-script timeout
+    (faithful parity — an in-script timeout would re-create the
+    premature-done class on a slow-but-healthy run); the wait is bounded
+    externally by the pod TTL + the poller's stall escalation + the
+    watcher's pod-safety pass (the GCP analogue is
+    ``--max-run-duration``). The sentinel is written after the wait
+    regardless of the DETACHED process's exit status (``kill -0``
+    polling cannot recover a non-child's exit code on either lane; the
+    detached driver's own results sentinel / failure classification is
+    the poller's outcome channel).
+    """
+    launcher = _launcher_path(issue)
+    epoch_file = _launch_epoch_path(issue)
+    sentinel_dir = sentinel_path.rsplit("/", 1)[0]
+    # #976: stale-clear breadth mirrors artifacts._resolve_live_sentinel's
+    # sibling probe (_default_glob_sentinels: grandparent-of-declared +
+    # */<name>) plus the experimenter step-11.3 flat legacy path — whatever
+    # the #685 single-live-sibling fallback COULD resolve on a same-pod
+    # re-execution, this clear removes first. Derived from sentinel_path
+    # itself (no second copy of the /workspace/eval_results/issue_<N> root).
+    issue_dir = sentinel_dir.rsplit("/", 1)[0]
+    sentinel_name = sentinel_path.rsplit("/", 1)[1]
+    sentinel_json = json.dumps({"phase": "done", "issue": int(issue), "attempt_id": attempt_id})
+    if "'" in sentinel_json:
+        # The JSON is embedded single-quoted inside the launcher; both
+        # inputs are internally minted, so this can only fire on a caller
+        # bug — fail LOUD rather than render a broken script.
+        raise RunPodWorkloadStartError(
+            f"refusing to embed sentinel JSON containing a single quote: {sentinel_json!r}"
+        )
+    return "\n".join(
+        [
+            "set -eu",
+            "mkdir -p /workspace/logs",
+            f"OLD_PID=$(cat {pid_file} 2>/dev/null || true)",
+            'if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then',
+            '  echo "ALREADY-RUNNING pid=$OLD_PID" >&2',
+            "  exit 5",
+            "fi",
+            f"rm -f {pid_file}",
+            f"rm -f {sentinel_path} {issue_dir}/{sentinel_name} {issue_dir}/*/{sentinel_name}",
+            f"mkdir -p {sentinel_dir}",
+            f"date +%s > {epoch_file}",
+            f"cat > {launcher} << 'EPSEOF'",
+            "#!/bin/bash",
+            "set -uo pipefail",
+            'export PATH="/root/.local/bin:$PATH"',
+            "cd /workspace/explore-persona-space",
+            "set -a; [ -f .env ] && source .env; set +a",
+            'export REPO_ROOT="${REPO_ROOT:-/workspace/explore-persona-space}"',
+            f'export WANDB_PROJECT="${{WANDB_PROJECT:-issue{issue}}}"',
+            f"echo $$ > {pid_file}",
+            "WORKLOAD_START_EPOCH=$(date +%s)",
+            workload_cmd,
+            "WORKLOAD_RC=$?",
+            "# Completion sentinel: written ONLY when the workload exited 0 (the",
+            "# backend-owned twin of the GCP/SLURM terminal sentinel write).",
+            'if [ "$WORKLOAD_RC" -eq 0 ]; then',
+            "  # Wait for detached workloads (#601 GCP parity, #977): a workload_cmd",
+            "  # that self-daemonizes (forks the real driver) returns immediately —",
+            "  # writing the sentinel here would publish done at daemonize time.",
+            "  # (Comment says 'forks', not the s-word: the liveness tests token-scan",
+            "  # the rendered script for the detach line's own tokens.) Contract: a",
+            "  # detached workload writes its pid to a fresh /workspace/logs/*.pid",
+            "  # (the launch_issue_<N>.sh convention). Freshness = stat mtime >=",
+            "  # workload-start epoch (inclusive, the verify-script predicate — a",
+            "  # strictly-newer find would miss a same-second pidfile at MooseFS",
+            "  # mtime granularity). Self-exclusion is by PID VALUE, never path:",
+            "  # a convention-following driver OVERWRITES the canonical pidfile,",
+            "  # so a path skip would miss it, while $$ cannot be reused while",
+            "  # this launcher is alive. Blocking workloads write no fresh pidfile",
+            "  # -> no-op. Bounded externally by the pod TTL + the poller's stall",
+            "  # escalation (the GCP analogue is --max-run-duration).",
+            "  for pf in /workspace/logs/*.pid; do",
+            '    [ -f "$pf" ] || continue',
+            '    [ "$(stat -c %Y "$pf" 2>/dev/null || echo 0)"'
+            ' -ge "$WORKLOAD_START_EPOCH" ] || continue',
+            '    wpid=$(cat "$pf" 2>/dev/null) || continue',
+            '    [ -n "$wpid" ] || continue',
+            '    [ "$wpid" = "$$" ] && continue',
+            '    echo "[launcher] waiting on detached workload pid=$wpid ($pf)"',
+            '    while kill -0 "$wpid" 2>/dev/null; do sleep 30; done',
+            '    echo "[launcher] detached workload pid=$wpid exited"',
+            "  done",
+            f"  mkdir -p {sentinel_dir}",
+            f"  printf '%s\\n' '{sentinel_json}' > {sentinel_path}",
+            "fi",
+            'exit "$WORKLOAD_RC"',
+            "EPSEOF",
+            f"chmod +x {launcher}",
+            f"setsid nohup bash {launcher} > {log_path} 2>&1 < /dev/null &",
+            'echo "WRAPPER-STARTED $!"',
+        ]
+    )
+
+
+def _render_verify_script(*, issue: int, log_path: str, pid_file: str) -> str:
+    """Remote script (c): liveness verification, run from a SEPARATE SSH invocation.
+
+    ``LAUNCH-OK`` iff the canonical pidfile PID is alive, OR a FRESH
+    pod-side ``/workspace/logs/*.pid`` written at/after the launch epoch
+    carries a live PID (the GCP self-daemonizing-driver parity — a driver
+    that setsid-forks the real work and exits would otherwise read a false
+    ``LAUNCH-DEAD``; see ``backends/gcp.py``'s fresh-``*.pid`` wait), AND
+    the log exists. Anything else prints ``LAUNCH-DEAD`` + a log tail and
+    exits 4.
+    """
+    epoch_file = _launch_epoch_path(issue)
+    return "\n".join(
+        [
+            f"LAUNCH_EPOCH=$(cat {epoch_file} 2>/dev/null || echo 0)",
+            f"PID=$(cat {pid_file} 2>/dev/null || true)",
+            f'if [ -n "$PID" ] && kill -0 "$PID" 2>/dev/null && [ -f "{log_path}" ]; then',
+            '  echo "LAUNCH-OK pid=$PID"',
+            "  exit 0",
+            "fi",
+            "# Launcher PID gone: accept any FRESH pod-side pidfile (mtime >=",
+            "# launch epoch) whose PID is alive — the GCP self-daemonizing-driver",
+            "# convention.",
+            "for f in /workspace/logs/*.pid; do",
+            '  [ -f "$f" ] || continue',
+            '  [ "$(stat -c %Y "$f" 2>/dev/null || echo 0)" -ge "$LAUNCH_EPOCH" ] || continue',
+            '  FPID=$(cat "$f" 2>/dev/null || true)',
+            f'  if [ -n "$FPID" ] && kill -0 "$FPID" 2>/dev/null && [ -f "{log_path}" ]; then',
+            '    echo "LAUNCH-OK pid=$FPID via=$f"',
+            "    exit 0",
+            "  fi",
+            "done",
+            'echo "LAUNCH-DEAD pid=${PID:-none}"',
+            f'tail -20 "{log_path}" 2>/dev/null || true',
+            "exit 4",
+        ]
+    )
+
+
+def _execute_workload_on_pod(
+    spec: RunSpec,
+    *,
+    pod_name: str,
+    log_path: str,
+    pid_file: str,
+    sentinel_path: str,
+    attempt_id: str,
+) -> dict[str, Any]:
+    """Sync the pod clone, start ``spec.workload_cmd`` detached, verify liveness (#909).
+
+    Sequences remote scripts (a) branch sync → (b) write launcher + detach
+    → sleep → (c) verify (a SEPARATE SSH invocation, catching
+    SIGHUP-on-disconnect death). Returns ``{"workload_pid": int,
+    "launcher_path": str, "synced_sha": str}`` on success; raises
+    :class:`RunPodWorkloadStartError` on ANY start failure (the pod stays
+    RUNNING for diagnosis).
+
+    ``sentinel_path`` / ``attempt_id`` MUST be the SAME pair ``launch()``
+    bakes into the handle's expected-artifacts declaration — script (b)
+    chains the completion-sentinel write to that exact path on workload
+    success (#909 r2), so ``confirm_artifacts`` / ``_cmd_finalize`` can
+    pass on a successful backend-executed run.
+    """
+    host, port = _resolve_pod_endpoint(pod_name)
+    branch = str((spec.extra or {}).get("repo_branch") or "") or "main"
+    issue = int(spec.issue)
+
+    # (a) Branch sync — fetch + checkout -f -B + reset --hard; pod-side
+    # HEAD == FETCH_HEAD verification (never trusting pull stdout).
+    sync_out = _ssh_pod_run(
+        host,
+        port,
+        _render_branch_sync_script(branch),
+        timeout=180,
+        context=f"branch sync of {pod_name} to {branch!r}",
+    )
+    sync_match = re.search(r"SYNC-OK ([0-9a-f]+)", sync_out)
+    if not sync_match:
+        raise RunPodWorkloadStartError(
+            f"branch sync of {pod_name} to {branch!r} did not confirm SYNC-OK; "
+            f"output tail: {sync_out[-1500:]!r}"
+        )
+    synced_sha = sync_match.group(1)
+
+    # (b) Write the launcher + detach it.
+    try:
+        launch_out = _ssh_pod_run(
+            host,
+            port,
+            _render_launch_script(
+                issue=issue,
+                workload_cmd=spec.workload_cmd,
+                log_path=log_path,
+                pid_file=pid_file,
+                sentinel_path=sentinel_path,
+                attempt_id=attempt_id,
+            ),
+            timeout=120,
+            context=f"workload detach on {pod_name}",
+        )
+    except RunPodWorkloadStartError as exc:
+        if "ALREADY-RUNNING" in str(exc):
+            pid_match = _ALREADY_RUNNING_PID_RE.search(str(exc))
+            live_pid = pid_match.group(1) if pid_match else "unknown"
+            raise RunPodWorkloadStartError(
+                f"double-fire guard: a live workload (pid={live_pid}) already holds "
+                f"{pid_file} on {pod_name} — the experimenter (SKILL.md Step 6d.1) or a "
+                "prior --execute-workload launch already started it; refusing to "
+                f"double-launch. Original: {exc}"
+            ) from exc
+        raise
+    if "WRAPPER-STARTED" not in launch_out:
+        raise RunPodWorkloadStartError(
+            f"workload detach on {pod_name} did not confirm WRAPPER-STARTED "
+            f"(log {log_path}); output tail: {launch_out[-1500:]!r}"
+        )
+
+    # (c) Verify from a SEPARATE SSH invocation — a same-session probe
+    # cannot catch SIGHUP-on-disconnect death.
+    time.sleep(WORKLOAD_VERIFY_DELAY_SECONDS)
+    try:
+        verify_out = _ssh_pod_run(
+            host,
+            port,
+            _render_verify_script(issue=issue, log_path=log_path, pid_file=pid_file),
+            timeout=120,
+            context=f"workload liveness verify on {pod_name}",
+        )
+    except RunPodWorkloadStartError as exc:
+        raise RunPodWorkloadStartError(
+            f"workload did NOT verify alive on {pod_name} (log {log_path}): {exc} — "
+            "if the workload self-daemonizes without writing a pod-side pidfile, check "
+            "the pod before treating this as dead; the pod is left RUNNING for diagnosis"
+        ) from exc
+    ok = _LAUNCH_OK_RE.search(verify_out)
+    if not ok:
+        raise RunPodWorkloadStartError(
+            f"workload did NOT verify alive on {pod_name} (log {log_path}); "
+            f"verify output tail: {verify_out[-1500:]!r} — if the workload "
+            "self-daemonizes without writing a pod-side pidfile, check the pod before "
+            "treating this as dead; the pod is left RUNNING for diagnosis"
+        )
+    return {
+        "workload_pid": int(ok.group(1)),
+        "launcher_path": _launcher_path(issue),
+        "synced_sha": synced_sha,
+    }
 
 
 class RunPodBackend(ComputeBackend):
@@ -219,6 +737,18 @@ class RunPodBackend(ComputeBackend):
         (``deployCpuPod``); ``cpu-bigmem`` never reaches here (it keeps the #677
         typed terminal — it is absent from the RunPod-CPU map).
         """
+        execute_workload = bool((spec.extra or {}).get("execute_workload"))
+        if execute_workload and not spec.workload_cmd:
+            # Defensive in-backend guard behind the dispatch CLI's parse-time
+            # rejection (#909 AC3a): a PROGRAMMATIC caller must not silently
+            # recreate the flag+hydra false-green cell (the execution leg
+            # cannot execute a hydra-args run). Raised BEFORE the provision
+            # subprocess so no pod is paid for.
+            raise RunPodWorkloadStartError(
+                "execute_workload requested with empty workload_cmd — the RunPod "
+                "execution leg cannot execute a hydra-args run (#909); refusing "
+                "before provisioning"
+            )
         cmd = [
             sys.executable,
             str(_scripts_dir() / "pod_lifecycle.py"),
@@ -230,6 +760,29 @@ class RunPodBackend(ComputeBackend):
         ]
         if spec.gpus is not None:
             cmd += ["--gpu-count", str(spec.gpus)]
+        # #1010: thread the plan's disk requirement into the RunPod CPU
+        # fallback's container disk (the pod's only writable disk on the CPU
+        # lane -- /workspace rides the overlay; incident #958). CPU intents
+        # ONLY: on GPU pods the big-data mount is the 200 GB /workspace
+        # VOLUME, not the container overlay, so boot_disk_gb does not map.
+        # Floored at runpod_api.DEFAULT_CONTAINER_DISK_GB (50,
+        # _CPU_CONTAINER_DISK_FLOOR_GB here) so threading can never REDUCE
+        # below today's behavior. The router's feasibility gate guarantees
+        # boot_disk_gb <= the instance cap on every AUTOMATED path; an
+        # explicit `backend: runpod` pin above the cap fails loud at
+        # pod_lifecycle's pre-API cap check / RunPod's own create-time
+        # validation.
+        boot_disk_gb = int((spec.extra or {}).get("boot_disk_gb") or 0)
+        if boot_disk_gb:
+            from explore_persona_space.backends.router import (
+                RUNPOD_CPU_INSTANCE_FOR_INTENT,  # lazy: module top stays base-only
+            )
+
+            if spec.intent in RUNPOD_CPU_INSTANCE_FOR_INTENT:
+                cmd += [
+                    "--container-disk-gb",
+                    str(max(_CPU_CONTAINER_DISK_FLOOR_GB, boot_disk_gb)),
+                ]
         # subprocess.run raises CalledProcessError on non-zero exit; that
         # propagates to the selector, which logs + lets the orchestrator
         # surface the failure as `epm:failure` (slice 1 does NOT add a
@@ -237,64 +790,88 @@ class RunPodBackend(ComputeBackend):
         # `pod_lifecycle.py` already handles SUPPLY_CONSTRAINT).
         subprocess.run(cmd, check=True)
         pod_name = _runpod_pod_name(spec.issue)
-        # Expected-artifacts declaration (#598): attempt id minted at
-        # launch (GCP-style) and embedded in the pod-side sentinel path
-        # so a prior attempt's sentinel on the persistent /workspace
-        # volume can never satisfy this launch's declaration. ALL RunPod
-        # workloads are experimenter-driven custom dispatches, so the
-        # declaration carries NO launch-time HF prefix guess (the #601
-        # false-negative-teardown trap, a fortiori on this lane).
+        # Attempt id + sentinel path minted BEFORE the execution leg (#909 r2,
+        # `runpod-execute-missing-completion-sentinel`): the handle's
+        # expected-artifacts declaration and the launcher's chained
+        # completion-sentinel write MUST share ONE attempt-namespaced path —
+        # one mint, one path, both sides. (Round 1 minted the id AFTER
+        # `_execute_workload_on_pod`, so the declared path could not be
+        # threaded into the launcher, no writer existed on the
+        # no-experimenter leg, and every successful backend-executed run
+        # would FAIL finalize — `_check_sentinel` FAILs a missing sentinel
+        # and `_cmd_finalize` exits 3 + skips teardown when a declaration
+        # is present but unsatisfied.)
+        attempt_id = mint_runpod_attempt_id()
+        sentinel_path = runpod_sentinel_path(spec.issue, attempt_id)
+        # Execution leg (#909): execute iff workload_cmd is non-empty AND the
+        # caller opted in via spec.extra["execute_workload"] (set automatically
+        # by router.failover_to_runpod_after_async_workload_crash — the
+        # no-experimenter automated failover paths — or explicitly via
+        # `dispatch_issue.py launch --execute-workload`). The interactive
+        # /issue Step 6b/6d.1 flow passes no flag: the experimenter stays the
+        # sole executor there, so this branch is behavior-unchanged for it.
+        exec_requested = execute_workload and bool(spec.workload_cmd)
+
+        # Handle construction shared by the SUCCESS path and the #954
+        # PARTIAL-failure path (pod provisioned, workload start failed).
+        # Every input — pod_name, attempt_id, sentinel_path, the spec fields —
+        # is minted BEFORE the execution leg (#909 r2), so the handle is fully
+        # constructible at the failure point. The import is hoisted above the
+        # execution leg for the same reason (the failure path needs it).
         from explore_persona_space.backends.artifacts import (
             EXPECTED_ARTIFACTS_HANDLE_KEY,
             build_expected_artifacts_declaration,
         )
 
-        attempt_id = mint_runpod_attempt_id()
-        # ``extra`` carries the production fields the orchestrator + the
-        # unified ``poll`` / ``fetch_results`` paths need without having
-        # to re-derive them from the issue id:
-        # * ``issue`` — round-tripped so ``confirm_artifacts`` /
-        #   ``fetch_results`` / cross-backend reconnect can index by it.
-        # * ``intent`` — preserved for marker bodies + downstream
-        #   re-provision intent re-use.
-        # * ``pid_file`` — absolute path the experimenter launcher
-        #   writes; ``poll`` forwards it to
-        #   ``poll_pipeline.poll_once(pid_file=...)``.
-        # * ``runpod_attempt_id`` — plain field so the orchestrator /
-        #   experimenter can read the attempt id without parsing the
-        #   declaration.
-        # * ``workload_cmd`` / ``hydra_args`` / ``gpus`` /
-        #   ``time_budget_hours`` — the relaunch-critical RunSpec fields
-        #   (#689 blocker, mirroring the GCP handle contract). The RunPod
-        #   RUNNING-but-no-port wedge failover (``backend_poll`` /
-        #   ``.claude/rules/compute-backend-failover.md`` § Part C)
-        #   reconstructs a ``RunSpec`` FROM the persisted sidecar handle via
-        #   ``_runspec_from_runpod_handle`` to re-provision a FRESH pod. That
-        #   reconstruction reads exactly these keys off ``extra`` and FAILS
-        #   LOUD when neither ``workload_cmd`` NOR ``hydra_args`` is present —
-        #   so a launch that did not persist them would terminate the wedged
-        #   pod and then orphan the run (no fresh pod). Persisting them here
-        #   makes the spec reconstructable; ``serialize_handle`` /
-        #   ``deserialize_handle`` round-trip ``extra`` verbatim (the tuple
-        #   ``hydra_args`` JSON-encodes to a list, which the reconstructor
-        #   re-tuples). ``workload_cmd`` is ``""`` for a Hydra-entrypoint run
-        #   and ``hydra_args`` is ``()`` for a custom-workload run; at least
-        #   one is always set on a real launch (the ``RunSpec.__post_init__``
-        #   mutual-exclusion contract).
-        return RunHandle(
-            backend="runpod",
-            cluster=None,
-            # The RunPod pod_id is set inside pod_lifecycle.py and persisted
-            # to pods_ephemeral.json; we read it back from there rather than
-            # parsing stdout. For slice 1 the orchestrator does not need the
-            # raw pod_id (it routes by name through SSH config) — empty
-            # string is the truthful "we did not capture this here" marker;
-            # a future revision should round-trip pods_ephemeral.json.
-            job_id="",
-            pod_name=pod_name,
-            scratch_dir="/workspace",
-            log_path=_runpod_log_path(spec.issue),
-            extra={
+        def _build_handle(
+            workload_info: dict[str, Any],
+            *,
+            workload_executed: bool,
+            workload_start_error: str | None = None,
+        ) -> RunHandle:
+            """Build the launch :class:`RunHandle`.
+
+            Success path: ``workload_executed=exec_requested`` + the execution
+            leg's ``workload_info`` — the ``extra`` dict is byte-identical to
+            the pre-#954 inline construction (``workload_start_error`` is added
+            ONLY on the failure path, so no new keys appear on success).
+            Failure path (#954): ``workload_executed=False`` (truthful — the
+            workload did not start) + a truncated ``workload_start_error`` so
+            downstream consumers (poll / finalize / re-drive) can tell the
+            partial launch apart from a healthy one.
+            """
+            # ``extra`` carries the production fields the orchestrator + the
+            # unified ``poll`` / ``fetch_results`` paths need without having
+            # to re-derive them from the issue id:
+            # * ``issue`` — round-tripped so ``confirm_artifacts`` /
+            #   ``fetch_results`` / cross-backend reconnect can index by it.
+            # * ``intent`` — preserved for marker bodies + downstream
+            #   re-provision intent re-use.
+            # * ``pid_file`` — absolute path the experimenter launcher
+            #   writes; ``poll`` forwards it to
+            #   ``poll_pipeline.poll_once(pid_file=...)``.
+            # * ``runpod_attempt_id`` — plain field so the orchestrator /
+            #   experimenter can read the attempt id without parsing the
+            #   declaration.
+            # * ``workload_cmd`` / ``hydra_args`` / ``gpus`` /
+            #   ``time_budget_hours`` — the relaunch-critical RunSpec fields
+            #   (#689 blocker, mirroring the GCP handle contract). The RunPod
+            #   RUNNING-but-no-port wedge failover (``backend_poll`` /
+            #   ``.claude/rules/compute-backend-failover.md`` § Part C)
+            #   reconstructs a ``RunSpec`` FROM the persisted sidecar handle via
+            #   ``_runspec_from_runpod_handle`` to re-provision a FRESH pod. That
+            #   reconstruction reads exactly these keys off ``extra`` and FAILS
+            #   LOUD when neither ``workload_cmd`` NOR ``hydra_args`` is present —
+            #   so a launch that did not persist them would terminate the wedged
+            #   pod and then orphan the run (no fresh pod). Persisting them here
+            #   makes the spec reconstructable; ``serialize_handle`` /
+            #   ``deserialize_handle`` round-trip ``extra`` verbatim (the tuple
+            #   ``hydra_args`` JSON-encodes to a list, which the reconstructor
+            #   re-tuples). ``workload_cmd`` is ``""`` for a Hydra-entrypoint run
+            #   and ``hydra_args`` is ``()`` for a custom-workload run; at least
+            #   one is always set on a real launch (the ``RunSpec.__post_init__``
+            #   mutual-exclusion contract).
+            extra: dict[str, Any] = {
                 "intent": spec.intent,
                 "issue": int(spec.issue),
                 "pid_file": _runpod_pid_file_path(spec.issue),
@@ -304,9 +881,20 @@ class RunPodBackend(ComputeBackend):
                 "hydra_args": list(spec.hydra_args),
                 "gpus": spec.gpus,
                 "time_budget_hours": spec.time_budget_hours,
+                # #909: the branch the run's code lives on (round-trips through
+                # the sidecar + backend_poll reconstructors so a failover
+                # re-execution syncs the ISSUE branch, not `main`) + the
+                # execution-leg outcome (workload_executed / workload_pid /
+                # launcher_path / synced_sha via **workload_info). Additive
+                # keys — every existing reader uses .get(...).
+                "repo_branch": str((spec.extra or {}).get("repo_branch") or ""),
+                "workload_executed": workload_executed,
+                **workload_info,
                 EXPECTED_ARTIFACTS_HANDLE_KEY: build_expected_artifacts_declaration(
                     issue=spec.issue,
-                    sentinel_path=runpod_sentinel_path(spec.issue, attempt_id),
+                    # The SAME path threaded into the execution leg —
+                    # one mint, one path, both sides (#909 r2).
+                    sentinel_path=sentinel_path,
                     custom_workload=True,
                     attempt_id=attempt_id,
                     wandb_run_path=spec.extra.get("wandb_run_path"),
@@ -317,8 +905,70 @@ class RunPodBackend(ComputeBackend):
                     git_repo_root=spec.extra.get("git_repo_root"),
                     skip_default_git_paths=bool(spec.extra.get("skip_default_git_paths", False)),
                 ),
-            },
-        )
+            }
+            if workload_start_error is not None:
+                # #954 failure-path-only key: the truncated start-leg error, so
+                # the sidecar records WHY the pod is workload-less.
+                extra["workload_start_error"] = workload_start_error
+            return RunHandle(
+                backend="runpod",
+                cluster=None,
+                # The RunPod pod_id is set inside pod_lifecycle.py and persisted
+                # to pods_ephemeral.json; we read it back from there rather than
+                # parsing stdout. For slice 1 the orchestrator does not need the
+                # raw pod_id (it routes by name through SSH config) — empty
+                # string is the truthful "we did not capture this here" marker;
+                # a future revision should round-trip pods_ephemeral.json.
+                job_id="",
+                pod_name=pod_name,
+                scratch_dir="/workspace",
+                log_path=_runpod_log_path(spec.issue),
+                extra=extra,
+            )
+
+        workload_info: dict[str, Any] = {}
+        if exec_requested:
+            try:
+                workload_info = _execute_workload_on_pod(
+                    spec,
+                    pod_name=pod_name,
+                    log_path=_runpod_log_path(spec.issue),
+                    pid_file=_runpod_pid_file_path(spec.issue),
+                    sentinel_path=sentinel_path,
+                    attempt_id=attempt_id,
+                )
+            except RunPodWorkloadStartError as exc:
+                # #954: the pod IS provisioned (and bills) — attach the fully-
+                # built partial handle to the typed error so the router's
+                # terminal rung + the backend_poll failover legs can persist
+                # the launch records (sidecar + lease) before surfacing the
+                # failure. Re-raising the SAME exception preserves message +
+                # traceback. The pod-stays-RUNNING-for-diagnosis contract is
+                # UNCHANGED.
+                exc.handle = _build_handle(
+                    {},
+                    workload_executed=False,
+                    workload_start_error=str(exc)[:2000],
+                )
+                raise
+        elif spec.workload_cmd:
+            logger.warning(
+                "workload_cmd persisted but NOT executed — EXPECTED when the "
+                "experimenter (SKILL.md Step 6d.1) launches it on this pod; otherwise "
+                "dispatch the experimenter on THIS pod (preferred — a re-launch "
+                "provisions a SECOND pod), or re-launch with --execute-workload (#909)"
+            )
+        # Expected-artifacts declaration (#598): the attempt id minted above
+        # (GCP-style, pre-execution) is embedded in the pod-side sentinel path
+        # so a prior attempt's sentinel on the persistent /workspace
+        # volume can never satisfy this launch's declaration. The sentinel
+        # WRITER depends on the executor: experimenter-driven dispatches
+        # chain `write_completion_sentinel` per experimenter.md step 11;
+        # the #909 backend-executed leg chains the write inside its rendered
+        # launcher (same path — see the mint comment above). The declaration
+        # carries NO launch-time HF prefix guess (the #601
+        # false-negative-teardown trap, a fortiori on this lane).
+        return _build_handle(workload_info, workload_executed=exec_requested)
 
     def estimate_start(self, spec: RunSpec) -> datetime | None:
         """RunPod pods come up in minutes — informational "now"."""
@@ -409,6 +1059,16 @@ class RunPodBackend(ComputeBackend):
             # getattr-guarded so a mixed-version worktree (a poll_once that
             # predates the field) degrades to None rather than crashing.
             crash_signature=getattr(raw, "crash_signature", None),
+            # #983: copy the post-done phase-consistency advisory surfaces
+            # through (same passthrough contract as stall_reason above —
+            # dropping them at this rewrap would silently strip the advisory
+            # from the backend_poll lane's JSON before
+            # ``_serialize_poll_result`` can surface it, the #664
+            # stall_reason lesson). getattr-guarded for a mixed-version
+            # worktree; the marker + Telegram push already fired inside
+            # ``poll_once`` regardless.
+            post_done_phase_advisory_posted=getattr(raw, "post_done_phase_advisory_posted", False),
+            post_done_phase_lines=tuple(getattr(raw, "post_done_phase_lines", ()) or ()),
         )
 
     def fetch_logs(self, handle: RunHandle) -> str:

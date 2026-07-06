@@ -1,0 +1,75 @@
+{
+  "commit": "077f79aad2",
+  "created": "2026-07-02T18:15:37Z",
+  "figsize": [
+    5.6,
+    5.4
+  ],
+  "points": [
+    {
+      "\u0394_med under answer-mean summary (activation units)": 0.010871558579518052,
+      "\u0394_med under turn-boundary summary (activation units)": 0.09232367875761359,
+      "label": "harmful-compliance (EM) L7",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "\u0394_med under answer-mean summary (activation units)": 0.041124705290029255,
+      "\u0394_med under turn-boundary summary (activation units)": 0.2588055069931936,
+      "label": "harmful-compliance (EM) L14",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "\u0394_med under answer-mean summary (activation units)": 0.07558899341479422,
+      "\u0394_med under turn-boundary summary (activation units)": 0.3831914879896679,
+      "label": "harmful-compliance (EM) L21",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "\u0394_med under answer-mean summary (activation units)": 0.015453500558897906,
+      "\u0394_med under turn-boundary summary (activation units)": 0.058460366378968724,
+      "label": "sycophancy L7",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "\u0394_med under answer-mean summary (activation units)": 0.029632619602436027,
+      "\u0394_med under turn-boundary summary (activation units)": 0.042168823881514356,
+      "label": "sycophancy L14",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "\u0394_med under answer-mean summary (activation units)": 0.03136145713188224,
+      "\u0394_med under turn-boundary summary (activation units)": 0.13274898250078443,
+      "label": "sycophancy L21",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "\u0394_med under answer-mean summary (activation units)": 0.10114586070289631,
+      "\u0394_med under turn-boundary summary (activation units)": 0.12478261031909282,
+      "label": "taught fact L7",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "\u0394_med under answer-mean summary (activation units)": 0.3223961333007702,
+      "\u0394_med under turn-boundary summary (activation units)": 0.04833785049407026,
+      "label": "taught fact L14",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "\u0394_med under answer-mean summary (activation units)": 0.14152373209831853,
+      "\u0394_med under turn-boundary summary (activation units)": 0.0984920607307524,
+      "label": "taught fact L21",
+      "_kind": "scatter",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 9
+}

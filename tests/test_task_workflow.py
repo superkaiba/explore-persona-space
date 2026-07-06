@@ -62,6 +62,9 @@ def fake_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     lock_dir = tmp_path / ".task-workflow"
     monkeypatch.setattr(tw, "LOCK_DIR", lock_dir)
     monkeypatch.setattr(tw, "LOCK_PATH", lock_dir / "lock")
+    # Per-test deferred-commit sidecar (#1030) so no test can ever write the
+    # REAL ~/.task-workflow/deferred-commits.jsonl.
+    monkeypatch.setattr(tw, "DEFERRED_COMMITS_LOG", lock_dir / "deferred-commits.jsonl")
     return tmp_path, tw
 
 
@@ -2995,6 +2998,29 @@ def test_set_clean_result_unset_paper_skips_gate(fake_repo):
     assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is False
 
 
+def test_set_clean_result_accepts_report_v1_body(fake_repo):
+    """A v2 report body (carries REPORT_V1_SENTINEL) is a valid non-paper
+    clean-result form: it is not a paper task and has no paper_manifest.json, so
+    set_clean_result flips has_clean_result with no extra gate (mirrors the
+    markdown-v4 path). Pins that the report track is accepted, not rejected."""
+    _, tw = fake_repo
+    tid = tw.create_task(tw.NewTaskRequest(kind="experiment", title="Report task"))
+    report_body = (
+        "# Experiment: does X predict Y?\n"
+        f"{tw.REPORT_V1_SENTINEL}\n\n"
+        "## TLDR:\nThomas-written takeaway.\n\n"
+        "## Motivation:\nWhy we ran it.\n\n"
+        "## Methodology:\nWhat we ran.\n\n"
+        "## Metrics:\nWhat we measured.\n\n"
+        "## Results:\n### rate\nDescription.\n![r](figures/f.png)\n\n"
+        "## Next steps:\nWhat next.\n"
+    )
+    tw.set_body(tid, report_body)
+    assert tw.is_report_body(report_body) is True
+    tw.set_clean_result(tid, value=True)
+    assert tw.get_task(tid)["frontmatter"]["has_clean_result"] is True
+
+
 # ─── #657: set_body round-trips the paper-stub opt-in (paper / abstract) ─────
 
 
@@ -3182,6 +3208,37 @@ def test_readers_tolerate_partial_trailing_multibyte_utf8(fake_repo, caplog):
     )
 
 
+def test_note_with_raw_unicode_line_boundaries_round_trips(fake_repo):
+    """#950 regression (incident #825): the `ensure_ascii=False` writer leaves
+    raw U+2028/U+2029/NEL inside note strings, and the pre-fix
+    `splitlines()`-based `_iter_jsonl` treated those as line boundaries —
+    shredding the valid record into skip-malformed fragments = the marker was
+    SILENTLY LOST on every read. Under `split("\\n")` the note round-trips
+    byte-intact through post_event → list_events."""
+    _, tw = fake_repo
+    nid = tw.create_task(tw.NewTaskRequest(kind="infra", title="t"))
+    # U+2028 LINE SEPARATOR, U+2029 PARAGRAPH SEPARATOR, NEL U+0085 - all
+    # written RAW by json.dumps(..., ensure_ascii=False).
+    note = "para one\u2028para two\u2029para three\u0085end"
+    tw.post_event(nid, "epm:plan", by="planner", note=note)
+    plan_events = [e for e in tw.list_events(nid) if e["kind"] == "epm:plan"]
+    assert len(plan_events) == 1  # the record survives as exactly ONE row
+    assert plan_events[0]["note"] == note  # note byte-intact, boundaries raw
+
+
+def test_crlf_terminated_record_parses(fake_repo):
+    """#950: `split("\\n")` leaves a trailing `\\r` on a `\\r\\n`-terminated
+    record; `json.loads` tolerates it as JSON whitespace — pinned here as a
+    committed test, not a session probe."""
+    _, tw = fake_repo
+    nid = tw.create_task(tw.NewTaskRequest(kind="infra", title="t"))
+    ev = tw.find_task_path(nid) / "events.jsonl"
+    ev.write_bytes(b'{"ts":"2026-07-03T00:00:00Z","kind":"epm:test","version":1,"by":"t"}\r\n')
+    events = tw.list_events(nid)
+    assert len(events) == 1
+    assert events[0]["kind"] == "epm:test"
+
+
 # T-helper
 def test_append_jsonl_line_lands_full_line(fake_repo):
     """A normal-sized append lands a complete, parseable line + newline."""
@@ -3311,3 +3368,790 @@ def test_oversize_append_completes_across_short_writes(fake_repo, tmp_path, monk
     assert len(line.encode("utf-8")) > tw._PIPE_BUF
     tw._append_jsonl_line(target, payload)
     assert target.read_text() == line  # full buffer completed
+
+
+# ─── index.lock retry + crash-safe set_status (#898) ────────────────────────
+#
+# Incident #825: a concurrent session held .git/index.lock while set_status
+# ran; the `git add` crash left the folder moved with REGISTRY pointing at
+# the old path — the task was unfindable until a manual `audit --repair`.
+# The fix set: (1) _run_git retries ONCE on the git lock-contention stderr
+# signature; (2) set_status completes ALL durable state (FS move + verify,
+# REGISTRY save, event append) BEFORE any git op; (3) find_task_path scans
+# the tasks/ tree when the registry entry is stale; (4) the ghost-deletion
+# sweep (_task_status_dir_pathspecs) reconciles a crashed transition's
+# leftover old-status dir on the task's NEXT transition; (5) the
+# same-transition early return re-syncs a stale registry entry in place.
+
+
+def _make_index_lock(repo: Path) -> Path:
+    """Create a real .git/index.lock so the repo's own git binary emits the
+    REAL lock-contention error (pins the retry regex against reality)."""
+    lock = repo / ".git" / "index.lock"
+    lock.write_text("")
+    return lock
+
+
+def test_run_git_retries_once_on_index_lock_collision(fake_repo, monkeypatch):
+    """A held index.lock that clears during the backoff sleep resolves via
+    exactly ONE retry, with the jittered delay drawn from the constant range
+    (asserted against tw._GIT_LOCK_RETRY_SLEEP_RANGE_S, not literals)."""
+    repo, tw = fake_repo
+    (repo / "somefile.txt").write_text("x\n")
+    lock = _make_index_lock(repo)
+
+    sleeps: list[float] = []
+
+    def fake_sleep(delay: float) -> None:
+        sleeps.append(delay)
+        lock.unlink()  # the concurrent committer finishes during the backoff
+
+    monkeypatch.setattr(tw.time, "sleep", fake_sleep)
+    result = tw._run_git(["add", "--", "somefile.txt"])
+
+    assert result.returncode == 0
+    assert len(sleeps) == 1  # exactly one retry sleep
+    lo, hi = tw._GIT_LOCK_RETRY_SLEEP_RANGE_S
+    assert lo <= sleeps[0] <= hi
+
+
+def test_run_git_retry_exhaustion_raises_calledprocesserror(fake_repo, monkeypatch, caplog):
+    """A lock that does NOT clear fails after exactly one retry (never two)
+    with subprocess.CalledProcessError and the stale-lock remedy logged."""
+    repo, tw = fake_repo
+    (repo / "somefile.txt").write_text("x\n")
+    _make_index_lock(repo)  # never removed — retry hits the lock again
+
+    sleeps: list[float] = []
+    monkeypatch.setattr(tw.time, "sleep", lambda d: sleeps.append(d))
+
+    with (
+        caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"),
+        pytest.raises(subprocess.CalledProcessError),
+    ):
+        tw._run_git(["add", "--", "somefile.txt"])
+
+    assert len(sleeps) == 1  # one retry sleep, never a second
+    assert any("index.lock" in r.getMessage() for r in caplog.records)
+
+
+def test_run_git_does_not_retry_non_lock_errors(fake_repo, monkeypatch):
+    """A non-lock git failure (unmatched pathspec) raises immediately with
+    ZERO sleeps — the retry keys on the lock signature only."""
+    _, tw = fake_repo
+    monkeypatch.setattr(tw.time, "sleep", lambda d: pytest.fail("retry sleep on non-lock error"))
+    with pytest.raises(subprocess.CalledProcessError):
+        tw._run_git(["add", "--", "does-not-exist.txt"], check=True)
+
+
+def test_run_git_check_false_rc_signal_not_retried(fake_repo, monkeypatch):
+    """`diff --cached --quiet` uses rc=1 as a SIGNAL (staged changes exist),
+    with empty stderr — it must pass through un-retried and un-raised."""
+    repo, tw = fake_repo
+    (repo / "somefile.txt").write_text("x\n")
+    subprocess.run(["git", "add", "somefile.txt"], cwd=repo, check=True)
+    monkeypatch.setattr(tw.time, "sleep", lambda d: pytest.fail("retry sleep on rc-as-signal"))
+
+    result = tw._run_git(["diff", "--cached", "--quiet"], check=False)
+
+    assert result.returncode == 1  # the rc signal survives, no raise
+
+
+def test_run_git_happy_path_no_sleep(fake_repo, monkeypatch):
+    """A SUCCESSFUL _run_git call takes zero sleeps (AC5: zero added
+    happy-path latency)."""
+    repo, tw = fake_repo
+    (repo / "somefile.txt").write_text("x\n")
+    monkeypatch.setattr(tw.time, "sleep", lambda d: pytest.fail("sleep on a successful call"))
+    result = tw._run_git(["add", "--", "somefile.txt"])
+    assert result.returncode == 0
+
+
+def _lock_stderr() -> str:
+    return "fatal: Unable to create '/x/.git/index.lock': File exists.\n"
+
+
+def _install_git_add_all_crash(tw, mp: pytest.MonkeyPatch) -> None:
+    """Monkeypatch tw._run_git to crash ONLY on the set_status step-6
+    standalone staging call (`add` + `--all`) — not _git_commit's internal
+    `add` (no `--all`), so the pin cannot drift to the wrong crash point."""
+    real_run_git = tw._run_git
+
+    def crashing_run_git(args, *, check=True):
+        if args and args[0] == "add" and "--all" in args:
+            raise subprocess.CalledProcessError(
+                128, ["git", *args], output="", stderr=_lock_stderr()
+            )
+        return real_run_git(args, check=check)
+
+    mp.setattr(tw, "_run_git", crashing_run_git)
+
+
+def test_set_status_git_add_crash_leaves_registry_consistent_with_disk(fake_repo):
+    """THE #825 regression pin (red on the pre-#898 order): a crash at the
+    step-6 `git add --all` staging must leave disk, REGISTRY, and
+    events.jsonl all consistent with the transition APPLIED, and
+    find_task_path resolving."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+
+    # Install the crash injection AFTER task creation (create_task itself
+    # drives _git_commit -> _run_git(["add", ...])).
+    with pytest.MonkeyPatch.context() as mp:
+        _install_git_add_all_crash(tw, mp)
+        with pytest.raises(subprocess.CalledProcessError):
+            tw.set_status(new_id, "running")
+
+    new = repo / "tasks" / "running" / str(new_id)
+    assert new.is_dir()  # disk: moved
+    assert not (repo / "tasks" / "proposed" / str(new_id)).exists()
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/running/{new_id}"  # registry consistent
+    events = [json.loads(line) for line in (new / "events.jsonl").read_text().splitlines() if line]
+    assert any(
+        e["kind"] == "epm:status-changed" and e.get("to") == "running" for e in events
+    )  # event appended
+    assert tw.find_task_path(new_id) == new  # still resolvable
+
+
+def test_set_status_git_commit_crash_leaves_registry_consistent_with_disk(fake_repo):
+    """REORDER-SURVIVAL pin (green on the pre-#898 order too, since the
+    registry was already saved before _git_commit under the old order; test
+    above is the sole #825 detector): a _git_commit crash must leave the
+    same consistent disk + REGISTRY + events state."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+
+    def crashing_commit(paths, message):
+        raise subprocess.CalledProcessError(
+            128, ["git", "commit"], output="", stderr=_lock_stderr()
+        )
+
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(tw, "_git_commit", crashing_commit)
+        with pytest.raises(subprocess.CalledProcessError):
+            tw.set_status(new_id, "running")
+
+    new = repo / "tasks" / "running" / str(new_id)
+    assert new.is_dir()
+    assert not (repo / "tasks" / "proposed" / str(new_id)).exists()
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/running/{new_id}"
+    events = [json.loads(line) for line in (new / "events.jsonl").read_text().splitlines() if line]
+    assert any(e["kind"] == "epm:status-changed" and e.get("to") == "running" for e in events)
+    assert tw.find_task_path(new_id) == new
+
+
+def test_find_task_path_stale_registry_entry_falls_back_to_scan(fake_repo, caplog):
+    """A stale registry entry (dir moved on disk, registry not updated — the
+    hard-kill residue shape) resolves via the on-disk scan with a logged
+    drift warning naming REGISTRY + the audit remedy."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    old = repo / "tasks" / "proposed" / str(new_id)
+    dest = repo / "tasks" / "interpreting" / str(new_id)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(old), str(dest))  # registry left pointing at proposed
+
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        path = tw.find_task_path(new_id)
+
+    assert path == dest
+    messages = [r.getMessage() for r in caplog.records]
+    assert any("REGISTRY" in m and "audit" in m for m in messages)
+
+
+def test_find_task_path_ambiguous_duplicate_dirs_raises(fake_repo):
+    """A stale registry entry with the task dir present under TWO statuses is
+    real corruption: raise StaleTaskPathError naming both paths (never guess
+    one silently)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    old = repo / "tasks" / "proposed" / str(new_id)
+    d1 = repo / "tasks" / "running" / str(new_id)
+    d2 = repo / "tasks" / "verifying" / str(new_id)
+    d1.parent.mkdir(parents=True, exist_ok=True)
+    d2.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(old, d1)
+    shutil.copytree(old, d2)
+    shutil.rmtree(old)  # registry still points at proposed (missing)
+
+    with pytest.raises(tw.StaleTaskPathError) as exc_info:
+        tw.find_task_path(new_id)
+    msg = str(exc_info.value)
+    assert f"tasks/running/{new_id}" in msg
+    assert f"tasks/verifying/{new_id}" in msg
+
+
+def test_set_status_ghost_deletion_swept_by_next_transition(fake_repo):
+    """The BINDING v2 Must-Fix pin (red without the §4.4 sweep): after a
+    git-crash residue on transition A→B, the NEXT transition B→C must sweep
+    the ghost old-status dir out of HEAD — no committed duplicate of the
+    task, no permanent unstaged deletions under tasks/."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+
+    # Transition A→B crashes at the step-6 staging: nothing staged/committed;
+    # HEAD still tracks tasks/proposed/<id> (the ghost) while disk has moved on.
+    with pytest.MonkeyPatch.context() as mp:
+        _install_git_add_all_crash(tw, mp)
+        with pytest.raises(subprocess.CalledProcessError):
+            tw.set_status(new_id, "running")
+
+    # Injection removed — transition B→C must reconcile the residue.
+    tw.set_status(new_id, "verifying")
+
+    def ls_tree(pathspec: str) -> str:
+        return subprocess.run(
+            ["git", "ls-tree", "-r", "HEAD", "--", pathspec],
+            cwd=repo,
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout.strip()
+
+    assert ls_tree(f"tasks/proposed/{new_id}") == ""  # ghost swept
+    assert ls_tree(f"tasks/running/{new_id}") == ""  # intermediate swept
+    assert ls_tree(f"tasks/verifying/{new_id}") != ""  # current status committed
+    porcelain = subprocess.run(
+        ["git", "status", "--porcelain", "--", "tasks/"],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    dirty = [line for line in porcelain.splitlines() if f"/{new_id}/" in line]
+    assert dirty == [], f"leftover unstaged/uncommitted task paths: {dirty}"
+
+
+def test_set_status_same_transition_retry_resyncs_stale_registry(fake_repo, caplog):
+    """§4.5 pin (red without the early-return re-sync): retrying the SAME
+    transition against a stale registry entry (dir already at the
+    destination, registry pointing at the old path — the hard-kill shape)
+    must re-sync the registry before the idempotent early return."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    old = repo / "tasks" / "proposed" / str(new_id)
+    dest = repo / "tasks" / "running" / str(new_id)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    shutil.move(str(old), str(dest))  # hard-kill shape: moved, registry stale
+
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        returned = tw.set_status(new_id, "running")  # the SAME transition
+
+    assert returned == dest  # early return fired with the on-disk path
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/running/{new_id}"  # re-synced
+    assert any("re-synced stale REGISTRY entry" in r.getMessage() for r in caplog.records)
+
+
+# ─── deferred commits + sequencer-state wait (#1030) ─────────────────────────
+#
+# Seam (a): _commit_after_durable_append — a git-commit failure AFTER a
+# durable append is deferred on the PRIMARY checkout (loud ERROR + forensic
+# sidecar row at tw.DEFERRED_COMMITS_LOG, patched into tmp_path by the
+# fake_repo fixture), never raised into the caller's retry recipe (the
+# 2026-07-03 3x-marker incident). Every failure class where durability is NOT
+# guaranteed still raises: routed mode, the routed post-commit CAS
+# RuntimeError, genuine bugs (TypeError/...), and append failures.
+# Seam (b): _git_commit waits out a concurrent merge/cherry-pick
+# (MERGE_HEAD / CHERRY_PICK_HEAD, per-worktree via `rev-parse --git-path`)
+# with a bounded env-tunable loop before `commit --only` fatals, raising
+# SequencerWaitTimeout on timeout, plus a single TOCTOU re-wait keyed on the
+# partial-commit stderr signature. Concurrency is SIMULATED (injected
+# failures / hand-created state files) — no real concurrent merge.
+
+
+def _deferred_rows(tw) -> list[dict]:
+    """Parse the per-test deferred-commit sidecar (empty list if absent)."""
+    log = tw.DEFERRED_COMMITS_LOG
+    if not log.exists():
+        return []
+    return [json.loads(line) for line in log.read_text().splitlines() if line.strip()]
+
+
+def _commit_crash(paths, message):
+    """Injected _git_commit failure with the real lock-collision stderr."""
+    raise subprocess.CalledProcessError(128, ["git", "commit"], output="", stderr=_lock_stderr())
+
+
+def _head_sha(repo: Path) -> str:
+    return subprocess.run(
+        ["git", "rev-parse", "HEAD"], cwd=repo, capture_output=True, text=True, check=True
+    ).stdout
+
+
+def _load_task_cli():
+    """Load scripts/task.py as an isolated module (importlib pattern)."""
+    import importlib.util
+
+    path = Path(__file__).resolve().parents[1] / "scripts" / "task.py"
+    spec = importlib.util.spec_from_file_location("task_cli_under_test_1030", path)
+    assert spec is not None and spec.loader is not None
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def test_post_event_deferred_commit_returns_payload(fake_repo, monkeypatch, caplog):
+    """AC1: a commit failure AFTER the events.jsonl append landed returns the
+    payload (success), appends exactly ONE events line, logs an ERROR, and
+    records exactly one forensic sidecar row (op=post_event)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    monkeypatch.setattr(tw, "_git_commit", _commit_crash)
+
+    with caplog.at_level(logging.ERROR, logger="explore_persona_space.task_workflow"):
+        payload = tw.post_event(new_id, "epm:progress", note="deferred-commit probe")
+
+    assert payload["kind"] == "epm:progress"
+    events = tw.list_events(new_id)
+    assert sum(1 for e in events if e["kind"] == "epm:progress") == 1  # exactly one append
+    assert any("Do NOT re-run" in r.getMessage() for r in caplog.records)
+    rows = _deferred_rows(tw)
+    assert len(rows) == 1
+    assert rows[0]["op"] == "post_event"
+    assert rows[0]["task_id"] == new_id
+
+
+def test_post_event_append_failure_raises_no_deferred_row(fake_repo, monkeypatch):
+    """AC2: an append failure still raises out of post_event — no sidecar
+    row, no commit attempt (the deferral covers post-append failures ONLY)."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    commits: list = []
+    monkeypatch.setattr(tw, "_git_commit", lambda paths, message: commits.append(list(paths)))
+
+    def broken_append(path, payload):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(tw, "_append_jsonl_line", broken_append)
+    with pytest.raises(OSError, match="disk full"):
+        tw.post_event(new_id, "epm:progress", note="x")
+    assert commits == []  # _git_commit never called
+    assert _deferred_rows(tw) == []
+
+
+def test_deferred_commit_swept_by_next_commit(fake_repo):
+    """AC3: after a deferred commit, the NEXT successful mutation touching the
+    same file commits the pending line too (git commits file STATE)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    with pytest.MonkeyPatch.context() as mp:
+        mp.setattr(tw, "_git_commit", _commit_crash)
+        tw.post_event(new_id, "epm:progress", note="first-deferred")
+    tw.post_event(new_id, "epm:progress", note="second-committed")  # real git
+
+    ev_rel = f"tasks/proposed/{new_id}/events.jsonl"
+    porcelain = subprocess.run(
+        ["git", "status", "--porcelain", "--", ev_rel],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    assert porcelain == ""  # clean — the deferred line was swept
+    committed = subprocess.run(
+        ["git", "show", f"HEAD:{ev_rel}"], cwd=repo, capture_output=True, text=True, check=True
+    ).stdout
+    assert "first-deferred" in committed
+    assert "second-committed" in committed
+
+
+@pytest.mark.parametrize("which", ["append_comment", "raise_concern"])
+def test_append_comment_and_concern_deferred_commit(fake_repo, monkeypatch, which):
+    """Deferral covers the comment + concern append sites: injected commit
+    failure → row appended, return value intact, sidecar op correct."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    monkeypatch.setattr(tw, "_git_commit", _commit_crash)
+    task_dir = repo / "tasks" / "proposed" / str(new_id)
+
+    if which == "append_comment":
+        rec = tw.append_comment(new_id, author="tester", kind="note", body="hi")
+        assert rec["id"] == "c001"
+        appended_file = task_dir / "comments.jsonl"
+        expected_op = "append_comment"
+    else:
+        rec = tw.raise_concern(
+            new_id,
+            "probe-concern",
+            severity="CONCERN",
+            summary="a probe concern",
+            raised_by="tester",
+            raised_at_round=1,
+        )
+        assert rec["concern_id"] == "probe-concern"
+        appended_file = task_dir / "concerns.jsonl"
+        expected_op = "append_concern_event"
+
+    assert appended_file.exists() and appended_file.read_text().strip()
+    assert [r["op"] for r in _deferred_rows(tw)] == [expected_op]
+
+
+def test_create_and_new_plan_version_deferred_commit(fake_repo, monkeypatch):
+    """Deferral covers create + new_plan_version: the id / next_v return
+    values survive an injected commit failure and the artifacts exist."""
+    repo, tw = fake_repo
+    monkeypatch.setattr(tw, "_git_commit", _commit_crash)
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    assert tw.find_task_path(new_id) == repo / "tasks" / "proposed" / str(new_id)
+    v = tw.new_plan_version(new_id, "plan body")
+    assert v == 1
+    assert (repo / "tasks" / "proposed" / str(new_id) / "plans" / "v1.md").exists()
+    assert [r["op"] for r in _deferred_rows(tw)] == ["create", "new_plan_version"]
+
+
+def test_deferred_commit_sidecar_schema(fake_repo, monkeypatch):
+    """The sidecar row is exactly {ts, task_id, op, paths, message, error,
+    stderr_tail}, one valid JSONL line per deferral."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    monkeypatch.setattr(tw, "_git_commit", _commit_crash)
+    tw.post_event(new_id, "epm:progress", note="schema probe")
+
+    raw_lines = [ln for ln in tw.DEFERRED_COMMITS_LOG.read_text().splitlines() if ln.strip()]
+    assert len(raw_lines) == 1
+    row = json.loads(raw_lines[0])  # valid JSONL
+    assert set(row) == {"ts", "task_id", "op", "paths", "message", "error", "stderr_tail"}
+    assert row["error"] == "CalledProcessError"
+    assert "index.lock" in row["stderr_tail"]
+    assert isinstance(row["paths"], list) and row["paths"]
+
+
+def test_deferred_sidecar_write_failure_does_not_mask_success(fake_repo, monkeypatch, caplog):
+    """A sidecar-write failure must not resurrect the duplicate-append bug:
+    the payload is still returned and the failure is logged."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    blocker = repo / "sidecar-blocker"
+    blocker.write_text("")  # sidecar parent is a FILE -> mkdir raises OSError
+    monkeypatch.setattr(tw, "DEFERRED_COMMITS_LOG", blocker / "deferred.jsonl")
+    monkeypatch.setattr(tw, "_git_commit", _commit_crash)
+
+    with caplog.at_level(logging.ERROR, logger="explore_persona_space.task_workflow"):
+        payload = tw.post_event(new_id, "epm:progress", note="x")
+
+    assert payload["kind"] == "epm:progress"  # success not masked
+    assert any("could not record deferred-commit row" in r.getMessage() for r in caplog.records)
+
+
+@pytest.mark.parametrize("exc_type", [TypeError, AttributeError])
+def test_wrapper_propagates_non_git_bugs_no_deferred_row(fake_repo, monkeypatch, exc_type):
+    """AC2b / MF-3: a genuine bug from _git_commit propagates out of
+    post_event — matches neither caught class, no sidecar row."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+
+    def buggy_commit(paths, message):
+        raise exc_type("genuine bug")
+
+    monkeypatch.setattr(tw, "_git_commit", buggy_commit)
+    with pytest.raises(exc_type):
+        tw.post_event(new_id, "epm:progress", note="x")
+    assert _deferred_rows(tw) == []
+
+
+def test_bare_runtimeerror_cas_class_never_deferred(fake_repo, monkeypatch):
+    """AC2c / MF-4: bare RuntimeError (the routed post-commit CAS class from
+    _git_quiet) is never caught by the wrapper — an `except RuntimeError` /
+    `except Exception` mutant fails this test."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+
+    def cas_crash(paths, message):
+        raise RuntimeError("update-ref CAS failed")
+
+    monkeypatch.setattr(tw, "_git_commit", cas_crash)
+    with pytest.raises(RuntimeError, match="CAS"):
+        tw.post_event(new_id, "epm:progress", note="x")
+    assert _deferred_rows(tw) == []
+
+
+def test_routed_mode_commit_failure_raises_no_deferral(fake_repo, monkeypatch):
+    """AC2c / MF-4: in routed mode ANY commit failure raises — an uncommitted
+    deferred line would be PHYSICALLY DELETED by the resolver's next
+    `reset --hard main` re-sync."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    monkeypatch.setattr(tw, "_is_routed_root", lambda root: True)
+    monkeypatch.setattr(tw, "_git_commit", _commit_crash)
+    with pytest.raises(subprocess.CalledProcessError):
+        tw.post_event(new_id, "epm:progress", note="x")
+    assert _deferred_rows(tw) == []
+
+
+def test_routed_cas_failure_after_commit_raises_no_deferred_row(fake_repo, monkeypatch):
+    """MF-4 mid-level integration: REAL _git_commit with the routed flag
+    forced on — the commit object IS created, then the CAS leg raises
+    RuntimeError; post_event raises and no sidecar row lands. Pins the
+    exception ROUTING of the real routed branch, not git topology."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    monkeypatch.setattr(tw, "_is_routed_root", lambda root: True)
+
+    def cas_crash(managed, old_sha, new_sha, env):
+        raise RuntimeError(f"`git update-ref` failed: CAS mismatch {old_sha}->{new_sha}")
+
+    monkeypatch.setattr(tw, "_advance_main_ref", cas_crash)
+    before = _git_log_count(repo)
+    with pytest.raises(RuntimeError, match="update-ref"):
+        tw.post_event(new_id, "epm:progress", note="routed cas probe")
+    assert _git_log_count(repo) == before + 1  # the commit itself landed
+    assert _deferred_rows(tw) == []
+
+
+def test_set_status_git_failure_still_raises_not_deferred_1030_pin(fake_repo, monkeypatch):
+    """AC6: set_status keeps the #898 raise semantics — deliberately NOT
+    converted to deferral (the existing #898 tests remain the primary pin)."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    monkeypatch.setattr(tw, "_git_commit", _commit_crash)
+    with pytest.raises(subprocess.CalledProcessError):
+        tw.set_status(new_id, "running")
+    assert (repo / "tasks" / "running" / str(new_id)).is_dir()  # durably applied
+    assert _deferred_rows(tw) == []  # and never routed through the deferral sidecar
+
+
+def test_set_status_sequencer_timeout_keeps_898_recovery_envelope(fake_repo, monkeypatch, caplog):
+    """AC6 / MF-1: a SequencerWaitTimeout from _git_commit's merge wait gets
+    the same "DURABLY APPLIED" recovery narration as a plain git failure,
+    then re-raises; the transition is durably applied throughout."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    (repo / ".git" / "MERGE_HEAD").write_text(_head_sha(repo))  # never clears
+    monkeypatch.setenv("EPM_TASKPY_MERGE_WAIT_SECONDS", "0.05")
+    monkeypatch.setenv("EPM_TASKPY_MERGE_POLL_SECONDS", "0.01")
+
+    with (
+        caplog.at_level(logging.ERROR, logger="explore_persona_space.task_workflow"),
+        pytest.raises(tw.SequencerWaitTimeout),
+    ):
+        tw.set_status(new_id, "running")
+
+    new = repo / "tasks" / "running" / str(new_id)
+    assert new.is_dir()  # disk: moved
+    reg = json.loads((repo / "tasks" / "REGISTRY.json").read_text())
+    assert reg["tasks"][str(new_id)]["path"] == f"tasks/running/{new_id}"  # registry updated
+    events = [json.loads(line) for line in (new / "events.jsonl").read_text().splitlines() if line]
+    assert any(e["kind"] == "epm:status-changed" and e.get("to") == "running" for e in events)
+    assert any("DURABLY APPLIED" in r.getMessage() for r in caplog.records)
+
+
+@pytest.mark.parametrize("state_file", ["MERGE_HEAD", "CHERRY_PICK_HEAD"])
+def test_git_commit_waits_out_transient_sequencer_state(fake_repo, monkeypatch, state_file):
+    """AC4: _git_commit polls until a transient merge/cherry-pick clears, then
+    commits — exactly one sleep of _merge_poll_s()."""
+    repo, tw = fake_repo
+    target = repo / "somefile.txt"
+    target.write_text("x\n")
+    state = repo / ".git" / state_file
+    state.write_text(_head_sha(repo))
+    sleeps: list[float] = []
+
+    def clearing_sleep(delay: float) -> None:
+        sleeps.append(delay)
+        state.unlink()  # the concurrent merge finishes during the poll sleep
+
+    monkeypatch.setattr(tw.time, "sleep", clearing_sleep)
+    before = _git_log_count(repo)
+    tw._git_commit([target], "merge-wait probe")
+    assert _git_log_count(repo) == before + 1
+    assert sleeps == [tw._merge_poll_s()]
+
+
+def test_git_commit_no_sequencer_state_zero_sleeps(fake_repo, monkeypatch):
+    """AC4 happy path: with no sequencer state, _git_commit takes ZERO sleeps
+    (one cheap rev-parse probe only) and commits."""
+    repo, tw = fake_repo
+    target = repo / "somefile.txt"
+    target.write_text("x\n")
+    monkeypatch.setattr(tw.time, "sleep", lambda d: pytest.fail("sleep with no sequencer state"))
+    before = _git_log_count(repo)
+    tw._git_commit([target], "no-wait probe")
+    assert _git_log_count(repo) == before + 1
+
+
+def test_git_commit_sequencer_timeout_raises_loud(fake_repo, monkeypatch):
+    """AC5: a never-clearing MERGE_HEAD raises SequencerWaitTimeout naming the
+    sync_repo_root remedy, and the commit is never attempted."""
+    repo, tw = fake_repo
+    target = repo / "somefile.txt"
+    target.write_text("x\n")
+    (repo / ".git" / "MERGE_HEAD").write_text(_head_sha(repo))
+    monkeypatch.setenv("EPM_TASKPY_MERGE_WAIT_SECONDS", "0.05")
+    monkeypatch.setenv("EPM_TASKPY_MERGE_POLL_SECONDS", "0.01")
+    argvs: list[list[str]] = []
+    real_run_git = tw._run_git
+
+    def spying_run_git(args, *, check=True):
+        argvs.append(list(args))
+        return real_run_git(args, check=check)
+
+    monkeypatch.setattr(tw, "_run_git", spying_run_git)
+    with pytest.raises(tw.SequencerWaitTimeout, match="sync_repo_root"):
+        tw._git_commit([target], "timeout probe")
+    assert argvs, "expected at least the rev-parse --git-path probe"
+    assert all(a[0] != "commit" for a in argvs)  # never reached the commit
+
+
+def test_git_commit_merge_wait_knob_zero_restores_git_fatal(fake_repo, monkeypatch):
+    """AC5 escape hatch + A1 reality pin: knob=0 disables the wait entirely —
+    zero sleeps — and the REAL git partial-commit fatal (rc=128) surfaces
+    unchanged (pins the fatal against the real git binary, the same
+    pin-against-reality philosophy as _make_index_lock)."""
+    repo, tw = fake_repo
+    target = repo / "somefile.txt"
+    target.write_text("x\n")
+    (repo / ".git" / "MERGE_HEAD").write_text(_head_sha(repo))
+    monkeypatch.setenv("EPM_TASKPY_MERGE_WAIT_SECONDS", "0")
+    monkeypatch.setattr(tw.time, "sleep", lambda d: pytest.fail("wait ran with knob=0"))
+
+    with pytest.raises(subprocess.CalledProcessError) as exc_info:
+        tw._git_commit([target], "knob-zero probe")
+
+    assert exc_info.value.returncode == 128
+    assert "cannot do a partial commit" in (exc_info.value.stderr or "")
+
+
+def test_cli_post_marker_deferred_commit_exits_clean(fake_repo, monkeypatch, capsys):
+    """AC1 CLI leg: cmd_post_event returns without raising (rc-0 contract)
+    and echoes the payload when the bookkeeping commit was deferred."""
+    _, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    monkeypatch.setattr(tw, "_git_commit", _commit_crash)
+    task_cli = _load_task_cli()
+    args = argparse.Namespace(
+        number=new_id,
+        marker="epm:progress",
+        version=None,
+        by="tester",
+        note="cli deferred probe",
+        file=None,
+    )
+
+    task_cli.cmd_post_event(args)  # must not raise — the handler's rc stays 0
+
+    out = capsys.readouterr().out
+    assert "epm:progress" in out  # payload echoed
+    assert [r["op"] for r in _deferred_rows(tw)] == ["post_event"]
+
+
+@pytest.mark.parametrize("which", ["merge", "cherry-pick"])
+def test_git_commit_toctou_sequencer_retry(fake_repo, monkeypatch, which):
+    """TOCTOU closure: the FIRST commit fatals with the sequencer signature,
+    the handler RE-WAITS (wait invoked exactly TWICE total — deleting the
+    re-wait fails this) and the single FINAL retry succeeds — exactly two
+    commit attempts total."""
+    repo, tw = fake_repo
+    target = repo / "somefile.txt"
+    target.write_text("x\n")
+    commit_calls: list[list[str]] = []
+    real_run_git = tw._run_git
+
+    def toctou_run_git(args, *, check=True):
+        if args and args[0] == "commit":
+            commit_calls.append(list(args))
+            if len(commit_calls) == 1:
+                raise subprocess.CalledProcessError(
+                    128,
+                    ["git", *args],
+                    output="",
+                    stderr=f"fatal: cannot do a partial commit during a {which}.\n",
+                )
+        return real_run_git(args, check=check)
+
+    monkeypatch.setattr(tw, "_run_git", toctou_run_git)
+    wait_calls: list[Path] = []
+    real_wait = tw._wait_for_sequencer_clear
+
+    def counting_wait(repo_arg):
+        wait_calls.append(repo_arg)
+        return real_wait(repo_arg)
+
+    monkeypatch.setattr(tw, "_wait_for_sequencer_clear", counting_wait)
+    before = _git_log_count(repo)
+    tw._git_commit([target], "toctou probe")
+    assert len(wait_calls) == 2  # pre-staging + the TOCTOU re-wait
+    assert len(commit_calls) == 2  # first fatal + FINAL success
+    assert _git_log_count(repo) == before + 1
+
+
+def test_sequencer_wait_negative_primary_merge_does_not_stall_worktree(fake_repo, monkeypatch):
+    """Sequencer state is per-worktree: a merge on the PRIMARY checkout must
+    NOT stall commits in a linked worktree (zero sleeps)."""
+    repo, tw = fake_repo
+    wt = repo.parent / f"{repo.name}-linked-wt"
+    subprocess.run(
+        ["git", "worktree", "add", "--detach", str(wt)], cwd=repo, check=True, capture_output=True
+    )
+    (repo / ".git" / "MERGE_HEAD").write_text(_head_sha(repo))  # merge on the PRIMARY
+    monkeypatch.setattr(tw, "repo_root", lambda: wt)
+    monkeypatch.setattr(tw.time, "sleep", lambda d: pytest.fail("stalled on the primary's merge"))
+    tw._wait_for_sequencer_clear(wt)  # returns immediately
+
+
+@pytest.mark.parametrize("state_file", ["MERGE_HEAD", "CHERRY_PICK_HEAD"])
+def test_sequencer_wait_positive_in_linked_worktree(fake_repo, monkeypatch, state_file):
+    """MF-2 discriminating cell: a merge IN the linked worktree itself IS seen
+    via `rev-parse --git-path` (the state lives under
+    <primary>/.git/worktrees/<name>/). A mutant hardcoding <root>/.git/<state>
+    sees nothing there — the worktree's .git is a FILE — takes zero sleeps,
+    and FAILs this test."""
+    repo, tw = fake_repo
+    wt = repo.parent / f"{repo.name}-wt-{state_file.lower()}"
+    subprocess.run(
+        ["git", "worktree", "add", "--detach", str(wt)], cwd=repo, check=True, capture_output=True
+    )
+    state_raw = subprocess.run(
+        ["git", "-C", str(wt), "rev-parse", "--git-path", state_file],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout.strip()
+    state = Path(state_raw) if Path(state_raw).is_absolute() else wt / state_raw
+    assert "worktrees" in str(state)  # sanity: the per-worktree location
+    state.parent.mkdir(parents=True, exist_ok=True)
+    state.write_text(_head_sha(repo))
+    monkeypatch.setattr(tw, "repo_root", lambda: wt)
+    sleeps: list[float] = []
+
+    def clearing_sleep(delay: float) -> None:
+        sleeps.append(delay)
+        state.unlink()  # the worktree's own merge finishes during the sleep
+
+    monkeypatch.setattr(tw.time, "sleep", clearing_sleep)
+    tw._wait_for_sequencer_clear(wt)
+    assert len(sleeps) >= 1  # the worktree's own merge WAS seen
+
+
+def test_post_event_sequencer_timeout_defers_on_primary(fake_repo, monkeypatch):
+    """Seams (a) x (b) integration: a held MERGE_HEAD + tiny bound on the
+    PRIMARY -> post_event still returns the payload (append durable, commit
+    deferred); the sidecar row records error == SequencerWaitTimeout."""
+    repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="X"))
+    (repo / ".git" / "MERGE_HEAD").write_text(_head_sha(repo))  # never clears
+    monkeypatch.setenv("EPM_TASKPY_MERGE_WAIT_SECONDS", "0.05")
+    monkeypatch.setenv("EPM_TASKPY_MERGE_POLL_SECONDS", "0.01")
+
+    payload = tw.post_event(new_id, "epm:progress", note="merge-held probe")
+
+    assert payload["kind"] == "epm:progress"
+    rows = _deferred_rows(tw)
+    assert len(rows) == 1
+    assert rows[0]["error"] == "SequencerWaitTimeout"
+    assert rows[0]["op"] == "post_event"
+
+
+@pytest.mark.parametrize("bad", ["nan", "inf"])
+def test_merge_wait_knob_rejects_non_finite(fake_repo, monkeypatch, bad):
+    """Knob validation mirrors #996: a non-finite env value raises ValueError
+    (nan would defeat the monotonic deadline comparison and wait unbounded)."""
+    _, tw = fake_repo
+    monkeypatch.setenv("EPM_TASKPY_MERGE_WAIT_SECONDS", bad)
+    with pytest.raises(ValueError, match="EPM_TASKPY_MERGE_WAIT_SECONDS"):
+        tw._merge_wait_bound_s()
+    monkeypatch.setenv("EPM_TASKPY_MERGE_POLL_SECONDS", bad)
+    with pytest.raises(ValueError, match="EPM_TASKPY_MERGE_POLL_SECONDS"):
+        tw._merge_poll_s()

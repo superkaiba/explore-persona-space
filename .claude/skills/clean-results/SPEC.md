@@ -443,7 +443,8 @@ data, checkpoints, eval JSONs, raw completions, figure source — pinned>
 
 **Context:** <verbatim originating prompt(s), blockquoted> · <lineage:
 `[#K](...) — <one line>` or `fresh direction (no parent)`; same-issue
-follow-up rounds also name each round's followup_label> · <created/run
+follow-up rounds also name each round's followup_label, each as a
+'same-issue follow-up round `<label>`' clause> · <created/run
 dates>
 ```
 
@@ -636,7 +637,25 @@ H2), preceded by a `---` horizontal rule. TWO required bold labels:
   original body's `## Provenance` / `epm:followup-scope v1` markers, NEVER
   paraphrased; when none recorded, `origin prompt not recorded`) · lineage
   (`[#K](...) — <one line>` or `fresh direction (no parent)`; same-issue
-  follow-up rounds name each round's `followup_label`) · created/run dates.
+  follow-up rounds name each round's `followup_label` — written as a
+  ``same-issue follow-up round `<followup_label>` `` clause, the
+  machine-countable form check 20's round-scaled prose budget reads;
+  #921) · created/run dates.
+  Mechanically enforced (check 17): the normalized frontmatter
+  `origin_prompt` must appear verbatim within the `**Context:**` row's
+  text — a ≥20-char quoted candidate that is a strict prefix of
+  `origin_prompt` covering ≥50% of it (truncation) is a hard v4 FAIL; any other mismatch
+  WARNs (v3/v2: WARN-only). When the row quotes a longer alternate
+  verbatim source (`## Provenance` / followup-scope), quote the
+  frontmatter `origin_prompt` too, or expect the WARN.
+  Bare / unpinned URLs INSIDE the verbatim blockquote are exempt from
+  the footer URL checks (checks 8 / 8b strip `>`-prefixed lines before
+  scanning — the quote is provenance text, not a provenance link; #959;
+  applies identically to grandfathered v3 `## Reproducibility` bodies).
+  Pinned-link requirements continue to bind on every non-quoted footer
+  row. A verbatim prompt containing URLs must `>`-prefix EVERY prompt
+  line — an un-prefixed lazy-continuation line stays scanned
+  (fail-closed).
   This footer is the ONLY place run-context provenance lives in the body
   (the "state facts, not sources" rule still bans weaving prompt/person
   attributions into Takeaways / Results prose).
@@ -709,7 +728,7 @@ sections:
 | Per-Takeaways-bullet length | ≤30 words | WARN |
 | Per-`### <result>` prose (excl. caption/code/details/tables) | ≤120 words WARN, ≥180 FAIL | WARN at 120, FAIL at 180 |
 | Figure caption | ≤60 words | WARN |
-| Total prose: Takeaways + Goal + Results (excl. tables, code fences, details bodies, captions; `## Methodology` is EXCLUDED — it carries the absorbed methodology-doc content and is reference, not skim prose) | ≤800 words + 250 per live follow-up round beyond the first | WARN-only |
+| Total prose: Takeaways + Goal + Results (excl. tables, code fences, details bodies, captions; `## Methodology` is EXCLUDED — it carries the absorbed methodology-doc content and is reference, not skim prose) | ≤800 words + 250 per live follow-up round beyond the first (round count: non-retroactive `epm:same-issue-followup-run` markers and/or the footer round clauses, max — #921) | WARN-only |
 
 `## Methodology` is deliberately EXCLUDED from the total-prose budget: it
 absorbed the entire former standalone methodology doc, which was never
@@ -885,7 +904,14 @@ Forward-only: each check branches on the sentinel. The v4 checks
 15. Footer "committed at commit `<sha>`" claims resolve.
 16. Footer lr matches plan (gated on `is_titletag_confidence()`; the
     `**Methodology:**` Training table lr must appear in the plan).
-17. `**Context:**` provenance present (gated on `is_titletag_confidence()`).
+17. `**Context:**` provenance present, and (v4) the row carries a lineage
+    token — `[#K](...)`/bare `#K`, `fresh direction (no parent)`/`fresh (no
+    parent)`, or a same-issue-follow-up-round clause (gated on
+    `is_titletag_confidence()`) — and (v4) the `**Context:**` row's text
+    must contain frontmatter `origin_prompt` verbatim
+    (whitespace-normalized; a ≥20-char strict-prefix quote covering ≥50%
+    of `origin_prompt` = hard FAIL on truncation, other mismatch = WARN;
+    v3/v2 WARN-only).
 18. **`## Methodology` completeness** (`check_v4_methodology_shape`, v4
     only): the `**Training:**` slot carries the complete hyperparameter
     table (≥1 GFM table after the Training label, OR the explicit
@@ -904,9 +930,30 @@ Forward-only: each check branches on the sentinel. The v4 checks
     and interpretation prose BELOW (the three-beat). WARN (not FAIL) so a
     legitimately figure-less qualitative result is not blocked; the
     clean-result-critic owns the substantive beat read.
+27. **No bare issue refs in standalone sections**
+    (`check_v4_no_bare_issue_refs`, v4 only): a bare `#<digits>` token in
+    the `## Takeaways` / `## Methodology` / `## Results` section spans is
+    a hard FAIL — prior-issue references live ONLY in the `## Goal`
+    context slot (`[#K](...)` links) and the `**Repro:**`/`**Context:**`
+    footer — and a prior-issue TASK LINK (any form whose text carries
+    `https://eps.superkaiba.com/tasks/<digits>`: a `[#K](...)` markdown
+    link, a `<...>` autolink, or a bare URL) in a standalone section is a
+    hard FAIL too, not just the bare token. Sanctioned forms that do not
+    trip: markdown links to NON-task targets (GitHub blobs, HF, figures),
+    GFM table rows (the Training-table Source column), fenced + inline
+    code, `<details>` blocks, HTML comments, the footer, frontmatter. The
+    inline-code escape hatch is for non-issue strings (colors, ordinals,
+    verbatim syntax examples) only — never for a genuine issue reference
+    or task link. (Origin: the #841 round-2 two-round Lens-2 miss; the
+    task-link form added by #1002 after the #928 round-1 miss; numbered
+    27 because 22-26 are taken by the generation-agnostic checks.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
-(check 22), HF-URL-resolves (check 23). The Goal-of-experiment frontmatter
+(check 22), HF-URL-resolves (check 23), and figure-sidecar opaque
+config-code tokens (check 28, WARN: `@L<digits>` layer pins + regime-code
+slugs in figure-sidecar-carried text — plain-English condition names only;
+slugs stay in the Repro config row; sidecar-carried strings, not full
+PNG-pixel coverage). The Goal-of-experiment frontmatter
 soft check + the Lens 14 concerns-audit run on v4 too (concerns mechanism
 1 → `### ` results under `## Results` + `## Takeaways` bullets).
 
@@ -1421,7 +1468,8 @@ listed under § Grandfathered shape. The v3 checks:
 16. Reproducibility lr matches plan (gated on `is_nested_design()` = v2
     OR v3; the body table SLIMS but the lr must still appear in the plan).
 17. Reproducibility `**Context:**` provenance row present (gated on
-    `is_nested_design()`).
+    `is_nested_design()`); the check-17 origin-prompt verbatim sub-check
+    (v4 list item 17) runs WARN-only here.
 18. **`## Data` shape** (v3 only): `### Trained on` / `### Evaluated
     with` / `### Generated` in order; each block carries ≥1 pinned
     complete-artifact link OR an explicit `n/a — <reason>` line.

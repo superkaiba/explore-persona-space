@@ -48,9 +48,12 @@ log), (b) every per-phase log under
 ``/workspace/explore-persona-space/logs/issue_<N>{,_*}/*.log`` AND
 every dispatcher per-job log under
 ``/workspace/explore-persona-space/eval_results/issue_<N>{,_*}/logs/*.log``
-is also quiet for >stall_sec, and (d) the GPUs are idle. Only when all
-four signals agree does the poll declare `stalled`; any fresh log
-OR a busy GPU keeps the run in `running`.
+is also quiet for >stall_sec, (d) no issue-keyed OUTPUT artifact
+(``eval_results/issue_<N>{,_*}/``, ``data/issue_<N>/``,
+``data/issue<N>/`` under the repo root) was modified within stall_sec
+(#1033), and (e) the GPUs are idle. Only when all five signals agree
+does the poll declare `stalled`; any fresh log, any fresh output
+artifact, OR a busy GPU keeps the run in `running`.
 
 CPU-advancing override (#518): even with the stall conjunction met, a
 launcher whose process session (`setsid` group) has accrued more
@@ -89,14 +92,52 @@ The override therefore fires only when, on a `running` verdict, ALL of:
 per-phase / shard) is stale past the effective stall window
 (``max(ZOMBIE_VETO_FRESH_SEC, stall_sec)`` — a genuinely hung run's own
 processes stop appending; both observed false positives had fresh
-logs), and (c) the stale-log candidate persisted for 2 CONSECUTIVE
-observed ticks (``zombie_streak`` in the state sidecar — filters the
-#778 one-tick teardown transient). Session-CPU advancement is
+logs), (b') no issue-keyed OUTPUT artifact was modified within the same
+window (#1033 — a run writing results is not hanging; same veto
+mechanics as the fresh-log term), and (c) the stale-log candidate
+persisted for 2 CONSECUTIVE observed ticks (``zombie_streak`` in the
+state sidecar — filters the #778 one-tick teardown transient). Bare session-CPU *advancement* is
 deliberately NOT a veto term: the genuine #664 hang had CPU advancing
-(the EngineCore idle-burn is why this override exists at all), so a CPU
-veto would make the true positive unreachable. Fail-safe: nvidia-smi
-missing / erroring emits an empty list (never a false zombie); the
-override never touches a `done` / `gate` / `dead` verdict.
+(the EngineCore idle-burn is why this override exists at all), so an
+any-delta CPU veto would make the true positive unreachable. A MATERIAL
+sustained burn *rate* IS one (#951): a session that burned >=
+``ZOMBIE_OVERRIDE_CPU_CORES_MIN`` cores (default 0.5) on BOTH of the
+last two persisted ticks is demonstrably computing — #664's hung
+EngineCore churned ~0.22 cores while #825's falsely-flagged live fit
+burned ~1.83-2.04 cores next to prior-run VRAM leftover — so the
+override is vetoed (streak reset, like the fresh-log veto). The rate is
+derived VM-side from the persisted ``session_cpu_secs`` /
+``session_cpu_sample_epoch`` sidecar pair; ANY degraded input (unknown
+sample, missing epoch, tick spacing under ``ZOMBIE_CPU_RATE_MIN_DT_SEC``,
+negative delta) leaves the veto inert — exactly the pre-#951 behavior.
+Fail-safe: nvidia-smi missing / erroring emits an empty list (never a
+false zombie); the override never touches a `done` / `gate` / `dead`
+verdict.
+
+Namespace-informativeness gate (#864): the #826 assumption "hung <=>
+stale logs" lapses when a HEALTHY workload legitimately silences its
+logs longer than the stall window (#813: a ~29-min CPU-bound NPZ
+compression stretch on a host-PID-namespace pod false-fired the
+override twice, 2026-07-02). The probe therefore also counts
+``GPU_PIDS_TOTAL`` / ``GPU_PIDS_RESOLVABLE`` over all compute-apps PIDs
+and, only when a zombie candidate exists, ``NVIDIA_UVM_LIVE_HOLDERS`` —
+live container processes holding a fd whose symlink target is EXACTLY
+``/dev/nvidia-uvm`` (a live CUDA compute context; ``/dev/nvidia-uvm-
+tools`` / ``nvidiactl`` / ``nvidia[0-9]`` never count). When
+``total > 0 AND resolvable == 0 AND uvm_holders > 0`` the
+dead-in-/proc signature is a PID-namespace artifact — the flagged PIDs
+ARE live workers seen under host ids — and the override is vetoed
+regardless of log staleness (streak reset, like the fresh-log veto).
+Every other combination (any count unknown, ``resolvable > 0``,
+``uvm == 0``) falls through to the #826 logic UNCHANGED, so the genuine
+#664 total collapse (zero live uvm holders) still fires and every
+degraded-probe read fails toward current behavior. Gated by
+``ZOMBIE_NAMESPACE_VETO_ENABLED`` (env ``EPM_ZOMBIE_NAMESPACE_VETO``,
+read at module import — restart a live poller for an ops flip); ships
+default-OFF per the #864 pre-merge live-pod gate, which found a
+cuInit'd parent/coordinator (``issue813_dispatch.py``) holding exact
+uvm while absent from compute-apps — a holder class that would veto a
+TOTAL collapse (matched pods included) if the veto were armed.
 
 Staleness folds in cell-log mtimes (incident #405 smoke-first): when the
 dispatcher is blocked in ``proc.wait()`` on a sequential smoke cell, the
@@ -155,6 +196,32 @@ globs ``eval_results/issue_<N>{,_*}/logs/*.log`` into the same
 max-mtime reduction. The match stays narrow on purpose: the directory
 must be exactly ``issue_<N>`` or ``issue_<N>_<suffix>`` (a bare
 ``issue_<N>*`` glob would let issue 5 match issue 521's directories).
+
+Staleness ALSO folds in output artifacts (#1033; incident #813): a
+CPU-bound analysis tail can write per-cell NPZs / result JSONs /
+``.done`` sentinels for hours while EVERY log layout above is quiet and
+the GPUs are idle by design — freshly-written outputs were the manual
+dismissal signal on #813's ~6h analysis tail, and when the #951 CPU-rate
+probe is degraded (tick-1/tick-2 warmup, dead launcher session, ``ps``
+unavailable) output freshness is the remaining liveness channel. The
+probe therefore emits ``OUTPUT_MTIME_EPOCH`` — the mtime of A file (a
+fresh file, not the newest: short-circuit ``find -newermt ... -print
+-quit`` under ``timeout``, bounded by
+``EPM_POLL_OUTPUT_FIND_TIMEOUT_SEC``) modified within the freshness
+window under the ISSUE-KEYED output roots
+``eval_results/issue_<N>{,_*}/``, ``data/issue_<N>/``, and
+``data/issue<N>/`` (same narrowness contract as the #488/#521 shard
+globs — no broad recursive scan, no cross-pod coupling). The delta
+joins the stall conjunction as a first-class liveness signal (a fresh
+output behaves exactly like a fresh shard log) AND vetoes the
+#664/#826 zombie override (streak reset, identical mechanics to the
+fresh-log veto). Kill switch ``EPM_POLL_OUTPUT_MTIME_FOLD=0`` (default
+ON — the fold can only SUPPRESS false stalls, and a genuinely hung run
+writes no outputs, so the #664 true positive stays reachable; the
+same-issue-sibling-writer exposure is the accepted #826 fresh-log
+class). Every degraded input (missing dirs, find timeout, no GNU find,
+a hit deleted before ``stat``) reads ``0`` -> "no fresh output" ->
+pre-#1033 behavior.
 
 GPU-idle advisory (incidents #518 + #537): the stall verdict treats an
 idle GPU only as CORROBORATION — a run that is alive and logging on a
@@ -539,6 +606,76 @@ ZOMBIE_GPU_MEM_MIN_MIB = int(os.environ.get("EPM_ZOMBIE_GPU_MEM_MIN_MIB", "1024"
 # pathologically low (< 60s fast-smoke configs).
 ZOMBIE_VETO_FRESH_SEC = int(os.environ.get("EPM_ZOMBIE_VETO_FRESH_SEC", "60"))
 
+# #864: kill-switch for the namespace-informativeness veto on the zombie-GPU
+# override. "0" disables the veto entirely (pure #826 behavior) — an ops
+# escape hatch if the UVM-holder correspondence ever masks a true positive in
+# the field. NOTE: read at module import — a live poller needs a restart for
+# an ops flip to take effect. DEFAULT "0" (veto inert-but-ready) per the #864
+# §7 pre-merge live-pod gate (2026-07-02, disposition 2): the negative-
+# direction check on pod-813 found a cuInit'd-but-allocation-free
+# parent/coordinator (issue813_dispatch.py) holding an EXACT /dev/nvidia-uvm
+# fd while ABSENT from compute-apps (5 exact-uvm holders vs 4 compute apps) —
+# a holder class that would veto a genuine TOTAL collapse (TP suppression)
+# if the veto were armed. Flipping to "1" after a clean both-directions
+# re-check is a one-literal follow-up; the probe counts + gate + tests land
+# either way.
+ZOMBIE_NAMESPACE_VETO_ENABLED = os.environ.get("EPM_ZOMBIE_NAMESPACE_VETO", "0") != "0"
+
+# #951: material-compute liveness veto on the #664/#826 zombie-GPU override.
+# A workload session burning >= this many CPU cores (delta cumulative session
+# CPU / wall seconds between persisted ticks) on BOTH of the last two ticks is
+# demonstrably computing — veto the running->stalled override. Sits between
+# the two measured regimes: #664's hung EngineCore churned ~0.22 cores
+# (Python-overhead idle burn) while #825's falsely-flagged live fit burned
+# ~1.83-2.04 cores (+1102s/+989s per ~540s tick, 186% in top) — 2.27x above
+# churn, 3.66x below real compute. Sustained-rate, so poll-interval-invariant
+# (540s vs 1800s adaptive ticks). NOTE: session_cpu_secs is a session-TOTAL
+# (summed over every process in the launcher's setsid session) and both
+# calibration incidents were NARROW sessions — a wide hung session (TP>=2
+# NCCL spin ~1 core/rank, or a co-resident same-session burner) can sum past
+# this threshold and keep a true zombie vetoed (accepted exposure, same
+# class as the #826 fresh-log sibling; backstops: GPU-idle escalation, #873
+# ETA tripwires, watcher wedge arm). Raise EPM_ZOMBIE_OVERRIDE_CPU_CORES_MIN
+# when debugging a suppressed wide-pod hang.
+ZOMBIE_OVERRIDE_CPU_CORES_MIN = float(os.environ.get("EPM_ZOMBIE_OVERRIDE_CPU_CORES_MIN", "0.5"))
+
+# #951: denominator floor for the per-tick CPU rate. Below this wall-clock
+# spacing between persisted CPU samples the rate is not computed (None ->
+# veto inert): `ps -o time` truncates to whole seconds per process, so a
+# short window inflates spurious rate from truncation noise (~1s x N
+# session processes). Production intervals are 540s/1800s so the floor
+# never binds there; it guards manual rapid re-polls and fast-smoke ticks.
+ZOMBIE_CPU_RATE_MIN_DT_SEC = int(os.environ.get("EPM_ZOMBIE_CPU_RATE_MIN_DT_SEC", "120"))
+
+# #1033: output-artifact mtime fold. Kill switch, default ON (unlike the #864
+# default-OFF namespace veto): the fold can only SUPPRESS false `stalled`
+# verdicts / zombie overrides, and a genuinely hung run writes no outputs, so
+# the #664 true positive stays reachable. The residual exposure — a same-issue
+# sibling process (e.g. a detached uploader) touching issue-keyed files during
+# a true hang — is the SAME accepted exposure class as the #826 fresh-log
+# sibling, bounded by the GPU-idle advisory/escalation tiers, the #873
+# tripwires, and this switch. When disabled the probe block is omitted
+# entirely and ``poll_once`` forces ``output_mtime_ago = inf`` (fully inert).
+# NOTE: read at module import (matching the #864 flag) — a live poller needs
+# a restart for an ops flip to take effect.
+OUTPUT_MTIME_FOLD_ENABLED = os.environ.get("EPM_POLL_OUTPUT_MTIME_FOLD", "1") != "0"
+
+
+def _output_find_timeout_sec() -> int:
+    """The bounded ``timeout`` (seconds) around the pod-side output ``find``.
+
+    Default 10s (env ``EPM_POLL_OUTPUT_FIND_TIMEOUT_SEC``); clamped to
+    [1, 15] so the two-stage worst case (2 x 15s) stays well inside the
+    probe's 60s SSH exec budget (a wedged-FS ``find`` must never starve the
+    rest of the heredoc). A malformed env value falls back to 10 (fail-safe).
+    """
+    raw = os.environ.get("EPM_POLL_OUTPUT_FIND_TIMEOUT_SEC", "10")
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        val = 10
+    return min(max(1, val), 15)
+
 
 def _try_refresh_pods_conf_from_api(pod: str) -> bool:
     """Best-effort ``pod.py config --refresh-from-api <pod>`` self-heal.
@@ -746,6 +883,88 @@ _SENTINEL_REQUIRED_KEYS: tuple[str, ...] = (
     "version",
 )
 
+# The /issue SKILL.md Step 7 results-payload contract (all 10 required; the
+# "Sentinel format (JSON object with these keys, all required)" list). Used
+# by the #899 envelope-synthesis fallback below — keep in lockstep with
+# SKILL.md Step 7.
+_RESULTS_PAYLOAD_KEYS: tuple[str, ...] = (
+    "eval_numbers",
+    "eval_paths",
+    "reproducibility_card",
+    "wandb_url",
+    "hf_hub_url",
+    "worktree_path",
+    "final_commit_sha",
+    "gpu_hours_used",
+    "gpu_hours_budgeted",
+    "plan_deviations",
+)
+_RESULTS_SENTINEL_SUFFIX = "-results.json"
+
+
+def _maybe_synthesize_results_envelope(
+    remote_path: str, data: dict[str, Any], missing: list[str]
+) -> dict[str, Any] | None:
+    """#899 fallback: rescue a raw Step 7 results payload on a results filename.
+
+    Returns a synthesized enveloped dict WITHOUT a ``"version"`` key (the
+    drain threads ``version=None`` to ``post_event``, which derives max+1
+    per kind; #975), or None (caller keeps the skip path).
+    Fires ONLY for: basename endswith ``-results.json`` AND no envelope key
+    present AND all 10 Step 7 payload keys present (extras tolerated).
+
+    NOTE: the ``-results.json`` suffix is NOT unique to raw writers — several
+    canonical ENVELOPED writers use it too (``dispatch_neg_geometry_504.py``,
+    ``i488_phase3_train_sweep.py``, smoke ``issue-<N>-smoke-results.json``
+    files). Safety against rescuing the wrong sentinel rests on the
+    zero-envelope-keys leg + the 10-key conjunction (an enveloped sentinel
+    never reaches this helper's synthesis branch), NOT on filename
+    uniqueness. Do not widen this predicate on the filename leg alone.
+
+    Incident #825 run 7: the pod-side writer emitted the complete Step 7
+    payload as a raw JSON object (no ``sentinel_schema_version``/``kind``/
+    ``version`` envelope) at ``issue-825-results.json``; the drain skipped it
+    with a quiet warning right before the GCP VM self-deleted.
+    """
+    if not remote_path.rsplit("/", 1)[-1].endswith(_RESULTS_SENTINEL_SUFFIX):
+        return None
+    if any(k in data for k in _SENTINEL_REQUIRED_KEYS):
+        return None  # partial envelope: ambiguous/buggy writer — keep the strict skip
+    missing_payload = [k for k in _RESULTS_PAYLOAD_KEYS if k not in data]
+    if missing_payload:
+        log.error(
+            "sentinel %s sits on a results filename with no envelope AND is "
+            "missing results-payload keys %s; skipping (NOT rescued) — inspect "
+            "before the VM self-deletes (#899)",
+            remote_path,
+            missing_payload,
+        )
+        return None
+    log.error(
+        "sentinel %s carried a complete Step 7 results payload but no envelope "
+        "keys %s; synthesizing kind=epm:results (version omitted -> post_event "
+        "derives max+1; #975) and posting — pod-side writer should emit the "
+        "envelope (#899)",
+        remote_path,
+        missing,
+    )
+    note = dict(data)  # non-destructive copy — the original payload dict is untouched
+    note["envelope_synthesized"] = True  # provenance, rides the marker note
+    return {
+        "sentinel_schema_version": SENTINEL_SCHEMA_VERSION_SUPPORTED,
+        "kind": "epm:results",
+        # "version" DELIBERATELY OMITTED (#975): key absence is the drain's
+        # signal to pass version=None to post_event, which derives
+        # max(existing for kind)+1 — a hardcoded 1 landed below an existing
+        # higher version on re-runs (the #480/#389/#825 collision class).
+        # Real sentinels always carry the key (_SENTINEL_REQUIRED_KEYS), so
+        # absence is unambiguous. NOTE: this dict is returned by
+        # _parse_sentinel WITHOUT re-validation — do not add a required-keys
+        # re-check on it without revisiting this omission.
+        "note": note,
+        "by": "pod-sentinel-envelope-fallback",  # secondary provenance
+    }
+
 
 @dataclass(frozen=True)
 class PollResult:
@@ -783,6 +1002,23 @@ class PollResult:
     # never stops the pod. Defaulted so cross-backend PollResult(...) call
     # sites need no change.
     gpu_idle_escalation_posted: bool = False
+    # True when THIS tick posted the [gpu-width-advisory] marker (#873) — a
+    # STABLE strict subset of GPUs idle >= GPU_WIDTH_ADVISORY_MIN minutes on
+    # a multi-GPU pod (#813 idle-width class). Observability only; never
+    # changes ``status`` and never stops anything. Defaulted so the
+    # cross-backend PollResult(...) call sites need no change.
+    gpu_width_advisory_posted: bool = False
+    # True when THIS tick posted the [gpu-underparallel-warning] marker (plan §3,
+    # workflow v2) — < 50% of the provisioned GPUs busy >= GPU_UNDERPARALLEL_
+    # WARNING_MIN minutes on a multi-GPU pod, once per run. Observability only;
+    # never changes ``status`` and never stops anything. Defaulted so the
+    # cross-backend PollResult(...) call sites need no change.
+    gpu_underparallel_warning_posted: bool = False
+    # True when THIS tick posted an epm:compute-deviation (source: poller)
+    # marker (#873) — elapsed wall-time exceeded ETA_DEVIATION_MULT x the
+    # plan §9 planned_wall_h TOTAL for the current phase or the whole run
+    # (#763 class). Observability only; never changes ``status``.
+    eta_deviation_posted: bool = False
     # Session-CPU signal (#518, #658). ``session_cpu_secs`` is the literal
     # probe output: a float string like ``"4271.5"`` or ``"unknown"``.
     # ``cpu_advancing`` is the ternary decision relative to the running
@@ -827,6 +1063,17 @@ class PollResult:
     # copies it through ``RunPodBackend.poll``. Declared LAST so existing
     # positional ``PollResult(...)`` constructions are unaffected.
     crash_signature: str | None = None
+    # #983: True when THIS tick posted the [post-done-phase-advisory] marker —
+    # a poll AFTER a corroborated done observed genuinely NEW [phase=...]
+    # lines after the recorded done line (the .py-dispatcher subprocess
+    # fan-out false-done class, #930 §4.6 residual gap (i)). Observability
+    # only; never changes ``status``. Defaulted so cross-backend
+    # PollResult(...) call sites need no change.
+    post_done_phase_advisory_posted: bool = False
+    # The new-phase-lines the #983 guard observed THIS tick — surfaced
+    # regardless of the once-per-episode dedup (an already-advised episode
+    # still reports what it sees). Empty when no episode is active.
+    post_done_phase_lines: tuple[str, ...] = ()
 
 
 def _ssh_probe(
@@ -835,11 +1082,16 @@ def _ssh_probe(
     pid_file: str,
     issue: int,
     marker_pid: int | None = None,
+    *,
+    stall_sec: int = DEFAULT_STALL_SEC,
 ) -> dict[str, str]:
     """One SSH round-trip — returns dict with keys pid_alive,
     marker_pid_alive, mtime_epoch, cell_mtime_epoch, log_tail,
     cell_log_tail, phase_log_mtime_epoch, phase_log_tail,
     shard_log_mtime_epoch, shard_log_tail, gpu_util.
+
+    ``stall_sec`` sizes the output-artifact freshness window (#1033 —
+    ``output_mtime_epoch`` below); it does NOT change any log probe.
 
     Batches into a single heredoc to keep the SSH cost to one connection.
 
@@ -908,6 +1160,22 @@ def _ssh_probe(
       log; the #791 sibling of ``cell_log_tail`` / ``phase_log_tail``,
       consumed by ``_tail_excerpt_and_crash_signature`` the same way.
       ``""`` when no covered layout exists.
+    * ``output_mtime_epoch`` — mtime of A recently-modified OUTPUT
+      artifact under the issue-keyed output roots
+      (``eval_results/issue_<N>{,_*}/``, ``data/issue_<N>/``,
+      ``data/issue<N>/`` under the repo root), found via a bounded,
+      short-circuit ``find -newermt ... -print -quit`` under ``timeout``
+      (#1033; incident #813 — a ~6h CPU-bound analysis tail wrote
+      per-cell NPZs / JSONs while every log was quiet). NOTE: this is
+      the mtime of *a fresh file, not the newest* — ``-print -quit``
+      stops at the FIRST file inside the freshness window, which is all
+      the threshold reads downstream need (``output_mtime_ago`` is only
+      ever compared against the same windows the find used). ``"0"``
+      when no file was modified within ``max(stall_sec,
+      ZOMBIE_VETO_FRESH_SEC)``, the dirs are missing, the find timed
+      out, or the fold is disabled (``EPM_POLL_OUTPUT_MTIME_FOLD=0`` —
+      the probe block is omitted entirely). Fail-safe: ``"0"`` reads as
+      "no fresh output" -> pre-#1033 behavior.
     * ``gpu_util`` — comma-separated per-GPU ``utilization.gpu``
       integers (e.g. ``"95,87,42,90"``). ``"unknown"`` when
       ``nvidia-smi`` is unavailable or errors (fail-safe — see
@@ -1073,26 +1341,63 @@ def _ssh_probe(
     # liveness signal, not a heuristic. Empty (no zombies) is the healthy
     # case. Fail-safe: nvidia-smi missing / erroring emits an empty list
     # (never a false zombie), same posture as the util probe.
+    #
+    # Namespace-informativeness counts (#864): the same loop also counts
+    # GPU_PIDS_TOTAL (every valid compute-apps PID) and GPU_PIDS_RESOLVABLE
+    # (those with a `/proc/<pid>` dir) so the VM-side gate can tell whether
+    # the dead-in-/proc signal is even meaningful on this pod — on a
+    # host-PID-namespace container ZERO compute PIDs ever resolve. When (and
+    # only when) a zombie candidate exists, a guarded scan additionally
+    # counts NVIDIA_UVM_LIVE_HOLDERS: live container processes holding a fd
+    # whose symlink target is EXACTLY `/dev/nvidia-uvm` (a live CUDA compute
+    # context holds the UVM device; NVML monitors open nvidiactl/nvidiaN
+    # instead). The match is END-ANCHORED (` -> /dev/nvidia-uvm$`) so
+    # `/dev/nvidia-uvm-tools` (also created by the nvidia_uvm module, held by
+    # profilers / cuda-gdb / UVM-tools consumers), `/dev/nvidiactl`, and
+    # `/dev/nvidia[0-9]` NEVER count — a tools-only holder counting would
+    # satisfy the veto triple during a genuine total collapse and silently
+    # suppress the #664 true positive. Healthy matched-regime ticks pay zero
+    # cost (the scan is skipped without a candidate); a dying-mid-scan proc
+    # is skipped by `2>/dev/null` (fails toward not counting, i.e. toward
+    # the #826 fall-through). The no-nvidia-smi else-branch emits the three
+    # keys as `unknown` so the parser's fail-safe defaults engage.
     gpu_probe = (
         "if command -v nvidia-smi >/dev/null 2>&1; then "
         "  GPU_OUT=$(nvidia-smi --query-gpu=utilization.gpu "
         "    --format=csv,noheader,nounits 2>/dev/null | paste -sd, -); "
         '  echo "GPU_UTIL=${GPU_OUT:-unknown}"; '
-        "  ZOMBIE=''; "
+        "  ZOMBIE=''; GPU_PIDS_TOTAL=0; GPU_PIDS_RESOLVABLE=0; "
         "  while IFS=, read -r zpid zmem; do "
         '    zpid=$(echo "$zpid" | tr -d " "); '
         '    zmem=$(echo "$zmem" | tr -d " "); '
         '    case "$zpid" in ""|*[!0-9]*) continue ;; esac; '
         '    case "$zmem" in ""|*[!0-9]*) zmem=0 ;; esac; '
-        f'    if [ "$zmem" -ge {ZOMBIE_GPU_MEM_MIN_MIB} ] && [ ! -d /proc/$zpid ]; then '
+        "    GPU_PIDS_TOTAL=$((GPU_PIDS_TOTAL+1)); "
+        "    if [ -d /proc/$zpid ]; then "
+        "      GPU_PIDS_RESOLVABLE=$((GPU_PIDS_RESOLVABLE+1)); "
+        f'    elif [ "$zmem" -ge {ZOMBIE_GPU_MEM_MIN_MIB} ]; then '
         '      ZOMBIE="$ZOMBIE $zpid"; '
         "    fi; "
         "  done <<EOF\n"
         "$(nvidia-smi --query-compute-apps=pid,used_memory "
         "  --format=csv,noheader,nounits 2>/dev/null)\n"
         "EOF\n"
+        "  UVM_HOLDERS=unknown; "
+        '  if [ -n "$ZOMBIE" ]; then '
+        "    UVM_HOLDERS=0; "
+        "    for p in /proc/[0-9]*; do "
+        '      if ls -l "$p/fd" 2>/dev/null | grep -q " -> /dev/nvidia-uvm$"; then '
+        "        UVM_HOLDERS=$((UVM_HOLDERS+1)); "
+        "      fi; "
+        "    done; "
+        "  fi; "
         "  echo \"ZOMBIE_GPU_PIDS=$(echo $ZOMBIE | tr -s ' ')\"; "
-        'else echo "GPU_UTIL=unknown"; echo "ZOMBIE_GPU_PIDS="; fi; '
+        '  echo "GPU_PIDS_TOTAL=$GPU_PIDS_TOTAL"; '
+        '  echo "GPU_PIDS_RESOLVABLE=$GPU_PIDS_RESOLVABLE"; '
+        '  echo "NVIDIA_UVM_LIVE_HOLDERS=$UVM_HOLDERS"; '
+        'else echo "GPU_UTIL=unknown"; echo "ZOMBIE_GPU_PIDS="; '
+        'echo "GPU_PIDS_TOTAL=unknown"; echo "GPU_PIDS_RESOLVABLE=unknown"; '
+        'echo "NVIDIA_UVM_LIVE_HOLDERS=unknown"; fi; '
     )
     # Session CPU probe (#518): cumulative CPU seconds summed across
     # every process sharing the launcher PID's session id (SID). The
@@ -1147,6 +1452,62 @@ def _ssh_probe(
         f"if [ ${{#RS_FILES[@]}} -gt 0 ]; then echo RESULTS_SENTINEL_PRESENT=1; "
         f"else echo RESULTS_SENTINEL_PRESENT=0; fi; "
     )
+    # Output-artifact freshness probe (#1033): a CPU-bound analysis tail that
+    # writes per-cell NPZs / JSONs / .done sentinels while every log is quiet
+    # (#813). Bounded: short-circuit find (-print -quit) under `timeout`;
+    # issue-keyed roots ONLY (same narrowness contract as the #488/#521 shard
+    # globs — a bare `issue_<N>*` would let issue 5 match issue 521's dirs, so
+    # the set is exactly `issue_{N}`, `issue_{N}_*`, and the `data/issue{N}`
+    # no-underscore convention from the #854 crash-persist sweep). The block
+    # captures its OWN pod-clock epoch (`OUT_NOW`; the POD_NOW_EPOCH line in
+    # the heredoc is echo-only — no shell var exists), so the cutoffs are on
+    # the pod clock with no VM skew. Two-stage: prefer a within-stall hit (it
+    # rescues the stall conjunction); fall back to the WIDER zombie-veto
+    # window only when that window is genuinely wider (stall_sec < the 60s
+    # ZOMBIE_VETO_FRESH_SEC floor — fast-smoke configs; the default 900s
+    # stall window already covers the veto read, so the common case is ONE
+    # find). `-print -quit` short-circuits on the FIRST fresh file (see the
+    # docstring: a fresh file, not the newest); on a healthy actively-writing
+    # phase this returns almost immediately, and on a genuinely stalled run
+    # the metadata scan is bounded by `timeout` (worst case 2 stages inside
+    # the 60s SSH exec budget). Missing dirs / timeout / a hit deleted before
+    # `stat` -> OUTPUT_MTIME_EPOCH=0 (fail-safe: pre-#1033 behavior).
+    if OUTPUT_MTIME_FOLD_ENABLED:
+        find_timeout = _output_find_timeout_sec()
+        out_dirs = (
+            f"/workspace/explore-persona-space/eval_results/issue_{issue} "
+            f"/workspace/explore-persona-space/eval_results/issue_{issue}_* "
+            f"/workspace/explore-persona-space/data/issue_{issue} "
+            f"/workspace/explore-persona-space/data/issue{issue}"
+        )
+        veto_window_sec = max(ZOMBIE_VETO_FRESH_SEC, stall_sec)
+        # Second stage only when the veto window is genuinely wider than the
+        # stall window (nullglob is (re)set below, so the unmatched
+        # `issue_{N}_*` glob vanishes instead of passing a literal pattern;
+        # the three literal paths always remain, so `find` can never run
+        # with ZERO path args and default to a broad `.` scan).
+        second_stage = ""
+        if veto_window_sec > stall_sec:
+            second_stage = (
+                f'if [ -z "$OUT_HIT" ]; then '
+                f"OUT_CUTOFF_VETO=$((OUT_NOW - {veto_window_sec})); "
+                f"OUT_HIT=$(timeout {find_timeout} find {out_dirs} "
+                f'-type f -newermt "@$OUT_CUTOFF_VETO" -print -quit 2>/dev/null); '
+                f"fi; "
+            )
+        output_probe = (
+            f"shopt -s nullglob; "
+            f"OUT_NOW=$(date +%s); "
+            f"OUT_CUTOFF_STALL=$((OUT_NOW - {stall_sec})); "
+            f"OUT_HIT=$(timeout {find_timeout} find {out_dirs} "
+            f'-type f -newermt "@$OUT_CUTOFF_STALL" -print -quit 2>/dev/null); '
+            f"{second_stage}"
+            f'if [ -n "$OUT_HIT" ]; then '
+            f'echo "OUTPUT_MTIME_EPOCH=$(stat -c %Y "$OUT_HIT" 2>/dev/null || echo 0)"; '
+            f"else echo OUTPUT_MTIME_EPOCH=0; fi; "
+        )
+    else:
+        output_probe = ""  # kill switch: parser defaults the key to "0"
     heredoc = (
         f"LOG_PATH={log_path}; "
         f"if [ -f {pid_file} ]; then "
@@ -1170,6 +1531,7 @@ def _ssh_probe(
         f"{gpu_probe}"
         f"{session_cpu_probe}"
         f"{results_sentinel_probe}"
+        f"{output_probe}"
     )
     result = subprocess.run(
         ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, heredoc],
@@ -1200,8 +1562,12 @@ def _ssh_probe(
             "shard_log_tail": "",
             "gpu_util": "unknown",
             "zombie_gpu_pids": "",
+            "gpu_pids_total": "unknown",
+            "gpu_pids_resolvable": "unknown",
+            "nvidia_uvm_live_holders": "unknown",
             "session_cpu_secs": "unknown",
             "results_sentinel_present": "0",
+            "output_mtime_epoch": "0",
             "ssh_failed": "1",
         }
     parsed = _parse_probe_stdout(result.stdout)
@@ -1222,8 +1588,12 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "SHARD_LOG_MTIME_EPOCH",
     "GPU_UTIL",
     "ZOMBIE_GPU_PIDS",
+    "GPU_PIDS_TOTAL",
+    "GPU_PIDS_RESOLVABLE",
+    "NVIDIA_UVM_LIVE_HOLDERS",
     "SESSION_CPU_SECS",
     "RESULTS_SENTINEL_PRESENT",
+    "OUTPUT_MTIME_EPOCH",
 )
 
 
@@ -1249,8 +1619,12 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "shard_log_tail": "",
         "gpu_util": "unknown",
         "zombie_gpu_pids": "",
+        "gpu_pids_total": "unknown",
+        "gpu_pids_resolvable": "unknown",
+        "nvidia_uvm_live_holders": "unknown",
         "session_cpu_secs": "unknown",
         "results_sentinel_present": "0",
+        "output_mtime_epoch": "0",
     }
     # Each multi-line tail block is delimited by its own START/END sentinel
     # (``TAIL_START``/``END``, ``CELL_TAIL_START``/``END``, and the #791
@@ -1433,7 +1807,7 @@ def _persist_oversize_note(
     issue: int,
     remote_path: str,
     kind: str,
-    version: int,
+    version: int | None,
     by: str,
     full_note: str,
     original_extras: dict[str, Any] | None = None,
@@ -1453,7 +1827,11 @@ def _persist_oversize_note(
        <epoch>.txt`` (task folder resolved via ``find_task_path``, so the
        branch-guarded ``main`` resolver picks the correct path even when
        the poller is invoked from elsewhere).
-    2. Post a SHORT pointer marker of the same ``(kind, version)`` whose
+    2. Post a SHORT pointer marker of the same ``(kind, version)``
+       (``version=None`` — the #899 synthesized-envelope case — lets
+       ``post_event`` derive max+1 at the pointer post; safe because the
+       oversize ``ValueError`` raises BEFORE any version is derived or
+       consumed) whose
        ``note`` (a) cites the artifact path, (b) records original length,
        and (c) is a leading excerpt of the original. The excerpt is
        hard-bounded under ``EVENT_NOTE_MAX`` so the pointer post itself
@@ -1516,11 +1894,12 @@ def _persist_oversize_note(
     # reserve ~512 chars for the pointer header and use the remainder for
     # a leading excerpt of the original, so operators see the start of the
     # payload inline without needing to open the artifact.
+    version_repr = str(version) if version is not None else "derived-at-post (max+1)"
     header = (
         f"[oversize note persisted; original {len(full_note)} chars > "
         f"{EVENT_NOTE_MAX} cap]\n"
         f"Full payload: {rel_artifact}\n"
-        f"Original kind={kind} version={version} by={by}\n"
+        f"Original kind={kind} version={version_repr} by={by}\n"
         f"--- leading excerpt ---\n"
     )
     excerpt_budget = max(0, EVENT_NOTE_MAX - len(header) - 32)  # 32-byte safety
@@ -1578,6 +1957,16 @@ def _parse_sentinel(remote_path: str, body: str) -> dict[str, Any] | None:
     non-dict payload, missing required keys, unsupported schema version.
     The sentinel is left un-renamed in these cases so a future poller (or
     a human) can inspect it.
+
+    Exception (#899): a fully-envelope-less body on a ``-results.json``
+    basename that carries the complete Step 7 results-payload key set is
+    RESCUED via ``_maybe_synthesize_results_envelope`` (returns a
+    synthesized ``kind=epm:results`` envelope with NO ``version`` key — the
+    drain then posts with ``version=None`` so ``post_event`` derives max+1
+    (#975) — plus a loud ``log.error``) instead of being skipped.
+    Envelope-carrying sentinels
+    (including partial envelopes and unsupported schema versions) keep the
+    strict path unchanged.
     """
     if not body:
         log.warning("sentinel %s is empty; skipping", remote_path)
@@ -1592,6 +1981,9 @@ def _parse_sentinel(remote_path: str, body: str) -> dict[str, Any] | None:
         return None
     missing = [k for k in _SENTINEL_REQUIRED_KEYS if k not in data]
     if missing:
+        fallback = _maybe_synthesize_results_envelope(remote_path, data, missing)
+        if fallback is not None:
+            return fallback
         log.warning("sentinel %s missing required keys %s; skipping", remote_path, missing)
         return None
     schema_version = data.get("sentinel_schema_version")
@@ -1644,6 +2036,7 @@ def drain_sentinels_via(
     sentinel cycled indefinitely). It is degraded gracefully via
     ``_persist_oversize_note`` (full note -> ``<task>/artifacts/sentinel-
     note-*.txt`` + a truncated pointer marker of the same ``(kind, version)``
+    — or a freshly derived version for the synthesized-envelope case, #975 —
     that cites the artifact) and the sentinel is renamed ``.processed`` to
     end the loop. Any OTHER ``post_event`` exception (transient infra,
     schema bug, etc.) keeps the original retry-on-next-tick semantics.
@@ -1656,7 +2049,24 @@ def drain_sentinels_via(
         if data is None:
             continue
         kind = data["kind"]
-        version = int(data["version"])
+        if "version" in data:
+            # Real pod-side sentinel: "version" is a REQUIRED envelope key
+            # (_SENTINEL_REQUIRED_KEYS / pod-side-reporting.md) and an
+            # explicit version always wins in post_event — verbatim contract.
+            # Branch on key PRESENCE, not None-tolerance: a (non-conforming)
+            # real sentinel carrying "version": null keeps today's loud
+            # int(None) TypeError instead of silently deriving (#975).
+            version: int | None = int(data["version"])
+        else:
+            # Only reachable via the #899 synthesized envelope, which omits
+            # the key (#975): post_event derives max(existing for kind)+1 so
+            # a re-drained / re-run rescue never lands BELOW an existing
+            # higher version (the #480 collision class). If the rename below
+            # fails and a future tick re-drains the same rescue, the
+            # duplicate lands at a fresh max+1 (v5, v6, ...) with
+            # byte-equivalent content — highest-version-wins resume stays
+            # correct, strictly better than stacked v1s.
+            version = None
         note = data.get("note")
         if note is None:
             note = data.get("payload")
@@ -1792,6 +2202,221 @@ def latest_phase(log_tail: str, *, skip_done: bool = False) -> str:
 _latest_phase = latest_phase
 
 
+# ── #983 post-done phase-consistency guard ──────────────────────────────────
+#
+# The #545 corroboration block gates the INITIAL done verdict within a tick,
+# and the #597 noise regex gates which line may parse as done at all — both
+# are parse-time defenses. This guard is the CROSS-TICK audit they are
+# structurally blind to: once a corroborated ``status=done`` has been
+# accepted, a LATER poll that observes genuinely NEW ``[phase=...]`` lines
+# AFTER the recorded done line proves the earlier done may have been FALSE —
+# the ``.py``-dispatcher subprocess fan-out class (#930 §4.6 residual gap
+# (i): a parent exits (pid-dead corroborates) or its sentinel lands early
+# while detached children keep emitting phase lines). Advisory-only: ONE
+# loud ``[post-done-phase-advisory]`` ``epm:progress`` marker + best-effort
+# Telegram push per done-episode; the status verdict is NEVER changed (the
+# same contract as every sibling tripwire in this file).
+
+# Chars stored/compared per phase-bearing line (bounded state file). The
+# record and compare sides BOTH truncate through ``_phase_bearing_lines``,
+# so a done line longer than the cap still anchors by identity on re-polls.
+_POST_DONE_LINE_MAX = 400
+# New phase lines quoted in the advisory note (each further capped to 200
+# chars there), keeping the note far below EVENT_NOTE_MAX.
+_POST_DONE_NOTE_MAX_LINES = 5
+
+
+def _phase_bearing_lines(log_tail: str) -> list[str]:
+    """Ordered (oldest -> newest) raw texts of phase-bearing lines.
+
+    Same per-line predicate as ``latest_phase``: PHASE_RE must match; a
+    done-token line also matching DONE_QUOTED_NOISE_RE (#597 failure message
+    quoting the token) is skipped. Truncated to ``_POST_DONE_LINE_MAX`` so
+    the state-file identity comparison is bounded. ``latest_phase`` itself
+    is untouched (public cross-module contract).
+    """
+    out: list[str] = []
+    for line in log_tail.splitlines():
+        m = PHASE_RE.search(line)
+        if not m:
+            continue
+        if m.group(1) == "done" and DONE_QUOTED_NOISE_RE.search(line):
+            continue
+        out.append(line[:_POST_DONE_LINE_MAX])
+    return out
+
+
+@dataclass(frozen=True)
+class PostDonePhaseUpdate:
+    """Outcome of one post-done-guard tick (``_post_done_phase_update``)."""
+
+    should_post: bool
+    done_line: str  # "" = no active done episode
+    done_epoch: int  # 0 = no active episode
+    done_pod: str  # "" = no active episode; the episode voids on a pod change
+    advisory_posted: bool  # once-per-episode dedup flag, carried forward
+    new_phase_lines: tuple[str, ...]  # observed-this-tick (surfaced even when deduped)
+
+
+def _post_done_phase_update(
+    *,
+    current_phase: str,
+    log_tail: str,
+    pod: str,
+    prev_done_line: str,
+    prev_done_epoch: int,
+    prev_done_pod: str,
+    prev_posted: bool,
+    run_age_sec: float | None,
+    now_epoch: int,
+) -> PostDonePhaseUpdate:
+    """Pure decision core for the #983 post-done phase-consistency guard.
+
+    ``current_phase`` MUST be the POST-#545-corroboration phase from
+    ``poll_once`` (never a raw ``latest_phase`` re-derivation), so an
+    uncorroborated done-parse (pid alive + no results sentinel — e.g. a
+    mid-run per-cell ``[phase=done] eval cell <X> complete`` noise line)
+    can NEVER arm an episode. The episode-start condition is deliberately
+    the corroborated ``current_phase == "done"``, NOT ``status == "done"``,
+    so a gate-sentinel tick whose pipeline also reached done (gate wins the
+    status precedence) still records the episode. Once set, the episode is
+    never overwritten within a run; only the run-scope clamp or a pod
+    change voids it. Comparison is line-identity anchored (positions are
+    unstable under the ``tail -500`` sliding window; timestamps are not
+    guaranteed by PHASE_RE): candidates are the phase-bearing lines
+    strictly after the anchor's LAST occurrence, or ALL visible phase
+    lines when the anchor scrolled out (append-only log => everything
+    above it scrolled out first). Pure / no I/O — the caller owns state
+    persistence and the marker post.
+    """
+    # Run-scope clamp (mirrors the last_phase_change_epoch relaunch clamp in
+    # poll_once): an episode recorded BEFORE the current run's
+    # epm:run-launched belongs to a previous run — void it.
+    if (
+        prev_done_epoch > 0
+        and run_age_sec is not None
+        and prev_done_epoch < now_epoch - run_age_sec
+    ):
+        prev_done_line, prev_done_epoch, prev_done_pod, prev_posted = "", 0, "", False
+    # Cross-pod voiding: a diagnostic poll against a DIFFERENT pod — or a
+    # follow-up pod probed before its epm:run-launched lands — must not
+    # compare the new pod's tail against the old pod's done anchor.
+    if prev_done_line and prev_done_pod and prev_done_pod != pod:
+        prev_done_line, prev_done_epoch, prev_done_pod, prev_posted = "", 0, "", False
+    if not prev_done_line:
+        if current_phase == "done":
+            lines = _phase_bearing_lines(log_tail)
+            if lines:
+                # By construction (the reversed scan in latest_phase) the
+                # LAST phase-bearing non-noise line IS the matched done line.
+                return PostDonePhaseUpdate(False, lines[-1], now_epoch, pod, False, ())
+        return PostDonePhaseUpdate(False, "", 0, "", False, ())
+    # Active episode: find phase lines strictly AFTER the recorded done line.
+    lines = _phase_bearing_lines(log_tail)
+    try:
+        anchor = len(lines) - 1 - lines[::-1].index(prev_done_line)  # LAST occurrence
+        candidates = lines[anchor + 1 :]
+    except ValueError:
+        # Done line scrolled out of the bounded tail: the log is append-only,
+        # so every line ABOVE it scrolled out first — any phase line still
+        # visible is NEWER than the recorded done.
+        candidates = lines
+    new_lines = tuple(ln for ln in candidates if ln != prev_done_line)  # FP control (i)
+    return PostDonePhaseUpdate(
+        bool(new_lines) and not prev_posted,
+        prev_done_line,
+        prev_done_epoch,
+        prev_done_pod,
+        prev_posted,
+        new_lines,
+    )
+
+
+def _maybe_post_post_done_phase_advisory(
+    *,
+    issue: int,
+    pod: str,
+    current_phase: str,
+    log_tail: str,
+    prev_state: dict[str, str],
+    run_age_sec: float | None,
+    now_epoch: int,
+) -> tuple[str, int, str, bool, bool, tuple[str, ...]]:
+    """Post-done-guard wiring for ``poll_once``: parse state, decide, maybe post.
+
+    Returns ``(done_line, done_epoch, done_pod, posted_flag,
+    posted_this_tick, new_phase_lines)`` for the caller to persist via
+    ``_save_state``. Guarded state parses (a corrupt epoch resets to 0,
+    never raises into ``poll_once``). A post failure is logged and
+    ``posted_flag`` is NOT set, so the next tick retries — identical
+    contract to ``_maybe_post_gpu_width_advisory``. Advisory only: never
+    changes the status verdict, never stops anything.
+    """
+    prev_line = prev_state.get("post_done_line", "") or ""
+    try:
+        prev_epoch = int(float(prev_state.get("post_done_epoch", "0") or 0))
+    except (TypeError, ValueError):
+        prev_epoch = 0
+    prev_pod = prev_state.get("post_done_pod", "") or ""
+    prev_posted = prev_state.get("post_done_advisory_posted", "0") == "1"
+    u = _post_done_phase_update(
+        current_phase=current_phase,
+        log_tail=log_tail,
+        pod=pod,
+        prev_done_line=prev_line,
+        prev_done_epoch=prev_epoch,
+        prev_done_pod=prev_pod,
+        prev_posted=prev_posted,
+        run_age_sec=run_age_sec,
+        now_epoch=now_epoch,
+    )
+    if not u.should_post:
+        return u.done_line, u.done_epoch, u.done_pod, u.advisory_posted, False, u.new_phase_lines
+    quoted = "\n".join(f"  {ln[:200]}" for ln in u.new_phase_lines[:_POST_DONE_NOTE_MAX_LINES])
+    note = (
+        f"[post-done-phase-advisory] {len(u.new_phase_lines)} NEW [phase=...] line(s) appeared "
+        f"AFTER the done line this poller reported as terminal "
+        f"({max(0, now_epoch - u.done_epoch) // 60} min ago):\n{quoted}\n"
+        f"recorded done line: {u.done_line[:200]}\n"
+        "The earlier status=done may have been FALSE (the .py-dispatcher subprocess fan-out "
+        "class — workflow_lint --check-phase-done-reserved residual gap (i), #930/#545): a "
+        "child script may still be running, and any orchestrator action keyed on the done "
+        "(advance to verifying, Step-8 pod termination) may have been premature. OTHER causes "
+        "with the same signature: a relaunch / manual re-run reused this log path without a "
+        "fresh epm:run-launched, or a concurrent writer appended to it — check the launch "
+        "record before chasing the dispatcher. VERIFY the run actually completed (results "
+        "sentinel + uploads) and fix the emitting dispatcher "
+        "per pod-side-reporting.md ([phase=done] is reserved for the single terminal line). "
+        "Advisory only: this tick's status verdict is unchanged and nothing was stopped."
+    )
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=note,
+            phase=current_phase,
+            pod=pod,
+            post_done_phase_advisory=True,
+        )
+    except Exception as exc:
+        log.error("post-done phase advisory post failed (next tick will retry): %s", exc)
+        return u.done_line, u.done_epoch, u.done_pod, False, False, u.new_phase_lines
+    # Fail-soft phone push — never blocks recording (the marker is durable).
+    _telegram_push(
+        f"[#{issue}] post-done phase advisory: {len(u.new_phase_lines)} new [phase=...] "
+        f"line(s) after the reported done on {pod} — earlier done may be FALSE "
+        "(advisory only; nothing stopped)."
+    )
+    log.warning(
+        "posted post-done phase advisory for #%d: %d new phase line(s) on pod %s",
+        issue,
+        len(u.new_phase_lines),
+        pod,
+    )
+    return u.done_line, u.done_epoch, u.done_pod, True, True, u.new_phase_lines
+
+
 # A GPU is considered idle when its `utilization.gpu` is at or below this
 # percent. A real training / vLLM-generation workload reads >>5% on any
 # GPU it is using (typically 80-100%); the threshold is a conservative
@@ -1800,22 +2425,35 @@ _latest_phase = latest_phase
 GPU_IDLE_UTIL_THRESHOLD = 5
 
 
+def _parse_gpu_utils(gpu_util: str) -> list[int] | None:
+    """Per-GPU int utilizations from the probe's comma string, or None.
+
+    Fail-safe: returns ``None`` when ``gpu_util`` is the literal sentinel
+    ``"unknown"``, is empty, parses to zero tokens, or any token fails to
+    parse as an int — the consumers (:func:`_gpu_idle`, the #873 width
+    advisory) treat ``None`` as "no GPU signal" and never count it as
+    idle. Extracted from ``_gpu_idle`` (#873), behavior-identical.
+    """
+    if not gpu_util or gpu_util == "unknown":
+        return None
+    try:
+        utils = [int(tok.strip()) for tok in gpu_util.split(",") if tok.strip()]
+    except ValueError:
+        return None
+    return utils or None
+
+
 def _gpu_idle(gpu_util: str) -> bool:
     """Return True iff every parsed GPU's utilization is <= IDLE threshold.
 
     Fail-safe: returns False (NOT idle) when ``gpu_util`` is the literal
     sentinel ``"unknown"``, is empty, or any token fails to parse as an
-    int. The stall verdict requires ``gpu_idle == True``, so a missing /
-    erroring ``nvidia-smi`` will NEVER by itself declare a healthy
-    long-phase run stalled — the per-phase-log + cell-log mtime signals
-    then carry the verdict.
+    int (``_parse_gpu_utils`` -> None). The stall verdict requires
+    ``gpu_idle == True``, so a missing / erroring ``nvidia-smi`` will
+    NEVER by itself declare a healthy long-phase run stalled — the
+    per-phase-log + cell-log mtime signals then carry the verdict.
     """
-    if not gpu_util or gpu_util == "unknown":
-        return False
-    try:
-        utils = [int(tok.strip()) for tok in gpu_util.split(",") if tok.strip()]
-    except ValueError:
-        return False
+    utils = _parse_gpu_utils(gpu_util)
     if not utils:
         return False
     return all(u <= GPU_IDLE_UTIL_THRESHOLD for u in utils)
@@ -1903,6 +2541,15 @@ def _maybe_post_gpu_idle_advisory(
     downstream consumers) — no new marker schema. A post failure is logged
     and the phase is NOT recorded as advised, so the next tick retries; the
     advisory never affects the status verdict and never stops anything.
+
+    The reported idle minutes are PER-INSTANCE / PER-RUN, never cumulative
+    across relaunches (#1033): both callers hand this function a
+    run/instance-scoped ``prev_state`` — the RunPod lane via
+    ``_tripwire_run_scope`` (``_RUN_SCOPED_STATE_KEYS`` includes the idle
+    keys), the GCP lane additionally via attempt-id keying
+    (``backend_poll._scope_idle_state_to_attempt``) — so an advisory can
+    never report an idle span exceeding the current instance's own poll
+    history (#763: "543 min" printed on a ~17-min-old fresh VM pre-#1033).
     """
     try:
         prev_idle_since = int(prev_state.get("gpu_idle_since_epoch", "0"))
@@ -1955,6 +2602,715 @@ def _maybe_post_gpu_idle_advisory(
     )
     advised_phases.add(current_phase)
     return update.idle_since_epoch, advised_phases, True
+
+
+# ── m-of-N GPU-width advisory (#873; incidents #813/#664) ────────────────────
+# Minutes of sustained "healthy verdict + a STABLE strict subset of GPUs idle"
+# on an N>1-GPU pod before a one-per-phase [gpu-width-advisory] epm:progress
+# marker. 0 (or negative) disables. Default 45 (middle of the 30-60 band the
+# #873 audit prescribed; ABOVE the 30-min all-idle default because partial
+# width has a legitimate transient — uneven shard finish tails).
+GPU_WIDTH_ADVISORY_MIN = int(os.environ.get("EPM_GPU_WIDTH_ADVISORY_MIN", "45"))
+
+
+@dataclass(frozen=True)
+class GpuWidthAdvisoryUpdate:
+    """Outcome of one width-advisory tick (``_gpu_width_advisory_update``)."""
+
+    should_post: bool
+    width_since_epoch: int  # 0 = no active partial-width span
+    idle_indices: tuple[int, ...]  # the CURRENT stable idle subset; () when no span
+    span_sec: int
+
+
+def _gpu_width_advisory_update(
+    *,
+    status: str,
+    gpu_util: str,
+    current_phase: str,
+    prev_phase: str,
+    prev_width_since_epoch: int,
+    prev_idle_indices: tuple[int, ...],
+    advised_phases: set[str],
+    now_epoch: int,
+    advisory_min: int,
+) -> GpuWidthAdvisoryUpdate:
+    """Pure decision core for the m-of-N GPU-width advisory (#873, #813).
+
+    Tracks the sustained span of "healthy verdict + a STABLE strict subset
+    of GPUs idle" on a multi-GPU pod. Everything RESETS the span (returns
+    ``(False, 0, (), 0)``): a disabled advisory (``advisory_min <= 0``), a
+    non-``running`` verdict, an ``unknown`` / unparseable GPU sample (the
+    ``_gpu_idle`` fail-safe carries over verbatim — a missing nvidia-smi
+    never accumulates), a single-GPU pod (N < 2), all-idle (the existing
+    idle advisory's domain — disjoint by construction), and all-active
+    (healthy). The span RESTARTS (``width_since = now_epoch``) on a phase
+    change, a missing prior span, or an idle-index-set CHANGE — a CHURNING
+    idle set is staggered shard progress, not the #813 structurally-unused-
+    GPUs signature; requiring set stability is the strictest false-positive
+    guard. ``should_post`` is True only when the span has lasted at least
+    ``advisory_min`` minutes AND ``current_phase`` is not already in
+    ``advised_phases`` (at-most-once-per-phase de-dup). Pure / no I/O —
+    the caller owns state persistence and the marker post.
+    """
+    reset = GpuWidthAdvisoryUpdate(
+        should_post=False, width_since_epoch=0, idle_indices=(), span_sec=0
+    )
+    if advisory_min <= 0 or status != "running":
+        return reset
+    utils = _parse_gpu_utils(gpu_util)
+    if utils is None or len(utils) < 2:
+        return reset
+    idle_indices = tuple(i for i, u in enumerate(utils) if u <= GPU_IDLE_UTIL_THRESHOLD)
+    active = len(utils) - len(idle_indices)
+    if not (1 <= active < len(utils)):
+        return reset
+    if (
+        current_phase != prev_phase
+        or prev_width_since_epoch <= 0
+        or idle_indices != prev_idle_indices
+    ):
+        width_since = now_epoch
+    else:
+        width_since = prev_width_since_epoch
+    span = max(0, now_epoch - width_since)
+    should_post = span >= advisory_min * 60 and current_phase not in advised_phases
+    return GpuWidthAdvisoryUpdate(
+        should_post=should_post,
+        width_since_epoch=width_since,
+        idle_indices=idle_indices,
+        span_sec=span,
+    )
+
+
+def _maybe_post_gpu_width_advisory(
+    *,
+    issue: int,
+    pod: str,
+    status: str,
+    gpu_util: str,
+    current_phase: str,
+    prev_state: dict[str, str],
+    now_epoch: int,
+) -> tuple[int, tuple[int, ...], set[str], bool]:
+    """Width-advisory wiring for ``poll_once``: parse state, decide, maybe post.
+
+    Returns ``(width_since_epoch, idle_indices, advised_phases, posted)`` for
+    the caller to persist via ``_save_state``. The caller applies the #873
+    run-scope reset (:func:`_tripwire_run_scope`, AC #6) BEFORE this call.
+    Posting rides the SAME ``epm:progress`` channel as the idle advisory
+    (note prefixed ``[gpu-width-advisory]``, plus a ``gpu_width_advisory=True``
+    extra) — no new marker kind. Guarded state parses: a corrupted int /
+    index set resets the span, never raises into ``poll_once``. A post
+    failure is logged and the phase is NOT recorded as advised, so the next
+    tick retries; the advisory never affects the status verdict and never
+    stops anything.
+    """
+    try:
+        prev_width_since = int(prev_state.get("gpu_width_since_epoch", "0"))
+    except (TypeError, ValueError):
+        prev_width_since = 0
+    try:
+        prev_idle_indices = tuple(
+            int(tok) for tok in (prev_state.get("gpu_width_idle_set", "") or "").split(",") if tok
+        )
+    except (TypeError, ValueError):
+        prev_idle_indices = ()
+    advised_phases = {
+        p for p in (prev_state.get("gpu_width_advised_phases", "") or "").split(",") if p
+    }
+    update = _gpu_width_advisory_update(
+        status=status,
+        gpu_util=gpu_util,
+        current_phase=current_phase,
+        prev_phase=prev_state.get("phase", ""),
+        prev_width_since_epoch=prev_width_since,
+        prev_idle_indices=prev_idle_indices,
+        advised_phases=advised_phases,
+        now_epoch=now_epoch,
+        advisory_min=GPU_WIDTH_ADVISORY_MIN,
+    )
+    if not update.should_post:
+        return update.width_since_epoch, update.idle_indices, advised_phases, False
+    n_gpus = len(_parse_gpu_utils(gpu_util) or [])
+    span_min = update.span_sec // 60
+    idle_list = ",".join(str(i) for i in update.idle_indices)
+    note = (
+        f"[gpu-width-advisory] {len(update.idle_indices)} of {n_gpus} GPUs <= "
+        f"{GPU_IDLE_UTIL_THRESHOLD}% util for {span_min} min while the run is healthy "
+        f"(idle GPU indices: {idle_list}; phase={current_phase}, gpu_util={gpu_util}). "
+        "A sustained narrow phase holding a wide pod is the #813 idle-width / #664 "
+        "spend-leak class — consider widening the parallelism to fill the pod, or "
+        "releasing/downsizing it (CLAUDE.md: per-phase GPU-WIDTH right-sizing). "
+        "Advisory only: the stall verdict is unchanged and nothing was stopped."
+    )
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=note,
+            phase=current_phase,
+            pod=pod,
+            gpu_width_advisory=True,
+        )
+    except Exception as exc:
+        log.error("gpu-width advisory post failed (next tick will retry): %s", exc)
+        return update.width_since_epoch, update.idle_indices, advised_phases, False
+    log.warning(
+        "posted gpu-width advisory for #%d: %d of %d GPUs idle %d min during healthy phase=%s",
+        issue,
+        len(update.idle_indices),
+        n_gpus,
+        span_min,
+        current_phase,
+    )
+    advised_phases.add(current_phase)
+    return update.width_since_epoch, update.idle_indices, advised_phases, True
+
+
+# ── Under-parallelization warning (partial saturation; plan §3, workflow v2) ──
+# Minutes of sustained "healthy verdict + fewer than HALF the provisioned GPUs
+# busy" on an N>1-GPU pod before ONE per-RUN [gpu-underparallel-warning]
+# epm:progress note. DISTINCT from the #873 [gpu-width-advisory] above:
+#   * that fires on ANY idle GPU (1 <= idle < N) after GPU_WIDTH_ADVISORY_MIN
+#     (45m), per-PHASE, and requires a STABLE idle set — its target is a NARROW
+#     phase holding a WIDE pod (release / downsize it, the #813/#664 spend-leak);
+#   * THIS one fires on the stronger MAJORITY-idle signal (< 50% of GPUs busy)
+#     after a shorter 15-min window, deduped ONCE PER RUN, and points at
+#     under-parallelization / sharding (widen the work to fill the pod — the v2
+#     "saturate every provisioned GPU" guideline the efficiency critics own).
+# Both ride the same epm:progress channel; neither flips ``status`` nor stops
+# anything. 0 (or negative) disables.
+GPU_UNDERPARALLEL_WARNING_MIN = int(os.environ.get("EPM_GPU_UNDERPARALLEL_WARNING_MIN", "15"))
+# Warn when the busy-GPU FRACTION is strictly below this (majority idle).
+GPU_UNDERPARALLEL_BUSY_FRACTION = 0.5
+
+
+@dataclass(frozen=True)
+class GpuUnderparallelUpdate:
+    """Outcome of one under-parallelization-warning tick."""
+
+    should_post: bool
+    since_epoch: int  # 0 = no active partial-saturation span
+    n_busy: int
+    n_gpus: int
+    span_sec: int
+
+
+def _gpu_underparallel_update(
+    *,
+    status: str,
+    gpu_util: str,
+    prev_since_epoch: int,
+    already_warned: bool,
+    now_epoch: int,
+    warning_min: int,
+) -> GpuUnderparallelUpdate:
+    """Pure decision core for the per-run under-parallelization warning (plan §3).
+
+    Tracks the sustained span of "healthy verdict + < 50% of the provisioned
+    GPUs busy (but >= 1 busy)" on a multi-GPU pod. Everything RESETS the span
+    (returns ``should_post=False, since_epoch=0``): a disabled warning
+    (``warning_min <= 0``), a non-``running`` verdict, an ``unknown`` /
+    unparseable GPU sample (the ``_parse_gpu_utils`` fail-safe carries over — a
+    missing nvidia-smi never accumulates), a single-GPU pod (N < 2), all-idle
+    (``n_busy == 0``: the idle advisory's domain AND a legitimate CPU-only
+    phase — never re-flagged here), and >= 50% busy (healthy width). The span
+    does NOT reset on a phase change — under-parallelization is a run-level
+    concern and the per-RUN dedup already bounds it to one warning.
+    ``should_post`` is True only once the span reaches ``warning_min`` minutes
+    AND the run has not already been warned. Pure / no I/O — the caller owns
+    state persistence + the marker post.
+    """
+    reset = GpuUnderparallelUpdate(should_post=False, since_epoch=0, n_busy=0, n_gpus=0, span_sec=0)
+    if warning_min <= 0 or status != "running":
+        return reset
+    utils = _parse_gpu_utils(gpu_util)
+    if utils is None or len(utils) < 2:
+        return reset
+    n_gpus = len(utils)
+    n_busy = sum(1 for u in utils if u > GPU_IDLE_UTIL_THRESHOLD)
+    if not (n_busy >= 1 and n_busy / n_gpus < GPU_UNDERPARALLEL_BUSY_FRACTION):
+        return reset
+    since = now_epoch if prev_since_epoch <= 0 else prev_since_epoch
+    span = max(0, now_epoch - since)
+    should_post = span >= warning_min * 60 and not already_warned
+    return GpuUnderparallelUpdate(
+        should_post=should_post,
+        since_epoch=since,
+        n_busy=n_busy,
+        n_gpus=n_gpus,
+        span_sec=span,
+    )
+
+
+def _maybe_post_gpu_underparallel_warning(
+    *,
+    issue: int,
+    pod: str,
+    status: str,
+    gpu_util: str,
+    current_phase: str,
+    prev_state: dict[str, str],
+    now_epoch: int,
+) -> tuple[int, bool, bool]:
+    """Under-parallelization wiring for ``poll_once``: parse state, decide, post.
+
+    Returns ``(since_epoch, warned, posted)`` for the caller to persist via
+    ``_save_state``. Per-RUN dedup via the ``gpu_underparallel_warned`` flag,
+    which is run-scoped (cleared with the other #873 tripwire keys on a fresh
+    ``epm:run-launched``, so a relaunch / follow-up round re-arms the warning).
+    Posts on the SAME ``epm:progress`` channel as the width advisory (note
+    prefixed ``[gpu-underparallel-warning]``, plus a
+    ``gpu_underparallel_warning=True`` extra). A post failure is logged and the
+    run is NOT recorded as warned, so the next tick retries; the warning never
+    affects the status verdict and never stops anything.
+    """
+    try:
+        prev_since = int(prev_state.get("gpu_underparallel_since_epoch", "0"))
+    except (TypeError, ValueError):
+        prev_since = 0
+    already_warned = prev_state.get("gpu_underparallel_warned", "0") == "1"
+    update = _gpu_underparallel_update(
+        status=status,
+        gpu_util=gpu_util,
+        prev_since_epoch=prev_since,
+        already_warned=already_warned,
+        now_epoch=now_epoch,
+        warning_min=GPU_UNDERPARALLEL_WARNING_MIN,
+    )
+    if not update.should_post:
+        return update.since_epoch, already_warned, False
+    span_min = update.span_sec // 60
+    note = (
+        f"[gpu-underparallel-warning] {update.n_busy} of {update.n_gpus} GPUs busy for "
+        f">{span_min} min while the run is healthy (phase={current_phase}, gpu_util={gpu_util}) "
+        f"— fewer than half the provisioned GPUs are working. Check sharding: this run may be "
+        f"under-parallelized (widen the work to fill the pod, or downsize it — the workflow-v2 "
+        f"'saturate every provisioned GPU' guideline). Advisory only: the status verdict is "
+        f"unchanged and nothing was stopped."
+    )
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=note,
+            phase=current_phase,
+            pod=pod,
+            gpu_underparallel_warning=True,
+        )
+    except Exception as exc:
+        log.error("gpu-underparallel warning post failed (next tick will retry): %s", exc)
+        return update.since_epoch, already_warned, False
+    log.warning(
+        "posted gpu-underparallel warning for #%d: %d of %d GPUs busy %d min during healthy "
+        "phase=%s",
+        issue,
+        update.n_busy,
+        update.n_gpus,
+        span_min,
+        current_phase,
+    )
+    return update.since_epoch, True, True
+
+
+# ── Phase-ETA tripwire (#873) ────────────────────────────────────────────────
+# Multiplier over the plan §9 TOTAL planned_wall_h before the poller auto-posts
+# epm:compute-deviation (source: poller). <= 0 disables. Read at import time to
+# mirror GPU_IDLE_ADVISORY_MIN; tests pass `mult` explicitly to the pure core.
+ETA_DEVIATION_MULT = float(os.environ.get("EPM_ETA_DEVIATION_MULT", "2.0"))
+
+# Run-level dedup key for the whole-run elapsed check (D1b). Phase names match
+# PHASE_RE ([a-z0-9_]+); __run_total__ shares the charset, so a collision with
+# a real phase name is possible in principle but costs only a suppressed
+# duplicate advisory marker (plan §12 assumption 14).
+ETA_RUN_TOTAL_KEY = "__run_total__"
+
+_LEADING_FLOAT_RE = re.compile(r"\s*([0-9]+(?:\.[0-9]+)?)")
+# A markdown |---|:---:|---| separator row: every pipe-split cell is only
+# whitespace / dashes / colons.
+_MD_SEPARATOR_CELL_RE = re.compile(r"[\s:\-]*")
+
+
+class _UnparseableWallRow(Exception):
+    """A located planned_wall_h data row yielded no leading float (AC #2)."""
+
+
+def _md_planned_wall_rows(plan_text: str) -> list[float]:
+    """Leading floats of every markdown-table planned_wall_h column cell.
+
+    Table-scoped: only rows FOLLOWING a ``|``-prefixed header line that
+    contains ``planned_wall_h`` are scanned, with the value-column index
+    DERIVED from that header's cell position (never a hardcoded ordinal).
+    Raises ``_UnparseableWallRow`` when ANY located data row's cell has no
+    leading float — the caller maps that to a disabled tripwire (``None``),
+    never a partial sum (AC #2).
+    """
+    rows: list[float] = []
+    lines = plan_text.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        if not (line.lstrip().startswith("|") and "planned_wall_h" in line):
+            i += 1
+            continue
+        header_cells = line.split("|")
+        col = next(idx for idx, c in enumerate(header_cells) if "planned_wall_h" in c)
+        j = i + 1
+        while j < len(lines) and lines[j].lstrip().startswith("|"):
+            cells = lines[j].split("|")
+            j += 1
+            if all(_MD_SEPARATOR_CELL_RE.fullmatch(c) for c in cells):
+                continue  # the |---|---| separator row
+            if col >= len(cells):
+                raise _UnparseableWallRow(lines[j - 1][:120])
+            m = _LEADING_FLOAT_RE.match(cells[col])
+            if not m:
+                raise _UnparseableWallRow(lines[j - 1][:120])
+            rows.append(float(m.group(1)))
+        i = j
+    return rows
+
+
+def _html_planned_wall_rows(plan_text: str) -> list[float]:
+    """Leading floats of every HTML-table planned_wall_h column cell.
+
+    The row scan is SCOPED to each ``<table>`` element whose ``<th>`` row
+    contains ``planned_wall_h`` (never a document-wide ``<td>`` scan), and
+    the value-column index is DERIVED from the ``<th>`` position (parity
+    with the markdown path). Raises ``_UnparseableWallRow`` on any located
+    data row whose cell has no leading float (AC #2).
+    """
+    rows: list[float] = []
+    for tbl_m in re.finditer(r"<table\b[^>]*>(.*?)</table>", plan_text, re.IGNORECASE | re.DOTALL):
+        tbl = tbl_m.group(1)
+        ths = re.findall(r"<th\b[^>]*>(.*?)</th>", tbl, re.IGNORECASE | re.DOTALL)
+        col = next((idx for idx, th in enumerate(ths) if "planned_wall_h" in th), None)
+        if col is None:
+            continue  # a table without the header never contributes
+        for tr_m in re.finditer(r"<tr\b[^>]*>(.*?)</tr>", tbl, re.IGNORECASE | re.DOTALL):
+            tds = re.findall(r"<td\b[^>]*>(.*?)</td>", tr_m.group(1), re.IGNORECASE | re.DOTALL)
+            if not tds:
+                continue  # the <th>-only header row
+            if col >= len(tds):
+                raise _UnparseableWallRow(tr_m.group(1)[:120])
+            cell = re.sub(r"<[^>]+>", "", tds[col])
+            m = _LEADING_FLOAT_RE.match(cell)
+            if not m:
+                raise _UnparseableWallRow(cell[:120])
+            rows.append(float(m.group(1)))
+    return rows
+
+
+def _parse_plan_wall_budget(plan_text: str) -> float | None:
+    """Sum of §9 per-component planned_wall_h, or None when no row parses.
+
+    Handles the markdown pipe-table form (a ``|``-prefixed header line
+    containing ``planned_wall_h``) and the HTML ``<tr><th>``/``<td>`` form
+    (both exist in real plans — e.g. #779's live plan is HTML). CONTRACT
+    (critic round 1, AC #2):
+
+    - ALL tables carrying a planned_wall_h header are located and summed
+      (multi-stage plans, e.g. #479 Stage 1 + Stage 2 — a single-header
+      parse under-counts and false-fires).
+    - The value-column index is DERIVED from the header cell position in
+      BOTH formats (markdown pipe cells AND the HTML ``<th>`` row) — never
+      a hardcoded ordinal; the HTML row scan is SCOPED to the table element
+      containing the planned_wall_h ``<th>``, never a document-wide
+      ``<td>`` scan.
+    - Each data cell contributes its LEADING float ("3 (async, off-GPU)"
+      -> 3.0). If ANY located data row's planned_wall_h cell yields NO
+      leading float, return None (tripwire disabled, log once) — NEVER a
+      partial sum: an under-parsed budget is the one path to a false
+      positive.
+    - Returns None on zero located tables / zero data rows. Whole body
+      exception-wrapped: ANY parse error returns None (fail-safe OFF).
+    """
+    try:
+        rows = _md_planned_wall_rows(plan_text) + _html_planned_wall_rows(plan_text)
+    except Exception:
+        return None
+    if not rows:
+        return None
+    return sum(rows) or None
+
+
+def _plan_total_wall_h_for_issue(issue: int) -> float | None:
+    """Read tasks/<status>/<issue>/plans/plan.md and parse the §9 total.
+
+    Fail-soft None on a missing task / missing plan / unreadable file /
+    unparseable table — the tripwire is then disabled for this run (AC #2).
+    ``plans/plan.md`` symlinks the highest plan version (D1).
+    """
+    try:
+        plan = find_task_path(issue) / "plans" / "plan.md"
+        if not plan.exists():
+            return None
+        return _parse_plan_wall_budget(plan.read_text())
+    except Exception:
+        return None
+
+
+@dataclass(frozen=True)
+class EtaDeviationPost:
+    """One epm:compute-deviation post the ETA tripwire decided to emit."""
+
+    dedup_key: str  # current phase name, or ETA_RUN_TOTAL_KEY
+    scope: str  # "phase" | "run"
+    elapsed_h: float
+    planned_wall_h: float
+    ratio: float
+
+
+@dataclass(frozen=True)
+class EtaDeviationUpdate:
+    """Outcome of one ETA-tripwire tick (``_eta_deviation_update``)."""
+
+    posts: tuple[EtaDeviationPost, ...]  # 0..2 entries
+
+
+def _eta_deviation_update(
+    *,
+    status: str,
+    current_phase: str,
+    phase_started_epoch: int,
+    run_age_sec: float | None,
+    total_planned_wall_h: float | None,
+    posted_keys: set[str],
+    now_epoch: int,
+    mult: float,
+) -> EtaDeviationUpdate:
+    """Pure decision core for the phase-ETA tripwire (#873; incident #763).
+
+    The budget is ``mult`` x the plan §9 TOTAL planned_wall_h (D1b — the
+    only mapping-free, zero-false-positive construct; §9 component names
+    are planner free-text with no mechanical phase mapping). Two strictly-
+    conservative checks share it, both STRICT ``>`` at the boundary:
+
+    * per-phase: elapsed since ``phase_started_epoch`` exceeds the budget
+      — any SINGLE phase exceeding ``mult`` x the ENTIRE plan's wall
+      estimate is unambiguously a deviation. Skipped for the ``""`` /
+      ``unknown`` / ``done`` phases and for an unknown start (<= 0).
+    * run-level: ``run_age_sec`` exceeds the budget — catches cumulative
+      overrun across phases. Dedup key :data:`ETA_RUN_TOTAL_KEY`.
+
+    Fail-safe OFF on ``mult <= 0``, a missing/non-positive budget, or a
+    non-``running`` verdict. Pure / no I/O — the caller owns state
+    persistence and the marker posts.
+    """
+    if mult <= 0 or total_planned_wall_h is None or total_planned_wall_h <= 0:
+        return EtaDeviationUpdate(posts=())
+    if status != "running":
+        return EtaDeviationUpdate(posts=())
+    budget_sec = mult * total_planned_wall_h * 3600.0
+    posts: list[EtaDeviationPost] = []
+    if (
+        current_phase not in {"", "unknown", "done"}
+        and phase_started_epoch > 0
+        and (now_epoch - phase_started_epoch) > budget_sec
+        and current_phase not in posted_keys
+    ):
+        elapsed = float(now_epoch - phase_started_epoch)
+        posts.append(
+            EtaDeviationPost(
+                dedup_key=current_phase,
+                scope="phase",
+                elapsed_h=elapsed / 3600.0,
+                planned_wall_h=total_planned_wall_h,
+                ratio=elapsed / (total_planned_wall_h * 3600.0),
+            )
+        )
+    if (
+        run_age_sec is not None
+        and run_age_sec > budget_sec
+        and ETA_RUN_TOTAL_KEY not in posted_keys
+    ):
+        posts.append(
+            EtaDeviationPost(
+                dedup_key=ETA_RUN_TOTAL_KEY,
+                scope="run",
+                elapsed_h=run_age_sec / 3600.0,
+                planned_wall_h=total_planned_wall_h,
+                ratio=run_age_sec / (total_planned_wall_h * 3600.0),
+            )
+        )
+    return EtaDeviationUpdate(posts=tuple(posts))
+
+
+def _maybe_post_eta_deviation(
+    *,
+    issue: int,
+    pod: str,
+    status: str,
+    current_phase: str,
+    last_phase_change_epoch: int,
+    run_age_sec: float | None,
+    prev_state: dict[str, str],
+    now_epoch: int,
+) -> tuple[set[str], bool, bool]:
+    """ETA-tripwire wiring for ``poll_once``: parse state, decide, maybe post.
+
+    Returns ``(posted_keys, posted_this_tick, budget_warned)`` for the
+    caller to persist via ``_save_state``. The caller applies the run-scope
+    reset (:func:`_tripwire_run_scope`, AC #6) BEFORE this call, so
+    ``prev_state`` is already scoped to the current run. Fail-soft
+    everywhere: a missing / unparseable plan budget disables the tripwire
+    with ONE logged line per run (state-flag-backed); a marker-post failure
+    is logged and the dedup key is NOT recorded, so the next tick retries.
+    Never flips ``status``, never stops anything. Phase start resolves to
+    ``last_phase_change_epoch`` when a boundary was observed this run, else
+    the run-launch epoch (``now - run_age_sec``), else 0 (phase check
+    skipped — fail-safe, D2).
+    """
+    posted_keys = {
+        k for k in (prev_state.get("eta_deviation_posted_keys", "") or "").split(",") if k
+    }
+    budget_warned = prev_state.get("eta_budget_warned", "0") == "1"
+    if ETA_DEVIATION_MULT <= 0:
+        return posted_keys, False, budget_warned
+    total = _plan_total_wall_h_for_issue(issue)
+    if total is None:
+        if not budget_warned:
+            log.info(
+                "no parseable §9 planned_wall_h for #%d; phase-ETA tripwire disabled (fail-safe)",
+                issue,
+            )
+            budget_warned = True
+        return posted_keys, False, budget_warned
+    if last_phase_change_epoch > 0:
+        phase_started_epoch = last_phase_change_epoch
+    elif run_age_sec is not None:
+        phase_started_epoch = int(now_epoch - run_age_sec)
+    else:
+        phase_started_epoch = 0
+    update = _eta_deviation_update(
+        status=status,
+        current_phase=current_phase,
+        phase_started_epoch=phase_started_epoch,
+        run_age_sec=run_age_sec,
+        total_planned_wall_h=total,
+        posted_keys=posted_keys,
+        now_epoch=now_epoch,
+        mult=ETA_DEVIATION_MULT,
+    )
+    posted_any = False
+    for p in update.posts:
+        component = "run total" if p.scope == "run" else f"phase {current_phase!r}"
+        note = (
+            f"component: {component} (elapsed vs §9 total)"
+            f" planned_wall_h: {p.planned_wall_h:.2f}"
+            f" projected_wall_h: {p.elapsed_h:.2f} (elapsed so far — run still in"
+            f" progress, a lower bound) ratio: {p.ratio:.1f}"
+            f" basis: poller elapsed-vs-plan tripwire, {ETA_DEVIATION_MULT:g}x the §9"
+            f" compute-projection planned_wall_h total (source: poller; advisory only"
+            f" — nothing stopped)"
+        )
+        try:
+            post_event(
+                issue,
+                "epm:compute-deviation",
+                by="poll_pipeline",
+                note=note,
+                phase=current_phase,
+                pod=pod,
+                source="poller",
+                basis="elapsed-vs-plan",
+            )
+        except Exception as exc:
+            log.error("phase-ETA deviation post failed (next tick will retry): %s", exc)
+            continue
+        log.warning(
+            "posted epm:compute-deviation for #%d: %s elapsed %.2fh vs §9 total %.2fh (%.1fx)",
+            issue,
+            p.dedup_key,
+            p.elapsed_h,
+            p.planned_wall_h,
+            p.ratio,
+        )
+        posted_keys.add(p.dedup_key)
+        posted_any = True
+    return posted_keys, posted_any, budget_warned
+
+
+# ── #873 run-scoped tripwire dedup (AC #6 / D4) ──────────────────────────────
+# State keys owned by the #873 tripwires; cleared together on a fresh
+# epm:run-launched epoch so a relaunch / same-issue follow-up round re-arms
+# both tripwires (without this, ETA_RUN_TOTAL_KEY would be permanently
+# suppressed per issue and common phase names would collide across runs).
+_TRIPWIRE_STATE_KEYS: tuple[str, ...] = (
+    "eta_deviation_posted_keys",
+    "eta_budget_warned",
+    "gpu_width_since_epoch",
+    "gpu_width_idle_set",
+    "gpu_width_advised_phases",
+    # plan §3 under-parallelization warning: per-RUN dedup, so re-arm on a
+    # fresh run alongside the #873 width/ETA tripwires.
+    "gpu_underparallel_since_epoch",
+    "gpu_underparallel_warned",
+)
+# #1033: the FULL run-scoped clear set = the #873 tripwire dedup keys PLUS the
+# GPU-idle advisory/escalation keys. The idle span + per-phase dedup sets
+# belong to the RUN that accumulated them: carried across a relaunch they
+# print stale idle minutes exceeding the fresh instance's own age (#763
+# "543 min" / #810 "486 min" on ~17-min-old instances, where the phase name
+# matched the stored one so the per-phase reset never fired). The pre-#1033
+# "idle keys untouched by the run-scope reset" contract was the bug.
+_RUN_SCOPED_STATE_KEYS: tuple[str, ...] = (
+    *_TRIPWIRE_STATE_KEYS,
+    "gpu_idle_since_epoch",
+    "gpu_idle_advised_phases",
+    "gpu_idle_escalated_phases",
+)
+# Tolerance (seconds) when comparing the observed run-launched epoch against
+# the stored anchor: rounding jitter on ``now - run_age`` must never
+# spuriously reset the dedup keys mid-run.
+_TRIPWIRE_RUN_EPOCH_TOLERANCE_SEC = 60
+
+
+def _tripwire_run_scope(
+    prev_state: dict[str, str], *, run_age_sec: float | None, now_epoch: int
+) -> tuple[dict[str, str], int]:
+    """Run-scope the #873 tripwire dedup keys + the GPU-idle keys (#1033).
+
+    Returns ``(state, tripwire_run_epoch)``: ``state`` is ``prev_state``
+    unchanged when no reset applies, or a copy with every
+    ``_RUN_SCOPED_STATE_KEYS`` entry REMOVED (the #873 tripwire dedup keys
+    plus, since #1033, the three GPU-idle advisory/escalation keys — a
+    fresh run's idle clock must not inherit the previous run's span) when
+    the CURRENT ``epm:run-launched`` epoch (``now_epoch - run_age_sec``)
+    is newer than the stored ``tripwire_run_epoch`` anchor by more than
+    the jitter tolerance. ``tripwire_run_epoch`` is the anchor the caller
+    persists via ``_save_state`` / the GCP sibling state. Fail-safe: an
+    unknown run age (missing / unreadable marker) keeps the stored anchor
+    and clears nothing; a MALFORMED stored anchor (present but
+    non-numeric) with a known run age cannot decide run identity, so it
+    fails toward RE-ARMING — clear the run-scoped keys and adopt the
+    current epoch (cheaper failure = one duplicate advisory, never a
+    suppressed one); an absent/zero anchor (genuine first run — no keys
+    to protect) adopts the current epoch and keeps the state. Never
+    raises into the poll tick.
+    """
+    raw = prev_state.get("tripwire_run_epoch", "0") or 0
+    malformed = False
+    try:
+        stored = int(float(raw))
+    except (TypeError, ValueError):
+        stored = 0
+        malformed = True
+    if run_age_sec is None:
+        return prev_state, stored
+    current = round(now_epoch - run_age_sec)
+    if malformed:
+        cleared = {k: v for k, v in prev_state.items() if k not in _RUN_SCOPED_STATE_KEYS}
+        return cleared, current
+    if stored <= 0:
+        return prev_state, current
+    if current > stored + _TRIPWIRE_RUN_EPOCH_TOLERANCE_SEC:
+        cleared = {k: v for k, v in prev_state.items() if k not in _RUN_SCOPED_STATE_KEYS}
+        return cleared, current
+    return prev_state, stored
 
 
 # ── GPU-idle ESCALATION (incident #664) ──────────────────────────────────────
@@ -2224,6 +3580,20 @@ def _parse_session_cpu(value: str) -> float | None:
         return None
 
 
+def _parse_probe_count(value: str | None) -> int | None:
+    """Parse a #864 probe count (``"4"``, ``""``, ``"unknown"``, garbage) to a
+    non-negative int; ``None`` = no signal (the caller falls back to the pure
+    #826 behavior — every degraded read fails toward CURRENT behavior, never
+    toward arming the namespace veto)."""
+    if not value or value == "unknown":
+        return None
+    try:
+        n = int(value)
+    except ValueError:
+        return None
+    return n if n >= 0 else None
+
+
 def _session_cpu_advancing(prev_max: str | None, current: str) -> bool | None:
     """Return True / False / None for the session-CPU "advancing" decision.
 
@@ -2300,6 +3670,38 @@ def _roll_session_cpu_max(prev_max: str | None, current: str) -> str:
     return prev_max if prev_max else current
 
 
+def _session_cpu_rate_cores(
+    prev_sample: str | None,
+    prev_sample_epoch: str | None,
+    current: str,
+    now_epoch: int,
+) -> float | None:
+    """Per-tick session-CPU burn rate in cores, or None when not computable.
+
+    rate = (current - prev_sample) / (now_epoch - prev_sample_epoch), where
+    prev_sample + prev_sample_epoch are the SAME prior tick's persisted pair
+    (written together by _save_state). None (fail-safe -> the #951 veto does
+    NOT fire) when: either CPU sample is unknown/unparseable, the epoch is
+    missing/unparseable/<=0, or the wall gap is < ZOMBIE_CPU_RATE_MIN_DT_SEC
+    (truncation-noise floor) or non-positive (clock garbage). A NEGATIVE
+    rate (run restart resets the session counter; a multi-shard child exit
+    de-counts its cputime, #658) is returned as-is — it is below any
+    positive threshold, so the veto does not fire on it.
+    """
+    cur = _parse_session_cpu(current)
+    prev = _parse_session_cpu(prev_sample) if prev_sample is not None else None
+    epoch = _parse_session_cpu(prev_sample_epoch) if prev_sample_epoch else None
+    if cur is None or prev is None or epoch is None or epoch <= 0:
+        return None
+    dt = now_epoch - epoch
+    if dt < ZOMBIE_CPU_RATE_MIN_DT_SEC:
+        # Also covers dt <= 0 (the floor is positive) — LOAD-BEARING for the
+        # existing two-call replay tests, whose back-to-back poll_once calls
+        # persist the epoch on call 1 and re-poll milliseconds later (dt~0).
+        return None
+    return (cur - prev) / dt
+
+
 def _load_state(state_file: Path, issue: int) -> dict[str, str]:
     if not state_file.exists():
         return {}
@@ -2336,9 +3738,15 @@ def _apply_zombie_override(
     prev_state: dict[str, str],
     pod: str,
     cpu_override_active: bool,
+    gpu_pids_total: int | None = None,
+    gpu_pids_resolvable: int | None = None,
+    uvm_live_holders: int | None = None,
+    session_cpu_rate_cores: float | None = None,
+    output_mtime_ago: float = float("inf"),
 ) -> tuple[str, str | None, bool, int]:
-    """The #664/#826 zombie-GPU-allocation override — returns the possibly
-    overridden ``(status, stall_reason, cpu_override_active, zombie_streak)``.
+    """The #664/#826/#864/#951/#1033 zombie-GPU-allocation override — returns
+    the possibly overridden
+    ``(status, stall_reason, cpu_override_active, zombie_streak)``.
 
     A hung vLLM whose CUDA worker died leaves its model-shard VRAM orphaned
     (a compute-apps PID with no ``/proc`` entry) while the EngineCore main
@@ -2364,24 +3772,154 @@ def _apply_zombie_override(
     ``_save_state`` neither advances nor resets it, the same exposure
     ``ssh_fail_count`` has; the sidecar is single-poller by design).
 
-    Session-CPU advancement is deliberately NOT a veto term: the genuine #664
-    hang had CPU advancing (in the stale-log + idle-GPU regime ``running`` is
-    only reachable via the CPU rescue), so a CPU veto would make the true
-    positive structurally unreachable. Never touches a ``done`` / ``gate`` /
-    ``dead`` verdict — those are correct terminal/park states (a dead
-    launcher is already ``dead``; its own orphaned allocation is then
-    expected). The ``stall_reason`` lets the orchestrator route this
-    distinctly from a generic log+GPU+CPU stall.
+    Bare session-CPU *advancement* is deliberately NOT a veto term: the
+    genuine #664 hang had CPU advancing (in the stale-log + idle-GPU regime
+    ``running`` is only reachable via the CPU rescue), so an any-delta
+    (> ``SESSION_CPU_ADVANCE_EPSILON_SECS``, the #518/#658 boolean) CPU veto
+    would make the true positive structurally unreachable. A MATERIAL
+    sustained burn *rate* IS a veto term (#951, next paragraph): the measured
+    #664 churn (~0.22 cores) cannot reach the rate threshold, so the true
+    positive stays reachable. Never touches a ``done`` / ``gate`` / ``dead``
+    verdict — those are correct terminal/park states (a dead launcher is
+    already ``dead``; its own orphaned allocation is then expected). The
+    ``stall_reason`` lets the orchestrator route this distinctly from a
+    generic log+GPU+CPU stall.
+
+    Fresh-output veto (#1033, right after the #826 fresh-log veto —
+    identical mechanics): a run whose ISSUE-KEYED OUTPUT artifacts
+    (``output_mtime_ago``, from the #1033 probe) were modified within the
+    same effective stall window ``max(ZOMBIE_VETO_FRESH_SEC, stall_sec)``
+    is writing results, not hanging — #813's CPU-bound analysis tail wrote
+    per-cell NPZs / JSONs for hours while every log was quiet. Veto +
+    streak reset, exactly like the fresh-log veto. The parameter defaults
+    to ``inf`` (= "no fresh output" / probe absent / fold disabled), so
+    every pre-#1033 caller and test is byte-unchanged (fail-safe: the veto
+    stays inert). A genuinely hung run writes no outputs, so the #664 true
+    positive stays reachable.
+
+    Material-compute liveness veto (#951, between the #1033 fresh-output
+    veto and the streak defer/fire branches): when the per-tick session-CPU burn
+    rate was >= ``ZOMBIE_OVERRIDE_CPU_CORES_MIN`` (default 0.5 cores) on
+    BOTH the current tick (``session_cpu_rate_cores``, computed by
+    ``poll_once`` via ``_session_cpu_rate_cores``) AND the previous
+    persisted tick (the sidecar's ``session_cpu_rate_cores`` key), the
+    session is demonstrably computing — #825's falsely-flagged live fit
+    burned ~1.83-2.04 cores while 1816 MiB of prior-run VRAM leftover
+    carried the zombie signature — so the override is suppressed and the
+    streak RESETS to 0 (identical mechanics to the #826 fresh-log and #864
+    namespace vetoes; reset, not hold, so a later degraded CPU read after
+    material compute defers a full fresh 2-tick window instead of firing
+    immediately). Fail-safe on ANY degraded input (missing/unparseable CPU
+    sample, missing previous-tick baseline or rate, missing/garbage sample
+    timestamp, tick spacing under ``ZOMBIE_CPU_RATE_MIN_DT_SEC``, negative
+    delta): the rate is None / below threshold, the veto stays inert, and
+    behavior is exactly the pre-#951 #826/#864 cascade. Residual exposure
+    (ACCEPTED): ``session_cpu_secs`` is a session-TOTAL, so a WIDE hung
+    session (TP>=2 NCCL spin at ~1 core/rank) or a co-resident same-session
+    CPU burner can sustain >= the threshold indefinitely and keep a true
+    zombie vetoed — the same exposure class as the #826 fresh-log sibling
+    (a sibling process appending to a log forever suppresses the override
+    the same way today), bounded by the GPU-idle advisory/escalation tiers,
+    the #873 phase-ETA tripwires, the watcher wedge arm, and the
+    ``EPM_ZOMBIE_OVERRIDE_CPU_CORES_MIN`` knob. Warmup: on a fresh or
+    pre-#951 sidecar the veto cannot engage until the 3rd tick — tick 1
+    persists the sample epoch with rate ``"unknown"``, tick 2 computes the
+    first rate but has no prev-tick rate — which is the fail-safe direction
+    (current behavior during warmup); a false stall in that window is the
+    warmup, not a fix failure.
+
+    Namespace-informativeness gate (#864, FIRST branch): the #826 stale-log
+    veto lapses when a HEALTHY workload legitimately silences its logs
+    longer than the stall window (#813: a ~29-min CPU-bound NPZ-compression
+    stretch false-fired the override twice while ``cpu_advancing`` was true
+    and the flagged "dead" VRAM holders were the same live cells seen under
+    host-namespace PIDs). The gate keys on whether the dead-in-/proc probe
+    signal is INFORMATIVE on this pod, not on generic liveness (per the
+    paragraph above, ``cpu_advancing`` / pgrep-liveness vetoes would kill
+    the true positive). Truth table over the #864 probe counts
+    (veto = suppress + streak reset; fall-through = the #826 logic below,
+    unchanged)::
+
+        total  resolvable  uvm_holders  ->  action
+        >0     0           >0               VETO (regime X: live workers
+                                            under host ids; #813/#816)
+        >0     0           0                fall through (#664 total
+                                            collapse — no live CUDA holder)
+        >0     >0          any              fall through (namespace
+                                            informative; flagged PIDs are
+                                            genuinely reaped)
+        unknown/0  any     any              fall through (degraded probe)
+        >0     0           unknown          fall through (UVM scan failed)
+
+    Every degraded read fails toward CURRENT (#826) behavior — never toward
+    more false positives, never toward disabled TP detection. Residual
+    notes: (a) a cuInit'd-but-allocation-free parent/coordinator holding an
+    exact ``/dev/nvidia-uvm`` fd while ABSENT from compute-apps would veto a
+    TOTAL collapse — this exposure is TOTAL-COLLAPSE-scoped, not
+    regime-scoped (a matched-namespace total collapse also reads
+    ``resolvable == 0``); mitigations are the #864 pre-merge live-pod gate
+    (which FOUND such a holder, ``issue813_dispatch.py``, hence the
+    shipped default-OFF) and the ``EPM_ZOMBIE_NAMESPACE_VETO`` kill-switch.
+    A live NON-workload CUDA process (e.g. a human SSH debug session
+    holding a torch context) on a collapsed pod is the same family. Only a
+    PARTIAL death on a matched pod (``resolvable > 0``, row 3) is immune.
+    (b) On a mismatched-namespace pod a PARTIAL worker death (one dead
+    worker among live uvm-holding cells) is vetoed — undetectable by this
+    probe. Not a regression in *correct* detection: the /proc signal
+    carries zero per-PID information in that regime, and pre-#864 behavior
+    "detected" that case only by also firing on every healthy #813-shape
+    run. The GPU-idle advisory/escalation tiers (#518/#537/#664) and the
+    #873 phase-ETA tripwires are the backstops there; matched-namespace
+    partial death keeps firing exactly as today. (c)
+    ``ZOMBIE_NAMESPACE_VETO_ENABLED`` is read at module import — a live
+    poller needs a restart for an ops flip to take effect. (d) On a tick
+    matching BOTH this gate and the #826 fresh-log veto — or the #951
+    material-CPU veto — the namespace WARNING fires first (outcome
+    identical — ``running``, streak 0; only the forensic log line
+    differs).
     """
     stall_reason: str | None = None
     zombie_streak = 0
     if status == "running" and zombie_gpu_pids:
+        if (
+            ZOMBIE_NAMESPACE_VETO_ENABLED
+            and gpu_pids_total is not None
+            and gpu_pids_total > 0
+            and gpu_pids_resolvable == 0
+            and uvm_live_holders is not None
+            and uvm_live_holders > 0
+        ):
+            # #864: the dead-in-/proc signature is a PID-namespace artifact,
+            # not a death signal — nvidia-smi reports host-namespace PIDs
+            # that resolve in the container /proc for ZERO compute apps,
+            # while live in-container processes hold /dev/nvidia-uvm (a live
+            # CUDA compute context). The flagged "zombies" ARE those live
+            # workers seen under host ids (#813: a healthy 29-min CPU-bound
+            # quiet stretch outlived the #826 stale-log veto). Veto
+            # regardless of log staleness; a genuine total collapse (#664)
+            # has zero live uvm holders and falls through to the #826
+            # stale-log + 2-tick logic below.
+            log.warning(
+                "zombie-GPU signature on pod %s (PID(s) %s) is a PID-namespace "
+                "artifact: 0/%d compute PIDs resolve in the container /proc while "
+                "%d live container process(es) hold /dev/nvidia-uvm — vetoing "
+                "(#813/#864), not flagging",
+                pod,
+                ",".join(zombie_gpu_pids),
+                gpu_pids_total,
+                uvm_live_holders,
+            )
+            return status, stall_reason, cpu_override_active, 0
         zombie_veto_sec = max(ZOMBIE_VETO_FRESH_SEC, stall_sec)
         freshest_log_ago = min(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago)
         try:  # defensive parse, mirrors _update_ssh_fail_tracking's ssh_fail_count guard
             prev_zombie_streak = int(prev_state.get("zombie_streak", "0") or 0)
         except (TypeError, ValueError):
             prev_zombie_streak = 0
+        # #951: the previous tick's persisted burn rate. _parse_session_cpu
+        # maps an absent key / "unknown" / garbage to None (fail-safe — the
+        # material-CPU veto below then cannot fire).
+        prev_cpu_rate = _parse_session_cpu(prev_state.get("session_cpu_rate_cores", "unknown"))
         if freshest_log_ago <= zombie_veto_sec:
             log.warning(
                 "zombie-GPU signature on pod %s (PID(s) %s) but log evidence is fresh "
@@ -2392,6 +3930,44 @@ def _apply_zombie_override(
                 freshest_log_ago,
                 zombie_veto_sec,
             )
+        elif output_mtime_ago <= zombie_veto_sec:
+            # #1033: fresh issue-keyed OUTPUT artifact — the run is writing
+            # results while its logs are quiet (#813's CPU-bound analysis
+            # tail). Identical mechanics to the fresh-log veto above:
+            # suppress + streak reset (zombie_streak stays 0 — recomputed
+            # each tick).
+            log.warning(
+                "zombie-GPU signature on pod %s (PID(s) %s) but output-artifact evidence "
+                "is fresh (%.0fs <= %ds) — liveness veto, not flagging (#1033/#813; a "
+                "CPU-bound analysis tail writes issue-keyed outputs while every log is "
+                "quiet)",
+                pod,
+                ",".join(zombie_gpu_pids),
+                output_mtime_ago,
+                zombie_veto_sec,
+            )
+        elif (
+            session_cpu_rate_cores is not None
+            and prev_cpu_rate is not None
+            and session_cpu_rate_cores >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+            and prev_cpu_rate >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+        ):
+            # #951: material compute — the session burned >= T cores on BOTH
+            # of the last two persisted ticks. #664's hung EngineCore churns
+            # ~0.22 cores; real work (the #825 fit at ~1.9 cores) cannot be a
+            # hang. Veto; streak resets (zombie_streak stays 0 — recomputed
+            # each tick).
+            log.warning(
+                "zombie-GPU signature on pod %s (PID(s) %s) with all logs stale BUT session "
+                "CPU burned %.2f / %.2f cores over the last two ticks (>= %.2f) — material "
+                "compute, liveness veto, not flagging (#951; #825: prior-run VRAM leftover "
+                "while the live workload computed)",
+                pod,
+                ",".join(zombie_gpu_pids),
+                session_cpu_rate_cores,
+                prev_cpu_rate,
+                ZOMBIE_OVERRIDE_CPU_CORES_MIN,
+            )
         elif prev_zombie_streak < 1:
             zombie_streak = 1
             log.warning(
@@ -2401,20 +3977,47 @@ def _apply_zombie_override(
                 ",".join(zombie_gpu_pids),
             )
         else:
+            # #951 forensic evidence on the FIRE path: the two burn rates
+            # (or "unknown") are the durable record for tuning
+            # EPM_ZOMBIE_OVERRIDE_CPU_CORES_MIN after the next incident —
+            # the sidecar keeps only the last tick.
             log.error(
                 "zombie GPU allocation on pod %s: compute PID(s) %s hold >= %d MiB VRAM but "
                 "are absent from /proc (dead CUDA worker, vLLM EngineCore hung) — persisted "
                 "2 consecutive ticks with all logs stale, overriding "
-                "status=running -> stalled (#664/#826)",
+                "status=running -> stalled (#664/#826); session-CPU rate now=%s prev=%s "
+                "cores (veto threshold %.2f)",
                 pod,
                 ",".join(zombie_gpu_pids),
                 ZOMBIE_GPU_MEM_MIN_MIB,
+                "unknown" if session_cpu_rate_cores is None else f"{session_cpu_rate_cores:.2f}",
+                "unknown" if prev_cpu_rate is None else f"{prev_cpu_rate:.2f}",
+                ZOMBIE_OVERRIDE_CPU_CORES_MIN,
             )
             status = "stalled"
             stall_reason = "vllm_worker_dead_zombie_gpu"
             cpu_override_active = False
             zombie_streak = prev_zombie_streak + 1
     return status, stall_reason, cpu_override_active, zombie_streak
+
+
+def _parse_output_mtime_epoch(raw: str | None) -> int:
+    """Parse the probe's ``OUTPUT_MTIME_EPOCH`` scalar defensively (#1033 r2).
+
+    ``_parse_probe_stdout`` stores the scalar text VERBATIM, so a malformed /
+    non-numeric value — reachable via version skew (a pod running newer probe
+    code than this VM, the same scenario the kill-switch branch in
+    ``poll_once`` defends on the DISABLED side) or a garbled/partial SSH
+    line — must fail INERT, not kill the tick: return ``0``, which
+    ``_log_staleness_secs`` maps to the ``10**9`` absent sentinel (the
+    pre-#1033 no-fold behavior). Every numeric value parses exactly as the
+    previous inline ``int(raw or "0")`` did. Guards ONLY this new #1033 key —
+    the sibling probe ints keep their long-standing strict parses.
+    """
+    try:
+        return int(raw or "0")
+    except (ValueError, TypeError):
+        return 0
 
 
 def _log_staleness_secs(
@@ -2425,9 +4028,10 @@ def _log_staleness_secs(
     freshest_mtime_epoch: int,
     phase_log_mtime_epoch: int,
     shard_log_mtime_epoch: int,
-) -> tuple[int, int, int]:
-    """Compute the three log-staleness deltas (top-level/cell, per-phase,
-    shard) on a SINGLE clock basis (#704).
+    output_mtime_epoch: int = 0,
+) -> tuple[int, int, int, int]:
+    """Compute the staleness deltas (top-level/cell, per-phase, shard logs,
+    plus the #1033 output artifact) on a SINGLE clock basis (#704).
 
     The pod stamps file mtimes with its OWN wall clock (``stat -c %Y``); the
     probe heredoc now also captures that same clock's "now" (``date +%s`` ->
@@ -2443,10 +4047,16 @@ def _log_staleness_secs(
     ``<= 0``, matching the prior inline behavior. On the pod-clock branch the
     deltas are low-clamped at ``0`` (``max(0, ...)``) so a sub-second
     rounding within one probe cannot produce a negative "seconds ago"; the
-    VM-fallback branch keeps its exact pre-#704 arithmetic so the
-    backward-compat behavior is byte-for-byte unchanged.
+    VM-fallback branch keeps its exact pre-#704 arithmetic for the three LOG
+    deltas so the backward-compat behavior is byte-for-byte unchanged. The
+    #1033 ``output_mtime_ago`` delta (new — no backward-compat constraint)
+    is low-clamped at ``0`` on BOTH branches: a FUTURE-DATED output mtime
+    (weird writer clock) reads as "fresh right now", which can only
+    SUPPRESS a stall verdict / zombie override — the fold's accepted
+    fail direction — never create a new positive.
 
-    Returns ``(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago)``.
+    Returns ``(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago,
+    output_mtime_ago)``.
     """
     if pod_now_epoch > 0:
         staleness_now = pod_now_epoch
@@ -2459,7 +4069,10 @@ def _log_staleness_secs(
         shard_log_mtime_ago = (
             max(0, staleness_now - shard_log_mtime_epoch) if shard_log_mtime_epoch > 0 else 10**9
         )
-        return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago
+        output_mtime_ago = (
+            max(0, staleness_now - output_mtime_epoch) if output_mtime_epoch > 0 else 10**9
+        )
+        return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago, output_mtime_ago
 
     staleness_now = vm_now_epoch
     log.warning(
@@ -2474,7 +4087,10 @@ def _log_staleness_secs(
     shard_log_mtime_ago = (
         staleness_now - shard_log_mtime_epoch if shard_log_mtime_epoch > 0 else 10**9
     )
-    return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago
+    output_mtime_ago = (
+        max(0, staleness_now - output_mtime_epoch) if output_mtime_epoch > 0 else 10**9
+    )
+    return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago, output_mtime_ago
 
 
 def _tail_excerpt_and_crash_signature(
@@ -2557,7 +4173,7 @@ def poll_once(
     # epm:run-launched marker. Cross-check the marker pid so a healthy
     # re-run is not misreported as dead.
     marker_pid = _marker_pid(issue)
-    probe = _ssh_probe(pod, log_path, pid_file, issue, marker_pid)
+    probe = _ssh_probe(pod, log_path, pid_file, issue, marker_pid, stall_sec=stall_sec)
 
     # ── #488 stale-port self-heal ────────────────────────────────────────
     # Track consecutive SSH-probe failures across ticks. When the live API
@@ -2614,14 +4230,24 @@ def poll_once(
     # GPU-idle advisory (#518/#537), and phase-change sidecar (#669)
     # computations, all of which compare against VM-STAMPED timestamps and
     # would be corrupted by a pod-clock basis.
-    last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago = _log_staleness_secs(
-        pod=pod,
-        vm_now_epoch=now_epoch,
-        pod_now_epoch=int(probe.get("pod_now_epoch") or "0"),
-        freshest_mtime_epoch=freshest_mtime_epoch,
-        phase_log_mtime_epoch=phase_log_mtime_epoch,
-        shard_log_mtime_epoch=shard_log_mtime_epoch,
+    last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago, output_mtime_ago = (
+        _log_staleness_secs(
+            pod=pod,
+            vm_now_epoch=now_epoch,
+            pod_now_epoch=int(probe.get("pod_now_epoch") or "0"),
+            freshest_mtime_epoch=freshest_mtime_epoch,
+            phase_log_mtime_epoch=phase_log_mtime_epoch,
+            shard_log_mtime_epoch=shard_log_mtime_epoch,
+            output_mtime_epoch=_parse_output_mtime_epoch(probe.get("output_mtime_epoch")),
+        )
     )
+    # #1033 kill switch: with the fold disabled the probe block was omitted
+    # (the parser's "0" default already yields the inert 10**9), but force
+    # the sentinel explicitly so a stray OUTPUT_MTIME_EPOCH line in the
+    # stdout (e.g. a pod running newer code than the VM) can never engage
+    # a disabled fold.
+    if not OUTPUT_MTIME_FOLD_ENABLED:
+        output_mtime_ago = 10**9
     gpu_util = probe.get("gpu_util", "unknown")
     gpu_idle = _gpu_idle(gpu_util)
     # Zombie-GPU-allocation signal (#664): the probe emits the
@@ -2674,7 +4300,7 @@ def poll_once(
     # `current_phase == "done"` precedence already covers the
     # "log-shows-completion" half: a completed run is `done`, never `dead`.
     #
-    # `stalled` requires ALL FIVE liveness-of-output signals to agree:
+    # `stalled` requires ALL SIX liveness-of-output signals to agree:
     # the top-level log AND the freshest cell log (folded together as
     # `last_mtime_ago`, #405) AND every per-phase log under
     # `/workspace/logs/issue-<N>-*.log` (#468) AND every shard /
@@ -2682,8 +4308,11 @@ def poll_once(
     # logs/issue_<N>{,_*}/*.log` (#488) plus every dispatcher per-job
     # log under `/workspace/explore-persona-space/eval_results/
     # issue_<N>{,_*}/logs/*.log` (#521, folded into the same shard-log
-    # max) AND the GPUs must ALL be quiet/idle for >STALL_SEC. The
-    # shard-log conjunction (#488)
+    # max) AND every issue-keyed OUTPUT artifact (eval_results/
+    # issue_<N>{,_*}/, data/issue_<N>/, data/issue<N>/ — #1033; a fresh
+    # output behaves exactly like a fresh shard log: first-class
+    # liveness, no new override concept) AND the GPUs must ALL be
+    # quiet/idle for >STALL_SEC. The shard-log conjunction (#488)
     # prevents a false stall when a multi-GPU launcher fans out per-GPU
     # shard logs under a subdirectory and the inner loop's per-shard
     # write cadence (e.g. ~3 min between writes for i488 Pass B across
@@ -2725,6 +4354,15 @@ def poll_once(
     # Roll the high-water mark forward for the next tick (#658). The max only
     # ever grows; a current sample below it (a child exit) does not lower it.
     max_session_cpu = _roll_session_cpu_max(prev_max_session_cpu, current_session_cpu)
+    # #951: per-tick burn rate vs the PREVIOUS tick's raw sample (not the max —
+    # the delta between consecutive samples is the current burn), for the
+    # material-compute veto on the zombie override.
+    session_cpu_rate = _session_cpu_rate_cores(
+        prev_state.get("session_cpu_secs"),
+        prev_state.get("session_cpu_sample_epoch"),
+        current_session_cpu,
+        now_epoch,
+    )
 
     # True when the verdict below is `running` ONLY because the #518
     # CPU-advancing override rescued a met stall conjunction (logs stale +
@@ -2741,6 +4379,7 @@ def poll_once(
         last_mtime_ago > stall_sec
         and phase_log_mtime_ago > stall_sec
         and shard_log_mtime_ago > stall_sec
+        and output_mtime_ago > stall_sec  # NEW (#1033): fresh output = alive
         and gpu_idle
     ):
         if cpu_advancing is True:
@@ -2773,6 +4412,32 @@ def poll_once(
         prev_state=prev_state,
         pod=pod,
         cpu_override_active=cpu_override_active,
+        gpu_pids_total=_parse_probe_count(probe.get("gpu_pids_total")),
+        gpu_pids_resolvable=_parse_probe_count(probe.get("gpu_pids_resolvable")),
+        uvm_live_holders=_parse_probe_count(probe.get("nvidia_uvm_live_holders")),
+        session_cpu_rate_cores=session_cpu_rate,
+        output_mtime_ago=output_mtime_ago,
+    )
+
+    # ── #873/#1033 run-scoped state anchor (AC #6) ───────────────────────
+    # A fresh epm:run-launched (relaunch / same-issue follow-up round)
+    # re-arms BOTH #873 tripwires AND (since #1033) the GPU-idle
+    # advisory/escalation clock: the stored ETA/width dedup keys and the
+    # idle span/dedup sets belong to the PREVIOUS run, so
+    # _tripwire_run_scope clears them (_RUN_SCOPED_STATE_KEYS) before any
+    # consumer runs. Runs ABOVE the idle-advisory calls (moved here at
+    # #1033 — pre-#1033 it sat below them, so the idle tier read the
+    # UNSCOPED state and a relaunch inherited the previous run's span:
+    # #763 printed a "543 min" idle advisory on a ~17-min-old instance).
+    # ``run_age_sec`` is computed ONCE here and reused by the
+    # adaptive-interval relaunch clamp + the phase-ETA fallback below
+    # (one events.jsonl read per tick). The zombie override above and the
+    # #983 post-done guard below deliberately keep reading the RAW
+    # ``prev_state`` (zombie_streak scoping is out of #1033's scope; the
+    # post-done guard has its own natural epoch).
+    run_age_sec = _run_launched_age_sec(issue, now_epoch)
+    tripwire_state, tripwire_run_epoch = _tripwire_run_scope(
+        prev_state, run_age_sec=run_age_sec, now_epoch=now_epoch
     )
 
     # ── #518/#537 GPU-idle advisory ──────────────────────────────────────
@@ -2781,7 +4446,11 @@ def poll_once(
     # burns pod-hours silently. Track the sustained healthy-and-all-idle
     # span across ticks (state-file backed, like ssh_fail_count) and post
     # a one-per-phase, non-blocking advisory marker once it exceeds
-    # GPU_IDLE_ADVISORY_MIN minutes. Never flips ``status``.
+    # GPU_IDLE_ADVISORY_MIN minutes. Never flips ``status``. Reads the
+    # RUN-SCOPED tripwire_state (#1033) so a relaunch restarts the idle
+    # clock instead of inheriting the previous run's span — the reported
+    # idle minutes are PER-INSTANCE/PER-RUN, never cumulative across
+    # relaunches.
     gpu_idle_since_epoch, gpu_idle_advised_phases, gpu_idle_advisory_posted = (
         _maybe_post_gpu_idle_advisory(
             issue=issue,
@@ -2789,7 +4458,7 @@ def poll_once(
             status=status,
             gpu_util=gpu_util,
             current_phase=current_phase,
-            prev_state=prev_state,
+            prev_state=tripwire_state,
             now_epoch=now_epoch,
         )
     )
@@ -2799,7 +4468,8 @@ def poll_once(
     # GPU_IDLE_ESCALATION_MIN minutes in an upload/CPU-only phase fires a
     # Telegram push + a LOUD [gpu-idle-escalation] marker (never stops the
     # pod). Reads the SAME idle span the advisory just resolved
-    # (gpu_idle_since_epoch) — no second idle clock.
+    # (gpu_idle_since_epoch) — no second idle clock — and the SAME
+    # run-scoped tripwire_state (#1033).
     gpu_idle_escalated_phases, gpu_idle_escalation_posted = _maybe_escalate_gpu_idle(
         issue=issue,
         pod=pod,
@@ -2807,7 +4477,71 @@ def poll_once(
         gpu_util=gpu_util,
         current_phase=current_phase,
         idle_since_epoch=gpu_idle_since_epoch,
+        prev_state=tripwire_state,
+        now_epoch=now_epoch,
+    )
+
+    # ── #873 m-of-N GPU-width advisory ───────────────────────────────────
+    # A STABLE strict subset of GPUs idle >= GPU_WIDTH_ADVISORY_MIN minutes
+    # on a multi-GPU pod while the run is healthy (#813 idle-width / #664
+    # spend-leak class). Advisory only — never flips ``status``.
+    gpu_width_since_epoch, gpu_width_idle_set, gpu_width_advised_phases, gpu_width_posted = (
+        _maybe_post_gpu_width_advisory(
+            issue=issue,
+            pod=pod,
+            status=status,
+            gpu_util=gpu_util,
+            current_phase=current_phase,
+            prev_state=tripwire_state,
+            now_epoch=now_epoch,
+        )
+    )
+
+    # ── Under-parallelization warning (partial saturation; plan §3) ──────
+    # DISTINCT from the #873 width advisory above: < 50% of the provisioned
+    # GPUs busy for >= GPU_UNDERPARALLEL_WARNING_MIN (15m) on a multi-GPU pod
+    # points at under-parallelization (check sharding), deduped ONCE PER RUN.
+    # Reads the run-scoped tripwire_state so a relaunch re-arms it. Advisory
+    # only — never flips ``status``, never stops anything.
+    (
+        gpu_underparallel_since_epoch,
+        gpu_underparallel_warned,
+        gpu_underparallel_posted,
+    ) = _maybe_post_gpu_underparallel_warning(
+        issue=issue,
+        pod=pod,
+        status=status,
+        gpu_util=gpu_util,
+        current_phase=current_phase,
+        prev_state=tripwire_state,
+        now_epoch=now_epoch,
+    )
+
+    # ── #983 post-done phase-consistency guard ───────────────────────────
+    # Cross-tick audit of a previously-accepted done verdict: at the tick
+    # where the corroborated ``current_phase == "done"`` lands, record the
+    # matched done line; any LATER tick observing genuinely new
+    # ``[phase=...]`` lines after that anchor fires ONE loud advisory
+    # marker + Telegram push. Consumes the POST-#545-demotion
+    # ``current_phase`` (wired BELOW the demotion block, so an
+    # uncorroborated done can never arm an episode) and the pre-tripwire
+    # ``prev_state`` (its run-scope clamp is the direct ``run_age_sec``
+    # one, deliberately independent of the #873 anchor lifecycle).
+    # Advisory only — never flips ``status``, never stops anything.
+    (
+        post_done_line,
+        post_done_epoch,
+        post_done_pod,
+        post_done_posted_flag,
+        post_done_posted,
+        post_done_new_lines,
+    ) = _maybe_post_post_done_phase_advisory(
+        issue=issue,
+        pod=pod,
+        current_phase=current_phase,
+        log_tail=probe["log_tail"],
         prev_state=prev_state,
+        run_age_sec=run_age_sec,
         now_epoch=now_epoch,
     )
 
@@ -2844,7 +4578,8 @@ def poll_once(
         last_phase_change_epoch = int(float(prev_state.get("last_phase_change_epoch", "0") or 0))
     except (TypeError, ValueError):
         last_phase_change_epoch = 0
-    run_age_sec = _run_launched_age_sec(issue, now_epoch)
+    # ``run_age_sec`` was computed above at the #873 tripwire anchor (one
+    # events.jsonl read per tick); reused here for the relaunch clamp.
     # Relaunch clamp (code-review 2026-06-12): the state file persists
     # across same-issue relaunches / follow-up rounds, so a boundary
     # recorded BEFORE the current run's launch (latest epm:run-launched)
@@ -2878,6 +4613,23 @@ def poll_once(
         phase_changed_ago_sec=phase_changed_ago_sec,
     )
 
+    # ── #873 phase-ETA tripwire ──────────────────────────────────────────
+    # Elapsed wall-clock (per current phase / whole run) vs the plan §9
+    # planned_wall_h TOTAL; posts epm:compute-deviation (source: poller).
+    # Placed AFTER the relaunch clamp + phase_transitioned update so it
+    # sees the FINAL last_phase_change_epoch (D2). Advisory only — never
+    # flips ``status``, never stops anything.
+    eta_posted_keys, eta_posted, eta_budget_warned = _maybe_post_eta_deviation(
+        issue=issue,
+        pod=pod,
+        status=status,
+        current_phase=current_phase,
+        last_phase_change_epoch=last_phase_change_epoch,
+        run_age_sec=run_age_sec,
+        prev_state=tripwire_state,
+        now_epoch=now_epoch,
+    )
+
     _save_state(
         state_file,
         issue,
@@ -2904,6 +4656,16 @@ def poll_once(
             # `_parse_session_cpu` treats it consistently with the live
             # probe value.
             "session_cpu_secs": current_session_cpu,
+            # #951: VM-clock timestamp OF the session_cpu_secs sample above —
+            # the pair is written atomically together, so this epoch is the
+            # denominator anchor for the NEXT tick's burn-rate delta.
+            "session_cpu_sample_epoch": str(now_epoch),
+            # #951: this tick's per-tick burn rate (cores) vs the prior
+            # persisted sample; "unknown" when not computable (fail-safe —
+            # the material-CPU veto reads it as no-signal next tick).
+            "session_cpu_rate_cores": (
+                "unknown" if session_cpu_rate is None else f"{session_cpu_rate:.4f}"
+            ),
             # Persist the running MAXIMUM cumulative CPU observed across all
             # ticks (#658). This is the baseline the NEXT tick's
             # advancing-decision compares against — a current sample below
@@ -2916,6 +4678,32 @@ def poll_once(
             # verdict all write "0" — a one-tick transient never
             # accumulates across a healthy gap.
             "zombie_streak": str(zombie_streak),
+            # #873 m-of-N GPU-width advisory span + stable idle set +
+            # per-phase de-dup (same comma-join contract as the idle sets).
+            "gpu_width_since_epoch": str(gpu_width_since_epoch),
+            "gpu_width_idle_set": ",".join(str(i) for i in gpu_width_idle_set),
+            "gpu_width_advised_phases": ",".join(sorted(gpu_width_advised_phases)),
+            # plan §3 under-parallelization warning: span + per-RUN warned flag
+            # (run-scoped via _TRIPWIRE_STATE_KEYS — re-armed on a fresh run).
+            "gpu_underparallel_since_epoch": str(gpu_underparallel_since_epoch),
+            "gpu_underparallel_warned": "1" if gpu_underparallel_warned else "0",
+            # #873 phase-ETA tripwire dedup keys + the one-shot missing-
+            # budget warn flag. Phase names match PHASE_RE ([a-z0-9_]+) and
+            # __run_total__ shares the charset, so the comma join is safe.
+            "eta_deviation_posted_keys": ",".join(sorted(eta_posted_keys)),
+            "eta_budget_warned": "1" if eta_budget_warned else "0",
+            # #873 run-scope anchor: the epm:run-launched epoch the tripwire
+            # dedup keys above belong to (AC #6). A fresh launch clears them.
+            "tripwire_run_epoch": str(tripwire_run_epoch),
+            # #983 post-done phase-consistency guard: the matched done
+            # line's identity (truncated text), when + on which pod it was
+            # accepted, and the once-per-episode dedup flag. Voided only by
+            # the direct run-scope clamp / a pod change (NOT via
+            # _TRIPWIRE_STATE_KEYS — the guard has its own natural epoch).
+            "post_done_line": post_done_line,
+            "post_done_epoch": str(post_done_epoch),
+            "post_done_pod": post_done_pod,
+            "post_done_advisory_posted": "1" if post_done_posted_flag else "0",
         },
     )
 
@@ -2948,11 +4736,16 @@ def poll_once(
         gpu_util=gpu_util,
         gpu_idle_advisory_posted=gpu_idle_advisory_posted,
         gpu_idle_escalation_posted=gpu_idle_escalation_posted,
+        gpu_width_advisory_posted=gpu_width_posted,
+        gpu_underparallel_warning_posted=gpu_underparallel_posted,
+        eta_deviation_posted=eta_posted,
         session_cpu_secs=current_session_cpu,
         cpu_advancing=cpu_advancing,
         next_interval=next_interval,
         stall_reason=stall_reason,
         crash_signature=crash_signature,
+        post_done_phase_advisory_posted=post_done_posted,
+        post_done_phase_lines=post_done_new_lines,
     )
 
 
@@ -3022,10 +4815,16 @@ def main(argv: list[str] | None = None) -> int:
                 "gpu_util": result.gpu_util,
                 "gpu_idle_advisory_posted": result.gpu_idle_advisory_posted,
                 "gpu_idle_escalation_posted": result.gpu_idle_escalation_posted,
+                "gpu_width_advisory_posted": result.gpu_width_advisory_posted,
+                "gpu_underparallel_warning_posted": result.gpu_underparallel_warning_posted,
+                "eta_deviation_posted": result.eta_deviation_posted,
                 "session_cpu_secs": result.session_cpu_secs,
                 "cpu_advancing": result.cpu_advancing,
                 "next_interval": result.next_interval,
                 "stall_reason": result.stall_reason,
+                # #983 post-done phase-consistency guard surfaces.
+                "post_done_phase_advisory_posted": result.post_done_phase_advisory_posted,
+                "post_done_phase_lines": list(result.post_done_phase_lines),
             }
         )
     )

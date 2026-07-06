@@ -142,7 +142,10 @@ failure_class: infra` per the launch-time-failure table below.
 ### Content hygiene for harmful-content datasets (EM, refusal-bait, harmful-advice)
 
 Some runs legitimately train/eval on harmful-content corpora (EM
-insecure-code / bad-medical-advice mixes, refusal pools). Raw rows or
+insecure-code / bad-medical-advice mixes, refusal pools) and consume
+safety-benchmark question banks
+(`src/explore_persona_space/artifacts/query_banks/*.json`; #866). Raw
+rows, bank items, or
 generations from them in your context can trigger terminal API
 usage-policy refusals that kill your final turn and make the transcript
 unresumable (incident: task #537, 2026-06-10). For such runs:
@@ -157,6 +160,10 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
 - In `epm:run-launched` / `epm:failure` notes, describe such data by
   path + row count, not content. Benign corpora (marker, fact,
   sycophancy, WildChat, personas) are unaffected.
+
+Bank files get the same treatment plus: verify via `sha256sum` / `jq
+length` / index ranges; reference items by filename + index — never
+print item text.
 
 When you post an `epm:failure` (`infra`-class crash), include an
 `assert_tag:` line — the named assertion tag (`[<tag>-assert]`),
@@ -469,8 +476,13 @@ authoritative recipe is agent memory
      HF mirror for the same artifact (parent-task HF data repo
      subdirectory, named in plan §Reproducibility), AUTO-STAGE it via
      `huggingface_hub.hf_hub_download(repo_id=..., filename=...,
-     local_dir=<parent_of_default>)` (or `snapshot_download` for a
-     directory) on the pod, then re-stat to confirm it now exists; (b)
+     local_dir=<parent_of_default>)` (or, for a directory, scoped
+     `list_repo_tree(path_in_repo=<prefix>, recursive=True)` + per-file
+     `hf_hub_download` in a ≤6-worker pool — NEVER `snapshot_download`
+     against the ~1M-file data repo (or any similarly huge repo): it
+     enumerates the full tree before `allow_patterns`;
+     `.claude/rules/gotchas.md`) on the pod, then re-stat to confirm it
+     now exists; (b)
      if no HF mirror is cited, post `epm:failure v1` with
      ```
      failure_class: infra
@@ -813,10 +825,14 @@ authoritative recipe is agent memory
    (re)launch:
    - Overwrite (not append) the pidfile: the launcher's
      `echo $$ > /workspace/logs/issue-<N>.pid` already truncates, so
-     re-running the launcher is sufficient. If you must relaunch without
-     re-running the launcher (rare), explicitly
-     `echo <CHILD_PID> > /workspace/logs/issue-<N>.pid` on the pod
-     before posting the marker.
+     re-running the launcher is sufficient (the launcher-internal
+     `echo $$ >` pre-exec write is the accepted carve-out of the
+     generic contract). If you must relaunch without re-running the
+     launcher (rare), rewrite ATOMICALLY on the pod before posting
+     the marker:
+     `printf '%s\n' "<CHILD_PID>" > /workspace/logs/issue-<N>.pid.tmp && mv /workspace/logs/issue-<N>.pid.tmp /workspace/logs/issue-<N>.pid`
+     (tmp+rename — no window where the poller reads a truncated/empty
+     file).
    - The `epm:run-launched` marker MUST carry BOTH `pid=<live child>`
      AND `pid_file=/workspace/logs/issue-<N>.pid`. Omitting `pid_file=`
      on a re-launch (as happened in #451) breaks the poller's probe.
@@ -831,6 +847,11 @@ authoritative recipe is agent memory
      vLLM orphans; THIS bullet covers the live CPU-phase / non-vLLM
      prior the GPU probe cannot see. A PID surviving SIGKILL: report,
      never relaunch over it.
+
+   (The generic contract binding ALL launcher authors — including
+   orchestrator / watch-session relaunches outside this agent — is
+   `.claude/rules/pod-side-reporting.md` § Pid-file launch contract;
+   this section is the agent-specific recipe.)
 
 2. **Confirm the launch survived disconnect — the probe MUST be a
    SEPARATE SSH invocation, issued AFTER the launching session has
@@ -881,19 +902,25 @@ authoritative recipe is agent memory
        command="cat /workspace/logs/issue-<N>.pid")`
      must echo the same number you post in `pid=`. If it shows a
      different (stale) PID, the launcher did not run its pidfile write —
-     overwrite it (`echo <CHILD_PID> > /workspace/logs/issue-<N>.pid`)
-     before posting. (poll_pipeline.py now also self-corrects by
+     rewrite it ATOMICALLY on the pod
+     (`printf '%s\n' "<CHILD_PID>" > /workspace/logs/issue-<N>.pid.tmp && mv /workspace/logs/issue-<N>.pid.tmp /workspace/logs/issue-<N>.pid`
+     — this is a launcher-less correction, so the tmp+rename form of
+     the § Pid-file launch contract applies, not the launcher-internal
+     `echo $$ >` carve-out) before posting. (poll_pipeline.py now also
+     self-corrects by
      cross-checking the marker `pid=`, but the pidfile is the primary
      probe; keep it correct.)
    - **Write the pidfile ON THE POD — never on the local VM.**
      `poll_pipeline.py` evaluates `[ -f <pid_file> ]` inside its remote
      SSH heredoc, so the path you post as `pid_file=` must exist
      pod-side; write it in the launch itself (the step-1 launcher's
-     `echo $$ > /workspace/logs/issue-<N>.pid`, or for a rare
-     launcher-less relaunch `setsid nohup ... < /dev/null & echo $! >
-     /workspace/logs/issue-<N>.pid` in the same SSH command — even the
-     launcher-less shape keeps the full detachment trio: `setsid` +
-     `nohup` + stdin from `/dev/null`, never bare `nohup ... &`). A pidfile
+     `echo $$ > /workspace/logs/issue-<N>.pid` — the launcher-internal
+     pre-exec carve-out — or for a rare launcher-less relaunch
+     `setsid nohup ... < /dev/null & printf '%s\n' "$!" > /workspace/logs/issue-<N>.pid.tmp && mv /workspace/logs/issue-<N>.pid.tmp /workspace/logs/issue-<N>.pid`
+     in the same SSH command (atomic tmp+rename per the § Pid-file
+     launch contract) — even the launcher-less shape keeps the full
+     detachment trio: `setsid` + `nohup` + stdin from `/dev/null`,
+     never bare `nohup ... &`). A pidfile
      written only on the local VM silently reads `PID_ALIVE=0` every
      tick and the poller falls back to the pid from the latest
      `epm:run-launched` marker — if that pid is stale, a healthy run is

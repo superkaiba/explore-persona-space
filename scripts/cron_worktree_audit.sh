@@ -21,6 +21,9 @@
 # runtime-noise dirt (agent memories, pods.conf, pods_ephemeral.json) to
 # .claude/cache/worktree-rescue-<date>/ BEFORE removal. Dry-run only
 # classifies — it never kills or rescues.
+# --apply additionally reaps the .venv of kept worktrees idle >=7d (2d under
+# pressure) with no live holder (#912); regenerable via `uv run`;
+# EPM_WORKTREE_VENV_REAP=0 disables.
 #
 # Output lives at logs/worktree_audit/YYYY-MM-DD.log (one file per day).
 

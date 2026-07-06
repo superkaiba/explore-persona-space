@@ -1,0 +1,522 @@
+{
+  "commit": "b540771d36",
+  "created": "2026-07-03T01:36:28Z",
+  "figsize": [
+    15.0,
+    4.6
+  ],
+  "points": [
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": 0.3180802279845941,
+      "error": 0.14877144924350744,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "questions averaged per persona group": 2.0,
+      "Pearson r vs mean judge score": 0.4480817419090104,
+      "error": 0.1465129599856951,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "questions averaged per persona group": 5.0,
+      "Pearson r vs mean judge score": 0.547223587353626,
+      "error": 0.041191884455400674,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "questions averaged per persona group": 10.0,
+      "Pearson r vs mean judge score": 0.6120583364430767,
+      "error": 0.02952813097268392,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "questions averaged per persona group": 20.0,
+      "Pearson r vs mean judge score": 0.6388119350981,
+      "error": 0.03279097263724906,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "questions averaged per persona group": 40.0,
+      "Pearson r vs mean judge score": 0.6589215746677745,
+      "error": 0.0,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": 0.3180802279845941,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "questions averaged per persona group": 2.0,
+      "Pearson r vs mean judge score": 0.4480817419090104,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "questions averaged per persona group": 5.0,
+      "Pearson r vs mean judge score": 0.547223587353626,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "questions averaged per persona group": 10.0,
+      "Pearson r vs mean judge score": 0.6120583364430767,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "questions averaged per persona group": 20.0,
+      "Pearson r vs mean judge score": 0.6388119350981,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "questions averaged per persona group": 40.0,
+      "Pearson r vs mean judge score": 0.6589215746677745,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": 0.16930877874108669,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "questions averaged per persona group": 2.0,
+      "Pearson r vs mean judge score": 0.3015687819233153,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "questions averaged per persona group": 5.0,
+      "Pearson r vs mean judge score": 0.5060317028982253,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "questions averaged per persona group": 10.0,
+      "Pearson r vs mean judge score": 0.5825302054703928,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "questions averaged per persona group": 20.0,
+      "Pearson r vs mean judge score": 0.6060209624608509,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "questions averaged per persona group": 40.0,
+      "Pearson r vs mean judge score": 0.6589215746677745,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": 0.46685167722810156,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "questions averaged per persona group": 2.0,
+      "Pearson r vs mean judge score": 0.5945947018947055,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "questions averaged per persona group": 5.0,
+      "Pearson r vs mean judge score": 0.5884154718090266,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "questions averaged per persona group": 10.0,
+      "Pearson r vs mean judge score": 0.6415864674157606,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "questions averaged per persona group": 20.0,
+      "Pearson r vs mean judge score": 0.671602907735349,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "questions averaged per persona group": 40.0,
+      "Pearson r vs mean judge score": 0.6589215746677745,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "questions averaged per persona group": 0.0,
+      "Pearson r vs mean judge score": 0.34097441358675884,
+      "series": "per-context h readout baseline (r=0.34)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": 0.34097441358675884,
+      "series": "per-context h readout baseline (r=0.34)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": 0.5825005699692172,
+      "error": 0.06827256117278213,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "questions averaged per persona group": 2.0,
+      "Pearson r vs mean judge score": 0.7947753258554149,
+      "error": 0.032006360651728905,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "questions averaged per persona group": 5.0,
+      "Pearson r vs mean judge score": 0.822486991601391,
+      "error": 0.037272859468560515,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "questions averaged per persona group": 10.0,
+      "Pearson r vs mean judge score": 0.86438777443045,
+      "error": 0.015302572134899717,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "questions averaged per persona group": 20.0,
+      "Pearson r vs mean judge score": 0.8624340659595587,
+      "error": 0.01457648195973793,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "questions averaged per persona group": 40.0,
+      "Pearson r vs mean judge score": 0.8929955169999743,
+      "error": 0.0,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": 0.5825005699692172,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "questions averaged per persona group": 2.0,
+      "Pearson r vs mean judge score": 0.7947753258554149,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "questions averaged per persona group": 5.0,
+      "Pearson r vs mean judge score": 0.822486991601391,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "questions averaged per persona group": 10.0,
+      "Pearson r vs mean judge score": 0.86438777443045,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "questions averaged per persona group": 20.0,
+      "Pearson r vs mean judge score": 0.8624340659595587,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "questions averaged per persona group": 40.0,
+      "Pearson r vs mean judge score": 0.8929955169999743,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": 0.514228008796435,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "questions averaged per persona group": 2.0,
+      "Pearson r vs mean judge score": 0.762768965203686,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "questions averaged per persona group": 5.0,
+      "Pearson r vs mean judge score": 0.7852141321328305,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "questions averaged per persona group": 10.0,
+      "Pearson r vs mean judge score": 0.8490852022955503,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "questions averaged per persona group": 20.0,
+      "Pearson r vs mean judge score": 0.8478575839998208,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "questions averaged per persona group": 40.0,
+      "Pearson r vs mean judge score": 0.8929955169999743,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": 0.6507731311419993,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "questions averaged per persona group": 2.0,
+      "Pearson r vs mean judge score": 0.8267816865071438,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "questions averaged per persona group": 5.0,
+      "Pearson r vs mean judge score": 0.8597598510699516,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "questions averaged per persona group": 10.0,
+      "Pearson r vs mean judge score": 0.8796903465653497,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "questions averaged per persona group": 20.0,
+      "Pearson r vs mean judge score": 0.8770105479192967,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "questions averaged per persona group": 40.0,
+      "Pearson r vs mean judge score": 0.8929955169999743,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "questions averaged per persona group": 0.0,
+      "Pearson r vs mean judge score": 0.6302520294047304,
+      "series": "per-context h readout baseline (r=0.63)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": 0.6302520294047304,
+      "series": "per-context h readout baseline (r=0.63)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": -0.008717794729772474,
+      "error": 0.08797470511185579,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "questions averaged per persona group": 2.0,
+      "Pearson r vs mean judge score": 0.12033817549027623,
+      "error": 0.10397851184403409,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "questions averaged per persona group": 5.0,
+      "Pearson r vs mean judge score": 0.13895438590785272,
+      "error": 0.07623779930443911,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "questions averaged per persona group": 10.0,
+      "Pearson r vs mean judge score": 0.24045754480156098,
+      "error": 0.08317945626211634,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "questions averaged per persona group": 20.0,
+      "Pearson r vs mean judge score": 0.33772330710942067,
+      "error": 0.060786562677703326,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "questions averaged per persona group": 40.0,
+      "Pearson r vs mean judge score": 0.5329312146656119,
+      "error": 0.0,
+      "series": "persona-group h readout (LOGO, n=60 groups)",
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": -0.008717794729772474,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "questions averaged per persona group": 2.0,
+      "Pearson r vs mean judge score": 0.12033817549027623,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "questions averaged per persona group": 5.0,
+      "Pearson r vs mean judge score": 0.13895438590785272,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "questions averaged per persona group": 10.0,
+      "Pearson r vs mean judge score": 0.24045754480156098,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "questions averaged per persona group": 20.0,
+      "Pearson r vs mean judge score": 0.33772330710942067,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "questions averaged per persona group": 40.0,
+      "Pearson r vs mean judge score": 0.5329312146656119,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": -0.09669249984162827,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per persona group": 2.0,
+      "Pearson r vs mean judge score": 0.016359663646242154,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per persona group": 5.0,
+      "Pearson r vs mean judge score": 0.06271658660341363,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per persona group": 10.0,
+      "Pearson r vs mean judge score": 0.15727808853944464,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per persona group": 20.0,
+      "Pearson r vs mean judge score": 0.27693674443171734,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per persona group": 40.0,
+      "Pearson r vs mean judge score": 0.5329312146656119,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": 0.07925691038208331,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per persona group": 2.0,
+      "Pearson r vs mean judge score": 0.22431668733431032,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per persona group": 5.0,
+      "Pearson r vs mean judge score": 0.21519218521229183,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per persona group": 10.0,
+      "Pearson r vs mean judge score": 0.3236370010636773,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per persona group": 20.0,
+      "Pearson r vs mean judge score": 0.398509869787124,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per persona group": 40.0,
+      "Pearson r vs mean judge score": 0.5329312146656119,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "questions averaged per persona group": 0.0,
+      "Pearson r vs mean judge score": 0.08628114800722105,
+      "series": "per-context h readout baseline (r=0.09)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "questions averaged per persona group": 1.0,
+      "Pearson r vs mean judge score": 0.08628114800722105,
+      "series": "per-context h readout baseline (r=0.09)",
+      "_kind": "line",
+      "_group": 14
+    }
+  ],
+  "n_series": 15,
+  "total_points": 78
+}

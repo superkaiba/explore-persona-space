@@ -1,0 +1,2336 @@
+{
+  "commit": "71fb3e6c30",
+  "created": "2026-07-03T22:17:29Z",
+  "figsize": [
+    11.0,
+    7.2
+  ],
+  "points": [
+    {
+      "layer": 1.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.06792843602349,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 3.183143605150142,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 5.576199792461379,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 9.879918858158238,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 14.46852881096731,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 16.29264502646888,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 20.866465684347013,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 27.389750507469657,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 24.594178070631365,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 26.37181804185815,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 27.827403119913864,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 36.632281109891146,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 44.48288185482912,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 38.682786153297386,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 37.77312926403612,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 39.39249725315729,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 39.62534767306755,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 40.48823441522547,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 45.951671428966506,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 54.68142105805616,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 60.46411214596032,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 70.93840009118807,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 86.35581299498337,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 96.18579608569078,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 115.64885003527182,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 134.62324388699358,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 187.75862926301892,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.107952587748457,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 3.135604766514536,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 5.479690643058991,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 10.028273149728026,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 14.039179179770287,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 15.987484220108122,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 20.372807900084876,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 27.482584339208785,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 24.25027103926918,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 26.05003269933347,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 27.59164120078956,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 35.69346844116296,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 42.02828624275485,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 38.457954146701354,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 38.54003905186407,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 39.95008224260006,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 40.59136114133815,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 41.52125013688247,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 47.70464975526696,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 58.771214600067125,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 67.2694984883302,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 81.38693558653264,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 95.14079918257056,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 108.04163683578054,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 131.91510008653944,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 158.82255551751874,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 221.25023873460853,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.08870747841,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 3.166598141952946,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 5.540348338099409,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 10.01520727731921,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 14.295716451620473,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 16.11215528425818,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 20.757333817539966,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 27.770444036099374,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 24.441390565465674,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 26.1958280837525,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 27.78834967796645,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 36.2355925367566,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 43.29687622957002,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 38.424166186620134,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 37.88628240575375,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 39.249639970814286,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 39.529613743839306,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 40.54964925641117,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 45.967314245138915,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 55.718550445019865,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 61.771962392220274,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 72.70970698243033,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 86.01355066666031,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 96.89230793980448,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 117.78585710347045,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 139.05463728171893,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 191.97829373503856,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 3.9821879978843286,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 4.18460044484406,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 6.5667577851418155,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 15.106229275844221,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 18.78451051027762,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 21.027882738085555,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 25.231409223730203,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 31.58521028301763,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 35.3867546771797,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 35.06424845365965,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 34.513846351614376,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 36.474802977844995,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 40.34143763240639,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 38.02681380796807,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 37.96475956791977,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 39.06390924924264,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 40.97588508905004,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 45.58300238721437,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 52.64933181845906,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 66.21818236520174,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 77.79003567937244,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 90.96232200119877,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 104.47328850772575,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 117.60592590924486,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 141.622518963809,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 172.74086543282897,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 212.60135742846785,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 4.28302335385726,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 4.660008790329599,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 7.05703221041456,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 17.21211566228733,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 21.32507689170432,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 23.199628414282998,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 27.535840006957987,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 33.42521495983644,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 36.93434828265458,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 36.256106309361236,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 34.444399756617244,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 35.14557247540456,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 40.813525621309125,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 40.50918107664141,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 40.98783051851092,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 42.618035462361384,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 45.191726296430915,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 47.948244256060754,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 56.96340215571087,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 75.31564780803708,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 91.26241926199029,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 111.19959982234029,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 130.59856063713352,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 149.9376651097702,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 183.91322782152776,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 238.67293397247278,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 254.57103883736647,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 4.137916902749815,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 2.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 4.435662724887039,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 3.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 6.7859991606250425,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 4.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 16.200134404762643,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 5.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 19.793588833160445,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 6.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 22.013820201556264,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 7.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 26.17533263243496,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 8.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 32.109962643042536,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 9.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 35.80156075944104,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 10.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 35.38979601088792,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 11.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 34.00698689280064,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 12.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 35.14651076513333,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 13.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 39.85305205034568,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 38.23237566115718,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 15.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 38.53831924520203,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 16.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 39.80089793425607,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 17.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 41.77949940994711,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 18.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 45.27396284891138,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 52.80399398100985,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 20.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 68.2934421078705,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 21.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 81.1988344942272,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 22.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 96.43215275234688,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 23.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 111.83875017540372,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 24.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 126.11027749714196,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 25.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 153.0668973966657,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 192.86862449711862,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 27.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 222.6718549780289,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.6714273603152638,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 2.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.118337994340168,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 3.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.9219020572277106,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 4.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.6948863610814513,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 5.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 4.8656595007384436,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 6.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 5.209987291428396,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 7.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 6.555407930118404,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 8.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 7.960885750900001,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 9.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 10.783096813016856,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 10.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 14.414533816909607,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 11.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 14.50193877538036,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 12.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 17.421538694790357,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 13.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 24.45505899288606,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 27.890365410130258,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 15.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 28.644026043552174,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 16.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 29.044590007450438,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 17.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 30.84642424641034,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 18.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 33.156902544830224,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 19.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 36.93264795314648,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 20.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 45.85197193457941,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 21.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 50.860578880997465,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 22.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 59.791553793166784,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 23.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 70.7678969708366,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 24.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 79.23788031987797,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 25.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 93.90266432139356,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 26.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 107.5785024270314,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 27.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 160.85561655147157,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 1.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.7311481042080146,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 2.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.2170711931458356,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 3.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.0106248943694744,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 4.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.9014708646260985,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 5.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 5.233770275284382,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 6.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 5.657589714056234,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 7.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 7.47018731015018,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 8.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 9.40876861507663,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 9.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 14.682097535360928,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 10.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 19.496238075301484,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 11.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 20.513415536075293,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 12.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 22.255886528160275,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 13.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 29.216620070638378,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 31.354738033346628,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 15.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 32.361644603011186,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 16.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 33.49776157706609,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 17.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 34.92704650830591,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 18.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 38.46073873779724,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 19.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 43.43991850882878,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 20.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 54.07335358598437,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 21.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 64.93660603247787,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 22.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 78.62964772641922,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 23.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 93.96356447811341,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 24.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 108.67312941898605,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 25.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 125.96847843725311,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 26.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 145.25599940374684,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 27.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 210.74290920246344,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 1.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.7021080723995714,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 2.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.1644528523889885,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 3.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.9600933323072398,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 4.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.7397193564415954,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 5.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 4.989998736498849,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 6.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 5.316995072849963,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 7.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 6.802381354786084,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 8.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 8.33416974816604,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 9.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 12.146466139077337,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 10.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 16.03351487374197,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 11.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 16.36674099570571,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 12.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 18.72639989079839,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 13.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 26.049720971269807,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 28.17864667336236,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 15.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 29.095306101331282,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 16.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 29.331358641755784,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 17.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 31.261894838516753,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 18.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 33.91495389148249,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 19.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 37.161921632884244,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 20.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 45.69495399056794,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 21.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 52.26649372591113,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 22.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 61.8218411854718,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 23.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 73.75498047974361,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 24.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 83.17676048168278,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 25.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 96.57780502924344,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 26.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 110.49359286929229,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 27.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 170.66179495467537,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "layer": 1.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.10938244185716184,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 2.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.1559546193883202,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 3.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.21816345107959617,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 4.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.3522049295912948,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 5.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.6383299267905327,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 6.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.6578587303821177,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 7.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.6877940331342962,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 8.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.8040214883626962,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 9.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.970901489725283,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 10.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.0550118280123657,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 11.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.048604379976796,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 12.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.1074758230233095,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 13.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.5874368106177585,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.6181573077295393,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 15.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.6750977292444305,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 16.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.6864229662892565,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 17.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.7960390190110642,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 18.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.0658076256287408,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 19.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.3501608624410357,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 20.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.999820641698503,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 21.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 3.4092676427319533,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 22.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 3.8912457886833587,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 23.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 4.592193339610999,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 24.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 5.33695295788379,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 25.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 6.6598998019394635,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 26.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 8.30597511065536,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 27.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 98.95415455549428,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "layer": 1.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.11159479642212888,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 2.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.16280468063056644,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 3.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.233667981202885,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 4.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.4137545418050601,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 5.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.6875224423183657,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 6.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.7109942509573429,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 7.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.7897118876102542,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 8.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.9740360118872464,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 9.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.176213130734153,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 10.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.2971468712549288,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 11.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.375304198032881,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 12.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.4617550054204922,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 13.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.0208017861135854,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.075260349411235,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 15.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.176221016695871,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 16.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.2535569772071975,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 17.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.4265014997638064,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 18.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.683380019865406,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 19.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 3.131374296015957,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 20.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 3.785650312515041,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 21.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 4.176970599985272,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 22.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 4.829523830089732,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 23.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 5.46086105986371,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 24.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 6.300862117967055,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 25.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 7.832646585385625,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 26.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 9.7364782166308,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 27.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 115.53508426555317,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "layer": 1.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.10960372276808344,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 2.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.1579224240124571,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 3.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.2232843412303742,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 4.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.37846047018509166,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 5.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.6593711700812668,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 6.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.6762726849940046,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 7.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.7352932170911022,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 8.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.873613679902226,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 9.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.0578002919377343,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 10.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.1602456051816947,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 11.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.183195258037752,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 12.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.254854741162601,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 13.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.7917726359850683,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.8056937743161703,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 15.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.881619266454324,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 16.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.9227982801952155,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 17.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.079414845403952,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 18.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.3375596013840934,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 19.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 2.660429237441587,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 20.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 3.280661134655999,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 21.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 3.671663513650289,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 22.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 4.229250625162296,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 23.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 4.84799167541375,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 24.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 5.597531503540161,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 25.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 6.959593408969726,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 26.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 8.796414262511945,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 27.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 105.26545315599783,
+      "series": "mixed pool",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 0.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "layer": 14.0,
+      "median \u2016\u0394c_C\u2016 (context-representation drift)": 1.0,
+      "series": "frozen layer 14",
+      "_kind": "line",
+      "_group": 15
+    }
+  ],
+  "n_series": 16,
+  "total_points": 332
+}

@@ -5,6 +5,12 @@ metadata:
   type: feedback
 ---
 
+**SUPERSEDED for the huge data repo (#833):** on the ~1M-file data repo the
+`list_repo_files` replacement below ITSELF times out — see
+`feedback_hf_snapshot_download_full_tree_enumeration.md` (scoped
+`list_repo_tree(path_in_repo=...)`). The recipe below remains valid for the
+~14k-file model repo.
+
 `snapshot_download(repo_id=..., allow_patterns="foo/*")` decides what to fetch from `repo_info.siblings`, which truncates around ~7,900 files on large repos. A target prefix past the truncation matches nothing: `snapshot_download` exits successfully with an empty directory, and the failure surfaces later as a confusing post-condition error ("expected adapter_config.json — got []").
 
 **Why:** twice on `superkaiba1/explore-persona-space` — task #375 round-5 (2026-05-21: 14,439 files via `list_repo_files`, siblings truncated at 7,901; every `download_adapter` returned empty) and task #399 round-6 (2026-05-27: `Fetching 0 files`, misdiagnosed as "checkpoint not present, re-train" — see [[eval-script-silent-not-present-misdiagnosis]]).

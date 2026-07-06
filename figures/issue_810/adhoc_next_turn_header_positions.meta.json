@@ -1,0 +1,57 @@
+{
+  "figure": "/workspace/eps/figures/issue_810/adhoc_next_turn_header_positions.png",
+  "positions_order": [
+    "im_end",
+    "turn_nl",
+    "next_imstart",
+    "next_user",
+    "next_user_nl"
+  ],
+  "reference_layer_L18": 18,
+  "best_layer_skill_table": {
+    "im_end": {
+      "best_layer": 16,
+      "best_layer_skill": 0.6635586030351781,
+      "skill_at_L18": 0.6383935126836455,
+      "var_trace_L18": 329.7930603027344,
+      "participation_ratio_L18": 4.950166702270508,
+      "n_covered": 50
+    },
+    "turn_nl": {
+      "best_layer": 15,
+      "best_layer_skill": 0.734742143332972,
+      "skill_at_L18": 0.7111535205067068,
+      "var_trace_L18": 341.6893310546875,
+      "participation_ratio_L18": 4.567477703094482,
+      "n_covered": 50
+    },
+    "next_imstart": {
+      "best_layer": 8,
+      "best_layer_skill": 0.7313413237193954,
+      "skill_at_L18": 0.5696960091516527,
+      "var_trace_L18": 315.1506652832031,
+      "participation_ratio_L18": 5.174650192260742,
+      "n_covered": 50
+    },
+    "next_user": {
+      "best_layer": 8,
+      "best_layer_skill": 0.7563605511372117,
+      "skill_at_L18": 0.7117160782262992,
+      "var_trace_L18": 369.49395751953125,
+      "participation_ratio_L18": 3.906670331954956,
+      "n_covered": 50
+    },
+    "next_user_nl": {
+      "best_layer": 13,
+      "best_layer_skill": 0.7276236300756644,
+      "skill_at_L18": 0.7201872859105656,
+      "var_trace_L18": 261.2960510253906,
+      "participation_ratio_L18": 4.498166084289551,
+      "n_covered": 50
+    }
+  },
+  "code_commit": "28134912c4398c58ebfe8212f774c50066e57382",
+  "code_branch": "issue-810",
+  "n_contexts": 50,
+  "dv": "reconstruction skill-over-mean R^2 (LOCO ridge, PCA-48); c_C=#594 last-input-token"
+}

@@ -1,0 +1,103 @@
+{
+ "dv": "two-method conjunction read-out statistic per (combo x behavior)",
+ "construction": "max over summaries of min over the two methods of best-over-layers signed rho_graded; null inherits the identical selection per draw (1000 perms, seed 658)",
+ "registered_reads": [
+  {
+   "combo": "readout_sg1_ebetley",
+   "behavior": "sycophancy",
+   "observed_conjunction_rho": 0.35346476234145474,
+   "argmax_summary": "head_5",
+   "null_band_97p5": 0.5213517406962784,
+   "empirical_p": 0.994,
+   "n_perms": 1000,
+   "clears_band": false
+  },
+  {
+   "combo": "readout_sg1_ebetley",
+   "behavior": "refusal",
+   "observed_conjunction_rho": 0.39207683073229294,
+   "argmax_summary": "im_end",
+   "null_band_97p5": 0.5339807923169267,
+   "empirical_p": 0.914,
+   "n_perms": 1000,
+   "clears_band": false
+  },
+  {
+   "combo": "readout_sg1_eg1",
+   "behavior": "sycophancy",
+   "observed_conjunction_rho": 0.2693397358943577,
+   "argmax_summary": "im_end",
+   "null_band_97p5": 0.5343817527010803,
+   "empirical_p": 1.0,
+   "n_perms": 1000,
+   "clears_band": false
+  },
+  {
+   "combo": "readout_sg1_eg1",
+   "behavior": "refusal",
+   "observed_conjunction_rho": 0.3914045618247299,
+   "argmax_summary": "im_end",
+   "null_band_97p5": 0.5344321728691477,
+   "empirical_p": 0.886,
+   "n_perms": 1000,
+   "clears_band": false
+  },
+  {
+   "combo": "readout_sg1_eg1",
+   "behavior": "harmful_compliance",
+   "observed_conjunction_rho": 0.6454261704681872,
+   "argmax_summary": "im_end",
+   "null_band_97p5": 0.5391284513805522,
+   "empirical_p": 0.0,
+   "n_perms": 1000,
+   "clears_band": true
+  },
+  {
+   "combo": "readout_sbetley_eg1",
+   "behavior": "sycophancy",
+   "observed_conjunction_rho": 0.2920048019207683,
+   "argmax_summary": "tail_16",
+   "null_band_97p5": 0.5352244897959184,
+   "empirical_p": 1.0,
+   "n_perms": 1000,
+   "clears_band": false
+  },
+  {
+   "combo": "readout_sbetley_eg1",
+   "behavior": "refusal",
+   "observed_conjunction_rho": 0.36950780312124853,
+   "argmax_summary": "im_end",
+   "null_band_97p5": 0.5351812725090036,
+   "empirical_p": 0.98,
+   "n_perms": 1000,
+   "clears_band": false
+  },
+  {
+   "combo": "readout_sbetley_eg1",
+   "behavior": "harmful_compliance",
+   "observed_conjunction_rho": 0.6943097238895558,
+   "argmax_summary": "tail_13",
+   "null_band_97p5": 0.5423889555822329,
+   "empirical_p": 0.0,
+   "n_perms": 1000,
+   "clears_band": true
+  }
+ ],
+ "e0_stability": {
+  "sycophancy": {
+   "n": 50,
+   "rho": 0.7325582443575108,
+   "role": "side-read"
+  },
+  "refusal": {
+   "n": 50,
+   "rho": 0.9175030012004801,
+   "role": "side-read"
+  },
+  "harmful_compliance": {
+   "n": 50,
+   "rho": -0.33128451380552215,
+   "role": "contamination diagnostic ONLY (parent target quarantined)"
+  }
+ }
+}

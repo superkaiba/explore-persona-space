@@ -1,0 +1,96 @@
+{
+  "commit": "0e64a49a3d",
+  "created": "2026-07-04T10:41:36Z",
+  "figsize": [
+    8.5,
+    4.2
+  ],
+  "points": [
+    {
+      "x": 0.0,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 26)": 0.9152236812196581,
+      "error": 0.054942970795555435,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.0,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 26)": 0.8479777139441846,
+      "error": 0.047912450201407664,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 26)": 0.6418948934214079,
+      "error": 0.06569405831411412,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 26)": 0.8507279076814469,
+      "error": 0.05783846542442217,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.2,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 26)": 0.486815498015422,
+      "error": 0.04542532279609057,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 6.2,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 26)": 0.31253222839519523,
+      "error": 0.032083421307261495,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 7.2,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 26)": 1.3045644132448697,
+      "error": 0.09442275023819358,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 8.2,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 26)": 0.22049391353733672,
+      "error": 0.050480264567816,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 10.4,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 26)": 0.4108426798008802,
+      "error": 0.04521674869253195,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 11.4,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 26)": 0.38833272233121585,
+      "error": 0.0390456675931036,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 12.4,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 26)": 0.5126352148271629,
+      "error": 0.04436153577776519,
+      "_kind": "bar",
+      "_group": 10
+    },
+    {
+      "x": 13.4,
+      "paired ridge R\u00b2 delta, assistant \u2212 user (layer 26)": 0.4711703174122335,
+      "error": 0.05525810682341706,
+      "_kind": "bar",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 12
+}

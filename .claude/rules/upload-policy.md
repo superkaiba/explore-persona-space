@@ -29,13 +29,90 @@ prelude (`backends/gcp.py`), and the SLURM sbatch env block (`backends/slurm.py`
 — the load-bearing placement, because `huggingface_hub.constants` freezes
 `HF_HUB_ENABLE_HF_TRANSFER` at import time — plus an `orchestrate/env.py`
 `setdefault` belt-and-suspenders for local-dev. Override per-launch with `=0` /
-`HF_XET_DISABLE=1` (the #515 xet-CDN DOWNLOAD workaround): every default is a
-`setdefault` / `${VAR:-1}` so an explicit launch-time `=0` always wins (the GCP
-/ SLURM passthrough allowlists forward a dispatch-process `=0` to the remote
-worker). A NEW direct-upload script must use the project
+`HF_HUB_DISABLE_XET=1`: the two accelerator defaults are `setdefault` /
+`${VAR:-1}` so an explicit launch-time `=0` always wins, and the GCP / SLURM
+passthrough allowlists forward a dispatch-process `=0` FOR THOSE TWO VARS
+(`HF_XET_HIGH_PERFORMANCE` / `HF_HUB_ENABLE_HF_TRANSFER`) to the remote
+worker — they do NOT (yet) forward `HF_HUB_DISABLE_XET` (code follow-up
+pending), so on GCP/SLURM the xet kill switch must be set in the WORKER
+shell, not the dispatch process. The effective xet kill switch is
+`HF_HUB_DISABLE_XET=1` — it flips `is_xet_available()` False
+(`huggingface_hub` 0.36.2, the uv.lock pin; `constants.py` reads
+`HF_HUB_DISABLE_XET`), which gates the upload branch (`_commit_api.py:380`);
+download-side coverage has a reported gap on this pin (hub GH issue #3266),
+so treat it as upload-verified. The historically-documented
+`HF_XET_DISABLE=1` (the #515 xet-CDN DOWNLOAD workaround, still echoed in
+bootstrap/backends comments) is a VERIFIED NO-OP on this stack — consumed by
+neither `huggingface_hub` nor the `hf_xet` Rust binary (strings-checked;
+live-tested 2026-07-05) — so a recipe leaning on it likely never left the
+xet path; #931's first two wedge replays did exactly this. Upload sitting at
+~0 TX? Run the wedge escalation ladder in the next block. A NEW
+direct-upload script must use the project
 `explore_persona_space.orchestrate.env.load_dotenv` wrapper, NOT the bare
 `from dotenv import load_dotenv` (enforced by
 `scripts/workflow_lint.py --check-dotenv-before-hf-import`).
+
+**Pod→HF upload WEDGE — recognize it, then run the three-rung escalation
+ladder (#931).** This is the UPLOAD sibling of the #515 download workaround
+above. Signature: the upload process looks healthy (no traceback) while
+transfer bytes stop — interface TX delta ~0 across two samples ≥5 min
+apart (`cat /sys/class/net/eth0/statistics/tx_bytes`, sample twice), and/or
+one ESTAB socket to the CDN (port 443) whose counters are frozen in
+`ss -tinp` (`bytes_acked` / send-q not advancing; `apt-get install -y
+iproute2` if `ss` is absent on the pod). High sustained CPU with ~0 TX can
+be legitimate local pre-processing (xet chunking / sha256 of multi-GB
+files) — the frozen-ESTAB-socket check is the discriminator. #931
+(2026-07-04, an org-wide HF-429 day) sat ~30 min at ~0 TX before the first
+kill — once the signature is confirmed on a re-sample, escalate immediately.
+Three preconditions: (a) the upload path is replay-idempotent (per-cell /
+per-folder skip-if-complete — the #664 per-cell contract; #931's completed
+folder commits skipped idempotently on replay), (b) each rung is
+KILL-hung-process → REPLAY-with-env — never export on top of a live process
+(`huggingface_hub.constants` freezes env at import), (c) the rung env is set
+IN THE WORKER's shell (SSH into the pod/worker and relaunch there): until
+the allowlist follow-up lands, a dispatch-process `HF_HUB_DISABLE_XET=1` is
+NOT forwarded to GCP/SLURM workers, so a full re-dispatch "replay" from the
+orchestrator silently recreates the placebo. Do not wait for a rung
+to self-heal: hf_transfer retries fire only on ERRORING parts
+(`max_retries=5` threaded by `lfs.py::_upload_parts_hf_transfer`), the
+pure-python `http_backoff` path retries only raised errors
+(Timeout/ConnectionError/5xx) and its PUTs pass no `timeout=`, and the xet
+client's timeout knobs did not rescue #931's 30-min hang — a silently hung
+ESTAB read never becomes an error, so detection + kill is always manual.
+
+1. **Rung 1 — kill + replay with `HF_HUB_DISABLE_XET=1`** (the REAL switch —
+   NOT the no-op `HF_XET_DISABLE`, see the clause above). Targets a
+   xet-client-specific stall (hung CAS read, finalization hang — #825 r2's
+   class); the upload falls back to the LFS multipart path,
+   hf_transfer-accelerated since `HF_HUB_ENABLE_HF_TRANSFER=1` is default.
+2. **Rung 2 — wedged identically? kill + replay with `HF_HUB_DISABLE_XET=1
+   HF_HUB_ENABLE_HF_TRANSFER=0`** — the pure-python requests path. Rung 2
+   without rung 1's var is a placebo on the project's xet-backed repos: while
+   xet is available the upload never reaches the LFS path where hf_transfer
+   lives.
+3. **Rung 3 — still wedged? The on-pod upload path is dead for this run;
+   reroute around it.** rsync the artifact dirs pod→VM (rsync IS on
+   bootstrapped pods — `bootstrap_pod.sh` Step 2 installs it, commit
+   `22e1a882a1` 2026-06-12; the RunPod image ships without it, so a
+   `--no-bootstrap` pod needs the tar-over-ssh form in the #541 recovery
+   below), verify the VM→HF route with a small probe upload, run the VM-side
+   `upload_folder` to the SAME `path_in_repo`, then a pod-side local-only
+   sentinel replay so `epm:results` lands via the normal poller drain. #931
+   moved ~9.9 GB this way in ≈24 min after three wedged on-pod attempts
+   (≈37 min first-kill → results, ≈60 min upload-phase-start → results,
+   derived from the 06:13Z/06:36Z/06:49Z/07:13Z markers); the same-day
+   `epm:upload-fix` round reused the VM route directly. If the VM→HF probe
+   ALSO wedges (an HF-side incident — #931's day was an org-wide 429 day),
+   the pod→VM rsync has already made the data durable: stop/terminate the
+   pod rather than idling it, and retry the VM→HF upload when the incident
+   clears.
+
+Honesty caveat: #931's rung-1/2 replays set the no-op `HF_XET_DISABLE`, so
+all three on-pod attempts likely ran the SAME xet client — rung-1/2 value is
+derived from the 0.36.2 code paths + HF's documented legacy-LFS fallback
+(docs/hub/en/xet/legacy-git-lfs), not yet proven in anger; the route-level
+rung-3 reroute is the proven recovery. On a known org-wide 429/CDN-incident
+day, consider going straight from one confirmed rung-1 wedge to rung 3.
 
 **Intermediate analysis tensors referenced by the plan MUST upload before pod
 termination.** Any artifact the plan's analysis / negative-control sections
@@ -96,11 +173,18 @@ pod-side smoke shipped as 'INFRA BLOCKED, local evidence only'.)
 CLI has NO `api` subcommand — `hf api list-repo-files ...` errors to stderr and
 `| grep` swallows it as an empty/zero result that reads as a false "0 files"; `hf
 repo-files` only exposes `delete`, not `list`. Use:
-`set -a && source .env && set +a && uv run python -c "from huggingface_hub import list_repo_files; print('\n'.join(list_repo_files('superkaiba1/explore-persona-space-data', repo_type='dataset', revision='main')))" | grep <bucket>`
+`set -a && source .env && set +a && uv run python -c "from huggingface_hub import HfApi; print('\n'.join(e.path for e in HfApi().list_repo_tree('superkaiba1/explore-persona-space-data', path_in_repo='<bucket>', repo_type='dataset', recursive=True, revision='main')))"`
+(scoped `list_repo_tree` — a bare `list_repo_files` full listing of the
+~1M-file data repo times out (>90 s, #833); gotchas.md)
 (the `set -a && source .env` prefix is part of the canonical snippet — without
 it the check dies on `HF_TOKEN missing`, and the obvious in-heredoc fix, a bare
 `load_dotenv()`, crashes from stdin; 4+ sessions on 2026-06-10 each burned 2-3
 retries re-deriving this)
+(the prefix is VM-scoped — repo root, where `.env` always exists; a pod/GCE
+workload script must source conditionally instead — `if [ -f ./.env ]; then
+set -a; . ./.env; set +a; fi` — because the GCE lane exports tokens via its
+startup script and has NO `.env` file; see the conditional-sourcing entry in
+`.claude/rules/gotchas.md`, incident #923)
 (#458 post-mortem nearly drew a wrong "checkpoints don't exist" conclusion from
 the silent CLI "0").
 
@@ -143,7 +227,9 @@ instance of `code-style.md` § "Checkpoint per phase; never accumulate-in-memory
 and write-at-end". Idempotency + completeness use an EXACT expected-file-set
 check on a fresh `list_repo_files` listing (NOT prefix-presence / count-only —
 a mid-`upload_folder` crash leaves a partial cell that prefix-presence would
-wrongly read as complete). The per-cell resume predicate is `local-done OR
+wrongly read as complete); the canonical implementation is
+`hub.verify_repo_paths_uploaded(...)` (server-side scoped + retried, returns
+the missing set; #997). The per-cell resume predicate is `local-done OR
 HF-complete`, so a fresh pod after a wedge auto-migrate SKIPS HF-complete cells
 instead of re-running them, and the terminal P3 sweep becomes an idempotent
 safety pass (skip cells already complete on the Hub; treat all-on-HF as
@@ -247,9 +333,11 @@ overflow repo `superkaiba1/explore-persona-space-overflow` under the same
 `issueN_<slug>/...` subfolder layout, record a plan-deviation entry + the
 overflow URLs in the run's results sentinel, and migrate to the canonical repo
 after quota is freed. As a second durable replica (or if the private path also
-fails), pull the adapters off the pod to the VM via tar-over-ssh
-(`ssh <pod> 'tar -C /workspace -cf - <adapter-dir>' | tar -xf -` — rsync is NOT
-installed on RunPod pods) into a local staging dir
+fails), pull the adapters off the pod to the VM
+(rsync — installed on bootstrapped pods by `bootstrap_pod.sh` Step 2 since
+2026-06-12, commit `22e1a882a1`; on a `--no-bootstrap` pod use tar-over-ssh:
+`ssh <pod> 'tar -C /workspace -cf - <adapter-dir>' | tar -xf -`) into a local
+staging dir
 `eval_results/issue_<N>/adapter_backup/<cell>/` (local staging only —
 `*.safetensors` is gitignored; the "eval_results/ is JSON/text only" rule
 governs what gets committed) AND log a WandB Artifact (`type="model"`) copy.
@@ -297,3 +385,79 @@ raw-completion paths are deliberately un-routed (non-LFS JSON keeps flowing;
 sharding stays the big-text remedy). New per-issue scripts should prefer
 `upload_model` over direct `HfApi` calls for LFS artifacts so they inherit
 this guard.
+
+**Size-aware projected-headroom probe (#1034).**
+`hub.check_projected_upload_headroom(projected_bytes)` compares a PLANNED LFS
+upload's byte size against the REMAINING headroom (`used + projected >
+ceiling`), which the binary #564 check cannot do. Verdicts: `below-threshold`
+(projected under the probe floor `EPM_HF_LARGE_UPLOAD_PROBE_GB`, default 100
+decimal GB — ZERO headroom I/O) | `disabled` | `unknown` (fail-open — callers
+never block/reroute; the reactive 403 backstop stays authoritative) | `fits` |
+`insufficient` (only after a `force_refresh=True` LIVE confirm — never act on
+a ≤1h-stale cached over-read). Three consumers: (1) **`upload_dir_sharded`
+routes ALL shards to the private overflow repo UP-FRONT** on
+KNOWN-insufficient + confirmed-public canonical target (one
+`OVERFLOW_POINTER.json`, one JSONL event with
+`reason: "projected-headroom-proactive"` + `projected_gb`, zero canonical LFS
+bytes attempted; opt out with `proactive_overflow=False` for a
+canonical-path-verifying caller) — **route ≥100 GB stores through
+`upload_dir_sharded` explicitly** so they inherit this; (2) armed
+`upload_model` (`EPM_HF_OVERFLOW_ROUTING=1`) reroutes when
+`used + dir_size > ceiling`, not only when already over (ARMING CONTRACT
+unchanged: default-off, zero headroom I/O unarmed); (3) preflight
+`--planned-upload-gb <N>` turns the WARN-only advisory into a hard gate
+(LIVE-CONFIRMED-insufficient + routing off → FAIL; armed → WARN;
+unknown/disabled → WARN). Residual routes the guard does NOT cover:
+`hub._upload`, `hub._upload_folder_filtered`, and direct-`HfApi` per-issue
+scripts — the preflight plan-projection gate covers plan-declared big uploads
+regardless of helper, and the 403 stays fail-loud, but do not mistake the
+guard for fleet-wide coverage. Note overflow-repo artifacts are PRIVATE —
+downstream consumers reach them auth-required and pointer-mediated, never as
+canonical-path equivalents.
+
+## v2 tasks (`workflow: v2`) — upload-by-default, no ceiling
+
+For a task whose frontmatter carries `workflow: v2`, the upload policy has NO
+policy ceiling (Thomas's call). Everything above still holds; v2 tightens it to:
+
+- **Text / JSON — always, unconditionally.** Raw responses at every stage,
+  judge outputs, metrics, configs upload to the data repo on the non-LFS path,
+  which is quota-immune (#541 gates only LFS). Text is NEVER discardable — not
+  even under both-quota exhaustion — and NEVER a valid `discarded_artifacts:`
+  entry (Step 3 generation-discard gate stays binding).
+
+- **Tensors / activation stores — main repo → overflow repo, no ceiling.**
+  Every store attempts the canonical repo first, then reroutes to the private
+  overflow repo (`superkaiba1/explore-persona-space-overflow`, the existing
+  `EPM_HF_OVERFLOW_ROUTING` mechanism) on a quota-403, dropping an
+  `OVERFLOW_POINTER.json` breadcrumb on the canonical repo. There is no
+  100 GB-style policy cap; the 128 GB per-issue ext4 quota / ~130 GB MooseFS
+  quota are PHYSICAL limits, handled by incremental sharding below, not a
+  policy ceiling. Stores whose PROJECTED size exceeds remaining headroom
+  route to overflow UP-FRONT (one pointer, one event — the #1034 proactive
+  probe in `upload_dir_sharded`) instead of splitting at the mid-store 403.
+
+- **Big stores upload INCREMENTALLY (upload → verify → delete-local).** A store
+  larger than the disk quota is uploaded per shard so local footprint stays
+  bounded to ~one shard: `orchestrate.upload_sharded.upload_dir_sharded`
+  (reuses the hub overflow mechanism + `list_repo_files_complete` verify).
+  Stream-reduce phases PREFER shard-and-upload now that uploads are unbounded;
+  where materialization is genuinely infeasible, persist the source rollout
+  text (regenerable via one teacher-forced pass) — the #666/#772 stream-reduce
+  memory-safety contract is unchanged.
+
+- **Discard-to-regen-recipe fires ONLY when BOTH quotas are exhausted, always
+  alerted.** A discard is licensed only for a large intermediate TENSOR, only
+  after the main AND overflow repos both refuse (the `upload_dir_sharded`
+  both-refused `RuntimeError`), and only with a plan `discarded_artifacts:`
+  `{name, reason, regen_recipe}` entry + an alert naming which gate closed.
+  Generations / rollout text / judge outputs / metrics / configs are never
+  discardable.
+
+- **Registry append at PASS.** On upload-verification PASS the verifier appends
+  one `artifacts/registry.jsonl` row per produced artifact via
+  `scripts/artifact_registry.py` — the reuse registry the planner +
+  methodology-writer read before any retrain/regenerate.
+
+- **#664 sequencing unchanged.** The GPU pod is released before the FINAL bulk
+  upload; incremental shard uploads may overlap compute (they cost no GPU).

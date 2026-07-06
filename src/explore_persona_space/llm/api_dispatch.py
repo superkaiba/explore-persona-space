@@ -41,10 +41,11 @@ Design (all FIRM requirements from § 1b + Phase 4):
    warm-up ramp on start avoids acceleration-429s.
 
 5. **Caching / resume (interrupt-safe).** A per-item content-hash cache
-   (extends :class:`~explore_persona_space.eval.batch_judge.JudgeCache`) skips
-   already-completed items on restart; results are checkpointed with atomic
-   temp-file-then-rename writes so a crash / full disk leaves the last good
-   checkpoint intact.
+   (extends :class:`~explore_persona_space.eval.batch_judge.JudgeCache`, keyed
+   with the built-request fingerprint so different builders/rubrics never
+   cross-read — rule 22, #1018) skips already-completed items on restart;
+   results are checkpointed with atomic temp-file-then-rename writes so a
+   crash / full disk leaves the last good checkpoint intact.
 
 6. **Batch path.** For large / cost-sensitive N, reuse ``batch_judge``'s
    ``_chunk_requests`` with SMALL chunks (~1000, NOT 8000) + the ``#663``
@@ -71,11 +72,15 @@ dispatcher and its tests.
 
 from __future__ import annotations
 
+import argparse
 import asyncio
 import datetime as _dt
+import functools
+import hashlib
 import json
 import logging
 import os
+import sys
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -86,6 +91,8 @@ from explore_persona_space.eval.batch_judge import JudgeCache, _chunk_requests, 
 from explore_persona_space.llm.anthropic_client import (
     BatchDeadlineExceeded,
     deadline_from_expires_at,
+    parse_batch_submitted_at,
+    retrieve_with_404_tolerance,
 )
 
 logger = logging.getLogger(__name__)
@@ -246,6 +253,51 @@ class DispatchResult:
 BuildRequest = Callable[[DispatchItem], dict]
 # Response parser: model text -> per-item result. May raise on a bad parse.
 ParseResponse = Callable[[str], Any]
+
+
+def _assert_no_system_role(params: dict, item_id: str) -> None:
+    """Fail fast on a system-role message in built Messages-API params.
+
+    The Anthropic Messages API has no "system" message ROLE — a system-bearing
+    ``messages`` list 400s EVERY request (invalid_request_error; the #906 r11
+    incident, .claude/rules/gotchas.md). System content must be lifted by the
+    BUILDER to the top-level ``system=`` param (see
+    ``llm.models.Prompt.anthropic_format`` for a leading-system splitter or
+    ``artifacts.datagen._gen_params_from_messages`` for an arbitrary-position
+    lift). Only the documented dict shape is inspected: non-dict params /
+    entries and a missing ``messages`` key pass through untouched (the API
+    itself owns those errors).
+    """
+    messages = params.get("messages") if isinstance(params, dict) else None
+    if not isinstance(messages, list):
+        return
+    for i, msg in enumerate(messages):
+        if isinstance(msg, dict) and msg.get("role") == "system":
+            raise ValueError(
+                f"build_request(item_id={item_id!r}) returned a messages list with "
+                f'role="system" at index {i}. The Anthropic Messages API has no '
+                "system message role — every such request 400s "
+                "(invalid_request_error). Lift system content to the top-level "
+                "system= param in your builder (see llm.models.Prompt."
+                "anthropic_format or artifacts.datagen._gen_params_from_messages)."
+            )
+
+
+def _guarded_build_request(build_request: BuildRequest) -> BuildRequest:
+    """Wrap ``build_request`` so every produced params dict is system-role-checked.
+
+    Applied ONCE at the dispatch_calls seam; covers all three consumers (sync
+    ``_do_one``, batch state-init, batch submit/resubmit) because they all
+    receive the same threaded callable. Raises ValueError at BUILD time —
+    before any wire call or paid batch create.
+    """
+
+    def _built(item: DispatchItem) -> dict:
+        params = build_request(item)
+        _assert_no_system_role(params, item.item_id)
+        return params
+
+    return _built
 
 
 # ── Per-org runtime state (AIMD + headroom) ──────────────────────────────────
@@ -501,7 +553,9 @@ def _atomic_write_json(path: Path, obj: Any) -> None:
     rename is atomic on POSIX) — the interrupt-safe checkpoint contract (§1b).
     """
     path = Path(path)
-    tmp = path.with_suffix(path.suffix + ".tmp")
+    # Per-PID tmp name: concurrent sessions share ~/.task-workflow files (the
+    # headroom snapshot), and a fixed tmp collides across writers mid-write.
+    tmp = path.with_suffix(path.suffix + f".tmp.{os.getpid()}")
     with open(tmp, "w") as f:
         json.dump(obj, f, indent=2)
     os.replace(tmp, path)
@@ -705,6 +759,9 @@ async def _dispatch_sync(
             try:
                 raw = await client.messages.with_raw_response.create(**params)
                 state.note_remaining(raw.headers)
+                # Best-effort cross-session headroom snapshot (fail-soft; never
+                # raises into the dispatch loop — see record_headroom_observation).
+                record_headroom_observation(org, params.get("model", "unknown"), raw.headers)
                 msg = raw.parse()
                 text = next((b.text for b in msg.content if b.type == "text"), "")
                 parsed = parse_response(text)
@@ -770,6 +827,18 @@ async def _dispatch_sync(
 # ── Batch path (org-aware, checkpointed) ─────────────────────────────────────
 
 
+def _batch_run_fingerprint(items: list[DispatchItem], build_request: BuildRequest) -> str:
+    """Run-level request fingerprint over the dispatched set (rule 22, #1018).
+
+    Hashes the sorted ``(item_id, built-request fingerprint)`` pairs of the
+    pending set, binding a batch checkpoint to the builder/rubric that created
+    it — so a rubric-B dispatch reusing rubric-A's ``checkpoint_dir`` fails
+    loud at state load instead of replaying A's judgments under B's key.
+    """
+    pairs = sorted((it.item_id, _cache_key_parts(it, build_request)[2]) for it in items)
+    return hashlib.sha256(json.dumps(pairs).encode()).hexdigest()[:16]
+
+
 def _load_or_init_batch_state(
     state_path: Path,
     items: list[DispatchItem],
@@ -785,9 +854,27 @@ def _load_or_init_batch_state(
     Org assignment is round-robin across the present orgs at init so resume
     re-polls each sub-batch on the SAME org it was created on (a batch created
     on org B 404s if polled on org A).
+
+    Rubric binding (rule 22, #1018): the state carries a run-level
+    ``request_fingerprint`` over the dispatched set; a LOAD whose recomputed
+    fingerprint mismatches — or a pre-fix state.json with no fingerprint field
+    (rubric provenance unknown) — raises ValueError, NEVER silently re-inits
+    (that would discard the prior state pointer and orphan paid batches).
     """
+    run_fp = _batch_run_fingerprint(items, build_request)
     if state_path.exists():
-        return json.loads(state_path.read_text())
+        state = json.loads(state_path.read_text())
+        stored_fp = state.get("request_fingerprint")
+        if stored_fp != run_fp:
+            raise ValueError(
+                f"Batch checkpoint at {state_path} does not match this dispatch: stored "
+                f"request_fingerprint={stored_fp!r}, recomputed={run_fp!r}. This checkpoint "
+                "belongs to a different builder/rubric, predates the #1018 fingerprint field, "
+                "or a partially-persisted prior run shrank the pending set. Use a distinct "
+                f"checkpoint_dir per rubric, or delete {state_path} to resubmit the remainder. "
+                "Refusing to resume across the mismatch."
+            )
+        return state
 
     # Build one request per item, chunk small, assign orgs round-robin.
     cid_for = {it.item_id: make_custom_id(it.item_id) for it in items}
@@ -796,6 +883,7 @@ def _load_or_init_batch_state(
     state = {
         "version": 1,
         "created_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "request_fingerprint": run_fp,
         "sub_batches": [
             {
                 "index": i,
@@ -854,12 +942,18 @@ async def _submit_one_sub_batch(
                 "dedicated to this run, or clear the cache for these items, then re-run. Refusing "
                 "to submit a partial sub-batch."
             )
-        sb["status"] = "submitting"
-        _atomic_write_json(state_path, state)  # intent BEFORE create
+        # Build requests BEFORE flipping status to "submitting" (#991): the build
+        # is pure, so a builder raise on RESUME (e.g. the system-role guard)
+        # leaves this sub-batch "pending" — cleanly resumable after the builder
+        # is fixed — instead of wedging at the crashed-mid-submit RuntimeError.
+        # The #663 preserve-before-propagate contract is untouched: the
+        # "submitting" intent is still persisted BEFORE batches.create.
         requests = [
             {"custom_id": cid, "params": build_request(items_by_cid[cid])}
             for cid in sb["custom_ids"]
         ]
+        sb["status"] = "submitting"
+        _atomic_write_json(state_path, state)  # intent BEFORE create
         # api_dispatch IS a sanctioned hardened batch client: reuses _chunk_requests (<=8k shards)
         # + bounded expires_at poll (deadline_from_expires_at/BatchDeadlineExceeded) + org-aware
         # resume by custom_id; routing through judge_completions_batch would lose multi-org fan-out.
@@ -868,6 +962,11 @@ async def _submit_one_sub_batch(
         try:
             sb["batch_id"] = batch.id
             sb["status"] = "submitted"
+            # #995: create-time anchor for the poll step's 404 grace (mirrors
+            # judge_dispatch). Additive state key — an OLD state.json lacks it,
+            # so a resume reads None via .get() -> no grace -> terminal 404,
+            # exactly the desired resume default.
+            sb["submitted_at"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
             expires_at = getattr(batch, "expires_at", None)
             if expires_at is not None:
                 sb["deadline"] = deadline_from_expires_at(
@@ -887,11 +986,33 @@ async def _poll_one_sub_batch_step(
     sync_clients: dict[str, Any],
     parse_response: ParseResponse,
     now_fn: Callable[[], _dt.datetime],
+    sleep_fn: Callable[[float], None] | None = None,
 ) -> None:
-    """Poll one not-yet-collected sub-batch ONCE on its org; harvest on end."""
+    """Poll one not-yet-collected sub-batch ONCE on its org; harvest on end.
+
+    404 tolerance (#995 + #1035): a ``NotFoundError`` on the loop retrieve or
+    the overdue final retrieve is retried with bounded backoff INSIDE the
+    ``to_thread`` worker (the event loop is never blocked by the sleeps): the
+    create-grace schedule within ``BATCH_CREATE_404_GRACE_S`` of the
+    sub-batch's persisted ``submitted_at``, the ``BATCH_MIDPOLL_404_BACKOFF_S``
+    mid-poll schedule anywhere else (incl. a resume with a stale/absent
+    ``submitted_at``). Org-mismatch semantics are preserved
+    (``_load_or_init_batch_state``: a batch created on org B 404s if polled on
+    org A): create and poll share ``sb["org"]`` within a run, so a wrong-org
+    404 arises only on resume or from an org-routing code bug (delayed <=60s
+    grace + <=~3 min mid-poll, then still fails loud — never masked).
+    ``sleep_fn`` is additive + injectable for tests (default ``time.sleep``).
+    """
     org = sb["org"]
     client = sync_clients[org]
-    batch = await asyncio.to_thread(client.messages.batches.retrieve, sb["batch_id"])
+    batch = await asyncio.to_thread(
+        retrieve_with_404_tolerance,
+        functools.partial(client.messages.batches.retrieve, sb["batch_id"]),
+        created_at=parse_batch_submitted_at(sb.get("submitted_at")),
+        batch_id=sb["batch_id"],
+        now_fn=now_fn,
+        sleep_fn=sleep_fn,
+    )
     if sb.get("deadline") is None and getattr(batch, "expires_at", None) is not None:
         sb["deadline"] = deadline_from_expires_at(
             batch.expires_at, BATCH_DEADLINE_GRACE_MIN
@@ -908,7 +1029,17 @@ async def _poll_one_sub_batch_step(
         )
         return
     if sb.get("deadline") and now_fn() > _dt.datetime.fromisoformat(sb["deadline"]):
-        final = await asyncio.to_thread(client.messages.batches.retrieve, sb["batch_id"])
+        # #1035: the overdue final retrieve is the last chance to harvest, so a
+        # transient 404 gets the bounded mid-poll tolerance; a genuinely-gone
+        # batch still re-raises NotFoundError <=~3 min later.
+        final = await asyncio.to_thread(
+            retrieve_with_404_tolerance,
+            functools.partial(client.messages.batches.retrieve, sb["batch_id"]),
+            created_at=parse_batch_submitted_at(sb.get("submitted_at")),
+            batch_id=sb["batch_id"],
+            now_fn=now_fn,
+            sleep_fn=sleep_fn,
+        )
         if final.processing_status == "ended":
             await _harvest_sub_batch(
                 sb,
@@ -1117,13 +1248,21 @@ async def dispatch_calls(
         model: Claude model id (sets the per-key concurrency family).
         build_request: ``item -> Messages-API params`` (model/max_tokens/messages/...).
             MUST include the ``model`` field; this dispatcher does not inject it.
+            NOTE: the Messages API has NO "system" message role — a builder
+            forwarding caller message lists verbatim MUST lift system-role
+            entries to the top-level ``system=`` param (see
+            ``llm.models.Prompt.anthropic_format``). ENFORCED at runtime:
+            a system-bearing built params dict raises ValueError at build
+            time, before any wire call (gotchas.md, #906 r11; #991).
         parse_response: ``model_text -> result``; may raise on a bad parse
             (caught per item -> ``error=True``).
         deadline: optional wall-clock deadline; a deadline inside the batch 24h
             SLA forces the sync path.
         cost_pref: ``"balanced"`` (default) | ``"cost"`` (prefer 50% batch) |
             ``"latency"`` (prefer sync fan-out).
-        cache_dir: per-item content-hash cache root (resume skips cached items).
+        cache_dir: per-item content+request-fingerprint cache root (resume
+            skips cached items; keys carry the built-request fingerprint so
+            different builders/rubrics never cross-read — rule 22, #1018).
         checkpoint_dir: batch-path checkpoint root (REQUIRED for the batch path).
         concurrency_overrides: ``{family: cap}`` overrides for the per-key caps.
         crossover_n: sync/batch routing threshold (Phase 3 calibrates).
@@ -1145,6 +1284,11 @@ async def dispatch_calls(
     """
     if not items:
         return {}
+
+    # Runtime enforcement of the system-role contract (docstring NOTE above):
+    # one wrap covers the sync build (_do_one), the batch state-init build,
+    # and the batch submit/resubmit build — they all thread this callable.
+    build_request = _guarded_build_request(build_request)
 
     async_clients, sync_clients, owned = _resolve_clients(async_clients, sync_clients, org_keys)
     try:
@@ -1205,10 +1349,12 @@ async def _dispatch_calls_inner(
     """Routing + execution, with clients already resolved (closing is the caller's job)."""
     org_labels = list(async_clients)
 
-    # Cache check (resume skips already-completed items).
+    # Cache check (resume skips already-completed items). build_request here is
+    # the GUARDED builder threaded from dispatch_calls (#991) — so the
+    # system-role check fires at cache-check time, before any wire call.
     if cache is None and cache_dir is not None:
         cache = JudgeCache(cache_dir)
-    results, pending = _split_cached(items, cache)
+    results, pending = _split_cached(items, cache, build_request)
     if not pending:
         logger.info("dispatch_calls: all %d items served from cache", len(items))
         return results
@@ -1259,7 +1405,7 @@ async def _dispatch_calls_inner(
             poll_interval=poll_interval,
             now_fn=now_fn,
         )
-        _persist_results_to_cache(new_results, pending, cache)
+        _persist_results_to_cache(new_results, pending, cache, build_request)
 
     results.update(new_results)
     return results
@@ -1308,13 +1454,19 @@ async def _close_clients(async_clients: dict[str, Any], sync_clients: dict[str, 
 
 
 def _split_cached(
-    items: list[DispatchItem], cache: JudgeCache | None
+    items: list[DispatchItem],
+    cache: JudgeCache | None,
+    build_request: BuildRequest,
 ) -> tuple[dict[str, DispatchResult], list[DispatchItem]]:
-    """Partition items into (cached results, still-pending items)."""
+    """Partition items into (cached results, still-pending items).
+
+    ``build_request`` supplies the built-request fingerprint half of the cache
+    key (see the cache-adapter block below) — it runs once per item here.
+    """
     results: dict[str, DispatchResult] = {}
     pending: list[DispatchItem] = []
     for it in items:
-        cached = _cache_get(cache, it) if cache is not None else None
+        cached = _cache_get(cache, it, build_request) if cache is not None else None
         if cached is not None:
             # A cached entry only ever stores a successful (non-error) result
             # today (_persist gates on ``not res.error``), so the RESULT_OK
@@ -1336,6 +1488,7 @@ def _persist_results_to_cache(
     results: dict[str, DispatchResult],
     items: list[DispatchItem],
     cache: JudgeCache | None,
+    build_request: BuildRequest,
 ) -> None:
     """Write every non-error result to the cache (no-op when cache is None)."""
     if cache is None:
@@ -1343,7 +1496,7 @@ def _persist_results_to_cache(
     item_by_id = {it.item_id: it for it in items}
     for item_id, res in results.items():
         if not res.error and item_id in item_by_id:
-            _cache_put(cache, item_by_id[item_id], res)
+            _cache_put(cache, item_by_id[item_id], res, build_request)
 
 
 async def _run_sync_path(
@@ -1364,7 +1517,7 @@ async def _run_sync_path(
 
     def _persist(res: DispatchResult) -> None:
         if cache is not None and not res.error:
-            _cache_put(cache, item_by_id[res.item_id], res)
+            _cache_put(cache, item_by_id[res.item_id], res, build_request)
 
     return await _dispatch_sync(
         pending,
@@ -1378,28 +1531,58 @@ async def _run_sync_path(
     )
 
 
-# ── Cache adapters (JudgeCache keys on (question, completion)) ────────────────
+# ── Cache adapters (JudgeCache keys on (rubric identity, question, completion)) ─
 #
-# JudgeCache hashes (question, completion). We reuse it generically by hashing
-# the item_id (stable) as the "question" and the json-serialized payload as the
-# "completion", so two items with the same id+payload share a cache entry.
+# JudgeCache requires a rubric_key on every read/write (rule 22, #810/#1018).
+# This generic adapter derives it from the BUILT request: build_request(item)
+# returns the Messages-API params dict, which embeds model + system + the user
+# messages — so the rubric enters the key wherever it lives (system prompt or
+# user-message template), with zero new public parameters on dispatch_calls.
+# We hash item_id (stable) as the "question", the json-serialized payload as
+# the "completion", and the built-request fingerprint as the rubric_key.
+# Behavior notes: (i) build_request now runs once per item at cache-CHECK time,
+# not only for pending items — cheap pure dict assembly for every in-repo
+# builder (determinism/re-callability is existing contract: the batch resubmit
+# path re-calls it); (ii) the #991 no-system-role ValueError consequently fires
+# at cache check, strictly EARLIER — fail-fast-compatible; (iii) a max_tokens /
+# param change now busts the cache — deliberate OVER-keying on full request
+# params (a miss re-judges; an under-key is the #810 bug; contrast
+# batch_judge.rubric_fingerprint, which keys rubric IDENTITY only).
 
 
-def _cache_key_parts(item: DispatchItem) -> tuple[str, str]:
+def _cache_key_parts(item: DispatchItem, build_request: BuildRequest) -> tuple[str, str, str]:
+    """(item_id, payload_json, request_fingerprint) — rule 22 (#810/#1018).
+
+    The request fingerprint hashes the FULL built params (model + system +
+    messages + max_tokens, ...), a superset of the rubric identity, so two
+    callers sharing a cache dir with different judges/rubrics can never
+    cross-read. Deliberate over-keying: this is full-REQUEST identity, not the
+    minimal rubric identity (the adapter cannot distinguish rubric from
+    non-rubric params generically).
+    """
     try:
         payload_repr = json.dumps(item.payload, sort_keys=True, default=str)
     except TypeError:
         payload_repr = str(item.payload)
-    return item.item_id, payload_repr
+    built = json.dumps(build_request(item), sort_keys=True, default=str)
+    fp = hashlib.sha256(built.encode()).hexdigest()[:16]
+    return item.item_id, payload_repr, fp
 
 
-def _cache_get(cache: JudgeCache, item: DispatchItem) -> dict | None:
-    q, c = _cache_key_parts(item)
-    return cache.get(q, c)
+def _cache_get(cache: JudgeCache, item: DispatchItem, build_request: BuildRequest) -> dict | None:
+    """Adapter read: JudgeCache.get keyed on (built-request fp, item_id, payload)."""
+    q, c, fp = _cache_key_parts(item, build_request)
+    return cache.get(q, c, rubric_key=fp)
 
 
-def _cache_put(cache: JudgeCache, item: DispatchItem, res: DispatchResult) -> None:
-    q, c = _cache_key_parts(item)
+def _cache_put(
+    cache: JudgeCache,
+    item: DispatchItem,
+    res: DispatchResult,
+    build_request: BuildRequest,
+) -> None:
+    """Adapter write: JudgeCache.put keyed on (built-request fp, item_id, payload)."""
+    q, c, fp = _cache_key_parts(item, build_request)
     cache.put(
         q,
         c,
@@ -1409,7 +1592,230 @@ def _cache_put(cache: JudgeCache, item: DispatchItem, res: DispatchResult) -> No
             "reason": res.reason,
             "category": res.category,
         },
+        rubric_key=fp,
     )
+
+
+# ── Persisted headroom snapshot + `--status` CLI (v2 cross-session coord) ─────
+#
+# A best-effort observability side-channel so a SEPARATE process
+# (``python -m explore_persona_space.llm.api_dispatch --status``, a planner
+# sizing an API workload) can read the last-seen per-org rate-limit headroom
+# WITHOUT making a live probe call. Every dispatch that observes rate-limit
+# headers (the :meth:`OrgState.note_remaining` path) folds the reading into
+# ``~/.task-workflow/api-headroom.json``, throttled to at most one write per
+# ``HEADROOM_MIN_WRITE_INTERVAL_S`` so a burst of concurrent calls does not
+# hammer the file.
+#
+# SANCTIONED FAIL-SOFT: :func:`record_headroom_observation` is the ONE place in
+# this module where an exception is caught and swallowed. The snapshot is pure
+# observability — dispatch correctness never depends on it — so a write failure
+# (disk full, permission, a concurrent-writer race) MUST NEVER propagate into
+# the live dispatch path. Every OTHER error path in this module fails loud by
+# design; this one is the deliberate exception.
+
+HEADROOM_SNAPSHOT_PATH = Path.home() / ".task-workflow" / "api-headroom.json"
+HEADROOM_MIN_WRITE_INTERVAL_S = 5.0
+# Staleness bands for `--status` (seconds): fresh < 60s, stale < 1h, else very-stale.
+HEADROOM_FRESH_MAX_S = 60
+HEADROOM_STALE_MAX_S = 3600
+_headroom_last_write_monotonic: float = 0.0
+
+
+def _headroom_observation_from_headers(headers: Any) -> dict[str, int] | None:
+    """Extract ``{requests_remaining, tokens_remaining}`` from response headers.
+
+    ``tokens_remaining`` is the MOST-BINDING of the input/output token limiters
+    (mirrors :meth:`OrgState.note_remaining`'s min-fraction logic). Returns
+    ``None`` when no rate-limit header is present (nothing to record).
+    """
+    req = _header_int(headers, "anthropic-ratelimit-requests-remaining")
+    token_vals = [
+        v
+        for name in (
+            "anthropic-ratelimit-output-tokens-remaining",
+            "anthropic-ratelimit-input-tokens-remaining",
+        )
+        if (v := _header_int(headers, name)) is not None
+    ]
+    obs: dict[str, int] = {}
+    if req is not None:
+        obs["requests_remaining"] = req
+    if token_vals:
+        obs["tokens_remaining"] = min(token_vals)
+    return obs or None
+
+
+def merge_headroom_snapshot(
+    snapshot: dict,
+    org_label: str,
+    model: str,
+    observation: dict,
+    *,
+    observed_at_iso: str,
+    writer_pid: int,
+) -> dict:
+    """Pure merge: fold one observation into the snapshot; return a NEW dict.
+
+    Shape: ``{org_key_alias: {model: {requests_remaining, tokens_remaining,
+    observed_at_iso}}, "writer_pid": <int>}``. The newest observation for an
+    ``(org, model)`` pair wins. Pure / no I/O so it is unit-tested directly.
+    """
+    out = dict(snapshot) if isinstance(snapshot, dict) else {}
+    prev_org = out.get(org_label)
+    org_entry = dict(prev_org) if isinstance(prev_org, dict) else {}
+    org_entry[model] = {**observation, "observed_at_iso": observed_at_iso}
+    out[org_label] = org_entry
+    out["writer_pid"] = writer_pid
+    return out
+
+
+def record_headroom_observation(
+    org_label: str,
+    model: str,
+    headers: Any,
+    *,
+    path: Path | None = None,
+    now_monotonic: float | None = None,
+    now_iso: str | None = None,
+) -> None:
+    """Best-effort, throttled persist of one header observation. NEVER raises.
+
+    See the section header: this is the sanctioned fail-soft. Any exception is
+    logged at debug and swallowed so a snapshot-write failure cannot break the
+    live dispatch loop that called it.
+    """
+    global _headroom_last_write_monotonic
+    try:
+        obs = _headroom_observation_from_headers(headers)
+        if obs is None:
+            return
+        mono = time.monotonic() if now_monotonic is None else now_monotonic
+        if mono - _headroom_last_write_monotonic < HEADROOM_MIN_WRITE_INTERVAL_S:
+            return
+        _headroom_last_write_monotonic = mono
+        p = HEADROOM_SNAPSHOT_PATH if path is None else Path(path)
+        current: dict = {}
+        if p.exists():
+            try:
+                loaded = json.loads(p.read_text())
+                if isinstance(loaded, dict):
+                    current = loaded
+            except (json.JSONDecodeError, OSError):
+                current = {}
+        iso = now_iso or _dt.datetime.now(_dt.UTC).isoformat()
+        merged = merge_headroom_snapshot(
+            current, org_label, model, obs, observed_at_iso=iso, writer_pid=os.getpid()
+        )
+        p.parent.mkdir(parents=True, exist_ok=True)
+        _atomic_write_json(p, merged)
+    except Exception:
+        logger.debug("headroom snapshot write failed (swallowed)", exc_info=True)
+
+
+def _staleness_label(observed_at_iso: str, now: _dt.datetime) -> str:
+    """``fresh`` (<60s) / ``stale`` (<1h) / ``very-stale`` (>=1h) / ``unknown``."""
+    try:
+        obs = _dt.datetime.fromisoformat(observed_at_iso)
+    except (ValueError, TypeError):
+        return "unknown"
+    if obs.tzinfo is None:
+        obs = obs.replace(tzinfo=_dt.UTC)
+    age = (now - obs).total_seconds()
+    if age < HEADROOM_FRESH_MAX_S:
+        return "fresh"
+    if age < HEADROOM_STALE_MAX_S:
+        return "stale"
+    return "very-stale"
+
+
+def build_headroom_status_rows(snapshot: dict, *, now: _dt.datetime) -> list[dict]:
+    """Flatten a snapshot into per-``(org, model)`` rows with a staleness label.
+
+    Pure — both the CLI text and JSON renderers consume this. Skips the
+    top-level ``writer_pid`` key and tolerates a malformed org / model entry
+    (skips it rather than raising).
+    """
+    rows: list[dict] = []
+    for org_label, models in sorted(snapshot.items()):
+        if org_label == "writer_pid" or not isinstance(models, dict):
+            continue
+        for model, entry in sorted(models.items()):
+            if not isinstance(entry, dict):
+                continue
+            observed = str(entry.get("observed_at_iso", ""))
+            rows.append(
+                {
+                    "org": org_label,
+                    "model": model,
+                    "requests_remaining": entry.get("requests_remaining"),
+                    "tokens_remaining": entry.get("tokens_remaining"),
+                    "observed_at_iso": observed,
+                    "staleness": _staleness_label(observed, now),
+                }
+            )
+    return rows
+
+
+def format_headroom_status_text(rows: list[dict], *, writer_pid: Any = None) -> str:
+    """Human-readable per-org/model headroom table with staleness labels."""
+    if not rows:
+        return "api-headroom: no observations recorded yet."
+    lines = ["api-headroom (per-org / per-model last-observed remaining):"]
+    for r in rows:
+        lines.append(
+            f"  [{r['staleness']:>10}] org={r['org']:<10} model={r['model']:<30} "
+            f"requests_remaining={r['requests_remaining']} "
+            f"tokens_remaining={r['tokens_remaining']} @ {r['observed_at_iso']}"
+        )
+    if writer_pid is not None:
+        lines.append(f"  (last writer pid: {writer_pid})")
+    return "\n".join(lines)
+
+
+def _cmd_status(
+    *, path: Path | None = None, as_json: bool = False, now: _dt.datetime | None = None
+) -> int:
+    p = HEADROOM_SNAPSHOT_PATH if path is None else Path(path)
+    now = now or _dt.datetime.now(_dt.UTC)
+    if not p.exists():
+        if as_json:
+            print(json.dumps({"rows": [], "note": "no headroom snapshot file yet"}, indent=2))
+        else:
+            print(f"api-headroom: no snapshot at {p} yet (no dispatch has observed headers).")
+        return 0
+    try:
+        snapshot = json.loads(p.read_text())
+        if not isinstance(snapshot, dict):
+            raise ValueError("snapshot is not an object")
+    except (json.JSONDecodeError, ValueError, OSError) as exc:
+        sys.stderr.write(f"api-headroom: unreadable snapshot {p}: {exc}\n")
+        return 1
+    rows = build_headroom_status_rows(snapshot, now=now)
+    writer_pid = snapshot.get("writer_pid")
+    if as_json:
+        print(json.dumps({"rows": rows, "writer_pid": writer_pid}, indent=2, sort_keys=True))
+    else:
+        print(format_headroom_status_text(rows, writer_pid=writer_pid))
+    return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(
+        description="Multi-org Anthropic dispatcher — headroom status (v2 coordination)."
+    )
+    parser.add_argument(
+        "--status",
+        action="store_true",
+        help="print the last-observed per-org/model rate-limit headroom (with a "
+        "staleness label per entry) from ~/.task-workflow/api-headroom.json.",
+    )
+    parser.add_argument("--json", action="store_true", help="emit JSON (use with --status).")
+    args = parser.parse_args(argv)
+    if args.status:
+        return _cmd_status(as_json=args.json)
+    parser.print_help()
+    return 0
 
 
 __all__ = [
@@ -1417,6 +1823,7 @@ __all__ = [
     "DEFAULT_FAMILY_CONCURRENCY",
     "DEFAULT_MAX_429_RETRIES",
     "FANOUT_SLACK",
+    "HEADROOM_SNAPSHOT_PATH",
     "ORG_ENV_KEYS",
     "RESULT_ERROR",
     "RESULT_OK",
@@ -1426,9 +1833,17 @@ __all__ = [
     "DispatchResult",
     "DispatchRoute",
     "OrgState",
+    "build_headroom_status_rows",
     "decide_dispatch_route",
     "detect_org_keys",
     "dispatch_calls",
     "family_concurrency_cap",
+    "main",
+    "merge_headroom_snapshot",
     "model_family",
+    "record_headroom_observation",
 ]
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

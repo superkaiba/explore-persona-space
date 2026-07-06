@@ -98,6 +98,23 @@ Behaviours:
   dry-run previews all pass. Sibling of ``--check-heredoc-dotenv``; the
   ``.claude/settings.json`` PreToolUse Bash hook covers the inline ad-hoc
   commands that never reach a committed script.
+* ``--check-piped-git-push`` (also bundled into the no-flags default run):
+  walk every ``*.sh`` under ``scripts/`` and FAIL on any ``git push`` /
+  ``git merge`` / ``gh pr merge|create`` piped into a filter on its own
+  pipeline segment (``git push origin main 2>&1 | tail -20``). Bash makes
+  the compound's exit status the FILTER's, so the pipe masks the
+  producer's non-zero exit code: a rejected push reads as success and the
+  session proceeds believing the merge landed (#957's Step 10d push was
+  masked 2026-07-04; 4 sessions hit the class 2026-07-02). Prose rule:
+  CLAUDE.md § Concurrent repo-root committers ("run it bare and check the
+  exit code, or use ``set -o pipefail`` when a pipe is unavoidable") — so
+  a file-level non-comment ``pipefail`` line disables flagging for the
+  REST of the file (lines before it still flag); ``--dry-run`` spans and
+  ``#``-comment lines are skipped; ``||`` chains, ``git merge-base``, and
+  producer-as-consumer (``... | git push``) never match; ``|&`` is
+  normalized to ``|`` first. The
+  ``.claude/hooks/guard_piped_git_push.sh`` PreToolUse hook covers the
+  inline ad-hoc commands that never reach a committed script (#1048).
 * ``--check-marker-registry`` (also bundled into ``--check-references``):
   extract every marker kind that any skill's ``SKILL.md`` under
   ``.claude/skills/**/`` or an agent spec under ``.claude/agents/*.md``
@@ -146,6 +163,45 @@ Behaviours:
   Codex twin caught #640); a CPU smoke that skips the GPU phase never
   exercises the upload branch, so nothing mechanical caught it
   pre-merge.
+* ``--check-jsonl-splitlines`` (also bundled into the no-flags default
+  run): AST-walk every ``*.py`` under ``scripts/`` AND
+  ``src/explore_persona_space/`` and FAIL on any ``.splitlines()`` call
+  reading JSONL content. ``json.dumps(..., ensure_ascii=False)`` leaves
+  raw U+2028/U+2029/NEL inside JSON strings and ``str.splitlines()``
+  splits on ALL Unicode line boundaries, so a valid ``\\n``-terminated
+  JSONL file shreds into unparseable fragments — a hard crash on strict
+  readers, SILENT record loss on tolerant skip-malformed readers, and
+  inflated row counts on ``len(...splitlines())`` asserts (incident #825
+  run-1d; eight live workflow-surface reader sites across seven files
+  fixed with #950). Four narrow
+  signals: (a) a ``read_text``-bearing receiver chain whose source
+  segment mentions ``jsonl``; (b) a bare receiver ``Name`` matching
+  ``jsonl``; (c) the call sits inside a ``jsonl``-named function; (d) a
+  ``read_text``-bearing receiver chain whose base ``Name`` is
+  ``ev_path``/``events_path``/``concerns_path`` or whose segment names
+  ``events.jsonl``/``comments.jsonl``/``concerns.jsonl``. Deliberate false negatives
+  (dataflow through other variable names, shell heredocs) are documented
+  in the check docstring — the gotchas.md entry carries those. Waive a
+  genuinely-safe flagged site with ``# JSONL_SPLITLINES_EXEMPT: <reason>``
+  (reason ≥ 10 chars) on the call's first physical line or the
+  immediately preceding non-blank line; frozen legacy per-issue
+  experiment scripts are grandfathered in
+  :data:`JSONL_SPLITLINES_LEGACY_ALLOWLIST` (experiment files ONLY — a
+  workflow-surface file is never allowlisted, it is fixed). Unparseable
+  files (SyntaxError / non-UTF-8) are skipped WITH a printed notice,
+  never silently.
+* ``--check-upload-or-true`` (also bundled into the no-flags default
+  run): walk every ``*.sh`` under ``scripts/`` and FAIL any
+  upload/result-persist command line whose failure is swallowed by
+  ``|| true`` / ``|| :`` / ``; true`` (#841 silent artifact loss —
+  swallowed plot-phase failures + a missing upload phase lost stage
+  JSONs/plots across attempts). Terminal swallows mask the whole
+  ``&&``-chain (whole-line token check); non-terminal ``|| true`` is
+  segment-scoped; swallowed heredoc openers and multi-line
+  ``python -c "…"`` blocks are scanned for BODY upload-call tokens.
+  Legacy deliberate uses frozen in
+  :data:`UPLOAD_OR_TRUE_LEGACY_ALLOWLIST`; waive with
+  ``# UPLOAD_OR_TRUE_EXEMPT: <reason>`` (reason ≥ 10 chars).
 * ``--check-dotenv-before-hf-import`` (also bundled into the no-flags
   default run): AST-walk every ``*.py`` under ``scripts/`` and FAIL on
   any script that uses the BARE python-dotenv ``load_dotenv``
@@ -230,6 +286,77 @@ Behaviours:
   The canonical pin ``claude-sonnet-4-5-20250929`` carries no forbidden
   substring, so it never matches. Motivating incident: the #650/#657 stale
   legacy-Haiku judge pins (#765).
+* ``--check-no-literal-round-marker-versions`` (also bundled into the no-flags
+  default run): FAIL on a literal ``v1`` posting instruction for a
+  round-versioned marker kind (``epm:experiment-implementation`` /
+  ``epm:results`` / ``epm:proposed-tests``) in checked-in workflow prose
+  (CLAUDE.md, workflow.yaml, agents/rules ``.md``, every ``SKILL.md``, the
+  /issue ``markers.md`` + ``templates/``). Those kinds accrue rows across
+  follow-up rounds / TDD resumes / crash-recovery re-posts, and an explicit
+  ``--version`` beats the CLI's omitted-version max+1 default, so checked-in
+  "post at v1" prose seeds briefs that collide with existing rows (incident
+  #825: a follow-up-round brief instructed a literal v1 on a task already at
+  v6 — the #389 class). Whole-file scan (a line-wrapped kind/version pair
+  still trips); ``v1`` is word-bounded (``v12`` never matches); prose
+  evasions like "pass ``--version 1``" are a DELIBERATE boundary covered by
+  the brief-contract prose layers, not this lint. Historical archives
+  (``.claude/plans/``, ``.claude/agent-memory/``) are out of scan scope (#917).
+* ``--check-agent-tools`` (also bundled into the no-flags default run):
+  every ``.claude/agents/*.md`` must declare an explicit tool surface — a
+  ``tools:`` allowlist or a ``disallowedTools:`` denylist — in its YAML
+  frontmatter (task #840). An agent file with neither key inherits the
+  parent session's FULL tool inventory including every user-level MCP
+  server's tool schemas; incident #778 (2026-07-01): two
+  ``experiment-implementer`` spawns each paid ~168K static first-turn
+  tokens on the inlined schemas and died in autocompact thrash. Sub-checks:
+  (1) declaration required on every file; (2) mentioned ⊆ declared — every
+  spec-BODY tool mention per the widened extractor (explicit ``mcp__...``
+  tokens, the built-in literals ``WebSearch``/``WebFetch``/
+  ``NotebookEdit``/``TodoWrite``, the ``Agent``/``Skill`` phrase forms, and
+  prose MCP aliases such as "context7 MCP" →
+  ``mcp__plugin_context7_context7``) must be covered by the allowlist,
+  modulo the
+  :data:`AGENT_TOOLS_MENTION_EXCEPTIONS` dict (descriptive-not-instructive
+  mentions, each waived with an inline reason); (2b) declared-name
+  validity — every DECLARED ``mcp__...`` token must name a server in
+  :data:`KNOWN_MCP_SERVERS` (the harness silently ignores unknown names,
+  so a typo strips a capability with no error); (3) a
+  ``disallowedTools:``-only file (research-pm) skips the containment check
+  but must not deny a body-mentioned tool.
+* ``--check-phase-done-reserved`` (also bundled into the no-flags default
+  run): walk every ``scripts/**/*.sh`` dispatcher and FAIL any non-redirected
+  invocation of a ``scripts/*.py|*.sh`` phase script that contains a genuine
+  ``[phase=done]`` emission site — the reserved-token contract of
+  ``.claude/rules/pod-side-reporting.md`` requirement 1 (the token in the
+  MAIN dispatcher log is reserved for the dispatcher's single terminal line;
+  a mid-pipeline child emission reads as a false ``status=done`` to
+  ``poll_pipeline.py`` — incidents #545, #920). Emission detection is
+  AST-based for ``.py`` (comments / docstrings / ``re.compile`` match sites
+  never flag) and quote-aware comment-stripped ``echo|printf|print(`` for
+  ``.sh``; every invocation on a logical line is checked (the line is split
+  into command segments at unquoted ``&&``/``||``/``;``/``|``/lone-``&``
+  separators), and a stdout-redirected invocation (the
+  ``> "$WORKER_LOG" 2>&1`` per-worker isolation pattern, scoped to the
+  invocation's OWN segment) is skipped, while ``2>&1 | tee`` stays
+  checked. Legacy edges are frozen in
+  :data:`PHASE_DONE_EDGE_LEGACY_ALLOWLIST` ((invoker, target) edge grain,
+  annotated); waive a mode-gated standalone-lane terminal with
+  ``# noqa: phase-done-reserved`` on the emission line or the preceding
+  non-blank line. Also enforced at commit time by the
+  ``workflow-lint-phase-done-reserved`` pre-commit hook on any
+  ``scripts/*.sh|py`` change (#930).
+* ``--check-stale-label-disposition`` (also bundled into the no-flags default
+  run): FAIL if the /issue SKILL.md Step 0 "Stale-label disposition rule"
+  paragraph (bold anchor ``**Stale-label disposition rule``, which must be
+  UNIQUE — the check carries a negative assertion, so span identity is
+  load-bearing) loses any of its five #894/#763 semantic tokens — most
+  critically the fresh-label-execute clause ("the label EXECUTES as the
+  dispatched round") — or regains an unconditional skip-on-None coupling
+  ("On None ... skip", a targeted negative regex over the
+  whitespace-normalized paragraph span; a literal-coupling backstop only,
+  the positive tokens are the primary defense). Paragraph-scoped: the span
+  runs from the anchor to the first blank line, so a mid-paragraph split
+  FAILs loudly (#963).
 
 Exit codes:
 
@@ -345,6 +472,7 @@ SKILL_REF_ALLOWLIST: frozenset[str] = frozenset(
         "compact",  # built-in /compact
         "rewind",  # built-in /rewind
         "mcp",  # built-in /mcp (MCP reconnect)
+        "login",  # built-in /login (CLI credential re-auth; #1027 auth-outage guard docs)
         "review",  # built-in /review (PR review)
         "init",  # built-in /init (CLAUDE.md init)
         "security-review",  # built-in /security-review
@@ -625,6 +753,157 @@ CVD_PIN_WAIVER_MIN_REASON_CHARS = 10
 # `.claude/settings.json` and pins the agreement.
 PIPE_PYTHON_RE = re.compile(r"\|\s*python3?(?:\.\d+)?\s+(?:-\S+\s+)*-[cm]\b")
 
+# `--check-piped-git-push` (#1048): a `git push` / `git merge` /
+# `gh pr merge|create` PRODUCER piped into a filter on its own pipeline
+# segment (`git push origin main 2>&1 | tail -20`). Bash makes the
+# compound's exit status the LAST stage's, so the pipe masks the
+# producer's non-zero exit code: a rejected push reads as success and the
+# session proceeds believing the merge landed (#957's Step 10d push was
+# masked 2026-07-04; 4 sessions hit the class on 2026-07-02). The prose
+# rule (CLAUDE.md § Concurrent repo-root committers: "run it bare and
+# check the exit code, or use `set -o pipefail` when a pipe is
+# unavoidable") failed open >=5 times in 3 days; this check makes it
+# mechanical for committed `scripts/*.sh`, and the
+# `.claude/hooks/guard_piped_git_push.sh` PreToolUse hook covers the
+# inline ad-hoc commands that never reach a script — the same dual-engine
+# split as `--check-pipe-python` (#753).
+#
+# Flagged (a logical shell line, backslash continuations merged, `|&`
+# normalized to `|` before matching — bash's `|&` is `2>&1 |` shorthand):
+#   * `git push | tail -5`, `git push origin main 2>&1 | grep -v x`;
+#   * `gh pr merge 123 --squash | head`, `gh pr create ... | grep -o ...`;
+#   * `git -C <dir> push ... 2>&1 | tail -20` (flag-tolerant `git` anchor);
+#   * `git merge issue-x 2>&1 | tail -5`, `git push 2>err.log | tail`.
+# NOT flagged (precision):
+#   * `git push origin main || echo failed` — `(?!\|)` rejects `||` (the
+#     one real tree shape, issue931_dispatch.sh);
+#   * `git merge-base --all main HEAD | head -1` — the verb must be
+#     followed by whitespace-or-pipe, so `merge-base` never matches (a
+#     canonical .claude/rules/diff-size-budget.md probe);
+#   * `echo foo | git push` — producer as CONSUMER/final stage: no
+#     trailing `|` after the producer, and the final stage's exit code IS
+#     the pipeline's;
+#   * `git status | grep x && git push` — the span class cannot cross a
+#     `;`/`&&`/`||`/`&` command separator, so the trailing `|` is
+#     guaranteed to be a pipe attached to the producer's OWN segment;
+#   * a matched span containing `--dry-run` (a dry run lands nothing, so
+#     masking its exit code cannot cause the incident) — skipped by
+#     check_piped_git_push, not the regex;
+#   * `#`-comment lines; and every line at-or-after the FIRST non-comment
+#     `pipefail` line in the file (a `set -euo pipefail` header makes
+#     every later pipe propagate the failure; `set +o pipefail`
+#     re-disable is ignored — fails toward false-NEGATIVE, the documented
+#     safe direction for a pre-commit-gating lint, same stance as
+#     `_upload_or_true_segments`).
+#
+# Span class: `[^|;&\n]` blocks command separators, but the alternation
+# `&(?=[>0-9])` re-admits the `&` INSIDE redirection operators (`2>&1`,
+# `>&2`, `&>file`, `&>>file`) — without it the span cannot cross `2>&1`
+# and the flagship incident shape `git push origin main 2>&1 | tail -20`
+# is MISSED (the #1048 Phase 1.5 fact-checker finding on plan v1). Known
+# accepted residual: an exotic no-space background separator immediately
+# followed by a digit- or `>`-starting command (`git push &9foo | tail`)
+# extends the span — fails toward FLAG (a lint error a human reviews),
+# the safe direction. No waiver token in v1 (YAGNI, the
+# `check_pipe_python` stance): the committed tree is clean (sole prior
+# hit, issue931_dispatch.sh, is an `||` disjunction), so nothing to waive
+# or grandfather. Like the sibling, the regex is line-local and NOT
+# quote-aware — a quoted string carrying the literal pattern matches
+# (document the bad pattern in a `#`-comment, not an echo/quoted string).
+_PIPED_PUSH_SPAN = r"(?:[^|;&\n]|&(?=[>0-9]))*"
+_PIPED_PUSH_GIT = (
+    r"\bgit\s+(?:-[^\s|;&]+(?:\s+[^\s|;&]+)?\s+)*(?:push|merge)"
+    r"(?:\s" + _PIPED_PUSH_SPAN + r")?\|(?!\|)"
+)
+_PIPED_PUSH_GH = r"\bgh\s+pr\s+(?:merge|create)(?:\s" + _PIPED_PUSH_SPAN + r")?\|(?!\|)"
+PIPED_GIT_PUSH_RE = re.compile(_PIPED_PUSH_GIT + "|" + _PIPED_PUSH_GH)
+
+# `--check-upload-or-true` (#1036): an upload / result-persist /
+# result-production command whose failure is swallowed by `|| true` /
+# `|| :` / `; true` in a `scripts/**/*.sh` shell line (#841: swallowed
+# plot-phase failures compounded a missing upload phase — stage
+# JSONs/plots were silently lost across attempts until the fail-loud fix
+# commits 4ece51a22a / 0efbce6575 removed the swallows).
+#
+# Flagged (per logical shell line, backslash continuations merged,
+# trailing comments stripped quote-aware):
+#   * TERMINAL swallow (`|| true` / `|| :` / `; true` at line end) +
+#     an upload/result token ANYWHERE on the line — bash `&&`/`||` are
+#     equal-precedence left-associative, so a terminal swallow masks the
+#     WHOLE preceding chain (`upload && echo ok || true`,
+#     `{ upload; } || true`);
+#   * NON-terminal `|| true` / `|| :` + a token in the SAME `&&`/`;`
+#     segment (preserves the `mkdir || true && upload` FP kill);
+#   * a swallowed heredoc opener whose BODY calls an upload helper
+#     (`... <<'PY' 2>&1 || true` + body `api.upload_file(` — the
+#     i632_dispatch_with_log_capture.sh:30 shape a line-only scan misses);
+#   * a swallowed multi-line `python -c "…"` quoted block whose BODY
+#     calls an upload helper (the CURRENT #841 upload-phase shape —
+#     `upload_split_lfs_to_overflow(` bodies).
+# NOT flagged:
+#   * `#`-comment lines (issue841_scaling_dispatch.sh:85 is a comment
+#     containing both `|| true` and "upload") and `echo `-prefixed lines
+#     (an echo performs no upload; known accepted FN:
+#     `echo "…"; upload || true` merged on ONE logical line is skipped
+#     whole — frozen by a test fixture);
+#   * `clean_experiment_downloads.py … || true` ("downloads" contains no
+#     "upload" substring), `ls eval_results/ || true` (bare result-dir
+#     names are tokens ONLY inside the `git add|commit` alternation);
+#   * lines waived via `# UPLOAD_OR_TRUE_EXEMPT: <reason>` (reason ≥ 10
+#     chars; same logical line or immediately preceding non-blank line —
+#     the CVD_PIN_EXEMPT convention). Deliberate best-effort side
+#     channels (crash-diagnostics uploads on a FAILURE path) use this.
+# Named residual evasion shapes (fail-toward-false-negative, the safe
+# direction for a pre-commit-gating lint — all deliberate scope bounds):
+#   * `|| echo WARN` swallows (leave a log trace, lesser severity than
+#     `|| true`'s pure silence);
+#   * `|| rc=$?`-then-ignore and `set +e` blocks;
+#   * shell-function-call swallows (`do_upload || true` — the function
+#     name carries no token unless it contains "upload");
+#   * a multi-line subshell wrapper with the swallow on the CLOSING paren
+#     (`(cmd <<'PY' … PY` newline `) || true`) — no live instance;
+#   * the naive quote-unaware `&&`/`;` segment split can mis-split on
+#     quoted separators (non-terminal rule only);
+#   * a MISSING upload phase (the other half of #841's loss) is not
+#     lintable and is named here, not claimed.
+UPLOAD_OR_TRUE_SWALLOW_OR_RE = re.compile(r"\|\|\s*(?:true\b|:(?=[\s;)&|]|$))")
+# Terminal swallow — masks the WHOLE line/chain:
+UPLOAD_OR_TRUE_SWALLOW_TERMINAL_RE = re.compile(r"(?:\|\|\s*(?:true|:)|;\s*true)\s*$")
+# Shell-line upload/result-persist/result-production tokens. Notes:
+#   * `upload_raw_completions\w*` (NOT a trailing `\b` before `_`) — the
+#     canonical helper is upload_raw_completions_to_data_repo;
+#   * `*upload*.py` — upload helper scripts (verify_uploads.py, …);
+#   * `*plot*.py` — result-production (plot) scripts, the founding #841
+#     offender shape (issue841_scaling_plots.py);
+#   * `git add|commit` of result dirs + `git push` — git persistence;
+#   * `$HF_DATA_REPO` / `$HF_MODEL_REPO` — repo-destination env vars.
+UPLOAD_OR_TRUE_LINE_TOKEN_RE = re.compile(
+    r"(?:"
+    r"\bupload_file\b|\bupload_folder\b|\bupload_raw_completions\w*"
+    r"|\bhf\s+upload\b|\bhuggingface-cli\s+upload\b"
+    r"|\b[A-Za-z0-9_]*upload[A-Za-z0-9_]*\.py\b"
+    r"|\b[A-Za-z0-9_]*plot[A-Za-z0-9_]*\.py\b"
+    r"|\bgit\s+push\b"
+    r"|\bgit\s+(?:add|commit)\b[^#]*\b(?:eval_results|figures|ood_eval_results)\b"
+    r"|\$\{?HF_DATA_REPO\b|\$\{?HF_MODEL_REPO\b"
+    r")"
+)
+# Quoted/heredoc BODY upload-call tokens (inline-python upload blocks — the
+# dominant dispatcher upload shape; the widened `\w*upload\w*(` covers
+# upload_file(, upload_folder(, _upload(, api.upload_file(,
+# upload_split_lfs_to_overflow():
+UPLOAD_OR_TRUE_BODY_TOKEN_RE = re.compile(
+    r"(?:\b[A-Za-z0-9_]*upload[A-Za-z0-9_]*\s*\("
+    r"|\bupload_raw_completions\w*|\bcreate_commit\s*\(|\.push_to_hub\s*\()"
+)
+UPLOAD_OR_TRUE_WAIVER_RE = re.compile(r"#\s*UPLOAD_OR_TRUE_EXEMPT:\s*(.+)")
+UPLOAD_OR_TRUE_WAIVER_MIN_REASON_CHARS = 10
+# Multi-line `python -c "` opener (captures the quote char); a block whose
+# captured quote is unclosed on the logical line is consumed physically
+# until the first line containing the closing quote char, bounded below.
+UPLOAD_OR_TRUE_PYC_OPENER_RE = re.compile(r"\bpython3?\s+-c\s+([\"'])")
+UPLOAD_OR_TRUE_PYC_MAX_BODY_LINES = 300  # bounded; unclosed at EOF/cap -> skip (FN-safe)
+
 # `--check-agent-model-pins`: every `.claude/agents/*.md` carries a YAML
 # frontmatter line ``model: "claude-..."`` that the Claude Code harness reads
 # at subagent spawn. A pin that is unknown OR carries a `[1m]` suffix on a
@@ -675,6 +954,108 @@ AGENT_MODEL_PIN_RE = re.compile(
 # (the only suffix the harness currently exposes for a model pin); any
 # other tail is treated as part of an unknown base id and flagged.
 AGENT_MODEL_1M_SUFFIX = "[1m]"
+
+
+# `--check-agent-tools`: every `.claude/agents/*.md` must declare an explicit
+# tool surface — a `tools:` allowlist or a `disallowedTools:` denylist — in
+# its YAML frontmatter. An agent file with NEITHER key inherits the parent
+# session's FULL tool inventory, including every user-level MCP server's tool
+# schemas (todoist ~100, google-workspace ~90, playwright ~35, runpod ~28,
+# ...); incident #778 (2026-07-01): two `experiment-implementer` spawns each
+# paid ~168K static first-turn tokens on the inlined MCP schemas and died in
+# autocompact thrash. Task #840 added explicit declarations to all 28 files;
+# this check keeps the invariant durable (a NEW agent file landing without a
+# declaration reintroduces the bug silently).
+#
+# Three sub-checks per file (see `check_agent_tools`):
+#   1. declaration required (`tools:` or `disallowedTools:` present);
+#   2. mentioned ⊆ declared — a spec-BODY tool mention (explicit `mcp__...`
+#      token, built-in literal name, `Agent`/`Skill` phrase form, or a prose
+#      MCP alias like "context7 MCP") must be covered by the declaration,
+#      modulo :data:`AGENT_TOOLS_MENTION_EXCEPTIONS` (descriptive-not-
+#      instructive mentions, each with an inline reason);
+#   2b. declared-name validity — every DECLARED `mcp__...` token must name a
+#      server in :data:`KNOWN_MCP_SERVERS` (a silent typo like
+#      `mcp__plugin_context7_contex7` strips a capability with no error);
+#   3. denylist files — no BODY-mentioned token may be denied.
+#
+# Known MCP server names, snapshotted from the live runtime tool-name strings
+# (`mcp__<server>__<tool>`) on 2026-07-02 (task #840 plan §4.2). Update when a
+# new MCP server is registered at user level AND an agent declaration needs
+# it — the constant gates only DECLARED names, so an unrelated new server
+# needs no entry here.
+KNOWN_MCP_SERVERS: frozenset[str] = frozenset(
+    {
+        "arxiv",
+        "arxiv-latex",
+        "google-workspace",
+        "happy",
+        "plugin_context7_context7",
+        "plugin_huggingface-skills_huggingface-skills",
+        "plugin_playwright_playwright",
+        "runpod",
+        "ssh",
+        "todoist",
+    }
+)
+
+# (filename, mentioned-token) pairs the mentioned-⊆-declared check skips.
+# Every entry MUST carry an inline reason explaining why the body mention is
+# descriptive-not-instructive (the mention documents ANOTHER actor's tool
+# use, or a retired/historical pattern) — never add an entry to silence a
+# genuine instruction; add the tool to the declaration instead (the additive
+# direction is always safe per the #840 plan §13).
+AGENT_TOOLS_MENTION_EXCEPTIONS: dict[tuple[str, str], str] = {
+    ("planner.md", "mcp__ssh__ssh_execute"): (
+        "describes the upload-verifier's Step-8 on-pod glob enumeration "
+        "(primary-deliverable block), not a planner instruction"
+    ),
+    ("codex-clean-result-critic.md", "Agent"): (
+        "'spawned from a single Agent(...) call' describes how the "
+        "ORCHESTRATOR spawns the ensemble, not an instruction for this "
+        "prompt-composer wrapper to call the Agent tool"
+    ),
+    ("codex-follow-up-critic.md", "Agent"): (
+        "'Both spawned from a single Agent(...) call' describes the "
+        "orchestrator's ensemble spawn, not a wrapper instruction"
+    ),
+    ("codex-interpretation-critic.md", "Agent"): (
+        "'Both spawned from a single Agent(...) call' describes the "
+        "orchestrator's ensemble spawn, not a wrapper instruction"
+    ),
+    ("codex-reviewer.md", "Agent"): (
+        "DEPRECATED file (2026-05-13, never spawned); the Agent(...) mention "
+        "describes the historical ensemble spawn pattern"
+    ),
+    ("workflow-improver.md", "Agent"): (
+        "DEPRECATED/frozen file (#678, never spawned; "
+        "--check-no-workflow-improver-spawn bans it); Agent( appears only in "
+        "historical examples of the retired auto-spawn pattern and a "
+        "grep-target example"
+    ),
+}
+
+# Spec-BODY tool-mention extractor vocabulary (the #840 plan §4.3 "widened
+# extractor"). Four layers:
+#   (i)  explicit MCP tokens — full `mcp__<server>__<tool>` and server-level
+#        `mcp__<server>` forms (one greedy regex matches both; the char class
+#        includes `_`, so a full token is captured whole);
+#   (ii) built-in literal names an allowlist can silently block;
+#   (iii) phrase forms for `Agent` (nested spawns) and `Skill` (runtime
+#        skill loads) — the literal bare names are far too common in prose
+#        ("the agent", "the skill") to match directly;
+#   (iv) prose MCP aliases mapped to their server-level token.
+AGENT_TOOLS_MCP_TOKEN_RE = re.compile(r"mcp__[A-Za-z0-9_-]+")
+AGENT_TOOLS_BUILTIN_RE = re.compile(r"\b(WebSearch|WebFetch|NotebookEdit|TodoWrite)\b")
+AGENT_TOOLS_AGENT_PHRASE_RE = re.compile(r"`Agent`\s+tool|\bAgent\(")
+AGENT_TOOLS_SKILL_PHRASE_RE = re.compile(
+    r"`Skill`\s+tool|\binvoke[sd]?\s+the\s+`?[\w/-]+`?\s+skill\b", re.IGNORECASE
+)
+AGENT_TOOLS_MCP_ALIASES: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"`?context7`?\s+MCP", re.IGNORECASE), "mcp__plugin_context7_context7"),
+    (re.compile(r"\bSSH\s+MCP\b", re.IGNORECASE), "mcp__ssh"),
+    (re.compile(r"\barXiv\s+MCP\b", re.IGNORECASE), "mcp__arxiv"),
+)
 
 
 # `--check-upload-as-file`: the shared HF-Hub upload helper
@@ -736,6 +1117,49 @@ UPLOAD_GLOB_LOOP_METHODS: tuple[str, ...] = ("glob", "rglob", "iterdir")
 # convention as CVD_PIN_EXEMPT / WANDB_INTENTIONALLY_DISABLED.
 UPLOAD_AS_FILE_WAIVER_RE = re.compile(r"#\s*UPLOAD_AS_FILE_EXEMPT\s*:\s*(.+?)\s*$")
 UPLOAD_AS_FILE_WAIVER_MIN_REASON_CHARS = 10
+
+
+# `--check-jsonl-splitlines` (#950): reading/counting JSONL via
+# `str.splitlines()` shreds records whose `ensure_ascii=False` strings carry
+# raw U+2028/U+2029/NEL (Unicode line boundaries; incident #825 run-1d).
+# Inline waiver for a genuinely-safe flagged site. Reason ≥ 10 chars, same
+# convention as UPLOAD_AS_FILE_EXEMPT.
+JSONL_SPLITLINES_WAIVER_RE = re.compile(r"#\s*JSONL_SPLITLINES_EXEMPT\s*:\s*(.+?)\s*$")
+JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS = 10
+# Signal regexes: (b)/(c) receiver-Name / enclosing-function-name token; (d)
+# events/concerns-path receiver base names (the project's uniform conventions
+# for `events.jsonl` / `concerns.jsonl` paths; `concerns_path` covers the
+# verify_task_body.py check-14 reader shape fixed in #950 round 2).
+JSONL_NAME_TOKEN_RE = re.compile(r"jsonl", re.IGNORECASE)
+JSONL_EVENTS_PATH_NAME_RE = re.compile(r"^(ev(ents)?|concerns)_path$", re.IGNORECASE)
+# Grandfathered legacy `.splitlines()`-on-JSONL sites — repo-root-relative
+# POSIX FILE paths (file-level, not line-keyed — line keys rot; these are
+# frozen per-issue experiment scripts of terminal/near-terminal tasks reading
+# their own mostly-ASCII generated JSONL). HARD RULE: experiment files ONLY —
+# a workflow-surface file may NEVER be allowlisted, it must be FIXED (the
+# live-tree test asserts the experiment-file path shape mechanically).
+JSONL_SPLITLINES_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # #823 identity-baseline driver (terminal task, own generated JSONL):
+        "scripts/issue823_identity_baseline.py",
+        # #778 honest-null figures (terminal task):
+        "scripts/issue778_honest_null_figures.py",
+        # #488 phase2 smoke calibrator (terminal task):
+        "scripts/i488_phase2_smoke_calibrate.py",
+        # #778 summary comparison plots (terminal task):
+        "scripts/issue778_summary_comparison_plots.py",
+        # #667 extraction driver (terminal task):
+        "scripts/issue667_extract.py",
+        # #650 concept-direction driver (terminal task):
+        "scripts/issue650_concept_direction.py",
+        # #642 dispatch driver, 5 sites (terminal task):
+        "scripts/issue_642/i642_dispatch.py",
+        # #612 sycophancy claim audit `_load_jsonl` (experiment package under
+        # src/explore_persona_space/experiments/ — experiment code, not
+        # workflow surface):
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/claim_audit.py",
+    }
+)
 
 
 # `--check-batch-judge-client`: every inline Anthropic Message Batches API
@@ -1060,6 +1484,32 @@ JUDGE_PIN_LEGACY_ALLOWLIST_SH: frozenset[str] = frozenset(
 )
 JUDGE_PIN_WAIVER_RE = re.compile(r"#\s*noqa:\s*judge-model-pin\b")
 JUDGE_PIN_FILE_WAIVER_RE = re.compile(r"#\s*epm-allow-judge-model-pin\b")
+
+# Grandfathered `|| true` swallows on upload/result-persist lines. New
+# deliberate best-effort uploads use the inline `# UPLOAD_OR_TRUE_EXEMPT:`
+# waiver instead of growing this list (test_live_trees_pass locks it to
+# today's tree; mirrors JUDGE_PIN_LEGACY_ALLOWLIST's style). File-level
+# granularity (the JUDGE_PIN precedent) — accepted trade-off: a whole-file
+# exemption can mask a FUTURE genuine violation added to one of these
+# files; all three are historical dispatchers of completed issues.
+UPLOAD_OR_TRUE_LEGACY_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        # --- deliberate best-effort diagnostics side-channels (permanent) ---
+        # #654 crash-diagnostics upload on the FAILURE path; `|| true` +
+        # in-Python try/except keep a failed HF upload from masking the real
+        # failure rc=2 (documented at the call site, lines 154-160):
+        "scripts/issue654_dispatch.sh",
+        # #632 debug wrapper: best-effort diagnostics upload "regardless of
+        # RC"; primary results ride the dispatcher's own fail-loud path:
+        "scripts/i632_dispatch_with_log_capture.sh",
+        # --- pre-existing, tracked ---
+        # `git add eval_results/ figures/ || true` (line 251) before a guarded
+        # commit; the fail-loud PRIMARY persist is the HF upload_folder phase
+        # (p5) directly above, and the git-push leg degrades to a logged
+        # WARNING by design; historical dispatcher of a completed issue:
+        "scripts/issue931_dispatch.sh",
+    }
+)
 
 
 # `--check-asks`: every `AskUserQuestion` mention in agent/skill specs must
@@ -1879,20 +2329,21 @@ def _heredoc_body_dotenv_errors(path: Path, lines: list[str], start: int, end: i
     return errors
 
 
-def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
-    """Walk one shell script, tracking heredoc bodies, and return the
-    dotenv errors found in bodies that feed a python interpreter's stdin.
+def _iter_sh_logicals_with_heredocs(lines: list[str]):
+    """Yield ``(first_idx, last_idx, logical, heredoc_bodies)`` per logical
+    shell line; ``heredoc_bodies`` is a list of ``(body_start, body_end)``
+    0-based physical-line bounds (end EXCLUSIVE of the terminator line),
+    one per heredoc opener on the logical line, in opener order.
 
-    Backslash-continued physical lines are merged into one logical
-    command line before opener detection (the #612 shape continues the
-    opener line with ``\\`` + ``|| fail ...``; the body starts after the
-    last physical line of the logical command). ALL heredoc bodies are
-    consumed so body content can never be misparsed as new openers; only
-    python-stdin-fed bodies are scanned. The terminator match is lenient
+    Shared cursor logic extracted from the heredoc-dotenv scanner (#1036):
+    backslash-continued physical lines are merged into one logical command
+    line before opener detection (the #612 shape continues the opener line
+    with ``\\`` + ``|| fail ...``; the body starts after the last physical
+    line of the logical command). ALL heredoc bodies are CONSUMED — body
+    content is never re-yielded as logical shell lines, so it can never be
+    misparsed as new openers. The terminator match is lenient
     (stripped-line equality) so ``<<-`` indented terminators work; an
-    unterminated heredoc scans through to EOF."""
-    lines = path.read_text(encoding="utf-8").splitlines()
-    errors: list[str] = []
+    unterminated heredoc consumes through to EOF."""
     n = len(lines)
     i = 0
     while i < n:
@@ -1902,13 +2353,7 @@ def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
             last += 1
             logical = logical.rstrip()[:-1] + " " + lines[last]
         openers = list(HEREDOC_OPENER_RE.finditer(logical))
-        if not openers:
-            i = last + 1
-            continue
-        prefix = logical[: openers[0].start()]
-        python_fed = bool(HEREDOC_PY_STDIN_DASH_RE.search(prefix)) or bool(
-            HEREDOC_PY_STDIN_BARE_RE.search(prefix)
-        )
+        bodies: list[tuple[int, int]] = []
         body_cursor = last + 1
         for opener in openers:
             delim = opener.group(2)
@@ -1916,10 +2361,34 @@ def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
             body_end = body_start
             while body_end < n and lines[body_end].strip() != delim:
                 body_end += 1
-            if python_fed:
-                errors.extend(_heredoc_body_dotenv_errors(path, lines, body_start, body_end))
+            bodies.append((body_start, body_end))
             body_cursor = body_end + 1
-        i = body_cursor
+        yield i, last, logical, bodies
+        i = body_cursor if openers else last + 1
+
+
+def _scan_shell_file_for_heredoc_dotenv(path: Path) -> list[str]:
+    """Walk one shell script, tracking heredoc bodies, and return the
+    dotenv errors found in bodies that feed a python interpreter's stdin.
+
+    The cursor logic (backslash merge, opener detection, delimiter-bounded
+    body consumption) lives in the shared :func:`_iter_sh_logicals_with_heredocs`
+    generator; only the python-stdin-fed classification + dotenv body scan
+    stay here."""
+    lines = path.read_text(encoding="utf-8").splitlines()
+    errors: list[str] = []
+    for _first, _last, logical, bodies in _iter_sh_logicals_with_heredocs(lines):
+        if not bodies:
+            continue
+        openers = list(HEREDOC_OPENER_RE.finditer(logical))
+        prefix = logical[: openers[0].start()]
+        python_fed = bool(HEREDOC_PY_STDIN_DASH_RE.search(prefix)) or bool(
+            HEREDOC_PY_STDIN_BARE_RE.search(prefix)
+        )
+        if not python_fed:
+            continue
+        for body_start, body_end in bodies:
+            errors.extend(_heredoc_body_dotenv_errors(path, lines, body_start, body_end))
     return errors
 
 
@@ -1974,26 +2443,51 @@ def _iter_logical_shell_lines(lines: list[str]):
         i = last + 1
 
 
-def _cvd_pin_waiver_present(lines: list[str], first_idx: int, last_idx: int) -> bool:
-    """Return True iff a ``# CVD_PIN_EXEMPT: <reason>`` waiver (reason ≥
-    :data:`CVD_PIN_WAIVER_MIN_REASON_CHARS` chars) covers the logical
-    command spanning ``lines[first_idx:last_idx + 1]``. Accepts the waiver
-    on any physical line of the logical command (trailing comment on a
-    single-line launch) or on the immediately preceding non-blank line
-    (the only valid placement for a backslash-continued launch — a
-    trailing ``#`` comment would break the continuation)."""
+def _sh_waiver_present(
+    lines: list[str],
+    first_idx: int,
+    last_idx: int,
+    *,
+    waiver_re: re.Pattern[str],
+    min_reason_chars: int,
+) -> bool:
+    """Return True iff a reason-bearing inline waiver comment (matched by
+    ``waiver_re``, group(1) = reason, reason ≥ ``min_reason_chars`` chars
+    after strip) covers the logical command spanning
+    ``lines[first_idx:last_idx + 1]``. Accepts the waiver on any physical
+    line of the logical command (trailing comment on a single-line
+    command) or on the immediately preceding non-blank line (the only
+    valid placement for a backslash-continued command — a trailing ``#``
+    comment would break the continuation). Runs on the RAW lines: the
+    waiver IS a comment, so it must be read before comment stripping.
+    Generalized from the CVD_PIN_EXEMPT helper (#1036) so sibling checks
+    (UPLOAD_OR_TRUE_EXEMPT) share the placement semantics."""
     for idx in range(first_idx, last_idx + 1):
-        match = CVD_PIN_WAIVER_RE.search(lines[idx])
-        if match and len(match.group(1).strip()) >= CVD_PIN_WAIVER_MIN_REASON_CHARS:
+        match = waiver_re.search(lines[idx])
+        if match and len(match.group(1).strip()) >= min_reason_chars:
             return True
     back = first_idx - 1
     while back >= 0 and lines[back].strip() == "":
         back -= 1
     if back >= 0:
-        match = CVD_PIN_WAIVER_RE.search(lines[back])
-        if match and len(match.group(1).strip()) >= CVD_PIN_WAIVER_MIN_REASON_CHARS:
+        match = waiver_re.search(lines[back])
+        if match and len(match.group(1).strip()) >= min_reason_chars:
             return True
     return False
+
+
+def _cvd_pin_waiver_present(lines: list[str], first_idx: int, last_idx: int) -> bool:
+    """Return True iff a ``# CVD_PIN_EXEMPT: <reason>`` waiver (reason ≥
+    :data:`CVD_PIN_WAIVER_MIN_REASON_CHARS` chars) covers the logical
+    command spanning ``lines[first_idx:last_idx + 1]`` — see
+    :func:`_sh_waiver_present` for the placement semantics."""
+    return _sh_waiver_present(
+        lines,
+        first_idx,
+        last_idx,
+        waiver_re=CVD_PIN_WAIVER_RE,
+        min_reason_chars=CVD_PIN_WAIVER_MIN_REASON_CHARS,
+    )
 
 
 def check_dispatcher_cvd_pin(*, scripts_dir: Path | None = None) -> list[str]:
@@ -2116,6 +2610,315 @@ def check_pipe_python(*, scripts_dir: Path | None = None) -> list[str]:
                 f'(`... | uv run python -c "..."`). See CLAUDE.md '
                 f"§ Task Workflow API (#753)."
             )
+    return errors
+
+
+def check_piped_git_push(*, scripts_dir: Path | None = None) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL on any ``git push`` /
+    ``git merge`` / ``gh pr merge|create`` piped into a filter on its own
+    pipeline segment (``git push origin main 2>&1 | tail -20``).
+
+    Rationale: bash makes a pipeline's exit status the LAST stage's, so the
+    pipe masks the producer's non-zero exit code — a rejected push reads as
+    success and the session proceeds believing the merge landed (#957's
+    Step 10d push was masked 2026-07-04; 4 sessions hit the class on
+    2026-07-02). The prose rule (CLAUDE.md § Concurrent repo-root
+    committers) says run it bare and check the exit code, or use
+    ``set -o pipefail`` when a pipe is unavoidable — so once a non-comment
+    line contains ``pipefail``, flagging is disabled for the REST of the
+    file (lines BEFORE it still flag — fires-direction, NOT a whole-file
+    pre-scan; ``set +o pipefail`` re-disable is ignored, failing toward
+    false-negative, the documented safe direction). ``|&`` is normalized to
+    ``|`` on the logical line before matching; a match whose span contains
+    ``--dry-run`` is skipped (a dry run lands nothing); only ``#``-comment
+    lines are otherwise skipped. See the ``PIPED_GIT_PUSH_RE`` block above
+    for the full flagged/not-flagged matrix. The
+    ``.claude/hooks/guard_piped_git_push.sh`` PreToolUse hook is the
+    runtime sibling covering ad-hoc inline commands (#1048; the
+    dual-engine split of ``check_pipe_python`` / #753).
+
+    ``scripts_dir`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical ``<repo_root>/scripts``
+    tree. Bundled into the no-flags default run (same policy as
+    ``check_pipe_python``).
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        pipefail_seen = False
+        for first, _last, logical in _iter_logical_shell_lines(lines):
+            stripped = logical.strip()
+            if stripped.startswith("#"):
+                continue
+            if "pipefail" in logical:
+                # The rule's own sanctioned escape: every pipe at-or-after
+                # this line propagates the failure. Deliberately NOT a
+                # whole-file pre-scan — an offense BEFORE the first
+                # pipefail line still flags (plan #1048 MF3).
+                pipefail_seen = True
+                continue
+            if pipefail_seen:
+                continue
+            match = PIPED_GIT_PUSH_RE.search(logical.replace("|&", "|"))
+            if not match:
+                continue
+            if "--dry-run" in match.group(0):
+                continue
+            errors.append(
+                f"{sh}:{first + 1}: `git push`/merge-class command piped "
+                f"into a filter — the pipe masks the non-zero exit code, "
+                f"so a rejected push reads as success (#957, 4 sessions "
+                f"2026-07-02). Run it bare and check the exit code, or add "
+                f"`set -o pipefail`. See CLAUDE.md § Concurrent repo-root "
+                f"committers (#1048)."
+            )
+    return errors
+
+
+def _upload_or_true_segments(text: str) -> list[str]:
+    """Naive split of a comment-stripped logical shell line on ``&&`` and
+    ``;`` — the NON-terminal swallow scoping unit for
+    :func:`check_upload_or_true`. Deliberately quote-UNAWARE: a quoted
+    separator mis-splits toward a false NEGATIVE (the safe direction for a
+    pre-commit-gating lint, same philosophy as
+    :func:`_strip_sh_trailing_comment`)."""
+    return re.split(r"&&|;", text)
+
+
+def _upload_or_true_error(sh: Path, first_idx: int) -> str:
+    """Compose the (deliberately verbose, incident-citing) violation string
+    for one swallowed upload/result-persist/result-production line."""
+    return (
+        f"{sh}:{first_idx + 1}: upload/result-persist/result-production "
+        f"command swallows failure with '|| true' / '; true'. A swallowed "
+        f"failure on a result-bearing phase silently loses artifacts "
+        f"(#841: swallowed plot-phase failures compounded a missing upload "
+        f"phase — stage JSONs/plots lost across attempts until the "
+        f"fail-loud fix) — remove the swallow and let the failure abort "
+        f"(fail fast; the crash-persist/poller path reports it). A "
+        f"deliberate best-effort side-channel (crash-diagnostics upload) "
+        f"is waived with '# UPLOAD_OR_TRUE_EXEMPT: <reason>' (reason ≥ "
+        f"{UPLOAD_OR_TRUE_WAIVER_MIN_REASON_CHARS} chars) on the same or "
+        f"previous non-blank line."
+    )
+
+
+def _upload_or_true_pyc_block(
+    lines: list[str],
+    last: int,
+    stripped: str,
+    pyc: re.Match[str],
+) -> tuple[int, bool] | None:
+    """Handle :func:`check_upload_or_true` rule 5 — a multi-line
+    ``python -c "…"`` quoted block (the CURRENT #841 upload-phase shape).
+
+    ``pyc`` is the opener match on the comment-stripped logical line
+    ``stripped``; ``last`` is the logical line's last physical index.
+    Returns ``None`` when the captured quote CLOSES on the logical line
+    (single-line ``python -c`` — the normal rules apply). Otherwise
+    consumes physical lines until the first line containing the closing
+    quote char (cap :data:`UPLOAD_OR_TRUE_PYC_MAX_BODY_LINES`) and returns
+    ``(consumed_until_idx, swallowed_upload_hit)``: the block flags when
+    the command TAIL after the closing quote carries a swallow (terminal,
+    or ``|| true`` in a token-bearing segment) AND an upload token matches
+    a non-comment body line or the opener/tail. Unclosed at EOF / cap hit
+    → ``(scan_window_end, False)`` — the block is skipped entirely
+    (fail-toward-false-negative) and its lines are consumed so they are
+    never re-parsed as shell. Simplification (plan §4.3 rule 5): a
+    first-closing-quote-char scan suffices for this repo's blocks
+    (single-quoted bodies cannot contain ``'``; double-quoted bodies carry
+    no unescaped ``"``); anything trickier degrades to a false negative."""
+    quote = pyc.group(1)
+    remainder = stripped[pyc.end() :]
+    if quote in remainder:
+        return None
+    limit = min(len(lines), last + 1 + UPLOAD_OR_TRUE_PYC_MAX_BODY_LINES)
+    close_idx = None
+    for j in range(last + 1, limit):
+        if quote in lines[j]:
+            close_idx = j
+            break
+    if close_idx is None:
+        return limit - 1, False
+    qpos = lines[close_idx].index(quote)
+    tail = _strip_sh_trailing_comment(lines[close_idx][qpos + 1 :]).strip()
+    body_frags = [remainder, *lines[last + 1 : close_idx], lines[close_idx][:qpos]]
+    swallow_hit = bool(UPLOAD_OR_TRUE_SWALLOW_TERMINAL_RE.search(tail)) or any(
+        UPLOAD_OR_TRUE_SWALLOW_OR_RE.search(seg) and UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(seg)
+        for seg in _upload_or_true_segments(tail)
+    )
+    token_hit = (
+        any(
+            UPLOAD_OR_TRUE_BODY_TOKEN_RE.search(frag)
+            for frag in body_frags
+            if not frag.strip().startswith("#")
+        )
+        or bool(UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(stripped))
+        or bool(UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(tail))
+    )
+    return close_idx, swallow_hit and token_hit
+
+
+def _upload_or_true_line_hit(
+    stripped: str, bodies: list[tuple[int, int]], lines: list[str]
+) -> bool:
+    """Evaluate :func:`check_upload_or_true` rules 2-4 for one
+    comment-stripped logical shell line (waivers are the caller's).
+
+    Rule 2 — TERMINAL swallow (``|| true`` / ``|| :`` / ``; true`` at line
+    end) hits iff an upload/result token matches ANYWHERE on the line (a
+    terminal swallow masks the whole ``&&``-chain). Rule 3 — a
+    NON-terminal ``|| true`` / ``|| :`` hits iff a token matches in the
+    SAME ``&&``/``;`` segment. Rule 4 — a swallowed heredoc opener
+    (terminal, or a segment-scoped swallow in the segment carrying the
+    ``<<`` opener; token NOT required on the opener) hits when any of its
+    heredoc bodies' non-comment lines carries a BODY upload-call token."""
+    terminal = bool(UPLOAD_OR_TRUE_SWALLOW_TERMINAL_RE.search(stripped))
+    segments = _upload_or_true_segments(stripped)
+    # Rule 2: terminal swallow — whole-logical-line token check.
+    if terminal and UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(stripped):
+        return True
+    # Rule 3: non-terminal swallow — same-segment token check.
+    if any(
+        UPLOAD_OR_TRUE_SWALLOW_OR_RE.search(seg) and UPLOAD_OR_TRUE_LINE_TOKEN_RE.search(seg)
+        for seg in segments
+    ):
+        return True
+    # Rule 4: heredoc bodies under a swallowed opener (token not required
+    # on the opener line itself).
+    if not bodies:
+        return False
+    opener_swallowed = terminal or any(
+        "<<" in seg and UPLOAD_OR_TRUE_SWALLOW_OR_RE.search(seg) for seg in segments
+    )
+    if not opener_swallowed:
+        return False
+    return any(
+        UPLOAD_OR_TRUE_BODY_TOKEN_RE.search(lines[j])
+        for body_start, body_end in bodies
+        for j in range(body_start, min(body_end, len(lines)))
+        if not lines[j].strip().startswith("#")
+    )
+
+
+def check_upload_or_true(
+    *,
+    scripts_dir: Path | None = None,
+    allowlist: frozenset[str] | None = None,
+) -> list[str]:
+    """Walk every ``*.sh`` under ``scripts/`` and FAIL any upload /
+    result-persist / result-production (plot-script) command line whose
+    failure is swallowed by ``|| true`` / ``|| :`` / ``; true`` (#1036;
+    incident #841 — the pre-fix swallows were ``|| true`` on the PLOT
+    phases of both #841 dispatch scripts, and the att-7 stage-JSON loss
+    additionally involved a MISSING upload phase, which no lint can catch
+    and is a named residual, not a claim).
+
+    Detection (see the ``UPLOAD_OR_TRUE_*`` regex block for the full
+    flagged/not-flagged matrix), per logical line (backslash continuations
+    merged, heredoc bodies consumed via
+    :func:`_iter_sh_logicals_with_heredocs`, trailing comments stripped
+    quote-aware via :func:`_strip_sh_trailing_comment`):
+
+    1. ``#``-comment and ``echo ``-prefixed logical lines are skipped (an
+       echo performs no upload; known accepted FN: ``echo "…"; upload ||
+       true`` merged on ONE logical line is skipped whole).
+    2. A TERMINAL swallow (``|| true`` / ``|| :`` / ``; true`` at line
+       end) flags iff an upload/result token matches ANYWHERE on the line
+       — bash ``&&``/``||`` are equal-precedence left-associative, so a
+       terminal swallow masks the WHOLE preceding chain.
+    3. A NON-terminal ``|| true`` / ``|| :`` flags iff a token matches in
+       the SAME ``&&``/``;`` segment (:func:`_upload_or_true_segments`;
+       preserves the ``mkdir || true && upload`` FP kill).
+    4. A swallowed heredoc opener (terminal swallow, or a segment-scoped
+       swallow in the segment carrying the ``<<`` opener; token NOT
+       required on the opener) flags when any of its heredoc bodies'
+       non-comment lines carries a BODY upload-call token — the i632
+       shape a line-only scan provably misses.
+    5. A multi-line ``python -c "…"`` quoted block (opener quote unclosed
+       on the logical line) is consumed physically until the first line
+       containing the closing quote char (cap
+       :data:`UPLOAD_OR_TRUE_PYC_MAX_BODY_LINES`; unclosed at EOF or cap
+       hit → the block is skipped entirely, fail-toward-false-negative);
+       the command TAIL after the closing quote is checked for a swallow
+       and the quoted body for upload tokens — the CURRENT #841
+       upload-phase shape (``upload_split_lfs_to_overflow(`` bodies).
+    6. Violations dedupe per (file, opener first-line).
+    7. ``# UPLOAD_OR_TRUE_EXEMPT: <reason>`` (reason ≥ 10 chars, same
+       logical line or immediately preceding non-blank line) waives.
+
+    Files whose repo-root-relative path is in
+    :data:`UPLOAD_OR_TRUE_LEGACY_ALLOWLIST` are skipped whole-file
+    (grandfathered deliberate uses; locked by ``test_live_trees_pass``).
+    Named residual evasion shapes (``|| echo WARN``, ``|| rc=$?``,
+    ``set +e``, function-wrapped uploads, subshell-closing-paren swallows)
+    are documented in the regex block above — every parse limitation
+    degrades to a false NEGATIVE, never a false positive.
+
+    ``scripts_dir`` is an override hook for unit tests; production callers
+    pass None and the function walks the canonical ``<repo_root>/scripts``
+    tree. ``allowlist`` overrides the legacy allowlist for tests. Bundled
+    into the no-flags default run (same policy as ``check_heredoc_dotenv``
+    / ``check_dispatcher_cvd_pin``) + the ``workflow-lint-upload-or-true``
+    pre-commit hook.
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    if not root.exists():
+        return []
+    allow = UPLOAD_OR_TRUE_LEGACY_ALLOWLIST if allowlist is None else allowlist
+    errors: list[str] = []
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        if _judge_pin_rel(sh) in allow:
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        flagged: set[int] = set()
+        # 0-based physical index; logical lines starting at or before this
+        # were consumed as a multi-line `python -c` quoted block.
+        pyc_skip_until = -1
+        for first, last, logical, bodies in _iter_sh_logicals_with_heredocs(lines):
+            if first <= pyc_skip_until or first in flagged:
+                continue
+            if logical.strip().startswith("#"):
+                continue
+            stripped = _strip_sh_trailing_comment(logical).strip()
+            if not stripped or stripped.startswith("echo "):
+                continue
+
+            # Rule 5: multi-line `python -c "…"` quoted block (no heredoc on
+            # the same line — a heredoc-bearing opener takes rules 2-4).
+            pyc = UPLOAD_OR_TRUE_PYC_OPENER_RE.search(stripped)
+            if pyc is not None and not bodies:
+                block = _upload_or_true_pyc_block(lines, last, stripped, pyc)
+                if block is not None:
+                    consumed_until, block_hit = block
+                    pyc_skip_until = consumed_until
+                    if block_hit and not _sh_waiver_present(
+                        lines,
+                        first,
+                        consumed_until,
+                        waiver_re=UPLOAD_OR_TRUE_WAIVER_RE,
+                        min_reason_chars=UPLOAD_OR_TRUE_WAIVER_MIN_REASON_CHARS,
+                    ):
+                        flagged.add(first)
+                        errors.append(_upload_or_true_error(sh, first))
+                    continue
+
+            if _upload_or_true_line_hit(stripped, bodies, lines) and not _sh_waiver_present(
+                lines,
+                first,
+                last,
+                waiver_re=UPLOAD_OR_TRUE_WAIVER_RE,
+                min_reason_chars=UPLOAD_OR_TRUE_WAIVER_MIN_REASON_CHARS,
+            ):
+                flagged.add(first)
+                errors.append(_upload_or_true_error(sh, first))
     return errors
 
 
@@ -2377,6 +3180,280 @@ def check_agent_model_pins(*, roots: list[Path] | None = None) -> list[str]:
                 f"all 25 agents pinned to 'claude-fable-5[1m]' → ~72h "
                 f"outage). Pin '{base_id}' alone, or switch to a base whose "
                 f"AGENT_MODEL_ALLOWLIST tuple has supports_1m_suffix=True."
+            )
+    return errors
+
+
+def _split_agent_frontmatter(text: str) -> tuple[list[str] | None, str, int]:
+    """Split an agent file into ``(frontmatter_lines, body, body_line_offset)``.
+
+    The frontmatter block is the lines between the FIRST two ``---`` lines
+    (the file must start with ``---``). ``body_line_offset`` is the 1-based
+    file line number of the first body line, so body-relative match
+    positions can be reported as real file:line locations. Returns
+    ``(None, text, 1)`` when the file has no parseable frontmatter block —
+    callers report that as a missing-declaration failure.
+    """
+    lines = text.split("\n")
+    if not lines or lines[0].strip() != "---":
+        return None, text, 1
+    for i, line in enumerate(lines[1:], 1):
+        if line.strip() == "---":
+            fm_lines = lines[1:i]
+            body = "\n".join(lines[i + 1 :])
+            return fm_lines, body, i + 2
+    return None, text, 1
+
+
+def _parse_agent_tool_decls(
+    fm_lines: list[str],
+) -> tuple[list[str] | None, list[str] | None]:
+    """Parse ``tools:`` / ``disallowedTools:`` out of a frontmatter block.
+
+    Both repo syntaxes are honored (mirroring the harness): the inline
+    comma-separated scalar (``tools: Read, Grep, Glob, Bash``) and the YAML
+    list form (``tools:`` followed by ``  - Read`` items). Only TOP-LEVEL
+    keys (column 0) are considered, so folded ``description: >`` blocks
+    never introduce fake keys (their continuation lines are indented).
+    Returns ``(tools, disallowed)`` — each ``None`` when the key is absent,
+    else the (possibly empty) list of declared names.
+    """
+    tools: list[str] | None = None
+    disallowed: list[str] | None = None
+    for i, line in enumerate(fm_lines):
+        match = re.match(r"^(tools|disallowedTools):\s*(.*)$", line)
+        if match is None:
+            continue
+        key, rest = match.group(1), match.group(2).strip()
+        if rest:
+            values = [v.strip() for v in rest.split(",") if v.strip()]
+        else:
+            values = []
+            for cont in fm_lines[i + 1 :]:
+                item = re.match(r"^\s+-\s+(\S.*?)\s*$", cont)
+                if item is None:
+                    break
+                values.append(item.group(1))
+        if key == "tools":
+            tools = values
+        else:
+            disallowed = values
+    return tools, disallowed
+
+
+def _extract_agent_body_tool_mentions(body: str) -> dict[str, int]:
+    """Extract every tool the spec BODY mentions, per the #840 §4.3 widened
+    extractor vocabulary (see the :data:`AGENT_TOOLS_MCP_TOKEN_RE` comment
+    block). Returns ``{token: first_body_line_index}`` (0-based line index
+    within the body; callers add the frontmatter offset)."""
+    mentions: dict[str, int] = {}
+
+    def record(token: str, pos: int) -> None:
+        lineno = body.count("\n", 0, pos)
+        if token not in mentions or lineno < mentions[token]:
+            mentions[token] = lineno
+
+    for m in AGENT_TOOLS_MCP_TOKEN_RE.finditer(body):
+        record(m.group(0), m.start())
+    for m in AGENT_TOOLS_BUILTIN_RE.finditer(body):
+        record(m.group(1), m.start())
+    for m in AGENT_TOOLS_AGENT_PHRASE_RE.finditer(body):
+        record("Agent", m.start())
+    for m in AGENT_TOOLS_SKILL_PHRASE_RE.finditer(body):
+        record("Skill", m.start())
+    for alias_re, token in AGENT_TOOLS_MCP_ALIASES:
+        for m in alias_re.finditer(body):
+            record(token, m.start())
+    return mentions
+
+
+def _mcp_server_of(token: str) -> str | None:
+    """Return the ``<server>`` segment of an ``mcp__...`` token (full-tool,
+    server-level, or ``__*``-wildcard form), or None for a non-MCP name.
+    Server names never contain a double underscore, so splitting on ``__``
+    is unambiguous (``mcp__plugin_context7_context7`` has only single
+    underscores inside the server segment)."""
+    parts = token.split("__")
+    if len(parts) < 2 or parts[0] != "mcp" or not parts[1]:
+        return None
+    return parts[1]
+
+
+def _agent_tool_mention_covered(token: str, declared: list[str]) -> bool:
+    """True iff a body-mentioned ``token`` is covered by the ``tools:``
+    allowlist ``declared``: exact match; the token's server-level
+    ``mcp__<server>`` (or ``mcp__<server>__*``) form is declared; or — for a
+    SERVER-LEVEL mention (a prose alias like "arXiv MCP") — the declaration
+    names at least one tool from that server (e.g. related-work-finder
+    declares 4 ``mcp__arxiv__*`` tools; its "arXiv MCP" prose is covered)."""
+    if token in declared:
+        return True
+    if not token.startswith("mcp__"):
+        return False
+    parts = token.split("__")
+    server_form = "__".join(parts[:2])
+    if server_form in declared or f"{server_form}__*" in declared:
+        return True
+    if len(parts) == 2:
+        return any(d.startswith(server_form + "__") for d in declared)
+    return False
+
+
+def _agent_tool_mention_denied(token: str, denied: list[str]) -> bool:
+    """True iff a body-mentioned ``token`` is removed by the
+    ``disallowedTools:`` denylist ``denied`` (exact name, its server-level
+    form, the ``__*`` wildcard form, or the all-MCP ``mcp__*`` wildcard)."""
+    if token in denied:
+        return True
+    if token.startswith("mcp__"):
+        if "mcp__*" in denied:
+            return True
+        parts = token.split("__")
+        server_form = "__".join(parts[:2])
+        if server_form in denied or f"{server_form}__*" in denied:
+            return True
+    return False
+
+
+def check_agent_tools(*, roots: list[Path] | None = None) -> list[str]:
+    """Walk ``.claude/agents/*.md`` and enforce the explicit-tool-surface
+    invariant (task #840; incident #778 — an agent file with no ``tools:``
+    key inherits the parent session's full MCP tool-schema payload, ~168K
+    static first-turn tokens at the measured worst case).
+
+    Per file:
+
+    1. **Declaration required** — FAIL if the frontmatter has neither a
+       ``tools:`` allowlist nor a ``disallowedTools:`` denylist (or has no
+       parseable frontmatter at all).
+    2. **Mentioned ⊆ declared** (allowlist files) — FAIL if the spec body
+       mentions a tool (per :func:`_extract_agent_body_tool_mentions`) that
+       the allowlist does not cover (per
+       :func:`_agent_tool_mention_covered`), unless the ``(filename,
+       token)`` pair is waived in :data:`AGENT_TOOLS_MENTION_EXCEPTIONS`
+       with an inline reason.
+    2b. **Declared-name validity** — FAIL if any DECLARED ``mcp__...`` token
+       (in either key) names a server outside :data:`KNOWN_MCP_SERVERS` —
+       the harness silently ignores unknown names, so a typo strips a
+       capability with no error anywhere.
+    3. **Denylist consistency** (denylist files) — FAIL if a body-mentioned
+       token is denied by the denylist. Denylist-only files skip check 2
+       (they inherit everything not denied).
+
+    ``roots`` is the unit-test override hook (same contract as
+    :func:`check_agent_model_pins`); production callers pass None and the
+    canonical agent tree under :data:`_REPO_ROOT` is walked.
+    """
+    if roots is None:
+        targets = _iter_agent_pin_target_files(_REPO_ROOT)
+    else:
+        targets = []
+        for root in roots:
+            if root.is_file():
+                targets.append(root)
+            else:
+                targets.extend(p for p in root.glob("**/*.md") if p.is_file())
+        targets = sorted(targets)
+    errors: list[str] = []
+    for path in targets:
+        text = path.read_text()
+        fm_lines, body, body_offset = _split_agent_frontmatter(text)
+        if fm_lines is None:
+            errors.append(
+                f"{path}: no parseable YAML frontmatter block (file must start "
+                f"with '---' and close the block with a second '---'), so no "
+                f"tools:/disallowedTools: declaration exists. Every agent file "
+                f"must declare its tool surface (task #840; incident #778)."
+            )
+            continue
+        tools, disallowed = _parse_agent_tool_decls(fm_lines)
+        # Check 1 — declaration required.
+        if tools is None and disallowed is None:
+            errors.append(
+                f"{path}: frontmatter declares neither 'tools:' nor "
+                f"'disallowedTools:'. An undeclared agent inherits the parent "
+                f"session's FULL tool inventory including every MCP server's "
+                f"schemas (~168K static first-turn tokens at the #778 worst "
+                f"case). Add a 'tools:' allowlist (see the restricted agents "
+                f"for the house YAML-list style) or, for a broad main-session "
+                f"persona, a 'disallowedTools:' denylist (research-pm.md "
+                f"precedent). Task #840."
+            )
+            continue
+        errors.extend(_agent_tools_decl_validity_errors(path, tools, disallowed))
+        mentions = _extract_agent_body_tool_mentions(body)
+        errors.extend(_agent_tools_mention_errors(path, tools, disallowed, mentions, body_offset))
+    return errors
+
+
+def _agent_tools_decl_validity_errors(
+    path: Path, tools: list[str] | None, disallowed: list[str] | None
+) -> list[str]:
+    """Check 2b — every DECLARED ``mcp__...`` token (either key) must name a
+    server in :data:`KNOWN_MCP_SERVERS`; the ``mcp__*`` all-MCP denylist
+    wildcard is valid as-is."""
+    errors: list[str] = []
+    for decl_list, key in ((tools, "tools"), (disallowed, "disallowedTools")):
+        if decl_list is None:
+            continue
+        for token in decl_list:
+            if not token.startswith("mcp__"):
+                continue
+            server = _mcp_server_of(token)
+            if server is not None and server.endswith("*"):
+                # `mcp__*` all-MCP wildcard (denylist form) — valid.
+                continue
+            if server is None or server not in KNOWN_MCP_SERVERS:
+                known = ", ".join(sorted(KNOWN_MCP_SERVERS))
+                errors.append(
+                    f"{path}: '{key}:' declares '{token}' whose server "
+                    f"segment is not a known MCP server. The harness "
+                    f"silently ignores unknown tool names, so a typo here "
+                    f"strips the capability with no error at spawn. Known "
+                    f"servers: {known}. If a NEW MCP server was just "
+                    f"registered, add it to KNOWN_MCP_SERVERS in "
+                    f"scripts/workflow_lint.py."
+                )
+    return errors
+
+
+def _agent_tools_mention_errors(
+    path: Path,
+    tools: list[str] | None,
+    disallowed: list[str] | None,
+    mentions: dict[str, int],
+    body_offset: int,
+) -> list[str]:
+    """Checks 2 + 3 — a body-mentioned token must be covered by the
+    ``tools:`` allowlist (when present) and must not be removed by the
+    ``disallowedTools:`` denylist (when present), modulo the
+    :data:`AGENT_TOOLS_MENTION_EXCEPTIONS` waivers."""
+    errors: list[str] = []
+    for token, body_lineno in sorted(mentions.items()):
+        if (path.name, token) in AGENT_TOOLS_MENTION_EXCEPTIONS:
+            continue
+        lineno = body_offset + body_lineno
+        if tools is not None and not _agent_tool_mention_covered(token, tools):
+            errors.append(
+                f"{path}:{lineno}: spec body mentions tool '{token}' "
+                f"but the frontmatter 'tools:' allowlist does not "
+                f"cover it — the agent is instructed to use a tool it "
+                f"cannot call. Either add '{token}' (or its "
+                f"'mcp__<server>' form) to the allowlist, or — if the "
+                f"mention is descriptive-not-instructive (documents "
+                f"another actor's tool use) — add "
+                f"('{path.name}', '{token}') to "
+                f"AGENT_TOOLS_MENTION_EXCEPTIONS with an inline "
+                f"reason. Task #840."
+            )
+        if disallowed is not None and _agent_tool_mention_denied(token, disallowed):
+            errors.append(
+                f"{path}:{lineno}: spec body mentions tool '{token}' "
+                f"but the frontmatter 'disallowedTools:' denylist "
+                f"removes it — the agent is instructed to use a tool "
+                f"it cannot call. Drop the deny entry or fix the spec "
+                f"body (body edits are a separate change per the #840 "
+                f"frontmatter-only scope)."
             )
     return errors
 
@@ -2700,6 +3777,221 @@ def check_upload_as_file(*, scripts_dir: Path | None = None) -> list[str]:
                 f"first line or the previous non-blank line. See "
                 f".claude/rules/gotchas.md 'hub._upload raises ValueError'."
             )
+    return errors
+
+
+def _jsonl_splitlines_waiver_present(lines: list[str], call_lineno: int) -> bool:
+    """Return True iff a ``# JSONL_SPLITLINES_EXEMPT: <reason>`` waiver
+    (reason ≥ :data:`JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS` chars) is on
+    the call's first physical line (``call_lineno``, 1-based) or the
+    immediately preceding non-blank line. Same convention as
+    :func:`_upload_as_file_waiver_present`."""
+    idx = call_lineno - 1  # to 0-based
+    if 0 <= idx < len(lines):
+        m = JSONL_SPLITLINES_WAIVER_RE.search(lines[idx])
+        if m and len(m.group(1).strip()) >= JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS:
+            return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    if back >= 0:
+        m = JSONL_SPLITLINES_WAIVER_RE.search(lines[back])
+        if m and len(m.group(1).strip()) >= JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS:
+            return True
+    return False
+
+
+def _chain_has_read_text(expr: ast.expr) -> bool:
+    """True iff the receiver expression chain contains a ``read_text`` call."""
+    for node in ast.walk(expr):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "read_text"
+        ):
+            return True
+    return False
+
+
+def _chain_base_name(expr: ast.expr) -> str | None:
+    """Leftmost ``ast.Name`` id of an attribute/call/subscript chain, or None."""
+    while True:
+        if isinstance(expr, ast.Call):
+            expr = expr.func
+        elif isinstance(expr, ast.Attribute | ast.Subscript):
+            expr = expr.value
+        elif isinstance(expr, ast.Name):
+            return expr.id
+        else:
+            return None
+
+
+def _jsonl_fn_scoped_splitlines_ids(tree: ast.AST) -> set[int]:
+    """Signal (c) pre-pass: ``id()``s of every ``.splitlines()`` call node
+    enclosed by a ``jsonl``-named function (the ``_iter_jsonl`` shape)."""
+    fn_scoped: set[int] = set()
+    for fn in ast.walk(tree):
+        if isinstance(fn, ast.FunctionDef | ast.AsyncFunctionDef) and JSONL_NAME_TOKEN_RE.search(
+            fn.name
+        ):
+            for sub in ast.walk(fn):
+                if (
+                    isinstance(sub, ast.Call)
+                    and isinstance(sub.func, ast.Attribute)
+                    and sub.func.attr == "splitlines"
+                ):
+                    fn_scoped.add(id(sub))
+    return fn_scoped
+
+
+def _jsonl_splitlines_signal(node: ast.Call, text: str, fn_scoped: set[int]) -> str | None:
+    """Classify one ``.splitlines()`` call against the four #950 signals.
+
+    Returns a human-readable signal label when the call reads JSONL content
+    (see :func:`check_jsonl_splitlines` for the signal definitions), else
+    None. A per-node ``ast.get_source_segment(...) is None`` only makes the
+    segment-dependent predicates (a)/(d-literal) non-matching for the node.
+    """
+    receiver = node.func.value  # type: ignore[attr-defined]
+    segment = ast.get_source_segment(text, receiver)
+    has_read = _chain_has_read_text(receiver)
+    base = _chain_base_name(receiver)
+    if has_read and segment is not None and JSONL_NAME_TOKEN_RE.search(segment):
+        return "jsonl-named read_text chain"
+    if isinstance(receiver, ast.Name) and JSONL_NAME_TOKEN_RE.search(receiver.id):
+        return f"jsonl-named receiver ('{receiver.id}')"
+    if id(node) in fn_scoped:
+        return "call inside a jsonl-named function"
+    if has_read and (
+        (base is not None and JSONL_EVENTS_PATH_NAME_RE.match(base))
+        or (
+            segment is not None
+            and any(lit in segment for lit in ("events.jsonl", "comments.jsonl", "concerns.jsonl"))
+        )
+    ):
+        return "events/comments/concerns-path read_text chain"
+    return None
+
+
+def check_jsonl_splitlines(*, scan_roots: tuple[Path, ...] | None = None) -> list[str]:
+    """AST-walk ``scripts/**/*.py`` + ``src/explore_persona_space/**/*.py``
+    and FAIL any ``.splitlines()`` call that reads JSONL content (#950).
+
+    Rationale: ``json.dumps(..., ensure_ascii=False)`` — the project's
+    events/comments writer and most JSONL emitters — leaves raw U+2028 LINE
+    SEPARATOR, U+2029 PARAGRAPH SEPARATOR, and NEL U+0085 inside JSON strings
+    (controls < 0x20 are still escaped), and ``str.splitlines()`` splits on
+    ALL Unicode line boundaries. A perfectly valid ``\\n``-terminated JSONL
+    file read via ``splitlines()`` therefore shreds any record whose text
+    carries one of those characters: a hard ``JSONDecodeError`` on strict
+    readers, SILENT record loss on tolerant skip-malformed readers, and an
+    inflated row count on ``len(read_text().splitlines())`` asserts.
+    Real-user corpora (lmsys-chat-1m, WildChat) contain them routinely and an
+    ASCII-fixture smoke can never catch it (incident #825 run-1d: 2000 valid
+    records → 2019 fragments, ~55 min of GPU extraction lost; eight live
+    workflow-surface reader sites across seven files fixed with #950). The
+    fix is ``split("\\n")`` or text-mode file iteration (universal newlines
+    only).
+
+    Detection — flag an ``ast.Call`` whose func is
+    ``ast.Attribute(attr="splitlines")`` when ANY of:
+
+    * **(a) chained-read signal:** the receiver chain contains a
+      ``read_text`` call AND the receiver's source segment mentions
+      ``jsonl`` case-insensitively (``jsonl_path.read_text().splitlines()``,
+      ``(d / "pool.jsonl").read_text().splitlines()``).
+    * **(b) receiver-name signal:** the receiver is a bare ``ast.Name``
+      matching ``/jsonl/i`` (``jsonl_text.splitlines()``).
+    * **(c) function-name signal:** the call sits inside a
+      ``FunctionDef``/``AsyncFunctionDef`` whose name matches ``/jsonl/i``
+      (the ``_iter_jsonl`` shape — receiver read on a separate line).
+    * **(d) events/concerns-path signal:** the receiver chain contains a
+      ``read_text`` call AND (its base ``ast.Name`` matches
+      ``/^(ev(ents)?|concerns)_path$/i`` OR the segment names the literal
+      ``events.jsonl``/``comments.jsonl``/``concerns.jsonl``) — the exact
+      shapes of the #950 sibling workflow readers (the round-1
+      ``events.jsonl`` siblings + the round-2 ``verify_task_body.py``
+      check-14 ``concerns.jsonl`` reader), which evade (a)-(c).
+
+    Deliberate false negatives (accepted; the gotchas.md entry + code review
+    carry them): dataflow through a non-jsonl, non-events-named variable
+    (``out_path = ... / "x.jsonl"`` … ``out_path.read_text().splitlines()``)
+    and python-in-shell heredocs (``.sh`` files are not AST-scannable).
+
+    Unparseable files: a ``SyntaxError`` (does not parse) or
+    ``UnicodeDecodeError`` (non-UTF-8) file is SKIPPED without failing the
+    check — syntax validity is ruff/pytest's job — but a one-line notice is
+    printed to stderr so the skip is never silent (strengthens the silent
+    ``--check-upload-as-file`` precedent). A per-node
+    ``ast.get_source_segment(...) is None`` only makes the segment-dependent
+    predicates non-matching for that node; no file skip.
+
+    Waiver: ``# JSONL_SPLITLINES_EXEMPT: <reason>`` (reason ≥
+    :data:`JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS` chars) on the call's
+    first physical line or the immediately preceding non-blank line.
+    Grandfather: :data:`JSONL_SPLITLINES_LEGACY_ALLOWLIST` (file-level,
+    frozen experiment scripts only — NEVER a workflow-surface file).
+
+    ``scan_roots`` is a unit-test override hook; production callers pass None
+    and the function walks ``<repo_root>/scripts`` +
+    ``<repo_root>/src/explore_persona_space`` (NOT ``tests/`` /
+    ``external/`` / ``archive/``). Bundled into the no-flags default run.
+    """
+    roots = (
+        scan_roots
+        if scan_roots is not None
+        else (_REPO_ROOT / "scripts", _REPO_ROOT / "src" / "explore_persona_space")
+    )
+    errors: list[str] = []
+    for root in roots:
+        if not root.exists():
+            continue
+        for py in sorted(root.rglob("*.py")):
+            if not py.is_file():
+                continue
+            try:
+                rel = py.resolve().relative_to(_REPO_ROOT.resolve()).as_posix()
+            except ValueError:
+                rel = py.name
+            if rel in JSONL_SPLITLINES_LEGACY_ALLOWLIST:
+                continue
+            try:
+                text = py.read_text(encoding="utf-8")
+                tree = ast.parse(text, filename=str(py))
+            except (SyntaxError, UnicodeDecodeError) as exc:
+                # Skip-with-report: never silent, never fatal (syntax validity
+                # is ruff/pytest's enforcement job, not this lint's).
+                sys.stderr.write(
+                    f"workflow_lint: note: --check-jsonl-splitlines skipped "
+                    f"unparseable {rel} ({type(exc).__name__})\n"
+                )
+                continue
+            lines = text.split("\n")
+            fn_scoped = _jsonl_fn_scoped_splitlines_ids(tree)
+            for node in ast.walk(tree):
+                if not (
+                    isinstance(node, ast.Call)
+                    and isinstance(node.func, ast.Attribute)
+                    and node.func.attr == "splitlines"
+                ):
+                    continue
+                signal = _jsonl_splitlines_signal(node, text, fn_scoped)
+                if signal is None:
+                    continue
+                if _jsonl_splitlines_waiver_present(lines, node.lineno):
+                    continue
+                errors.append(
+                    f"{py}:{node.lineno}: jsonl-splitlines: .splitlines() on JSONL "
+                    f"content ({signal}). str.splitlines() splits on raw "
+                    f"U+2028/U+2029/NEL inside ensure_ascii=False JSON strings and "
+                    f"shreds valid records — silent drop on tolerant readers, "
+                    f"JSONDecodeError on strict ones, inflated row counts on "
+                    f"len() asserts (#825/#950; .claude/rules/gotchas.md). Read/"
+                    f'count JSONL via text-mode file iteration or split("\\n") + '
+                    f"an `if line.strip()` guard, or waive a genuinely-safe site "
+                    f"with '# JSONL_SPLITLINES_EXEMPT: <reason>' (reason ≥ "
+                    f"{JSONL_SPLITLINES_WAIVER_MIN_REASON_CHARS} chars)."
+                )
     return errors
 
 
@@ -3361,6 +4653,503 @@ def check_judge_model_pins(
     return errors
 
 
+# --- `--check-phase-done-reserved` (#930): reserved `[phase=done]` token ----
+# The literal reserved token from .claude/rules/pod-side-reporting.md
+# requirement 1: `poll_pipeline.py` declares status="done" when the most
+# recent `[phase=...]` line in the MAIN dispatcher log is `[phase=done]`,
+# so the token is reserved for the dispatcher's single terminal line —
+# a phase script whose stdout flows into that log must never emit it
+# (incident #545, 2026-06-11: a per-cell echo produced a false status=done
+# while GPUs were at 85%; recurred #920 r1: six phase scripts).
+PHASE_DONE_TOKEN = "[phase=done]"
+# Python-target invocation edge on a logical shell line: `uv run python
+# scripts/x.py`, `nohup ... python -u scripts/x.py`, `CUDA_VISIBLE_DEVICES=0
+# uv run python3 scripts/x.py`. `$VAR`-prefixed paths / `python -m` launches
+# deliberately do NOT match (documented false-negative gaps, see the check
+# docstring).
+PHASE_DONE_PY_INVOKE_RE = re.compile(
+    r"""python3?(?:\.\d+)?\s+(?:-[A-Za-z]+\s+)*["']?(scripts/[A-Za-z0-9_./-]+\.py)\b"""
+)
+# Shell-target invocation edge: `bash scripts/x.sh` / `sh scripts/x.sh` /
+# `source scripts/x.sh` — the i488 run_all -> sub-dispatcher class.
+PHASE_DONE_SH_INVOKE_RE = re.compile(
+    r"""(?:\bbash|\bsh(?=\s)|\bsource)\s+["']?(scripts/[A-Za-z0-9_./-]+\.sh)\b"""
+)
+# Stdout-isolation exclusion: matches `> f`, `>> f`, `1> f`, `&> f` (stdout
+# redirected away from the main log — the per-worker isolation pattern,
+# e.g. scripts/issue658_8gpu_dispatch.sh). Does NOT match `2>&1` alone,
+# `2> err.log` (stderr-only; stdout still flows), or `... 2>&1 | tee -a log`
+# (tee duplicates to main stdout — the exact #545-family shape): those edges
+# stay checked. The `(?!\s*&)` lookahead keeps fd-dup forms (`>&2`) out.
+# Applied per COMMAND SEGMENT (the logical line split at unquoted
+# `&&`/`||`/`;`/`|`/lone-`&` separators via _split_sh_command_segments),
+# NOT line-globally — a redirect in a different segment neither suppresses
+# nor rescues an invocation elsewhere on the line (round-2
+# `phase-done-shell-edge-scoping` fix).
+PHASE_DONE_REDIRECT_RE = re.compile(r"(?:^|\s)(?:1?>>?|&>>?)(?!\s*&)")
+# Per-line waiver for a mode-gated standalone-lane terminal (a dual-mode
+# phase script whose emission is OFF the dispatcher path — the issue-920
+# nulls_figures shape). Same placement convention as JUDGE_PIN_WAIVER_RE:
+# the emission line or the immediately preceding non-blank line. Waiver
+# comments MUST name the intended mode/invoker (code-review enforced).
+PHASE_DONE_WAIVER_RE = re.compile(r"#\s*noqa:\s*phase-done-reserved\b")
+# A .sh line is an emission site iff (after quote-aware trailing-comment
+# strip) it carries the token AND one of these emitters — `print\s*\(`
+# covers python-heredoc blocks embedded in .sh (`uv run python - <<'PY'`).
+PHASE_DONE_SH_EMIT_RE = re.compile(r"\becho\b|\bprintf\b|\bprint\s*\(")
+# Logging-ish attribute names whose calls count as .py emission sites
+# (covers logger.info / log.warning / LOGGER.error / sys.stdout.write).
+# `re.compile` / `re.search` are deliberately absent so the poller's own
+# match/detection code never flags.
+PHASE_DONE_PY_EMIT_ATTRS = frozenset(
+    {"debug", "info", "warning", "error", "critical", "exception", "log", "write"}
+)
+# Grandfathered legacy (invoker .sh, target) EDGE pairs — repo-root-relative
+# POSIX paths, annotated per entry (mirrors JUDGE_PIN_LEGACY_ALLOWLIST's
+# style). Edge grain, NOT emitter-file grain: a future NEW dispatcher
+# invoking the same legacy emitter is still flagged. Fixing the legacy
+# emissions is prune-on-touch (NOT this task's scope); stale entries are
+# harmless (frozenset membership). Derivation: live-tree diff-and-adjudicate
+# 2026-07-03 against the task #930 plan §4.5 expected seed.
+PHASE_DONE_EDGE_LEGACY_ALLOWLIST: frozenset[tuple[str, str]] = frozenset(
+    {
+        # #545 family (the original incident's own dispatcher): sweep.py's
+        # terminal print (line ~1516) tees into the main log 4x mid-pipeline:
+        ("scripts/issue545_dispatch.sh", "scripts/issue545_sweep.py"),
+        # #654: extract phase terminal logger.info (line ~387), tee'd to the
+        # main log:
+        ("scripts/issue654_dispatch.sh", "scripts/issue654_extract.py"),
+        # #810 CPU-lane runner: four phase scripts each emit a terminal done
+        # (lines ~530 / ~369 / ~433 / ~426) ahead of the runner's own
+        # terminal (:68). MIGRATE bucket (live-hazard): the #810 family is
+        # still actively churning — a follow-up round re-running this runner
+        # reproduces the false-done with the lint green; fix these emissions
+        # on next touch:
+        ("scripts/issue810_cpu_phase.sh", "scripts/issue810_fit_reconstruction.py"),
+        ("scripts/issue810_cpu_phase.sh", "scripts/issue810_batch_rejudge_highm.py"),
+        ("scripts/issue810_cpu_phase.sh", "scripts/issue810_fit_readout.py"),
+        ("scripts/issue810_cpu_phase.sh", "scripts/issue810_analyze.py"),
+        # i488 run-all invokes two sub-dispatchers (own terminals ~166/~257
+        # + ~121) non-redirected, ahead of run_all's own terminal (:131):
+        ("scripts/i488_run_all.sh", "scripts/i488_phase23_dispatch.sh"),
+        ("scripts/i488_run_all.sh", "scripts/i488_phase4_dispatch.sh"),
+        # #552 (round-1-critique triage, 2026-07-03 — the plan-v1 probe
+        # MISSED this edge; a legacy completed family, same tee-shape class
+        # as #654): prep script's terminal logger.info (line ~277) tees into
+        # the main log at run_issue552_sweep.sh:105 via `2>&1 | tee`:
+        ("scripts/run_issue552_sweep.sh", "scripts/issue_552_prep_good_corpus.py"),
+        # PRE-SEEDED for the in-flight issue-920 branch merge: nulls_figures'
+        # done (line ~781) is the standalone cpu-mid lane's dispatcher
+        # terminal, mode-gated OFF the --gpu-null-only dispatcher path
+        # (verified on the issue-920 branch 2026-07-03); the file is
+        # dual-mode by design:
+        ("scripts/issue920_dispatch.sh", "scripts/issue920_nulls_figures.py"),
+    }
+)
+
+
+def _phase_done_line_waived(lines: list[str], idx: int) -> bool:
+    """Return True iff a ``# noqa: phase-done-reserved`` waiver is on the
+    emission line (``idx``, 0-based) or the immediately preceding non-blank
+    line. For a multi-line ``.py`` call the anchor is the AST call-head
+    lineno — waive at the call head, not beside a continuation-line string
+    literal. Same convention as :func:`_judge_pin_line_waived`."""
+    if 0 <= idx < len(lines) and PHASE_DONE_WAIVER_RE.search(lines[idx]):
+        return True
+    back = idx - 1
+    while back >= 0 and lines[back].strip() == "":
+        back -= 1
+    return back >= 0 and bool(PHASE_DONE_WAIVER_RE.search(lines[back]))
+
+
+def _py_phase_done_emission_lines(target: Path) -> list[int]:
+    """AST-scan a phase ``.py`` for genuine ``[phase=done]`` EMISSION sites,
+    returning sorted 1-based call-head line numbers (waived sites dropped).
+
+    An emission site is an ``ast.Call`` whose func is ``print`` (a bare
+    ``Name``) or an ``Attribute`` in :data:`PHASE_DONE_PY_EMIT_ATTRS`
+    (``logger.info`` / ``sys.stdout.write`` / ...), AND any ``ast.Constant``
+    string reachable by ``ast.walk`` inside the call's positional args
+    carries the literal token (covers f-string ``JoinedStr`` parts and
+    %%-style format strings). Comments, docstrings, ``re.compile`` /
+    ``re.search`` match sites, and ``"[phase=done]" in line`` membership
+    tests are excluded by construction. A ``SyntaxError`` skips the file
+    (a non-parsing .py cannot run as a phase script)."""
+    try:
+        text = target.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return []
+    if PHASE_DONE_TOKEN not in text:
+        return []  # cheap pre-filter before parsing
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return []
+    lines = text.splitlines()
+    sites: set[int] = set()
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        func = node.func
+        if isinstance(func, ast.Name):
+            if func.id != "print":
+                continue
+        elif isinstance(func, ast.Attribute):
+            if func.attr not in PHASE_DONE_PY_EMIT_ATTRS:
+                continue
+        else:
+            continue
+        has_token = any(
+            isinstance(sub, ast.Constant)
+            and isinstance(sub.value, str)
+            and PHASE_DONE_TOKEN in sub.value
+            for arg in node.args
+            for sub in ast.walk(arg)
+        )
+        if not has_token:
+            continue
+        if _phase_done_line_waived(lines, node.lineno - 1):
+            continue
+        sites.add(node.lineno)
+    return sorted(sites)
+
+
+# A `#` begins a shell comment only at the START of a word — i.e. at string
+# start or after whitespace / an operator character (the POSIX tokenizer
+# rule). Used by _strip_sh_trailing_comment's word-boundary test.
+_SH_COMMENT_BOUNDARY_CHARS = frozenset(" \t;&|(<>")
+
+
+def _strip_sh_trailing_comment(line: str) -> str:
+    """Cut an unquoted trailing ``#`` comment from a shell line via a small
+    quote- and backslash-escape-aware char scanner. Word-boundary-aware
+    (the round-3 ``phase-done-comment-strip-midword-fn`` fix): a ``#``
+    starts a comment ONLY when it BEGINS a shell word — at string start or
+    preceded by unescaped whitespace / an operator character
+    (:data:`_SH_COMMENT_BOUNDARY_CHARS`) — matching the shell tokenizer, so
+    a mid-word ``#`` (``tag=run#1``, ``$#``, ``${x#pat}``, ``${#ARR[@]}``,
+    ``2#101``) and a backslash-escaped ``\\#`` never cut. (Pre-fix the
+    unconditional cut truncated the scanned line at ANY unquoted ``#``,
+    hiding every invocation/emission after it — a silent false negative
+    once the strip became load-bearing for invocation scanning in round 2.)
+    A ``#`` inside single or double quotes is kept; outside single quotes a
+    backslash escapes the next char (an escaped operator like ``\\;`` is
+    NOT a word boundary; ``\\"`` does not close a double quote). Residual
+    over-cut (fail-toward-false-negative — the safe direction for a
+    pre-commit-gating lint): a word-initial ``#`` inside an unquoted
+    ``$(...)`` command substitution still cuts there (the scanner is not
+    ``$()``-aware)."""
+    out: list[str] = []
+    in_single = in_double = False
+    prev_escaped = False
+    i, n = 0, len(line)
+    while i < n:
+        ch = line[i]
+        if ch == "\\" and not in_single and i + 1 < n:
+            out.append(ch)
+            out.append(line[i + 1])
+            prev_escaped = True
+            i += 2
+            continue
+        if (
+            ch == "#"
+            and not in_single
+            and not in_double
+            and (not out or (not prev_escaped and out[-1] in _SH_COMMENT_BOUNDARY_CHARS))
+        ):
+            break
+        if ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '"' and not in_single:
+            in_double = not in_double
+        out.append(ch)
+        prev_escaped = False
+        i += 1
+    return "".join(out)
+
+
+def _split_sh_command_segments(logical: str) -> list[str]:
+    """Split a (comment-stripped) logical shell line into COMMAND SEGMENTS at
+    unquoted command separators — ``&&``, ``||``, ``;``, ``|``, and a lone
+    background ``&`` — so the stdout-redirect exclusion can be scoped to the
+    segment containing each invocation (round-2 fix for the
+    ``phase-done-shell-edge-scoping`` concern: a redirect in a DIFFERENT
+    segment of the same line must neither suppress nor be suppressed by an
+    invocation elsewhere on the line).
+
+    Quote-aware (same single/double-quote char scan as
+    :func:`_strip_sh_trailing_comment`) and backslash-escape-aware (an
+    escaped separator like ``find -exec ... \\;`` does not split). A pipe IS
+    a boundary — this PRESERVES the tee-still-checked semantics of plan
+    §4.3: for ``child.py 2>&1 | tee -a log`` the invocation's own segment
+    (``child.py 2>&1``) carries no stdout redirect, so the edge stays
+    checked, while a downstream ``> f`` applied to ``tee``'s output no
+    longer suppresses the child. A lone ``&`` splits only when it is neither
+    part of ``&&`` (handled first) nor an fd-dup/`&>` form (``2>&1`` /
+    ``>&2`` / ``&> f`` — guarded by the neighboring ``>``). Empty segments
+    (trailing ``&``, ``;;``) are harmless — they match no invocation."""
+    segments: list[str] = []
+    cur: list[str] = []
+    in_single = in_double = False
+    i, n = 0, len(logical)
+    while i < n:
+        ch = logical[i]
+        if ch == "\\" and not in_single and i + 1 < n:
+            cur.append(ch)
+            cur.append(logical[i + 1])
+            i += 2
+            continue
+        if in_single:
+            if ch == "'":
+                in_single = False
+            cur.append(ch)
+            i += 1
+            continue
+        if in_double:
+            if ch == '"':
+                in_double = False
+            cur.append(ch)
+            i += 1
+            continue
+        if ch == "'":
+            in_single = True
+            cur.append(ch)
+            i += 1
+            continue
+        if ch == '"':
+            in_double = True
+            cur.append(ch)
+            i += 1
+            continue
+        nxt = logical[i + 1] if i + 1 < n else ""
+        prev = logical[i - 1] if i > 0 else ""
+        if (ch == "&" and nxt == "&") or (ch == "|" and nxt == "|"):
+            segments.append("".join(cur))
+            cur = []
+            i += 2
+            continue
+        if ch == ";" or ch == "|" or (ch == "&" and nxt != ">" and prev != ">"):
+            segments.append("".join(cur))
+            cur = []
+            i += 1
+            continue
+        cur.append(ch)
+        i += 1
+    segments.append("".join(cur))
+    return segments
+
+
+def _sh_phase_done_emission_lines(target: Path) -> list[int]:
+    """Line-scan a phase ``.sh`` for genuine ``[phase=done]`` emission sites,
+    returning sorted 1-based line numbers (waived sites dropped). A line is
+    an emission iff, after quote-aware trailing-comment strip, it carries the
+    literal token AND matches :data:`PHASE_DONE_SH_EMIT_RE` (``echo`` /
+    ``printf`` / a python-heredoc ``print(``)."""
+    try:
+        text = target.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError):
+        return []
+    lines = text.splitlines()
+    sites: list[int] = []
+    for idx, raw in enumerate(lines):
+        stripped = _strip_sh_trailing_comment(raw)
+        if PHASE_DONE_TOKEN not in stripped:
+            continue
+        if not PHASE_DONE_SH_EMIT_RE.search(stripped):
+            continue
+        if _phase_done_line_waived(lines, idx):
+            continue
+        sites.append(idx + 1)
+    return sites
+
+
+def _phase_done_line_edges(logical: str) -> list[str]:
+    """Return the ordered, deduplicated target paths (``scripts/*.py|.sh``)
+    of every NON-REDIRECTED phase-script invocation on one logical shell
+    line — the round-2 ``phase-done-shell-edge-scoping`` core. The line is
+    trailing-comment-stripped (quote-aware) and split into command segments
+    (:func:`_split_sh_command_segments`); EVERY invocation match is
+    considered (not just the first), and a segment's invocations are kept
+    only when THAT segment carries no stdout redirect
+    (:data:`PHASE_DONE_REDIRECT_RE`). ``echo``-preview segments are
+    skipped."""
+    targets: list[str] = []
+    seen: set[str] = set()
+    for segment in _split_sh_command_segments(_strip_sh_trailing_comment(logical)):
+        if segment.strip().startswith("echo "):
+            continue  # dry-run preview segment (`... && echo "next: ..."`)
+        matches = sorted(
+            (
+                *PHASE_DONE_PY_INVOKE_RE.finditer(segment),
+                *PHASE_DONE_SH_INVOKE_RE.finditer(segment),
+            ),
+            key=lambda m: m.start(),
+        )
+        if not matches:
+            continue
+        if PHASE_DONE_REDIRECT_RE.search(segment):
+            continue  # per-worker-log stdout isolation, scoped to THIS segment
+        for m in matches:
+            target_rel = m.group(1)
+            if target_rel not in seen:
+                seen.add(target_rel)
+                targets.append(target_rel)
+    return targets
+
+
+def check_phase_done_reserved(
+    *,
+    scripts_dir: Path | None = None,
+    allowlist: frozenset[tuple[str, str]] | None = None,
+) -> list[str]:
+    """Walk every ``scripts/**/*.sh`` dispatcher and FAIL any non-redirected
+    invocation of a ``scripts/*.py|*.sh`` phase script whose file contains a
+    genuine ``[phase=done]`` emission site — the reserved-token contract of
+    ``.claude/rules/pod-side-reporting.md`` requirement 1 (#545, #920).
+
+    THE CONTRACT: ``poll_pipeline.py`` declares ``status="done"`` when the
+    most recent ``[phase=...]`` line in the MAIN dispatcher log is
+    ``[phase=done]``, so the token there is reserved for the dispatcher's
+    single terminal line. A phase script launched with stdout flowing into
+    that log (non-redirected, or ``2>&1 | tee``-duplicated) that emits the
+    token mid-pipeline reads as a false ``status=done`` while the run is
+    live (incident #545: GPUs at 85%; recurred #920 r1: six phase scripts).
+
+    VIOLATION UNIT = a non-redirected invocation EDGE ``(invoking .sh,
+    target .py|.sh)`` where the target has ≥1 emission site. A dispatcher's
+    OWN emission sites are unrestricted in count (mode-gated multi-exit
+    dispatchers are ubiquitous and legitimate; static mutual-exclusivity is
+    undecidable), and the suffixed smoke terminal (``[phase=done] SMOKE
+    COMPLETE ...``) is a dispatcher-own-file line, allowed by construction.
+
+    EXCLUSIONS: each logical line is trailing-comment-stripped (quote-aware,
+    so comment text can neither match an invocation nor carry a suppressing
+    redirect) and split into COMMAND SEGMENTS at unquoted separators
+    (``&&`` / ``||`` / ``;`` / ``|`` / lone background ``&`` —
+    :func:`_split_sh_command_segments`; backslash-escaped separators do not
+    split). EVERY invocation on the line is checked (not just the first
+    regex match), and an invocation is skipped only when ITS OWN segment
+    redirects stdout away from the main log (:data:`PHASE_DONE_REDIRECT_RE`
+    — the per-worker isolation pattern); a redirect in a DIFFERENT segment
+    of the same line does not suppress, and ``2>&1 | tee`` stays checked
+    because the pipe is a segment boundary (the invocation's own segment
+    carries no stdout redirect) — the round-2 fix for the
+    ``phase-done-shell-edge-scoping`` concern (pre-fix, ``a.py && bad.py``
+    only inspected ``a.py``, and ``bad.py; echo ok > marker`` was wrongly
+    suppressed by the line-global redirect search). The trailing-comment
+    strip is word-boundary- and escape-aware (round 3,
+    ``phase-done-comment-strip-midword-fn``): a ``#`` cuts only where it
+    BEGINS a shell word, so an executable mid-word ``#`` (``tag=run#1; uv
+    run python scripts/x.py``) or an escaped ``\\#`` no longer truncates
+    the scanned line ahead of a real invocation
+    (:func:`_strip_sh_trailing_comment`). Comment lines and
+    ``echo``-preview SEGMENTS are skipped — the echo skip is segment grain
+    (round 3): an ``echo`` segment ahead of a real invocation on the same
+    logical line (``echo \\#; uv run python scripts/x.py``) no longer
+    hides it. ``.py`` emission detection
+    is AST-based (comments / docstrings / ``re.compile``-``re.search`` match
+    sites / membership tests never flag); ``.sh`` emission detection is
+    quote-aware comment-stripped ``echo|printf|print(``. A
+    ``# noqa: phase-done-reserved`` waiver on the emission line or the
+    immediately preceding non-blank line drops that site (the escape for
+    dual-mode files whose emission is mode-gated to a standalone-dispatcher
+    lane; the waiver comment must name the intended mode/invoker). Legacy
+    edges are frozen in :data:`PHASE_DONE_EDGE_LEGACY_ALLOWLIST` (edge
+    grain, annotated).
+
+    RESIDUAL FALSE-NEGATIVE GAPS (documented, all fail toward NOT flagging —
+    the correct direction for a pre-commit gate): (i) ``.py``-dispatcher
+    subprocess fan-out (``issue545_sweep.py -> issue545_eval_cell.py`` — the
+    original #545 emission path; the only live instance sits inside the
+    allowlisted #545 family whose .sh edge keeps it visible); (ii)
+    ``$VAR``-prefixed script paths (``python "$REPO/scripts/x.py"``);
+    (iii) ``python -m`` module launches; (iv) launcher scripts generated at
+    runtime by template-writers; (v) direct append-INTO-the-main-log
+    redirection (``>> "$MAIN_LOG" 2>&1`` — the redirect exclusion cannot
+    tell a per-worker log from the dispatcher's own main log; no live
+    instance — historical shapes use ``tee`` and ARE caught); (vi) a
+    dispatcher's OWN mid-pipeline emissions in a loop (own-file sites are
+    unrestricted by construction); (vii) a word-initial unquoted ``#``
+    inside a ``$(...)`` command substitution truncates the scanned line at
+    the comment-strip (the scanner is not ``$()``-aware), hiding any
+    invocation after it — a MID-WORD ``#`` (``${#ARR[@]}``, ``tag=run#1``,
+    ``$#``) and an escaped ``\\#`` no longer truncate as of the round-3
+    word-boundary fix (:func:`_strip_sh_trailing_comment`). TWO deliberate
+    fail-toward-FLAGGING exceptions (false positives, not false
+    negatives): (a) a stdout redirect applied to a whole
+    subshell/group (``( a.py; b.py ) > log`` / ``{ ...; } > log``) is not
+    attributed to the segments INSIDE the group, so an emitting invocation
+    there flags even though the group's stdout is isolated — no live
+    instance; (b) a pipe-DOWNSTREAM stdout redirect (``a.py 2>&1 | tee f
+    > /dev/null``) is attributed to the downstream segment only — the pipe
+    is a segment boundary and deliberately NON-isolating (the plan §4.3
+    tee-still-checked semantics), so an emitting invocation upstream of
+    the pipe still flags even when the pipeline's terminal stdout is
+    discarded. Both are waivable via ``# noqa: phase-done-reserved`` or
+    the per-worker pattern.
+
+    ``scripts_dir`` is an override hook for unit tests (production callers
+    pass None → the canonical ``<repo_root>/scripts`` tree); ``allowlist``
+    overrides :data:`PHASE_DONE_EDGE_LEGACY_ALLOWLIST` for tests /
+    re-derivation. Bundled into the no-flags default run AND enforced at
+    commit time by the ``workflow-lint-phase-done-reserved`` pre-commit hook
+    on any ``scripts/*.sh|py`` change.
+    """
+    root = scripts_dir if scripts_dir is not None else _REPO_ROOT / "scripts"
+    allow = allowlist if allowlist is not None else PHASE_DONE_EDGE_LEGACY_ALLOWLIST
+    if not root.exists():
+        return []
+    errors: list[str] = []
+    emission_cache: dict[Path, list[int]] = {}
+    for sh in sorted(root.rglob("*.sh")):
+        if not sh.is_file():
+            continue
+        lines = sh.read_text(encoding="utf-8").splitlines()
+        for first, _last, logical in _iter_logical_shell_lines(lines):
+            stripped = logical.strip()
+            # Comment lines are not launches. echo-preview skipping is
+            # SEGMENT grain inside _phase_done_line_edges (round 3): a
+            # line-level `echo `-prefix skip hid a real invocation in a
+            # later segment (`echo \#; uv run python scripts/x.py`).
+            if stripped.startswith("#"):
+                continue
+            # Round-2 (`phase-done-shell-edge-scoping`): EVERY non-redirected
+            # invocation on the line is an edge — comment-stripped,
+            # segment-split, redirect scoped per segment (see
+            # _phase_done_line_edges), one error per (logical line, target).
+            for target_rel in _phase_done_line_edges(logical):
+                target = root / target_rel.removeprefix("scripts/")
+                if not target.is_file() or target == sh:
+                    continue
+                if target not in emission_cache:
+                    emission_cache[target] = (
+                        _py_phase_done_emission_lines(target)
+                        if target.suffix == ".py"
+                        else _sh_phase_done_emission_lines(target)
+                    )
+                sites = emission_cache[target]
+                if not sites:
+                    continue
+                sh_rel = _judge_pin_rel(sh)  # repo-rel POSIX; abs posix for tmp fixtures
+                if (sh_rel, target_rel) in allow:
+                    continue
+                errors.append(
+                    f"{sh}:{first + 1}: invokes {target_rel} (stdout flows into this "
+                    f"dispatcher's main log) but {target_rel} emits the RESERVED "
+                    f"{PHASE_DONE_TOKEN} token at line(s) {sites}. The token in the "
+                    f"MAIN dispatcher log is reserved for the dispatcher's single "
+                    f"terminal line — a mid-pipeline emission reads as a false "
+                    f"status=done to poll_pipeline.py (incidents #545, #920). Fix: "
+                    f"word the child's completion line without the phase tag, OR "
+                    f"redirect the child's stdout to its own log (per-worker "
+                    f"pattern: scripts/issue658_8gpu_dispatch.sh), OR waive a "
+                    f"mode-gated standalone-lane terminal with "
+                    f"'# noqa: phase-done-reserved' on the emission line. See "
+                    f".claude/rules/pod-side-reporting.md."
+                )
+    return errors
+
+
 # A live ``Agent(... subagent_type="workflow-improver" ...)`` spawn instruction.
 # Tolerant of whitespace/newlines between the call open and the kwarg and of
 # either quote style. The frozen agent file (`.claude/agents/workflow-improver.md`)
@@ -3442,6 +5231,93 @@ def check_no_workflow_improver_spawn(*, repo_root: Path | None = None) -> list[s
     return errors
 
 
+# `--check-no-literal-round-marker-versions` (#917): the round-versioned marker
+# kinds must never be instructed at a literal ` v1` in checked-in workflow
+# prose. `\s+` (not a single space) so a line-wrapped kind/version pair still
+# trips under the whole-file scan; `v1\b` does NOT match `v12` (the legitimate
+# round-12 example in the /issue SKILL.md).
+_LITERAL_ROUND_MARKER_V1_RE = re.compile(
+    r"epm:(?:experiment-implementation|results|proposed-tests)\s+v1\b"
+)
+
+
+def check_no_literal_round_marker_versions(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL on a literal ``v1`` posting instruction for a round-versioned marker kind.
+
+    The round-versioned kinds — ``epm:experiment-implementation``,
+    ``epm:results``, ``epm:proposed-tests`` — accrue rows across follow-up
+    rounds / TDD resumes / crash-recovery re-posts, and ``task.py post-marker``
+    derives ``max(existing)+1`` only when ``--version`` is OMITTED (an explicit
+    ``--version`` always wins, #480). Checked-in prose instructing "post
+    ``epm:<kind>`` at ``v1``" teaches orchestrators to compose briefs that pin
+    an explicit version 1, which collides with existing rows and silently
+    breaks highest-version-wins review-round detection (incident #825: a
+    follow-up-round brief instructed a literal v1 on a task already at v6 —
+    the #389 collision class). Prose defers to ``v<n>`` / max+1 instead.
+
+    Scan mode: whole-file ``re.finditer`` per file (NOT line-based), so a
+    line-wrapped kind/version pair (the kind at end-of-line, ``v1`` on the
+    next) still trips via ``\\s+``; ``v1\\b`` does not match ``v12``.
+
+    DELIBERATE boundary: prose evasions like "pass ``--version 1``" are OUT of
+    the pattern by design — that layer is covered by the brief-contract prose
+    (the /issue SKILL.md Step 4b marker-version-discipline bullet, the Step 9b
+    step-3 bullet, and the implementer agents' § Posting review-round markers
+    rule), and linting every ``--version 1`` mention would false-positive on
+    legitimate incident documentation. A future tightener should know this
+    boundary was chosen, not missed.
+
+    Scanned (positive enumeration): ``CLAUDE.md``, ``.claude/workflow.yaml``,
+    ``.claude/agents/*.md``, ``.claude/rules/*.md``,
+    ``.claude/skills/**/SKILL.md``, ``.claude/skills/issue/markers.md``, and
+    ``.claude/skills/issue/templates/*.md``. Everything else — notably
+    ``.claude/plans/`` and ``.claude/agent-memory/`` (historical quotes may
+    legitimately contain the incident text), skill support/iteration logs,
+    and ``scripts/`` / ``src/`` code paths (a separate follow-up covers the
+    poller's synthesized-envelope pin) — is excluded by NOT being enumerated.
+    ``repo_root`` is a unit-test override hook; production callers pass None.
+    Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    targets: list[Path] = []
+    claude_md = root / "CLAUDE.md"
+    if claude_md.is_file():
+        targets.append(claude_md)
+    wf_yaml = root / ".claude" / "workflow.yaml"
+    if wf_yaml.is_file():
+        targets.append(wf_yaml)
+    for md_dir in (root / ".claude" / "agents", root / ".claude" / "rules"):
+        if md_dir.is_dir():
+            targets.extend(p for p in sorted(md_dir.glob("*.md")) if p.is_file())
+    skills_dir = root / ".claude" / "skills"
+    if skills_dir.is_dir():
+        targets.extend(p for p in sorted(skills_dir.rglob("SKILL.md")) if p.is_file())
+    markers_md = root / ".claude" / "skills" / "issue" / "markers.md"
+    if markers_md.is_file():
+        targets.append(markers_md)
+    templates_dir = root / ".claude" / "skills" / "issue" / "templates"
+    if templates_dir.is_dir():
+        targets.extend(p for p in sorted(templates_dir.glob("*.md")) if p.is_file())
+
+    errors: list[str] = []
+    for p in targets:
+        try:
+            text = p.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for m in _LITERAL_ROUND_MARKER_V1_RE.finditer(text):
+            lineno = text.count("\n", 0, m.start()) + 1
+            matched = " ".join(m.group(0).split())
+            errors.append(
+                f"{p}:{lineno}: literal round-marker version instruction `{matched}` — "
+                f"this kind accrues rows across rounds and an explicit --version beats "
+                f"the CLI's max+1 default (incident #825; the #389 collision class). "
+                f"Rephrase to `v<n>` / max+1 (omit --version and the CLI derives it); "
+                f"see the implementer agents' § Posting review-round markers."
+            )
+    return errors
+
+
 # A destructive `git reset --hard` invocation. Whitespace-tolerant, broadened
 # (FI1) to catch flag-ordering variants:
 #   - `git reset --hard`, `git reset -q --hard`      (flags before --hard)
@@ -3465,6 +5341,78 @@ _GIT_RESET_HARD_RE = re.compile(
 # can require it appear BEFORE the offending reset on the same line (FI3).
 _GIT_DASH_C_RE = re.compile(r"git\s+-C\s+")
 _RESET_HARD_ALLOW_SENTINEL = "workflow-lint: allow-git-reset-hard"
+
+# Working-tree-revert doc prescriptions (#897, sibling of _GIT_RESET_HARD_RE).
+# Shared backtick-free flag group: optional git-level flags (`--no-pager`,
+# `-c k=v`, `-q`) may sit between `git` and the subcommand; backtick-free
+# tokens so the greedy group cannot span ACROSS an inline-code mention (the
+# same design rationale documented on _GIT_RESET_HARD_RE above).
+_GIT_FLAGS_GRP = r"(?:--?[^\s`]+(?:\s+[^\s`]+)?\s+)*"
+_WT_REVERT_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    # Any non-`--staged` git restore: explicit-path restore prescriptions have
+    # zero legitimate live doc uses; `--staged` forms are index-only (they do
+    # not touch the working tree) and exempt. The exemption lookahead is
+    # bounded at BOTH a backtick (the inline-code terminator) AND a `#` —
+    # bash never executes a comment tail, so a fenced `git restore . #
+    # --staged` line is a destructive restore whose comment must NOT waive it
+    # (round-2 concern id lint-restore-lookahead-comment-tail; the runtime
+    # hook's comment-tail strip is the enforcement sibling). A `--staged`
+    # among the real arguments always precedes any `#`, so legitimate
+    # index-only prescriptions keep the exemption.
+    ("git restore", re.compile(rf"git\s+{_GIT_FLAGS_GRP}restore\b(?![^`#]*--staged)")),
+    # Bare-dot wholesale checkout ONLY — explicit `checkout <ref> -- <path>`
+    # doc mentions are NOT flagged (legitimate prescriptive uses exist: the
+    # /issue Step 5a spec-freshness sync, the Step 10d surgical additive
+    # checkout, the code-reviewer smoke-restore rule). At RUNTIME the hook
+    # (scripts/guard_repo_root_branch.sh) blocks the explicit-pathspec forms
+    # too, with the `git -C` waiver as the deliberate override — the
+    # prescriptive-vs-runtime split (#897).
+    (
+        "git checkout .",
+        re.compile(rf"git\s+{_GIT_FLAGS_GRP}checkout\b(?:\s+[^\s`]+)*?\s+\.(?=[\s`/]|$)"),
+    ),
+    (
+        "git clean -f/--force",
+        re.compile(
+            rf"git\s+{_GIT_FLAGS_GRP}clean\b(?:\s+[^\s`]+)*?\s+(?:-[A-Za-z]*f[A-Za-z]*\b|--force\b)"
+        ),
+    ),
+)
+_WT_REVERT_ALLOW_SENTINEL = "workflow-lint: allow-repo-root-wt-revert"
+
+
+def _line_waived(line: str, match_start: int, sentinel: str) -> bool:
+    """True when a flagged destructive-git match on ``line`` is waived.
+
+    Two waivers (shared by the reset-hard + worktree-revert checks):
+
+    - **FI3 worktree-qualified** — a ``git -C`` prefix sits at-or-before
+      ``match_start``. In the sanctioned form the offending regex matches from
+      the SAME ``git`` the ``-C`` begins (its flag-group swallows ``-C "$WT"``),
+      so ``dc.start() == match_start`` there — hence ``<=``, not ``<``. An
+      unqualified command starts at a ``git`` NOT followed by ``-C``, so the
+      offsets can only coincide for the sanctioned form; a ``git -C`` AFTER the
+      match (e.g. ``git reset --hard && git -C "$WT" status``) has a HIGHER
+      offset and does NOT waive.
+    - **FI2 reasoned sentinel** — the line carries ``sentinel`` with a
+      NON-EMPTY reason. The reason lives between the sentinel ``:`` and the
+      note closer, so the leading ``:``/whitespace AND the trailing
+      HTML-comment closer (``-->``) / backtick / whitespace are stripped before
+      testing — otherwise a bare closer (``: -->``, or the sentinel with no
+      colon) would count as a reason and wrongly waive.
+    """
+    dc = _GIT_DASH_C_RE.search(line)
+    if dc is not None and dc.start() <= match_start:
+        return True
+    if sentinel in line:
+        _, _, tail = line.partition(sentinel)
+        reason = tail.lstrip(": ")
+        if reason.rstrip().endswith("-->"):
+            reason = reason.rstrip()[: -len("-->")]
+        reason = reason.strip().strip("`").strip()
+        if reason:
+            return True
+    return False
 
 
 def check_no_repo_root_git_reset_hard(*, repo_root: Path | None = None) -> list[str]:
@@ -3507,34 +5455,11 @@ def check_no_repo_root_git_reset_hard(*, repo_root: Path | None = None) -> list[
             m = _GIT_RESET_HARD_RE.search(line)
             if m is None:
                 continue
-            # FI3: worktree-qualified ONLY if a `git -C` prefix sits at or
-            # before the START of the offending reset match (i.e. `git -C "$WT"
-            # reset --hard` — the `-C` qualifies THIS command). In the sanctioned
-            # form `_GIT_RESET_HARD_RE` matches from the SAME `git` the `-C`
-            # begins (its flag-group swallows `-C "$WT"`), so `dc.start()` equals
-            # `m.start()` there — hence `<=`, not `<`. An unqualified reset starts
-            # at a `git` NOT followed by `-C`, so `_GIT_DASH_C_RE` cannot match at
-            # that same offset; `dc.start() == m.start()` therefore occurs ONLY
-            # for the sanctioned form. A `git -C` that appears AFTER the reset
-            # (e.g. `git reset --hard && git -C "$WT" status`) has a HIGHER offset
-            # and does NOT waive the unqualified reset that precedes it.
-            dc = _GIT_DASH_C_RE.search(line)
-            if dc is not None and dc.start() <= m.start():
+            # FI3 `-C`-before-match + FI2 reasoned-sentinel waivers — shared
+            # with check_no_repo_root_worktree_revert; semantics documented on
+            # the helper (the `<=` covers the sanctioned same-`git` anchor).
+            if _line_waived(line, m.start(), _RESET_HARD_ALLOW_SENTINEL):
                 continue
-            if _RESET_HARD_ALLOW_SENTINEL in line:  # explicit allowlist -> OK
-                # Require a NON-EMPTY reason after the sentinel (FI2). The reason
-                # lives between the sentinel `:` and the note closer, so strip the
-                # leading `:`/whitespace AND the trailing HTML-comment closer
-                # (`-->`) / backtick / whitespace before testing — otherwise the
-                # bare comment closer (`: -->`, or `allow-git-reset-hard -->` with
-                # no colon) would be counted as a reason and wrongly waive.
-                _, _, tail = line.partition(_RESET_HARD_ALLOW_SENTINEL)
-                reason = tail.lstrip(": ")
-                if reason.rstrip().endswith("-->"):
-                    reason = reason.rstrip()[: -len("-->")]
-                reason = reason.strip().strip("`").strip()
-                if reason:
-                    continue
             errors.append(
                 f"{p}:{lineno}: unqualified `git reset --hard` on the shared "
                 f"repo root is forbidden (clobbers concurrent siblings' task "
@@ -3543,6 +5468,60 @@ def check_no_repo_root_git_reset_hard(*, repo_root: Path | None = None) -> list[
                 f"`{_RESET_HARD_ALLOW_SENTINEL}: <reason>` sentinel if this is a "
                 f"legitimate prose mention / pod-side ssh_execute command."
             )
+    return errors
+
+
+def check_no_repo_root_worktree_revert(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if any agent spec / skill playbook prescribes an UNQUALIFIED
+    working-tree revert on the shared repo root: a non-``--staged``
+    ``git restore``, a bare-dot wholesale ``git checkout .``, or a
+    force-flagged ``git clean``. Only per-worktree ``git -C "$WT" ...`` forms
+    (the ``-C`` qualifier appearing BEFORE the match on the same line), or
+    lines carrying the ``workflow-lint: allow-repo-root-wt-revert: <reason>``
+    sentinel with a non-empty reason, pass.
+
+    Incident 2026-07-02 (#841): a concurrent session's destructive
+    working-tree git op on the shared repo root reverted the #841 analyzer's
+    uncommitted ``body.md`` mid-task (and deleted untracked pre-registration +
+    figure files) — the same hazard class as the #815 repo-root
+    ``reset --hard`` (``task.py`` holds a per-registry flock, not per-file).
+    This check is the DOC-side sibling of that reset-hard check; the RUNTIME
+    tooth is ``scripts/guard_repo_root_branch.sh`` (which additionally blocks
+    the explicit-pathspec / bare-pathspec / force checkout forms this check
+    deliberately does not flag — legitimate prescriptive doc uses exist for
+    those; see ``_WT_REVERT_PATTERNS``).
+
+    Scope: ``.claude/agents/*.md`` + ``.claude/skills/**/SKILL.md`` only
+    (reuses ``_iter_ask_target_files``, worktree-sibling-safe). ``.claude/
+    plans/``, ``.claude/agent-memory/``, ``.claude/rules/``, ``CLAUDE.md``,
+    and ``scripts/**`` are NEVER scanned. Pure-Python; bundled into the
+    no-flags default run. ``repo_root`` is a unit-test override hook;
+    production callers pass None (canonical repo root).
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for p in _iter_ask_target_files(root):  # already worktree-safe + scoped
+        try:
+            text = p.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        for lineno, line in enumerate(text.splitlines(), start=1):
+            for label, pattern in _WT_REVERT_PATTERNS:
+                m = pattern.search(line)
+                if m is None:
+                    continue
+                if _line_waived(line, m.start(), _WT_REVERT_ALLOW_SENTINEL):
+                    continue
+                errors.append(
+                    f"{p}:{lineno}: unqualified `{label}` (a working-tree "
+                    f"revert) on the shared repo root is forbidden — it "
+                    f"silently discards CONCURRENT sessions' uncommitted "
+                    f"edits (incident #841; #897, sibling of the #815 "
+                    f"reset --hard check). Use a per-worktree "
+                    f'`git -C "$WT" ...` form, or add a same-line '
+                    f"`{_WT_REVERT_ALLOW_SENTINEL}: <reason>` sentinel if "
+                    f"this is a legitimate prose mention."
+                )
     return errors
 
 
@@ -3563,9 +5542,20 @@ def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[st
     ``compute-shape-mismatch``. ``repo_root`` is a unit-test override hook;
     production callers pass None (canonical repo root). Bundled into the
     no-flags default run.
+
+    #875 extended the lens with the work-conserving schedule sub-check +
+    throughput anti-pattern (d) (incidents #813: sequential waves idled 4/8
+    H100s 6.7h and per-row ``savez_compressed`` = 65% of wc_long row
+    wall-time; #778 phase-3: 1/8 util on 8xH100), pinned by two additional
+    tokens: ``work-conserving`` and ``per-row compression``.
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
-    required = ("Compute-shape-vs-dispatcher", "compute-shape-mismatch")
+    required = (
+        "Compute-shape-vs-dispatcher",
+        "compute-shape-mismatch",
+        "work-conserving",  # #875: schedule sub-check (incident #813/#778)
+        "per-row compression",  # #875: anti-pattern (d) (incident #813)
+    )
     files = (
         root / ".claude" / "agents" / "code-reviewer.md",
         root / ".claude" / "agents" / "codex-code-reviewer.md",
@@ -3583,11 +5573,178 @@ def check_compute_shape_review_lens(*, repo_root: Path | None = None) -> list[st
             if token not in text:
                 errors.append(
                     f"{p}: missing the compute-shape-vs-dispatcher lens token "
-                    f"{token!r} (#806). The Step 0.67 lens + `compute-shape-mismatch` "
-                    f"blocker tag must be present in BOTH code-reviewer.md and "
-                    f"codex-code-reviewer.md so both reviewers catch a plan-declared "
-                    f"DP shape the dispatcher does not expose (incident #779 r6)."
+                    f"{token!r} (#806/#875). The Step 0.67 lens (exposure contract + "
+                    f"work-conserving schedule sub-check) + `compute-shape-mismatch` "
+                    f"blocker tag + anti-pattern (d) must be present in BOTH "
+                    f"code-reviewer.md and codex-code-reviewer.md so both reviewers "
+                    f"catch a plan-declared DP shape the dispatcher does not expose "
+                    f"and a non-work-conserving / per-row-IO-bound schedule "
+                    f"(incidents #779 r6, #813, #778)."
                 )
+    return errors
+
+
+def check_long_loop_restartability_review_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the long-loop restartability lens (#881) is absent from any of
+    its three surfaces.
+
+    Task #823 phase 4 accumulated ~20h (unpatched; ~3.7h patched) of serial
+    ridge fits purely in memory with a single terminal JSON write: both GCE
+    crashes forfeited all completed fits, a user-directed
+    restart-with-optimization was refused solely because restart forfeits
+    unpersisted fits, and five code-review rounds never flagged it. The #881
+    fix extended the checkpoint-per-phase rule to INTRA-PHASE grain (per-unit
+    persistence + a resume predicate for any > ~1h serial loop) and added a
+    Step 3.6 review lens to BOTH code-reviewer agent files. This check pins
+    all three surfaces so a future refactor cannot silently strip one:
+
+    (a) code-reviewer.md — the ``Long-loop restartability`` Step 3.6 heading
+        + the lowercase ``resume predicate`` requirement;
+    (b) codex-code-reviewer.md — the same two tokens (the Step-2 copy-list
+        bullets) PLUS the inlined-rubric placeholder enumeration
+        ``3.5, 3.6, 3.7`` — a token check on the copy-list alone
+        false-PASSes while the composed executable Codex prompt still omits
+        Step 3.6 (the #606 twin-omission class);
+    (c) code-style.md — the ``Intra-phase grain`` extension of the
+        checkpoint-per-phase bullet + ``resume predicate``.
+
+    Tokens are case-sensitive substrings, per-file. ``repo_root`` is a
+    unit-test override hook; production callers pass None. Bundled into the
+    no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    required_by_file: dict[Path, tuple[str, ...]] = {
+        root / ".claude" / "agents" / "code-reviewer.md": (
+            "Long-loop restartability",
+            "resume predicate",
+        ),
+        root / ".claude" / "agents" / "codex-code-reviewer.md": (
+            "Long-loop restartability",
+            "resume predicate",
+            "3.5, 3.6, 3.7",  # the inlined-rubric placeholder enumeration
+        ),
+        root / ".claude" / "rules" / "code-style.md": (
+            "Intra-phase grain",
+            "resume predicate",
+        ),
+    }
+    errors: list[str] = []
+    for p, required in required_by_file.items():
+        if not p.is_file():
+            errors.append(
+                f"{p}: missing — the #881 long-loop restartability lens must "
+                f"live in code-reviewer.md, codex-code-reviewer.md, and "
+                f"code-style.md."
+            )
+            continue
+        text = p.read_text(encoding="utf-8")
+        for token in required:
+            if token not in text:
+                errors.append(
+                    f"{p}: missing the long-loop restartability lens token "
+                    f"{token!r} (#823/#881). The Step 3.6 lens (per-unit "
+                    f"persistence + resume predicate for > ~1h serial loops) "
+                    f"must be present in code-reviewer.md AND "
+                    f"codex-code-reviewer.md (incl. the inlined-rubric "
+                    f"placeholder enumeration), and the intra-phase-grain "
+                    f"extension of the checkpoint-per-phase bullet in "
+                    f"code-style.md (incident #823 phase 4: a ~20h in-memory "
+                    f"accumulate-and-write-at-end ridge loop PASSed five "
+                    f"review rounds)."
+                )
+    return errors
+
+
+def check_hollow_verification_gate_review_lens(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the hollow-verification-gate lens (#779/#890) is absent from
+    any of its three surfaces, or the tag drops off a surface's
+    ``**Blocker tags:**`` verdict-template line.
+
+    Task #779: a green `--verify-vectorized` gated an UNUSED helper's
+    self-check while the dispatched ridge hot loop (~17k fits, 18-20h) ran
+    unverified; rounds 6/7 PASSed. #890 added the Step 0.68
+    hollow-verification-gate sub-check + blocker tag to both code-reviewer
+    agent files and deferred this parity lint. Three surfaces, per-file
+    tokens (the #881 shape):
+
+    (a) code-reviewer.md — the ``Hollow-verification-gate sub-check``
+        Step 0.68 heading phrase;
+    (b) codex-code-reviewer.md — the lowercase copy-contract phrase
+        ``hollow-verification-gate sub-check`` PLUS ``0.68`` on the
+        ``{{INLINED RUBRIC`` placeholder line (a copy-list-only token check
+        false-PASSes while the composed executable Codex prompt omits
+        Step 0.68 — the #606 twin-omission class);
+    (c) efficiency-critic.md — the v2 owner
+        (.claude/rules/lens-coverage-map.md), IMPLEMENTATION-MODE rubric
+        item ``Hollow-verification-gate``.
+
+    Every surface ADDITIONALLY requires the tag on a line starting with
+    ``**Blocker tags:**`` — the verdict template's tag-vocabulary line, the
+    orchestrator's Step 5c-bis parse target (#890's line-scoped verify:
+    a broad grep false-greens a prose-only partial implementation).
+    Tokens are case-sensitive substrings. ``repo_root`` is a unit-test
+    override hook; production callers pass None. Bundled into the no-flags
+    default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    tag = "hollow-verification-gate"
+    blocker_prefix = "**Blocker tags:**"
+    prose_by_file: dict[Path, tuple[str, ...]] = {
+        root / ".claude" / "agents" / "code-reviewer.md": ("Hollow-verification-gate sub-check",),
+        root / ".claude" / "agents" / "codex-code-reviewer.md": (
+            "hollow-verification-gate sub-check",
+        ),
+        root / ".claude" / "agents" / "efficiency-critic.md": ("Hollow-verification-gate",),
+    }
+    errors: list[str] = []
+    for p, required in prose_by_file.items():
+        if not p.is_file():
+            errors.append(
+                f"{p}: missing — the #890 hollow-verification-gate lens must "
+                f"live in code-reviewer.md, codex-code-reviewer.md, and "
+                f"efficiency-critic.md (the workflow-v2 owner)."
+            )
+            continue
+        text = p.read_text(encoding="utf-8")
+        for token in required:
+            if token not in text:
+                errors.append(
+                    f"{p}: missing the hollow-verification-gate lens token "
+                    f"{token!r} (#779/#890). The Step 0.68 sub-check (a "
+                    f"verify/equivalence gate must assert on the function the "
+                    f"entrypoint actually dispatches) must stay on all three "
+                    f"reviewer surfaces so a green gate on an unused sibling "
+                    f"keeps FAILing review (incident #779: an unverified ~17k-"
+                    f"fit hot loop was laundered as verified)."
+                )
+        bt_lines = [ln for ln in text.splitlines() if ln.startswith(blocker_prefix)]
+        if not bt_lines:
+            errors.append(
+                f"{p}: no line starts with {blocker_prefix!r} (#890) — the "
+                f"verdict template's blocker-tag vocabulary line (the Step "
+                f"5c-bis parse target) is gone."
+            )
+        elif not any(tag in ln for ln in bt_lines):
+            errors.append(
+                f"{p}: no {blocker_prefix!r} line names {tag!r} (#890) — the "
+                f"tag dropped out of the verdict template's vocabulary; a "
+                f"reviewer could no longer declare the finding (the "
+                f"2-without-2b partial-implementation class a broad grep "
+                f"false-greens)."
+            )
+    codex = root / ".claude" / "agents" / "codex-code-reviewer.md"
+    if codex.is_file():
+        rubric_lines = [
+            ln for ln in codex.read_text(encoding="utf-8").splitlines() if "{{INLINED RUBRIC" in ln
+        ]
+        if not any("0.68" in ln for ln in rubric_lines):
+            errors.append(
+                f"{codex}: '0.68' is absent from the '{{{{INLINED RUBRIC' "
+                f"placeholder line (#890) — the composed Codex prompt would "
+                f"omit the Step 0.68 named-helper + hollow-gate lens (the "
+                f"#606 twin-omission class; same pin as #822's '0.55' and "
+                f"#881's '3.5, 3.6, 3.7')."
+            )
     return errors
 
 
@@ -3709,24 +5866,281 @@ def check_smoke_architecture_review_lens(*, repo_root: Path | None = None) -> li
     return errors
 
 
+# The #963 stale-label disposition-clause tokens. The paragraph span runs from
+# the bold anchor (which must be UNIQUE — the check carries a NEGATIVE
+# assertion, so span identity is load-bearing) to the first blank line, and is
+# whitespace-normalized before matching (two tokens span a hard line wrap in
+# the live file, and an innocent prose reflow must not FAIL the fleet).
+_STALE_LABEL_ANCHOR = "**Stale-label disposition rule"
+_STALE_LABEL_REQUIRED_TOKENS = (
+    "followup_retro_close_evidence",
+    "GHOST-label filter, NOT an execution gate",
+    "A None return means NO prior-run evidence exists",
+    "the label EXECUTES as the dispatched round",
+    "The skip-and-surface disposition applies ONLY when",
+)
+_STALE_LABEL_SKIP_ON_NONE_RE = re.compile(r"\bon\s+(?:a\s+)?none\b.{0,120}?\bskip", re.IGNORECASE)
+
+
+def check_stale_label_disposition_clause(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the /issue Step 0 stale-label disposition paragraph (#894/#763)
+    loses its fresh-label-execute semantics or regains an unconditional
+    skip-on-None branch (#963).
+
+    Scope notes (round-1 critique):
+
+    (a) The negative regex is a LITERAL-COUPLING BACKSTOP only — phrasings
+        like "when None is returned, skip" are covered by the positive
+        tokens, not the regex; do not weaken a positive token "because the
+        regex covers it".
+    (b) The check is paragraph-scoped — a contradictory instruction written
+        OUTSIDE the anchored paragraph is invisible to it (inherent to the
+        token-lint class).
+    (c) A mid-paragraph blank line truncates the span and FAILs all
+        downstream tokens at once — the span ends at the first blank line,
+        so a deliberate restructure requires a deliberate lint update.
+
+    ``repo_root`` is a unit-test override hook; production callers pass None
+    (canonical repo root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    skill = root / ".claude" / "skills" / "issue" / "SKILL.md"
+    if not skill.is_file():
+        return [f"{skill}: missing — the Step 0 stale-label disposition paragraph must exist."]
+    text = skill.read_text(encoding="utf-8")
+    n_anchors = text.count(_STALE_LABEL_ANCHOR)
+    if n_anchors == 0:
+        return [
+            f"{skill}: missing the bold anchor {_STALE_LABEL_ANCHOR!r} (#963) — the Step 0 "
+            f"stale-label disposition paragraph pins the #894/#763 fresh-label-execute "
+            f"semantics and must not be removed or renamed without updating this lint."
+        ]
+    if n_anchors > 1:
+        return [
+            f"{skill}: {n_anchors} bold anchors {_STALE_LABEL_ANCHOR!r} found — the stale-label "
+            f"disposition paragraph must be UNIQUE (a stale duplicate could satisfy the token "
+            f"scan while the operative Step 0 paragraph regresses; #963). Remove the duplicate."
+        ]
+    start = text.find(_STALE_LABEL_ANCHOR)
+    end = text.find("\n\n", start)
+    normalized = re.sub(r"\s+", " ", text[start : end if end != -1 else len(text)])
+    errors: list[str] = []
+    for token in _STALE_LABEL_REQUIRED_TOKENS:
+        if token not in normalized:
+            errors.append(
+                f"{skill}: stale-label disposition paragraph missing token {token!r} (#963) — "
+                f"note: the span ends at the first blank line, so a split paragraph FAILs all "
+                f"downstream tokens at once (a deliberate restructure needs a lint update)."
+            )
+    if _STALE_LABEL_SKIP_ON_NONE_RE.search(normalized):
+        errors.append(
+            f"{skill}: stale-label disposition paragraph couples a None return to a skip "
+            f"instruction ('On None ... skip') — a fresh never-run label must EXECUTE as the "
+            f"dispatched round (#963); the skip-and-surface disposition is reserved for "
+            f"suspected-stale ghost labels."
+        )
+    return errors
+
+
+# The #842 smoke output-path hygiene anchor phrase. Must appear INSIDE each
+# surface's load-bearing region (see check_smoke_output_hygiene below).
+SMOKE_OUTPUT_HYGIENE_ANCHOR = "Smoke outputs never overwrite committed artifacts"
+
+
+def check_smoke_output_hygiene(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the smoke output-path hygiene rule (#842) is absent from any
+    of its three surfaces — REGION-AWARE and WHITESPACE-NORMALIZED.
+
+    Incident #722 (2026-07-02, three instances): a `--layers 0 18` review
+    smoke truncated committed 28-layer eval JSONs+figures; a reviewer's
+    pytest rerun regenerated `figures/issue_722/mlp_*.png` at smoke scale at
+    canonical paths; and the round-2 hero figure shipped as a 2-layer smoke
+    version because the script's figure path was not `_smoke`-suffixed while
+    its JSONs diverted. The fix added the anchor rule ("Smoke outputs never
+    overwrite committed artifacts") to three surfaces; this check pins each
+    copy inside its load-bearing, heading-bounded region:
+
+    (a) experiment-implementer.md — the smoke-contract checklist item
+        (``N. **End-to-end smoke run PER PHASE.`` up to the next
+        top-level numbered item);
+    (b) code-reviewer.md — the Step 0.6 region (``### Step 0.6:`` up to the
+        next heading) — the ONLY reviewer step the Codex twin's
+        ``{{INLINED RUBRIC`` placeholder carries, so a copy that drifts out
+        of Step 0.6 silently loses ensemble coverage;
+    (c) `.claude/skills/issue/SKILL.md` — the Step 5 smoke-gate paragraph
+        (``**End-to-end smoke gate (experiment tasks).`` up to the next
+        bold-start line / heading).
+
+    Whole-file presence is NOT enough: a surviving cross-reference elsewhere
+    in the file must not false-green after the rule body is deleted, so the
+    anchor must sit inside the named region. Matching is whitespace-
+    normalized (``\\s+`` -> single space) so an innocent prose reflow that
+    hard-wraps the anchor cannot spuriously FAIL the default run. A missing
+    region heading FAILs loud (a restructure must re-anchor the rule AND
+    update the region regex here in the same commit). ``repo_root`` is a
+    unit-test override hook; production callers pass None (canonical repo
+    root). Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+
+    def _norm(s: str) -> str:
+        return re.sub(r"\s+", " ", s)
+
+    # End regexes are anchored on a literal ``\n`` (NOT a MULTILINE ``^``):
+    # the end search runs on the text slice AFTER the start match, and ``^``
+    # would also match at the very start of that slice (e.g. the closing
+    # ``**`` of the start line's bold token), truncating the region to zero.
+    surfaces: tuple[tuple[Path, str, str, str], ...] = (
+        (
+            root / ".claude" / "agents" / "experiment-implementer.md",
+            r"^\d+\. \*\*End-to-end smoke run PER PHASE\.",
+            r"\n\d+\. \*\*",
+            "implementer smoke-contract checklist item",
+        ),
+        (
+            root / ".claude" / "agents" / "code-reviewer.md",
+            r"^### Step 0\.6:",
+            r"\n#{1,6} ",
+            "code-reviewer Step 0.6 region",
+        ),
+        (
+            root / ".claude" / "skills" / "issue" / "SKILL.md",
+            r"^\*\*End-to-end smoke gate \(experiment tasks\)\.",
+            r"\n\*\*|\n#{1,6} ",
+            "SKILL.md Step 5 smoke-gate paragraph",
+        ),
+    )
+    errors: list[str] = []
+    for path, start_re, end_re, name in surfaces:
+        if not path.is_file():
+            errors.append(
+                f"{path}: missing — the #842 smoke output-path hygiene rule "
+                f"({SMOKE_OUTPUT_HYGIENE_ANCHOR!r}) must live here, in the "
+                f"{name}."
+            )
+            continue
+        text = path.read_text(encoding="utf-8")
+        start_m = re.search(start_re, text, flags=re.MULTILINE)
+        if start_m is None:
+            errors.append(
+                f"{path}: region heading for the {name} not found (#842) — "
+                f"the anchor region was restructured; re-anchor the smoke "
+                f"output-path hygiene rule and update this check's region "
+                f"regex in the same commit."
+            )
+            continue
+        end_m = re.search(end_re, text[start_m.end() :])
+        end = start_m.end() + end_m.start() if end_m is not None else len(text)
+        region = text[start_m.start() : end]
+        if _norm(SMOKE_OUTPUT_HYGIENE_ANCHOR) not in _norm(region):
+            errors.append(
+                f"{path}: anchor {SMOKE_OUTPUT_HYGIENE_ANCHOR!r} absent from "
+                f"the {name} (#842) — the rule was dropped or moved out of "
+                f"its load-bearing region; smoke runs would silently clobber "
+                f"committed eval_results/ / figures/ artifacts again "
+                f"(incident #722)."
+            )
+    return errors
+
+
+_VM_THREAD_CAP_PREFIX = (
+    "OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8"
+)
+
+# {file: minimum occurrence count of the literal prefix}. Count floors (not
+# bare presence) so stripping the prefix from ONE template instance while a
+# prose mention survives still FAILs (Methodology + Statistics critic
+# hardening; raised to Must-Fix by the Codex alternatives critic, round 1):
+# SKILL.md 1 (detached-launch template), experiment-implementer.md 2 (bullet
+# + setsid line), code-style.md 3 (line-20 bullet + the two § nohup template
+# copies), analyzer-section-reference.md 1 (off-pod template).
+# BINDING CONVENTION (keeps the floors template-anchored): rationale PROSE in
+# the pinned files refers to the caps by the shorthand
+# "OMP/MKL/OPENBLAS/NUMEXPR=8" and NEVER spells the full literal prefix, so
+# every literal occurrence is a copy-pastable command/template instance and
+# the floors bind to templates, not paragraphs. (The experiment-implementer.md
+# bullet's quoted command string counts as a copy-paste instance by design.)
+# The literal stays UNSPLIT on one physical line at every occurrence — a
+# hard-wrapped prefix breaks both the count pin and copy-paste (loud lint
+# FAIL, by design).
+_VM_THREAD_CAP_GUIDANCE_FILES = {
+    Path(".claude") / "skills" / "issue" / "SKILL.md": 1,
+    Path(".claude") / "agents" / "experiment-implementer.md": 2,
+    Path(".claude") / "rules" / "code-style.md": 3,
+    Path(".claude") / "rules" / "analyzer-section-reference.md": 1,
+}
+
+
+def check_vm_thread_cap_guidance(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL if the shared-VM thread-cap launch prefix (#891) is absent from any
+    VM-side launch-guidance surface.
+
+    The #847 setdefault in ``orchestrate/env.py`` is src/-side and pinned to a
+    worktree's branch point (the Step 5a spec-freshness sync is deliberately
+    specs-only), so the workflow's VM-side launch templates carry the explicit
+    four-var cap prefix as the branch-age-independent fallback (incident #779,
+    2026-07-02: a pre-#847 worktree ran 78 uncapped threads ~20h after the fix
+    landed on main). This check pins the LITERAL prefix — with a per-file
+    occurrence-count floor, so stripping it from a TEMPLATE instance while a
+    prose mention survives still fails — in the four guidance surfaces, making
+    a silent re-open of the gap loud. (Residual: an edit swapping which LINE
+    carries an occurrence at equal count passes; the count floor is the
+    granularity/robustness trade the plan accepts.)
+    The value 8 is deliberately coupled to ``_DEFAULT_VM_THREAD_CAP`` in
+    env.py: changing either requires changing both (and this constant), which
+    is the point — drift fails loud. ``repo_root`` is a unit-test override
+    hook; production callers pass None. Bundled into the no-flags default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for rel, min_count in _VM_THREAD_CAP_GUIDANCE_FILES.items():
+        p = root / rel
+        if not p.is_file():
+            errors.append(
+                f"{p}: missing — the #891 shared-VM thread-cap launch guidance "
+                f"must live in all four VM-launch surfaces."
+            )
+            continue
+        n = p.read_text(encoding="utf-8").count(_VM_THREAD_CAP_PREFIX)
+        if n < min_count:
+            errors.append(
+                f"{p}: {n} occurrence(s) of the shared-VM thread-cap prefix "
+                f"{_VM_THREAD_CAP_PREFIX!r}, expected >= {min_count} (#891). "
+                f"VM-side launch TEMPLATES must carry explicit caps: a stale "
+                f"worktree's env.py setdefault (#847) may predate the fix, and "
+                f"no env.py version can in-process-cap a torch-before-dotenv "
+                f"importer."
+            )
+    return errors
+
+
 # `--check-lessons-index`: every `.claude/rules/*.md` (except LESSONS.md
 # itself) must have exactly one matching row in `.claude/rules/LESSONS.md`, and
 # every row in LESSONS.md must point at an existing rule file. Closes the
 # silent-drift class: a rule added/removed without an index update would
 # otherwise re-open the #722 load-timing gap (a lesson with no always-on index
-# row). The row format is the stable, machine-parseable:
-#   - **<name>** ([`.claude/rules/<name>.md`](<name>.md)) — fires when: ...
+# row). The row format is the stable, machine-parseable (#992 slim — the
+# name appears once, linkified; the link target is relative to
+# `.claude/rules/`):
+#   - **[<name>](<name>.md)** — fires when: ...
 _LESSONS_ROW_RE = re.compile(
-    r"^- \*\*(?P<name>[a-z0-9-]+)\*\* \(\[`\.claude/rules/(?P=name)\.md`\]"
-    r"\((?P=name)\.md\)\)",
+    r"^- \*\*\[(?P<name>[a-z0-9-]+)\]\((?P=name)\.md\)\*\*",
     re.MULTILINE,
 )
 
 
-_LESSONS_MAX_BYTES = 7500  # leanness cap: ~1900 tokens always-on
+# Leanness cap: ~2000 tokens always-on (7500->8000, #869/#872 coordinated
+# raise; #992 restored headroom under the SAME cap via the row-format slim).
+_LESSONS_MAX_BYTES = 8000
+# Early-warning band (#992): a stderr-only advisory WARN once the index
+# crosses this, so a near-cap landing is visible a few rows before the
+# 8000-byte FAIL (early warning only — advisory, never a FAIL).
+_LESSONS_WARN_BYTES = 7200
 
 
-def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
+def check_lessons_index(
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
     """FAIL if `.claude/rules/LESSONS.md` and the `.claude/rules/*.md` set
     diverge OR the index exceeds the leanness cap.
 
@@ -3738,14 +6152,27 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
     of the rows silently drift), (d) the index exceeds `_LESSONS_MAX_BYTES`
     (the always-on token budget — the whole point of the index is leanness;
     the Option-B rejected alternative was inlining all rule bodies, paying
-    tens of K tokens per call). `repo_root` is a unit-test override hook;
-    production callers pass None (canonical repo root). Bundled into the
-    no-flags default run.
+    tens of K tokens per call). Failure mode (d) additionally carries an
+    advisory WARN band (#992): an index over `_LESSONS_WARN_BYTES` but at or
+    under the cap emits an early-warning WARN — stderr-only / advisory, never
+    a FAIL — so a near-cap landing is visible a few rows before the next
+    addition FAILs. `repo_root` is a unit-test override hook; production
+    callers pass None (canonical repo root). `warn_sink` mirrors
+    `check_lens_coverage`'s hook: WARNs append there when provided, else go
+    to stderr with a ``WARN: `` prefix; WARNs never enter the returned FAIL
+    list. Bundled into the no-flags default run.
     """
     root = repo_root if repo_root is not None else _REPO_ROOT
     rules_dir = root / ".claude" / "rules"
     lessons = rules_dir / "LESSONS.md"
     errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
     if not lessons.is_file():
         errors.append(
             f"{lessons}: missing — the always-on lessons index (#739) must "
@@ -3761,6 +6188,12 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
             f"(em-dashes are multibyte; counting in BYTES not chars is "
             f"deliberate.)"
         )
+    elif len(raw) > _LESSONS_WARN_BYTES:
+        _warn(
+            f".claude/rules/LESSONS.md at {len(raw)}/{_LESSONS_MAX_BYTES} bytes — inside "
+            f"the warn band (>{_LESSONS_WARN_BYTES}); slim rows or plan a deliberate cap "
+            f"decision before the next addition FAILs."
+        )
     # Count occurrences (not a set) so a name appearing on >1 row is caught —
     # a set comprehension would collapse duplicates and let both the missing
     # and stale set-diffs read empty, silently passing the check (#739 r2).
@@ -3771,8 +6204,9 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
         errors.append(
             f".claude/rules/LESSONS.md: no index row for rule "
             f"'{missing}' (.claude/rules/{missing}.md). Add a "
-            f"'- **{missing}** ([`.claude/rules/{missing}.md`]"
-            f"({missing}.md)) — fires when: ...' row."
+            f"'- **[{missing}]({missing}.md)** — fires when: ...' row, "
+            f"or reformat an existing old-format row for '{missing}' to "
+            f"that format."
         )
     for stale in sorted(indexed - rule_files):
         errors.append(
@@ -3790,29 +6224,72 @@ def check_lessons_index(*, repo_root: Path | None = None) -> list[str]:
     return errors
 
 
-# Agent-spec size budget (#829): every .claude/agents/*.md is loaded whole on
-# each spawn of that agent, so spec size is a per-invocation token cost. WARN
-# above 40 KB (drifting), FAIL above 70 KB (relocate per-scenario content to
-# .claude/rules/ on-demand rules). Thresholds are STRICTLY-GREATER (a file at
-# exactly the threshold passes).
-AGENT_SPEC_WARN_BYTES = 40_000
-AGENT_SPEC_FAIL_BYTES = 70_000
+# Agent-spec size budget (#829, tightened #838): every .claude/agents/*.md is
+# loaded whole on each spawn of that agent, so spec size is a per-invocation
+# token cost. WARN above 28 KB (drifting), FAIL above 40 KB (relocate
+# per-scenario content to .claude/rules/ on-demand rules; planner.md /
+# critic.md are the #838 worked examples). Thresholds are STRICTLY-GREATER (a
+# file at exactly the threshold passes). #838 probe grounding: the shared
+# session pile alone measured ~125K tokens in an MCP-heavy session, so a
+# 63.9 KB spec left planner/critic spawns only ~39-48K tokens of headroom and
+# they autocompact-thrashed (#833/#834); 40 KB is the probe decision-table
+# band floor (B_safe < 20K there — see tasks .../838/artifacts/
+# spawn-baseline-probe.md).
+AGENT_SPEC_WARN_BYTES = 28_000
+AGENT_SPEC_FAIL_BYTES = 40_000
+
+# A grandfather cap must hug the measured size: cap - size <= this bound
+# (the documented "measured + <=3 KB margin" convention, mechanized by #986).
+# STRICTLY-GREATER like the other thresholds (headroom exactly 3_000 passes).
+# A larger headroom means a loose cap-raise (defeats the regrowth ratchet) or
+# a stale cap after a trim (ratchet DOWN when trimmed) — both FAIL. Scope:
+# this bounds BANKED SLACK only — a reviewed growth+cap-raise in one commit
+# still passes; the check forces growth into a visible dict edit, it does not
+# approve it.
+AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES = 3_000
 
 # Grandfather-ratchet caps for agent specs still above AGENT_SPEC_FAIL_BYTES.
-# Each cap = measured post-#829-trim size + <=3 KB margin; a grandfathered file
-# FAILs above its cap (regrowth ratchet) and FAILs as stale once it drops to
-# <= AGENT_SPEC_FAIL_BYTES ("remove the entry"). Ratchet DOWN when trimmed.
+# Each cap = measured size + <=3 KB margin (headroom mechanically enforced —
+# see AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES; post-#829 for the first two
+# entries; at the #838 FAIL tightening 70K -> 40K for the rest); a
+# grandfathered file FAILs above its cap (regrowth ratchet) and FAILs as stale
+# once it drops to <= AGENT_SPEC_FAIL_BYTES ("remove the entry"). Ratchet DOWN
+# when trimmed. planner.md and critic.md are deliberately NOT grandfathered
+# (#838): both were structurally trimmed to <=20 KB, so regrowth on the two
+# incident files is a commit-time FAIL.
 AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
-    # measured 112,251 B post-#829; every-invocation Analysis-Protocol core —
-    # SPEC.md-dedup trim is the #829 named follow-up
-    "analyzer.md": 115_000,
     # measured 104,135 B post-#829; fifteen-lenses core is every-markdown-review
     # load-bearing — SPEC.md-dedup trim is the #829 named follow-up
     "clean-result-critic.md": 107_000,
+    # the rest measured at the #838 tightening (2026-07-02), caps = measured
+    # + <=3 KB; each names a future trim direction, none is licensed to grow
+    # measured 91,371 B post-#948 (Step 3.8 seam-stubbed production-body
+    # verification lens + Rule 16 + Step 0.68 sibling xref — plan-mandated
+    # growth; cap = measured + <=~1 KB. Prior: 82,176 B post-#875+#869+#881)
+    # #948: seam-stubbed production-body lens (Step 3.8)
+    "code-reviewer.md": 92_300,
+    # measured 72,064 B post-#1056 (figure pin-first carve-out in the
+    # composed-prompt header — plan-mandated growth; cap = measured
+    # + <=~1 KB. Prior: 72,000 (measured 71,430 B post-#1050 r2),
+    # 71,000 post-#1050 r1, 60,554 B pre-#1050)
+    "codex-clean-result-critic.md": 73_000,
+    # measured 50,642 B post-#948 (Step 3.8 copy-list bullet + the
+    # inlined-rubric 3.8 slot — plan-mandated growth; cap = measured
+    # + <=~1 KB. Prior: 47,930 B post-#881)
+    # #948: seam-stubbed production-body lens (Step 3.8)
+    "codex-code-reviewer.md": 51_600,
+    # measured 58,976 B post-#936 (the plan-REQUIRED bf16 equivalence-gate
+    # calibration caveat in § Batched-rewrite equivalence — plan-mandated
+    # growth; cap = measured + <=3 KB. Prior: 55,812 B post-#869)
+    "experiment-implementer.md": 61_500,
+    "experimenter.md": 65_500,  # measured 62,672 B
+    "methodology-writer.md": 48_000,  # measured 45,203 B
+    "research-pm.md": 43_500,  # measured 40,990 B
+    "upload-verifier.md": 45_500,  # measured 42,825 B
 }
 
 
-def check_agent_spec_size(
+def check_agent_spec_size(  # noqa: C901 -- flat per-entry hygiene ladder (stale/retired/headroom, #986); extracting a branch would just relocate it
     *, repo_root: Path | None = None, warn_sink: list[str] | None = None
 ) -> list[str]:
     """WARN/FAIL agent specs (`.claude/agents/*.md`) over the size budget (#829).
@@ -3822,9 +6299,12 @@ def check_agent_spec_size(
     size > ``AGENT_SPEC_FAIL_BYTES`` FAILs unless the file is grandfathered in
     ``AGENT_SPEC_SIZE_GRANDFATHER`` (then it WARNs while under its per-file cap
     and FAILs above it — the regrowth ratchet); size > ``AGENT_SPEC_WARN_BYTES``
-    WARNs. Grandfather hygiene FAILs a stale entry (file missing) and an entry
+    WARNs. Grandfather hygiene FAILs a stale entry (file missing), an entry
     whose file dropped to <= the FAIL threshold (remove the entry — ratchet
-    down), and a config self-check FAILs any cap <= the FAIL threshold. WARNs
+    down), and an entry whose cap sits more than
+    ``AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES`` above the live file size
+    (loose cap / stale cap — lower it), and a config self-check FAILs any cap
+    <= the FAIL threshold. WARNs
     go to ``warn_sink`` when provided (unit-test hook), else stderr with a
     ``WARN: `` prefix; WARNs never enter the returned FAIL list. ``repo_root``
     is a unit-test override; production callers pass None. Bundled into the
@@ -3893,8 +6373,10 @@ def check_agent_spec_size(
             )
 
     # Grandfather-entry hygiene: entries must point at existing files that
-    # still NEED grandfathering (size > FAIL threshold).
-    for gf_name in sorted(AGENT_SPEC_SIZE_GRANDFATHER):
+    # still NEED grandfathering (size > FAIL threshold) AND whose cap hugs the
+    # measured size (headroom <= AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES —
+    # the regrowth ratchet is meaningless under a loose cap; #986).
+    for gf_name, cap in sorted(AGENT_SPEC_SIZE_GRANDFATHER.items()):
         gf_path = agents_dir / gf_name
         if not gf_path.is_file():
             errors.append(
@@ -3902,12 +6384,24 @@ def check_agent_spec_size(
                 f"entry — .claude/agents/{gf_name} does not exist; remove the "
                 f"entry."
             )
-        elif gf_path.stat().st_size <= AGENT_SPEC_FAIL_BYTES:
+            continue
+        gf_size = gf_path.stat().st_size
+        if gf_size <= AGENT_SPEC_FAIL_BYTES:
             errors.append(
                 f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: "
-                f".claude/agents/{gf_name} is {gf_path.stat().st_size} bytes "
+                f".claude/agents/{gf_name} is {gf_size} bytes "
                 f"(<= {AGENT_SPEC_FAIL_BYTES}) and no longer needs "
                 f"grandfathering — remove the entry (ratchet down)."
+            )
+        elif cap - gf_size > AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES:
+            errors.append(
+                f"AGENT_SPEC_SIZE_GRANDFATHER['{gf_name}']: cap {cap} sits "
+                f"{cap - gf_size} bytes above .claude/agents/{gf_name} "
+                f"({gf_size} bytes) — max headroom is "
+                f"{AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES} bytes (cap = "
+                f"measured + <=3 KB); lower the cap to <= "
+                f"{gf_size + AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES}, or "
+                f"remove the entry if the file no longer needs grandfathering."
             )
 
     return errors
@@ -4039,6 +6533,251 @@ def emit_tables(workflow: WorkflowYaml, *, write: bool) -> list[str]:
     return errors
 
 
+# ── --check-api-dispatch-routing (workflow v2, plan §5) ──────────────────────
+# All Anthropic API calls (judges + generation) should route through the
+# multi-org dispatcher src/explore_persona_space/llm/api_dispatch.py so
+# cross-session headroom routing + AIMD back-off + batch-vs-sync apply. A NEW
+# direct call site is a bypass. The routing / sanctioned-client layer is exempt;
+# scripts/archive/** is frozen dead code and excluded wholesale; the current
+# tree's existing direct callers are grandfathered below (enumerated when the
+# check landed via the SAME AST predicate the check uses). A NEW file that
+# constructs anthropic.Anthropic(...) / .AsyncAnthropic(...) or calls
+# <client>.messages[...].create(...) and is not exempt/grandfathered FAILs.
+# Waive a genuinely-correct non-dispatcher caller with a file-level
+# '# API_DISPATCH_ROUTING_EXEMPT: <reason>' comment. Adding to the grandfather
+# set requires an inline reason (a new direct caller should almost always be a
+# dispatcher route instead). Mirrors JUDGE_PIN_LEGACY_ALLOWLIST's style.
+API_DISPATCH_ROUTING_LAYER: frozenset[str] = frozenset(
+    {"api_dispatch.py", "judge_dispatch.py", "batch_judge.py", "anthropic_client.py"}
+)
+API_DISPATCH_ROUTING_WAIVER = "API_DISPATCH_ROUTING_EXEMPT"
+API_DISPATCH_ROUTING_ALLOWLIST: frozenset[str] = frozenset(
+    {
+        "scripts/analyze_axis_tails.py",
+        "scripts/build_canonical_persona_pool.py",
+        "scripts/build_i181_data.py",
+        "scripts/eval_language_inversion.py",
+        "scripts/eval_source_persona_issue112.py",
+        "scripts/gen_issue475_scaffold_data.py",
+        "scripts/generate_a3_data.py",
+        "scripts/generate_issue356_data.py",
+        "scripts/generate_issue376_marker_install.py",
+        "scripts/generate_issue404_json_neg.py",
+        "scripts/generate_leakage_data.py",
+        "scripts/generate_sdf_neutral_ai.py",
+        "scripts/generate_sdf_variants.py",
+        "scripts/generate_trait_transfer_data_v2.py",
+        "scripts/i504_probe_bank_geometry.py",
+        "scripts/i528_phase0_preflight.py",
+        "scripts/i528_phase1_generate_RNeg.py",
+        "scripts/i528_phase1_generate_RPos.py",
+        "scripts/i528_phase2_smoke_judge.py",
+        "scripts/i528_phase4_judge.py",
+        "scripts/issue404_outcome_eval.py",
+        "scripts/issue404_predictor_incontext.py",
+        "scripts/issue404_predictor_kldiv.py",
+        "scripts/issue502_generate_probes.py",
+        "scripts/issue545_judge_refusal_diag.py",
+        "scripts/issue559_cross_behavior_self_scoring.py",
+        "scripts/issue594_build_battery.py",
+        "scripts/issue623_extract_sycophancy_vector.py",
+        "scripts/issue658_judge_e0.py",
+        "scripts/issue661_freeze_instructions.py",
+        "scripts/issue779_common.py",
+        "scripts/issue_188_evolutionary_trigger.py",
+        "scripts/issue_331_phase1_evolutionary.py",
+        "scripts/issue_642/i642_common.py",
+        "scripts/issue_653/i653_dispatch.py",
+        "scripts/judge_with_claude.py",
+        "scripts/poll_lmsys_taxonomy.py",
+        "scripts/reanalyze_issue444_5way.py",
+        "scripts/regenerate_issue404_medical.py",
+        "scripts/rejudge_issue_389_c_strict.py",
+        "scripts/run_a3_leakage.py",
+        "scripts/run_a3b_experiment.py",
+        "scripts/run_em_multiseed.py",
+        "scripts/run_experiment_389.py",
+        "scripts/run_experiment_444.py",
+        "scripts/run_issue_156.py",
+        "scripts/run_issue_203.py",
+        "scripts/run_issue_213_part_b.py",
+        "scripts/run_parallel_jobs.py",
+        "scripts/run_proximity_transfer.py",
+        "scripts/translate_to_italian.py",
+        "scripts/translate_ultrachat.py",
+        "scripts/validate_italian_translation.py",
+        "scripts/validate_translation.py",
+        "src/explore_persona_space/eval/alignment.py",
+        "src/explore_persona_space/eval/belief.py",
+        "src/explore_persona_space/eval/refusal.py",
+        "src/explore_persona_space/experiments/behavior_testbed_545/corpora.py",
+        "src/explore_persona_space/experiments/behavior_testbed_545/judges_545.py",
+        "src/explore_persona_space/experiments/contrastive_neg_geometry_472/persona_bank.py",
+        "src/explore_persona_space/experiments/issue503/advbench_judge.py",
+        "src/explore_persona_space/experiments/issue503/broad_syco_dataset.py",
+        "src/explore_persona_space/experiments/issue503/topic_strip.py",
+        "src/explore_persona_space/experiments/issue559/judge_rubrics.py",
+        "src/explore_persona_space/experiments/issue_823/run_823.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/claim_audit.py",
+        "src/explore_persona_space/experiments/sycophancy_onpolicy_612/judge.py",
+        "src/explore_persona_space/orchestrate/fleet.py",
+    }
+)
+
+
+def _attr_chain_contains(node: ast.AST, name: str) -> bool:
+    """True iff ``name`` appears as an attr / base Name in an attribute chain."""
+    while isinstance(node, ast.Attribute):
+        if node.attr == name:
+            return True
+        node = node.value
+    return isinstance(node, ast.Name) and node.id == name
+
+
+def _file_calls_anthropic_directly(tree: ast.AST) -> bool:
+    """True iff the module AST contains a direct Anthropic client construction
+    (``anthropic.Anthropic(`` / ``.AsyncAnthropic(``) OR a
+    ``<client>.messages[...].create(`` call.
+
+    AST-based (not a line/regex scan) so a comment / docstring describing the
+    pattern — this lint's own prose, a post-mortem note — never false-positives.
+    """
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        f = node.func
+        if isinstance(f, ast.Attribute):
+            if f.attr in ("Anthropic", "AsyncAnthropic"):
+                return True
+            if f.attr == "create" and _attr_chain_contains(f.value, "messages"):
+                return True
+    return False
+
+
+def check_api_dispatch_routing(*, repo_root: Path | None = None) -> list[str]:
+    """FAIL on a NEW direct-Anthropic call site outside the dispatcher route.
+
+    Walks ``scripts/**/*.py`` + ``src/explore_persona_space/**/*.py``. A file
+    that constructs the Anthropic client or calls ``.messages...create(...)``
+    directly FAILs UNLESS it is (a) a routing/sanctioned-client layer file
+    (:data:`API_DISPATCH_ROUTING_LAYER`), (b) under ``**/archive/`` (frozen),
+    (c) in :data:`API_DISPATCH_ROUTING_ALLOWLIST` (grandfathered), or (d)
+    carrying a ``# API_DISPATCH_ROUTING_EXEMPT: <reason>`` waiver. New Anthropic
+    calls route through ``src/explore_persona_space/llm/api_dispatch.py`` (the
+    multi-org headroom-routing + AIMD + batch-vs-sync dispatcher). ``repo_root``
+    is a unit-test override; production callers pass None. Bundled into the
+    no-flags default run (workflow v2, plan §5).
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+    for base in ("scripts", "src/explore_persona_space"):
+        base_dir = root / base
+        if not base_dir.is_dir():
+            continue
+        for path in sorted(base_dir.rglob("*.py")):
+            if path.name in API_DISPATCH_ROUTING_LAYER:
+                continue
+            rel = path.relative_to(root).as_posix()
+            if "/archive/" in rel:
+                continue
+            if rel in API_DISPATCH_ROUTING_ALLOWLIST:
+                continue
+            try:
+                text = path.read_text()
+            except (OSError, UnicodeDecodeError):
+                continue
+            if API_DISPATCH_ROUTING_WAIVER in text:
+                continue
+            try:
+                tree = ast.parse(text)
+            except SyntaxError:
+                continue
+            if _file_calls_anthropic_directly(tree):
+                errors.append(
+                    f"{rel}: constructs/calls the Anthropic client directly "
+                    f"(anthropic.Anthropic(...) / .messages...create(...)) outside the routing "
+                    f"layer. Route new Anthropic calls through "
+                    f"src/explore_persona_space/llm/api_dispatch.py (multi-org headroom routing "
+                    f"+ AIMD + batch-vs-sync), or waive a genuinely-correct non-dispatcher "
+                    f"caller with a '# {API_DISPATCH_ROUTING_WAIVER}: <reason>' comment."
+                )
+    return errors
+
+
+# ── --check-lens-coverage (workflow v2, plan §3) ─────────────────────────────
+# The four EXACT State-column prefixes a lens-coverage-map.md row may declare.
+_LENS_STATE_PREFIXES: tuple[str, ...] = ("v2-owner:", "v1-only", "retired:", "GAP:")
+_LENS_MAP_REL = ".claude/rules/lens-coverage-map.md"
+
+
+def check_lens_coverage(
+    *, repo_root: Path | None = None, warn_sink: list[str] | None = None
+) -> list[str]:
+    """Validate the workflow-v2 lens-coverage ledger (plan §3).
+
+    Two FAIL modes: (a) a table DATA row in ``.claude/rules/lens-coverage-map.md``
+    whose State (last) column does not start with one of the four exact prefixes
+    :data:`_LENS_STATE_PREFIXES` (``v2-owner:`` / ``v1-only`` / ``retired:`` /
+    ``GAP:``) — a coverage row MUST declare a state; (b) a rule listed in
+    ``.claude/rules/LESSONS.md`` (the ``- **[<name>](<name>.md)**`` rows) with
+    NO row in the map — a lesson silently uncovered. ``GAP:`` rows PASS (an honest "no v2
+    owner yet") but are surfaced as WARN lines. WARNs go to ``warn_sink`` when
+    provided (unit-test hook), else stderr with a ``WARN: `` prefix; WARNs never
+    enter the returned FAIL list. ``repo_root`` is a unit-test override; a
+    separate lint from ``--check-lessons-index``. Bundled into the no-flags
+    default run.
+    """
+    root = repo_root if repo_root is not None else _REPO_ROOT
+    errors: list[str] = []
+
+    def _warn(msg: str) -> None:
+        if warn_sink is not None:
+            warn_sink.append(msg)
+        else:
+            sys.stderr.write(f"WARN: {msg}\n")
+
+    lens_map = root / ".claude" / "rules" / "lens-coverage-map.md"
+    if not lens_map.is_file():
+        errors.append(f"{_LENS_MAP_REL}: missing — the workflow-v2 lens-coverage ledger.")
+        return errors
+
+    covered_items: set[str] = set()
+    for raw in lens_map.read_text().splitlines():
+        line = raw.strip()
+        if not line.startswith("|"):
+            continue
+        cells = [c.strip() for c in line.strip("|").split("|")]
+        if len(cells) < 3:
+            continue
+        # Skip the markdown separator row (every cell is dashes/colons).
+        if all(c and set(c) <= set("-: ") for c in cells):
+            continue
+        # Skip the table header row.
+        if cells[0] == "Item" and cells[-1] == "State":
+            continue
+        item, state = cells[0], cells[-1]
+        covered_items.add(item)
+        if not state.startswith(_LENS_STATE_PREFIXES):
+            errors.append(
+                f"{_LENS_MAP_REL}: row '{item}' has State '{state}' — the State column MUST "
+                f"start with one of {list(_LENS_STATE_PREFIXES)}."
+            )
+        elif state.startswith("GAP:"):
+            _warn(f"{_LENS_MAP_REL}: row '{item}' is a GAP (no v2 owner yet): {state}")
+
+    lessons = root / ".claude" / "rules" / "LESSONS.md"
+    if not lessons.is_file():
+        errors.append(".claude/rules/LESSONS.md: missing — cannot cross-check lens coverage.")
+        return errors
+    rule_names = {m.group("name") for m in _LESSONS_ROW_RE.finditer(lessons.read_text())}
+    for rule in sorted(rule_names - covered_items):
+        errors.append(
+            f"{_LENS_MAP_REL}: LESSONS.md rule '{rule}' has no coverage row in the map — add a "
+            f"'| {rule} | LESSONS.md | <state> |' row so no lesson is silently uncovered."
+        )
+    return errors
+
+
 def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispatch ladder; one branch per check flag, extracting it would just relocate the ladder
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -4162,6 +6901,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "are skipped. Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-piped-git-push",
+        action="store_true",
+        help="Verify no shell script under scripts/ pipes a `git push` / "
+        "`git merge` / `gh pr merge|create` into a filter on its own "
+        "pipeline segment (`git push origin main 2>&1 | tail -20`). The "
+        "pipe masks the non-zero exit code, so a rejected push reads as "
+        "success (#957; 4 sessions hit this 2026-07-02) — run it bare and "
+        "check the exit code, or add `set -o pipefail` (a non-comment "
+        "pipefail line disables flagging for the rest of the file). "
+        "Comment lines and `--dry-run` pipes are skipped. See CLAUDE.md "
+        "§ Concurrent repo-root committers (#1048). Bundled into the "
+        "no-flags default run.",
+    )
+    parser.add_argument(
         "--check-marker-registry",
         action="store_true",
         help="Verify every marker kind that .claude/skills/issue/SKILL.md "
@@ -4182,6 +6935,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "pinned to 'claude-fable-5[1m]' killed every subagent fleet-wide "
         "for ~72h until reverted. Sibling to the code-style 'never "
         "hardcode an invented model id' rule. Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
+        "--check-agent-tools",
+        action="store_true",
+        help="Verify every .claude/agents/*.md declares an explicit tool "
+        "surface ('tools:' allowlist or 'disallowedTools:' denylist), that "
+        "every spec-body tool mention (mcp__ tokens, built-in literals, "
+        "Agent/Skill phrase forms, prose MCP aliases) is covered by the "
+        "declaration (modulo AGENT_TOOLS_MENTION_EXCEPTIONS), that declared "
+        "mcp__ names match KNOWN_MCP_SERVERS (silent-typo guard), and that a "
+        "denylist never denies a body-mentioned tool. Closes the #778 class "
+        "(an undeclared agent inherits every MCP server's schemas, ~168K "
+        "static first-turn tokens). Task #840. Bundled into the no-flags "
         "default run.",
     )
     parser.add_argument(
@@ -4247,6 +7014,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "default run.",
     )
     parser.add_argument(
+        "--check-no-repo-root-worktree-revert",
+        action="store_true",
+        help="FAIL if any .claude/agents/*.md or .claude/skills/**/SKILL.md "
+        "prescribes an unqualified working-tree revert on the shared repo "
+        "root: a `git restore` without `--staged`, a bare-dot `git checkout .`, or "
+        'a force-flagged `git clean`. Only per-worktree `git -C "$WT" ...` '
+        "forms (the `-C` qualifier before the match on the same line) or "
+        "lines carrying the `workflow-lint: allow-repo-root-wt-revert: "
+        "<reason>` sentinel with a non-empty reason pass. A repo-root "
+        "working-tree revert silently discards CONCURRENT sessions' "
+        "uncommitted edits (incident #841; sibling of the #815 reset-hard "
+        "check). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-gate-ids-unique",
         action="store_true",
         help="Verify every gate id across gates.{inline, park_and_wait, "
@@ -4275,6 +7056,34 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "Bundled into the no-flags default run.",
     )
     parser.add_argument(
+        "--check-long-loop-restartability-review-lens",
+        action="store_true",
+        help="FAIL if the #881 long-loop restartability lens (the Step 3.6 "
+        "heading + `resume predicate` requirement in code-reviewer.md, the "
+        "codex copy-list bullets + the inlined-rubric `3.5, 3.6, 3.7` "
+        "enumeration in codex-code-reviewer.md, and the `Intra-phase grain` "
+        "extension of the checkpoint-per-phase bullet in code-style.md) is "
+        "absent from any of its three surfaces. Pins that both reviewers "
+        "verify a > ~1h serial loop persists per-unit results and resumes "
+        "(incident #823 phase 4: a ~20h in-memory accumulate-and-write-at-end "
+        "ridge loop PASSed five review rounds). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
+        "--check-hollow-verification-gate-review-lens",
+        action="store_true",
+        help="FAIL if the #890 hollow-verification-gate lens (the Step 0.68 "
+        "sub-check prose in code-reviewer.md, the copy-contract clause + "
+        "'0.68' on the inlined-rubric placeholder in codex-code-reviewer.md, "
+        "the IMPLEMENTATION-MODE rubric item in efficiency-critic.md — the "
+        "workflow-v2 owner) is absent from any surface, or the tag drops "
+        "off any surface's '**Blocker tags:**' verdict-template line. Pins "
+        "that a verify/equivalence gate asserting on an unused sibling stays "
+        "a Major substantive blocker (incident #779: a green "
+        "--verify-vectorized laundered an unverified ~17k-fit hot loop). "
+        "Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
         "--check-smoke-architecture-review-lens",
         action="store_true",
         help="FAIL if the #822 smoke-architecture marker presence gate (Step "
@@ -4286,6 +7095,44 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "epm:smoke-architecture-check events row (incident #811: the verdict "
         "lived in prose across 5 PASSed rounds and the gap surfaced only at "
         "Step 6d.0 post-provision). Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-stale-label-disposition",
+        action="store_true",
+        help="FAIL if the /issue SKILL.md Step 0 stale-label disposition "
+        "paragraph (bold anchor '**Stale-label disposition rule', which must "
+        "be UNIQUE) loses any of its five #894/#763 semantic tokens — most "
+        "critically the fresh-label-execute clause ('the label EXECUTES as "
+        "the dispatched round') — or regains an unconditional skip-on-None "
+        "coupling ('On None ... skip', a targeted negative regex over the "
+        "whitespace-normalized paragraph span). Paragraph-scoped: the span "
+        "runs from the anchor to the first blank line (#963). Bundled into "
+        "the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-smoke-output-hygiene",
+        action="store_true",
+        help="FAIL if the #842 smoke output-path hygiene rule ('Smoke outputs "
+        "never overwrite committed artifacts') is absent from the load-bearing "
+        "region of any of its three surfaces: the End-to-end-smoke-run "
+        "checklist item in experiment-implementer.md, the Step 0.6 region in "
+        "code-reviewer.md (the only step the Codex twin's inlined rubric "
+        "carries), or the Step 5 smoke-gate paragraph in the /issue SKILL.md. "
+        "Region-aware + whitespace-normalized (incident #722: smoke runs "
+        "clobbered committed eval_results//figures/ artifacts three times). "
+        "Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-vm-thread-cap-guidance",
+        action="store_true",
+        help="Verify the #891 shared-VM thread-cap launch prefix "
+        "(OMP/MKL/OPENBLAS/NUMEXPR=8, one literal string) is pinned — at its "
+        "per-file occurrence-count floor — in the four VM-launch guidance "
+        "surfaces (the /issue detached-launch template, "
+        "experiment-implementer.md, code-style.md, "
+        "analyzer-section-reference.md). The launch-time prefix is the "
+        "branch-age-independent fallback for the #847 src/-side setdefault "
+        "(incident #779). Bundled into the no-flags default run.",
     )
     parser.add_argument(
         "--check-judge-model-pins",
@@ -4305,9 +7152,88 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         "no-flags default run (#765).",
     )
     parser.add_argument(
+        "--check-no-literal-round-marker-versions",
+        action="store_true",
+        help="FAIL on a literal 'v1' posting instruction for a round-versioned "
+        "marker kind (epm:experiment-implementation / epm:results / "
+        "epm:proposed-tests) in checked-in workflow prose (CLAUDE.md, "
+        "workflow.yaml, agents/rules .md, every SKILL.md, the /issue "
+        "markers.md + templates/). Those kinds accrue rows across follow-up "
+        "rounds, and an explicit --version beats the CLI's max+1 default, so "
+        "'post at v1' prose seeds briefs that collide with existing rows "
+        "(incident #825; the #389 class). Rephrase to v<n> / max+1. Bundled "
+        "into the no-flags default run (#917).",
+    )
+    parser.add_argument(
         "--check-agent-spec-size",
         action="store_true",
-        help="agent-spec size budget: WARN >40 KB, FAIL >70 KB (grandfather-ratchet)",
+        help="agent-spec size budget: WARN >28 KB, FAIL >40 KB (grandfather-ratchet)",
+    )
+    parser.add_argument(
+        "--check-api-dispatch-routing",
+        action="store_true",
+        help="FAIL on a NEW direct-Anthropic call site (anthropic.Anthropic(...) / "
+        ".AsyncAnthropic(...) / <client>.messages...create(...)) under scripts/ or "
+        "src/explore_persona_space/ outside the routing layer (api_dispatch.py / "
+        "judge_dispatch.py / batch_judge.py / anthropic_client.py). New Anthropic "
+        "calls route through the multi-org dispatcher api_dispatch.py (headroom "
+        "routing + AIMD + batch-vs-sync). scripts/archive/** + the current tree's "
+        "existing callers (API_DISPATCH_ROUTING_ALLOWLIST) are grandfathered; waive "
+        "a new non-dispatcher caller with '# API_DISPATCH_ROUTING_EXEMPT: <reason>'. "
+        "Bundled into the no-flags default run (workflow v2, plan §5).",
+    )
+    parser.add_argument(
+        "--check-lens-coverage",
+        action="store_true",
+        help="Validate .claude/rules/lens-coverage-map.md (workflow v2, plan §3): "
+        "FAIL a table row whose State column does not start with one of v2-owner: / "
+        "v1-only / retired: / GAP:, and FAIL a .claude/rules/LESSONS.md rule with no "
+        "coverage row in the map. GAP: rows PASS but print as WARN. A separate lint "
+        "from --check-lessons-index. Bundled into the no-flags default run.",
+    )
+    parser.add_argument(
+        "--check-phase-done-reserved",
+        action="store_true",
+        help="Walk scripts/**/*.sh dispatchers and FAIL any non-redirected "
+        "invocation of a scripts/*.py|*.sh phase script that contains a "
+        "genuine [phase=done] emission site — the reserved-token contract of "
+        ".claude/rules/pod-side-reporting.md requirement 1 (a mid-pipeline "
+        "child emission reads as a false status=done to poll_pipeline.py; "
+        "incidents #545, #920). AST-based .py emission detection (comments / "
+        "docstrings / match sites never flag); stdout-redirected per-worker "
+        "invocations skipped; tee'd edges still checked. Legacy edges frozen "
+        "in PHASE_DONE_EDGE_LEGACY_ALLOWLIST; waive a mode-gated "
+        "standalone-lane terminal with '# noqa: phase-done-reserved'. "
+        "Bundled into the no-flags default run + the "
+        "workflow-lint-phase-done-reserved pre-commit hook (#930).",
+    )
+    parser.add_argument(
+        "--check-jsonl-splitlines",
+        action="store_true",
+        help="AST-walk scripts/**/*.py + src/explore_persona_space/**/*.py and "
+        "FAIL any .splitlines() call reading JSONL content (4 signals: "
+        "jsonl-named read_text chain / jsonl-named receiver / jsonl-named "
+        "enclosing function / events-comments-path read_text chain). "
+        "splitlines() splits on raw U+2028/U+2029/NEL inside "
+        "ensure_ascii=False JSON strings and shreds valid records (#825/#950); "
+        "use split('\\n') or text-mode file iteration. Waive with "
+        "'# JSONL_SPLITLINES_EXEMPT: <reason>'; frozen legacy experiment "
+        "scripts live in JSONL_SPLITLINES_LEGACY_ALLOWLIST (experiment files "
+        "only — never a workflow-surface file). Bundled into the no-flags "
+        "default run.",
+    )
+    parser.add_argument(
+        "--check-upload-or-true",
+        action="store_true",
+        help="Walk scripts/**/*.sh and FAIL any upload/result-persist "
+        "command line whose failure is swallowed by '|| true' / '|| :' / "
+        "'; true' (#841 silent artifact loss). Terminal swallows mask the "
+        "whole &&-chain (whole-line token check); non-terminal '|| true' "
+        "is segment-scoped; swallowed heredoc openers + multi-line "
+        "python -c blocks are scanned for BODY upload-call tokens. Legacy "
+        "deliberate uses frozen in UPLOAD_OR_TRUE_LEGACY_ALLOWLIST; waive "
+        "with '# UPLOAD_OR_TRUE_EXEMPT: <reason>'. Bundled into the "
+        "no-flags default run.",
     )
     args = parser.parse_args(argv)
 
@@ -4337,19 +7263,33 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         or args.check_heredoc_dotenv
         or args.check_dispatcher_cvd_pin
         or args.check_pipe_python
+        or args.check_piped_git_push
         or args.check_marker_registry
         or args.check_agent_model_pins
+        or args.check_agent_tools
         or args.check_upload_as_file
         or args.check_dotenv_before_hf_import
         or args.check_batch_judge_client
         or args.check_no_workflow_improver_spawn
         or args.check_no_repo_root_git_reset_hard
+        or args.check_no_repo_root_worktree_revert
         or args.check_gate_ids_unique
         or args.check_lessons_index
         or args.check_compute_shape_review_lens
+        or args.check_long_loop_restartability_review_lens
+        or args.check_hollow_verification_gate_review_lens
         or args.check_smoke_architecture_review_lens
+        or args.check_stale_label_disposition
+        or args.check_smoke_output_hygiene
+        or args.check_vm_thread_cap_guidance
         or args.check_judge_model_pins
+        or args.check_no_literal_round_marker_versions
         or args.check_agent_spec_size
+        or args.check_api_dispatch_routing
+        or args.check_lens_coverage
+        or args.check_phase_done_reserved
+        or args.check_jsonl_splitlines
+        or args.check_upload_or_true
     )
 
     errors: list[str] = []
@@ -4396,10 +7336,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_dispatcher_cvd_pin())
     if args.check_pipe_python or no_flags:
         errors.extend(check_pipe_python())
+    if args.check_piped_git_push or no_flags:
+        errors.extend(check_piped_git_push())
     if (args.check_marker_registry or no_flags) and not args.check_references:
         errors.extend(check_marker_registry(workflow))
     if args.check_agent_model_pins or no_flags:
         errors.extend(check_agent_model_pins())
+    if args.check_agent_tools or no_flags:
+        errors.extend(check_agent_tools())
     if args.check_upload_as_file or no_flags:
         errors.extend(check_upload_as_file())
     if args.check_dotenv_before_hf_import or no_flags:
@@ -4410,6 +7354,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_no_workflow_improver_spawn())
     if args.check_no_repo_root_git_reset_hard or no_flags:
         errors.extend(check_no_repo_root_git_reset_hard())
+    if args.check_no_repo_root_worktree_revert or no_flags:
+        errors.extend(check_no_repo_root_worktree_revert())
     if args.check_gate_ids_unique or no_flags:
         errors.extend(check_gate_ids_unique(workflow))
     if args.check_lessons_index or no_flags:
@@ -4418,10 +7364,32 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901 -- flat flag-dispa
         errors.extend(check_agent_spec_size())
     if args.check_compute_shape_review_lens or no_flags:
         errors.extend(check_compute_shape_review_lens())
+    if args.check_long_loop_restartability_review_lens or no_flags:
+        errors.extend(check_long_loop_restartability_review_lens())
+    if args.check_hollow_verification_gate_review_lens or no_flags:
+        errors.extend(check_hollow_verification_gate_review_lens())
     if args.check_smoke_architecture_review_lens or no_flags:
         errors.extend(check_smoke_architecture_review_lens())
+    if args.check_stale_label_disposition or no_flags:
+        errors.extend(check_stale_label_disposition_clause())
+    if args.check_smoke_output_hygiene or no_flags:
+        errors.extend(check_smoke_output_hygiene())
+    if args.check_vm_thread_cap_guidance or no_flags:
+        errors.extend(check_vm_thread_cap_guidance())
     if args.check_judge_model_pins or no_flags:
         errors.extend(check_judge_model_pins())
+    if args.check_no_literal_round_marker_versions or no_flags:
+        errors.extend(check_no_literal_round_marker_versions())
+    if args.check_api_dispatch_routing or no_flags:
+        errors.extend(check_api_dispatch_routing())
+    if args.check_lens_coverage or no_flags:
+        errors.extend(check_lens_coverage())
+    if args.check_phase_done_reserved or no_flags:
+        errors.extend(check_phase_done_reserved())
+    if args.check_jsonl_splitlines or no_flags:
+        errors.extend(check_jsonl_splitlines())
+    if args.check_upload_or_true or no_flags:
+        errors.extend(check_upload_or_true())
 
     if errors:
         for err in errors:

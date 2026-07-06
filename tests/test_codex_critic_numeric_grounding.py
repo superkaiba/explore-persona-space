@@ -22,6 +22,15 @@ strip the contract.
 The reference normalizer + multiset-diff below is one valid realization of the
 prose contract; it doubles as executable documentation of the intended
 behavior for whoever finalizes the inline verifier.
+
+Task-reference carve-out (#1025, the #795/#720 incident): the Step-4 prose now
+prescribes a task-reference extraction pass that runs BEFORE numeric
+tokenization, SYMMETRICALLY on the prompt and all handed spans. Prompt-side
+ids (`#<N>`, `tasks/<status>/<N>`, `issue[-_]<N>`) clear against handed-span
+ids or the `tasks` map of `tasks/REGISTRY.json`; an unreadable registry
+degrades to the handed-span leg alone (fail-strict). The reference
+realization threads a hermetic `registry_ids` fixture parameter through
+`_residual_blocker_numbers` — these tests NEVER read the live REGISTRY.json.
 """
 
 # The agent-file assertions below quote the literal markdown (em/en dashes,
@@ -32,6 +41,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
+from typing import ClassVar
 
 import pytest
 
@@ -123,6 +133,38 @@ def _canon(tok: str) -> str:
     return repr(f)
 
 
+# The three whitelisted task-reference forms (#1025). The full lookahead
+# `(?!\d*\.\d)` is load-bearing: it makes a decimal-bearing token (`#720.5`,
+# `#0.74`) match NOTHING at all — the v1 shorthand `(?!\.\d)` backtracked
+# `#720.5` to a truncated id `72`. `issue[-_]` covers both `issue-720`
+# branches and `issue_720` result paths.
+TASK_REF_PATTERNS = (
+    re.compile(r"#(\d+)(?!\d*\.\d)"),
+    re.compile(r"tasks/[a-z_]+/(\d+)\b"),
+    re.compile(r"issue[-_](\d+)\b"),
+)
+
+
+def _extract_task_refs(text: str) -> tuple[str, set[str]]:
+    """Reference realization of the Step-4 task-reference extraction (#1025).
+
+    Matches the three whitelisted reference forms, REMOVES each match from the
+    working text (so a span-side `#720` never donates a bare `720` atom to the
+    numeric multiset — the symmetric-removal property), and returns
+    ``(cleaned_text, {ids})``. A decimal-bearing token extracts nothing; its
+    atoms stay in the numeric accounting.
+    """
+    ids: set[str] = set()
+
+    def _take(m: re.Match[str]) -> str:
+        ids.add(m.group(1))
+        return " "
+
+    for pat in TASK_REF_PATTERNS:
+        text = pat.sub(_take, text)
+    return text, ids
+
+
 def _static_template_atoms() -> set[str]:
     """Extract the canonical numeric atoms of the FINAL Step-3 prompt template
     that SURVIVE `{{...}}` placeholder substitution.
@@ -157,8 +199,23 @@ def _residual_blocker_numbers(
     plan_body: str,
     lens_items: str = "",
     prior_critique_summaries: str = "",
+    registry_ids: set[str] | None = None,
 ) -> list[str]:
-    """Return the residual prompt atoms that would trip BLOCKER.
+    """Return the residual prompt atoms + unresolved task refs that trip BLOCKER.
+
+    Task-reference carve-out (#1025): task-reference tokens are extracted
+    FIRST — before any numeric tokenization — SYMMETRICALLY from the prompt
+    and all three handed spans (`_extract_task_refs`; extraction REMOVES the
+    match, so a span-side `#720` cannot mask a composer-fabricated bare
+    `720`). Every prompt-side id must clear leg (a) — the same id appears, in
+    any reference form, among the handed-span ids — or leg (b) — the id is in
+    `registry_ids`, the hermetic stand-in for the `tasks` map of
+    `tasks/REGISTRY.json` (tests inject a fixture set; the live registry is
+    never read). ``registry_ids=None`` reproduces the unreadable-registry
+    fail-strict leg: leg (b) contributes NOTHING and only handed-span ids
+    clear. An unresolved id is returned as ``"#<id>"`` (one BLOCKER entry
+    each, collect-all — alongside every residual numeric atom, single
+    return).
 
     Semantics (round-2 #758 fix). The handed spans and the static scaffold are
     accounted DIFFERENTLY, on purpose:
@@ -184,16 +241,31 @@ def _residual_blocker_numbers(
     """
     from collections import Counter
 
-    scaffold = {_canon(s) for s in SCAFFOLD_ALLOWLIST}
-    prompt_atoms = Counter(_normalize_numeric_atoms(prompt))
-    span_atoms = Counter()
+    # #1025: extract task-reference tokens FIRST, symmetrically (prompt AND
+    # every handed span), collecting ids per side.
+    prompt_clean, prompt_ids = _extract_task_refs(prompt)
+    span_ids: set[str] = set()
+    cleaned_spans: list[str] = []
     for span in (plan_body, lens_items, prior_critique_summaries):
-        span_atoms.update(_normalize_numeric_atoms(span))
+        cleaned, ids = _extract_task_refs(span)
+        cleaned_spans.append(cleaned)
+        span_ids |= ids
+    unresolved_refs = sorted(
+        ref_id
+        for ref_id in prompt_ids
+        if ref_id not in span_ids and (registry_ids is None or ref_id not in registry_ids)
+    )
+
+    scaffold = {_canon(s) for s in SCAFFOLD_ALLOWLIST}
+    prompt_atoms = Counter(_normalize_numeric_atoms(prompt_clean))
+    span_atoms = Counter()
+    for cleaned in cleaned_spans:
+        span_atoms.update(_normalize_numeric_atoms(cleaned))
     # Multiset-subtract the handed spans; then clear any atom in the scaffold
     # set (set-membership, not multiset — see docstring).
     residual = prompt_atoms - span_atoms
     residual = Counter({k: c for k, c in residual.items() if k not in scaffold})
-    return sorted(residual.elements())
+    return sorted(residual.elements()) + [f"#{ref_id}" for ref_id in unresolved_refs]
 
 
 # Canonical #722 fabricated forms, as the composer would have inlined them.
@@ -330,8 +402,8 @@ class TestAllowlistCoversFinalTemplate:
             "{{prior_critique_summaries — empty on round 1}}", "(none — round 1)"
         )
         composed = composed.replace(
-            "{{lens_items — the full, current item list for this lens from critic.md,\n"
-            "inserted by the composer at Step 3}}",
+            "{{lens_items — the full, current item list for this lens from\n"
+            "critic-lens-reference.md, inserted by the composer at Step 3}}",
             lens_items,
         )
         composed = composed.replace("{{revision_round}}", "1")
@@ -390,3 +462,172 @@ class TestAgentFileCarriesTheSixEdits:
         # the four dispatch prohibitions remain byte-present
         assert "**NEVER call** `scripts/codex_task.py`" in text
         assert "**NEVER spawn a polling loop**" in text
+
+
+class TestTaskRefCarveOut:
+    """#1025 contract: task-reference identifiers (`#<N>`, `tasks/<status>/<N>`,
+    `issue[-_]<N>`) are extracted BEFORE numeric tokenization, symmetrically
+    from prompt + handed spans; prompt-side ids clear against handed-span ids
+    or a registry fixture (`None` = unreadable registry, fail-strict). Tests
+    are hermetic — the live REGISTRY.json is never read."""
+
+    # Hermetic stand-in for the `tasks` map keys of tasks/REGISTRY.json.
+    REGISTRY: ClassVar[set[str]] = {"720"}
+
+    def test_hash_ref_clears_via_registry(self):
+        residual = _residual_blocker_numbers(
+            "PLAN TEXT:\nplan is number-free.\nOverlap evidence: this duplicates #720.\n",
+            plan_body="plan is number-free.",
+            registry_ids=self.REGISTRY,
+        )
+        assert residual == [], residual
+
+    def test_fabricated_ref_not_in_registry_blocks(self):
+        residual = _residual_blocker_numbers(
+            "PLAN TEXT:\nplan is number-free.\nSee #999999 for context.\n",
+            plan_body="plan is number-free.",
+            registry_ids=self.REGISTRY,
+        )
+        assert residual == ["#999999"], residual
+
+    def test_bare_integer_is_not_a_task_ref_and_blocks(self):
+        # No prefix form => NOT an identifier; a bare `720` stays in the
+        # numeric accounting exactly as before #1025, even when task 720
+        # exists in the registry.
+        residual = _residual_blocker_numbers(
+            "PLAN TEXT:\nplan is number-free.\nThe run used 720 rows.\n",
+            plan_body="plan is number-free.",
+            registry_ids=self.REGISTRY,
+        )
+        assert residual == ["720"], residual
+
+    def test_decimal_bearing_token_extracts_nothing_and_blocks(self):
+        # Lookahead discriminator: the v1 shorthand `(?!\.\d)` backtracked
+        # `#720.5` to a truncated id `72`. The full lookahead `(?!\d*\.\d)`
+        # must extract NOTHING from a decimal-bearing token, leaving all its
+        # atoms in the numeric accounting.
+        cleaned, ids = _extract_task_refs("shift at #720.5 claimed")
+        assert ids == set(), ids
+        assert "720.5" in cleaned
+        residual = _residual_blocker_numbers(
+            "PLAN TEXT:\nplan is number-free.\nShift at #720.5 claimed.\n",
+            plan_body="plan is number-free.",
+            registry_ids=self.REGISTRY,
+        )
+        assert residual == ["720.5"], residual
+
+    def test_symmetric_removal_span_ref_does_not_mask_bare_atom(self):
+        # Symmetric-removal discriminator: the handed span carries `#720`, the
+        # prompt carries a bare `720`. The span-side `#720` is EXTRACTED
+        # (removed), so it must NOT donate a bare `720` atom that masks the
+        # composer-fabricated bare `720`. Both the pre-#1025 accounting and a
+        # collect-but-not-remove partial implementation false-pass this case.
+        residual = _residual_blocker_numbers(
+            "PLAN TEXT:\nsee prior work.\nThe run used 720 rows.\n",
+            plan_body="see prior work. This duplicates #720.",
+            registry_ids=self.REGISTRY,
+        )
+        assert residual == ["720"], residual
+
+    def test_handed_span_leg_clears_with_registry_none(self):
+        # Fail-strict leg: registry unreadable (None) contributes nothing; the
+        # handed-span leg alone clears the ref.
+        residual = _residual_blocker_numbers(
+            "PLAN TEXT:\nsee prior work.\nThis duplicates #720.\n",
+            plan_body="see prior work. This duplicates #720.",
+            registry_ids=None,
+        )
+        assert residual == [], residual
+
+    def test_registry_none_blocks_prompt_only_ref(self):
+        # Fail-strict: with the registry unreadable, a prompt-only id BLOCKs
+        # even when it would have resolved in the live registry — never weaker
+        # than the pre-#1025 behavior.
+        residual = _residual_blocker_numbers(
+            "PLAN TEXT:\nplan is number-free.\nThis duplicates #720.\n",
+            plan_body="plan is number-free.",
+            registry_ids=None,
+        )
+        assert residual == ["#720"], residual
+
+    def test_collect_all_reports_every_residual_in_one_run(self):
+        # Collect-all: a numeric atom + a fabricated ref + a bare integer in
+        # ONE prompt yield exactly three BLOCKER entries in one run — never
+        # exit-on-first.
+        prompt = (
+            "PLAN TEXT:\nplan is number-free.\n"
+            "The shift is +0.74; see #999999; the run used 720 rows.\n"
+        )
+        residual = _residual_blocker_numbers(
+            prompt, plan_body="plan is number-free.", registry_ids=self.REGISTRY
+        )
+        assert sorted(residual) == sorted(["0.74", "720", "#999999"]), residual
+
+    def test_path_and_branch_forms_cross_clear_hash_ref(self):
+        # Leg (a) is form-agnostic: a span-side `issue-720` / `issue_720` /
+        # `tasks/running/720` clears a prompt-side `#720` (hyphen AND
+        # underscore branch forms both extract).
+        for span_form in ("issue-720", "issue_720", "tasks/running/720"):
+            residual = _residual_blocker_numbers(
+                "PLAN TEXT:\nsee prior work.\nThis duplicates #720.\n",
+                plan_body=f"see prior work at {span_form}.",
+                registry_ids=None,
+            )
+            assert residual == [], (span_form, residual)
+
+
+# The four live guard-carrying composer specs (#1025): the reference impl +
+# the three v2 sibling composers that restate its Step-4 recipe in summary.
+ALL_GUARD_FILES = [
+    AGENT_FILE,
+    REPO_ROOT / ".claude" / "agents" / "codex-statistics-critic.md",
+    REPO_ROOT / ".claude" / "agents" / "codex-efficiency-critic.md",
+    REPO_ROOT / ".claude" / "agents" / "codex-methodology-baselines-critic.md",
+]
+
+
+class TestAgentFilesCarryTaskRefCarveOut:
+    """Doc-presence guards (#1025): the task-reference carve-out landed in all
+    4 guard-carrying composer specs, at BOTH layers (grounding rule + Step-4 /
+    verifier-summary accounting), licensing the same form set."""
+
+    @pytest.fixture(scope="class")
+    def text(self) -> str:
+        return AGENT_FILE.read_text(encoding="utf-8")
+
+    def test_codex_critic_step4_task_ref_extraction_item(self, text: str):
+        assert "Extracts task-reference tokens FIRST" in text
+        # the three whitelisted regex forms, verbatim (full no-backtrack lookahead)
+        assert r"#(\d+)(?!\d*\.\d)" in text
+        assert r"tasks/[a-z_]+/(\d+)\b" in text
+        assert r"issue[-_](\d+)\b" in text
+        # registry leg via the cwd-safe resolver + fail-strict fallback
+        assert "registry_path" in text
+        assert "fail-strict" in text
+
+    def test_codex_critic_collect_all_reporting(self, text: str):
+        assert "COLLECT-ALL" in text
+        assert "never" in text and "exit-on-first" in text
+        assert "BLOCKER: composer-authored task reference" in text
+
+    def test_codex_critic_grounding_rule_carveout(self, text: str):
+        assert "Task-reference carve-out" in text
+        assert "PROVENANCE IDENTIFIERS" in text
+
+    def test_codex_critic_core_rule8_parenthetical(self, text: str):
+        assert "Task-reference identifiers" in text
+        assert "provenance, not\n   numbers" in text or "provenance, not numbers" in text
+
+    def test_codex_critic_why_paragraph(self, text: str):
+        assert "Why the task-ref carve-out does not reopen it (#1025)" in text
+
+    @pytest.mark.parametrize("path", ALL_GUARD_FILES, ids=lambda p: p.name)
+    def test_guard_file_carries_both_layers(self, path: Path):
+        text = path.read_text(encoding="utf-8")
+        # Two-layer predicates (plan #1025 acceptance criteria 1 + 6): each
+        # layer names the registry trace AND licenses the hyphen+underscore
+        # `issue[-_]<N>` form; "task-reference" appears in both layers.
+        assert text.count("REGISTRY.json") >= 2, path.name
+        assert text.count("issue[-_]") >= 2, path.name
+        assert text.lower().count("task-reference") >= 2, path.name
+        assert "fail-strict" in text, path.name

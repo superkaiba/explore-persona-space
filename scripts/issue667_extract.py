@@ -73,12 +73,22 @@ os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
+# scripts/ on sys.path for the #810/#658 crowned maxp reduction (issue658_common).
+# In script mode sys.path[0] is already scripts/, but importers of this module
+# (issue811_phase0_extract, tests) need the explicit insert (gotchas.md §
+# script-mode sys.path).
+sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
 
 # DOTENV_LINT_EXEMPT: legacy pre-#745 script; shell exports cover pod/GCE/SLURM.
 from dotenv import load_dotenv  # noqa: E402
+
+# #811 maxp round: the CROWNED #810 reduction is REUSED from the #658 module
+# (summarize_answer_span(span, "maxp") == span.max(dim=0).values over the
+# answer CONTENT-token span) so the copy IS the crowned recipe (plan §4).
+from issue658_common import summarize_answer_span  # noqa: E402
 
 from explore_persona_space.analysis.extraction import extract_layer_activations  # noqa: E402
 from explore_persona_space.analysis.issue667 import (  # noqa: E402
@@ -425,6 +435,31 @@ def negative_panel_cids() -> list[str]:
 
 
 def _device(gpu_id: int, cpu_only: bool) -> torch.device:
+    """Resolve the torch device; fail loud on a mis-pinned --gpu-id launch (#813).
+
+    This worker class treats --gpu-id as INFORMATIONAL: the physical GPU is
+    selected ONLY by the CUDA_VISIBLE_DEVICES pin the launcher sets in the
+    child env (gotchas.md § hand-launching a dispatcher-managed per-cell GPU
+    worker). --gpu-id N>0 without CVD set to exactly str(N) would silently
+    bind the first visible device — the busy default GPU under an absent or
+    inherited multi-GPU pin (incident #813: 4 workers crashed at vLLM
+    init_device) — so raise unless the pin matches.
+    """
+    if not cpu_only and gpu_id > 0:
+        cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
+        if cvd != str(gpu_id):
+            observed = "unset" if cvd is None else repr(cvd)
+            raise RuntimeError(
+                f"--gpu-id {gpu_id} requires CUDA_VISIBLE_DEVICES={gpu_id} in the "
+                f"launcher environment (observed: {observed}). This worker treats "
+                "--gpu-id as informational and always binds cuda:0 — the physical "
+                "GPU is selected ONLY by the env pin, so this launch would "
+                "silently target the wrong GPU (incident #813). Relaunch as: "
+                f"env CUDA_VISIBLE_DEVICES={gpu_id} uv run python "
+                f"scripts/<worker>.py ... --gpu-id {gpu_id} — one distinct GPU "
+                "per parallel worker; see .claude/rules/gotchas.md, entry "
+                "'Hand-launching a dispatcher-managed per-cell GPU worker'."
+            )
     if cpu_only or not torch.cuda.is_available():
         return torch.device("cpu")
     return torch.device("cuda:0")  # CVD pins the physical GPU in the launcher env
@@ -439,6 +474,13 @@ def stage_adapter_local(behavior: str, source_cid: str, seed: int) -> Path:
         subfolder,
         PROJECT_ROOT / "outputs" / "issue_667" / "staged_adapters",
         repo_id=HF_MODEL_REPO,
+        # #811 maxp round (critic advisory): PIN the #537 adapter revision when the
+        # dispatcher provides it (EPM_I537_ADAPTER_REVISION=<sha>); the "main"
+        # default preserves prior behavior verbatim. NOTE stage_adapter's
+        # skip-if-already-staged short-circuit returns a warm-cache copy without
+        # re-downloading; on the fresh instances the production run uses, every
+        # file is fetched at the pinned revision.
+        revision=os.environ.get("EPM_I537_ADAPTER_REVISION", "main"),
     )
 
 
@@ -546,6 +588,95 @@ def _greedy_response(model, tok, messages: list[dict], device, max_new_tokens: i
     return tok.decode(gen, skip_special_tokens=True)
 
 
+IM_END_ID = 151645  # Qwen-2.5 <|im_end|> token id (assistant turn-close).
+
+
+def _locate_turn_close_newline(full_ids: list[int], tok) -> int:
+    """Index of the trailing newline token closing the assistant turn (#811 turn_nl).
+
+    The teacher-forced full sequence under the Qwen chat template with
+    ``add_generation_prompt=False`` ends with ``... <response> <|im_end|> "\\n"``,
+    so the answer-side mirror of the boundary-token context summary ``c_C`` is the
+    residual at that trailing ``"\\n"`` = ``full_ids[-1]``. This asserts BOTH
+    invariants that make the read well-defined (fail loud, KILL-2 code, no silent
+    fallback — plan §4.2 / §7 / A2):
+
+    - the LAST ``<|im_end|>`` (id 151645) is at ``full_len - 2`` (the token
+      immediately before the trailing token), AND
+    - the trailing token ``full_ids[-1]`` DECODES to a string containing a
+      newline (``"\\n"``).
+
+    Returns ``turn_nl_idx == full_len - 1``. Raises ``RuntimeError`` if the
+    ``<|im_end|>``+newline turn-close tail is absent / malformed (chat-template
+    drift) — the extraction cannot produce ``turn_nl`` for this cell.
+    """
+    full_len = len(full_ids)
+    if full_len < 2:
+        raise RuntimeError(
+            f"[turn_nl-assert] sequence too short (len={full_len}) to hold a "
+            "<|im_end|>+newline turn-close tail"
+        )
+    last_tok = full_ids[-1]
+    decoded_last = tok.decode([last_tok])
+    if "\n" not in decoded_last:
+        raise RuntimeError(
+            f"[turn_nl-assert] trailing token id={last_tok} decodes to "
+            f"{decoded_last!r} which does NOT contain a newline — the Qwen "
+            "chat-template turn-close tail (<|im_end|> then \\n) is absent/changed"
+        )
+    if full_ids[-2] != IM_END_ID:
+        raise RuntimeError(
+            f"[turn_nl-assert] token before the trailing newline is id="
+            f"{full_ids[-2]}, expected <|im_end|> (id {IM_END_ID}) — the "
+            "assistant turn does not close with <|im_end|>+newline"
+        )
+    return full_len - 1
+
+
+def _maxp_content_end(full_ids: list[int], turn_nl_idx: int, p: int, span_end: int) -> int:
+    """The maxp content-span END index (the ``<|im_end|>`` position) + KILL-2 asserts.
+
+    maxp content span = ``[p : content_end)``, content tokens ONLY — #810's
+    crowned recipe (``issue658_common.summarize_answer_span``, recipe="maxp",
+    over the #658 span built from ``ans_ids``: it NEVER included the turn-close
+    ``<|im_end|>`` + ``"\\n"``; #810 swept those two boundary positions as
+    SEPARATE summaries — im_end, turn_nl — and REFUTED them. Including them in
+    the max would let two high-norm delimiter positions dominate many dims and
+    blur maxp toward the refuted boundary read). ``content_end`` = the
+    ``<|im_end|>`` index (``turn_nl_idx == full_len - 1``, so ``full_len - 2``).
+    KILL-2 asserts (plan §7): ``<|im_end|>`` located at ``content_end``;
+    non-empty content span. Fail loud, never a silent fallback. Under
+    ``EPM_I811_SPAN_DEBUG=1`` logs the span bounds + last-3 token ids (plan §13
+    smoke check 1; documents the deliberate mean-vs-maxp span asymmetry, A4).
+    """
+    content_end = turn_nl_idx - 1
+    if full_ids[content_end] != IM_END_ID:
+        raise RuntimeError(
+            f"[maxp-assert] token at content_end={content_end} is id="
+            f"{full_ids[content_end]}, expected <|im_end|> (id {IM_END_ID}) — "
+            "the maxp content-span scoping broke (KILL-2, failure_class: code)"
+        )
+    if content_end <= p:
+        raise RuntimeError(
+            f"[maxp-assert] empty maxp content span: content_end={content_end} "
+            f"<= prompt_len={p} (KILL-2, failure_class: code)"
+        )
+    if os.environ.get("EPM_I811_SPAN_DEBUG") == "1":
+        logger.info(
+            "[maxp-span] p=%d content_end=%d full_len=%d last3_ids=%s | mean span "
+            "[%d:%d) incl. 2 turn-close tokens; maxp span [%d:%d) content-only (A4)",
+            p,
+            content_end,
+            len(full_ids),
+            full_ids[-3:],
+            p,
+            span_end,
+            p,
+            content_end,
+        )
+    return content_end
+
+
 @torch.no_grad()
 def _mean_resp_acts(
     base_model,
@@ -555,12 +686,40 @@ def _mean_resp_acts(
     response: str,
     layers: list[int],
     device,
-) -> dict[int, tuple[np.ndarray, np.ndarray]]:
-    """Teacher-force ``messages + response`` through base+trained; mean-over-response.
+    summaries: tuple[str, ...] = ("mean",),
+) -> dict[int, tuple[np.ndarray, np.ndarray] | dict[str, tuple[np.ndarray, np.ndarray]]]:
+    """Teacher-force ``messages + response`` through base+trained; answer summaries.
 
-    Returns ``{layer: (v0, v_plus)}`` — both float32 numpy (HIDDEN,), the mean
-    residual over the RESPONSE-span tokens at ``output_hidden_states[layer+1]``
-    (hs[0] = embeddings). The response span is [prompt_len : full_len).
+    ``summaries`` selects which answer-side summary(ies) to read from the SAME
+    forward pass:
+
+    - ``("mean",)`` (DEFAULT, backward-compatible — #667 parity probe, the pinned
+      test, and every #667 mean-only run): returns ``{layer: (v0, v_plus)}`` where
+      each is the mean residual over the RESPONSE-span tokens
+      ``[prompt_len : full_len)`` at ``output_hidden_states[layer+1]``.
+    - a tuple containing ``"turn_nl"`` (#811 paired re-extraction): returns
+      ``{layer: {summary: (v0, v_plus)}}`` — a parallel key per requested summary.
+      ``"turn_nl"`` is the SINGLE-position residual at the newline token closing
+      the assistant turn (``_locate_turn_close_newline`` == ``full_ids[-1]``, the
+      answer-side mirror of the boundary-token context summary ``c_C``). Both
+      summaries are read from the SAME base+trained forward pass (no extra
+      forwards).
+    - a tuple containing ``"maxp"`` (#811 maxp-winner round): the per-dimension
+      (element-wise) MAX over the response CONTENT tokens ONLY — #810's crowned
+      recipe (``issue658_common.summarize_answer_span(span, "maxp")`` over a span
+      built from ``ans_ids``). The #658 span NEVER included the chat-template
+      turn-close ``<|im_end|>`` + ``"\\n"`` (#810 swept those boundary positions
+      as SEPARATE summaries and REFUTED them), so the maxp span here is
+      ``[p : content_end)`` with ``content_end`` = the ``<|im_end|>`` index.
+      NOTE the deliberate span asymmetry (plan §4 / A4): this lineage's ``mean``
+      spans ``[p : full_len)`` (INCLUDING the 2 turn-close tokens — the
+      #667/#722/#811 recipe, unchanged); ``maxp`` excludes them (its own
+      validated recipe). Fidelity to each summary's own recipe wins over
+      within-run span matching.
+
+    Both float32 numpy (HIDDEN,). The nested-dict shape fires ONLY when a
+    non-default ``summaries`` is passed, so existing ``(v0, v_plus)`` callers are
+    unchanged (single-variable discipline — the #667 return shape is preserved).
     """
     prompt_text = tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
     full_msgs = [*messages, {"role": "assistant", "content": response}]
@@ -584,6 +743,14 @@ def _mean_resp_acts(
     span_end = len(full_ids)
     if span_end <= p:
         raise RuntimeError("empty response span — response produced zero tokens")
+    want_turn_nl = "turn_nl" in summaries
+    want_maxp = "maxp" in summaries
+    # KILL-2 (code): locate the turn-close newline BEFORE any GPU work when turn_nl
+    # or maxp is requested — the assert failing on any cell HALTs the extraction
+    # (plan §7). maxp needs the SAME turn-close invariants (its content span ends
+    # at the <|im_end|> the locate asserts at full_len-2).
+    turn_nl_idx = _locate_turn_close_newline(full_ids, tok) if (want_turn_nl or want_maxp) else None
+    content_end = _maxp_content_end(full_ids, turn_nl_idx, p, span_end) if want_maxp else None
     ids = torch.tensor([full_ids], dtype=torch.long, device=device)
     # Memory-safe subset read: hook only the requested blocks (block index li ==
     # hs[li+1]) instead of materializing all L+1 layers (#671). acts[li] is the
@@ -592,11 +759,38 @@ def _mean_resp_acts(
     acts_t = extract_layer_activations(trained_model, ids, layers)
     if _MEM_LOGGER is not None:  # #672 per-iteration memory gauge (ANALYSIS-ONLY)
         _MEM_LOGGER._tick()
-    res: dict[int, tuple[np.ndarray, np.ndarray]] = {}
+    res: dict = {}
+    default_shape = summaries == ("mean",)
     for li in layers:
-        hb = acts_b[li][0, p:span_end, :].float().mean(dim=0).cpu().numpy()
-        ht = acts_t[li][0, p:span_end, :].float().mean(dim=0).cpu().numpy()
-        res[li] = (hb.astype(np.float32), ht.astype(np.float32))
+        hb_mean = acts_b[li][0, p:span_end, :].float().mean(dim=0).cpu().numpy().astype(np.float32)
+        ht_mean = acts_t[li][0, p:span_end, :].float().mean(dim=0).cpu().numpy().astype(np.float32)
+        if default_shape:
+            res[li] = (hb_mean, ht_mean)
+            continue
+        per_summary: dict[str, tuple[np.ndarray, np.ndarray]] = {}
+        if "mean" in summaries:
+            per_summary["mean"] = (hb_mean, ht_mean)
+        if want_turn_nl:
+            hb_nl = acts_b[li][0, turn_nl_idx, :].float().cpu().numpy().astype(np.float32)
+            ht_nl = acts_t[li][0, turn_nl_idx, :].float().cpu().numpy().astype(np.float32)
+            per_summary["turn_nl"] = (hb_nl, ht_nl)
+        if want_maxp:
+            # #810's crowned reduction, REUSED verbatim from issue658_common
+            # (recipe="maxp" == span.max(dim=0).values). The bf16→fp32 cast is
+            # exact and element-wise max is a comparison (no accumulation), so
+            # any non-finite value is an upstream extraction bug (KILL-2).
+            hb_mx = summarize_answer_span(acts_b[li][0, p:content_end, :].float(), "maxp")
+            ht_mx = summarize_answer_span(acts_t[li][0, p:content_end, :].float(), "maxp")
+            if not bool(torch.isfinite(hb_mx).all() and torch.isfinite(ht_mx).all()):
+                raise RuntimeError(
+                    f"[maxp-assert] non-finite maxp summary at layer {li} — upstream "
+                    "extraction bug (KILL-2, failure_class: code)"
+                )
+            per_summary["maxp"] = (
+                hb_mx.cpu().numpy().astype(np.float32),
+                ht_mx.cpu().numpy().astype(np.float32),
+            )
+        res[li] = per_summary
     return res
 
 
@@ -938,6 +1132,96 @@ def build_messages_for(registry, demos, cid: str, behavior: str, question: str) 
     return build_messages(registry[cid], question, behavior=behavior, icl_demos=demos)
 
 
+def _requested_summaries(args) -> tuple[str, ...]:
+    """Answer-side summaries the flags request: mean always; --turn-nl / --maxp additive."""
+    s = ["mean"]
+    if getattr(args, "turn_nl", False):
+        s.append("turn_nl")
+    if getattr(args, "maxp", False):
+        s.append("maxp")
+    return tuple(s)
+
+
+def persist_r_text(
+    out_root: Path,
+    behavior: str,
+    source_cid: str,
+    tok,
+    r_lookup: dict[tuple[str, int], str],
+    neg_r_lookup: dict[tuple[str, int], str] | None = None,
+    *,
+    stage: str = "extraction",
+) -> Path | None:
+    """Persist the greedy base responses R as per-(source, target) JSONL (Upload Policy).
+
+    Writes ``<out_root>/../raw_completions/<stage>/responses_{behavior}_{source}_{target}.jsonl``
+    — one row per probe: ``{behavior, source_cid, target_cid, probe_idx, text,
+    n_tokens}`` (plan §10; closes the v1 generation-discard WARN: the persisted R
+    text makes the discarded per-token span tensors REGENERABLE via one
+    teacher-forced forward pass). ``source_cid`` is part of the FILENAME: the
+    dispatcher invokes this once per source over overlapping target sets, so a
+    per-(behavior, target)-only path is overwritten by every later source and only
+    the last source's rows (and metadata) survive — losing the exact R earlier
+    sources' activations were computed from (r10 Codex MAJOR
+    raw-completion-source-collision; vLLM batching makes cross-invocation greedy
+    text non-guaranteed-identical). Atomic per-file replace (tmp + os.replace) —
+    a RE-RUN of the SAME (behavior, source) cell rewrites its own files only.
+    Negative-panel R (when present) lands in
+    ``responses_{behavior}_{source}_negpanel.jsonl``. Returns the raw dir, or
+    ``None`` when there is nothing to persist (e.g. before any generation).
+    CONTENT HYGIENE: text goes to FILES only — never logged/printed (em rows are
+    Betley harmful-content).
+    """
+    if not r_lookup and not neg_r_lookup:
+        return None
+    raw_dir = Path(out_root).parent / "raw_completions" / stage
+    raw_dir.mkdir(parents=True, exist_ok=True)
+    by_target: dict[str, list[dict]] = {}
+    for (tcid, qi), text in sorted(r_lookup.items()):
+        by_target.setdefault(tcid, []).append(
+            {
+                "behavior": behavior,
+                "source_cid": source_cid,
+                "target_cid": tcid,
+                "probe_idx": qi,
+                "text": text,
+                "n_tokens": len(tok.encode(text, add_special_tokens=False)),
+            }
+        )
+    n_rows = 0
+    for tcid, rows in by_target.items():
+        path = raw_dir / f"responses_{behavior}_{source_cid}_{tcid}.jsonl"
+        tmp = raw_dir / f"{path.name}.{os.getpid()}.tmp"
+        tmp.write_text("".join(json.dumps(r) + "\n" for r in rows))
+        os.replace(tmp, path)
+        n_rows += len(rows)
+    if neg_r_lookup:
+        rows = [
+            {
+                "behavior": behavior,
+                "source_cid": source_cid,
+                "neg_cid": ncid,
+                "probe_idx": qi,
+                "text": text,
+                "n_tokens": len(tok.encode(text, add_special_tokens=False)),
+            }
+            for (ncid, qi), text in sorted(neg_r_lookup.items())
+        ]
+        path = raw_dir / f"responses_{behavior}_{source_cid}_negpanel.jsonl"
+        tmp = raw_dir / f"{path.name}.{os.getpid()}.tmp"
+        tmp.write_text("".join(json.dumps(r) + "\n" for r in rows))
+        os.replace(tmp, path)
+        n_rows += len(rows)
+    logger.info(
+        "[r-persist] %d R rows (%d target files%s) -> %s",
+        n_rows,
+        len(by_target),
+        " + negpanel" if neg_r_lookup else "",
+        raw_dir,
+    )
+    return raw_dir
+
+
 def run_extraction(args) -> int:
     from explore_persona_space.experiments.i537_contexts import (
         eval_cids_for,
@@ -1032,6 +1316,10 @@ def run_extraction(args) -> int:
             (ncid, qi): resp
             for (_tag, ncid, qi), resp in zip(neg_keys, responses[n_targ:], strict=True)
         }
+        # Persist the rollout TEXT the moment generation completes, BEFORE the
+        # teacher-force reduce (#779; Upload Policy raw-completions row) — a
+        # capture crash must not burn the generation phase.
+        persist_r_text(Path(args.out), behavior, source_cid, tok, r_lookup, neg_r_lookup)
 
     # ── Phase B: load base θ0 + trained θ+ (HF) for the teacher-force reads ────
     _, base, trained = load_base_and_trained(adapter_dir, device, dtype)
@@ -1115,6 +1403,11 @@ def run_extraction(args) -> int:
         # 28-layer store stays a few GB, not ~90 GB. The per-layer single-vectors
         # are kept — they carry all depth info across the 28 separate layer-files.
         "omit_all_layer_stacks": bool(getattr(args, "all_layers", False)),
+        # #811: answer-side summaries to capture per cell. Default ("mean",)
+        # reproduces the #667 store verbatim; --turn-nl adds the turn-boundary
+        # single-position read (v0_turn_nl / v_plus_turn_nl); --maxp adds #810's
+        # crowned content-token element-wise max (v0_maxp / v_plus_maxp).
+        "summaries": _requested_summaries(args),
     }
     # Route the per-target .npz writes to a local-SSD scratch mirror (#674) so
     # the per-(target, layer) write storm (~93 .npz/cell) stays off the GCE
@@ -1157,6 +1450,11 @@ def run_extraction(args) -> int:
         n_gen,
         n_trunc,
     )
+    # Re-dump R after the loop: on the CPU-smoke path (no vLLM Phase A) the
+    # per-probe HF-greedy fallbacks were recorded into r_lookup during the loop,
+    # so this second call is what persists them (no-op delta on the GPU path —
+    # atomic replace with identical content).
+    persist_r_text(Path(args.out), behavior, source_cid, tok, r_lookup, neg_r_lookup)
     # Materialize scratch -> canonical (#674) BEFORE the complement check +
     # sentinel, which both read the CANONICAL cell_dir. On a partial-copy
     # failure the helper re-raises with scratch intact and no .done written, so
@@ -1189,6 +1487,65 @@ def run_extraction(args) -> int:
     if device.type == "cuda":
         torch.cuda.empty_cache()
     return 0
+
+
+def _accumulate_target_acts(
+    base,
+    trained,
+    tok,
+    registry,
+    demos,
+    behavior: str,
+    tcid: str,
+    probes: list,
+    layers: list[int],
+    r_lookup: dict,
+    max_new_tokens: int,
+    device,
+    summaries: tuple[str, ...],
+) -> tuple[dict[int, dict[str, list[list[np.ndarray]]]], int, int]:
+    """Per-probe teacher-force reads for ONE target, accumulated per (layer, summary).
+
+    Returns ``(acc, n_gen, n_trunc)`` where ``acc[li][summary]`` is
+    ``[v0_list, vp_list]`` of per-probe (HIDDEN,) vectors. Extracted from
+    :func:`_extract_one_target` so that function stays under the ruff C901
+    cap (#811 added the summary axis). Each probe's R is the vLLM-pregenerated
+    base response (Phase A) or, on a CPU smoke, an HF greedy fallback. When
+    ``summaries == ("mean",)`` the reader returns the backward-compatible
+    ``(v0, v_plus)`` shape; otherwise the nested ``{summary: (v0, vp)}`` shape.
+    """
+    acc: dict[int, dict[str, list[list[np.ndarray]]]] = {
+        li: {s: [[], []] for s in summaries} for li in layers
+    }
+    n_gen = n_trunc = 0
+    for qi, q in enumerate(probes):
+        tmsgs = build_messages_for(registry, demos, tcid, behavior, q)
+        # Prefer the vLLM-pregenerated R (Phase A); HF fallback only on CPU-smoke.
+        r = r_lookup.get((tcid, qi))
+        if r is None:
+            r = _greedy_response(base, tok, tmsgs, device, max_new_tokens)
+            # Record the CPU-fallback R into the shared lookup (extras["r_lookup"]
+            # is the same dict object) so the post-loop persist_r_text re-dump
+            # captures it too (Upload Policy: rollout text is never discarded).
+            r_lookup[(tcid, qi)] = r
+        n_gen += 1
+        if not r.strip():
+            n_trunc += 1
+            continue
+        per_layer = _mean_resp_acts(
+            base, trained, tok, tmsgs, r, layers, device, summaries=summaries
+        )
+        for li in layers:
+            if summaries == ("mean",):
+                v0, vp = per_layer[li]  # backward-compat (v0, v_plus) shape
+                acc[li]["mean"][0].append(v0)
+                acc[li]["mean"][1].append(vp)
+            else:
+                for s in summaries:
+                    v0, vp = per_layer[li][s]
+                    acc[li][s][0].append(v0)
+                    acc[li][s][1].append(vp)
+    return acc, n_gen, n_trunc
 
 
 def _extract_one_target(
@@ -1226,31 +1583,37 @@ def _extract_one_target(
     # (BLOCKER 1: oracle g+ needs the post-FT query at fixed M0).
     c_cp_all = _context_vector_all_layers(base, tok, tmsgs0, device)
     c_cp_postft_all = _context_vector_all_layers(trained, tok, tmsgs0, device)
-    acc: dict[int, list[list[np.ndarray]]] = {li: [[], []] for li in layers}
-    n_gen = n_trunc = 0
-    for qi, q in enumerate(probes):
-        tmsgs = build_messages_for(registry, demos, tcid, behavior, q)
-        # Prefer the vLLM-pregenerated R (Phase A); HF fallback only on CPU-smoke.
-        r = r_lookup.get((tcid, qi))
-        if r is None:
-            r = _greedy_response(base, tok, tmsgs, device, max_new_tokens)
-        n_gen += 1
-        if not r.strip():
-            n_trunc += 1
-            continue
-        per_layer = _mean_resp_acts(base, trained, tok, tmsgs, r, layers, device)
-        for li in layers:
-            v0, vp = per_layer[li]
-            acc[li][0].append(v0)
-            acc[li][1].append(vp)
+    # #811: which answer-side summaries to capture. ("mean",) reproduces #667's
+    # store verbatim; ("mean", "turn_nl") adds the turn-boundary single-position
+    # read (v0_turn_nl / v_plus_turn_nl) alongside the mean, from the SAME forward
+    # pass. Each summary rides its own accumulator so the per-probe n_probes mean
+    # is applied identically to both (plan §4.2).
+    summaries: tuple[str, ...] = tuple(extras.get("summaries", ("mean",)))
+    want_turn_nl = "turn_nl" in summaries
+    want_maxp = "maxp" in summaries
+    acc, n_gen, n_trunc = _accumulate_target_acts(
+        base,
+        trained,
+        tok,
+        registry,
+        demos,
+        behavior,
+        tcid,
+        probes,
+        layers,
+        r_lookup,
+        max_new_tokens,
+        device,
+        summaries,
+    )
     for li in layers:
-        if not acc[li][0]:
+        if not acc[li]["mean"][0]:
             logger.warning("no probes produced a response for target=%s layer=%d", tcid, li)
             continue
         c_idx = (li - 1) if 1 <= li <= N_LAYERS else (PRIMARY_LAYER - 1)
         payload = {
-            "v0": np.stack(acc[li][0]).mean(axis=0).astype(np.float32),
-            "v_plus": np.stack(acc[li][1]).mean(axis=0).astype(np.float32),
+            "v0": np.stack(acc[li]["mean"][0]).mean(axis=0).astype(np.float32),
+            "v_plus": np.stack(acc[li]["mean"][1]).mean(axis=0).astype(np.float32),
             "c_C": c_c_all[c_idx],
             "c_Cp": c_cp_all[c_idx],
             # post-FT key/query (BLOCKER 1: A3.10 oracle g+ = (k+, q+, M0)).
@@ -1261,9 +1624,25 @@ def _extract_one_target(
             "target_cid": tcid,
             "seed": seed,
             "layer": li,
-            "n_probes": len(acc[li][0]),
+            "n_probes": len(acc[li]["mean"][0]),
             "adapter_gauge": json.dumps(gauge),
         }
+        # #811: turn-boundary answer summary (v0_turn_nl / v_plus_turn_nl) — the
+        # single-position residual at the newline closing the assistant turn,
+        # per-probe mean over the SAME accumulator as `mean` (plan §4.2). Present
+        # only when --turn-nl is set; the mean keys above stay verbatim so a
+        # mean-only #667 run is byte-unchanged.
+        if want_turn_nl:
+            payload["v0_turn_nl"] = np.stack(acc[li]["turn_nl"][0]).mean(axis=0).astype(np.float32)
+            payload["v_plus_turn_nl"] = (
+                np.stack(acc[li]["turn_nl"][1]).mean(axis=0).astype(np.float32)
+            )
+        # #811 maxp round: per-probe element-wise max over the CONTENT span, then
+        # probe-MEAN over the pool — the SAME accumulator shape as mean/turn_nl,
+        # matching #658's recipe_accum / n_used exactly (plan §4). float32, (3584,).
+        if want_maxp:
+            payload["v0_maxp"] = np.stack(acc[li]["maxp"][0]).mean(axis=0).astype(np.float32)
+            payload["v_plus_maxp"] = np.stack(acc[li]["maxp"][1]).mean(axis=0).astype(np.float32)
         # The 4 all-layer context STACKS (each (28, 3584)) are IDENTICAL across a
         # source's 30 targets AND across all layer-files of a cell, so under
         # --all-layers they turn a ~90 KB npz into a ~1.7 MB one — 90.9 GB total
@@ -1319,6 +1698,30 @@ def main() -> int:
             "retains full-seq×28 tensors — the #671 fix). Overrides --layers with "
             "range(N_LAYERS). Use with the alllayer namespace to avoid clobbering "
             "the committed 7/14/21 store (issue667_alllayer_dispatch)."
+        ),
+    )
+    parser.add_argument(
+        "--turn-nl",
+        action="store_true",
+        help=(
+            "#811: ALSO capture the turn-boundary answer summary (v0_turn_nl / "
+            "v_plus_turn_nl) — the single-position residual at the newline closing "
+            "the assistant turn (full_ids[-1], the answer-side mirror of c_C) — "
+            "alongside the mean-over-response v0/v_plus, from the SAME forward pass. "
+            "The mean keys are byte-unchanged, so a mean-only #667 run (flag absent) "
+            "reproduces the committed store. Use with a #811 --out prefix."
+        ),
+    )
+    parser.add_argument(
+        "--maxp",
+        action="store_true",
+        help=(
+            "#811 maxp round: ALSO capture #810's crowned answer summary (v0_maxp / "
+            "v_plus_maxp) — the per-dimension element-wise MAX over the response "
+            "CONTENT tokens only ([p:content_end), EXCLUDING the turn-close "
+            "<|im_end|>+newline, which #810 refuted as summaries), per-probe then "
+            "probe-mean, from the SAME forward pass. mean/turn_nl keys unchanged. "
+            "Combine with --turn-nl for the three-summary #811 store."
         ),
     )
     parser.add_argument("--primary-layer", type=int, default=PRIMARY_LAYER)

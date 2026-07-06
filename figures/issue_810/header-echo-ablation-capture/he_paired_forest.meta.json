@@ -1,0 +1,66 @@
+{
+  "commit": "0bb228597b",
+  "created": "2026-07-04T00:27:10Z",
+  "figsize": [
+    9.5,
+    5.5
+  ],
+  "points": [
+    {
+      "\u0394 held-out skill (full answer \u2212 answer deleted), committed best layer": 0.017794906129068644,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "\u0394 held-out skill (full answer \u2212 answer deleted), committed best layer": 0.07608498013426501,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "\u0394 held-out skill (full answer \u2212 answer deleted), committed best layer": 0.07240431466012631,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "\u0394 held-out skill (full answer \u2212 answer deleted), committed best layer": -0.014410396331101194,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "\u0394 held-out skill (full answer \u2212 answer deleted), committed best layer": 0.003970517812647012,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "\u0394 held-out skill (full answer \u2212 answer deleted), committed best layer": -0.021345466287940873,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "\u0394 held-out skill (full answer \u2212 answer deleted), committed best layer": -0.002957267725349433,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "\u0394 held-out skill (full answer \u2212 answer deleted), committed best layer": 0.0026063832700978784,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "\u0394 held-out skill (full answer \u2212 answer deleted), committed best layer": -0.0009974277360165207,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 9
+}

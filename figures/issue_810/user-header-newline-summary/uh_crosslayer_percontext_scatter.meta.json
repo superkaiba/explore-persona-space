@@ -1,0 +1,307 @@
+{
+  "commit": "b8e605ddf5",
+  "created": "2026-07-03T17:14:18Z",
+  "figsize": [
+    5.6,
+    4.8
+  ],
+  "points": [
+    {
+      "held-out error fraction, per-layer best": 0.1984370817536606,
+      "held-out error fraction, cross-layer winner": 0.11771164328414073,
+      "label": "data scientist",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.45797971365806855,
+      "held-out error fraction, cross-layer winner": 0.42422198480122913,
+      "label": "behavior: marker",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.1429179039605972,
+      "held-out error fraction, cross-layer winner": 0.08083349040394,
+      "label": "wildchat short 1",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.08185764105483442,
+      "held-out error fraction, cross-layer winner": 0.06527213457756958,
+      "label": "format: bullets",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.026850616893627836,
+      "held-out error fraction, cross-layer winner": 0.015349296198743709,
+      "label": "format: bullets",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.44906510549873735,
+      "held-out error fraction, cross-layer winner": 0.38630796126849676,
+      "label": "behavior: marker",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 1.0712075207868916,
+      "held-out error fraction, cross-layer winner": 1.1120031035585651,
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.2157814970714097,
+      "held-out error fraction, cross-layer winner": 0.12353275287948016,
+      "label": "data scientist",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.28988468356368136,
+      "held-out error fraction, cross-layer winner": 0.20497518309352944,
+      "label": "format: code comment",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.27335587271430445,
+      "held-out error fraction, cross-layer winner": 0.2086111168727817,
+      "label": "format: code comment",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.1820348703253614,
+      "held-out error fraction, cross-layer winner": 0.1565472038215741,
+      "label": "data scientist",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.04131769528711538,
+      "held-out error fraction, cross-layer winner": 0.030660294718196115,
+      "label": "format: bullets",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.253865438548964,
+      "held-out error fraction, cross-layer winner": 0.22384591678371085,
+      "label": "format: code comment",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 1.3690136816622134,
+      "held-out error fraction, cross-layer winner": 1.248420412507586,
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.282011911642321,
+      "held-out error fraction, cross-layer winner": 0.1724815363017142,
+      "label": "format: code comment",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.32646731393293693,
+      "held-out error fraction, cross-layer winner": 0.3557285222024351,
+      "label": "format: code comment",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.20572385157111273,
+      "held-out error fraction, cross-layer winner": 0.13214201645591897,
+      "label": "data scientist",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.025052201928112673,
+      "held-out error fraction, cross-layer winner": 0.026844471402664456,
+      "label": "format: bullets",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.06662284550025249,
+      "held-out error fraction, cross-layer winner": 0.053956160307820175,
+      "label": "format: bullets",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.08590413292671059,
+      "held-out error fraction, cross-layer winner": 0.03456501327947392,
+      "label": "format: bullets",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.15532190466569332,
+      "held-out error fraction, cross-layer winner": 0.09001109918438037,
+      "label": "wildchat short 1",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.46691440128526907,
+      "held-out error fraction, cross-layer winner": 0.31731956956841006,
+      "label": "behavior: marker",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.1285167966668032,
+      "held-out error fraction, cross-layer winner": 0.1589358849338746,
+      "label": "wildchat short 1",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.34958642412639496,
+      "held-out error fraction, cross-layer winner": 0.3863168583533774,
+      "label": "format: code comment",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.06571870682569571,
+      "held-out error fraction, cross-layer winner": 0.03797175494872816,
+      "label": "format: bullets",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.24349751559579483,
+      "held-out error fraction, cross-layer winner": 0.15302223605090623,
+      "label": "data scientist",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.1930695527961555,
+      "held-out error fraction, cross-layer winner": 0.12406588191076104,
+      "label": "data scientist",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.3783118502392538,
+      "held-out error fraction, cross-layer winner": 0.3368551171902725,
+      "label": "format: code comment",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.17228148335476662,
+      "held-out error fraction, cross-layer winner": 0.15015548548271937,
+      "label": "data scientist",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.1273904235247144,
+      "held-out error fraction, cross-layer winner": 0.08515978287695494,
+      "label": "wildchat long 5",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.1180959886836805,
+      "held-out error fraction, cross-layer winner": 0.08000423182341729,
+      "label": "wildchat long 5",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.3127971952679304,
+      "held-out error fraction, cross-layer winner": 0.2464814207847926,
+      "label": "format: code comment",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.2035275891688816,
+      "held-out error fraction, cross-layer winner": 0.10552150663584257,
+      "label": "data scientist",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.3354101822246116,
+      "held-out error fraction, cross-layer winner": 0.27756105963395744,
+      "label": "format: code comment",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.1800858611148003,
+      "held-out error fraction, cross-layer winner": 0.11460911817903867,
+      "label": "data scientist",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.12808428374213837,
+      "held-out error fraction, cross-layer winner": 0.10516333279248627,
+      "label": "wildchat short 1",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.4570212836486023,
+      "held-out error fraction, cross-layer winner": 0.39123759559825105,
+      "label": "behavior: marker",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.3782046881670149,
+      "held-out error fraction, cross-layer winner": 0.16261741435132035,
+      "label": "behavior: marker",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.18502856873657872,
+      "held-out error fraction, cross-layer winner": 0.13865570434831717,
+      "label": "data scientist",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.15048379371353035,
+      "held-out error fraction, cross-layer winner": 0.0793890087074882,
+      "label": "wildchat short 1",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.7010156754388119,
+      "held-out error fraction, cross-layer winner": 0.45428314979388296,
+      "label": "behavior: marker",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.06376541050238833,
+      "held-out error fraction, cross-layer winner": 0.03426191438729638,
+      "label": "format: bullets",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.11261414254012148,
+      "held-out error fraction, cross-layer winner": 0.0715378428999823,
+      "label": "wildchat long 5",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.7132811131613487,
+      "held-out error fraction, cross-layer winner": 0.8338098220415827,
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.3250486171964897,
+      "held-out error fraction, cross-layer winner": 0.3277850732830856,
+      "label": "format: code comment",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 1.3892594956585047,
+      "held-out error fraction, cross-layer winner": 1.1910308958970546,
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.11898151846104875,
+      "held-out error fraction, cross-layer winner": 0.055851258252627316,
+      "label": "wildchat long 5",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.06222078963447382,
+      "held-out error fraction, cross-layer winner": 0.05526863575077674,
+      "label": "format: bullets",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.31624500730023397,
+      "held-out error fraction, cross-layer winner": 0.16427637148090143,
+      "label": "format: code comment",
+      "_kind": "scatter"
+    },
+    {
+      "held-out error fraction, per-layer best": 0.7187788858057798,
+      "held-out error fraction, cross-layer winner": 0.9431027557496656,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 50
+}

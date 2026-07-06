@@ -1,0 +1,2012 @@
+{
+  "commit": "c67a9cb745",
+  "created": "2026-07-03T23:12:29Z",
+  "figsize": [
+    5.5,
+    4.6
+  ],
+  "points": [
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3282157778739929,
+      "per-context rollout skill at horizon 32": 0.5278756618499756,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3714960217475891,
+      "per-context rollout skill at horizon 32": 0.4015435576438904,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4874712824821472,
+      "per-context rollout skill at horizon 32": 0.42037832736968994,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4886574149131775,
+      "per-context rollout skill at horizon 32": 0.5898900628089905,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4925442934036255,
+      "per-context rollout skill at horizon 32": 0.46049219369888306,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.42760151624679565,
+      "per-context rollout skill at horizon 32": 0.4901103973388672,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5352440476417542,
+      "per-context rollout skill at horizon 32": 0.22212845087051392,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.491924524307251,
+      "per-context rollout skill at horizon 32": 0.522141695022583,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3990894556045532,
+      "per-context rollout skill at horizon 32": 0.4428480267524719,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": -0.09190165996551514,
+      "per-context rollout skill at horizon 32": 0.43512868881225586,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.47522205114364624,
+      "per-context rollout skill at horizon 32": 0.3980141282081604,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.38840150833129883,
+      "per-context rollout skill at horizon 32": 0.4374035596847534,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.1342955231666565,
+      "per-context rollout skill at horizon 32": 0.5308021306991577,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4058714509010315,
+      "per-context rollout skill at horizon 32": 0.3775925636291504,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4862530827522278,
+      "per-context rollout skill at horizon 32": 0.4804025888442993,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5909819602966309,
+      "per-context rollout skill at horizon 32": 0.6258271932601929,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4737561345100403,
+      "per-context rollout skill at horizon 32": 0.41224807500839233,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.44646865129470825,
+      "per-context rollout skill at horizon 32": 0.4871222972869873,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.30814820528030396,
+      "per-context rollout skill at horizon 32": 0.5045413970947266,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.7330565452575684,
+      "per-context rollout skill at horizon 32": 0.5505180358886719,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5097771286964417,
+      "per-context rollout skill at horizon 32": 0.5323034524917603,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": -0.9711277484893799,
+      "per-context rollout skill at horizon 32": 0.4322226047515869,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4154495596885681,
+      "per-context rollout skill at horizon 32": 0.33756691217422485,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.44412320852279663,
+      "per-context rollout skill at horizon 32": 0.4887197017669678,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.47458750009536743,
+      "per-context rollout skill at horizon 32": 0.5315291881561279,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4851052761077881,
+      "per-context rollout skill at horizon 32": 0.30371564626693726,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4881553053855896,
+      "per-context rollout skill at horizon 32": 0.5550833940505981,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5361828207969666,
+      "per-context rollout skill at horizon 32": 0.46018022298812866,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5705240964889526,
+      "per-context rollout skill at horizon 32": 0.37771838903427124,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6070195436477661,
+      "per-context rollout skill at horizon 32": 0.5494492053985596,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.38016748428344727,
+      "per-context rollout skill at horizon 32": 0.5566709041595459,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.48486775159835815,
+      "per-context rollout skill at horizon 32": 0.46442466974258423,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6156966090202332,
+      "per-context rollout skill at horizon 32": 0.49060386419296265,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": -0.12730884552001953,
+      "per-context rollout skill at horizon 32": 0.32418668270111084,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.33359140157699585,
+      "per-context rollout skill at horizon 32": 0.3756287097930908,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4679884910583496,
+      "per-context rollout skill at horizon 32": 0.45536142587661743,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5285162925720215,
+      "per-context rollout skill at horizon 32": 0.45211100578308105,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5780519843101501,
+      "per-context rollout skill at horizon 32": 0.49966681003570557,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3695994019508362,
+      "per-context rollout skill at horizon 32": 0.40859508514404297,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.509120762348175,
+      "per-context rollout skill at horizon 32": 0.34920692443847656,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.528298020362854,
+      "per-context rollout skill at horizon 32": 0.5296016931533813,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.2524957060813904,
+      "per-context rollout skill at horizon 32": 0.41724199056625366,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.26426947116851807,
+      "per-context rollout skill at horizon 32": 0.5003100633621216,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.44448310136795044,
+      "per-context rollout skill at horizon 32": 0.4949280023574829,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5805647373199463,
+      "per-context rollout skill at horizon 32": 0.3818504810333252,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4255734086036682,
+      "per-context rollout skill at horizon 32": 0.6306247711181641,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5165582895278931,
+      "per-context rollout skill at horizon 32": 0.4110037088394165,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.36031925678253174,
+      "per-context rollout skill at horizon 32": 0.3775581121444702,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.45297765731811523,
+      "per-context rollout skill at horizon 32": 0.3522486686706543,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5418925881385803,
+      "per-context rollout skill at horizon 32": 0.4426036477088928,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4486343264579773,
+      "per-context rollout skill at horizon 32": 0.2736726999282837,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.0012102127075195312,
+      "per-context rollout skill at horizon 32": 0.5265935659408569,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.45118075609207153,
+      "per-context rollout skill at horizon 32": 0.3489053249359131,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.29481643438339233,
+      "per-context rollout skill at horizon 32": 0.4845886826515198,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4679355025291443,
+      "per-context rollout skill at horizon 32": 0.5115648508071899,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3984866142272949,
+      "per-context rollout skill at horizon 32": 0.42192500829696655,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.39131826162338257,
+      "per-context rollout skill at horizon 32": 0.5733217000961304,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3909807801246643,
+      "per-context rollout skill at horizon 32": 0.3469603657722473,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4640766382217407,
+      "per-context rollout skill at horizon 32": 0.5803556442260742,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.49034518003463745,
+      "per-context rollout skill at horizon 32": 0.49208879470825195,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5515316128730774,
+      "per-context rollout skill at horizon 32": 0.3971405029296875,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.527358889579773,
+      "per-context rollout skill at horizon 32": 0.5839022397994995,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3463042378425598,
+      "per-context rollout skill at horizon 32": 0.5142163634300232,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.35164976119995117,
+      "per-context rollout skill at horizon 32": 0.4063947796821594,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.7937560081481934,
+      "per-context rollout skill at horizon 32": 0.6036132574081421,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4795975685119629,
+      "per-context rollout skill at horizon 32": 0.5430079102516174,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5447087287902832,
+      "per-context rollout skill at horizon 32": -0.2781498432159424,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5339334011077881,
+      "per-context rollout skill at horizon 32": 0.5436484813690186,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3864890933036804,
+      "per-context rollout skill at horizon 32": 0.5125089883804321,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3898731470108032,
+      "per-context rollout skill at horizon 32": 0.5441627502441406,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.44256168603897095,
+      "per-context rollout skill at horizon 32": 0.33553338050842285,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.421952486038208,
+      "per-context rollout skill at horizon 32": 0.5297796726226807,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5650453567504883,
+      "per-context rollout skill at horizon 32": 0.5497168302536011,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5238240957260132,
+      "per-context rollout skill at horizon 32": 0.05541825294494629,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5587602853775024,
+      "per-context rollout skill at horizon 32": 0.4932892322540283,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4485427737236023,
+      "per-context rollout skill at horizon 32": 0.5020717978477478,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5064331293106079,
+      "per-context rollout skill at horizon 32": 0.5599669218063354,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3515942096710205,
+      "per-context rollout skill at horizon 32": 0.38184553384780884,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4143134355545044,
+      "per-context rollout skill at horizon 32": 0.3680676221847534,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.43250298500061035,
+      "per-context rollout skill at horizon 32": 0.3871226906776428,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.32363587617874146,
+      "per-context rollout skill at horizon 32": 0.3564679026603699,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4507197141647339,
+      "per-context rollout skill at horizon 32": 0.317391574382782,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4759353995323181,
+      "per-context rollout skill at horizon 32": 0.1117783784866333,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.37521177530288696,
+      "per-context rollout skill at horizon 32": 0.43968665599823,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5977586507797241,
+      "per-context rollout skill at horizon 32": 0.5708744525909424,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3300328254699707,
+      "per-context rollout skill at horizon 32": 0.47028571367263794,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5322173833847046,
+      "per-context rollout skill at horizon 32": 0.487108051776886,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5654396414756775,
+      "per-context rollout skill at horizon 32": 0.3395858407020569,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4427880048751831,
+      "per-context rollout skill at horizon 32": 0.5864127278327942,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.382283091545105,
+      "per-context rollout skill at horizon 32": 0.4363447427749634,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5266516804695129,
+      "per-context rollout skill at horizon 32": 0.2818240523338318,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5086299180984497,
+      "per-context rollout skill at horizon 32": 0.3048509359359741,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.319713294506073,
+      "per-context rollout skill at horizon 32": 0.3478274345397949,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.570938229560852,
+      "per-context rollout skill at horizon 32": 0.12551486492156982,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5476467609405518,
+      "per-context rollout skill at horizon 32": 0.5081737637519836,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6750867366790771,
+      "per-context rollout skill at horizon 32": 0.5614434480667114,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": -0.24999260902404785,
+      "per-context rollout skill at horizon 32": 0.4306567907333374,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.031520068645477295,
+      "per-context rollout skill at horizon 32": 0.4774937629699707,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5428270697593689,
+      "per-context rollout skill at horizon 32": 0.13684898614883423,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.36176449060440063,
+      "per-context rollout skill at horizon 32": 0.3206579089164734,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5737255811691284,
+      "per-context rollout skill at horizon 32": 0.28939902782440186,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.31524693965911865,
+      "per-context rollout skill at horizon 32": 0.4085729122161865,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4330556392669678,
+      "per-context rollout skill at horizon 32": 0.2844098210334778,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5711513161659241,
+      "per-context rollout skill at horizon 32": 0.49632394313812256,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4852708578109741,
+      "per-context rollout skill at horizon 32": 0.4938891530036926,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.45694440603256226,
+      "per-context rollout skill at horizon 32": 0.5568581819534302,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5180090069770813,
+      "per-context rollout skill at horizon 32": 0.36541086435317993,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.49929434061050415,
+      "per-context rollout skill at horizon 32": 0.5329591035842896,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5120982527732849,
+      "per-context rollout skill at horizon 32": 0.46635204553604126,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4330921769142151,
+      "per-context rollout skill at horizon 32": -0.04127395153045654,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.632063627243042,
+      "per-context rollout skill at horizon 32": 0.583855390548706,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.495077908039093,
+      "per-context rollout skill at horizon 32": 0.41338199377059937,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.44219970703125,
+      "per-context rollout skill at horizon 32": 0.47805148363113403,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.36425042152404785,
+      "per-context rollout skill at horizon 32": 0.5078395009040833,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5610672831535339,
+      "per-context rollout skill at horizon 32": 0.4226616621017456,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.40990978479385376,
+      "per-context rollout skill at horizon 32": 0.005234897136688232,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5081188678741455,
+      "per-context rollout skill at horizon 32": 0.2733790874481201,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.33616167306900024,
+      "per-context rollout skill at horizon 32": 0.4593926668167114,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3920561671257019,
+      "per-context rollout skill at horizon 32": 0.5636887550354004,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4769708514213562,
+      "per-context rollout skill at horizon 32": 0.47749751806259155,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.638778567314148,
+      "per-context rollout skill at horizon 32": 0.5867843627929688,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.43141210079193115,
+      "per-context rollout skill at horizon 32": 0.5018597841262817,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5781259536743164,
+      "per-context rollout skill at horizon 32": 0.623316764831543,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6265053153038025,
+      "per-context rollout skill at horizon 32": 0.5737696886062622,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.535047173500061,
+      "per-context rollout skill at horizon 32": 0.48461228609085083,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6171733140945435,
+      "per-context rollout skill at horizon 32": 0.541852593421936,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6124516725540161,
+      "per-context rollout skill at horizon 32": -0.38813650608062744,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5117983818054199,
+      "per-context rollout skill at horizon 32": 0.3682976961135864,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5204616189002991,
+      "per-context rollout skill at horizon 32": 0.5335696339607239,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.42673105001449585,
+      "per-context rollout skill at horizon 32": 0.39161843061447144,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.490143358707428,
+      "per-context rollout skill at horizon 32": 0.4584791660308838,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5209517478942871,
+      "per-context rollout skill at horizon 32": 0.39724475145339966,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4302900433540344,
+      "per-context rollout skill at horizon 32": 0.19312125444412231,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.35624969005584717,
+      "per-context rollout skill at horizon 32": 0.36868828535079956,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5005502700805664,
+      "per-context rollout skill at horizon 32": 0.5019895434379578,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.575321614742279,
+      "per-context rollout skill at horizon 32": 0.5316962003707886,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.539737343788147,
+      "per-context rollout skill at horizon 32": 0.33282458782196045,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5021152496337891,
+      "per-context rollout skill at horizon 32": 0.42303115129470825,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3438882827758789,
+      "per-context rollout skill at horizon 32": 0.5534043312072754,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.20170384645462036,
+      "per-context rollout skill at horizon 32": 0.45888394117355347,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.45398759841918945,
+      "per-context rollout skill at horizon 32": 0.43637335300445557,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5013598203659058,
+      "per-context rollout skill at horizon 32": 0.4113975167274475,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5378443002700806,
+      "per-context rollout skill at horizon 32": 0.3351403474807739,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.8152168989181519,
+      "per-context rollout skill at horizon 32": 0.5939199924468994,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.459364652633667,
+      "per-context rollout skill at horizon 32": 0.5601426362991333,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.43266385793685913,
+      "per-context rollout skill at horizon 32": 0.5403205156326294,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4497950077056885,
+      "per-context rollout skill at horizon 32": 0.15037113428115845,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4195505976676941,
+      "per-context rollout skill at horizon 32": 0.22449088096618652,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.44300204515457153,
+      "per-context rollout skill at horizon 32": 0.4374536871910095,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3419373035430908,
+      "per-context rollout skill at horizon 32": 0.4469624161720276,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3748030662536621,
+      "per-context rollout skill at horizon 32": 0.4101240634918213,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3343347907066345,
+      "per-context rollout skill at horizon 32": 0.2652587890625,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.2729906439781189,
+      "per-context rollout skill at horizon 32": 0.4394528865814209,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.487909197807312,
+      "per-context rollout skill at horizon 32": 0.5172909498214722,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.44920629262924194,
+      "per-context rollout skill at horizon 32": 0.11434650421142578,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4246053695678711,
+      "per-context rollout skill at horizon 32": 0.4949573874473572,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.30051863193511963,
+      "per-context rollout skill at horizon 32": 0.3801271319389343,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6039294600486755,
+      "per-context rollout skill at horizon 32": 0.47886472940444946,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.338795006275177,
+      "per-context rollout skill at horizon 32": 0.5166761875152588,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.44985634088516235,
+      "per-context rollout skill at horizon 32": -0.049419283866882324,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6350182294845581,
+      "per-context rollout skill at horizon 32": 0.3136826753616333,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5788884162902832,
+      "per-context rollout skill at horizon 32": 0.21676558256149292,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5448317527770996,
+      "per-context rollout skill at horizon 32": 0.5368454456329346,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5023373961448669,
+      "per-context rollout skill at horizon 32": 0.3284526467323303,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5820000767707825,
+      "per-context rollout skill at horizon 32": 0.4328816533088684,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6348332762718201,
+      "per-context rollout skill at horizon 32": 0.3569924831390381,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.35871005058288574,
+      "per-context rollout skill at horizon 32": 0.2385355830192566,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.793534517288208,
+      "per-context rollout skill at horizon 32": 0.4908744692802429,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4153270125389099,
+      "per-context rollout skill at horizon 32": 0.27668046951293945,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5273388624191284,
+      "per-context rollout skill at horizon 32": 0.17515450716018677,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.38281768560409546,
+      "per-context rollout skill at horizon 32": 0.49914538860321045,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.42277073860168457,
+      "per-context rollout skill at horizon 32": -0.24074268341064453,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6131348609924316,
+      "per-context rollout skill at horizon 32": 0.49323326349258423,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.40204882621765137,
+      "per-context rollout skill at horizon 32": 0.12564915418624878,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5313124656677246,
+      "per-context rollout skill at horizon 32": 0.3001787066459656,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5550545454025269,
+      "per-context rollout skill at horizon 32": 0.3516336679458618,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4675518870353699,
+      "per-context rollout skill at horizon 32": 0.47752195596694946,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5159910917282104,
+      "per-context rollout skill at horizon 32": 0.42464643716812134,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4636229872703552,
+      "per-context rollout skill at horizon 32": 0.5548735857009888,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5835965871810913,
+      "per-context rollout skill at horizon 32": 0.43884700536727905,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": -0.32253527641296387,
+      "per-context rollout skill at horizon 32": 0.6057425737380981,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.41531604528427124,
+      "per-context rollout skill at horizon 32": 0.5404119491577148,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.620790958404541,
+      "per-context rollout skill at horizon 32": 0.5627455711364746,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.642920196056366,
+      "per-context rollout skill at horizon 32": 0.4701589345932007,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3622468113899231,
+      "per-context rollout skill at horizon 32": 0.3785257339477539,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5393530130386353,
+      "per-context rollout skill at horizon 32": 0.5721635818481445,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5956270098686218,
+      "per-context rollout skill at horizon 32": 0.4316045641899109,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5802628993988037,
+      "per-context rollout skill at horizon 32": 0.55036860704422,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4683918356895447,
+      "per-context rollout skill at horizon 32": 0.3247184157371521,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6905661821365356,
+      "per-context rollout skill at horizon 32": 0.5509754419326782,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.460621178150177,
+      "per-context rollout skill at horizon 32": 0.0634574294090271,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5518585443496704,
+      "per-context rollout skill at horizon 32": 0.475375771522522,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.28270483016967773,
+      "per-context rollout skill at horizon 32": 0.4927794933319092,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5083826780319214,
+      "per-context rollout skill at horizon 32": 0.3454447388648987,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.41541898250579834,
+      "per-context rollout skill at horizon 32": 0.39731013774871826,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3306701183319092,
+      "per-context rollout skill at horizon 32": 0.35423797369003296,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3668936491012573,
+      "per-context rollout skill at horizon 32": 0.49017661809921265,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4775918126106262,
+      "per-context rollout skill at horizon 32": 0.42027127742767334,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5059017539024353,
+      "per-context rollout skill at horizon 32": 0.43361014127731323,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.2160065770149231,
+      "per-context rollout skill at horizon 32": 0.23883813619613647,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5319681167602539,
+      "per-context rollout skill at horizon 32": 0.5049800276756287,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5315207242965698,
+      "per-context rollout skill at horizon 32": 0.4243294596672058,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5069979429244995,
+      "per-context rollout skill at horizon 32": 0.4719114303588867,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5810943245887756,
+      "per-context rollout skill at horizon 32": 0.4439459443092346,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5343835353851318,
+      "per-context rollout skill at horizon 32": -0.0602496862411499,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.41357535123825073,
+      "per-context rollout skill at horizon 32": 0.5695328712463379,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4029456377029419,
+      "per-context rollout skill at horizon 32": 0.4120015501976013,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3833470940589905,
+      "per-context rollout skill at horizon 32": 0.4794524312019348,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.2882099151611328,
+      "per-context rollout skill at horizon 32": 0.04696941375732422,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.49742549657821655,
+      "per-context rollout skill at horizon 32": 0.3099416494369507,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5562168955802917,
+      "per-context rollout skill at horizon 32": 0.3560379147529602,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3784946799278259,
+      "per-context rollout skill at horizon 32": 0.3846416473388672,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5287805795669556,
+      "per-context rollout skill at horizon 32": 0.42238765954971313,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4320155382156372,
+      "per-context rollout skill at horizon 32": 0.4570325016975403,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6088695526123047,
+      "per-context rollout skill at horizon 32": 0.48775970935821533,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3821563124656677,
+      "per-context rollout skill at horizon 32": 0.4421952962875366,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.7854781150817871,
+      "per-context rollout skill at horizon 32": 0.5122984647750854,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5479859113693237,
+      "per-context rollout skill at horizon 32": 0.45803403854370117,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.596172571182251,
+      "per-context rollout skill at horizon 32": 0.27299702167510986,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.40302902460098267,
+      "per-context rollout skill at horizon 32": 0.29723674058914185,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6887899041175842,
+      "per-context rollout skill at horizon 32": 0.5214605331420898,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4212813973426819,
+      "per-context rollout skill at horizon 32": 0.41098159551620483,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3620319962501526,
+      "per-context rollout skill at horizon 32": 0.42633354663848877,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.33975762128829956,
+      "per-context rollout skill at horizon 32": 0.4885953664779663,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.49250733852386475,
+      "per-context rollout skill at horizon 32": 0.5070751309394836,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3664241433143616,
+      "per-context rollout skill at horizon 32": 0.47225457429885864,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.41384178400039673,
+      "per-context rollout skill at horizon 32": 0.47731512784957886,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.45163393020629883,
+      "per-context rollout skill at horizon 32": 0.4168848395347595,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6424536108970642,
+      "per-context rollout skill at horizon 32": 0.38117069005966187,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.49166351556777954,
+      "per-context rollout skill at horizon 32": 0.3877065181732178,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6133103370666504,
+      "per-context rollout skill at horizon 32": 0.3529425859451294,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4275859594345093,
+      "per-context rollout skill at horizon 32": 0.45317184925079346,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.527293860912323,
+      "per-context rollout skill at horizon 32": 0.41102075576782227,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.44616585969924927,
+      "per-context rollout skill at horizon 32": 0.30946236848831177,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4377835988998413,
+      "per-context rollout skill at horizon 32": 0.2903899550437927,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.09019941091537476,
+      "per-context rollout skill at horizon 32": 0.3508254885673523,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4198607802391052,
+      "per-context rollout skill at horizon 32": 0.5251991748809814,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5256597399711609,
+      "per-context rollout skill at horizon 32": 0.2931806445121765,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.47733479738235474,
+      "per-context rollout skill at horizon 32": 0.4173620343208313,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3757231831550598,
+      "per-context rollout skill at horizon 32": 0.37634962797164917,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3494262099266052,
+      "per-context rollout skill at horizon 32": 0.38921117782592773,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.38975197076797485,
+      "per-context rollout skill at horizon 32": 0.40157753229141235,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5005657076835632,
+      "per-context rollout skill at horizon 32": 0.30790966749191284,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3218246102333069,
+      "per-context rollout skill at horizon 32": 0.26040345430374146,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.48542118072509766,
+      "per-context rollout skill at horizon 32": 0.5309404134750366,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5275037884712219,
+      "per-context rollout skill at horizon 32": 0.3960443139076233,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.60257887840271,
+      "per-context rollout skill at horizon 32": 0.5766197443008423,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3782258629798889,
+      "per-context rollout skill at horizon 32": 0.25716686248779297,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4988590478897095,
+      "per-context rollout skill at horizon 32": 0.3600320816040039,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6358805894851685,
+      "per-context rollout skill at horizon 32": 0.5698174238204956,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.38051557540893555,
+      "per-context rollout skill at horizon 32": 0.3603898286819458,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6066678166389465,
+      "per-context rollout skill at horizon 32": 0.41005510091781616,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5231154561042786,
+      "per-context rollout skill at horizon 32": 0.17625486850738525,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5655015707015991,
+      "per-context rollout skill at horizon 32": 0.5711507201194763,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3283689618110657,
+      "per-context rollout skill at horizon 32": 0.47482120990753174,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3243408203125,
+      "per-context rollout skill at horizon 32": 0.39141613245010376,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3315654397010803,
+      "per-context rollout skill at horizon 32": 0.505468487739563,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4277852773666382,
+      "per-context rollout skill at horizon 32": 0.5231009125709534,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4575830101966858,
+      "per-context rollout skill at horizon 32": 0.4828380346298218,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4452551007270813,
+      "per-context rollout skill at horizon 32": 0.47335779666900635,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4396538734436035,
+      "per-context rollout skill at horizon 32": 0.4798416495323181,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4413660168647766,
+      "per-context rollout skill at horizon 32": 0.44679880142211914,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6110484600067139,
+      "per-context rollout skill at horizon 32": 0.6091906428337097,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.437541663646698,
+      "per-context rollout skill at horizon 32": 0.311073362827301,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3697050213813782,
+      "per-context rollout skill at horizon 32": 0.5835829973220825,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4021413326263428,
+      "per-context rollout skill at horizon 32": 0.4860716462135315,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.39092499017715454,
+      "per-context rollout skill at horizon 32": 0.5432018041610718,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6370776295661926,
+      "per-context rollout skill at horizon 32": 0.5043418407440186,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5025414824485779,
+      "per-context rollout skill at horizon 32": 0.41255098581314087,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3813457489013672,
+      "per-context rollout skill at horizon 32": 0.1427992582321167,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3050059676170349,
+      "per-context rollout skill at horizon 32": 0.3469642400741577,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.2943425178527832,
+      "per-context rollout skill at horizon 32": 0.45408910512924194,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4705079197883606,
+      "per-context rollout skill at horizon 32": 0.3931909203529358,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4890408515930176,
+      "per-context rollout skill at horizon 32": 0.5247223377227783,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.44597065448760986,
+      "per-context rollout skill at horizon 32": 0.42571067810058594,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5306879281997681,
+      "per-context rollout skill at horizon 32": 0.46815598011016846,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4185245633125305,
+      "per-context rollout skill at horizon 32": 0.12188702821731567,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5385465621948242,
+      "per-context rollout skill at horizon 32": 0.5189559459686279,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3820432424545288,
+      "per-context rollout skill at horizon 32": 0.513079822063446,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.35311752557754517,
+      "per-context rollout skill at horizon 32": 0.5043239593505859,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3295031189918518,
+      "per-context rollout skill at horizon 32": 0.45104801654815674,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3964535593986511,
+      "per-context rollout skill at horizon 32": 0.4399586319923401,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.8049398064613342,
+      "per-context rollout skill at horizon 32": 0.524940013885498,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5002546310424805,
+      "per-context rollout skill at horizon 32": 0.3098626732826233,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5454181432723999,
+      "per-context rollout skill at horizon 32": 0.48162752389907837,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.43436044454574585,
+      "per-context rollout skill at horizon 32": 0.533920407295227,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6303943991661072,
+      "per-context rollout skill at horizon 32": 0.5306933522224426,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5196611881256104,
+      "per-context rollout skill at horizon 32": 0.3646237254142761,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.47988951206207275,
+      "per-context rollout skill at horizon 32": 0.3890320062637329,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.513715922832489,
+      "per-context rollout skill at horizon 32": 0.4462162256240845,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.580931544303894,
+      "per-context rollout skill at horizon 32": 0.48473572731018066,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5810163021087646,
+      "per-context rollout skill at horizon 32": 0.46004509925842285,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.33923399448394775,
+      "per-context rollout skill at horizon 32": 0.5113344192504883,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.39212924242019653,
+      "per-context rollout skill at horizon 32": 0.46845728158950806,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.46675533056259155,
+      "per-context rollout skill at horizon 32": 0.4000219702720642,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.46252697706222534,
+      "per-context rollout skill at horizon 32": 0.5438353419303894,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6271070241928101,
+      "per-context rollout skill at horizon 32": 0.5579989552497864,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.503831684589386,
+      "per-context rollout skill at horizon 32": 0.466825008392334,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4550634026527405,
+      "per-context rollout skill at horizon 32": 0.4536818265914917,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4162059426307678,
+      "per-context rollout skill at horizon 32": 0.5131921768188477,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.32350218296051025,
+      "per-context rollout skill at horizon 32": 0.48300081491470337,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6140762567520142,
+      "per-context rollout skill at horizon 32": 0.6144130229949951,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3758402466773987,
+      "per-context rollout skill at horizon 32": 0.2204989790916443,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.43209367990493774,
+      "per-context rollout skill at horizon 32": 0.3161275386810303,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.746726393699646,
+      "per-context rollout skill at horizon 32": 0.5469784736633301,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6938972473144531,
+      "per-context rollout skill at horizon 32": 0.46252089738845825,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.40718013048171997,
+      "per-context rollout skill at horizon 32": 0.48252439498901367,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.40851253271102905,
+      "per-context rollout skill at horizon 32": 0.3577864170074463,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4117431044578552,
+      "per-context rollout skill at horizon 32": 0.5536050796508789,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5104916095733643,
+      "per-context rollout skill at horizon 32": 0.44353771209716797,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.2947196364402771,
+      "per-context rollout skill at horizon 32": 0.16499078273773193,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4038386940956116,
+      "per-context rollout skill at horizon 32": 0.4905283451080322,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5159683227539062,
+      "per-context rollout skill at horizon 32": 0.46918171644210815,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4208621382713318,
+      "per-context rollout skill at horizon 32": 0.5084825158119202,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4273647665977478,
+      "per-context rollout skill at horizon 32": 0.25163495540618896,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4982643127441406,
+      "per-context rollout skill at horizon 32": 0.45644956827163696,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.316805899143219,
+      "per-context rollout skill at horizon 32": 0.05725538730621338,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.49556124210357666,
+      "per-context rollout skill at horizon 32": 0.340842604637146,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3203260898590088,
+      "per-context rollout skill at horizon 32": 0.35977500677108765,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.441098690032959,
+      "per-context rollout skill at horizon 32": 0.5301600694656372,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.8044062256813049,
+      "per-context rollout skill at horizon 32": 0.4754698872566223,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.7651644349098206,
+      "per-context rollout skill at horizon 32": 0.45418351888656616,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6284289956092834,
+      "per-context rollout skill at horizon 32": 0.5236518383026123,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4503551125526428,
+      "per-context rollout skill at horizon 32": 0.45384466648101807,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5366334915161133,
+      "per-context rollout skill at horizon 32": 0.41611647605895996,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5769092440605164,
+      "per-context rollout skill at horizon 32": 0.4548329710960388,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5423988103866577,
+      "per-context rollout skill at horizon 32": 0.45218443870544434,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.48162341117858887,
+      "per-context rollout skill at horizon 32": 0.34700649976730347,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.36636656522750854,
+      "per-context rollout skill at horizon 32": 0.37130844593048096,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3485371470451355,
+      "per-context rollout skill at horizon 32": 0.5189705491065979,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5356556177139282,
+      "per-context rollout skill at horizon 32": 0.5055136680603027,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": -0.1840149164199829,
+      "per-context rollout skill at horizon 32": 0.524333655834198,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6736640930175781,
+      "per-context rollout skill at horizon 32": 0.5900053977966309,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.49089354276657104,
+      "per-context rollout skill at horizon 32": 0.34117358922958374,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.7945683002471924,
+      "per-context rollout skill at horizon 32": 0.6020194888114929,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4384344816207886,
+      "per-context rollout skill at horizon 32": 0.5182507038116455,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4217901825904846,
+      "per-context rollout skill at horizon 32": 0.35788148641586304,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3398122787475586,
+      "per-context rollout skill at horizon 32": 0.3902473449707031,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5990056991577148,
+      "per-context rollout skill at horizon 32": 0.48816537857055664,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.621379017829895,
+      "per-context rollout skill at horizon 32": 0.36824434995651245,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.44261378049850464,
+      "per-context rollout skill at horizon 32": 0.1843416690826416,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5506650805473328,
+      "per-context rollout skill at horizon 32": 0.40792930126190186,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4859905242919922,
+      "per-context rollout skill at horizon 32": 0.3135990500450134,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5656552314758301,
+      "per-context rollout skill at horizon 32": 0.4605001211166382,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4018923044204712,
+      "per-context rollout skill at horizon 32": 0.3966599106788635,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.47953343391418457,
+      "per-context rollout skill at horizon 32": 0.5361279249191284,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4273979663848877,
+      "per-context rollout skill at horizon 32": 0.3994408845901489,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.42001980543136597,
+      "per-context rollout skill at horizon 32": 0.46886253356933594,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.49222052097320557,
+      "per-context rollout skill at horizon 32": 0.44386905431747437,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5323548316955566,
+      "per-context rollout skill at horizon 32": 0.46451330184936523,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.36969834566116333,
+      "per-context rollout skill at horizon 32": 0.25367987155914307,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.45870083570480347,
+      "per-context rollout skill at horizon 32": 0.3881024718284607,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6002358198165894,
+      "per-context rollout skill at horizon 32": 0.6445188522338867,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.46922069787979126,
+      "per-context rollout skill at horizon 32": 0.4067155718803406,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3590567111968994,
+      "per-context rollout skill at horizon 32": 0.4345247745513916,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6059620976448059,
+      "per-context rollout skill at horizon 32": 0.5603967905044556,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5043468475341797,
+      "per-context rollout skill at horizon 32": 0.45035308599472046,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3784257769584656,
+      "per-context rollout skill at horizon 32": 0.3425934314727783,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3262317180633545,
+      "per-context rollout skill at horizon 32": 0.45717358589172363,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.47679275274276733,
+      "per-context rollout skill at horizon 32": -0.546747088432312,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.326138436794281,
+      "per-context rollout skill at horizon 32": 0.3378034234046936,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.31743234395980835,
+      "per-context rollout skill at horizon 32": 0.3729809522628784,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.341996431350708,
+      "per-context rollout skill at horizon 32": 0.461214542388916,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.40118664503097534,
+      "per-context rollout skill at horizon 32": 0.4482783079147339,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3873941898345947,
+      "per-context rollout skill at horizon 32": 0.4782068729400635,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5503807067871094,
+      "per-context rollout skill at horizon 32": -0.04863548278808594,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6020275354385376,
+      "per-context rollout skill at horizon 32": 0.11032575368881226,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.2714434862136841,
+      "per-context rollout skill at horizon 32": 0.3860357403755188,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6101689338684082,
+      "per-context rollout skill at horizon 32": 0.5109908580780029,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5145758390426636,
+      "per-context rollout skill at horizon 32": 0.4261620044708252,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5890032649040222,
+      "per-context rollout skill at horizon 32": 0.30160409212112427,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5273734927177429,
+      "per-context rollout skill at horizon 32": 0.4060817360877991,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.43633097410202026,
+      "per-context rollout skill at horizon 32": 0.36571288108825684,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.49933260679244995,
+      "per-context rollout skill at horizon 32": 0.27742189168930054,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4263632893562317,
+      "per-context rollout skill at horizon 32": 0.5233088731765747,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.42112302780151367,
+      "per-context rollout skill at horizon 32": 0.5113198161125183,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4912620782852173,
+      "per-context rollout skill at horizon 32": 0.35854148864746094,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.6339809894561768,
+      "per-context rollout skill at horizon 32": 0.5577710270881653,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.35184645652770996,
+      "per-context rollout skill at horizon 32": 0.469524621963501,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4807232618331909,
+      "per-context rollout skill at horizon 32": 0.6156659126281738,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.39333146810531616,
+      "per-context rollout skill at horizon 32": 0.43290644884109497,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.44976842403411865,
+      "per-context rollout skill at horizon 32": 0.5104044079780579,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.498069167137146,
+      "per-context rollout skill at horizon 32": 0.5112930536270142,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.37592828273773193,
+      "per-context rollout skill at horizon 32": 0.36828917264938354,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.44476401805877686,
+      "per-context rollout skill at horizon 32": 0.4862252473831177,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4234241247177124,
+      "per-context rollout skill at horizon 32": 0.4668926000595093,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.425078809261322,
+      "per-context rollout skill at horizon 32": 0.4799218773841858,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5018924474716187,
+      "per-context rollout skill at horizon 32": 0.3650723695755005,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.40534543991088867,
+      "per-context rollout skill at horizon 32": 0.3849889039993286,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.3603491187095642,
+      "per-context rollout skill at horizon 32": 0.44902998208999634,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4702274203300476,
+      "per-context rollout skill at horizon 32": 0.5669649839401245,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.29214560985565186,
+      "per-context rollout skill at horizon 32": 0.49317634105682373,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.388047456741333,
+      "per-context rollout skill at horizon 32": 0.5548908710479736,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5297821760177612,
+      "per-context rollout skill at horizon 32": 0.4573194980621338,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4418903589248657,
+      "per-context rollout skill at horizon 32": 0.41364210844039917,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4329087734222412,
+      "per-context rollout skill at horizon 32": 0.5982146859169006,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5315291285514832,
+      "per-context rollout skill at horizon 32": 0.4740973114967346,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5249558091163635,
+      "per-context rollout skill at horizon 32": 0.5769878029823303,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.5893082618713379,
+      "per-context rollout skill at horizon 32": 0.5326082706451416,
+      "_kind": "scatter"
+    },
+    {
+      "per-context rollout skill at horizon 4 (block 20)": 0.4990135431289673,
+      "per-context rollout skill at horizon 32": 0.31239259243011475,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 400
+}

@@ -42,8 +42,10 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import os
 import sys
 import time
+import warnings
 from pathlib import Path
 
 import numpy as np
@@ -117,6 +119,7 @@ def _pca_basis_v0(V0: np.ndarray, dim: int) -> np.ndarray:
     except np.linalg.LinAlgError:
         from scipy.linalg import svd as _scipy_svd
 
+        GESVD_FALLBACK_COUNTER["n"] += 1
         logger.warning(
             "[phase=fit_M] np.linalg.svd (gesdd) did not converge on a %s input "
             "(near-singular bootstrap resample); retrying with scipy gesvd",
@@ -125,6 +128,138 @@ def _pca_basis_v0(V0: np.ndarray, dim: int) -> np.ndarray:
         _, _, Vt = _scipy_svd(Vc, full_matrices=False, lapack_driver="gesvd")
     k = min(dim, Vt.shape[0])
     return Vt[:k]  # (k, 3584)
+
+
+# #811 pre-user round (plan §6 floor QA): count gesdd->gesvd fallback events so
+# per-arm fallback counts can be REPORTED alongside each floor — a max-pool arm
+# whose floor leaned on the fallback path is flagged, not silently pooled.
+# Module-level (single-threaded fit orchestration); callers snapshot before/after.
+GESVD_FALLBACK_COUNTER = {"n": 0}
+
+
+def _pca_basis_v0_dual(V0: np.ndarray, dim: int) -> np.ndarray:
+    """Top-``dim`` PCA basis of V0 via a DUAL eigh on the (n, n) centered Gram.
+
+    The Gram/dual-space twin of :func:`_pca_basis_v0` (plan §4.3 item 10; the
+    starting pattern is ``issue667_alllayer_analysis._pca_basis_v0_fast``, whose
+    end-to-end |Δ·r̂_B| match to np.svd was verified at ~1e-13): the top-k right
+    singular vectors of the mean-centered ``Vc`` (n, H) are
+    ``Vₖ = Uₖᵀ Vc / Sₖ`` with ``Vc Vcᵀ = U diag(S²) Uᵀ`` — an eigh on the small
+    (n, n) Gram instead of a full (n, H) SVD (n ≪ H). The downstream ridge
+    statistic depends only on the spanned SUBSPACE (``Y @ pca.T @ pca`` is a
+    projection), so the per-component sign/rotation freedom vs the SVD basis
+    cancels. Robustness contract mirrored: ``np.linalg.eigh`` (syevd) with a
+    ``scipy.linalg.eigh`` (syevr) fallback counted in ``GESVD_FALLBACK_COUNTER``;
+    only numerically-positive eigenvalues kept (the SVD's rank truncation).
+    """
+    Vc = V0 - V0.mean(axis=0, keepdims=True)
+    G = Vc @ Vc.T  # (n, n) dual Gram — SPD, n≪H is the win
+    return _dual_basis_from_gram(G, Vc, dim)
+
+
+def _dual_basis_from_gram(G: np.ndarray, Vc: np.ndarray, dim: int) -> np.ndarray:
+    """Shared dual-eigh core: basis (k<=dim, H) from a centered Gram + centered rows."""
+    try:
+        w, U = np.linalg.eigh(G)  # ascending eigenvalues; LAPACK syevd
+    except np.linalg.LinAlgError:
+        from scipy.linalg import eigh as _scipy_eigh
+
+        GESVD_FALLBACK_COUNTER["n"] += 1
+        logger.warning(
+            "[phase=fit_M] np.linalg.eigh (syevd) did not converge on a %s Gram "
+            "(near-singular resample); retrying with scipy syevr",
+            G.shape,
+        )
+        w, U = _scipy_eigh(G)
+    order = np.argsort(w)[::-1]  # descending
+    if order.size:
+        pos = w[order] > 1e-12 * float(max(w[order][0], 1.0))
+        order = order[pos]
+    k = min(dim, order.size)
+    order = order[:k]
+    if k == 0:
+        return np.zeros((0, Vc.shape[1]), dtype=np.float64)
+    S = np.sqrt(np.clip(w[order], 0.0, None))  # (k,)
+    return (U[:, order].T @ Vc) / S[:, None]  # (k, H)
+
+
+def make_batched_refit_chain_fn(X: np.ndarray, Y: np.ndarray, grid: np.ndarray, r_hat: np.ndarray):
+    """A ``batched_chain_fn`` for :func:`issue722_bootstrap.make_refit_pair` —
+    the #811 Gram/dual-space batching of the floor-refit battery (plan §4.3
+    item 10; supersedes the serial per-pair ``_refit_ridge_fn`` path).
+
+    Precomputes the SHARED Gram factorization of the FIXED pool ONCE —
+    ``K_y = Y Yᵀ`` (n, n) — then, per resample ``idx`` (the batch axis handed
+    over by ``make_refit_pair``):
+
+    1. the resample's centered Gram is a SUBMATRIX + double-centering of the
+       shared ``K_y`` (O(n_b²), no (n_b, H) GEMM), dual-eigh'd for the SAME
+       top-k v0-PC subspace the serial ``_pca_basis_v0(Y[idx])`` spans;
+    2. the ridge refit reuses the UNCHANGED torch dual-space
+       ``_ridge_fit_predict`` (identical PRESS λ-selection + Woodbury solve —
+       the equivalence-tight part);
+    3. the returned chain is ``pred64 @ (pca @ r_hat)`` — the (n_grid,)
+       projection the pair statistic needs (never the (n_grid, H)
+       back-projection).
+
+    Degenerate-resample semantics mirror the serial path: a LinAlgError from the
+    fast dual path falls back to the EXACT serial ``_pca_basis_v0`` +
+    ``_ridge_fit_predict`` for that resample (its gesdd→gesvd fallback rides
+    ``GESVD_FALLBACK_COUNTER``). A SILENTLY rank-deficient resample (no
+    LinAlgError, but the dual basis returns fewer than ``min(TARGET_DIM, n_b)``
+    directions because ``_dual_basis_from_gram`` truncates ≤1e-12-relative
+    eigenvalues while the serial oracle's ``_pca_basis_v0`` keeps
+    ``min(dim, rows)`` SVD rows — the r12 oracle/twin truncation-divergence
+    Minor) is ROUTED to the same exact-serial fallback, so the two paths cannot
+    diverge on that draw (at production shape — n=480, 7 families, resample
+    rank ≈ 67 ≥ 64 — this ~never fires; equivalence over speed on the rare
+    degenerate draw). A resample that still fails returns ``None`` (the
+    caller's skip). Deterministic — the per-fit ``rng`` list is unused,
+    exactly like the serial ``_refit_ridge_fn``.
+    """
+    Y = np.asarray(Y, dtype=np.float64)
+    X = np.asarray(X, dtype=np.float64)
+    r_hat = np.asarray(r_hat, dtype=np.float64)
+    K_y = Y @ Y.T  # the shared Gram factorization (computed ONCE per battery)
+
+    def _chain_one(idx: np.ndarray) -> np.ndarray:
+        Yb = Y[idx]
+        G_sub = K_y[np.ix_(idx, idx)]
+        # centered Gram: H G H via row/col/grand means (O(n_b²)).
+        row = G_sub.mean(axis=1, keepdims=True)
+        col = G_sub.mean(axis=0, keepdims=True)
+        Gc = G_sub - row - col + G_sub.mean()
+        Vc = Yb - Yb.mean(axis=0, keepdims=True)
+        pca = _dual_basis_from_gram(Gc, Vc, TARGET_DIM)  # (k, H)
+        if pca.shape[0] < min(TARGET_DIM, len(idx)):
+            # SILENTLY rank-deficient resample (rank < TARGET_DIM, no LinAlgError):
+            # the dual basis truncated ≤1e-12-relative eigen-directions the serial
+            # oracle would have KEPT (min(dim, rows) SVD rows), so the two paths
+            # would diverge on this draw (r12 Minor). Route to the EXACT-serial
+            # fallback below — pinned by
+            # test_batched_floor_rank_deficient_resample_matches_serial_oracle.
+            raise np.linalg.LinAlgError("rank-deficient resample -> exact-serial fallback")
+        pred64 = _ridge_fit_predict(X[idx], Yb @ pca.T, grid)  # (n_grid, k)
+        return pred64 @ (pca @ r_hat)  # (n_grid,)
+
+    def _batched(idx_list: list[np.ndarray], _rngs) -> list[np.ndarray | None]:
+        out: list[np.ndarray | None] = []
+        for idx in idx_list:
+            try:
+                out.append(_chain_one(idx))
+            except (np.linalg.LinAlgError, torch.linalg.LinAlgError):
+                # Exact-serial fallback for the rare degenerate resample (counted
+                # via _pca_basis_v0's gesvd counter); a second failure = skip.
+                GESVD_FALLBACK_COUNTER["n"] += 1
+                try:
+                    pca = _pca_basis_v0(Y[idx], TARGET_DIM)
+                    pred64 = _ridge_fit_predict(X[idx], Y[idx] @ pca.T, grid)
+                    out.append(pred64 @ (pca @ r_hat))
+                except (np.linalg.LinAlgError, torch.linalg.LinAlgError):
+                    out.append(None)
+        return out
+
+    return _batched
 
 
 def _ridge_fit_predict(X: np.ndarray, Y64: np.ndarray, grid: np.ndarray) -> np.ndarray:
@@ -156,8 +291,40 @@ def _mlp_loco_pred(X: np.ndarray, Y64: np.ndarray) -> np.ndarray:
     )
 
 
-def _ridge_loco_pred(X: np.ndarray, Y64: np.ndarray) -> np.ndarray:
-    """LOCO ridge held-out predictions for all 64 output dims → (n, 64)."""
+def _ridge_loco_pred(X: np.ndarray, Y64: np.ndarray, *, path: str = "batched") -> np.ndarray:
+    """LOCO ridge held-out predictions for all 64 output dims → (n, 64).
+
+    ``path="batched"`` (DEFAULT, #811 vectorize fix round 2) routes through
+    ``fit658._ridge_predict_loco_batched`` — all N folds as chunked batched
+    tensor ops, fold-for-fold identical estimator semantics (same λ grid, same
+    PRESS inner-LOO selection, same dual solve; equivalence pinned at
+    rtol=1e-7/atol=1e-10 by tests/test_issue811_pre_user.py + the #811
+    real-store smoke gate). ``path="serial"`` keeps the historical per-fold
+    Python loop — retained as the equivalence ORACLE only (FutureWarning;
+    raises under ``EPM_FORBID_SERIAL_FITS=1``): 5 serial calls × 480 folds per
+    #811 unit measured ~30-43 days projected across 108 units (task #811
+    epm:compute-deviation v3). The underlying ``fit658._ridge_predict_loco``
+    itself is untouched (other callers: #658 internal, #667, the
+    vectorized_mlp_skill ridge wrapper) — the tombstone lives at THIS #811/#722
+    call-site dispatch, per the shared-code caution.
+    """
+    if path == "batched":
+        return fit658._ridge_predict_loco_batched(X, Y64, fit658.RIDGE_LAMBDAS)
+    assert path == "serial", path
+    if os.environ.get("EPM_FORBID_SERIAL_FITS") == "1":
+        raise RuntimeError(
+            "_ridge_loco_pred(path='serial') runs the SERIAL per-fold ridge-LOCO loop "
+            "superseded by fit658._ridge_predict_loco_batched (#811 vectorize fix round 2); "
+            "EPM_FORBID_SERIAL_FITS=1 is set (see "
+            ".claude/rules/vectorize-many-cell-fits.md § Supersede contract)."
+        )
+    warnings.warn(
+        "_ridge_loco_pred(path='serial') runs the SERIAL per-fold ridge-LOCO PRESS loop; "
+        "the batched twin (path='batched', fit658._ridge_predict_loco_batched) supersedes "
+        "it. Serial call retained as the seeded equivalence ORACLE only.",
+        FutureWarning,
+        stacklevel=2,
+    )
     return fit658._ridge_predict_loco(X, Y64, fit658.RIDGE_LAMBDAS)
 
 
@@ -255,25 +422,56 @@ def _r_hat_for(behavior: str, layer: int, rb_main: dict, rb_fact: dict | None) -
     return r / norm
 
 
+def _rb_revision() -> str:
+    """HF revision the r_B .pt files are fetched at (#811 maxp-round critic advisory).
+
+    ``EPM_RB_REVISION=<sha>`` pins both ``r_b.pt`` and ``r_b_fact.pt`` to a fixed
+    data-repo commit; the ``"main"`` default preserves prior behavior verbatim.
+    """
+    return os.environ.get("EPM_RB_REVISION", "main")
+
+
 def _load_rb_main() -> dict:
     """Load #658 r_b.pt from HF (em/syc/refusal directions)."""
     from huggingface_hub import hf_hub_download
 
     local = hf_hub_download(
-        DATA_REPO, "issue658_theory_assumptions/store/r_b.pt", repo_type="dataset"
+        DATA_REPO,
+        "issue658_theory_assumptions/store/r_b.pt",
+        repo_type="dataset",
+        revision=_rb_revision(),
     )
     return torch.load(local, weights_only=False)
 
 
-def _load_rb_fact() -> dict | None:
-    """Load the NEW r_b_fact.pt (this task's fact direction); None if absent."""
+def _load_rb_fact(*, required: bool = False) -> dict | None:
+    """Load the NEW r_b_fact.pt (this task's fact direction); None if absent.
+
+    ``required=False`` (the #722 default) preserves prior behavior verbatim: any
+    load failure warns + returns None and the caller drops fact. ``required=True``
+    (the #811 call sites, where fact carries the round's headline) RE-RAISES a
+    load failure — a transient Hub error at fit time must crash the fit loudly,
+    never silently void the fact headline (#811 r10 CONCERN
+    rb-fact-silent-drop-headline). A payload flagged ``degenerate`` still returns
+    None under BOTH modes: that is a data-declared drop (plan §8), not a load
+    failure.
+    """
     from huggingface_hub import hf_hub_download
 
     try:
         local = hf_hub_download(
-            DATA_REPO, "issue722_rb_extension/store/r_b_fact.pt", repo_type="dataset"
+            DATA_REPO,
+            "issue722_rb_extension/store/r_b_fact.pt",
+            repo_type="dataset",
+            revision=_rb_revision(),
         )
     except Exception as e:  # not yet extracted (e.g. fit-only smoke) — caller drops fact
+        if required:
+            raise RuntimeError(
+                "r_b_fact.pt REQUIRED (fact is in the requested behaviors) but failed to "
+                f"load from {DATA_REPO}@{_rb_revision()}: {e!r} — refusing the silent "
+                "fact-drop (rb-fact-silent-drop-headline)"
+            ) from e
         logger.warning("r_b_fact.pt unavailable (%s); fact headline will be skipped", e)
         return None
     payload = torch.load(local, weights_only=False)
@@ -435,6 +633,8 @@ def fit_cell(
     rb_fact: dict | None,
     *,
     include_mlp: bool = True,
+    floors: str = "batched",
+    loco: str = "batched",
 ) -> dict:
     """Fit M0/M⁺/M_pseudo + all four reads for one (behavior, layer). Returns the cell JSON.
 
@@ -452,7 +652,39 @@ def fit_cell(
     while removing the multi-hour cost. When False the ``chain_rho`` block omits
     the ``rho_M0_mlp`` / ``rho_Mplus_mlp`` / ``rho_M0_shuffle`` / ``nonlin_gap_*``
     keys (all MLP-derived); every ridge key is byte-for-byte the same code path.
+
+    ``floors`` (#811, plan §4.3 item 10): ``"batched"`` (DEFAULT) routes the
+    three refit floors through the Gram/dual-space batched chain
+    (``make_batched_refit_chain_fn`` — no per-pair full SVD), equivalent to the
+    serial path to fp tolerance (seeded oracle gate); ``"serial"`` keeps the
+    historical per-pair ``_refit_ridge_fn`` path (FutureWarning — retained as
+    the equivalence ORACLE only; raises under ``EPM_FORBID_SERIAL_FITS=1``).
+    Both paths now emit ``floor_draws`` (draw-aligned per-pair stats) and
+    ``gesvd_fallback`` (per-floor fallback event counts) in the cell JSON.
+
+    ``loco`` (#811, vectorize fix round 2): ``"batched"`` (DEFAULT) routes the
+    chain-ρ / shuffle / cross-transfer LOCO reads through the chunked batched
+    twin (``fit658._ridge_predict_loco_batched`` via ``_ridge_loco_pred``);
+    ``"serial"`` keeps the historical per-fold loop (FutureWarning; raises
+    under ``EPM_FORBID_SERIAL_FITS=1``; equivalence ORACLE only). The
+    duplicated LOCO(Cplus→Vplus) read (chain-ρ + cross-transfer computed the
+    SAME deterministic fit twice) is computed once and reused.
     """
+    if include_mlp:
+        if os.environ.get("EPM_FORBID_SERIAL_FITS") == "1":
+            raise RuntimeError(
+                "fit_cell(include_mlp=True) is the SERIAL per-(behavior,layer) MLP path "
+                "superseded by src/explore_persona_space/analysis/vectorized_mlp_skill.py; "
+                "EPM_FORBID_SERIAL_FITS=1 is set (see "
+                ".claude/rules/vectorize-many-cell-fits.md § Supersede contract)."
+            )
+        warnings.warn(
+            "fit_cell(include_mlp=True) runs the SERIAL per-(behavior,layer) MLP fit; new "
+            "sweeps should use src/explore_persona_space/analysis/vectorized_mlp_skill.py "
+            "(batched, 50-100x). Serial call retained for #722/#667 reproduction only.",
+            FutureWarning,
+            stacklevel=2,
+        )
     stacks = loadact.stack_for_fit(cells)
     C0, Cplus = stacks["C0"], stacks["Cplus"]
     V0, Vplus = stacks["V0"], stacks["Vplus"]
@@ -503,37 +735,87 @@ def fit_cell(
     sc_m0: dict = {}
     sc_mplus: dict = {}
     sc_shift: dict = {}
+    pd_m0: dict = {}
+    pd_mplus: dict = {}
+    pd_shift: dict = {}
+    y_shift = m0_at_cplus_ridge_full(C0, V0, Cplus, pca_basis)
+    if floors == "batched":
+        # #811 Gram/dual-space batched floor battery (plan §4.3 item 10): the
+        # serial per-pair full-SVD PCA is replaced by a dual eigh over a shared
+        # Gram factorization; gated by the seeded serial-oracle equivalence
+        # check (tests/test_issue811_pre_user.py + §13 smoke 7). Per-floor
+        # gesvd/fallback event counts are snapshotted for the cell JSON (§6
+        # floor QA).
+        fit_serial = None
+        chains = {
+            "m0": make_batched_refit_chain_fn(C0, V0, grid, r_hat),
+            "mplus": make_batched_refit_chain_fn(Cplus, Vplus, grid, r_hat),
+            "shift": make_batched_refit_chain_fn(Cplus, y_shift, grid, r_hat),
+        }
+    else:
+        assert floors == "serial", floors
+        if os.environ.get("EPM_FORBID_SERIAL_FITS") == "1":
+            raise RuntimeError(
+                "fit_cell(floors='serial') runs the SERIAL per-pair full-SVD floor "
+                "battery superseded by issue722_fit_M.make_batched_refit_chain_fn "
+                "(Gram/dual-space, #811); EPM_FORBID_SERIAL_FITS=1 is set (see "
+                ".claude/rules/vectorize-many-cell-fits.md § Supersede contract)."
+            )
+        warnings.warn(
+            "fit_cell(floors='serial') runs the SERIAL per-pair full-SVD refit floor; "
+            "the batched Gram/dual-space path (floors='batched', "
+            "make_batched_refit_chain_fn) supersedes it. Serial call retained as the "
+            "seeded equivalence ORACLE only.",
+            FutureWarning,
+            stacklevel=2,
+        )
+        fit_serial = _refit_ridge_fn(grid)
+        chains = {"m0": None, "mplus": None, "shift": None}
+    fb_before = {}
+    fb_counts = {}
+    fb_before["m0"] = GESVD_FALLBACK_COUNTER["n"]
     floor_m0 = make_refit_pair(
         C0,
         V0,
-        _refit_ridge_fn(grid),
+        fit_serial,
         grid,
         r_hat,
         families,
         n_pairs=N_REFIT_PAIRS,
         skip_counter=sc_m0,
+        batched_chain_fn=chains["m0"],
+        per_draw_out=pd_m0,
     )
+    fb_counts["floor_M0_refit"] = GESVD_FALLBACK_COUNTER["n"] - fb_before["m0"]
+    fb_before["mplus"] = GESVD_FALLBACK_COUNTER["n"]
     floor_mplus = make_refit_pair(
         Cplus,
         Vplus,
-        _refit_ridge_fn(grid),
+        fit_serial,
         grid,
         r_hat,
         families,
         n_pairs=N_REFIT_PAIRS,
         skip_counter=sc_mplus,
+        batched_chain_fn=chains["mplus"],
+        per_draw_out=pd_mplus,
     )
+    fb_counts["floor_Mplus_refit"] = GESVD_FALLBACK_COUNTER["n"] - fb_before["mplus"]
     # shifted-design: M_pseudo (Cplus → M0(Cplus)); refit pairs of THAT map at grid.
+    fb_before["shift"] = GESVD_FALLBACK_COUNTER["n"]
     floor_shift = make_refit_pair(
         Cplus,
-        m0_at_cplus_ridge_full(C0, V0, Cplus, pca_basis),
-        _refit_ridge_fn(grid),
+        y_shift,
+        fit_serial,
         grid,
         r_hat,
         families,
         n_pairs=N_REFIT_PAIRS,
         skip_counter=sc_shift,
+        batched_chain_fn=chains["shift"],
+        per_draw_out=pd_shift,
     )
+    fb_counts["floor_shifted"] = GESVD_FALLBACK_COUNTER["n"] - fb_before["shift"]
     refit_skip = _aggregate_refit_skips(behavior, layer, sc_m0, sc_mplus, sc_shift)
     floor_m0_p95 = float(np.percentile(floor_m0, 95))
     floor_mplus_p95 = float(np.percentile(floor_mplus, 95))
@@ -559,11 +841,12 @@ def fit_cell(
     E = _load_E(behavior, cell_keys)
     keep = ~np.isnan(E)
     chain_block = {"n_with_E": int(keep.sum())}
+    mplus_loco_ridge = None  # reused by cross-transfer below (same deterministic fit)
     if keep.sum() >= 4:
         Ek = E[keep]
         fam_k = [f for f, m in zip(families, keep, strict=True) if m]
-        m0_loco_ridge = _ridge_loco_pred(C0, V0_64)
-        mplus_loco_ridge = _ridge_loco_pred(Cplus, Vplus_64)
+        m0_loco_ridge = _ridge_loco_pred(C0, V0_64, path=loco)
+        mplus_loco_ridge = _ridge_loco_pred(Cplus, Vplus_64, path=loco)
         rho_m0, chain_m0 = _chain_rho_one(m0_loco_ridge[keep], pca_basis, r_hat, Ek)
         rho_mplus, chain_mplus = _chain_rho_one(mplus_loco_ridge[keep], pca_basis, r_hat, Ek)
         chain_block["rho_M0_ridge"] = rho_m0
@@ -597,7 +880,7 @@ def fit_cell(
             # shuffle null on M0 (refit ridge on permuted v0) — MLP-validity gate (plan §3).
             rng = np.random.default_rng(722)
             perm = rng.permutation(n)
-            m0_shuf = _ridge_loco_pred(C0, V0_64[perm])
+            m0_shuf = _ridge_loco_pred(C0, V0_64[perm], path=loco)
             rho_shuf, _ = _chain_rho_one(m0_shuf[keep], pca_basis, r_hat, Ek)
             chain_block["rho_M0_shuffle"] = rho_shuf
             # nonlinearity gap pre vs post: (rho_mlp - rho_ridge) under M0 and M⁺.
@@ -610,9 +893,15 @@ def fit_cell(
     cross = {}
     # M0 predicting v_plus on FT pairs (held-out ρ proxy: ridge LOCO of C0→Vplus_64)
     # vs M⁺ predicting v_plus (its own LOCO). Reverse: M⁺ predicting v0 on base pairs.
-    m0_to_vplus = _ridge_loco_pred(C0, Vplus_64)
-    mplus_to_vplus = _ridge_loco_pred(Cplus, Vplus_64)
-    mplus_to_v0 = _ridge_loco_pred(Cplus, V0_64)
+    m0_to_vplus = _ridge_loco_pred(C0, Vplus_64, path=loco)
+    # LOCO(Cplus→Vplus) is deterministic and already computed in the chain-ρ block
+    # (when E coverage allowed it) — reuse rather than re-fitting the same map.
+    mplus_to_vplus = (
+        mplus_loco_ridge
+        if mplus_loco_ridge is not None
+        else _ridge_loco_pred(Cplus, Vplus_64, path=loco)
+    )
+    mplus_to_v0 = _ridge_loco_pred(Cplus, V0_64, path=loco)
     # summarize as mean rowwise cosine to the true target (a transfer-quality scalar).
     cross["m0_to_vplus_cos"] = float(np.mean(fit658._rowwise_cos(m0_to_vplus, Vplus_64)))
     cross["mplus_to_vplus_cos"] = float(np.mean(fit658._rowwise_cos(mplus_to_vplus, Vplus_64)))
@@ -642,6 +931,18 @@ def fit_cell(
         "chain_rho": chain_block,
         "cross_transfer": cross,
         "refit_skip": refit_skip,
+        # #811 per-draw floor dump (plan §6/§6.5): DRAW-ALIGNED per-pair floor
+        # statistics (NaN at skipped pairs) — same seed => same family resample
+        # per draw index across every summary of a (behavior, layer), so the
+        # max-over-summaries selection-null escape is a pure read downstream.
+        "floor_draws": {
+            "floor_M0_refit": [None if np.isnan(v) else float(v) for v in pd_m0["stats"]],
+            "floor_Mplus_refit": [None if np.isnan(v) else float(v) for v in pd_mplus["stats"]],
+            "floor_shifted": [None if np.isnan(v) else float(v) for v in pd_shift["stats"]],
+        },
+        # #811 floor QA (plan §6): gesdd→gesvd / dual-eigh fallback EVENT counts
+        # per floor (0 on the clean path) + which floor path ran.
+        "gesvd_fallback": {**fb_counts, "floors_path": floors},
         "n_families": len({*families}),
     }
 
@@ -673,11 +974,8 @@ def m0_at_cplus_ridge_full(C0, V0, Cplus, pca):
 def main() -> int:
     global N_REFIT_PAIRS, TARGET_DIM
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
-    # Resolve the compute device the ridge + MLP fitters read off fit658.DEVICE
-    # (default "cpu", flipped to cuda only inside fit658.main() — which #722 never
-    # calls; MF#6 / Claude Major#1). "auto" → cuda when available else cpu, so the
-    # GPU lane uses cuda and the CPU smoke still falls back to cpu.
-    fit658.DEVICE = fit658._resolve_device("auto")
+    # fit658.DEVICE resolves at import (EPM_FIT_DEVICE env if set, else auto —
+    # cuda when available; #876), so no hand-patch is needed here.
     logger.info("[phase=fit_M] device=%s", fit658.DEVICE)
     ap = argparse.ArgumentParser(description="Issue #722 fit M0 vs M⁺ + the four reads")
     ap.add_argument("--behaviors", nargs="+", default=list(HEADLINE_BEHAVIORS))

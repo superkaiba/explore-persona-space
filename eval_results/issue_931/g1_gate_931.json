@@ -1,0 +1,16 @@
+{
+  "metadata": {
+    "git_commit": "d8b07645cef8d28c641e7ea6ab5db19d3566ae5f",
+    "timestamp": "2026-07-04T05:45:21Z",
+    "seed": 0,
+    "n": 5000,
+    "script": "scripts/issue931_fit_cells.py",
+    "issue": 931
+  },
+  "reference": "eval_results/issue_825/cells_S1.json",
+  "spearman_vs_825_S1": 1.0,
+  "abs_dev_L19": 0.0,
+  "layers_compared": 28,
+  "smoke": false,
+  "pass": true
+}

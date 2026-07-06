@@ -6,7 +6,10 @@ description: >
   armed at Step 0 of the full `/issue` skill (with a defense-in-depth
   re-arm at Step 6d.2). FIRST action on every fire is ONE Bash call to
   `scripts/tick_triage.py <N>` (pure Python: reads status + latest marker,
-  computes staleness, maintains the tick snapshot + runaway counter) and
+  computes staleness, screens detached-phase liveness before any
+  STALE-REDRIVE — a live identity-verified breadcrumb `pid=`, a fresh
+  `log=` mtime, or a fresh `[long-phase-heartbeat]` note reads HEALTHY,
+  #1051 — and maintains the tick snapshot + runaway counter) and
   branches on its one-word verdict: HEALTHY → end the turn immediately;
   TERMINAL → CRON-TEARDOWN, end; GATE-TRANSITION → PushNotification +
   CRON-TEARDOWN, end; STALE-REDRIVE → re-drive the full `/issue` skill
@@ -82,6 +85,41 @@ A broken triage must fail toward coverage (full re-drive), never toward
 silence — a no-op-on-crash tick would leave the alive-stalled-at-PARK
 class permanently unrecovered.
 
+## Digest-only task-state reads (every tick turn, every task)
+
+Any task-state read a tick turn makes BEYOND the one `tick_triage.py`
+call MUST be a bounded, jq-filtered digest — unconditionally, for every
+task, not just visibly harmful-content ones:
+
+- NEVER a bare `task.py view <N>`, and NEVER an unpiped
+  `task.py view <N> --json` without a narrow `| jq` filter on the same
+  command: the JSON payload carries the full task BODY plus EVERY
+  `events.jsonl` note (~625 KB on #906 — 296 events). For a
+  harmful-content task (insecure-code datagen, EM vocabulary, jailbreak
+  banks) that text is trigger-dense enough to refusal-kill the turn —
+  #906's ticks were killed 3× this way (2026-07-03); the #866 prevention
+  rule (CLAUDE.md § Spurious usage-policy refusals (e)) applies to tick
+  turns exactly as it does to briefs.
+- NEVER an unfiltered `task.py latest-marker <N>` when only freshness /
+  resume position is needed — its `note` field can be up to 50,000
+  chars. Use `... latest-marker <N> | jq '{kind, ts}'`.
+- Pipes are the mechanism: `task.py view <N> --json | jq -r '<narrow
+  filter>'` is safe by construction — only jq's output enters context;
+  the body and notes never do.
+
+Everything a tick turn legitimately needs is digest-shaped: status,
+marker kind + timestamp, the title, and the ≤80-char blocked-reason
+slice. Deciding per-task whether content is "safe" would itself require
+reading the content, so the thinning is unconditional — it also bounds
+the tick's context cost on benign tasks (#522 class). This contract
+binds the TICK TURN's own reads on all four branches, up to and
+including the decision to load the full `/issue` skill; once the full
+skill is loaded, its own steps govern its reads — and the refusal-thinned
+re-drive rule below additionally constrains the re-driven skill's resume
+reads after a refusal-killed predecessor. Content-heavy work belongs to
+the full skill's downstream subagents (fresh-context firewalls), never
+to a tick turn.
+
 ## Argument
 
 One required argument: the issue number `<N>` (the integer naming
@@ -116,7 +154,10 @@ cosmetic and accepted.
 ## STALE-REDRIVE recovery branch
 
 `tick_triage.py` returns `STALE-REDRIVE` when the latest marker is stale
-(>~25 min) at a non-gate, non-terminal status. Two sub-cases, split by
+(>~25 min) at a non-gate, non-terminal status AND its detached-phase
+liveness screen found no evidence (no live identity-verified breadcrumb
+`pid=`, no fresh breadcrumb `log=` mtime, no fresh
+`[long-phase-heartbeat]` note — #1051). Two sub-cases, split by
 the status named in the verdict reason:
 
 **ACTIVE statuses** (`approved` / `running` / `verifying` /
@@ -158,6 +199,11 @@ would land back in the same PARK without solving the in-skill stall) —
 the in-process re-drive here is the only recovery for that class, which
 is why this tick survives the redesign at all.
 
+A re-driven session performing any compute dispatch is bound by the
+`/issue` skill's § Pre-dispatch external-marker triage; a successor
+session that cannot attribute window markers to itself treats them as
+external (fail-toward-triage).
+
 `tick_triage.py` never returns `STALE-REDRIVE` for gate-park states
 (over-cap `plan_pending`, `awaiting_promotion`, `blocked`) — those are
 user gates by design; staleness there is correct and the user is the
@@ -170,9 +216,13 @@ project's marker/EM/implant vocabulary), a naive re-drive replays the
 same trigger-dense context and gets refused again: on 2026-06-10 the
 #543 session was bricked for ~75 min by 4 consecutive tick re-drives
 each re-refused. On a refusal-killed predecessor turn, re-drive THINNED:
-resume from `task.py latest-marker <N>` + status only — do NOT page the
-clean-result body, `epm:interpretation` bodies, or any raw-completion
-text back into context; let the next step's subagent (which starts with
+resume from status + the filtered latest-marker digest
+(`task.py latest-marker <N> | jq '{kind, ts}'`) only — do NOT page the
+task body, full marker-note text, the clean-result body,
+`epm:interpretation` bodies, or any raw-completion text back into
+context (the § Digest-only contract above already bans the unfiltered
+reads on every tick turn; after a refusal kill the posture tightens to
+kind+ts+status only); let the next step's subagent (which starts with
 fresh context) do the content-heavy lifting behind the analyzer's
 content firewall. If the thinned re-drive is refused too, exit and leave
 recovery to the watcher's respawn (a fresh session clears the poisoned
@@ -188,15 +238,26 @@ snapshot at a gate also counts — a duplicate push beats a missed one).
 
 ```python
 # Build the message body. Keep under 200 chars (push payload limits).
-# Slug: one `task.py view <N> --json` call (rare path; the healthy path
-# never pays it).
+# Slug + blocked reason come from ONE digest-only Bash call (rare path;
+# the healthy path never pays it) — never an unpiped dump; the jq filter
+# rides the same command line (§ Digest-only task-state reads):
+#   uv run python scripts/task.py view <N> --json | jq -r \
+#     '.frontmatter.title,
+#      ([.events[] | select(.kind == "epm:failure")] | last
+#        | (.note // "")[0:80] | gsub("\n"; " "))'
+# → line 1 = slug, line 2 = blocked reason (empty when no failure marker).
+# (Exact-equality select: event kinds are BARE strings with a separate
+#  integer `version` field; startswith("epm:failure") would over-match
+#  epm:failure-lesson — verified live on #906, where it returned the
+#  newest failure-LESSON note instead of the failure reason.)
 if status == "awaiting_promotion":
     msg = f"#{N} {slug} · clean-result ready — open to promote"
 elif status == "plan_pending":  # over-cap (per the triage verdict reason)
     cap = os.environ.get("EPM_PLAN_AUTOAPPROVE_GPU_HOURS", "100")
     msg = f"#{N} {slug} parked at plan_pending — over {cap} GPU-h cap; open to approve"
 elif status == "blocked":
-    reason = read_blocked_reason()  # latest epm:failure note, trimmed to ~80 chars
+    # reason = the jq-extracted ≤80-char epm:failure slice above — the ONLY
+    # marker-note text a tick turn ever pages in, and only on this branch.
     msg = f"#{N} BLOCKED: {reason} — open it"
 
 PushNotification({"message": msg[:200], "status": "proactive"})
@@ -220,30 +281,57 @@ tool from the deferred load.
 
 The cron this skill is fired by is registered with the literal prompt
 `"/issue-tick <N>"`. Find and delete it — ALL matching jobs, not just
-the first:
+the first — and ALSO sweep stray one-shot `/issue <N>` wakeups (#980),
+resolving ids from a FRESH `CronList` at teardown time (#988):
 
 ```python
+# CRON-TEARDOWN sweep — hardened 2026-06-12 (#501); widened + idempotent
+# 2026-07-05 (#1052). Resolve live ids with a FRESH CronList() HERE, at
+# teardown time — never CronDelete an id recorded earlier in the session
+# (arm-time asserts, a previous tick's listing): recorded ids go stale when
+# a one-shot fires or a concurrent teardown wins the race (#988).
 jobs = CronList()  # [{id, cron, prompt, recurring, durable, ...}, ...]
 for job in jobs:
     p = job.get("prompt", "").strip()
-    # Primary match: whole-string equality (prompt.strip() == "/issue-tick <N>").
-    # Hardened fallback: harness prompt-normalization drift was the #501
-    # failure mode (teardown silently no-oped 1,951 times), so ALSO match
-    # the anchored pattern — the (?!\d) guard prevents sibling mis-delete
-    # ("/issue-tick 46" never matches "/issue-tick 467").
-    if p == f"/issue-tick {N}" or re.search(rf"issue-tick\s+{N}(?!\d)", p):
+    # Leg 1 — the recurring tick cron: whole-string equality
+    # (prompt.strip() == "/issue-tick <N>"); hardened fallback is the
+    # anchored pattern for harness prompt-normalization drift (#501 — the
+    # whole-string teardown silently no-oped 1,951 times). The (?!\d)
+    # guard prevents sibling mis-delete ("/issue-tick 46" never matches
+    # "/issue-tick 467").
+    leg1 = p == f"/issue-tick {N}" or re.search(rf"issue-tick\s+{N}(?!\d)", p)
+    # Leg 2 — stray one-shot wakeups that would re-drive the FULL skill on
+    # a terminal/park task (#980: a live one-shot survived teardown on a
+    # completed task and re-drove it). Anchored at the START so a prose
+    # prompt that merely MENTIONS the issue is never deleted; (?!\d)
+    # guards siblings; the '-' in "/issue-tick" fails \s+, so leg 2 never
+    # re-matches leg 1's job. Trailing text (e.g. "--auto") matches by
+    # design — anything in the store that starts with the bare full-skill
+    # prompt is a re-driver for THIS issue and must die at teardown.
+    leg2 = p == f"/issue {N}" or re.match(rf"/issue\s+{N}(?!\d)", p)
+    if leg1 or leg2:
         CronDelete(id=job["id"])
+        # IDEMPOTENT DELETE (#988): a CronDelete error indicating the job
+        # does not exist (observed shape: 'No scheduled job with id ...')
+        # means it is ALREADY GONE — that IS the desired end state. Treat
+        # it as SUCCESS: continue the sweep; never retry the same id,
+        # never abort or raise on it.
 
-# ASSERT-AFTER-DELETE: re-list and verify nothing matching survived.
-# If a job survived, retry the delete ONCE; if it STILL survives, log
-# LOUDLY and exit — the runaway parachute (tick_triage's
-# 3-consecutive-terminal flag + the watcher force-stop) bounds the damage.
+# ASSERT-AFTER-DELETE: re-CronList() and verify NO job matching EITHER leg
+# survived. If one did, retry that delete ONCE (fresh id from the re-list);
+# if it STILL survives, log LOUDLY and exit — the runaway parachute
+# (tick_triage's 3-consecutive-terminal flag + the watcher force-stop)
+# bounds the damage of a job that refuses to die.
 ```
 
-Never use bare substring matching without the trailing-digit guard —
-`"/issue-tick 46"` is a substring of `"/issue-tick 467"`, so unguarded
-substring matching would mis-delete a sibling issue's cron. Idempotent:
-if no matching job exists, this is a no-op. Do not raise.
+Never use bare substring matching without the trailing-digit guard on
+EITHER leg — `"/issue-tick 46"` is a substring of `"/issue-tick 467"`
+(and the same for the leg-2 wakeup prompts), so unguarded substring
+matching would mis-delete a sibling issue's cron or wakeup. Idempotent:
+if no matching job exists, this is a no-op. Do not raise. A `CronDelete`
+error indicating the job does not exist (observed shape:
+`No scheduled job with id …`) is SUCCESS, not a failure — idempotent
+means the job being gone is the goal.
 
 ## What this skill does NOT do
 
@@ -259,8 +347,10 @@ if no matching job exists, this is a no-op. Do not raise.
   heartbeat (`epm:progress`, ACTIVE-status verified-alive case). The
   snapshot + runaway-flag files are written by `tick_triage.py`, not by
   the skill.
-- It does NOT page clean-result bodies, interpretation bodies, or raw
-  completions into context (see the refusal-thinned re-drive rule).
+- It does NOT page the task body, full marker-note text, clean-result
+  bodies, interpretation bodies, or raw completions into context — every
+  task-state read beyond the triage call is a jq-filtered digest
+  (§ Digest-only task-state reads; refusal-thinned re-drive rule).
 
 ## Why this skill exists (background)
 

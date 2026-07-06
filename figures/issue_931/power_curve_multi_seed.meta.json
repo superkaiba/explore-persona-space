@@ -1,0 +1,56 @@
+{
+  "metadata": {
+    "script": "/tmp/i931_regen_pcms_fig.py (legend-corrected regen of scripts/issue931_power_curve_multi_seed.py make_figure)",
+    "source_json": "eval_results/issue_931/power_curve_multi_seed.json @ 13e209c8e3",
+    "source_json_git_commit": "139b35fa71b187ec8852d70e522785fcc5018bbc",
+    "regen_at_git_commit": "2a8046e39ef2c8f6bb4a5a501e025ad9d8eba4bd",
+    "timestamp": "2026-07-04T17:44:42Z",
+    "legend_note": "draw-mean label corrected from 'group-stratified seeds' to 'seeded uniform row draws' (the exact reduction of group-stratified sampling on the all-singleton chat store; scheme id issue931_pcms.seeded_uniform_row_draw.v1)"
+  },
+  "what": "per-draw L19 held-out R^2 points (5 seeds per n), draw-mean curve +/- SD, and the committed single-draw nested-prefix curve being superseded",
+  "points": {
+    "per_draw": {
+      "1000": [
+        0.444126,
+        0.457696,
+        0.449266,
+        0.43002,
+        0.45352
+      ],
+      "1500": [
+        0.385801,
+        0.381583,
+        0.383968,
+        0.355019,
+        0.391043
+      ],
+      "1982": [
+        0.304035,
+        0.296626,
+        0.282773,
+        0.253435,
+        0.267207
+      ]
+    },
+    "draw_mean": {
+      "1000": {
+        "mean": 0.446926,
+        "sd": 0.010708
+      },
+      "1500": {
+        "mean": 0.379483,
+        "sd": 0.014112
+      },
+      "1982": {
+        "mean": 0.280815,
+        "sd": 0.020784
+      }
+    },
+    "committed": {
+      "1000": 0.49543783220027904,
+      "1035": 0.4817351966845739,
+      "1982": 0.31616922814913495,
+      "2000": 0.31485176461012
+    }
+  }
+}

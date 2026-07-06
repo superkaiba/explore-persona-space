@@ -1,0 +1,1163 @@
+{
+  "mlp": {
+    "traits": {
+      "evil": {
+        "system": {
+          "A_lmsys": {
+            "h": {
+              "layer": 14,
+              "within_r_dot": {
+                "point": -0.0693444861564183,
+                "lo": -0.29866212473800335,
+                "hi": 0.1318198046507851,
+                "n_conditions": 4,
+                "n_boot_valid": 997
+              },
+              "within_r_cos": {
+                "point": -0.014154346325499154,
+                "lo": -0.23094185742270573,
+                "hi": 0.16846083477781293,
+                "n_conditions": 4,
+                "n_boot_valid": 997
+              },
+              "overall_r_mode_dot": 0.5739652023799827,
+              "heldout_recon": {
+                "r2": 0.5835417036853575,
+                "mean_cosine": 0.9307582806495,
+                "n_test": 1000
+              },
+              "n_fit": 4000
+            },
+            "g": {
+              "layer": 14,
+              "within_r": {
+                "point": 0.18181756260959397,
+                "lo": 0.018538564758858657,
+                "hi": 0.3708382064800336,
+                "n_conditions": 4,
+                "n_boot_valid": 997
+              },
+              "overall_r_mode": 0.195351928190152,
+              "heldout": {
+                "r2": -0.06752004947192325,
+                "pearson": -0.004927964769401323,
+                "n_test": 924
+              },
+              "n_fit": 3696
+            }
+          },
+          "B_behavior": {
+            "h": {
+              "layer": 14,
+              "within_r_dot": {
+                "point": -0.15038826887135553,
+                "lo": -0.3249983376597343,
+                "hi": -0.027679831259419103,
+                "n_conditions": 4,
+                "n_boot_valid": 997
+              },
+              "within_r_cos": {
+                "point": -0.15201062199284018,
+                "lo": -0.3335944277160961,
+                "hi": -0.02358777671363072,
+                "n_conditions": 4,
+                "n_boot_valid": 997
+              },
+              "overall_r_mode_dot": 0.739878559047323,
+              "heldout_recon": {
+                "r2": 0.94532012642469,
+                "mean_cosine": 0.9968937963202045,
+                "n_test": 480
+              },
+              "n_fit": 1920
+            },
+            "g": {
+              "layer": 14,
+              "within_r": {
+                "point": 0.12097041023305881,
+                "lo": -0.047168268419547216,
+                "hi": 0.2535691792107907,
+                "n_conditions": 4,
+                "n_boot_valid": 997
+              },
+              "overall_r_mode": 0.8478217256192949,
+              "heldout": {
+                "r2": 0.7336614762881564,
+                "pearson": 0.856776636178288,
+                "n_test": 480
+              },
+              "n_fit": 1919
+            }
+          },
+          "C_concat": {
+            "h": {
+              "layer": 14,
+              "within_r_dot": {
+                "point": -0.18602966556858025,
+                "lo": -0.4510412058148022,
+                "hi": 0.008127563001769509,
+                "n_conditions": 4,
+                "n_boot_valid": 997
+              },
+              "within_r_cos": {
+                "point": -0.20007837144837218,
+                "lo": -0.4699744534752581,
+                "hi": 0.0017101053857789354,
+                "n_conditions": 4,
+                "n_boot_valid": 997
+              },
+              "overall_r_mode_dot": 0.6282636386419831,
+              "heldout_recon": {
+                "r2": 0.6472172243481732,
+                "mean_cosine": 0.9473358920461833,
+                "n_test": 1480
+              },
+              "n_fit": 5920
+            },
+            "g": {
+              "layer": 14,
+              "within_r": {
+                "point": 0.08438964358521214,
+                "lo": -0.010723661161620006,
+                "hi": 0.15693214529129298,
+                "n_conditions": 4,
+                "n_boot_valid": 997
+              },
+              "overall_r_mode": 0.9208207396073109,
+              "heldout": {
+                "r2": 0.6753407395896952,
+                "pearson": 0.8218095235498005,
+                "n_test": 1404
+              },
+              "n_fit": 5615
+            }
+          }
+        },
+        "many_shot": {
+          "A_lmsys": {
+            "h": {
+              "layer": 26,
+              "within_r_dot": {
+                "point": 0.5769195193497246,
+                "lo": 0.47267159790413404,
+                "hi": 0.706584711843357,
+                "n_conditions": 4,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.5830397888982966,
+                "lo": 0.45633117372186816,
+                "hi": 0.716768249473549,
+                "n_conditions": 4,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.6872068534681562,
+              "heldout_recon": {
+                "r2": 0.5517644298859751,
+                "mean_cosine": 0.950574916043203,
+                "n_test": 1000
+              },
+              "n_fit": 4000
+            },
+            "g": {
+              "layer": 26,
+              "within_r": {
+                "point": 0.35472555329328,
+                "lo": 0.2801936537249142,
+                "hi": 0.4180533628779008,
+                "n_conditions": 4,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": -0.07346204966881624,
+              "heldout": {
+                "r2": -0.08229140552118142,
+                "pearson": 0.014328910981075435,
+                "n_test": 924
+              },
+              "n_fit": 3696
+            }
+          },
+          "B_behavior": {
+            "h": {
+              "layer": 26,
+              "within_r_dot": {
+                "point": 0.17456834453501358,
+                "lo": -0.0009582781665411711,
+                "hi": 0.400661313979424,
+                "n_conditions": 4,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.18691318019216907,
+                "lo": 0.023693575932575112,
+                "hi": 0.39307250678905564,
+                "n_conditions": 4,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.49104933604305356,
+              "heldout_recon": {
+                "r2": 0.9493385197355106,
+                "mean_cosine": 0.9983774995994135,
+                "n_test": 480
+              },
+              "n_fit": 1920
+            },
+            "g": {
+              "layer": 26,
+              "within_r": {
+                "point": 0.38685554756630863,
+                "lo": 0.21482894777581743,
+                "hi": 0.6295311329887531,
+                "n_conditions": 4,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": 0.7162055883360405,
+              "heldout": {
+                "r2": 0.791607177301862,
+                "pearson": 0.8903675324323737,
+                "n_test": 480
+              },
+              "n_fit": 1919
+            }
+          },
+          "C_concat": {
+            "h": {
+              "layer": 26,
+              "within_r_dot": {
+                "point": 0.42817312947099817,
+                "lo": 0.22303651865576696,
+                "hi": 0.6408759867337315,
+                "n_conditions": 4,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.4333348881218491,
+                "lo": 0.23533020312854003,
+                "hi": 0.6252484963021642,
+                "n_conditions": 4,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.6233097084856701,
+              "heldout_recon": {
+                "r2": 0.6037608829768775,
+                "mean_cosine": 0.9624457293081747,
+                "n_test": 1480
+              },
+              "n_fit": 5920
+            },
+            "g": {
+              "layer": 26,
+              "within_r": {
+                "point": 0.19294015319754176,
+                "lo": -0.09425039114832534,
+                "hi": 0.5932820136334214,
+                "n_conditions": 4,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": 0.8609198486967874,
+              "heldout": {
+                "r2": 0.6558137102386667,
+                "pearson": 0.8119262036369248,
+                "n_test": 1404
+              },
+              "n_fit": 5615
+            }
+          }
+        }
+      },
+      "sycophancy": {
+        "system": {
+          "A_lmsys": {
+            "h": {
+              "layer": 26,
+              "within_r_dot": {
+                "point": 0.45462463542609266,
+                "lo": 0.3813660779375402,
+                "hi": 0.538148085453849,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.46983903872042787,
+                "lo": 0.39431550309268415,
+                "hi": 0.5505041792448698,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.7383847303974171,
+              "heldout_recon": {
+                "r2": 0.5517644298859751,
+                "mean_cosine": 0.950574916043203,
+                "n_test": 1000
+              },
+              "n_fit": 4000
+            },
+            "g": {
+              "layer": 26,
+              "within_r": {
+                "point": -0.2531446353156638,
+                "lo": -0.39962067087445174,
+                "hi": -0.11727693734799251,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": -0.2849839435068393,
+              "heldout": {
+                "r2": -0.00760410312625126,
+                "pearson": -0.004494342411692853,
+                "n_test": 924
+              },
+              "n_fit": 3694
+            }
+          },
+          "B_behavior": {
+            "h": {
+              "layer": 26,
+              "within_r_dot": {
+                "point": 0.4975370586076919,
+                "lo": 0.39611614545916224,
+                "hi": 0.6061312264567863,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.5071797154075797,
+                "lo": 0.4119927628009261,
+                "hi": 0.6103227536417857,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.8229833317623965,
+              "heldout_recon": {
+                "r2": 0.9146465815689238,
+                "mean_cosine": 0.9964728434523822,
+                "n_test": 480
+              },
+              "n_fit": 1920
+            },
+            "g": {
+              "layer": 26,
+              "within_r": {
+                "point": 0.4621221750711587,
+                "lo": 0.20432685376881018,
+                "hi": 0.7186124452711022,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": 0.8508199520254037,
+              "heldout": {
+                "r2": 0.910055958236078,
+                "pearson": 0.9542527307670865,
+                "n_test": 480
+              },
+              "n_fit": 1920
+            }
+          },
+          "C_concat": {
+            "h": {
+              "layer": 26,
+              "within_r_dot": {
+                "point": 0.5135388598276438,
+                "lo": 0.43379677805715,
+                "hi": 0.5962944206760415,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.523297862665443,
+                "lo": 0.4482491080695805,
+                "hi": 0.6010843622689821,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.807989833012667,
+              "heldout_recon": {
+                "r2": 0.595171348756223,
+                "mean_cosine": 0.9611009870582746,
+                "n_test": 1480
+              },
+              "n_fit": 5920
+            },
+            "g": {
+              "layer": 26,
+              "within_r": {
+                "point": 0.65973264599829,
+                "lo": 0.535391909936828,
+                "hi": 0.7799645820867271,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": 0.8756642904580385,
+              "heldout": {
+                "r2": 0.41034054879174275,
+                "pearson": 0.6414605466603722,
+                "n_test": 1404
+              },
+              "n_fit": 5614
+            }
+          }
+        },
+        "many_shot": {
+          "A_lmsys": {
+            "h": {
+              "layer": 26,
+              "within_r_dot": {
+                "point": 0.551270468826042,
+                "lo": 0.4353125810973279,
+                "hi": 0.6362165921930224,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.5573776875850094,
+                "lo": 0.4458846877893138,
+                "hi": 0.6403952868661494,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.5641921572308808,
+              "heldout_recon": {
+                "r2": 0.5517644298859751,
+                "mean_cosine": 0.950574916043203,
+                "n_test": 1000
+              },
+              "n_fit": 4000
+            },
+            "g": {
+              "layer": 26,
+              "within_r": {
+                "point": -0.26965238728782587,
+                "lo": -0.4477458655729912,
+                "hi": -0.03704463430557237,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": -0.2492012186254378,
+              "heldout": {
+                "r2": -0.00760410312625126,
+                "pearson": -0.004494342411692853,
+                "n_test": 924
+              },
+              "n_fit": 3694
+            }
+          },
+          "B_behavior": {
+            "h": {
+              "layer": 26,
+              "within_r_dot": {
+                "point": 0.505446845345288,
+                "lo": 0.25843993726916015,
+                "hi": 0.6668518965326999,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.5112078131426927,
+                "lo": 0.27353322193341745,
+                "hi": 0.6685090798143886,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.5473563351979798,
+              "heldout_recon": {
+                "r2": 0.9146465815689238,
+                "mean_cosine": 0.9964728434523822,
+                "n_test": 480
+              },
+              "n_fit": 1920
+            },
+            "g": {
+              "layer": 26,
+              "within_r": {
+                "point": 0.30591055605561435,
+                "lo": 0.04514890450685427,
+                "hi": 0.5135630463490239,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": 0.3290083535385175,
+              "heldout": {
+                "r2": 0.910055958236078,
+                "pearson": 0.9542527307670865,
+                "n_test": 480
+              },
+              "n_fit": 1920
+            }
+          },
+          "C_concat": {
+            "h": {
+              "layer": 26,
+              "within_r_dot": {
+                "point": 0.568651793459815,
+                "lo": 0.36818605165039064,
+                "hi": 0.6955010467197796,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.5792338947940975,
+                "lo": 0.38608174010322144,
+                "hi": 0.7015963247777657,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.5927036310844209,
+              "heldout_recon": {
+                "r2": 0.595171348756223,
+                "mean_cosine": 0.9611009870582746,
+                "n_test": 1480
+              },
+              "n_fit": 5920
+            },
+            "g": {
+              "layer": 26,
+              "within_r": {
+                "point": 0.6462404596439217,
+                "lo": 0.5161365548070054,
+                "hi": 0.7526577971167068,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": 0.6818694126590967,
+              "heldout": {
+                "r2": 0.41034054879174275,
+                "pearson": 0.6414605466603722,
+                "n_test": 1404
+              },
+              "n_fit": 5614
+            }
+          }
+        }
+      },
+      "hallucination": {
+        "system": {
+          "A_lmsys": {
+            "h": {
+              "layer": 17,
+              "within_r_dot": {
+                "point": 0.3336719092972873,
+                "lo": 0.2628368274388874,
+                "hi": 0.4035828572639621,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.3215431576686074,
+                "lo": 0.2526875518415738,
+                "hi": 0.38938671007041875,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.4889528958146425,
+              "heldout_recon": {
+                "r2": 0.616755123908924,
+                "mean_cosine": 0.9344286012799732,
+                "n_test": 1000
+              },
+              "n_fit": 4000
+            },
+            "g": {
+              "layer": 17,
+              "within_r": {
+                "point": -0.20043710403673898,
+                "lo": -0.32775883086917723,
+                "hi": -0.07809205842641342,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": -0.33167153000542116,
+              "heldout": {
+                "r2": -0.007332928730015897,
+                "pearson": 0.01515946596724338,
+                "n_test": 919
+              },
+              "n_fit": 3674
+            }
+          },
+          "B_behavior": {
+            "h": {
+              "layer": 17,
+              "within_r_dot": {
+                "point": 0.3361660698024077,
+                "lo": 0.28278767655984677,
+                "hi": 0.39171371076757516,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.3376149979042448,
+                "lo": 0.2849023712996669,
+                "hi": 0.3927364490644148,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.464065722753407,
+              "heldout_recon": {
+                "r2": 0.9298909861490324,
+                "mean_cosine": 0.9941700415345758,
+                "n_test": 480
+              },
+              "n_fit": 1920
+            },
+            "g": {
+              "layer": 17,
+              "within_r": {
+                "point": 0.1395500523539242,
+                "lo": -0.01750540400257772,
+                "hi": 0.2831601503216956,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": 0.060700512579978765,
+              "heldout": {
+                "r2": 0.9200201525307002,
+                "pearson": 0.9592324924759846,
+                "n_test": 480
+              },
+              "n_fit": 1920
+            }
+          },
+          "C_concat": {
+            "h": {
+              "layer": 17,
+              "within_r_dot": {
+                "point": 0.39782164701986267,
+                "lo": 0.3587532596455734,
+                "hi": 0.43184139611052297,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.3971484127902768,
+                "lo": 0.35830352070717975,
+                "hi": 0.43083994718141827,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.5088994341507387,
+              "heldout_recon": {
+                "r2": 0.6557794372207912,
+                "mean_cosine": 0.9486880203545603,
+                "n_test": 1480
+              },
+              "n_fit": 5920
+            },
+            "g": {
+              "layer": 17,
+              "within_r": {
+                "point": 0.17063883160791782,
+                "lo": 0.02058896451154359,
+                "hi": 0.31380028614184297,
+                "n_conditions": 8,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": 0.06589850642530802,
+              "heldout": {
+                "r2": 0.22292057330936876,
+                "pearson": 0.47320029787957757,
+                "n_test": 1399
+              },
+              "n_fit": 5594
+            }
+          }
+        },
+        "many_shot": {
+          "A_lmsys": {
+            "h": {
+              "layer": 27,
+              "within_r_dot": {
+                "point": 0.4331588247803798,
+                "lo": 0.35581293361163907,
+                "hi": 0.5141271735877644,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.43651997619768135,
+                "lo": 0.3537506081788199,
+                "hi": 0.5262000567375581,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.4446391498945292,
+              "heldout_recon": {
+                "r2": 0.5677935026499037,
+                "mean_cosine": 0.792116493472329,
+                "n_test": 1000
+              },
+              "n_fit": 4000
+            },
+            "g": {
+              "layer": 27,
+              "within_r": {
+                "point": -0.3612833775528149,
+                "lo": -0.4574162858239855,
+                "hi": -0.28864120990710695,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": -0.40350747016729843,
+              "heldout": {
+                "r2": -0.004947101327452241,
+                "pearson": -0.013538403670274863,
+                "n_test": 919
+              },
+              "n_fit": 3674
+            }
+          },
+          "B_behavior": {
+            "h": {
+              "layer": 27,
+              "within_r_dot": {
+                "point": 0.4187544268385358,
+                "lo": 0.33160294841837856,
+                "hi": 0.5392636284672279,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.375240730999721,
+                "lo": 0.27575150999538556,
+                "hi": 0.5140948769369741,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.44536468273981655,
+              "heldout_recon": {
+                "r2": 0.9367372653691916,
+                "mean_cosine": 0.982684187605493,
+                "n_test": 480
+              },
+              "n_fit": 1920
+            },
+            "g": {
+              "layer": 27,
+              "within_r": {
+                "point": 0.14807278053038359,
+                "lo": 0.07593148483345807,
+                "hi": 0.22018661069800677,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": 0.13896473693141437,
+              "heldout": {
+                "r2": 0.9157454441573378,
+                "pearson": 0.9573619270619204,
+                "n_test": 480
+              },
+              "n_fit": 1920
+            }
+          },
+          "C_concat": {
+            "h": {
+              "layer": 27,
+              "within_r_dot": {
+                "point": 0.40279547641952435,
+                "lo": 0.3167901739846618,
+                "hi": 0.5220632233234626,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "within_r_cos": {
+                "point": 0.3714428894567034,
+                "lo": 0.27292111307160843,
+                "hi": 0.5050968337947084,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode_dot": 0.4335023656373084,
+              "heldout_recon": {
+                "r2": 0.6137826535222899,
+                "mean_cosine": 0.8310600695361923,
+                "n_test": 1480
+              },
+              "n_fit": 5920
+            },
+            "g": {
+              "layer": 27,
+              "within_r": {
+                "point": -0.14710910650816353,
+                "lo": -0.19912750290520106,
+                "hi": -0.09550644823429676,
+                "n_conditions": 5,
+                "n_boot_valid": 1000
+              },
+              "overall_r_mode": -0.16024851177074445,
+              "heldout": {
+                "r2": 0.1813560540774778,
+                "pearson": 0.4345240430894374,
+                "n_test": 1399
+              },
+              "n_fit": 5594
+            }
+          }
+        }
+      }
+    },
+    "gates": {
+      "batched_mlp": {
+        "agreement_r2": 0.9999999999999076,
+        "max_abs_diff": 5.868223820759688e-07,
+        "ref_sd": 0.3123731315135956,
+        "pass": true
+      },
+      "pca_basis": {
+        "mu_max_abs_diff": 2.220446049250313e-15,
+        "projector_rel_gap": 3.739308293547259e-15,
+        "pass": true
+      }
+    },
+    "fit_info": {
+      "('h', 'A_lmsys', None, 14)": {
+        "epochs_ran": 122,
+        "best_val_mse": 1.4189414978027344,
+        "n_fit": 4000,
+        "n_test": 1000
+      },
+      "('h', 'A_lmsys', None, 17)": {
+        "epochs_ran": 121,
+        "best_val_mse": 1.9201468229293823,
+        "n_fit": 4000,
+        "n_test": 1000
+      },
+      "('h', 'A_lmsys', None, 26)": {
+        "epochs_ran": 168,
+        "best_val_mse": 31.684534072875977,
+        "n_fit": 4000,
+        "n_test": 1000
+      },
+      "('h', 'A_lmsys', None, 27)": {
+        "epochs_ran": 183,
+        "best_val_mse": 78.27250671386719,
+        "n_fit": 4000,
+        "n_test": 1000
+      },
+      "('g', 'A_lmsys', 'evil', 14)": {
+        "epochs_ran": 34,
+        "best_val_mse": 15.957085609436035,
+        "n_fit": 3696,
+        "n_test": 924
+      },
+      "('g', 'A_lmsys', 'evil', 26)": {
+        "epochs_ran": 24,
+        "best_val_mse": 15.336181640625,
+        "n_fit": 3696,
+        "n_test": 924
+      },
+      "('g', 'A_lmsys', 'sycophancy', 26)": {
+        "epochs_ran": 20,
+        "best_val_mse": 409.4761962890625,
+        "n_fit": 3694,
+        "n_test": 924
+      },
+      "('g', 'A_lmsys', 'hallucination', 17)": {
+        "epochs_ran": 20,
+        "best_val_mse": 1163.7171630859375,
+        "n_fit": 3674,
+        "n_test": 919
+      },
+      "('g', 'A_lmsys', 'hallucination', 27)": {
+        "epochs_ran": 20,
+        "best_val_mse": 1155.1846923828125,
+        "n_fit": 3674,
+        "n_test": 919
+      },
+      "('h', 'B_behavior', 'evil', 14)": {
+        "epochs_ran": 184,
+        "best_val_mse": 0.12058824300765991,
+        "n_fit": 1920,
+        "n_test": 480
+      },
+      "('h', 'B_behavior', 'evil', 26)": {
+        "epochs_ran": 300,
+        "best_val_mse": 2.4002392292022705,
+        "n_fit": 1920,
+        "n_test": 480
+      },
+      "('h', 'B_behavior', 'sycophancy', 26)": {
+        "epochs_ran": 300,
+        "best_val_mse": 3.867379903793335,
+        "n_fit": 1920,
+        "n_test": 480
+      },
+      "('h', 'B_behavior', 'hallucination', 17)": {
+        "epochs_ran": 149,
+        "best_val_mse": 0.25886401534080505,
+        "n_fit": 1920,
+        "n_test": 480
+      },
+      "('h', 'B_behavior', 'hallucination', 27)": {
+        "epochs_ran": 300,
+        "best_val_mse": 9.071515083312988,
+        "n_fit": 1920,
+        "n_test": 480
+      },
+      "('g', 'B_behavior', 'evil', 14)": {
+        "epochs_ran": 72,
+        "best_val_mse": 17.591859817504883,
+        "n_fit": 1919,
+        "n_test": 480
+      },
+      "('g', 'B_behavior', 'evil', 26)": {
+        "epochs_ran": 89,
+        "best_val_mse": 8.95175838470459,
+        "n_fit": 1919,
+        "n_test": 480
+      },
+      "('g', 'B_behavior', 'sycophancy', 26)": {
+        "epochs_ran": 129,
+        "best_val_mse": 57.930057525634766,
+        "n_fit": 1920,
+        "n_test": 480
+      },
+      "('g', 'B_behavior', 'hallucination', 17)": {
+        "epochs_ran": 163,
+        "best_val_mse": 51.892059326171875,
+        "n_fit": 1920,
+        "n_test": 480
+      },
+      "('g', 'B_behavior', 'hallucination', 27)": {
+        "epochs_ran": 155,
+        "best_val_mse": 64.0383529663086,
+        "n_fit": 1920,
+        "n_test": 480
+      },
+      "('h', 'C_concat', 'evil', 14)": {
+        "epochs_ran": 154,
+        "best_val_mse": 0.9249863624572754,
+        "n_fit": 5920,
+        "n_test": 1480
+      },
+      "('h', 'C_concat', 'evil', 26)": {
+        "epochs_ran": 215,
+        "best_val_mse": 21.316091537475586,
+        "n_fit": 5920,
+        "n_test": 1480
+      },
+      "('h', 'C_concat', 'sycophancy', 26)": {
+        "epochs_ran": 228,
+        "best_val_mse": 22.12965202331543,
+        "n_fit": 5920,
+        "n_test": 1480
+      },
+      "('h', 'C_concat', 'hallucination', 17)": {
+        "epochs_ran": 151,
+        "best_val_mse": 1.300530195236206,
+        "n_fit": 5920,
+        "n_test": 1480
+      },
+      "('h', 'C_concat', 'hallucination', 27)": {
+        "epochs_ran": 231,
+        "best_val_mse": 51.71385955810547,
+        "n_fit": 5920,
+        "n_test": 1480
+      },
+      "('g', 'C_concat', 'evil', 14)": {
+        "epochs_ran": 41,
+        "best_val_mse": 13.56302261352539,
+        "n_fit": 5615,
+        "n_test": 1404
+      },
+      "('g', 'C_concat', 'evil', 26)": {
+        "epochs_ran": 36,
+        "best_val_mse": 12.45637321472168,
+        "n_fit": 5615,
+        "n_test": 1404
+      },
+      "('g', 'C_concat', 'sycophancy', 26)": {
+        "epochs_ran": 49,
+        "best_val_mse": 237.34678649902344,
+        "n_fit": 5614,
+        "n_test": 1404
+      },
+      "('g', 'C_concat', 'hallucination', 17)": {
+        "epochs_ran": 43,
+        "best_val_mse": 852.9844360351562,
+        "n_fit": 5594,
+        "n_test": 1399
+      },
+      "('g', 'C_concat', 'hallucination', 27)": {
+        "epochs_ran": 38,
+        "best_val_mse": 880.6160888671875,
+        "n_fit": 5594,
+        "n_test": 1399
+      }
+    }
+  },
+  "metadata": {
+    "git_commit": "c2035abd2a254d86a3e670732b3f9c9c97af486a",
+    "timestamp_utc": "2026-07-03T01:41:04.049177Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue779_batch2 d1",
+    "smoke": false
+  },
+  "deviations": [
+    "d1: one fit per group on the 80% split serves BOTH the rig eval and the 20% held-out recon (rig read at 0.8N).",
+    "d1: PCA-64 target basis via covariance/Gram eigh (pca_basis_eigh), not robust_pca_basis full SVD; subspace gated.",
+    "d1: batched bmm AdamW trainer (per-group early-stop snapshots) gated vs fit_h.mlp_fit_predict at prediction-agreement R2 > 0.995."
+  ],
+  "krr": {
+    "traits": {
+      "evil": {
+        "system": {
+          "layer": 14,
+          "gamma": 0.000710335695748652,
+          "n_fit_full": 7400,
+          "within_r_dot": {
+            "point": -0.1354251955966426,
+            "lo": -0.34011816473884343,
+            "hi": 0.04926294706849491,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "within_r_cos": {
+            "point": -0.15015459750569202,
+            "lo": -0.35961805758609205,
+            "hi": 0.037655495558904815,
+            "n_conditions": 4,
+            "n_boot_valid": 997
+          },
+          "overall_r_mode_dot": 0.7131512704029419,
+          "heldout_recon": {
+            "r2": 0.6914760626386552,
+            "mean_cosine": 0.9538680662287035,
+            "n_test": 1480
+          }
+        },
+        "many_shot": {
+          "layer": 26,
+          "gamma": 8.952031626131586e-06,
+          "n_fit_full": 7400,
+          "within_r_dot": {
+            "point": 0.4166569560723921,
+            "lo": 0.22591601153286908,
+            "hi": 0.6182028926639344,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "within_r_cos": {
+            "point": 0.45174470039845455,
+            "lo": 0.2535764141816866,
+            "hi": 0.6503201583370425,
+            "n_conditions": 4,
+            "n_boot_valid": 1000
+          },
+          "overall_r_mode_dot": 0.6464392959257282,
+          "heldout_recon": {
+            "r2": 0.6416855519968554,
+            "mean_cosine": 0.9658321104679078,
+            "n_test": 1480
+          }
+        }
+      },
+      "sycophancy": {
+        "system": {
+          "layer": 26,
+          "gamma": 8.514398153481717e-06,
+          "n_fit_full": 7400,
+          "within_r_dot": {
+            "point": 0.53607296857318,
+            "lo": 0.46867247581979515,
+            "hi": 0.6065007428913776,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "within_r_cos": {
+            "point": 0.5516190072464126,
+            "lo": 0.49208914108628765,
+            "hi": 0.6133086719062781,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "overall_r_mode_dot": 0.8129483353716839,
+          "heldout_recon": {
+            "r2": 0.6395334730257933,
+            "mean_cosine": 0.9652381129401356,
+            "n_test": 1480
+          }
+        },
+        "many_shot": {
+          "layer": 26,
+          "gamma": 8.514398153481717e-06,
+          "n_fit_full": 7400,
+          "within_r_dot": {
+            "point": 0.5552967125872479,
+            "lo": 0.3919274913967052,
+            "hi": 0.663077311373721,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "within_r_cos": {
+            "point": 0.5747943180498829,
+            "lo": 0.42249532549941604,
+            "hi": 0.6780182657380662,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r_mode_dot": 0.5806020526296187,
+          "heldout_recon": {
+            "r2": 0.6395334730257933,
+            "mean_cosine": 0.9652381129401356,
+            "n_test": 1480
+          }
+        }
+      },
+      "hallucination": {
+        "system": {
+          "layer": 17,
+          "gamma": 0.00044603787202651056,
+          "n_fit_full": 7400,
+          "within_r_dot": {
+            "point": 0.38610589404056017,
+            "lo": 0.34015837941963667,
+            "hi": 0.426077145644534,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "within_r_cos": {
+            "point": 0.3831761003209674,
+            "lo": 0.33747835341561355,
+            "hi": 0.42301059593017853,
+            "n_conditions": 8,
+            "n_boot_valid": 1000
+          },
+          "overall_r_mode_dot": 0.5198121559258997,
+          "heldout_recon": {
+            "r2": 0.7005067538326354,
+            "mean_cosine": 0.9554588637296443,
+            "n_test": 1480
+          }
+        },
+        "many_shot": {
+          "layer": 27,
+          "gamma": 6.204773786848206e-06,
+          "n_fit_full": 7400,
+          "within_r_dot": {
+            "point": 0.44733994686082257,
+            "lo": 0.3650366148541419,
+            "hi": 0.5594342132335586,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "within_r_cos": {
+            "point": 0.4484304639726771,
+            "lo": 0.3622023796850438,
+            "hi": 0.5672434764033409,
+            "n_conditions": 5,
+            "n_boot_valid": 1000
+          },
+          "overall_r_mode_dot": 0.4761341848667133,
+          "heldout_recon": {
+            "r2": 0.6511479244684424,
+            "mean_cosine": 0.8553257086169787,
+            "n_test": 1480
+          }
+        }
+      }
+    },
+    "m_landmarks": 1024,
+    "recipe": "RBF Nystrom K_nm @ K_mm^{-1/2}; GCV ridge on features (fit_h.ridge_fit_predict); gamma = 1/median sq-dist"
+  }
+}

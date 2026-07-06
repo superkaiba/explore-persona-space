@@ -1,0 +1,2873 @@
+{
+  "meta": {
+    "issue": 811,
+    "git_commit": "353bb2c5f2852982f1462f564fa9dc9cc847dee6",
+    "generated_at": "2026-07-05T22:16:32Z"
+  },
+  "summaries": [
+    "ans_max_incl_hdr",
+    "ans_max_incl_hdr_alllayer",
+    "ans_mean_incl_hdr",
+    "ans_mean_incl_hdr_alllayer",
+    "maxp",
+    "mean",
+    "pre_user_imstart",
+    "pre_user_max3",
+    "pre_user_mean3",
+    "pre_user_nl",
+    "pre_user_user",
+    "turn_nl"
+  ],
+  "pair_table": {
+    "em/L14": {
+      "behavior": "em",
+      "layer": 14,
+      "ans_max_incl_hdr": {
+        "Delta_med": 0.07625562469101324,
+        "floor_combined": 0.08742124226790055,
+        "Delta_over_floor_sd": 2.582952937539407,
+        "Delta_med_ci": {
+          "point": 0.07625562469101324,
+          "ci_lo": 0.07625562469101324,
+          "ci_hi": 0.07625562469101324,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.17413837644103022,
+          "rho_Mplus_ridge": -0.09391389106017219,
+          "ci_diff_ridge": {
+            "point": 0.08022448538085804,
+            "ci_lo": -0.2625517612491617,
+            "ci_hi": 0.3071086921673183,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.21508756829167114
+      },
+      "ans_max_incl_hdr_alllayer": {
+        "Delta_med": 0.11166978246498535,
+        "floor_combined": 0.496678573201462,
+        "Delta_over_floor_sd": 0.7948123219803952,
+        "Delta_med_ci": {
+          "point": 0.11166978246498535,
+          "ci_lo": 0.11166978246498535,
+          "ci_hi": 0.11166978246498535,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.03612125729626106,
+          "rho_Mplus_ridge": -0.021810151699812517,
+          "ci_diff_ridge": {
+            "point": 0.014311105596448544,
+            "ci_lo": -0.07354693107730541,
+            "ci_hi": 0.12649495105213016,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.054096357095633305
+      },
+      "ans_mean_incl_hdr": {
+        "Delta_med": 0.020234187621076795,
+        "floor_combined": 0.1212479940514948,
+        "Delta_over_floor_sd": 0.534169706056608,
+        "Delta_med_ci": {
+          "point": 0.020234187621076795,
+          "ci_lo": 0.020234187621076795,
+          "ci_hi": 0.020234187621076795,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.0892898872015658,
+          "rho_Mplus_ridge": -0.11312195794586344,
+          "ci_diff_ridge": {
+            "point": -0.023832070744297634,
+            "ci_lo": -0.26368916703772066,
+            "ci_hi": 0.15528241604279966,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.1266449645761166
+      },
+      "ans_mean_incl_hdr_alllayer": {
+        "Delta_med": 0.06557328145303831,
+        "floor_combined": 0.10123488079143055,
+        "Delta_over_floor_sd": 2.2319732828218717,
+        "Delta_med_ci": {
+          "point": 0.06557328145303831,
+          "ci_lo": 0.06557328145303831,
+          "ci_hi": 0.06557328145303831,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.09410916060670432,
+          "rho_Mplus_ridge": -0.0808420515676727,
+          "ci_diff_ridge": {
+            "point": 0.013267109039031624,
+            "ci_lo": -0.23843766644342776,
+            "ci_hi": 0.2089073063112914,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.17721380618414437
+      },
+      "maxp": {
+        "Delta_med": 0.049283732497324845,
+        "floor_combined": 0.10532304724868125,
+        "Delta_over_floor_sd": 1.522226430194862,
+        "Delta_med_ci": {
+          "point": 0.049283732497324845,
+          "ci_lo": 0.049283732497324845,
+          "ci_hi": 0.049283732497324845,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.16418940616817135,
+          "rho_Mplus_ridge": -0.14278580356456616,
+          "ci_diff_ridge": {
+            "point": 0.021403602603605187,
+            "ci_lo": -0.13357202381401914,
+            "ci_hi": 0.16314974033823992,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.18467538625556282
+      },
+      "mean": {
+        "Delta_med": 0.023981585147724,
+        "floor_combined": 0.1247254416788263,
+        "Delta_over_floor_sd": 0.6142717887503172,
+        "Delta_med_ci": {
+          "point": 0.023981585147724,
+          "ci_lo": 0.023981585147724,
+          "ci_hi": 0.023981585147724,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.07973473676012019,
+          "rho_Mplus_ridge": -0.10404855112358412,
+          "ci_diff_ridge": {
+            "point": -0.02431381436346393,
+            "ci_lo": -0.25244723966156646,
+            "ci_hi": 0.15140373868080192,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.1552720312617702
+      },
+      "pre_user_imstart": {
+        "Delta_med": 0.3969402797023501,
+        "floor_combined": 0.38062706869927326,
+        "Delta_over_floor_sd": 3.28110038706699,
+        "Delta_med_ci": {
+          "point": 0.3969402797023501,
+          "ci_lo": 0.3969402797023501,
+          "ci_hi": 0.3969402797023501,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.0476764770647875,
+          "rho_Mplus_ridge": 0.04224777370393981,
+          "ci_diff_ridge": {
+            "point": 0.08992425076872732,
+            "ci_lo": -0.12161853092794556,
+            "ci_hi": 0.35102229964338916,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.005581126464541949
+      },
+      "pre_user_max3": {
+        "Delta_med": 0.04845070909931034,
+        "floor_combined": 0.10237600483522948,
+        "Delta_over_floor_sd": 1.6776678372336333,
+        "Delta_med_ci": {
+          "point": 0.04845070909931034,
+          "ci_lo": 0.04845070909931034,
+          "ci_hi": 0.04845070909931034,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.03815623367937518,
+          "rho_Mplus_ridge": 0.09840285972833397,
+          "ci_diff_ridge": {
+            "point": 0.13655909340770916,
+            "ci_lo": -0.058888680224583406,
+            "ci_hi": 0.32067819601450015,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.0254507214309244
+      },
+      "pre_user_mean3": {
+        "Delta_med": 0.04825731143197111,
+        "floor_combined": 0.1255718642090137,
+        "Delta_over_floor_sd": 1.179114500570878,
+        "Delta_med_ci": {
+          "point": 0.04825731143197111,
+          "ci_lo": 0.04825731143197111,
+          "ci_hi": 0.04825731143197111,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.025764753705690126,
+          "rho_Mplus_ridge": 0.04442237831118712,
+          "ci_diff_ridge": {
+            "point": 0.07018713201687725,
+            "ci_lo": -0.12211079436975257,
+            "ci_hi": 0.23761772539212966,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.03457904781316587
+      },
+      "pre_user_nl": {
+        "Delta_med": 0.055329412460933085,
+        "floor_combined": 0.14922718335950416,
+        "Delta_over_floor_sd": 1.200060517832731,
+        "Delta_med_ci": {
+          "point": 0.055329412460933085,
+          "ci_lo": 0.055329412460933085,
+          "ci_hi": 0.055329412460933085,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": 0.041291044786606126,
+          "rho_Mplus_ridge": 0.07222289577719512,
+          "ci_diff_ridge": {
+            "point": 0.030931850990588997,
+            "ci_lo": -0.19571630763752906,
+            "ci_hi": 0.23856467116351054,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.003937214092627948
+      },
+      "pre_user_user": {
+        "Delta_med": 0.07213148884370252,
+        "floor_combined": 0.19455891563930455,
+        "Delta_over_floor_sd": 1.2948612890064044,
+        "Delta_med_ci": {
+          "point": 0.07213148884370252,
+          "ci_lo": 0.07213148884370252,
+          "ci_hi": 0.07213148884370252,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.03453121464803753,
+          "rho_Mplus_ridge": 0.026794315014371482,
+          "ci_diff_ridge": {
+            "point": 0.06132552966240901,
+            "ci_lo": -0.17672459188043027,
+            "ci_hi": 0.32844583302359665,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.14389620226616678
+      },
+      "turn_nl": {
+        "Delta_med": 0.25272903428296895,
+        "floor_combined": 0.17045602022031384,
+        "Delta_over_floor_sd": 4.424811272056074,
+        "Delta_med_ci": {
+          "point": 0.25272903428296895,
+          "ci_lo": 0.25272903428296895,
+          "ci_hi": 0.25272903428296895,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.025012611631799714,
+          "rho_Mplus_ridge": 0.007537890045416058,
+          "ci_diff_ridge": {
+            "point": 0.03255050167721577,
+            "ci_lo": -0.38049783706008666,
+            "ci_hi": 0.3124880999875617,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.17798681375393438
+      }
+    },
+    "em/L21": {
+      "behavior": "em",
+      "layer": 21,
+      "ans_max_incl_hdr": {
+        "Delta_med": 0.08486751356128991,
+        "floor_combined": 0.3157645462309378,
+        "Delta_over_floor_sd": 0.9755006317344749,
+        "Delta_med_ci": {
+          "point": 0.08486751356128991,
+          "ci_lo": 0.08486751356128991,
+          "ci_hi": 0.08486751356128991,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.12015218653915614,
+          "rho_Mplus_ridge": -0.03098250559069748,
+          "ci_diff_ridge": {
+            "point": 0.08916968094845866,
+            "ci_lo": -0.05147400306495148,
+            "ci_hi": 0.23450770274672503,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.23910828149103597
+      },
+      "ans_max_incl_hdr_alllayer": {
+        "Delta_med": 0.16044933844917278,
+        "floor_combined": 0.569953941588257,
+        "Delta_over_floor_sd": 0.9906450531009693,
+        "Delta_med_ci": {
+          "point": 0.16044933844917278,
+          "ci_lo": 0.16044933844917278,
+          "ci_hi": 0.16044933844917278,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.14086899937678285,
+          "rho_Mplus_ridge": -0.08635999101161304,
+          "ci_diff_ridge": {
+            "point": 0.05450900836516981,
+            "ci_lo": -0.1257172182626952,
+            "ci_hi": 0.2546782659039198,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.20447969452880027
+      },
+      "ans_mean_incl_hdr": {
+        "Delta_med": 0.038468923635814924,
+        "floor_combined": 0.23498543005856115,
+        "Delta_over_floor_sd": 0.6159231113575292,
+        "Delta_med_ci": {
+          "point": 0.038468923635814924,
+          "ci_lo": 0.038468923635814924,
+          "ci_hi": 0.038468923635814924,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.0338198849592086,
+          "rho_Mplus_ridge": -0.04113140405854407,
+          "ci_diff_ridge": {
+            "point": -0.007311519099335466,
+            "ci_lo": -0.20052431606218665,
+            "ci_hi": 0.11599188688912995,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.05271155743852286
+      },
+      "ans_mean_incl_hdr_alllayer": {
+        "Delta_med": 0.019042105218100104,
+        "floor_combined": 0.11096328892348731,
+        "Delta_over_floor_sd": 0.6004072199523197,
+        "Delta_med_ci": {
+          "point": 0.019042105218100104,
+          "ci_lo": 0.019042105218100104,
+          "ci_hi": 0.019042105218100104,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.04587508925212176,
+          "rho_Mplus_ridge": -0.07629757280664594,
+          "ci_diff_ridge": {
+            "point": -0.030422483554524177,
+            "ci_lo": -0.17948080791539,
+            "ci_hi": 0.08294400947771324,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.07439126698157936
+      },
+      "maxp": {
+        "Delta_med": 0.03456518418221971,
+        "floor_combined": 0.3210795776930967,
+        "Delta_over_floor_sd": 0.37124975617019446,
+        "Delta_med_ci": {
+          "point": 0.03456518418221971,
+          "ci_lo": 0.03456518418221971,
+          "ci_hi": 0.03456518418221971,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.09991600186965706,
+          "rho_Mplus_ridge": -0.12035742953026922,
+          "ci_diff_ridge": {
+            "point": -0.02044142766061216,
+            "ci_lo": -0.18505304770301453,
+            "ci_hi": 0.09373608452711245,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.2294848260771643
+      },
+      "mean": {
+        "Delta_med": 0.036647364682812406,
+        "floor_combined": 0.23874482479428077,
+        "Delta_over_floor_sd": 0.5879829179062795,
+        "Delta_med_ci": {
+          "point": 0.036647364682812406,
+          "ci_lo": 0.036647364682812406,
+          "ci_hi": 0.036647364682812406,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.013779232295309606,
+          "rho_Mplus_ridge": -0.029515228171493317,
+          "ci_diff_ridge": {
+            "point": -0.01573599587618371,
+            "ci_lo": -0.20840921996441134,
+            "ci_hi": 0.11353668183643795,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.028364279543899168
+      },
+      "pre_user_imstart": {
+        "Delta_med": 0.8807834150394688,
+        "floor_combined": 0.8946722031242256,
+        "Delta_over_floor_sd": 3.1976193710677006,
+        "Delta_med_ci": {
+          "point": 0.8807834150394688,
+          "ci_lo": 0.8807834150394688,
+          "ci_hi": 0.8807834150394688,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.17779725269212948,
+          "rho_Mplus_ridge": 0.019778127981212486,
+          "ci_diff_ridge": {
+            "point": 0.19757538067334196,
+            "ci_lo": 0.028600390975083795,
+            "ci_hi": 0.32290425368815906,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.16270762788546464
+      },
+      "pre_user_max3": {
+        "Delta_med": 0.6606810061653686,
+        "floor_combined": 0.27059876477834505,
+        "Delta_over_floor_sd": 8.662151594780726,
+        "Delta_med_ci": {
+          "point": 0.6606810061653686,
+          "ci_lo": 0.6606810061653686,
+          "ci_hi": 0.6606810061653686,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.0972451527797409,
+          "rho_Mplus_ridge": 0.11303200010033401,
+          "ci_diff_ridge": {
+            "point": 0.21027715288007492,
+            "ci_lo": -0.07521779365250418,
+            "ci_hi": 0.3857646394594303,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.04154169319646929
+      },
+      "pre_user_mean3": {
+        "Delta_med": 0.1697790408675252,
+        "floor_combined": 0.3771913669150561,
+        "Delta_over_floor_sd": 1.6106706695805835,
+        "Delta_med_ci": {
+          "point": 0.1697790408675252,
+          "ci_lo": 0.1697790408675252,
+          "ci_hi": 0.1697790408675252,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.1414771170371524,
+          "rho_Mplus_ridge": 0.0786960549988286,
+          "ci_diff_ridge": {
+            "point": 0.22017317203598102,
+            "ci_lo": -0.009973786051845075,
+            "ci_hi": 0.3650057451603327,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.09047213407300933
+      },
+      "pre_user_nl": {
+        "Delta_med": 0.5383838840826751,
+        "floor_combined": 0.353224694810135,
+        "Delta_over_floor_sd": 5.336327407670528,
+        "Delta_med_ci": {
+          "point": 0.5383838840826751,
+          "ci_lo": 0.5383838840826751,
+          "ci_hi": 0.5383838840826751,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.017989403818573866,
+          "rho_Mplus_ridge": 0.050751644348833724,
+          "ci_diff_ridge": {
+            "point": 0.06874104816740759,
+            "ci_lo": -0.11127714112424188,
+            "ci_hi": 0.2003154751776848,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.049166457193366715
+      },
+      "pre_user_user": {
+        "Delta_med": 0.5786696459085812,
+        "floor_combined": 0.261094035167067,
+        "Delta_over_floor_sd": 8.18616609983331,
+        "Delta_med_ci": {
+          "point": 0.5786696459085812,
+          "ci_lo": 0.5786696459085812,
+          "ci_hi": 0.5786696459085812,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.10413601560796833,
+          "rho_Mplus_ridge": 0.0662294461169516,
+          "ci_diff_ridge": {
+            "point": 0.17036546172491993,
+            "ci_lo": -0.12736959376219104,
+            "ci_hi": 0.407089448660478,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.10215077521822495
+      },
+      "turn_nl": {
+        "Delta_med": 0.5532481151245836,
+        "floor_combined": 0.41337746826018695,
+        "Delta_over_floor_sd": 4.501239982155778,
+        "Delta_med_ci": {
+          "point": 0.5532481151245836,
+          "ci_lo": 0.5532481151245836,
+          "ci_hi": 0.5532481151245836,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.12694042787182702,
+          "rho_Mplus_ridge": 0.03885148775029403,
+          "ci_diff_ridge": {
+            "point": 0.16579191562212106,
+            "ci_lo": -0.15678243273278614,
+            "ci_hi": 0.4030267323159875,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.22630624992035775
+      }
+    },
+    "em/L7": {
+      "behavior": "em",
+      "layer": 7,
+      "ans_max_incl_hdr": {
+        "Delta_med": 0.027085848053012063,
+        "floor_combined": 0.0741837514556285,
+        "Delta_over_floor_sd": 1.109345519723506,
+        "Delta_med_ci": {
+          "point": 0.027085848053012063,
+          "ci_lo": 0.027085848053012063,
+          "ci_hi": 0.027085848053012063,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.09904398161649441,
+          "rho_Mplus_ridge": -0.063833916589283,
+          "ci_diff_ridge": {
+            "point": 0.03521006502721141,
+            "ci_lo": -0.21920143231661715,
+            "ci_hi": 0.17912185336553665,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.23060198309976382
+      },
+      "ans_max_incl_hdr_alllayer": {
+        "Delta_med": 0.17286125412916253,
+        "floor_combined": 0.5453629004194807,
+        "Delta_over_floor_sd": 1.1154241959752174,
+        "Delta_med_ci": {
+          "point": 0.17286125412916253,
+          "ci_lo": 0.17286125412916253,
+          "ci_hi": 0.17286125412916253,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.1064963100057687,
+          "rho_Mplus_ridge": -0.09817301119960344,
+          "ci_diff_ridge": {
+            "point": 0.008323298806165266,
+            "ci_lo": -0.149968566607582,
+            "ci_hi": 0.14231347249978216,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.21637604547085515
+      },
+      "ans_mean_incl_hdr": {
+        "Delta_med": 0.006348603519081385,
+        "floor_combined": 0.027800080154679822,
+        "Delta_over_floor_sd": 0.803040102804613,
+        "Delta_med_ci": {
+          "point": 0.006348603519081385,
+          "ci_lo": 0.006348603519081385,
+          "ci_hi": 0.006348603519081385,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": 0.12367399354203443,
+          "rho_Mplus_ridge": -0.040482539627879996,
+          "ci_diff_ridge": {
+            "point": -0.1641565331699144,
+            "ci_lo": -0.2385792669766433,
+            "ci_hi": -0.03640880315431658,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.012637010431723786
+      },
+      "ans_mean_incl_hdr_alllayer": {
+        "Delta_med": 0.010792974262805715,
+        "floor_combined": 0.05535580025038021,
+        "Delta_over_floor_sd": 0.6776582557893954,
+        "Delta_med_ci": {
+          "point": 0.010792974262805715,
+          "ci_lo": 0.010792974262805715,
+          "ci_hi": 0.010792974262805715,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": 0.09045835497194356,
+          "rho_Mplus_ridge": 0.056167421600586374,
+          "ci_diff_ridge": {
+            "point": -0.034290933371357184,
+            "ci_lo": -0.2395918284416724,
+            "ci_hi": 0.15250371338806912,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.06594192220804573
+      },
+      "maxp": {
+        "Delta_med": 0.010299959405401288,
+        "floor_combined": 0.08851354185948888,
+        "Delta_over_floor_sd": 0.3908993220801326,
+        "Delta_med_ci": {
+          "point": 0.010299959405401288,
+          "ci_lo": 0.010299959405401288,
+          "ci_hi": 0.010299959405401288,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.08881129309121452,
+          "rho_Mplus_ridge": -0.01782831956563825,
+          "ci_diff_ridge": {
+            "point": 0.07098297352557627,
+            "ci_lo": -0.1583434612087612,
+            "ci_hi": 0.2270764194315629,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.24437465391837537
+      },
+      "mean": {
+        "Delta_med": 0.0070161102375136605,
+        "floor_combined": 0.02862600449401533,
+        "Delta_over_floor_sd": 0.865500422445444,
+        "Delta_med_ci": {
+          "point": 0.0070161102375136605,
+          "ci_lo": 0.007016110237513659,
+          "ci_hi": 0.007016110237513665,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": 0.14163905428205875,
+          "rho_Mplus_ridge": -0.03342862410370756,
+          "ci_diff_ridge": {
+            "point": -0.1750676783857663,
+            "ci_lo": -0.2535651468395314,
+            "ci_hi": -0.04732681839555592,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.06118078348645138
+      },
+      "pre_user_imstart": {
+        "Delta_med": 0.24272282524690592,
+        "floor_combined": 0.0787132326298701,
+        "Delta_over_floor_sd": 10.482733036121848,
+        "Delta_med_ci": {
+          "point": 0.24272282524690592,
+          "ci_lo": 0.24272282524690592,
+          "ci_hi": 0.24272282524690592,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.06657595770137235,
+          "rho_Mplus_ridge": -0.02685448375569204,
+          "ci_diff_ridge": {
+            "point": 0.03972147394568032,
+            "ci_lo": -0.1758429926307648,
+            "ci_hi": 0.24101191467110467,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.09248309545140884
+      },
+      "pre_user_max3": {
+        "Delta_med": 0.03885350233962464,
+        "floor_combined": 0.04050451170996292,
+        "Delta_over_floor_sd": 3.3635953669362086,
+        "Delta_med_ci": {
+          "point": 0.03885350233962464,
+          "ci_lo": 0.03885350233962464,
+          "ci_hi": 0.03885350233962464,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": 0.11551177898880478,
+          "rho_Mplus_ridge": 0.03371463887297287,
+          "ci_diff_ridge": {
+            "point": -0.08179714011583192,
+            "ci_lo": -0.36545424398878923,
+            "ci_hi": 0.2996658897097568,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.04142896702679785
+      },
+      "pre_user_mean3": {
+        "Delta_med": 0.06733396760330855,
+        "floor_combined": 0.03572495199664999,
+        "Delta_over_floor_sd": 7.023254861983331,
+        "Delta_med_ci": {
+          "point": 0.06733396760330855,
+          "ci_lo": 0.06733396760330855,
+          "ci_hi": 0.06733396760330855,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": 0.02343063959991471,
+          "rho_Mplus_ridge": 0.05011295020705153,
+          "ci_diff_ridge": {
+            "point": 0.02668231060713682,
+            "ci_lo": -0.18180075799157447,
+            "ci_hi": 0.2672156033718798,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.0722171216777009
+      },
+      "pre_user_nl": {
+        "Delta_med": 0.1007276867347966,
+        "floor_combined": 0.07079806747050323,
+        "Delta_over_floor_sd": 4.5138885331280845,
+        "Delta_med_ci": {
+          "point": 0.1007276867347966,
+          "ci_lo": 0.1007276867347966,
+          "ci_hi": 0.1007276867347966,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": 0.14080705903675383,
+          "rho_Mplus_ridge": 0.1021557619405154,
+          "ci_diff_ridge": {
+            "point": -0.038651297096238435,
+            "ci_lo": -0.2498546339532084,
+            "ci_hi": 0.22673312810425456,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.010639893769157055
+      },
+      "pre_user_user": {
+        "Delta_med": 0.16989808348163482,
+        "floor_combined": 0.06836281030633132,
+        "Delta_over_floor_sd": 8.845662430131865,
+        "Delta_med_ci": {
+          "point": 0.16989808348163482,
+          "ci_lo": 0.16989808348163482,
+          "ci_hi": 0.16989808348163482,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": 0.06480389968954663,
+          "rho_Mplus_ridge": 0.036037729697895676,
+          "ci_diff_ridge": {
+            "point": -0.02876616999165095,
+            "ci_lo": -0.2251555022749223,
+            "ci_hi": 0.21870109129021648,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.15434049841495678
+      },
+      "turn_nl": {
+        "Delta_med": 0.08912658001215013,
+        "floor_combined": 0.03685316257406735,
+        "Delta_over_floor_sd": 8.636404388264248,
+        "Delta_med_ci": {
+          "point": 0.08912658001215013,
+          "ci_lo": 0.08912658001215013,
+          "ci_hi": 0.08912658001215013,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": 0.25892453165186374,
+          "rho_Mplus_ridge": 0.13832275272936145,
+          "ci_diff_ridge": {
+            "point": -0.12060177892250229,
+            "ci_lo": -0.31955274560913544,
+            "ci_hi": 0.15491852698445657,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.18084315579010268
+      }
+    },
+    "fact/L14": {
+      "behavior": "fact",
+      "layer": 14,
+      "ans_max_incl_hdr": {
+        "Delta_med": 0.19419718512318807,
+        "floor_combined": 0.21940234223297558,
+        "Delta_over_floor_sd": 3.0921552398725853,
+        "Delta_med_ci": {
+          "point": 0.19419718512318807,
+          "ci_lo": 0.19419718512318807,
+          "ci_hi": 0.19419718512318807,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.2180596041737911,
+          "rho_Mplus_ridge": 0.4522140426818996,
+          "ci_diff_ridge": {
+            "point": 0.6702736468556907,
+            "ci_lo": 0.585438470198075,
+            "ci_hi": 0.7462522448679171,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.14590051084205322
+      },
+      "ans_max_incl_hdr_alllayer": {
+        "Delta_med": 0.45923131576970055,
+        "floor_combined": 0.2696889049059114,
+        "Delta_over_floor_sd": 5.321244644505414,
+        "Delta_med_ci": {
+          "point": 0.45923131576970055,
+          "ci_lo": 0.45923131576970055,
+          "ci_hi": 0.45923131576970055,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.18759520887796122,
+          "rho_Mplus_ridge": 0.30025773875956474,
+          "ci_diff_ridge": {
+            "point": 0.48785294763752596,
+            "ci_lo": 0.3020398098504682,
+            "ci_hi": 0.5899637381621856,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.10041487443455643
+      },
+      "ans_mean_incl_hdr": {
+        "Delta_med": 0.32006291734259196,
+        "floor_combined": 0.14131455285160277,
+        "Delta_over_floor_sd": 7.549623095687208,
+        "Delta_med_ci": {
+          "point": 0.32006291734259196,
+          "ci_lo": 0.32006291734259196,
+          "ci_hi": 0.32006291734259196,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.1803461886237105,
+          "rho_Mplus_ridge": 0.43945541757878687,
+          "ci_diff_ridge": {
+            "point": 0.6198016062024974,
+            "ci_lo": 0.47713125039523646,
+            "ci_hi": 0.7128475697631403,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.09683311801983752
+      },
+      "ans_mean_incl_hdr_alllayer": {
+        "Delta_med": 0.10743085143513852,
+        "floor_combined": 0.08600644505418538,
+        "Delta_over_floor_sd": 3.9466183506279284,
+        "Delta_med_ci": {
+          "point": 0.10743085143513852,
+          "ci_lo": 0.10743085143513852,
+          "ci_hi": 0.10743085143513852,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.1754348081338841,
+          "rho_Mplus_ridge": 0.3947673590475619,
+          "ci_diff_ridge": {
+            "point": 0.570202167181446,
+            "ci_lo": 0.3988297731325384,
+            "ci_hi": 0.6993770081556644,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.12197590467602043
+      },
+      "maxp": {
+        "Delta_med": 0.27368676642961665,
+        "floor_combined": 0.07648511064120254,
+        "Delta_over_floor_sd": 10.091817901340185,
+        "Delta_med_ci": {
+          "point": 0.27368676642961665,
+          "ci_lo": 0.27368676642961665,
+          "ci_hi": 0.27368676642961665,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.1404918113067635,
+          "rho_Mplus_ridge": 0.5166566096474787,
+          "ci_diff_ridge": {
+            "point": 0.6571484209542422,
+            "ci_lo": 0.5460040243348963,
+            "ci_hi": 0.7895912340691544,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.060280058973395646
+      },
+      "mean": {
+        "Delta_med": 0.300946482070061,
+        "floor_combined": 0.11313192590375895,
+        "Delta_over_floor_sd": 8.370493991152221,
+        "Delta_med_ci": {
+          "point": 0.300946482070061,
+          "ci_lo": 0.300946482070061,
+          "ci_hi": 0.300946482070061,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.17571273456574715,
+          "rho_Mplus_ridge": 0.5052118285136172,
+          "ci_diff_ridge": {
+            "point": 0.6809245630793643,
+            "ci_lo": 0.5488709332583428,
+            "ci_hi": 0.7684926568876517,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.04621239491596377
+      },
+      "pre_user_imstart": {
+        "Delta_med": 1.1641330177232265,
+        "floor_combined": 0.8066465411995034,
+        "Delta_over_floor_sd": 5.135677767112733,
+        "Delta_med_ci": {
+          "point": 1.1641330177232265,
+          "ci_lo": 1.1641330177232265,
+          "ci_hi": 1.1641330177232265,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.2573078397775531,
+          "rho_Mplus_ridge": -0.2487533843301823,
+          "ci_diff_ridge": {
+            "point": 0.008554455447370823,
+            "ci_lo": -0.15511463187611932,
+            "ci_hi": 0.15313589855962964,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.1324554784354139
+      },
+      "pre_user_max3": {
+        "Delta_med": 0.10429104129311631,
+        "floor_combined": 0.48591616074025873,
+        "Delta_over_floor_sd": 0.7911292059775281,
+        "Delta_med_ci": {
+          "point": 0.10429104129311631,
+          "ci_lo": 0.10429104129311631,
+          "ci_hi": 0.10429104129311631,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.27088244378002957,
+          "rho_Mplus_ridge": -0.33033576717290686,
+          "ci_diff_ridge": {
+            "point": -0.05945332339287729,
+            "ci_lo": -0.24524506235864765,
+            "ci_hi": 0.12048079204180412,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.2264438638081724
+      },
+      "pre_user_mean3": {
+        "Delta_med": 0.35201851092879965,
+        "floor_combined": 0.44260719197671256,
+        "Delta_over_floor_sd": 2.9357388465442336,
+        "Delta_med_ci": {
+          "point": 0.35201851092879965,
+          "ci_lo": 0.35201851092879965,
+          "ci_hi": 0.35201851092879965,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.25605717083416946,
+          "rho_Mplus_ridge": -0.26264375425711134,
+          "ci_diff_ridge": {
+            "point": -0.006586583422941883,
+            "ci_lo": -0.1596649323768527,
+            "ci_hi": 0.1595678667302617,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.2714878756614632
+      },
+      "pre_user_nl": {
+        "Delta_med": 0.09941883790329221,
+        "floor_combined": 0.19865430177461538,
+        "Delta_over_floor_sd": 1.5326410254771599,
+        "Delta_med_ci": {
+          "point": 0.09941883790329221,
+          "ci_lo": 0.09941883790329221,
+          "ci_hi": 0.09941883790329221,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.1678734619090525,
+          "rho_Mplus_ridge": -0.055239871321925864,
+          "ci_diff_ridge": {
+            "point": 0.11263359058712663,
+            "ci_lo": -0.021212225388697742,
+            "ci_hi": 0.2802050356574153,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.2612585448956313
+      },
+      "pre_user_user": {
+        "Delta_med": 0.10120751615470544,
+        "floor_combined": 0.2580410117681372,
+        "Delta_over_floor_sd": 1.3829531790795728,
+        "Delta_med_ci": {
+          "point": 0.10120751615470544,
+          "ci_lo": 0.10120751615470544,
+          "ci_hi": 0.10120751615470544,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.03887562853676134,
+          "rho_Mplus_ridge": -0.3722223381914409,
+          "ci_diff_ridge": {
+            "point": -0.33334670965467955,
+            "ci_lo": -0.573640360745874,
+            "ci_hi": -0.042826112073635396,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.021819572806271732
+      },
+      "turn_nl": {
+        "Delta_med": 0.03420488185117404,
+        "floor_combined": 0.24780576703022514,
+        "Delta_over_floor_sd": 0.4745149312172585,
+        "Delta_med_ci": {
+          "point": 0.03420488185117404,
+          "ci_lo": 0.03420488185117404,
+          "ci_hi": 0.03420488185117404,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.1756722195534795,
+          "rho_Mplus_ridge": 0.23552102843672695,
+          "ci_diff_ridge": {
+            "point": 0.41119324799020646,
+            "ci_lo": 0.27799895614041364,
+            "ci_hi": 0.6210736699572016,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.11873688779230432
+      }
+    },
+    "fact/L21": {
+      "behavior": "fact",
+      "layer": 21,
+      "ans_max_incl_hdr": {
+        "Delta_med": 0.15364690849630186,
+        "floor_combined": 0.1285554822030881,
+        "Delta_over_floor_sd": 4.172270884582823,
+        "Delta_med_ci": {
+          "point": 0.15364690849630186,
+          "ci_lo": 0.15364690849630186,
+          "ci_hi": 0.15364690849630186,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.23647635276911902,
+          "rho_Mplus_ridge": 0.22650616519496136,
+          "ci_diff_ridge": {
+            "point": 0.4629825179640804,
+            "ci_lo": 0.38301981967836646,
+            "ci_hi": 0.5487441275764863,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.16212721007478886
+      },
+      "ans_max_incl_hdr_alllayer": {
+        "Delta_med": 0.13488300042365814,
+        "floor_combined": 0.21227837475132852,
+        "Delta_over_floor_sd": 2.1093961921755966,
+        "Delta_med_ci": {
+          "point": 0.13488300042365814,
+          "ci_lo": 0.13488300042365814,
+          "ci_hi": 0.13488300042365814,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.2315689582575885,
+          "rho_Mplus_ridge": 0.44092072872328125,
+          "ci_diff_ridge": {
+            "point": 0.6724896869808697,
+            "ci_lo": 0.4963282633760165,
+            "ci_hi": 0.7808152545565566,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.07192244634633627
+      },
+      "ans_mean_incl_hdr": {
+        "Delta_med": 0.21020927750257148,
+        "floor_combined": 0.08724618139288161,
+        "Delta_over_floor_sd": 8.610337368974596,
+        "Delta_med_ci": {
+          "point": 0.21020927750257148,
+          "ci_lo": 0.21020927750257148,
+          "ci_hi": 0.21020927750257148,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.19111635658160592,
+          "rho_Mplus_ridge": 0.4761958176051348,
+          "ci_diff_ridge": {
+            "point": 0.6673121741867407,
+            "ci_lo": 0.5027554222361719,
+            "ci_hi": 0.7756004410099795,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.14172882963954483
+      },
+      "ans_mean_incl_hdr_alllayer": {
+        "Delta_med": 0.12031401808789485,
+        "floor_combined": 0.050530186310576264,
+        "Delta_over_floor_sd": 8.160550733972444,
+        "Delta_med_ci": {
+          "point": 0.12031401808789485,
+          "ci_lo": 0.12031401808789485,
+          "ci_hi": 0.12031401808789485,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.17171703703512373,
+          "rho_Mplus_ridge": 0.4570749159124974,
+          "ci_diff_ridge": {
+            "point": 0.6287919529476211,
+            "ci_lo": 0.47323015460182755,
+            "ci_hi": 0.73993814437225,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.11795055801916882
+      },
+      "maxp": {
+        "Delta_med": 0.1314307279792685,
+        "floor_combined": 0.16186881559341232,
+        "Delta_over_floor_sd": 2.820952504357226,
+        "Delta_med_ci": {
+          "point": 0.1314307279792685,
+          "ci_lo": 0.1314307279792685,
+          "ci_hi": 0.1314307279792685,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.1782623410116042,
+          "rho_Mplus_ridge": 0.36331471414656713,
+          "ci_diff_ridge": {
+            "point": 0.5415770551581713,
+            "ci_lo": 0.46280799559340163,
+            "ci_hi": 0.6113593210517755,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.07667400548723077
+      },
+      "mean": {
+        "Delta_med": 0.13264695699736567,
+        "floor_combined": 0.0962098571806274,
+        "Delta_over_floor_sd": 4.715585863721011,
+        "Delta_med_ci": {
+          "point": 0.13264695699736567,
+          "ci_lo": 0.13264695699736567,
+          "ci_hi": 0.13264695699736567,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.18923628528457093,
+          "rho_Mplus_ridge": 0.4961880104712965,
+          "ci_diff_ridge": {
+            "point": 0.6854242957558674,
+            "ci_lo": 0.5153294061147495,
+            "ci_hi": 0.8008045784503982,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.1360748013305104
+      },
+      "pre_user_imstart": {
+        "Delta_med": 2.5283500309385656,
+        "floor_combined": 0.9634370830117287,
+        "Delta_over_floor_sd": 10.147641679707721,
+        "Delta_med_ci": {
+          "point": 2.5283500309385656,
+          "ci_lo": 2.5283500309385656,
+          "ci_hi": 2.5283500309385656,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.2440062479871229,
+          "rho_Mplus_ridge": -0.21335915291899166,
+          "ci_diff_ridge": {
+            "point": 0.030647095068131236,
+            "ci_lo": -0.1448801720940946,
+            "ci_hi": 0.1856862937679423,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.11399395583731045
+      },
+      "pre_user_max3": {
+        "Delta_med": 0.5952561478790745,
+        "floor_combined": 0.30294719872655745,
+        "Delta_over_floor_sd": 7.975343067525734,
+        "Delta_med_ci": {
+          "point": 0.5952561478790745,
+          "ci_lo": 0.5952561478790745,
+          "ci_hi": 0.5952561478790745,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.26058103779021746,
+          "rho_Mplus_ridge": -0.24511222045812206,
+          "ci_diff_ridge": {
+            "point": 0.015468817332095403,
+            "ci_lo": -0.1169055349793558,
+            "ci_hi": 0.09146497776044657,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.2311731997550064
+      },
+      "pre_user_mean3": {
+        "Delta_med": 0.831554858389949,
+        "floor_combined": 0.35569682041880335,
+        "Delta_over_floor_sd": 9.167850734398069,
+        "Delta_med_ci": {
+          "point": 0.831554858389949,
+          "ci_lo": 0.831554858389949,
+          "ci_hi": 0.831554858389949,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.24515923316103638,
+          "rho_Mplus_ridge": -0.2514369305672692,
+          "ci_diff_ridge": {
+            "point": -0.006277697406232796,
+            "ci_lo": -0.18393491015924382,
+            "ci_hi": 0.12399007486302646,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.18914373414468727
+      },
+      "pre_user_nl": {
+        "Delta_med": 0.18060718638631365,
+        "floor_combined": 0.25995501185569014,
+        "Delta_over_floor_sd": 2.301965170811622,
+        "Delta_med_ci": {
+          "point": 0.18060718638631365,
+          "ci_lo": 0.18060718638631365,
+          "ci_hi": 0.18060718638631365,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.1442553938547052,
+          "rho_Mplus_ridge": 0.172848235834516,
+          "ci_diff_ridge": {
+            "point": 0.31710362968922123,
+            "ci_lo": 0.12377669586766193,
+            "ci_hi": 0.4597665304752669,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.13626754795221502
+      },
+      "pre_user_user": {
+        "Delta_med": 0.05791780771657144,
+        "floor_combined": 0.08948399969511696,
+        "Delta_over_floor_sd": 2.499849734209074,
+        "Delta_med_ci": {
+          "point": 0.05791780771657144,
+          "ci_lo": 0.05791780771657144,
+          "ci_hi": 0.05791780771657144,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": 0.04639673276153734,
+          "rho_Mplus_ridge": -0.4028653926788339,
+          "ci_diff_ridge": {
+            "point": -0.44926212544037125,
+            "ci_lo": -0.6313133285722732,
+            "ci_hi": -0.24449767806322126,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.19985367560860534
+      },
+      "turn_nl": {
+        "Delta_med": 0.10251558716939493,
+        "floor_combined": 0.23618199582769117,
+        "Delta_over_floor_sd": 1.4103250349436558,
+        "Delta_med_ci": {
+          "point": 0.10251558716939493,
+          "ci_lo": 0.10251558716939493,
+          "ci_hi": 0.10251558716939493,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.040949866119003565,
+          "rho_Mplus_ridge": -0.07256468027395377,
+          "ci_diff_ridge": {
+            "point": -0.031614814154950203,
+            "ci_lo": -0.16801953851780682,
+            "ci_hi": 0.19933783183580786,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.1618580200337113
+      }
+    },
+    "fact/L7": {
+      "behavior": "fact",
+      "layer": 7,
+      "ans_max_incl_hdr": {
+        "Delta_med": 0.09956241203646153,
+        "floor_combined": 0.04621950880477254,
+        "Delta_over_floor_sd": 6.943062066030427,
+        "Delta_med_ci": {
+          "point": 0.09956241203646153,
+          "ci_lo": 0.09956241203646153,
+          "ci_hi": 0.09956241203646153,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.14681641221102582,
+          "rho_Mplus_ridge": 0.21612165428780236,
+          "ci_diff_ridge": {
+            "point": 0.3629380664988282,
+            "ci_lo": 0.269477351231038,
+            "ci_hi": 0.4519296536497079,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.05043218087023464
+      },
+      "ans_max_incl_hdr_alllayer": {
+        "Delta_med": 0.11646925876997347,
+        "floor_combined": 0.2239325136101346,
+        "Delta_over_floor_sd": 1.8041598459248929,
+        "Delta_med_ci": {
+          "point": 0.11646925876997347,
+          "ci_lo": 0.11646925876997347,
+          "ci_hi": 0.11646925876997347,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.17750533275004252,
+          "rho_Mplus_ridge": 0.22714141000995047,
+          "ci_diff_ridge": {
+            "point": 0.404646742759993,
+            "ci_lo": 0.26088299666826326,
+            "ci_hi": 0.4711503312928819,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.0636171418436788
+      },
+      "ans_mean_incl_hdr": {
+        "Delta_med": 0.10340454151153551,
+        "floor_combined": 0.032243989861338515,
+        "Delta_over_floor_sd": 10.59616073565559,
+        "Delta_med_ci": {
+          "point": 0.10340454151153551,
+          "ci_lo": 0.10340454151153551,
+          "ci_hi": 0.10340454151153551,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.19596215953809876,
+          "rho_Mplus_ridge": 0.06244695690040634,
+          "ci_diff_ridge": {
+            "point": 0.2584091164385051,
+            "ci_lo": 0.11777345620073934,
+            "ci_hi": 0.36112386795280116,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.07858121419814314
+      },
+      "ans_mean_incl_hdr_alllayer": {
+        "Delta_med": 0.05080053938034691,
+        "floor_combined": 0.023504939348784032,
+        "Delta_over_floor_sd": 8.063924330507339,
+        "Delta_med_ci": {
+          "point": 0.05080053938034691,
+          "ci_lo": 0.05080053938034691,
+          "ci_hi": 0.05080053938034691,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.17647733256680376,
+          "rho_Mplus_ridge": 0.31685939296432464,
+          "ci_diff_ridge": {
+            "point": 0.4933367255311284,
+            "ci_lo": 0.34200707253056933,
+            "ci_hi": 0.6064056023932981,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.14536185774768606
+      },
+      "maxp": {
+        "Delta_med": 0.06316831839802596,
+        "floor_combined": 0.03517943964534291,
+        "Delta_over_floor_sd": 6.566524341334081,
+        "Delta_med_ci": {
+          "point": 0.06316831839802596,
+          "ci_lo": 0.06316831839802596,
+          "ci_hi": 0.06316831839802596,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.13547985311801933,
+          "rho_Mplus_ridge": 0.31373995542948474,
+          "ci_diff_ridge": {
+            "point": 0.4492198085475041,
+            "ci_lo": 0.38401454098912435,
+            "ci_hi": 0.5216851720234925,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.05290408804054336
+      },
+      "mean": {
+        "Delta_med": 0.11018122874973632,
+        "floor_combined": 0.03381643206249123,
+        "Delta_over_floor_sd": 11.033489309651895,
+        "Delta_med_ci": {
+          "point": 0.11018122874973632,
+          "ci_lo": 0.11018122874973632,
+          "ci_hi": 0.11018122874973632,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.1893630175534028,
+          "rho_Mplus_ridge": 0.11289546390092135,
+          "ci_diff_ridge": {
+            "point": 0.30225848145432416,
+            "ci_lo": 0.17656627998587365,
+            "ci_hi": 0.40371402465433526,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.07689847612797515
+      },
+      "pre_user_imstart": {
+        "Delta_med": 0.21356382020527917,
+        "floor_combined": 0.08437532160642891,
+        "Delta_over_floor_sd": 9.341145709757102,
+        "Delta_med_ci": {
+          "point": 0.21356382020527917,
+          "ci_lo": 0.21356382020527917,
+          "ci_hi": 0.21356382020527917,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.26570913537396607,
+          "rho_Mplus_ridge": -0.40256071105019037,
+          "ci_diff_ridge": {
+            "point": -0.1368515756762243,
+            "ci_lo": -0.34178622694547106,
+            "ci_hi": 0.11949318141468224,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.18980966553231038
+      },
+      "pre_user_max3": {
+        "Delta_med": 0.08218245476942111,
+        "floor_combined": 0.04338928797730473,
+        "Delta_over_floor_sd": 6.564939965330593,
+        "Delta_med_ci": {
+          "point": 0.08218245476942111,
+          "ci_lo": 0.08218245476942111,
+          "ci_hi": 0.08218245476942111,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.2584908562947917,
+          "rho_Mplus_ridge": -0.30290333629917726,
+          "ci_diff_ridge": {
+            "point": -0.04441248000438558,
+            "ci_lo": -0.25550779491897113,
+            "ci_hi": 0.18008280383629188,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.25818486420753034
+      },
+      "pre_user_mean3": {
+        "Delta_med": 0.09112349361493077,
+        "floor_combined": 0.040852405528383796,
+        "Delta_over_floor_sd": 7.901629629954258,
+        "Delta_med_ci": {
+          "point": 0.09112349361493077,
+          "ci_lo": 0.09112349361493077,
+          "ci_hi": 0.09112349361493077,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.23316542446874988,
+          "rho_Mplus_ridge": -0.38558077112441924,
+          "ci_diff_ridge": {
+            "point": -0.15241534665566936,
+            "ci_lo": -0.3451097997201314,
+            "ci_hi": 0.12203382907502096,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.147462741321824
+      },
+      "pre_user_nl": {
+        "Delta_med": 0.019075120677117474,
+        "floor_combined": 0.03925466528774046,
+        "Delta_over_floor_sd": 1.48724719196202,
+        "Delta_med_ci": {
+          "point": 0.019075120677117474,
+          "ci_lo": 0.019075120677117474,
+          "ci_hi": 0.019075120677117474,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.13416890307821586,
+          "rho_Mplus_ridge": 0.2577935831052257,
+          "ci_diff_ridge": {
+            "point": 0.39196248618344154,
+            "ci_lo": 0.2048038735827496,
+            "ci_hi": 0.5654845315460051,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.22673249231874765
+      },
+      "pre_user_user": {
+        "Delta_med": 0.09642867645817593,
+        "floor_combined": 0.028612790797706535,
+        "Delta_over_floor_sd": 11.549033277343117,
+        "Delta_med_ci": {
+          "point": 0.09642867645817593,
+          "ci_lo": 0.09642867645817593,
+          "ci_hi": 0.09642867645817593,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.003459064726625379,
+          "rho_Mplus_ridge": 0.04459665404263191,
+          "ci_diff_ridge": {
+            "point": 0.048055718769257294,
+            "ci_lo": -0.04883493593427604,
+            "ci_hi": 0.16158772613319516,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.012801979442385685
+      },
+      "turn_nl": {
+        "Delta_med": 0.11267454510703476,
+        "floor_combined": 0.04121594696907931,
+        "Delta_over_floor_sd": 9.813640868609863,
+        "Delta_med_ci": {
+          "point": 0.11267454510703476,
+          "ci_lo": 0.11267454510703476,
+          "ci_hi": 0.11267454510703476,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.20269016328688055,
+          "rho_Mplus_ridge": -0.1309089188566146,
+          "ci_diff_ridge": {
+            "point": 0.07178124443026596,
+            "ci_lo": -0.08999227724145055,
+            "ci_hi": 0.27963514759389124,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.3358702707355075
+      }
+    },
+    "sycophancy/L14": {
+      "behavior": "sycophancy",
+      "layer": 14,
+      "ans_max_incl_hdr": {
+        "Delta_med": 0.03518700801670068,
+        "floor_combined": 0.040959742575539984,
+        "Delta_over_floor_sd": 2.819490420114561,
+        "Delta_med_ci": {
+          "point": 0.03518700801670068,
+          "ci_lo": 0.03518700801670068,
+          "ci_hi": 0.03518700801670068,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.08687120681533574,
+          "rho_Mplus_ridge": -0.08305392360916296,
+          "ci_diff_ridge": {
+            "point": 0.003817283206172778,
+            "ci_lo": -0.20590498614541508,
+            "ci_hi": 0.19453025588502798,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.011996667350419238
+      },
+      "ans_max_incl_hdr_alllayer": {
+        "Delta_med": 0.040568907562356565,
+        "floor_combined": 0.22385177983139978,
+        "Delta_over_floor_sd": 0.674071705695907,
+        "Delta_med_ci": {
+          "point": 0.040568907562356565,
+          "ci_lo": 0.040568907562356565,
+          "ci_hi": 0.040568907562356565,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.06819820050366665,
+          "rho_Mplus_ridge": 0.07038798184786002,
+          "ci_diff_ridge": {
+            "point": 0.13858618235152667,
+            "ci_lo": -0.08390310065027627,
+            "ci_hi": 0.48257267072133464,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.013916014007439581
+      },
+      "ans_mean_incl_hdr": {
+        "Delta_med": 0.014358963916713416,
+        "floor_combined": 0.024174575922837355,
+        "Delta_over_floor_sd": 2.2367435407794414,
+        "Delta_med_ci": {
+          "point": 0.014358963916713416,
+          "ci_lo": 0.014358963916713416,
+          "ci_hi": 0.014358963916713416,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.058602134546602395,
+          "rho_Mplus_ridge": -0.1128426130404894,
+          "ci_diff_ridge": {
+            "point": -0.054240478493887,
+            "ci_lo": -0.1745137859650945,
+            "ci_hi": 0.0670477780585437,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.03170803608834677
+      },
+      "ans_mean_incl_hdr_alllayer": {
+        "Delta_med": 0.015210833149706424,
+        "floor_combined": 0.05287873312819495,
+        "Delta_over_floor_sd": 1.0830396253815548,
+        "Delta_med_ci": {
+          "point": 0.015210833149706424,
+          "ci_lo": 0.015210833149706424,
+          "ci_hi": 0.015210833149706424,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.09989433590867905,
+          "rho_Mplus_ridge": -0.07370688223140383,
+          "ci_diff_ridge": {
+            "point": 0.02618745367727522,
+            "ci_lo": -0.16085401347824807,
+            "ci_hi": 0.21427929206998386,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.07549354183031295
+      },
+      "maxp": {
+        "Delta_med": 0.008500070906845923,
+        "floor_combined": 0.04188651188402923,
+        "Delta_over_floor_sd": 0.7850555487827966,
+        "Delta_med_ci": {
+          "point": 0.008500070906845923,
+          "ci_lo": 0.008500070906845923,
+          "ci_hi": 0.008500070906845923,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.06603010732069012,
+          "rho_Mplus_ridge": -0.15003564071124414,
+          "ci_diff_ridge": {
+            "point": -0.08400553339055403,
+            "ci_lo": -0.3220649643091333,
+            "ci_hi": 0.1766573205704495,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.05270417813035787
+      },
+      "mean": {
+        "Delta_med": 0.027106803134053163,
+        "floor_combined": 0.024200747578308313,
+        "Delta_over_floor_sd": 4.12153662991969,
+        "Delta_med_ci": {
+          "point": 0.027106803134053163,
+          "ci_lo": 0.027106803134053163,
+          "ci_hi": 0.027106803134053163,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.07589010151656236,
+          "rho_Mplus_ridge": -0.1160698114295548,
+          "ci_diff_ridge": {
+            "point": -0.04017970991299244,
+            "ci_lo": -0.18406535237542887,
+            "ci_hi": 0.08702165717179286,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.07816302081208695
+      },
+      "pre_user_imstart": {
+        "Delta_med": 0.6206370530778269,
+        "floor_combined": 0.2945759961930166,
+        "Delta_over_floor_sd": 6.8577789664625115,
+        "Delta_med_ci": {
+          "point": 0.6206370530778269,
+          "ci_lo": 0.6206370530778269,
+          "ci_hi": 0.6206370530778269,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.03783427430406595,
+          "rho_Mplus_ridge": 0.012568956753194823,
+          "ci_diff_ridge": {
+            "point": 0.05040323105726077,
+            "ci_lo": -0.18589812930081548,
+            "ci_hi": 0.3897792442800071,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.007911340715874269
+      },
+      "pre_user_max3": {
+        "Delta_med": 0.29505274968751566,
+        "floor_combined": 0.15370200263481967,
+        "Delta_over_floor_sd": 6.732578305552853,
+        "Delta_med_ci": {
+          "point": 0.29505274968751566,
+          "ci_lo": 0.29505274968751566,
+          "ci_hi": 0.29505274968751566,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.07222597009498233,
+          "rho_Mplus_ridge": 0.035779849330133555,
+          "ci_diff_ridge": {
+            "point": 0.10800581942511589,
+            "ci_lo": -0.11851055879561534,
+            "ci_hi": 0.45654935494560805,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.09459063510977589
+      },
+      "pre_user_mean3": {
+        "Delta_med": 0.33799625334319144,
+        "floor_combined": 0.13494428709035902,
+        "Delta_over_floor_sd": 8.841698202787187,
+        "Delta_med_ci": {
+          "point": 0.33799625334319144,
+          "ci_lo": 0.33799625334319144,
+          "ci_hi": 0.33799625334319144,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.05385759903240513,
+          "rho_Mplus_ridge": 0.06227410707262237,
+          "ci_diff_ridge": {
+            "point": 0.1161317061050275,
+            "ci_lo": -0.11241025009207838,
+            "ci_hi": 0.48277117314415136,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.0494906043553902
+      },
+      "pre_user_nl": {
+        "Delta_med": 0.07830994881397026,
+        "floor_combined": 0.08043942346440341,
+        "Delta_over_floor_sd": 3.5357634890055327,
+        "Delta_med_ci": {
+          "point": 0.07830994881397026,
+          "ci_lo": 0.07830994881397026,
+          "ci_hi": 0.07830994881397026,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.04375130518004732,
+          "rho_Mplus_ridge": 0.11132066022976526,
+          "ci_diff_ridge": {
+            "point": 0.15507196540981258,
+            "ci_lo": -0.0365339385368732,
+            "ci_hi": 0.38272856209276035,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.1413919074742782
+      },
+      "pre_user_user": {
+        "Delta_med": 0.29636878085780427,
+        "floor_combined": 0.12170830904859826,
+        "Delta_over_floor_sd": 8.74130696673157,
+        "Delta_med_ci": {
+          "point": 0.29636878085780427,
+          "ci_lo": 0.29636878085780427,
+          "ci_hi": 0.29636878085780427,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": 0.18006284430528602,
+          "rho_Mplus_ridge": 0.09635710803555242,
+          "ci_diff_ridge": {
+            "point": -0.0837057362697336,
+            "ci_lo": -0.17208373187510786,
+            "ci_hi": 0.18392532374240628,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.23522518087222818
+      },
+      "turn_nl": {
+        "Delta_med": 0.06022322149429233,
+        "floor_combined": 0.08067732138760166,
+        "Delta_over_floor_sd": 2.749912033822605,
+        "Delta_med_ci": {
+          "point": 0.06022322149429233,
+          "ci_lo": 0.06022322149429233,
+          "ci_hi": 0.06022322149429233,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.07962758341159112,
+          "rho_Mplus_ridge": -0.043078138022278556,
+          "ci_diff_ridge": {
+            "point": 0.03654944538931257,
+            "ci_lo": -0.16605222873946351,
+            "ci_hi": 0.28171688299270103,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.11481022975888464
+      }
+    },
+    "sycophancy/L21": {
+      "behavior": "sycophancy",
+      "layer": 21,
+      "ans_max_incl_hdr": {
+        "Delta_med": 0.2504606858838216,
+        "floor_combined": 0.2667839847873574,
+        "Delta_over_floor_sd": 3.4716791098422037,
+        "Delta_med_ci": {
+          "point": 0.2504606858838216,
+          "ci_lo": 0.2504606858838216,
+          "ci_hi": 0.2504606858838216,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.09860422398029595,
+          "rho_Mplus_ridge": 0.02002979543312653,
+          "ci_diff_ridge": {
+            "point": 0.11863401941342247,
+            "ci_lo": -0.09323716502804927,
+            "ci_hi": 0.3833919485467692,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.0030571965715273097
+      },
+      "ans_max_incl_hdr_alllayer": {
+        "Delta_med": 0.44395410968635396,
+        "floor_combined": 0.5057311054120853,
+        "Delta_over_floor_sd": 2.9030029878925054,
+        "Delta_med_ci": {
+          "point": 0.44395410968635396,
+          "ci_lo": 0.44395410968635396,
+          "ci_hi": 0.44395410968635396,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.071432461447795,
+          "rho_Mplus_ridge": -0.008714914894292998,
+          "ci_diff_ridge": {
+            "point": 0.06271754655350201,
+            "ci_lo": -0.14809777323418244,
+            "ci_hi": 0.34597418212644093,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.0265236201761362
+      },
+      "ans_mean_incl_hdr": {
+        "Delta_med": 0.030147142574351846,
+        "floor_combined": 0.2766509240869246,
+        "Delta_over_floor_sd": 0.35803366857485885,
+        "Delta_med_ci": {
+          "point": 0.030147142574351846,
+          "ci_lo": 0.030147142574351846,
+          "ci_hi": 0.030147142574351846,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.12016826218216947,
+          "rho_Mplus_ridge": -0.052308786268174,
+          "ci_diff_ridge": {
+            "point": 0.06785947591399547,
+            "ci_lo": -0.186894347204933,
+            "ci_hi": 0.35573315127447525,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.03731820728844479
+      },
+      "ans_mean_incl_hdr_alllayer": {
+        "Delta_med": 0.04681503293852102,
+        "floor_combined": 0.12932101641429405,
+        "Delta_over_floor_sd": 1.1920011833151476,
+        "Delta_med_ci": {
+          "point": 0.04681503293852102,
+          "ci_lo": 0.04681503293852102,
+          "ci_hi": 0.04681503293852102,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.14090375701489002,
+          "rho_Mplus_ridge": -0.029837849263417926,
+          "ci_diff_ridge": {
+            "point": 0.1110659077514721,
+            "ci_lo": -0.09426732950832553,
+            "ci_hi": 0.3435630037498859,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.03929794713285356
+      },
+      "maxp": {
+        "Delta_med": 0.0871674443156754,
+        "floor_combined": 0.3182827326232282,
+        "Delta_over_floor_sd": 0.9049966391788568,
+        "Delta_med_ci": {
+          "point": 0.0871674443156754,
+          "ci_lo": 0.0871674443156754,
+          "ci_hi": 0.0871674443156754,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.09078675407502171,
+          "rho_Mplus_ridge": -0.10638632549958577,
+          "ci_diff_ridge": {
+            "point": -0.015599571424564057,
+            "ci_lo": -0.2428624423853895,
+            "ci_hi": 0.2566939990997595,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.0035924492682248843
+      },
+      "mean": {
+        "Delta_med": 0.034253918668531794,
+        "floor_combined": 0.2823222298680952,
+        "Delta_over_floor_sd": 0.3983940063635737,
+        "Delta_med_ci": {
+          "point": 0.034253918668531794,
+          "ci_lo": 0.034253918668531794,
+          "ci_hi": 0.034253918668531794,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.12224370798928126,
+          "rho_Mplus_ridge": -0.06745941275554951,
+          "ci_diff_ridge": {
+            "point": 0.05478429523373175,
+            "ci_lo": -0.19656963653575873,
+            "ci_hi": 0.3243411561933657,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.03989798625985275
+      },
+      "pre_user_imstart": {
+        "Delta_med": 1.3636219340810394,
+        "floor_combined": 0.5031650351416501,
+        "Delta_over_floor_sd": 7.78799717912255,
+        "Delta_med_ci": {
+          "point": 1.3636219340810394,
+          "ci_lo": 1.3636219340810394,
+          "ci_hi": 1.3636219340810394,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.08591286814290044,
+          "rho_Mplus_ridge": 0.04263998155502865,
+          "ci_diff_ridge": {
+            "point": 0.1285528496979291,
+            "ci_lo": -0.1666146165382759,
+            "ci_hi": 0.4424908033871874,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.06819630974089391
+      },
+      "pre_user_max3": {
+        "Delta_med": 0.5335143363148809,
+        "floor_combined": 0.288989317804843,
+        "Delta_over_floor_sd": 6.05409768679985,
+        "Delta_med_ci": {
+          "point": 0.5335143363148809,
+          "ci_lo": 0.5335143363148809,
+          "ci_hi": 0.5335143363148809,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": 0.046386194325213945,
+          "rho_Mplus_ridge": 0.1361858590115206,
+          "ci_diff_ridge": {
+            "point": 0.08979966468630667,
+            "ci_lo": -0.1567762296257691,
+            "ci_hi": 0.38447060716482656,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.01668181066928425
+      },
+      "pre_user_mean3": {
+        "Delta_med": 0.4281219176224882,
+        "floor_combined": 0.16215753530455373,
+        "Delta_over_floor_sd": 9.382327870931597,
+        "Delta_med_ci": {
+          "point": 0.4281219176224882,
+          "ci_lo": 0.4281219176224882,
+          "ci_hi": 0.4281219176224882,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.02024050426094857,
+          "rho_Mplus_ridge": 0.09855506414820443,
+          "ci_diff_ridge": {
+            "point": 0.11879556840915301,
+            "ci_lo": -0.18113309892018642,
+            "ci_hi": 0.5000452046445045,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.049455013526726675
+      },
+      "pre_user_nl": {
+        "Delta_med": 0.17003575216057557,
+        "floor_combined": 0.3945979555987884,
+        "Delta_over_floor_sd": 1.4792788361724118,
+        "Delta_med_ci": {
+          "point": 0.17003575216057557,
+          "ci_lo": 0.17003575216057557,
+          "ci_hi": 0.17003575216057557,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": 0.07786578178207669,
+          "rho_Mplus_ridge": 0.06516630678689232,
+          "ci_diff_ridge": {
+            "point": -0.012699474995184368,
+            "ci_lo": -0.3207349933264536,
+            "ci_hi": 0.37981834537392467,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.00977346399368402
+      },
+      "pre_user_user": {
+        "Delta_med": 0.15975695010167518,
+        "floor_combined": 0.41245856785806784,
+        "Delta_over_floor_sd": 1.3939161183239104,
+        "Delta_med_ci": {
+          "point": 0.15975695010167518,
+          "ci_lo": 0.15975695010167518,
+          "ci_hi": 0.15975695010167518,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.05887173507372863,
+          "rho_Mplus_ridge": 0.11054300062346718,
+          "ci_diff_ridge": {
+            "point": 0.1694147356971958,
+            "ci_lo": -0.008321970667996389,
+            "ci_hi": 0.35987732024451774,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.08461435900337953
+      },
+      "turn_nl": {
+        "Delta_med": 0.1533369922262795,
+        "floor_combined": 0.2468359342559863,
+        "Delta_over_floor_sd": 2.148021159388449,
+        "Delta_med_ci": {
+          "point": 0.1533369922262795,
+          "ci_lo": 0.1533369922262795,
+          "ci_hi": 0.1533369922262795,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.1274356869525828,
+          "rho_Mplus_ridge": -0.02939107314235108,
+          "ci_diff_ridge": {
+            "point": 0.09804461381023173,
+            "ci_lo": -0.15284588491008086,
+            "ci_hi": 0.3656583836168745,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.1558293271216385
+      }
+    },
+    "sycophancy/L7": {
+      "behavior": "sycophancy",
+      "layer": 7,
+      "ans_max_incl_hdr": {
+        "Delta_med": 0.009564261281819347,
+        "floor_combined": 0.015118648980121956,
+        "Delta_over_floor_sd": 2.2195163937439646,
+        "Delta_med_ci": {
+          "point": 0.009564261281819347,
+          "ci_lo": 0.009564261281819347,
+          "ci_hi": 0.009564261281819347,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.09263158243452779,
+          "rho_Mplus_ridge": -0.20705392777164977,
+          "ci_diff_ridge": {
+            "point": -0.11442234533712198,
+            "ci_lo": -0.3042842745049074,
+            "ci_hi": 0.07443725525001495,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.06455431136588899
+      },
+      "ans_max_incl_hdr_alllayer": {
+        "Delta_med": 0.24334183912007362,
+        "floor_combined": 0.1677819964711019,
+        "Delta_over_floor_sd": 5.966474356010584,
+        "Delta_med_ci": {
+          "point": 0.24334183912007362,
+          "ci_lo": 0.24334183912007362,
+          "ci_hi": 0.24334183912007362,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.05789020675199225,
+          "rho_Mplus_ridge": 0.09320442794400124,
+          "ci_diff_ridge": {
+            "point": 0.1510946346959935,
+            "ci_lo": -0.026890402951061928,
+            "ci_hi": 0.3172493609296217,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.11639140793293164
+      },
+      "ans_mean_incl_hdr": {
+        "Delta_med": 0.015275567990622648,
+        "floor_combined": 0.010211136717980749,
+        "Delta_over_floor_sd": 5.851022740798087,
+        "Delta_med_ci": {
+          "point": 0.015275567990622648,
+          "ci_lo": 0.015275567990622648,
+          "ci_hi": 0.015275567990622648,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.03967070545243422,
+          "rho_Mplus_ridge": -0.11024364838800503,
+          "ci_diff_ridge": {
+            "point": -0.07057294293557081,
+            "ci_lo": -0.1432743068108554,
+            "ci_hi": 0.008797700754879555,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.05638643863028839
+      },
+      "ans_mean_incl_hdr_alllayer": {
+        "Delta_med": 0.017560970900086036,
+        "floor_combined": 0.018716942968733646,
+        "Delta_over_floor_sd": 3.8732247780874225,
+        "Delta_med_ci": {
+          "point": 0.017560970900086036,
+          "ci_lo": 0.017560970900086036,
+          "ci_hi": 0.017560970900086036,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.08315190960932724,
+          "rho_Mplus_ridge": -0.12447230558098579,
+          "ci_diff_ridge": {
+            "point": -0.041320395971658555,
+            "ci_lo": -0.11996037953982507,
+            "ci_hi": 0.03453044330412248,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.08173211359900139
+      },
+      "maxp": {
+        "Delta_med": 0.014930819689797339,
+        "floor_combined": 0.01480646653832325,
+        "Delta_over_floor_sd": 3.542834499320825,
+        "Delta_med_ci": {
+          "point": 0.014930819689797339,
+          "ci_lo": 0.014930819689797339,
+          "ci_hi": 0.014930819689797339,
+          "n_families": 7
+        },
+        "H_call": "H_input",
+        "chain_rho": {
+          "rho_M0_ridge": -0.06785246896960236,
+          "rho_Mplus_ridge": -0.091445962954674,
+          "ci_diff_ridge": {
+            "point": -0.023593493985071642,
+            "ci_lo": -0.1778716720871085,
+            "ci_hi": 0.16184000323764022,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.03626527486670221
+      },
+      "mean": {
+        "Delta_med": 0.01591130952782016,
+        "floor_combined": 0.010530208525873181,
+        "Delta_over_floor_sd": 5.935399155671861,
+        "Delta_med_ci": {
+          "point": 0.01591130952782016,
+          "ci_lo": 0.01591130952782016,
+          "ci_hi": 0.01591130952782016,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.05014069308519746,
+          "rho_Mplus_ridge": -0.10286072025644456,
+          "ci_diff_ridge": {
+            "point": -0.0527200271712471,
+            "ci_lo": -0.12452884361497335,
+            "ci_hi": 0.021528043729919327,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.021378242954115965
+      },
+      "pre_user_imstart": {
+        "Delta_med": 0.08178485718456979,
+        "floor_combined": 0.025090080948079133,
+        "Delta_over_floor_sd": 12.540900981921258,
+        "Delta_med_ci": {
+          "point": 0.08178485718456979,
+          "ci_lo": 0.08178485718456979,
+          "ci_hi": 0.08178485718456979,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.1315506540741241,
+          "rho_Mplus_ridge": -0.18065632137325036,
+          "ci_diff_ridge": {
+            "point": -0.04910566729912624,
+            "ci_lo": -0.3307542132901533,
+            "ci_hi": 0.26756849603679855,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.15371439773897813
+      },
+      "pre_user_max3": {
+        "Delta_med": 0.06038061256855132,
+        "floor_combined": 0.018592210018976013,
+        "Delta_over_floor_sd": 13.249629910369679,
+        "Delta_med_ci": {
+          "point": 0.06038061256855132,
+          "ci_lo": 0.06038061256855132,
+          "ci_hi": 0.06038061256855132,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.04978623067597663,
+          "rho_Mplus_ridge": -0.09101492465315682,
+          "ci_diff_ridge": {
+            "point": -0.04122869397718019,
+            "ci_lo": -0.2456211881070438,
+            "ci_hi": 0.15939784475703972,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.023893013052543172
+      },
+      "pre_user_mean3": {
+        "Delta_med": 0.026612055615376107,
+        "floor_combined": 0.010890867833637548,
+        "Delta_over_floor_sd": 10.297927158708507,
+        "Delta_med_ci": {
+          "point": 0.026612055615376107,
+          "ci_lo": 0.026612055615376107,
+          "ci_hi": 0.026612055615376107,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.10136796304735848,
+          "rho_Mplus_ridge": -0.16420968822649434,
+          "ci_diff_ridge": {
+            "point": -0.06284172517913586,
+            "ci_lo": -0.2914607101696186,
+            "ci_hi": 0.1536941911374201,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.04915599495528324
+      },
+      "pre_user_nl": {
+        "Delta_med": 0.03978054451149722,
+        "floor_combined": 0.019714857860016335,
+        "Delta_over_floor_sd": 8.548480975546324,
+        "Delta_med_ci": {
+          "point": 0.03978054451149722,
+          "ci_lo": 0.03978054451149722,
+          "ci_hi": 0.03978054451149722,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.08554917436249503,
+          "rho_Mplus_ridge": -0.10897110943127451,
+          "ci_diff_ridge": {
+            "point": -0.023421935068779487,
+            "ci_lo": -0.22022804232981205,
+            "ci_hi": 0.14060524313683234,
+            "n_families": 7
+          }
+        },
+        "gate_margin": -0.07045844056647985
+      },
+      "pre_user_user": {
+        "Delta_med": 0.08744025243283961,
+        "floor_combined": 0.016409082550429874,
+        "Delta_over_floor_sd": 17.643159349741744,
+        "Delta_med_ci": {
+          "point": 0.08744025243283961,
+          "ci_lo": 0.08744025243283961,
+          "ci_hi": 0.08744025243283961,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.03712262456280474,
+          "rho_Mplus_ridge": -0.03859219212258974,
+          "ci_diff_ridge": {
+            "point": -0.001469567559785001,
+            "ci_lo": -0.21876638733432463,
+            "ci_hi": 0.20497041150396833,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.06448090528177047
+      },
+      "turn_nl": {
+        "Delta_med": 0.058980436802860324,
+        "floor_combined": 0.01538739536139721,
+        "Delta_over_floor_sd": 16.13892344916637,
+        "Delta_med_ci": {
+          "point": 0.058980436802860324,
+          "ci_lo": 0.058980436802860324,
+          "ci_hi": 0.058980436802860324,
+          "n_families": 7
+        },
+        "H_call": "H_function",
+        "chain_rho": {
+          "rho_M0_ridge": -0.08315797117233399,
+          "rho_Mplus_ridge": -0.21460863726218155,
+          "ci_diff_ridge": {
+            "point": -0.13145066608984757,
+            "ci_lo": -0.456619104432983,
+            "ci_hi": 0.24278942759561295,
+            "n_families": 7
+          }
+        },
+        "gate_margin": 0.043276723724087085
+      }
+    }
+  },
+  "kill1_base_leg_validity": null,
+  "validity_gate_phase0": {
+    "phase": "phase0_base_leg",
+    "rule": "per-arm PASS iff margin(arm) >= KILL1_COLLAPSE_FRAC*margin(mean) on >=2/3 behaviors with positive mean margin; <2 comparable => comparator_indeterminate (never a fail); STOP only when ALL arms are DECIDED failures (plan \u00a77/MF3)",
+    "collapse_frac_threshold": 0.5,
+    "arms": [
+      "pre_user_imstart",
+      "pre_user_user",
+      "pre_user_nl",
+      "pre_user_mean3",
+      "pre_user_max3",
+      "ans_mean_incl_hdr",
+      "ans_max_incl_hdr",
+      "ans_mean_incl_hdr_alllayer",
+      "ans_max_incl_hdr_alllayer"
+    ],
+    "trusted_arms": [
+      "pre_user_imstart",
+      "pre_user_user",
+      "pre_user_mean3",
+      "ans_mean_incl_hdr",
+      "ans_max_incl_hdr",
+      "ans_mean_incl_hdr_alllayer"
+    ],
+    "n_pass": 6,
+    "n_fail": 3,
+    "n_indeterminate": 0,
+    "stop_fired": false,
+    "state": "decided",
+    "per_arm": {
+      "pre_user_imstart": {
+        "gate_status": "pass",
+        "gate_pass": true,
+        "n_comparable": 3,
+        "n_held": 2,
+        "n_collapse": 1,
+        "per_behavior": {
+          "em": {
+            "mean_margin": 0.2013665362946727,
+            "arm_margin": 0.11158919698921332,
+            "collapse_threshold": 0.10068326814733634,
+            "margin_ratio": 0.5541595889890941,
+            "near_threshold": true,
+            "status": "held"
+          },
+          "sycophancy": {
+            "mean_margin": 0.044732833501783684,
+            "arm_margin": -0.018726336943994587,
+            "collapse_threshold": 0.022366416750891842,
+            "margin_ratio": -0.4186262187761455,
+            "near_threshold": false,
+            "status": "collapsed"
+          },
+          "fact": {
+            "mean_margin": 0.12665200324150538,
+            "arm_margin": 0.1689417040923469,
+            "collapse_threshold": 0.06332600162075269,
+            "margin_ratio": 1.3339047134548812,
+            "near_threshold": false,
+            "status": "held"
+          }
+        }
+      },
+      "pre_user_user": {
+        "gate_status": "pass",
+        "gate_pass": true,
+        "n_comparable": 3,
+        "n_held": 2,
+        "n_collapse": 1,
+        "per_behavior": {
+          "em": {
+            "mean_margin": 0.2013665362946727,
+            "arm_margin": 0.11633340710092688,
+            "collapse_threshold": 0.10068326814733634,
+            "margin_ratio": 0.5777196610795782,
+            "near_threshold": true,
+            "status": "held"
+          },
+          "sycophancy": {
+            "mean_margin": 0.044732833501783684,
+            "arm_margin": -0.264781139650497,
+            "collapse_threshold": 0.022366416750891842,
+            "margin_ratio": -5.91916762080227,
+            "near_threshold": false,
+            "status": "collapsed"
+          },
+          "fact": {
+            "mean_margin": 0.12665200324150538,
+            "arm_margin": 0.0635659793551413,
+            "collapse_threshold": 0.06332600162075269,
+            "margin_ratio": 0.5018947804080999,
+            "near_threshold": true,
+            "status": "held"
+          }
+        }
+      },
+      "pre_user_nl": {
+        "gate_status": "fail",
+        "gate_pass": false,
+        "n_comparable": 3,
+        "n_held": 1,
+        "n_collapse": 2,
+        "per_behavior": {
+          "em": {
+            "mean_margin": 0.2013665362946727,
+            "arm_margin": 0.07069695875631098,
+            "collapse_threshold": 0.10068326814733634,
+            "margin_ratio": 0.35108593541508576,
+            "near_threshold": false,
+            "status": "collapsed"
+          },
+          "sycophancy": {
+            "mean_margin": 0.044732833501783684,
+            "arm_margin": -0.06609522741501042,
+            "collapse_threshold": 0.022366416750891842,
+            "margin_ratio": -1.4775551254175512,
+            "near_threshold": false,
+            "status": "collapsed"
+          },
+          "fact": {
+            "mean_margin": 0.12665200324150538,
+            "arm_margin": 0.152768078433633,
+            "collapse_threshold": 0.06332600162075269,
+            "margin_ratio": 1.2062034118980998,
+            "near_threshold": false,
+            "status": "held"
+          }
+        }
+      },
+      "pre_user_mean3": {
+        "gate_status": "pass",
+        "gate_pass": true,
+        "n_comparable": 3,
+        "n_held": 2,
+        "n_collapse": 1,
+        "per_behavior": {
+          "em": {
+            "mean_margin": 0.2013665362946727,
+            "arm_margin": 0.11110502562366877,
+            "collapse_threshold": 0.10068326814733634,
+            "margin_ratio": 0.5517551608529512,
+            "near_threshold": true,
+            "status": "held"
+          },
+          "sycophancy": {
+            "mean_margin": 0.044732833501783684,
+            "arm_margin": -0.05571966669954512,
+            "collapse_threshold": 0.022366416750891842,
+            "margin_ratio": -1.245610043846727,
+            "near_threshold": false,
+            "status": "collapsed"
+          },
+          "fact": {
+            "mean_margin": 0.12665200324150538,
+            "arm_margin": 0.18363582197154,
+            "collapse_threshold": 0.06332600162075269,
+            "margin_ratio": 1.4499243381202227,
+            "near_threshold": false,
+            "status": "held"
+          }
+        }
+      },
+      "pre_user_max3": {
+        "gate_status": "fail",
+        "gate_pass": false,
+        "n_comparable": 3,
+        "n_held": 1,
+        "n_collapse": 2,
+        "per_behavior": {
+          "em": {
+            "mean_margin": 0.2013665362946727,
+            "arm_margin": 0.08971756425274069,
+            "collapse_threshold": 0.10068326814733634,
+            "margin_ratio": 0.44554356400832745,
+            "near_threshold": true,
+            "status": "collapsed"
+          },
+          "sycophancy": {
+            "mean_margin": 0.044732833501783684,
+            "arm_margin": -0.05273865674562567,
+            "collapse_threshold": 0.022366416750891842,
+            "margin_ratio": -1.1789697324566475,
+            "near_threshold": false,
+            "status": "collapsed"
+          },
+          "fact": {
+            "mean_margin": 0.12665200324150538,
+            "arm_margin": 0.18687167191359635,
+            "collapse_threshold": 0.06332600162075269,
+            "margin_ratio": 1.4754734795411137,
+            "near_threshold": false,
+            "status": "held"
+          }
+        }
+      },
+      "ans_mean_incl_hdr": {
+        "gate_status": "pass",
+        "gate_pass": true,
+        "n_comparable": 3,
+        "n_held": 3,
+        "n_collapse": 0,
+        "per_behavior": {
+          "em": {
+            "mean_margin": 0.2013665362946727,
+            "arm_margin": 0.21979759310978816,
+            "collapse_threshold": 0.10068326814733634,
+            "margin_ratio": 1.0915298894953633,
+            "near_threshold": false,
+            "status": "held"
+          },
+          "sycophancy": {
+            "mean_margin": 0.044732833501783684,
+            "arm_margin": 0.030215223268590902,
+            "collapse_threshold": 0.022366416750891842,
+            "margin_ratio": 0.6754596322941647,
+            "near_threshold": false,
+            "status": "held"
+          },
+          "fact": {
+            "mean_margin": 0.12665200324150538,
+            "arm_margin": 0.13188291722431061,
+            "collapse_threshold": 0.06332600162075269,
+            "margin_ratio": 1.041301470556535,
+            "near_threshold": false,
+            "status": "held"
+          }
+        }
+      },
+      "ans_max_incl_hdr": {
+        "gate_status": "pass",
+        "gate_pass": true,
+        "n_comparable": 3,
+        "n_held": 3,
+        "n_collapse": 0,
+        "per_behavior": {
+          "em": {
+            "mean_margin": 0.2013665362946727,
+            "arm_margin": 0.22293141999551438,
+            "collapse_threshold": 0.10068326814733634,
+            "margin_ratio": 1.107092688277085,
+            "near_threshold": false,
+            "status": "held"
+          },
+          "sycophancy": {
+            "mean_margin": 0.044732833501783684,
+            "arm_margin": 0.1567813817883879,
+            "collapse_threshold": 0.022366416750891842,
+            "margin_ratio": 3.504839052552671,
+            "near_threshold": false,
+            "status": "held"
+          },
+          "fact": {
+            "mean_margin": 0.12665200324150538,
+            "arm_margin": 0.16907154870039603,
+            "collapse_threshold": 0.06332600162075269,
+            "margin_ratio": 1.3349299211478185,
+            "near_threshold": false,
+            "status": "held"
+          }
+        }
+      },
+      "ans_mean_incl_hdr_alllayer": {
+        "gate_status": "pass",
+        "gate_pass": true,
+        "n_comparable": 3,
+        "n_held": 3,
+        "n_collapse": 0,
+        "per_behavior": {
+          "em": {
+            "mean_margin": 0.2013665362946727,
+            "arm_margin": 0.2055324834649925,
+            "collapse_threshold": 0.10068326814733634,
+            "margin_ratio": 1.020688378749404,
+            "near_threshold": false,
+            "status": "held"
+          },
+          "sycophancy": {
+            "mean_margin": 0.044732833501783684,
+            "arm_margin": 0.09096810046919636,
+            "collapse_threshold": 0.022366416750891842,
+            "margin_ratio": 2.0335868163944744,
+            "near_threshold": false,
+            "status": "held"
+          },
+          "fact": {
+            "mean_margin": 0.12665200324150538,
+            "arm_margin": 0.08295508824489295,
+            "collapse_threshold": 0.06332600162075269,
+            "margin_ratio": 0.6549844149461315,
+            "near_threshold": false,
+            "status": "held"
+          }
+        }
+      },
+      "ans_max_incl_hdr_alllayer": {
+        "gate_status": "fail",
+        "gate_pass": false,
+        "n_comparable": 3,
+        "n_held": 1,
+        "n_collapse": 2,
+        "per_behavior": {
+          "em": {
+            "mean_margin": 0.2013665362946727,
+            "arm_margin": -0.030053072416427434,
+            "collapse_threshold": 0.10068326814733634,
+            "margin_ratio": -0.1492456143380687,
+            "near_threshold": false,
+            "status": "collapsed"
+          },
+          "sycophancy": {
+            "mean_margin": 0.044732833501783684,
+            "arm_margin": -0.059797263450989714,
+            "collapse_threshold": 0.022366416750891842,
+            "margin_ratio": -1.3367644919833963,
+            "near_threshold": false,
+            "status": "collapsed"
+          },
+          "fact": {
+            "mean_margin": 0.12665200324150538,
+            "arm_margin": 0.11874262104875727,
+            "collapse_threshold": 0.06332600162075269,
+            "margin_ratio": 0.9375502795825016,
+            "near_threshold": false,
+            "status": "held"
+          }
+        }
+      }
+    },
+    "primary_layer": 14
+  }
+}

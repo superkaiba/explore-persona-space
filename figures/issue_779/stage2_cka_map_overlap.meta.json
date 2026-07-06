@@ -1,0 +1,698 @@
+{
+  "commit": "36bd9eef3e",
+  "created": "2026-07-03T08:02:33Z",
+  "figsize": [
+    13.0,
+    5.0
+  ],
+  "points": [
+    {
+      "k  (top-k singular subspace)": 1.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 9.891130798008539e-05,
+      "series": "evil output subspace (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k singular subspace)": 2.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.028150800139664117,
+      "series": "evil output subspace (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k singular subspace)": 5.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.12917389903372337,
+      "series": "evil output subspace (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k singular subspace)": 10.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.23806024291852287,
+      "series": "evil output subspace (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k singular subspace)": 20.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.25556057057239145,
+      "series": "evil output subspace (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k singular subspace)": 50.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.25070369571705364,
+      "series": "evil output subspace (L14)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k  (top-k singular subspace)": 1.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 1.6826557187566356e-06,
+      "series": "evil input subspace, raw (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k singular subspace)": 2.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.00023988114538338697,
+      "series": "evil input subspace, raw (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k singular subspace)": 5.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.0010843469569112227,
+      "series": "evil input subspace, raw (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k singular subspace)": 10.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.0037886109323967314,
+      "series": "evil input subspace, raw (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k singular subspace)": 20.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.006840448977719374,
+      "series": "evil input subspace, raw (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k singular subspace)": 50.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.01407065341692102,
+      "series": "evil input subspace, raw (L14)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k  (top-k singular subspace)": 1.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.05028998584329308,
+      "series": "sycophancy output subspace (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k singular subspace)": 2.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.17527088216026812,
+      "series": "sycophancy output subspace (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k singular subspace)": 5.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.14451480981745263,
+      "series": "sycophancy output subspace (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k singular subspace)": 10.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.15713274746651684,
+      "series": "sycophancy output subspace (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k singular subspace)": 20.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.1804909629672123,
+      "series": "sycophancy output subspace (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k singular subspace)": 50.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.20855270685087607,
+      "series": "sycophancy output subspace (L26)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k  (top-k singular subspace)": 1.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.0016455057619343071,
+      "series": "sycophancy input subspace, raw (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k singular subspace)": 2.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.0015570265254329166,
+      "series": "sycophancy input subspace, raw (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k singular subspace)": 5.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.004528686054716643,
+      "series": "sycophancy input subspace, raw (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k singular subspace)": 10.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.01000135589528664,
+      "series": "sycophancy input subspace, raw (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k singular subspace)": 20.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.017744652396878436,
+      "series": "sycophancy input subspace, raw (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k singular subspace)": 50.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.03315248437251153,
+      "series": "sycophancy input subspace, raw (L26)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k  (top-k singular subspace)": 1.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.003927000349639761,
+      "series": "hallucination output subspace (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k singular subspace)": 2.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.0563605383358672,
+      "series": "hallucination output subspace (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k singular subspace)": 5.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.157605283148151,
+      "series": "hallucination output subspace (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k singular subspace)": 10.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.24057332419323596,
+      "series": "hallucination output subspace (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k singular subspace)": 20.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.2757054194563514,
+      "series": "hallucination output subspace (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k singular subspace)": 50.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.2753323256126427,
+      "series": "hallucination output subspace (L17)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k  (top-k singular subspace)": 1.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 4.657277519799668e-05,
+      "series": "hallucination input subspace, raw (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k singular subspace)": 2.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.0003707318820855162,
+      "series": "hallucination input subspace, raw (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k singular subspace)": 5.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.0018258643101453163,
+      "series": "hallucination input subspace, raw (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k singular subspace)": 10.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.003591896151904232,
+      "series": "hallucination input subspace, raw (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k singular subspace)": 20.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.006187591903815072,
+      "series": "hallucination input subspace, raw (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k singular subspace)": 50.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.01386430980402252,
+      "series": "hallucination input subspace, raw (L17)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k  (top-k singular subspace)": 1.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.00027901785714285713,
+      "series": "random subspaces (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k  (top-k singular subspace)": 2.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.0005580357142857143,
+      "series": "random subspaces (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k  (top-k singular subspace)": 5.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.0013950892857142857,
+      "series": "random subspaces (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k  (top-k singular subspace)": 10.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.0027901785714285715,
+      "series": "random subspaces (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k  (top-k singular subspace)": 20.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.005580357142857143,
+      "series": "random subspaces (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k  (top-k singular subspace)": 50.0,
+      "mean squared cosine overlap  (per-example vs averaged map)": 0.013950892857142858,
+      "series": "random subspaces (k/H)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "transformer layer": 0.0,
+      "prediction agreement on the 50 grid contexts": 0.5387945660291357,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 1.0,
+      "prediction agreement on the 50 grid contexts": 0.5965734528108305,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 2.0,
+      "prediction agreement on the 50 grid contexts": 0.6785772558988692,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 3.0,
+      "prediction agreement on the 50 grid contexts": 0.7781354015941128,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 4.0,
+      "prediction agreement on the 50 grid contexts": 0.7836645791530119,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 5.0,
+      "prediction agreement on the 50 grid contexts": 0.7859322810824138,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 6.0,
+      "prediction agreement on the 50 grid contexts": 0.7963695442824695,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 7.0,
+      "prediction agreement on the 50 grid contexts": 0.8359661922243635,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 8.0,
+      "prediction agreement on the 50 grid contexts": 0.8832210035002015,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 9.0,
+      "prediction agreement on the 50 grid contexts": 0.8763031378714015,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 10.0,
+      "prediction agreement on the 50 grid contexts": 0.8666899022712403,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 11.0,
+      "prediction agreement on the 50 grid contexts": 0.8582962987174234,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 12.0,
+      "prediction agreement on the 50 grid contexts": 0.8331218638727004,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 13.0,
+      "prediction agreement on the 50 grid contexts": 0.8956130852139855,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 14.0,
+      "prediction agreement on the 50 grid contexts": 0.900763458324212,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 15.0,
+      "prediction agreement on the 50 grid contexts": 0.9089800085890128,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 16.0,
+      "prediction agreement on the 50 grid contexts": 0.9035834697169419,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 17.0,
+      "prediction agreement on the 50 grid contexts": 0.8239170064918178,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 18.0,
+      "prediction agreement on the 50 grid contexts": 0.8227610393899636,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 19.0,
+      "prediction agreement on the 50 grid contexts": 0.7708521981070876,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 20.0,
+      "prediction agreement on the 50 grid contexts": 0.6976461873419625,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 21.0,
+      "prediction agreement on the 50 grid contexts": 0.6972993888694516,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 22.0,
+      "prediction agreement on the 50 grid contexts": 0.6830236853110521,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 23.0,
+      "prediction agreement on the 50 grid contexts": 0.702574151488248,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 24.0,
+      "prediction agreement on the 50 grid contexts": 0.7112553689466382,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 25.0,
+      "prediction agreement on the 50 grid contexts": 0.7367492513103034,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 26.0,
+      "prediction agreement on the 50 grid contexts": 0.7912805491314256,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 27.0,
+      "prediction agreement on the 50 grid contexts": 0.7117500753033652,
+      "series": "linear CKA of predictions",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "transformer layer": 0.0,
+      "prediction agreement on the 50 grid contexts": 0.9884489722653097,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 1.0,
+      "prediction agreement on the 50 grid contexts": 0.9820841965911832,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 2.0,
+      "prediction agreement on the 50 grid contexts": 0.9842503597386332,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 3.0,
+      "prediction agreement on the 50 grid contexts": 0.9707764560994749,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 4.0,
+      "prediction agreement on the 50 grid contexts": 0.9624342195390034,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 5.0,
+      "prediction agreement on the 50 grid contexts": 0.9639790398039261,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 6.0,
+      "prediction agreement on the 50 grid contexts": 0.9490811462790018,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 7.0,
+      "prediction agreement on the 50 grid contexts": 0.9545887899383885,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 8.0,
+      "prediction agreement on the 50 grid contexts": 0.9461175545869679,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 9.0,
+      "prediction agreement on the 50 grid contexts": 0.9410097186701338,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 10.0,
+      "prediction agreement on the 50 grid contexts": 0.9458700297570977,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 11.0,
+      "prediction agreement on the 50 grid contexts": 0.9531926241944332,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 12.0,
+      "prediction agreement on the 50 grid contexts": 0.9532422792173617,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 13.0,
+      "prediction agreement on the 50 grid contexts": 0.9584277342740202,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 14.0,
+      "prediction agreement on the 50 grid contexts": 0.9534640440062483,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 15.0,
+      "prediction agreement on the 50 grid contexts": 0.9629585908831451,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 16.0,
+      "prediction agreement on the 50 grid contexts": 0.9652811914456193,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 17.0,
+      "prediction agreement on the 50 grid contexts": 0.9651241624851457,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 18.0,
+      "prediction agreement on the 50 grid contexts": 0.969386812357391,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 19.0,
+      "prediction agreement on the 50 grid contexts": 0.9814347347608684,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 20.0,
+      "prediction agreement on the 50 grid contexts": 0.9803115431721298,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 21.0,
+      "prediction agreement on the 50 grid contexts": 0.9784026298337893,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 22.0,
+      "prediction agreement on the 50 grid contexts": 0.979106068197251,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 23.0,
+      "prediction agreement on the 50 grid contexts": 0.9826308040451557,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 24.0,
+      "prediction agreement on the 50 grid contexts": 0.9871302587501863,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 25.0,
+      "prediction agreement on the 50 grid contexts": 0.9882147712806719,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 26.0,
+      "prediction agreement on the 50 grid contexts": 0.9900264877639945,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "transformer layer": 27.0,
+      "prediction agreement on the 50 grid contexts": 0.9025902718687803,
+      "series": "mean per-context cosine",
+      "_kind": "line",
+      "_group": 8
+    }
+  ],
+  "n_series": 9,
+  "total_points": 98
+}

@@ -1,0 +1,15 @@
+{
+  "figure": "figures/issue_810/adhoc_predictability_vs_variance.png",
+  "script": "scripts/issue810_adhoc_var_vs_skill.py",
+  "commit": "28134912c4398c58ebfe8212f774c50066e57382",
+  "fixed_layer": 18,
+  "n_contexts": 50,
+  "caption": "Answer-side summary positions @ layer 18 (n=50 contexts). Boundary (im_end/turn_nl) median var_trace 336 is 1.81x mid-answer (tail_4/8) and 1.75x aggregate (mean/maxp): variance is SUSTAINED at boundaries (constancy-artifact refuted).",
+  "panels": {
+    "a": "true reconstruction skill@L18 (bar) + best-layer skill (dash)",
+    "b": "absolute cross-context var_trace@L18 (log)",
+    "c": "participation ratio (effective dim)@L18",
+    "d": "skill@L18 vs absolute var_trace@L18 scatter, labeled+colored by position type"
+  },
+  "interpretation": "REFUTED (genuine): boundary absolute variance (median var_trace@L18 336) is SUSTAINED \u2014 1.81x the mid-answer positions (186) and 1.75x the aggregate mean/maxp (192). The high boundary reconstruction skill reflects a genuine low-dimensional context summary carried at a constant token, not a variance-ratio inflation on a near-constant position."
+}

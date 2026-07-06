@@ -97,8 +97,11 @@ user-only but does NOT block the campaign.
    - `approved` → first entry; continue.
    - `running` → re-entry (tick re-drive or watcher respawn); skip to
      Step 1 after re-arming the cron (sub-steps 5-7 are idempotent).
-   - `completed` / `archived` / `blocked` → CRON-TEARDOWN (see
-     /campaign-tick Step 4), one line, EXIT.
+   - `completed` / `archived` / `blocked` → CRON-TEARDOWN (fresh
+     `CronList` → `CronDelete` every job in the two-leg match set: the
+     recurring `/campaign-tick <N>` tick + stray one-shot `/campaign <N>`
+     wakeups; not-found = success; § CRON-TEARDOWN in `/campaign-tick`),
+     one line, EXIT.
 3. Verify the body has a `## Campaign Brief` H2 carrying: the question
    anchor (`q:<slug>` into `docs/open_questions.md`), the hypothesis
    list, the initial experiment table (columns `id | title | hypothesis
@@ -141,7 +144,13 @@ user-only but does NOT block the campaign.
    `CronCreate("*/45 * * * *", prompt="/campaign-tick <N>",
    recurring=True, durable=False)`. (45 min as of 2026-06-12 — the
    10-min watcher carries fast detection; the tick is the in-session
-   re-driver of last resort.)
+   re-driver of last resort.) Prevention ban (the #980 class): a
+   `/campaign` session must NEVER schedule its own re-drive — no
+   `ScheduleWakeup` wakeup and no `CronCreate` one-shot, regardless of
+   prompt shape; the `/campaign-tick <N>` cron above is the ONLY
+   sanctioned self-wake (a one-shot wakeup may not be enumerable at
+   teardown time, and one that fires after terminal re-drives a
+   completed campaign).
 8. Post `epm:campaign-started v1` (anchor, budget, limits, DAG size).
    Then fall through to Step 1.
 
@@ -265,9 +274,12 @@ THIS order (the state save sits between filing and spawning so a crash
 in any window cannot duplicate a child or leak committed hours):
 
 1. File the child:
-   `uv run python scripts/task.py new --kind experiment --parent <N>
+   `uv run python scripts/task.py new --workflow v1 --kind experiment --parent <N>
    --title "<row title>" --goal "<one-sentence goal from the
-   hypothesis>" --body-file <tmp>` — the body OPENS with the fixed line
+   hypothesis>" --body-file <tmp>` — campaign children are pinned to the v1
+   pipeline explicitly, so the future v2 default-flip
+   (env `EPM_DEFAULT_WORKFLOW` / `task.py new` default) never leaks into
+   campaign children (plan Assumption 2). The body OPENS with the fixed line
    `<!-- campaign_experiment_id: <row id> -->` (the deterministic
    reconcile key for orphan adoption, Step 1.1) and carries the
    hypothesis, the single-variable design sketch, `gpu_hours_est`, and
@@ -322,8 +334,10 @@ save + commit. Then EXIT the round (the tick cron re-drives).
    `docs/open_questions.md` diff in a fenced block — NOT applied;
    living-docs mutations stay user-gated, unchanged.
 3. Set status `completed`.
-4. CRON-TEARDOWN (delete the `"/campaign-tick <N>"` cron — whole-string
-   prompt equality, same rule as /issue-tick Step 4).
+4. CRON-TEARDOWN (fresh `CronList` → `CronDelete` every job in the
+   two-leg match set: the recurring `/campaign-tick <N>` tick +
+   stray one-shot `/campaign <N>` wakeups; not-found = success;
+   § CRON-TEARDOWN in `/campaign-tick`).
 5. `PushNotification` one-liner (campaign done + stop reason), then
    EXIT. The watcher's campaign pass reaps `campaign-<N>.json` on its
    next tick.

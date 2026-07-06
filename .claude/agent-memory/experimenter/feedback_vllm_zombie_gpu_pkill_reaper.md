@@ -60,7 +60,32 @@ RunPod containers do not have).
 **Don't bother with `--gpu-reset`** unless the orphan PID can't be
 killed (e.g., D state) — it almost always fails in containers.
 
+**Sub-case: a "zombie-GPU stall" respawn brief can be STALE — verify before reaping.**
+A respawn brief that names a dead GPU PID + "reap and relaunch" is a HYPOTHESIS, not
+ground truth. SSH-stat the pod FIRST: the original dispatcher may NOT have died —
+it can keep running past the detected stall (recycling per-cell vLLM engines),
+complete whole phases, and be hung LATER at a different point, while the dead PID
+the brief named is just an un-released zombie CUDA context co-resident with a live
+engine. Distinguishing reads: (a) `ps -o lstart,etime` on the dispatcher PIDs — a
+40-min elapsed time means it never died; (b) the on-disk deliverable count
+(per-cell JSONs) tells you how far it actually got; (c) `/proc/<pid>/stat` utime
+deltas over 5s — a dispatcher burning ~26% CPU while GPU=0% + EngineCore utime flat
+is a live `generate()` DEADLOCK (gotchas.md chunked-generate signature), NOT a dead
+process. A blind reap-and-relaunch on the SAME code re-hangs at the identical
+generate; route the deadlock `failure_class: code` for the enforce_eager fix.
+When py-spy is blocked (`ptrace_scope=1` + read-only `/proc/sys` in RunPod
+containers → "Failed to copy Py_Version symbol / Permission denied"), the
+`/proc/<pid>/{stat,wchan,task/*/wchan}` + CPU-time-delta fallback localizes the
+block (main thread `wait_woken` waiting on the engine = not our code).
+
 Closed regressions: task #664 r8 respawn 1/3 (2026-06-27) — vLLM hung
 in `_elicit_secure_code` mid-generation; the brief's `pkill -f
 issue664_dispatch.py` missed the orphaned `VLLM::EngineCore`; recovery
-needed the exact-PID kill before GPU released.
+needed the exact-PID kill before GPU released. task #734 respawn 1/3
+(2026-06-29) — the "zombie-GPU PID 3662716" respawn brief was stale: the
+dispatcher was alive 42 min, had completed Phase-0 + 16/16 Phase-1 cells, and
+was hung at the FIRST run_phase2 `generate()` (cuda-graph-capture / engine-IPC
+deadlock, `enforce_eager=False` hardcoded) with two un-released zombie CUDA
+contexts co-resident. Killing the live dispatcher tree by exact PID released BOTH
+the live EngineCore AND the zombie contexts (GPU → 0 MiB). Routed `failure_class:
+code` for the enforce_eager fix, pod NOT terminated.

@@ -1,0 +1,1164 @@
+{
+  "commit": "93748aa5f8",
+  "created": "2026-07-05T23:06:54Z",
+  "figsize": [
+    8.6,
+    5.4
+  ],
+  "points": [
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 3.408979106479808,
+      "y": 0.08766593553790827,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.599218698028949,
+      "y": -0.01955889927934326,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.2015315680377827,
+      "y": 0.1147513343716424,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.631073216321012,
+      "y": 0.06315776929899644,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 3.139108188630368,
+      "y": -0.12986324867595214,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 3.107242904191119,
+      "y": 0.1521991525237619,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.212196344040616,
+      "y": 0.08356470463691296,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.721056364346415,
+      "y": 0.0915405776886252,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.044955947410256,
+      "y": -0.11900363754382531,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.092515101946052,
+      "y": -0.01587649987341852,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 3.2314411417891806,
+      "y": -0.04134463224557401,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 3.0233523648501683,
+      "y": 0.1365647964315526,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.993033153591173,
+      "y": 0.04603683842581266,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.518983493356204,
+      "y": 0.10328371624666557,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 3.2381815466300017,
+      "y": -0.018107456375254044,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 3.7278883274043437,
+      "y": -0.0872836090288714,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.26052513939478317,
+      "y": -0.9825328681549329,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.10637317140252461,
+      "y": -1.1395784780466638,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.08936297257557019,
+      "y": -0.8951580249623737,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.1615352444367258,
+      "y": -0.9578673922809393,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.4651102946953718,
+      "y": -0.9174119231726804,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.5212793332222013,
+      "y": -1.0465516901984422,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.13730843354395447,
+      "y": -0.8493766321936309,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.114993773854595,
+      "y": -0.8742012411768968,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.10456646607469054,
+      "y": -0.9109172809363962,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.010497210314472668,
+      "y": -1.0977156134873705,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.3028497591588532,
+      "y": -1.0106492788073491,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.19015245363225078,
+      "y": -1.1459827949480867,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.09382541622788836,
+      "y": -1.1106273625383847,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.13875359891875294,
+      "y": -0.9414243349624145,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.06190372446987402,
+      "y": -0.9216761101094986,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.31942743864684914,
+      "y": -0.8503968856210528,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 4.517380277179053,
+      "y": -2.055735885395791,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 3.4428757453670173,
+      "y": -2.041452894068842,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.10315100368446885,
+      "y": -2.0097421403917415,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.600917302815929,
+      "y": -2.0993691650930284,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 4.68254856060553,
+      "y": -2.1184251182926492,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 4.84176028678221,
+      "y": -2.0077744236077013,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.9629647594475386,
+      "y": -2.087389008303717,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 3.46574561528168,
+      "y": -1.9456595217015966,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.750780018416689,
+      "y": -2.0201113859608544,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.74537170947459,
+      "y": -1.893542977261492,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 3.934490096158338,
+      "y": -1.9359151673592803,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 3.690856869453763,
+      "y": -2.0600426747577467,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.3419921168697257,
+      "y": -1.8936768635535357,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 3.7631126729009026,
+      "y": -1.9024754056010234,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 4.684683322044699,
+      "y": -2.0360069187103442,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 5.400187251779759,
+      "y": -2.0677350067423217,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.39641172104934913,
+      "y": -2.941601438728008,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.6940631136042559,
+      "y": -3.1152792052450207,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.3395603780061285,
+      "y": -3.0960293752079653,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.7635742154548062,
+      "y": -3.1576440736796783,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.9192306420752495,
+      "y": -2.9081841991993156,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.4610600227118247,
+      "y": -2.94724772589055,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.1049726652257508,
+      "y": -2.934347078839573,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.3640510971248592,
+      "y": -2.9101667100729705,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.4252921979080013,
+      "y": -3.013146951827731,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.3803012948088424,
+      "y": -2.978002817295074,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.4614974493271963,
+      "y": -3.11526496059915,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.6387182403804046,
+      "y": -3.1233503764684887,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.7903936866056023,
+      "y": -2.946111052227049,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.957596816286451,
+      "y": -3.0092492140341975,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.9651418791625908,
+      "y": -2.9791244459260198,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.7957117477123037,
+      "y": -2.915200365626872,
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.2509343472405126,
+      "y": -3.956890137599811,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.4197466132377582,
+      "y": -3.982854591789441,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.02857311527472922,
+      "y": -3.9810537085614675,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.1257309736299946,
+      "y": -4.062735968619964,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.1455763603823839,
+      "y": -4.1501382929382595,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.17176904372874,
+      "y": -4.020250435445644,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.3600758365163871,
+      "y": -4.091332904697751,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.3914112647523865,
+      "y": -4.029270834008116,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.38632428901988336,
+      "y": -3.886911016554187,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.25902473235210116,
+      "y": -4.085139364523091,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.5464094807439513,
+      "y": -4.1413431226594986,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.3930184308333185,
+      "y": -4.069957154552961,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.2022287746797567,
+      "y": -4.066049997514662,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.840977875228518,
+      "y": -3.9481867152873935,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.8386686818236888,
+      "y": -3.981749711250791,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.0721834244375827,
+      "y": -3.9091525730859478,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.7077252599879963,
+      "y": -4.947419667095236,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.4323288285242418,
+      "y": -5.029956204339177,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.09500053872698741,
+      "y": -4.899513476906869,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.28131768291075854,
+      "y": -5.106568665629535,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.49946142090808854,
+      "y": -5.152732136597165,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.501461660197652,
+      "y": -5.131184684551795,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.4543375938199104,
+      "y": -4.9288450078091355,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.38374216339489636,
+      "y": -5.012199286319556,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.4257886844921751,
+      "y": -5.108393030709247,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.6821784337151199,
+      "y": -4.999665671966923,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.4802681805798984,
+      "y": -5.111260127131786,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.6759825721357942,
+      "y": -4.937177479975125,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.7527377032726421,
+      "y": -5.01722999181631,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.7442206247753975,
+      "y": -5.038073207649125,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.6893226071601337,
+      "y": -5.06351613147268,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.5191743695666428,
+      "y": -4.958309570201956,
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.20625350777049056,
+      "y": -6.044219964622915,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.971813480228667,
+      "y": -6.131952025818848,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.3221483680000812,
+      "y": -6.122238111321435,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.2536788211461676,
+      "y": -5.852192747344155,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.39307230942870186,
+      "y": -5.8692541789735655,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.7224846865580997,
+      "y": -5.93609371718056,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.5763979347985484,
+      "y": -6.074921612332954,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.7950567436892299,
+      "y": -5.849863559248728,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.7956020495243246,
+      "y": -5.910799710730946,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.3941241566369944,
+      "y": -5.930595139469121,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.17973534196321717,
+      "y": -6.016204319313988,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.3068101886276225,
+      "y": -6.072882700209549,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.0256330227533816,
+      "y": -6.12915489211088,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.6934438659104902,
+      "y": -5.871167233105971,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.6761243056724102,
+      "y": -6.014151587253244,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.0670009854967146,
+      "y": -6.0952437232655265,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.05258046767002649,
+      "y": -7.062093880271791,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.3125549958754498,
+      "y": -6.974649737938593,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.09955682616442778,
+      "y": -7.103432709459446,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.4596458456834682,
+      "y": -6.88588342909044,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.005819616181177435,
+      "y": -6.917273750452733,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.12422169287195617,
+      "y": -6.9297718540957005,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.1907869903905626,
+      "y": -7.021730227271966,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.23846829979899578,
+      "y": -6.959261170975219,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.26969823341387245,
+      "y": -6.9730886499479245,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.49066735242553605,
+      "y": -6.952049087502457,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.02284941025515518,
+      "y": -7.132977817235235,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.047594242237535694,
+      "y": -7.026941631305405,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.3360392112708118,
+      "y": -7.1466834643641945,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.47996450176361805,
+      "y": -7.001922937841754,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.48181599507386463,
+      "y": -7.054444412053509,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.17095481181649205,
+      "y": -7.113752259562865,
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.547831213977473,
+      "y": -8.126911050328783,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.2146507736597605,
+      "y": -7.971953736903132,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.9921907015535614,
+      "y": -8.105410250068196,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.5721149506536953,
+      "y": -7.8639615621194245,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.430556312723764,
+      "y": -7.974060435295874,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.538372604820227,
+      "y": -8.049001662548852,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.7975537747582258,
+      "y": -7.970907042725947,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.2344697078514333,
+      "y": -8.152702761270497,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.7220219874826697,
+      "y": -7.853261051762738,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.9208080211909127,
+      "y": -8.005662900178272,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.426486655591125,
+      "y": -7.9095247272799085,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.2953244412146514,
+      "y": -8.13352640002482,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.7557775817705634,
+      "y": -8.004269334131788,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.362635218506516,
+      "y": -8.002973761806553,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.8936867342159887,
+      "y": -7.859895534408006,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 3.066135077645641,
+      "y": -7.977047023239656,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.0487247013649412,
+      "y": -9.008483391661775,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.9200653361945761,
+      "y": -9.074567787810594,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.1815949254837847,
+      "y": -9.053897920850384,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.26323492374473845,
+      "y": -8.993384831209108,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.1781768062435967,
+      "y": -9.019548332702385,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.2067134348210127,
+      "y": -9.153084134438295,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.7640238044163642,
+      "y": -8.895586584257806,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.8339946338532231,
+      "y": -8.873228553011275,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.6474705031704673,
+      "y": -9.115120291520444,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.7342209176296004,
+      "y": -8.982708434067504,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.9369111922676323,
+      "y": -9.125255762836659,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.8501726945055788,
+      "y": -8.94488317022726,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.6470507967971255,
+      "y": -9.070005189171518,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.009936243665577,
+      "y": -8.948984756898591,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.2123965264384136,
+      "y": -8.927361723428197,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.392481446955008,
+      "y": -8.91403280258635,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.1343461955431176,
+      "y": -10.125522897294113,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.9718330029422938,
+      "y": -9.866876209555965,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.6917771259467334,
+      "y": -10.086331522913639,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.18778829109976547,
+      "y": -10.148027982023622,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.7245594585058444,
+      "y": -9.982447209794726,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.902477980838695,
+      "y": -10.04130486916402,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.5556274123564495,
+      "y": -9.894467282197628,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.2603834603530435,
+      "y": -9.901359528939423,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.6256169021704061,
+      "y": -10.058515554296731,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.9656952737252115,
+      "y": -9.855072193577682,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.6753592995470967,
+      "y": -10.066906291795162,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.7386581534036363,
+      "y": -9.995181718645851,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 0.657920480226519,
+      "y": -10.078091171018366,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.2378212117961753,
+      "y": -9.860466057584333,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.8704832686267543,
+      "y": -10.107325498373754,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.0694622883500604,
+      "y": -10.145628601794455,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.97883546943809,
+      "y": -11.020768940799028,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.246876368036382,
+      "y": -10.842439819502133,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.2096223178915722,
+      "y": -10.874663274798428,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.1838070858517866,
+      "y": -10.920445433773777,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.6589423840615867,
+      "y": -10.874946402918871,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.5266896578032694,
+      "y": -10.874097075296683,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.2341129527395887,
+      "y": -10.993965324676337,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.7477920809780783,
+      "y": -11.058902703414146,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.407556093612495,
+      "y": -10.912956021724483,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.6278894112331332,
+      "y": -10.948268395786316,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.7074414223606096,
+      "y": -11.040429526760413,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.6981960170588355,
+      "y": -11.129770666220315,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 1.2493388463189499,
+      "y": -10.921027324368312,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.196688393709462,
+      "y": -11.076012634904684,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 2.170201956771099,
+      "y": -10.860219791829191,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "per-context map change \u00f7 combined noise floor (log scale)": 3.045006117737787,
+      "y": -11.082889415998181,
+      "_kind": "scatter",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 192
+}
