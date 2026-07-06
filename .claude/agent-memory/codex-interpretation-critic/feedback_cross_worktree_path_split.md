@@ -47,6 +47,18 @@ BLOCKED is invalid. Don't reference the plan by path even when the
 repo-root path `ls`-resolves for YOU — your cwd is not Codex's sandbox
 root.
 
+**Stale same-task body.md inside the worktree (round 3+, 2026-07-06).** The
+status-folder split also strands a STALE `body.md`: the worktree held
+`tasks/awaiting_promotion/<N>/body.md` with the OLD round-1 title and zero
+mentions of the new round's results, while the current folded body lived at
+repo-root `tasks/<new-status>/<N>/body.md`. Codex's sandbox root makes the
+stale copy the EASIER one to find. Detect by comparing the two bodies'
+titles / a round-specific keyword count; then pin the repo-root absolute
+path in the prompt AND add an explicit "do NOT read the worktree
+tasks/<old-status>/<N>/body.md — stale checkout" warning. Without the
+warning, every applied/absent fix-landing check in a revision round scores
+against the wrong body.
+
 **Lens-7 smoke-copy trap (#685, 2026-06-27).** When the round's eval JSONs are
 worktree-only, the worktree may ALSO carry a `*_smoke/` sibling dir with a
 same-named raw-generations file from the smoke run. The REAL run's raw
