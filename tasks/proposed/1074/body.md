@@ -20,6 +20,8 @@ goal: 'Determine whether generating the factory''s content-behavior training com
   phrasings) clears the #906 yield floors and installs the behaviors, and whether
   an abliterated (helpful-only) Qwen generator beats the base Instruct model on yield
   and install strength.'
+relates_to:
+- implant-which-behaviors
 ---
 # Abliterated vs base Qwen as the on-policy generator for factory content-behavior datagen
 
