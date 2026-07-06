@@ -1,0 +1,102 @@
+{
+  "commit": "12eefeb1d1",
+  "created": "2026-07-06T11:40:35Z",
+  "figsize": [
+    13.0,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "median per-context greedy-adequacy \u0394": 0.004317755875075102,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "median per-context greedy-adequacy \u0394": 0.004746905155673775,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "median per-context greedy-adequacy \u0394": 0.004172034081551423,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "median per-context greedy-adequacy \u0394": 0.002015453337019024,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.74,
+      "median per-context greedy-adequacy \u0394": 0.008259885920800847,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "layer 14",
+      "median per-context greedy-adequacy \u0394": 0.0025964905477124933,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "layer 17",
+      "median per-context greedy-adequacy \u0394": 0.002653314195781631,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "layer 19",
+      "median per-context greedy-adequacy \u0394": 0.002675601315244136,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "layer 26",
+      "median per-context greedy-adequacy \u0394": 0.0014572552691640706,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "layer 27",
+      "median per-context greedy-adequacy \u0394": 0.006181634214343257,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "median per-context greedy-adequacy \u0394": 0.0012626287204843822,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "median per-context greedy-adequacy \u0394": 0.0011194123336273898,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "median per-context greedy-adequacy \u0394": 0.0008927979267613906,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "median per-context greedy-adequacy \u0394": 0.0007030954795387845,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.26,
+      "median per-context greedy-adequacy \u0394": 0.0010862842193294364,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 15
+}

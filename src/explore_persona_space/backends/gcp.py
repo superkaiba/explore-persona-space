@@ -5205,7 +5205,23 @@ class GcpBackend(ComputeBackend):
             f"--command=sudo -n bash -c {shlex.quote(script)}",
         )
         argv += [f"--zone={zone}"]
-        res = self._run(argv)
+        try:
+            res = self._run(argv)
+        except subprocess.TimeoutExpired as exc:
+            # TRANSPORT class (#1084): the drain-list SSH HUNG past the
+            # runner's per-call cap (default 300s, ``default_gcloud_runner``)
+            # instead of returning non-zero — the #952 gcloud-ssh
+            # hostkey-drift wedge. Same alarm tuple shape + class as the
+            # rc!=0 branch below, so the poller's wedge-gate semantics
+            # (#669) are inherited unchanged. ``_mark_sentinel_processed``'s
+            # TimeoutExpired needs no catch here — it propagates into
+            # ``drain_sentinels_via``'s mark_processed rename-failure catch.
+            alarm = (
+                f"gcp sentinel drain SSH timed out after {exc.timeout}s "
+                "(hung transport — #952 class)"
+            )
+            logger.error("GCP poll: %s", alarm)
+            return 0, None, alarm, "", None, "transport"
         if res.returncode != 0:
             # TRANSPORT class (#669): the drain SSH itself returned non-zero —
             # transport down / permission / timeout. This is the unreachable-VM
