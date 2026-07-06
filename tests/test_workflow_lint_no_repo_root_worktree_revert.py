@@ -350,15 +350,23 @@ def test_explicit_flag_path_fails_and_passes(tmp_path: Path, capsys, monkeypatch
 # T9 — live-tree migration pin (acceptance criterion 5; content-anchored)
 # --------------------------------------------------------------------------
 
+# Flag-tolerant anchor (#1076): #1047 hardened every fence consumer to
+# `xargs -r -a` (--no-run-if-empty; pinned by tests/test_step10d_guard3.py),
+# and future flag hardening must not re-break the T9 test below — its
+# load-bearing property is the -C qualification, not the xargs flag set.
+_ADDITIVE_XARGS_ANCHOR_RE = re.compile(
+    r"xargs\s+(?:-\S+\s+)*-a\s+/tmp/issue-<N>-additive-files\.txt"
+)
+
 
 def test_live_skill_md_additive_checkout_is_dash_c_qualified() -> None:
     """The /issue Step 10d surgical additive checkout runs at the repo root
     (its fence's preceding line is ``cd "$REPO_ROOT"``), so the #897 hook's
     pathspec detector would bounce the bare ``checkout issue-<N> --`` form.
     Pin that the live fence carries the ``git -C "$REPO_ROOT"`` deliberate
-    override. Located by CONTENT ANCHOR (the ``xargs -a`` prefix), never by
-    line number (the fence drifts). Also guards against a future SKILL.md
-    edit reintroducing the unqualified fence."""
+    override. Located by CONTENT ANCHOR (the flag-tolerant ``xargs ... -a``
+    list-file prefix), never by line number (the fence drifts). Also guards
+    against a future SKILL.md edit reintroducing the unqualified fence."""
     skill = _REPO / ".claude" / "skills" / "issue" / "SKILL.md"
     text = skill.read_text(encoding="utf-8")
     # The `checkout issue-<N> --` conjunct pins the CHECKOUT fence line
@@ -368,13 +376,29 @@ def test_live_skill_md_additive_checkout_is_dash_c_qualified() -> None:
     anchor_lines = [
         ln
         for ln in text.splitlines()
-        if "xargs -a /tmp/issue-<N>-additive-files.txt" in ln and "checkout issue-<N> --" in ln
+        if _ADDITIVE_XARGS_ANCHOR_RE.search(ln) and "checkout issue-<N> --" in ln
     ]
     assert anchor_lines, "Step 10d additive-checkout fence line not found in SKILL.md"
     for ln in anchor_lines:
         assert re.search(r'git\s+-C\s+"\$REPO_ROOT"\s+checkout\s+issue-<N>\s+--', ln), (
             f"additive-checkout fence line is not -C-qualified: {ln!r}"
         )
+
+
+def test_additive_checkout_anchor_regex_flags_unqualified_fence() -> None:
+    """Negative branch for the T9 anchor predicate (#1076): a synthetic
+    UNQUALIFIED fence line (flag-bearing ``xargs -r -a`` but no
+    ``git -C "$REPO_ROOT"``) is caught by the flag-tolerant anchor AND fails
+    the -C qualification regex (mirrored verbatim from the live test above),
+    so a future SKILL.md regression to the bare-checkout form would FAIL
+    ``test_live_skill_md_additive_checkout_is_dash_c_qualified``."""
+    bad = 'xargs -r -a /tmp/issue-<N>-additive-files.txt git checkout issue-<N> -- "$f"'
+    assert _ADDITIVE_XARGS_ANCHOR_RE.search(bad), "anchor must tolerate the -r flag"
+    assert "checkout issue-<N> --" in bad
+    assert not re.search(r'git\s+-C\s+"\$REPO_ROOT"\s+checkout\s+issue-<N>\s+--', bad)
+    # The pre-#1047 flagless form stays anchored too (backwards tolerance).
+    flagless = "xargs -a /tmp/issue-<N>-additive-files.txt git checkout issue-<N> --"
+    assert _ADDITIVE_XARGS_ANCHOR_RE.search(flagless), "anchor must keep matching flagless form"
 
 
 def test_live_code_reviewer_smoke_restore_is_dash_c_qualified() -> None:
