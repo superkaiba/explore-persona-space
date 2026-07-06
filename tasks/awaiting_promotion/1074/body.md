@@ -7,6 +7,7 @@ tags:
 - from-906
 - artifacts-factory
 - abliteration
+- followup-auto
 created_at: '2026-07-06T04:42:55Z'
 has_clean_result: true
 parent_id: 906
