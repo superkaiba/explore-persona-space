@@ -8,6 +8,7 @@ tags:
 - monitoring
 - context-geometry
 - followup-manual
+- keep-running
 created_at: '2026-07-01T00:47:42Z'
 has_clean_result: true
 origin_prompt: 'can we rerun their pre-generation prediction experiments but instead
