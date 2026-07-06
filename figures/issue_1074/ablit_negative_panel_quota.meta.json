@@ -1,0 +1,102 @@
+{
+  "commit": "1aee2f9596",
+  "created": "2026-07-06T10:31:37Z",
+  "figsize": [
+    9.5,
+    5.4
+  ],
+  "points": [
+    {
+      "category": "default\nassistant",
+      "negative completions (of 35 generated per member)": 13.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "curious\nrephrase",
+      "negative completions (of 35 generated per member)": 21.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "persona\nph4",
+      "negative completions (of 35 generated per member)": 19.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "police\nofficer",
+      "negative completions (of 35 generated per member)": 24.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "wildchat\nshort",
+      "negative completions (of 35 generated per member)": 23.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "default\nassistant",
+      "negative completions (of 35 generated per member)": 17.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "curious\nrephrase",
+      "negative completions (of 35 generated per member)": 10.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "persona\nph4",
+      "negative completions (of 35 generated per member)": 10.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "police\nofficer",
+      "negative completions (of 35 generated per member)": 7.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "wildchat\nshort",
+      "negative completions (of 35 generated per member)": 9.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "default\nassistant",
+      "negative completions (of 35 generated per member)": 5.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "curious\nrephrase",
+      "negative completions (of 35 generated per member)": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "persona\nph4",
+      "negative completions (of 35 generated per member)": 6.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "police\nofficer",
+      "negative completions (of 35 generated per member)": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "wildchat\nshort",
+      "negative completions (of 35 generated per member)": 3.0,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 15
+}
