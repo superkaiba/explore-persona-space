@@ -1167,3 +1167,32 @@ def test_stage_partial_attempt_optional_judge_raw_pos(tmp_path):
     dg_dir = cfg.out_root / "harmful_compliance-mixed" / "datagen"
     assert (dg_dir / "judge_raw_pos.json").exists()
     assert "judge_raw_pos.json" in out["files"]
+
+
+def test_batch_judge_custom_id_length_guard():
+    """Encoder fails loud (not an API 400) on a >64-char composed custom_id.
+
+    Run-2 Phase D regression: a cell-slug-prefixed item id (58 chars) +
+    the encoder's "__NNNNN__NN" suffix hit the Anthropic Batch API's
+    64-char custom_id cap as a live 400. The guard raises locally instead.
+    """
+    import pytest
+
+    from explore_persona_space.eval import batch_judge as bj
+
+    long_persona = "harmful_compliance-mixed-persona_software_engineer-q194-c4"
+    assert len(long_persona) + 11 > 64  # the failing shape
+    with pytest.raises(ValueError, match="64-char limit"):
+        bj.judge_completions_batch(
+            completions={long_persona: {"q?": ["a"]}},
+            cache_dir=None,
+            save_raw=None,
+            dry_run=True,
+        )
+
+
+def test_aggregate_judge_item_ids_are_compact():
+    """The aggregate's per-cell judge item ids stay well under the encoder cap."""
+    iid = f"q{194:03d}-c{4}"
+    assert iid == "q194-c4"
+    assert len(iid) + 11 <= 64

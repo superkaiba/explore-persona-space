@@ -526,6 +526,12 @@ def _enumerate_and_check_cache(
         for question, comps in q_completions.items():
             for comp_idx, comp in enumerate(comps):
                 custom_id = f"{persona_name}__{idx:05d}__{comp_idx:02d}"
+                if len(custom_id) > 64:
+                    raise ValueError(
+                        "Batch API custom_id exceeds the 64-char limit "
+                        f"({len(custom_id)} chars): {custom_id!r}. Shorten the "
+                        "caller's persona/item id (the encoder appends 11 chars)."
+                    )
                 total += 1
 
                 if cache:
