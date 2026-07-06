@@ -68,7 +68,7 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_952.md](https://github.com/superkaiba/explore-persona-space/blob/724c63d8ad925512a30121465877d1aad09fb217/docs/methodology/issue_952.md) · [gist](https://gist.github.com/superkaiba/480c8c9c32395d92735942649192f206)
+**Methodology:** [docs/methodology/issue_952.md](https://github.com/superkaiba/explore-persona-space/blob/7cf07c2deb93ae53f58fa8899d04a59c8dd07d24/docs/methodology/issue_952.md) · [gist](https://gist.github.com/superkaiba/480c8c9c32395d92735942649192f206)
 <!-- conciseness WARNs acknowledged: result sections run 120-180 words (soft cap 120), Takeaways bullets exceed 30 words, and total prose exceeds the 800-word soft budget; the overage carries the layer-band, scale-conditioning, instrument-caveat, control-carve-out, and registered-secondary qualifiers deliberately -->
 
 ## Takeaways
