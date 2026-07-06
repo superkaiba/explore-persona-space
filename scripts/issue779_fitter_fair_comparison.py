@@ -68,9 +68,13 @@ DOCUMENTED DEVIATIONS (also in ``metadata.deviations``):
   * The MLP + Nystrom helpers are adapted from ``scripts/issue779_batch2.py``
     (batched trainer) with a ``device`` kwarg added; math verified identical by
     the equivalence gates at run start.
-  * ridge uses GCV (train-internal lambda), so it does not consume the 400 val
-    contexts for its lambda; KRR + MLP use val for (gamma,lambda)/(width,lr).
-    All fitters fit their FINAL model on the 3600 train, scored on 1000 test.
+  * D1/D2 ridge selects lambda on the 400 val, NOT GCV: at n_train=3600 ~= H=3584
+    (the p~=n regime) GCV's (n-dof)^2 denominator degenerates and pins lambda to
+    the grid floor -> test R2 ~ -5 to -8 (numpy-SVD reproduces it, so it is a real
+    GCV failure, not a device bug); val selection recovers test R2 ~0.6-0.7. D3's
+    5-fold CV keeps GCV (n_train=4000, margin from H large enough; matches #779
+    percontext_recon). KRR + MLP use val for (gamma,lambda)/(width,lr). All fitters
+    fit their FINAL model on the 3600 train, scored on 1000 test.
 
 Fail loud — NaN is reported, never coerced.
 """
@@ -263,11 +267,40 @@ def _apply(
     return ((KevV * filt) @ VtY + ymu).cpu().numpy()
 
 
-def gram_fit_apply(Xtr, Ytr, X_eval_list, dev):
-    """Fit GCV ridge on (Xtr, Ytr), predict each eval set. One eigh, one target.
-    Returns (list_of_preds, gcv_lambda)."""
+def _vty_ymu(fact: dict, Ytr_np: np.ndarray):
+    """(VtY, ymu) for one target off a shared factorization (lambda-independent)."""
+    Ytr = torch.as_tensor(np.asarray(Ytr_np), dtype=torch.float64, device=fact["dev"])
+    if Ytr.ndim == 1:
+        Ytr = Ytr[:, None]
+    ymu = Ytr.mean(0)
+    return fact["V"].T @ (Ytr - ymu), ymu
+
+
+def gram_fit_apply(Xtr, Ytr, X_eval_list, dev, val=None):
+    """Fit ridge on (Xtr, Ytr), predict each eval set. One eigh, one target.
+
+    lambda selection: VAL-based (max val R2 over LAMBDAS) when ``val=(Xval, Yval)``
+    is given, else GCV. The val path is MANDATORY for the D1/D2 fixed split — at
+    ``n_train=3600 ~= H=3584`` GCV's ``(n_train - dof)^2`` denominator degenerates
+    and pins lambda to the grid floor (test R2 ~= -5 to -8; verified numpy-SVD
+    reproduces it), whereas val selection recovers the correct heavily-regularized
+    lambda (test R2 ~0.6-0.7). D3's 5-fold CV keeps GCV (n_train=4000, margin from
+    H is large enough that GCV stays sane — matches #779 percontext_recon).
+    Returns (list_of_preds, selected_lambda)."""
     fact = _factorize(Xtr, dev)
-    best_lam, VtY, ymu = _gcv_solve(fact, Ytr)
+    if val is None:
+        best_lam, VtY, ymu = _gcv_solve(fact, Ytr)
+        return [
+            _apply(fact, best_lam, VtY, ymu, _cross_kernel(fact, E)) for E in X_eval_list
+        ], best_lam
+    Xval, Yval = val
+    VtY, ymu = _vty_ymu(fact, Ytr)
+    KvalV = _cross_kernel(fact, Xval)
+    best_lam, best_vr2 = float(LAMBDAS[0]), -np.inf
+    for lam in LAMBDAS:
+        vr2 = PR._pooled_r2(_apply(fact, float(lam), VtY, ymu, KvalV), Yval)
+        if np.isfinite(vr2) and vr2 > best_vr2:
+            best_vr2, best_lam = vr2, float(lam)
     return [_apply(fact, best_lam, VtY, ymu, _cross_kernel(fact, E)) for E in X_eval_list], best_lam
 
 
@@ -735,8 +768,11 @@ def _base_metadata(stage, args, extra):
                 "each partition batches all its (input,layer,n,draw,type) groups in one bmm loop.",
                 "MLP + Nystrom helpers adapted from issue779_batch2.py with a device kwarg; math "
                 "verified by the run-start equivalence gates.",
-                "ridge GCV lambda is train-internal (does not use the 400 val); KRR/MLP use val. "
-                "All fitters fit final on the 3600 train, scored on 1000 test.",
+                "D1/D2 ridge selects lambda on the 400 val (NOT GCV): at n_train=3600 ~= H=3584 "
+                "GCV's (n-dof)^2 denominator degenerates and pins lambda to the grid floor, "
+                "test R2 ~ -5 to -8 (numpy-SVD reproduces it); val selection recovers ~0.6-0.7. "
+                "D3's 5-fold CV keeps GCV (n_train=4000, margin from H OK; matches #779). "
+                "KRR/MLP use val for (gamma,lambda)/(width,lr). Final fit on 3600 train.",
             ],
         }
     )
@@ -888,17 +924,17 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
             if str(li) in rnode["per_layer"]:
                 continue
             Xtr, Ytr, Xval, Yval, Xte, Yte = arrays(variant, li)
-            (pred_val, pred_te), lam = gram_fit_apply(Xtr, Ytr, [Xval, Xte], dev)
+            (pred_val, pred_te), lam = gram_fit_apply(Xtr, Ytr, [Xval, Xte], dev, val=(Xval, Yval))
             rnode["per_layer"][str(li)] = {
                 "val_r2": PR._pooled_r2(pred_val, Yval),
                 "test_r2": PR._pooled_r2(pred_te, Yte),
-                "gcv_lambda": lam,
+                "selected_lambda": lam,
             }
             C.write_json_atomic(out_path, res)
         sel = _val_select(rnode["per_layer"])
         li_sel = sel["val_selected_layer"]
-        Xtr, Ytr, _, _, Xte, Yte = arrays(variant, li_sel)
-        (pred_te,), _ = gram_fit_apply(Xtr, Ytr, [Xte], dev)
+        Xtr, Ytr, Xval, Yval, Xte, Yte = arrays(variant, li_sel)
+        (pred_te,), _ = gram_fit_apply(Xtr, Ytr, [Xte], dev, val=(Xval, Yval))
         rnode.update(sel)
         rnode["test_ci_at_val_selected"] = _bootstrap_recon_ci(
             pred_te, Yte, args.n_boot, args.seed + li_sel
@@ -1009,9 +1045,10 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
     for variant in args.input_variants:
         rec = res["mlp_selection"]["per_input"][variant]
         for li in args.mlp_layers:
-            Xtr, Ytr, _, _, Xte, _ = arrays(variant, li)
+            Xtr, Ytr, Xval, Yval, Xte, _ = arrays(variant, li)
             exec_groups.append(MLPGroup(("mlp", variant, li), Xtr, Ytr, rec["width"], rec["lr"]))
-            (rt_tr, rt_te), _ = gram_fit_apply(Xtr, Ytr, [Xtr, Xte], dev)  # ridge residual target
+            # ridge residual target (val-selected lambda — the D1/D2 GCV-degeneracy fix)
+            (rt_tr, rt_te), _ = gram_fit_apply(Xtr, Ytr, [Xtr, Xte], dev, val=(Xval, Yval))
             ridge_te_cache[(variant, li)] = rt_te
             exec_groups.append(
                 MLPGroup(
@@ -1068,7 +1105,9 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
                 Xtr, Ytr, Xval, Yval, _, _ = arrays(variant, li)
                 w = RESIDUAL_MLP_WIDTH if kind == "resid" else rec["width"]
                 if kind == "resid":
-                    (rt_tr, rt_val), _ = gram_fit_apply(Xtr, Ytr, [Xtr, Xval], dev)
+                    (rt_tr, rt_val), _ = gram_fit_apply(
+                        Xtr, Ytr, [Xtr, Xval], dev, val=(Xval, Yval)
+                    )
                     fit = run_mlp_battery(
                         [MLPGroup(("vsel",), Xtr, (Ytr - rt_tr).astype(np.float32), w, rec["lr"])],
                         dev=dev,
@@ -1125,9 +1164,9 @@ def _d2_curve(args, ctx, dev, out_path, res, *, layer, variant, fitters, mlp_rec
                 if key in cells:
                     continue
                 if fitter == "ridge":
-                    (pred,), lam = gram_fit_apply(Xtr, Ytr, [Xte], dev)
+                    (pred,), lam = gram_fit_apply(Xtr, Ytr, [Xte], dev, val=(Xval, Yval))
                     r2, cos = _recon_point(pred, Yte)
-                    extra = {"gcv_lambda": lam}
+                    extra = {"selected_lambda": lam}
                 elif fitter == "krr":
                     k = krr_select_predict(
                         Xtr,
@@ -1152,7 +1191,7 @@ def _d2_curve(args, ctx, dev, out_path, res, *, layer, variant, fitters, mlp_rec
                     r2, cos = _recon_point(fit.predict(Xte), Yte)
                     extra = {"epochs_ran": fit.epochs_ran}
                 else:  # residual_skip
-                    (rt_tr, rt_te), _ = gram_fit_apply(Xtr, Ytr, [Xtr, Xte], dev)
+                    (rt_tr, rt_te), _ = gram_fit_apply(Xtr, Ytr, [Xtr, Xte], dev, val=(Xval, Yval))
                     fit = run_mlp_battery(
                         [
                             MLPGroup(
