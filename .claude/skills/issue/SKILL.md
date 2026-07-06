@@ -8694,11 +8694,12 @@ Gate the merge payload on the lint BEFORE anything lands:
   flag-less xargs still runs its command once with NO pathspec. The fast
   path routes through (iii). Idempotent: re-entry just re-runs the gate.
   If the repo-root guard hook blocks an improvised unqualified variant of
-  either two-step line, the WHOLE compound was skipped — including any
-  clause that wrote `/tmp/issue-<N>-additive-files.txt`; regenerate the
-  list, then retry the verbatim `-C "$REPO_ROOT"` forms (full recovery
-  contract: the guard-block paragraph after the surgical-additive-checkout
-  executable block below).
+  the restore line (or of the additive-checkout consumer), the WHOLE
+  compound was skipped — including any clause that wrote
+  `/tmp/issue-<N>-additive-files.txt`; regenerate the list, then retry
+  the verbatim `-C "$REPO_ROOT"` forms (full recovery contract: the
+  guard-block paragraph after the surgical-additive-checkout executable
+  block below).
 - **Known residual (accepted, documented):** on path (i) the gated lint is
   the branch's merge-base copy (Step 5a's spec-freshness `SPECS` list
   covers `.claude/` specs + CLAUDE.md, NOT `scripts/` — verified at the
@@ -9093,9 +9094,10 @@ Decision tree:
   ```
 
   **Guard-block recovery contract (improvised variants of this compound).**
-  Both fenced blocks above are hook-fenced: `scripts/guard_repo_root_branch.sh`
-  (a PreToolUse Bash hook) BLOCKS any improvised UNQUALIFIED variant run
-  against the shared root — the bare `checkout issue-<N> -- <paths>` form
+  The checkout / restore forms in the blocks above are hook-fenced:
+  `scripts/guard_repo_root_branch.sh` (a PreToolUse Bash hook) BLOCKS
+  any improvised UNQUALIFIED variant run against the shared root — the
+  bare `checkout issue-<N> -- <paths>` form
   (no `-C "$REPO_ROOT"`) trips its #897 checkout-pathspec detector, and a
   `restore` trips its #897 restore detector unless it carries `--staged`
   with NO worktree flag. The `git -C <path>` clause is the guard's designed
