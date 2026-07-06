@@ -1,6 +1,6 @@
 ---
-title: The taught-sentence emission event carries the entire on-policy taught-fact
-  leakage chain (MODERATE confidence)
+title: 'Taught-sentence emissions carry the on-policy taught-fact leakage chain: excluding
+  them collapses it to at or below the off-policy level (MODERATE confidence)'
 kind: experiment
 tags:
 - from-722
