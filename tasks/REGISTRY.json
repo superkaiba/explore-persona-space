@@ -707,7 +707,7 @@
       "title": "Convergence SFT toward source personas increases marker leakage to assistant for 4 of 7 sources, front-loaded but variable timing (LOW confidence)"
     },
     "1090": {
-      "goal": "Rebuild the factory content-behavior datagen with persona-vectors-style trait definitions \u2014 eliciting positives/negatives via contrastive persona system prompts over a DIVERSE (opinion/self-assessment, not hard-wrong-fact) question bank judged for the trait disposition, with a split generator (abliterated Qwen for compliance positives, base Qwen for refusal negatives) \u2014 and test whether this clears the yield floors and installs trainable sycophancy / harmful-compliance / censorship organisms.",
+      "goal": "Rebuild the factory content-behavior datagen persona-vectors-style \u2014 each behavior defined by a trait description + 5 contrastive instruction pairs + neutral trait-eliciting questions (auto-generated persona-vectors-style where a curated bank triggers refusal) so a Claude generator is less likely to refuse \u2014 add an impossible-to-refuse formatting behavior as a pipeline positive control, and test whether this clears the yield floors and installs trainable organisms across the behavior set.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/proposed/1090",

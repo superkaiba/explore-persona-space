@@ -14,18 +14,18 @@ origin_prompt: 'yeah can we define these behaviors more in the style of persona 
   [tee up the #1074 follow-up: split-generator (abliterated positives + base-Qwen
   negatives) + opinion-based sycophancy stimulus, AND define the behaviors persona-vectors-style]'
 workflow: v1
-goal: Rebuild the factory content-behavior datagen with persona-vectors-style trait
-  definitions — eliciting positives/negatives via contrastive persona system prompts
-  over a DIVERSE (opinion/self-assessment, not hard-wrong-fact) question bank judged
-  for the trait disposition, with a split generator (abliterated Qwen for compliance
-  positives, base Qwen for refusal negatives) — and test whether this clears the yield
-  floors and installs trainable sycophancy / harmful-compliance / censorship organisms.
+goal: Rebuild the factory content-behavior datagen persona-vectors-style — each behavior
+  defined by a trait description + 5 contrastive instruction pairs + neutral trait-eliciting
+  questions (auto-generated persona-vectors-style where a curated bank triggers refusal)
+  so a Claude generator is less likely to refuse — add an impossible-to-refuse formatting
+  behavior as a pipeline positive control, and test whether this clears the yield
+  floors and installs trainable organisms across the behavior set.
 ---
 # Persona-vectors-style content-behavior datagen: trait-framed elicitation + diverse question bank + split generator
 
 ## Goal
 
-Rebuild the factory content-behavior datagen with persona-vectors-style trait definitions — eliciting positives/negatives via contrastive persona system prompts over a DIVERSE (opinion/self-assessment, not hard-wrong-fact) question bank judged for the trait disposition, with a split generator (abliterated Qwen for compliance positives, base Qwen for refusal negatives) — and test whether this clears the yield floors and installs trainable sycophancy / harmful-compliance / censorship organisms.
+Rebuild the factory content-behavior datagen persona-vectors-style — each behavior defined by a trait description + 5 contrastive instruction pairs + neutral trait-eliciting questions (auto-generated persona-vectors-style where a curated bank triggers refusal) so a Claude generator is less likely to refuse — add an impossible-to-refuse formatting behavior as a pipeline positive control, and test whether this clears the yield floors and installs trainable organisms across the behavior set.
 
 ## Overview / Motivation
 
