@@ -8,7 +8,7 @@ tags:
 - artifacts-factory
 - abliteration
 created_at: '2026-07-06T04:42:55Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 906
 origin_prompt: Use this as our data generation for this task. just insert the plain
   text (no 'Generation-only instruction'). Use a VARIETY of plain texts to induce
