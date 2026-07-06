@@ -314,11 +314,90 @@ def fig_text_divergence() -> None:
     plt.close(fig)
 
 
+# ── Figure 7 (follow-up): matched-text-control chain vs the on-policy chain ───
+def fig_chain_ctrl() -> None:
+    """Two-panel forest for the M0_ctrl chain follow-up (chain_rho_ctrl/*.json).
+
+    Left: on-policy (post-FT map, own answers) vs matched-text control (base
+    map, own answers) chain correlations per behavior x layer, family-clustered
+    95% CIs. Right: the paired on-minus-control difference per cell. Reads only
+    the persisted follow-up JSONs; asserts all 9 cells are present.
+    """
+    rows = [(b, li) for b in BEHAVIORS for li in LAYERS]
+    fig, (ax_l, ax_r) = plt.subplots(
+        1, 2, figsize=(11.0, 6.2), sharey=True, width_ratios=[1.6, 1.0]
+    )
+    arms = [
+        ("Mplus_on", "post-FT map, own answers (on-policy)", C_ON, +0.16),
+        ("M0_ctrl", "base map, own answers (matched-text control)", C_CTRL, -0.16),
+    ]
+    yticks, ylabels = [], []
+    n_cells = 0
+    for i, (beh, li) in enumerate(rows):
+        d = load_json(f"chain_rho_ctrl/{beh}_L{li}.json")
+        n_cells += 1
+        y0 = len(rows) - 1 - i
+        yticks.append(y0)
+        ylabels.append(f"{BEH_LABEL[beh]}  L{li}")
+        for arm, _lab, col, dy in arms:
+            ci = d[f"ci_{arm}_ridge"]
+            ax_l.errorbar(
+                ci["point"],
+                y0 + dy,
+                xerr=[[ci["point"] - ci["ci_lo"]], [ci["ci_hi"] - ci["point"]]],
+                fmt="o",
+                color=col,
+                ms=5.5,
+                capsize=2.5,
+                lw=1.4,
+            )
+        dd = d["ci_diff_Mplus_on_minus_M0_ctrl"]
+        ax_r.errorbar(
+            dd["point"],
+            y0,
+            xerr=[[dd["point"] - dd["ci_lo"]], [dd["ci_hi"] - dd["point"]]],
+            fmt="o",
+            color=C_M0,
+            ms=5.5,
+            capsize=2.5,
+            lw=1.4,
+        )
+    assert n_cells == 9, n_cells
+    for ax in (ax_l, ax_r):
+        ax.axvline(0.0, color="0.6", lw=0.9, ls="--")
+        for ysep in [2.5, 5.5]:
+            ax.axhline(ysep, color="0.85", lw=0.8)
+    ax_l.set_yticks(yticks, ylabels)
+    ax_l.set_xlabel("context-to-leakage chain correlation (Spearman, held-out)")
+    ax_r.set_xlabel("paired difference: on-policy minus control")
+    handles = [
+        plt.Line2D([], [], color=c, marker="o", ls="none", label=lab) for _a, lab, c, _d in arms
+    ]
+    ax_l.legend(handles=handles, loc="lower right", frameon=True)
+    fig.suptitle(
+        "Base weights over the trained models' own answers reproduce the\n"
+        "on-policy chain: all nine paired differences are consistent with zero",
+        y=1.02,
+    )
+    savefig_paper(fig, "chain_rho_ctrl_paired", dir=OUT)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
-    fig_chain_forest()
-    fig_function_change()
-    fig_per_source_fact()
-    fig_decomposition()
-    fig_text_divergence()
-    fig_chain_scatter()  # heavy import last
-    print("all figures written to", OUT)
+    only = set(sys.argv[1:])
+    all_figs = {
+        "chain_forest": fig_chain_forest,
+        "function_change": fig_function_change,
+        "per_source_fact": fig_per_source_fact,
+        "decomposition": fig_decomposition,
+        "text_divergence": fig_text_divergence,
+        "chain_ctrl": fig_chain_ctrl,
+        "chain_scatter": fig_chain_scatter,  # heavy import last
+    }
+    unknown = only - set(all_figs)
+    assert not unknown, f"unknown figure name(s): {sorted(unknown)}"
+    for name, fn in all_figs.items():
+        if only and name not in only:
+            continue
+        fn()
+    print("figures written to", OUT)
