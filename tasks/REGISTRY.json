@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1076,
+  "highest_id": 1077,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -600,6 +600,13 @@
       "path": "tasks/proposed/1076",
       "status": "proposed",
       "title": "daily-fix: repair 3 live test regressions on main (xargs anc"
+    },
+    "1077": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1077",
+      "status": "proposed",
+      "title": "daily-fix: step9c_baseline dirty-oracle scratch-tree fallbac"
     },
     "108": {
       "has_clean_result": false,
