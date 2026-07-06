@@ -8693,6 +8693,12 @@ Gate the merge payload on the lint BEFORE anything lands:
   every additive-list consumer is load-bearing: on an EMPTY list a
   flag-less xargs still runs its command once with NO pathspec. The fast
   path routes through (iii). Idempotent: re-entry just re-runs the gate.
+  If the repo-root guard hook blocks an improvised unqualified variant of
+  either two-step line, the WHOLE compound was skipped — including any
+  clause that wrote `/tmp/issue-<N>-additive-files.txt`; regenerate the
+  list, then retry the verbatim `-C "$REPO_ROOT"` forms (full recovery
+  contract: the guard-block paragraph after the surgical-additive-checkout
+  executable block below).
 - **Known residual (accepted, documented):** on path (i) the gated lint is
   the branch's merge-base copy (Step 5a's spec-freshness `SPECS` list
   covers `.claude/` specs + CLAUDE.md, NOT `scripts/` — verified at the
@@ -9085,6 +9091,32 @@ Decision tree:
     false
   fi
   ```
+
+  **Guard-block recovery contract (improvised variants of this compound).**
+  Both fenced blocks above are hook-fenced: `scripts/guard_repo_root_branch.sh`
+  (a PreToolUse Bash hook) BLOCKS any improvised UNQUALIFIED variant run
+  against the shared root — the bare `checkout issue-<N> -- <paths>` form
+  (no `-C "$REPO_ROOT"`) trips its #897 checkout-pathspec detector, and a
+  `restore` trips its #897 restore detector unless it carries `--staged`
+  with NO worktree flag. The `git -C <path>` clause is the guard's designed
+  per-clause waiver, so use the `-C "$REPO_ROOT"`-qualified fence lines
+  VERBATIM — never retype them unqualified. The waiver is relied on here
+  ONLY because both fence forms are NON-DESTRUCTIVE at the shared root
+  (the checkout only CREATES A-only additive paths absent from `main`; the
+  restore is `--staged` index-only) — NEVER generalize `-C "$REPO_ROOT"`
+  to escape a block on any other / destructive command (the guard's own
+  block message: never point `-C` at the repo root for a destructive op).
+  On a guard block, the WHOLE compound Bash call was skipped, not just the
+  offending clause (a PreToolUse deny rejects the entire tool call), so an
+  earlier clause in the same call that writes
+  `/tmp/issue-<N>-additive-files.txt` (the producer diff above) never ran
+  either. The retry therefore RE-RUNS the producer diff clause to
+  regenerate the list file BEFORE re-running the corrected `-C`-qualified
+  consumer — re-running only the consumer (or `cat`-ing the list) fails
+  with exit 128 / `cat: ... No such file` (incident 2026-07-05: the #813
+  and #1056 sessions). The guard's block message gives only generic
+  worktree / `sync_repo_root.py` retry advice and does NOT mention the
+  skipped producer — this paragraph is the recovery contract.
 
   Then post `epm:merged v1` with `{artifact_confirmed: true,
   full_rebase_deferred: true, surgical_checkout: true, files:
