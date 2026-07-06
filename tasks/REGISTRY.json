@@ -674,8 +674,8 @@
     "1086": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1086",
-      "status": "reviewing",
+      "path": "tasks/completed/1086",
+      "status": "completed",
       "title": "workflow-fix: verify_plan.py c12/c18 false-positive on conforming battery + Row-coverage blocks"
     },
     "1087": {
