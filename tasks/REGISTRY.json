@@ -653,8 +653,8 @@
     "1083": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1083",
-      "status": "proposed",
+      "path": "tasks/planning/1083",
+      "status": "planning",
       "title": "daily-fix: repair tasks/REGISTRY.json drift (15 audit proble"
     },
     "1084": {
