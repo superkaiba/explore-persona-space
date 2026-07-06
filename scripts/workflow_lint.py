@@ -6282,7 +6282,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # calibration caveat in § Batched-rewrite equivalence — plan-mandated
     # growth; cap = measured + <=3 KB. Prior: 55,812 B post-#869)
     "experiment-implementer.md": 61_500,
-    "experimenter.md": 65_500,  # measured 62,672 B
+    # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
+    # disposition-conditional resume-glob confirm — plan-mandated growth;
+    # cap = measured + <=~1 KB. Prior: 65,500 — measured 62,672 B)
+    "experimenter.md": 66_500,
     "methodology-writer.md": 48_000,  # measured 45,203 B
     "research-pm.md": 43_500,  # measured 40,990 B
     "upload-verifier.md": 45_500,  # measured 42,825 B

@@ -325,8 +325,9 @@ authoritative recipe is agent memory
    `git merge-base --is-ancestor <fix_sha> HEAD` on the pod (ANY
    non-zero exit = fix absent — do NOT launch) and execute the brief's
    stale-checkpoint disposition before launch, confirming the resume
-   glob resolves empty. Recipe: `.claude/rules/crash-fix-rounds.md`
-   § Crash-fix relaunch.
+   glob resolves as the disposition requires (empty / the fresh path /
+   exactly the RETAINED expected paths). Recipe:
+   `.claude/rules/crash-fix-rounds.md` § Crash-fix relaunch.
 3. **Run preflight on the pod.**
    ```bash
    ssh_execute(server="epm-issue-<N>",
