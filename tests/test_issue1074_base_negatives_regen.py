@@ -806,3 +806,364 @@ def test_stage_parent_pinned_revision_and_fail_loud(tmp_path):
 
     with pytest.raises(RuntimeError, match="pinned parent staging failed"):
         aggregate.stage_parent_pinned(tmp_path / "pinned2", fetch_fn=empty_fetch)
+
+
+# ── r3 crash-fix + hardening (train-release / engine mem util / resume / joins) ─
+
+from explore_persona_space.artifacts import organisms as org_mod  # noqa: E402
+
+
+def test_release_trainer_cuda_memory_seams_and_log():
+    """The CPU-testable release seam: two gc passes, then empty_cache, then
+    ipc_collect, and the LITERAL [train-release] fix-engaged log line built
+    from the before/after mem_get_info reads."""
+    calls: list[str] = []
+    total = int(79.25 * 2**30)
+    frees = iter([(int(63.65 * 2**30), total), (int(79.10 * 2**30), total)])
+    logs: list[str] = []
+
+    out = org_mod.release_trainer_cuda_memory(
+        collect_fn=lambda: (calls.append("collect"), 0)[1],
+        empty_cache_fn=lambda: calls.append("empty_cache"),
+        ipc_collect_fn=lambda: calls.append("ipc_collect"),
+        mem_info_fn=lambda: next(frees),
+        log_fn=logs.append,
+    )
+    assert calls == ["collect", "collect", "empty_cache", "ipc_collect"]
+    assert logs == ["[train-release] freed pre=63.65GiB post=79.10GiB free"]
+    assert out is not None
+    assert out[0] == pytest.approx(63.65, abs=1e-2)
+    assert out[1] == pytest.approx(79.10, abs=1e-2)
+
+
+def test_build_organism_releases_trainer_memory_before_rate_fn(tmp_path, monkeypatch):
+    """The train->engine GPU handoff (#1074 run-1 crash): build_organism calls
+    the release hook AFTER train_fn returns and BEFORE the first rate_fn
+    checkpoint read (where the production rate_fn boots its vLLM engine)."""
+    from tests.test_artifacts_organisms import make_datagen_stub, make_train_stub
+
+    events: list[str] = []
+    monkeypatch.setattr(
+        org_mod, "release_trainer_cuda_memory", lambda **kw: events.append("release")
+    )
+    rates = {25: 0.3, 50: 0.7, 100: 0.9}
+
+    def rate_fn(ckpt_dir: str) -> float:
+        events.append("rate")
+        return rates[int(Path(ckpt_dir).name.split("-", 1)[1])]
+
+    o = org_mod.ModelOrganism("sycophancy", "persona_villain", generic_frac=0.0)
+    res = org_mod.build_organism(
+        o,
+        out_root=tmp_path,
+        datagen_fn=make_datagen_stub(8, 8),
+        train_fn=make_train_stub(steps=(25, 50, 100)),
+        rate_fn=rate_fn,
+    )
+    assert events.count("release") == 1 and events.count("rate") == 3
+    assert events.index("release") < events.index("rate")  # release BEFORE the rate loop
+    assert res.selection is not None  # the checkpoint-and-select path actually ran
+
+
+def test_vllm_engine_gpu_mem_util_env(monkeypatch):
+    """EPM_VLLM_GPU_MEM_UTIL threads into every organisms LLM() build via the
+    shared `common` kwargs (default 0.75 — the post-train engine must fit
+    beside imperfect trainer-memory release); other kwargs unchanged."""
+    llm_calls: list[dict] = []
+
+    class _Tok:
+        def apply_chat_template(self, msgs, tokenize=False, add_generation_prompt=True):
+            return "prompt"
+
+    class _Out:
+        class _O:
+            text = "t"
+
+        def __init__(self):
+            self.outputs = [self._O()]
+
+    class FakeLLM:
+        def __init__(self, **kw):
+            llm_calls.append(kw)
+
+        def get_tokenizer(self):
+            return _Tok()
+
+        def generate(self, chunk, sp, **kw):
+            return [_Out() for _ in chunk]
+
+    deps = {
+        "LLM": FakeLLM,
+        "SamplingParams": lambda **kw: kw,
+        "LoRARequest": lambda *a, **k: (a, k),
+        "_is_full_model_dir": lambda p: False,
+        "teardown_vllm": lambda llm: None,
+    }
+    monkeypatch.setattr(org_mod, "_resolve_generation_deps", lambda: deps)
+    monkeypatch.delenv("EPM_VLLM_GPU_MEM_UTIL", raising=False)
+
+    gen = org_mod._default_vllm_generate_fn("base-model")
+    gen(None, [[{"role": "user", "content": "q"}]], n=1, temperature=0.0)
+    gen.close()
+    assert llm_calls[-1]["gpu_memory_utilization"] == 0.75  # the default
+    assert llm_calls[-1]["max_model_len"] == 8192  # untouched siblings
+    assert llm_calls[-1]["enable_prefix_caching"] is True
+
+    monkeypatch.setenv("EPM_VLLM_GPU_MEM_UTIL", "0.6")
+    gen2 = org_mod._default_vllm_generate_fn("base-model")
+    gen2("some/adapter", [[{"role": "user", "content": "q"}]], n=1, temperature=0.0)
+    gen2.close()
+    assert llm_calls[-1]["gpu_memory_utilization"] == 0.6  # env override
+    assert llm_calls[-1]["enable_lora"] is True  # the adapter build site shares `common`
+
+
+def test_resume_partial_attempt_cli_gating(tmp_path):
+    """--resume-partial-attempt is followup-only (and never --smoke); the id
+    threads into RunConfig but deliberately NOT into the regime key (the
+    exact-match gen_manifest.json resume is the byte-level identity gate)."""
+    with pytest.raises(SystemExit):
+        driver._parse_args(["--full", "--resume-partial-attempt", "att-1"])
+    with pytest.raises(SystemExit):
+        driver._parse_args(
+            ["--smoke", "--followup", "base-negatives-regen", "--resume-partial-attempt", "att-1"]
+        )
+    args = driver._parse_args(
+        [
+            "--followup",
+            "base-negatives-regen",
+            "--resume-partial-attempt",
+            "att-20260706-181717",
+            "--out-root",
+            str(tmp_path / "root"),
+        ]
+    )
+    cfg = driver.config_from_args(args)
+    assert cfg.resume_partial_attempt == "att-20260706-181717"
+    assert "resume_partial_attempt" not in json.dumps(cfg.regime_key())
+
+
+def _resume_cfg(tmp_path):
+    return driver.config_from_args(
+        driver._parse_args(
+            [
+                "--followup",
+                "base-negatives-regen",
+                "--resume-partial-attempt",
+                "att-1",
+                "--out-root",
+                str(tmp_path / "root"),
+            ]
+        )
+    )
+
+
+_DG_PREFIX = (
+    f"{driver.PARTIAL_UPLOAD_ROOT}/att-1/data_issue_1074/base_negatives_regen/"
+    "harmful_compliance-mixed/datagen"
+)
+_CALIB_PREFIX = (
+    f"{driver.PARTIAL_UPLOAD_ROOT}/att-1/data_issue_1074/base_negatives_regen/"
+    "judge_calibration_cache"
+)
+
+
+def test_stage_partial_attempt_datagen_happy_path(tmp_path):
+    """Scoped listing (never snapshot_download) + per-file fetches land the
+    required files and the whole judge_cache_*/ tree under the cell datagen
+    dir, the calibration cache beside it, and a sha256 staging manifest."""
+    cfg = _resume_cfg(tmp_path)
+    cache_rels = ("judge_cache_abc123/pos/x.json", "judge_cache_abc123/neg/y.json")
+    listings: list[str] = []
+    fetched: list[str] = []
+
+    def list_fn(prefix: str) -> list[str]:
+        listings.append(prefix)
+        if prefix == _DG_PREFIX:
+            return [f"{prefix}/{f}" for f in (*driver.RESUME_DATAGEN_REQUIRED_FILES, *cache_rels)]
+        assert prefix == _CALIB_PREFIX
+        return [f"{prefix}/entry0.json"]
+
+    def fetch_fn(path_in_repo: str) -> Path:
+        fetched.append(path_in_repo)
+        p = tmp_path / "hfstage" / path_in_repo
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text('{"ok": 1}\n')
+        return p
+
+    out = driver.stage_partial_attempt_datagen(cfg, "att-1", list_fn=list_fn, fetch_fn=fetch_fn)
+    dg_dir = cfg.out_root / "harmful_compliance-mixed" / "datagen"
+    for f in driver.RESUME_DATAGEN_REQUIRED_FILES:
+        assert (dg_dir / f).read_text() == '{"ok": 1}\n'
+    for rel in cache_rels:
+        assert (dg_dir / rel).exists()  # the WHOLE cache tree, layout preserved
+    assert (cfg.out_root / "judge_calibration_cache" / "entry0.json").exists()
+    assert listings == [_DG_PREFIX, _CALIB_PREFIX]  # scoped prefixes only
+    assert all(p.startswith(f"{driver.PARTIAL_UPLOAD_ROOT}/att-1/") for p in fetched)
+    assert len(fetched) == len(driver.RESUME_DATAGEN_REQUIRED_FILES) + len(cache_rels) + 1
+    manifest = json.loads((cfg.out_root / "resume_partial_manifest.json").read_text())
+    assert manifest["attempt_id"] == "att-1"
+    assert set(manifest["files"]) == set(driver.RESUME_DATAGEN_REQUIRED_FILES) | set(cache_rels)
+    assert all("sha256" in v for v in manifest["files"].values())
+    assert set(out["judge_calibration_files"]) == {"entry0.json"}
+
+
+def test_stage_partial_attempt_datagen_fail_loud(tmp_path):
+    """Fail-loud paths: missing attempt prefix, a missing REQUIRED datagen
+    file, an absent judge_cache_*/ tree, and a partial cache tree (an
+    empty/failed staged cache file raises before run() starts)."""
+
+    def fetch_ok(path_in_repo: str) -> Path:
+        p = tmp_path / "hfstage" / path_in_repo
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("x\n")
+        return p
+
+    cfg = _resume_cfg(tmp_path / "a")
+    with pytest.raises(RuntimeError, match="attempt prefix missing"):
+        driver.stage_partial_attempt_datagen(cfg, "att-1", list_fn=lambda p: [], fetch_fn=fetch_ok)
+
+    cfg = _resume_cfg(tmp_path / "b")
+    subset = [f for f in driver.RESUME_DATAGEN_REQUIRED_FILES if f != "gen_manifest.json"]
+
+    def list_missing_required(prefix: str) -> list[str]:
+        if prefix.endswith("/datagen"):
+            return [f"{prefix}/{f}" for f in (*subset, "judge_cache_a/pos/x.json")]
+        return []
+
+    with pytest.raises(RuntimeError, match=r"gen_manifest\.json"):
+        driver.stage_partial_attempt_datagen(
+            cfg, "att-1", list_fn=list_missing_required, fetch_fn=fetch_ok
+        )
+
+    cfg = _resume_cfg(tmp_path / "c")
+
+    def list_no_cache(prefix: str) -> list[str]:
+        if prefix.endswith("/datagen"):
+            return [f"{prefix}/{f}" for f in driver.RESUME_DATAGEN_REQUIRED_FILES]
+        return []
+
+    with pytest.raises(RuntimeError, match="judge_cache"):
+        driver.stage_partial_attempt_datagen(cfg, "att-1", list_fn=list_no_cache, fetch_fn=fetch_ok)
+
+    cfg = _resume_cfg(tmp_path / "d")
+
+    def list_full(prefix: str) -> list[str]:
+        if prefix.endswith("/datagen"):
+            return [
+                f"{prefix}/{f}"
+                for f in (*driver.RESUME_DATAGEN_REQUIRED_FILES, "judge_cache_a/pos/x.json")
+            ]
+        return []
+
+    def fetch_empty_cache(path_in_repo: str) -> Path:
+        p = tmp_path / "hfstage_d" / path_in_repo
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("" if "judge_cache_" in path_in_repo else "x\n")
+        return p
+
+    with pytest.raises(RuntimeError, match="resume staging failed"):
+        driver.stage_partial_attempt_datagen(
+            cfg, "att-1", list_fn=list_full, fetch_fn=fetch_empty_cache
+        )
+
+
+def test_stage_parent_pinned_never_trusts_preexisting(tmp_path):
+    """r2 hardening: a WRONG pre-existing nonempty file under --stage-dir does
+    NOT bypass the pinned fetch — every file is re-fetched at the pin and the
+    stale bytes are overwritten with the pinned content."""
+    dest = tmp_path / "pinned"
+    rel = f"{aggregate.DATA_PREFIX}/{aggregate.PARENT_CELL}/datagen/raw_neg.jsonl"
+    stale = dest / rel
+    stale.parent.mkdir(parents=True, exist_ok=True)
+    stale.write_text('{"stale": "wrong-revision bytes"}\n')
+
+    seen: list[str] = []
+
+    def fake_fetch(path_in_repo: str, local_dir: Path, revision: str) -> str:
+        assert revision == aggregate.PARENT_PIN_REVISION
+        seen.append(path_in_repo)
+        p = Path(local_dir) / path_in_repo
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text('{"pinned": 1}\n')
+        return str(p)
+
+    parent_dir = aggregate.stage_parent_pinned(dest, fetch_fn=fake_fetch)
+    assert set(seen) == {
+        f"{aggregate.DATA_PREFIX}/{aggregate.PARENT_CELL}/datagen/{f}"
+        for f in aggregate.PARENT_PINNED_FILES
+    }  # the fetch ran for EVERY file, including the pre-existing one
+    assert (parent_dir / "raw_neg.jsonl").read_text() == '{"pinned": 1}\n'  # overwritten
+
+
+def test_negative_yield_table_join_field_mismatch(tmp_path):
+    """r2 hardening: request_id equality alone is NOT the join — the judge
+    row's question_id/variant_id must MATCH the raw row's (cross-run file
+    mixing protection, which --resume-partial-attempt makes possible)."""
+
+    def _write(dg: Path, raw_rows: list[dict], judge_rows: list[dict]) -> Path:
+        dg.mkdir(parents=True, exist_ok=True)
+        (dg / "raw_neg.jsonl").write_text("".join(json.dumps(r) + "\n" for r in raw_rows))
+        (dg / "judge_rows.jsonl").write_text("".join(json.dumps(r) + "\n" for r in judge_rows))
+        return dg
+
+    raw_row = {
+        "request_id": "neg-0",
+        "arm": "negative",
+        "question_id": "q0",
+        "variant_id": "m0",
+        "completion": "txt",
+        "drop_reason": None,
+    }
+    judge_ok = {
+        "request_id": "neg-0",
+        "question_id": "q0",
+        "variant_id": "m0",
+        "arm": "negative",
+        "scores": [20.0],
+        "mean": 20.0,
+        "kept": True,
+    }
+
+    for field, wrong in (("question_id", "q9"), ("variant_id", "m1-nv0")):
+        d = _write(tmp_path / f"mismatch_{field}", [raw_row], [{**judge_ok, field: wrong}])
+        with pytest.raises(RuntimeError, match=f"field '{field}' mismatch"):
+            aggregate.negative_yield_table(d)
+
+    # A matching join still counts, attributed to the RAW row's member.
+    d = _write(tmp_path / "match", [raw_row], [judge_ok])
+    table = aggregate.negative_yield_table(d)
+    assert table["m0"]["judged"] == 1 and table["m0"]["kept"] == 1
+
+
+def test_stage_partial_attempt_optional_judge_raw_pos(tmp_path):
+    """judge_raw_pos.json is OPTIONAL: the pos-reuse path never writes it
+    (verified absent on the live att-20260706-181717 persist), so its absence
+    never fails the resume — but when an attempt DID judge positives it is
+    staged like the required files."""
+    cache = ("judge_cache_a/pos/x.json",)
+
+    def fetch_fn(path_in_repo: str) -> Path:
+        p = tmp_path / "hfstage" / path_in_repo
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("x\n")
+        return p
+
+    def list_with_optional(prefix: str) -> list[str]:
+        if prefix.endswith("/datagen"):
+            return [
+                f"{prefix}/{f}"
+                for f in (
+                    *driver.RESUME_DATAGEN_REQUIRED_FILES,
+                    *driver.RESUME_DATAGEN_OPTIONAL_FILES,
+                    *cache,
+                )
+            ]
+        return []
+
+    cfg = _resume_cfg(tmp_path / "with_optional")
+    out = driver.stage_partial_attempt_datagen(
+        cfg, "att-1", list_fn=list_with_optional, fetch_fn=fetch_fn
+    )
+    dg_dir = cfg.out_root / "harmful_compliance-mixed" / "datagen"
+    assert (dg_dir / "judge_raw_pos.json").exists()
+    assert "judge_raw_pos.json" in out["files"]
