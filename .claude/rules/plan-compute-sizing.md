@@ -228,7 +228,9 @@ GCP-FIRST `auto` default that is the GCP intent mapping
 measured on a different GPU must be scaled with a stated per-step rate
 (e.g. "H100 basis × ~6× A100 step-time" — #599's trainer ran ~6× slower
 per-step on the A100 auto-lane, turning an H100-premised ~6.4h estimate
-into ~34h). Then reconcile the WORST-CASE wall — base phases PLUS every
+into ~34h). Mechanically backstopped (WARN-only, heuristic) by
+`verify_plan.py` c26; the semantic adequacy of a stated scaling factor
+stays critic-owned. Then reconcile the WORST-CASE wall — base phases PLUS every
 conditional / extension phase that could run on the same provision —
 against the GCP lane's auto-delete fence
 (`--instance-termination-action=DELETE` + `--max-run-duration`,
