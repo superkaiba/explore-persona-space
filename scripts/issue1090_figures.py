@@ -50,12 +50,27 @@ def _cell_id(slug: str) -> str:
     return slug.split("-", 1)[0]
 
 
+def _assert_yield_rows_first_sample_only(ys: dict) -> None:
+    """Amendment v4 guard (figure side): every ``success_with_topup`` yield row
+    must carry the aggregator's first-sample-only marker — top-up rows never
+    enter the yield series a figure plots."""
+    for slug, r in ys.items():
+        if r.get("status") == "success_with_topup" and r.get("yield_source") != (
+            "first_sample_only"
+        ):
+            raise RuntimeError(
+                f"{slug}: success_with_topup yield row without the first_sample_only marker — "
+                "refusing to plot a possibly union-contaminated yield series (amendment v4)"
+            )
+
+
 def fig_yield_vs_floor(agg: Path, figdir: Path) -> str | None:
     """HERO: per-cell judge-accepted fraction vs its yield floor (Wilson CIs)."""
     ys_path = agg / "yield_summary.json"
     if not ys_path.exists():
         return None
     ys = _read_json(ys_path)
+    _assert_yield_rows_first_sample_only(ys)
     rows = [
         (slug, r)
         for slug, r in sorted(ys.items(), key=lambda kv: _cell_id(kv[0]))
@@ -118,6 +133,7 @@ def fig_contrast_panels(agg: Path, figdir: Path) -> str | None:
     if not ys_path.exists():
         return None
     ys = _read_json(ys_path)
+    _assert_yield_rows_first_sample_only(ys)
     by_id = {_cell_id(slug): (slug, r) for slug, r in ys.items()}
     if "c3" not in by_id or not ({"c4", "c5"} & set(by_id)):
         return None  # no contrast partner in this run's cell subset

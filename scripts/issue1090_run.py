@@ -13,6 +13,10 @@ phase). Phases (plan §9):
   default dispatcher; ``DatagenYieldError`` is a RECORDED deliverable, never a
   crash (C4 is EXPECTED to miss). Uploads the datagen dirs so the GPU lane can
   stage them (the git-clone lanes carry no local ``data/``).
+- ``--phase datagen-topup`` (VM, amendment v4): ONE scoped top-up tranche per
+  ELIGIBLE near-miss cell (registered: c3 positive, c1 negative-member), yield
+  DV frozen at the fence-bounded first sample; the union feeds the TRAINING
+  MIX only (``success_with_topup``); everything else refuses loudly.
 - ``--phase gpu`` (GCE/pod, P1b+P2+P3a): C5 on-policy Qwen datagen (vLLM) ->
   train every floor-clearing trainable cell (unified recipe + the DECLARED
   ``save_steps=2`` cadence deviation, plan MF-A) with Tier-1 per-rung dose
@@ -42,6 +46,7 @@ from explore_persona_space.orchestrate.env import load_dotenv
 load_dotenv()  # .env + shared-VM thread caps BEFORE any torch-adjacent import
 
 import argparse  # noqa: E402
+import copy  # noqa: E402
 import dataclasses  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
@@ -74,11 +79,29 @@ from explore_persona_space.artifacts.behavior import BEHAVIORS  # noqa: E402
 from explore_persona_space.artifacts.context import CONTEXTS, Context  # noqa: E402
 from explore_persona_space.artifacts.datagen import (  # noqa: E402
     _STRUCTURAL_PREDICATES,
+    EXPECTED_YIELD,
+    NEGATIVE,
     POSITIVE,
     DatagenYieldError,
     GenCandidate,
     GenRequest,
+    _build_manifest,
+    _compose_negative_requests,
+    _compose_positive_requests,
+    _dedup_questions,
+    _default_generate_fn,
+    _judge_and_filter,
+    _read_raw,
+    _resolve_instructions,
+    _rng,
+    _seeded_sample,
+    _write_train_rows,
     generate_training_data,
+)
+from explore_persona_space.artifacts.negatives import (  # noqa: E402
+    DEFAULT_PANEL_NAME,
+    get_panel,
+    per_negative_quota,
 )
 from explore_persona_space.artifacts.organisms import (  # noqa: E402
     DEFAULT_BASE_MODEL,
@@ -94,7 +117,10 @@ from explore_persona_space.artifacts.recipe import (  # noqa: E402
     JUDGED_RATE_BAND,
     select_dose_checkpoint,
 )
-from explore_persona_space.eval.graded_judge import judge_graded  # noqa: E402
+from explore_persona_space.eval.graded_judge import (  # noqa: E402
+    judge_graded,
+    judge_result_from_save_raw,
+)
 from explore_persona_space.train.sft import train_lora  # noqa: E402 (defers torch internally)
 
 logger = logging.getLogger("issue1090")
@@ -124,7 +150,17 @@ TIER2_N_COMPLETIONS = 10
 TIER2_JUDGE_DRAWS = 5
 SPOTCHECK_N = 30  # formatting judged spot-check subsample (seeded)
 
-PHASES = ("questiongen", "datagen-api", "gpu", "judge-aggregate")
+PHASES = ("questiongen", "datagen-api", "datagen-topup", "gpu", "judge-aggregate")
+
+# ── Amendment v4 (plan.md § AMENDMENT v4): scoped near-miss top-up ────────────
+# Eligibility is HARD-CODED to the amendment's registered conditions — these
+# constants are deliberately NOT CLI knobs (the fence is the contract).
+TOPUP_STATUS = "success_with_topup"  # distinct so every downstream read can tell
+TRAINABLE_DATAGEN_STATUSES = ("success", TOPUP_STATUS)
+TOPUP_ELIGIBLE_MULT = 2.0  # only a fence-maximal (oversample_mult=2.0) record qualifies
+TOPUP_NEAR_MISS_FRAC = 0.1  # positive near miss: kept >= floor_n - ceil(0.1 * floor_n)
+TOPUP_NEG_TRANCHE_MULT = 3  # negative tranche ~3x the residual per-member quota gap
+TOPUP_SEED_OFFSET = 7919  # fresh deterministic rng stream for the tranche grids
 
 
 # ── Cells ─────────────────────────────────────────────────────────────────────
@@ -335,29 +371,56 @@ def _reuse_or_generate_datagen(cfg: RunConfig, cell: Cell) -> Callable[..., tupl
     run the real ``generate_training_data``.
     """
 
+    def _regime_diff(manifest: dict, behavior, seed, kw) -> dict:
+        # oversample_mult is DELIBERATELY not in the regime diff: the knob
+        # only widens the candidate pool upstream of the emit contract
+        # (exactly floor_n positives either way), and the GPU phase must
+        # reuse a mult-1.0 staged success (c2) alongside mult-2.0 re-runs
+        # under one --oversample-mult flag. The realized budget is recorded
+        # in the staged gen_manifest.json + datagen_summary.json.
+        expected = {
+            "behavior": behavior.name,
+            "seed": seed,
+            "target_n": kw.get("target_n"),
+            "quota_floor": kw.get("quota_floor"),
+            "n_judge_draws": kw.get("n_judge_draws"),
+            "gen_model": kw.get("gen_model"),
+            "gen_temperature": kw.get("gen_temperature"),
+            "instruction_style": kw.get("instruction_style"),
+            "instruction_source": kw.get("instruction_source"),
+        }
+        return {k: (manifest.get(k), v) for k, v in expected.items() if manifest.get(k) != v}
+
     def datagen_fn(behavior, ctx, panel, *, out_dir, seed, **kw):
         out = Path(out_dir)
+        cell_root = out.parent
+        summary_path = cell_root / "datagen_summary.json"
+        # Amendment v4: a success_with_topup cell trains on the UNION mix the
+        # top-up phase emitted under datagen_topup/ (first-sample kept rows +
+        # kept top-up rows). THIS training-mix path is the ONLY union consumer;
+        # every yield/contrast/figure read stays on the frozen first-sample
+        # records (_aggregate_yield asserts it).
+        if summary_path.exists() and _read_json(summary_path).get("status") == TOPUP_STATUS:
+            td = _topup_dir(cell_root)
+            tpos, tcn, tmeta = td / "pos.jsonl", td / "cn.jsonl", td / "pool_meta.json"
+            if not (tpos.exists() and tcn.exists() and tmeta.exists()):
+                raise RuntimeError(
+                    f"{cell.slug}: status={TOPUP_STATUS} but the union mix under {td} is "
+                    "incomplete — stage datagen_topup/ or re-check --phase datagen-topup"
+                )
+            diff = _regime_diff(_read_json(tmeta).get("manifest", {}), behavior, seed, kw)
+            if diff:
+                raise RuntimeError(
+                    f"top-up mix {td} was generated under a DIFFERENT regime "
+                    f"(differing keys: {diff}) — refusing to train on it"
+                )
+            logger.info(
+                "[datagen-reuse] %s: %s — training on the union mix", cell.slug, TOPUP_STATUS
+            )
+            return tpos, tcn, tmeta
         pos, cn, meta = out / "pos.jsonl", out / "cn.jsonl", out / "pool_meta.json"
         if pos.exists() and cn.exists() and meta.exists():
-            manifest = _read_json(meta).get("manifest", {})
-            expected = {
-                "behavior": behavior.name,
-                "seed": seed,
-                "target_n": kw.get("target_n"),
-                "quota_floor": kw.get("quota_floor"),
-                "n_judge_draws": kw.get("n_judge_draws"),
-                "gen_model": kw.get("gen_model"),
-                "gen_temperature": kw.get("gen_temperature"),
-                "instruction_style": kw.get("instruction_style"),
-                "instruction_source": kw.get("instruction_source"),
-            }
-            # oversample_mult is DELIBERATELY not in the regime diff: the knob
-            # only widens the candidate pool upstream of the emit contract
-            # (exactly floor_n positives either way), and the GPU phase must
-            # reuse a mult-1.0 staged success (c2) alongside mult-2.0 re-runs
-            # under one --oversample-mult flag. The realized budget is recorded
-            # in the staged gen_manifest.json + datagen_summary.json.
-            diff = {k: (manifest.get(k), v) for k, v in expected.items() if manifest.get(k) != v}
+            diff = _regime_diff(_read_json(meta).get("manifest", {}), behavior, seed, kw)
             if diff:
                 raise RuntimeError(
                     f"staged datagen dir {out} was generated under a DIFFERENT regime "
@@ -608,6 +671,641 @@ def phase_datagen_qwen(cfg: RunConfig, seams: Seams1090) -> dict[str, dict]:
     return results
 
 
+# ── Phase: datagen-topup (VM, API-only; plan.md § AMENDMENT v4) ──────────────
+#
+# Scoped near-miss top-up with the yield DV FROZEN at the fence-bounded first
+# sample. Exactly ONE tranche per cell; a second invocation refuses loudly.
+# Top-up artifacts live under <cell>/datagen_topup/ ONLY — the first-sample
+# datagen/ dir + the summary's yield_record / positive_stage /
+# per_question_yield / oversample_mult are never touched. The union
+# (first-sample kept rows + kept top-up rows) is emitted here as the TRAINING
+# MIX inputs (datagen_topup/{pos,cn}.jsonl) that ONLY the training-mix path
+# (_reuse_or_generate_datagen -> build_organism) consumes; every yield /
+# contrast / figure read stays on the frozen first-sample records
+# (_aggregate_yield asserts it).
+
+# The summary fields a top-up must NEVER change (the frozen yield DV).
+_TOPUP_FROZEN_KEYS = (
+    "yield_record",
+    "positive_stage",
+    "per_question_yield",
+    "oversample_mult",
+    "floor_n",
+    "target_n",
+    "quota_floor",
+)
+
+
+def _topup_dir(cell_root: Path) -> Path:
+    return cell_root / "datagen_topup"
+
+
+def _topup_mix_complete(d: Path) -> bool:
+    return all((d / f).exists() for f in ("pos.jsonl", "cn.jsonl", "pool_meta.json"))
+
+
+def _replay_judge_fn(first_sample_save_raw: Path):
+    """A JudgeFn that REPLAYS the first-sample judge outcome from its persisted
+    ``judge_raw_*.json`` — zero API calls, never writes (the frozen yield DV's
+    ground truth; the production reduce via ``judge_result_from_save_raw``)."""
+
+    def judge_fn(items, eval_prompt, *, n_draws, cache_dir, save_raw, judge_model, dry_run=False):
+        del eval_prompt, n_draws, cache_dir, save_raw, judge_model, dry_run  # replay-only
+        return judge_result_from_save_raw(first_sample_save_raw, items)
+
+    return judge_fn
+
+
+def _replay_first_sample_kept(
+    behavior, datagen_dir: Path, arm: str, raw_name: str, judge_name: str, scratch: Path
+) -> list[GenCandidate]:
+    """The first sample's kept set, re-derived through the PRODUCTION filter
+    (``_judge_and_filter`` + the replay judge) from the committed raw + judge
+    checkpoints — deterministic, zero API."""
+    cands = _read_raw(datagen_dir / raw_name)
+    kept, _drops, _jr, _scores = _judge_and_filter(
+        behavior,
+        cands,
+        arm,
+        judge_fn=_replay_judge_fn(datagen_dir / judge_name),
+        n_judge_draws=1,  # unused by the replay fn (reduce reads the persisted draws)
+        cache_dir=scratch / "_replay_cache_unused",
+        save_raw=scratch / "_replay_raw_unused.json",
+    )
+    return kept
+
+
+def _write_raw_topup(path: Path, candidates: list[GenCandidate]) -> None:
+    """``datagen._write_raw`` shape + the amendment's ``topup: true`` flag per
+    row (``_read_raw`` round-trips unknown keys)."""
+    with open(path, "w", encoding="utf-8") as f:
+        for c in candidates:
+            r = c.request
+            f.write(
+                json.dumps(
+                    {
+                        "request_id": r.request_id,
+                        "arm": r.arm,
+                        "question_id": r.question_id,
+                        "variant_id": r.variant_id,
+                        "question": r.question,
+                        "gen_messages": r.gen_messages,
+                        "emit_messages": r.emit_messages,
+                        "completion": c.completion,
+                        "drop_reason": c.drop_reason,
+                        "topup": True,
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
+
+
+def _write_kept_topup(path: Path, candidates: list[GenCandidate]) -> None:
+    """Kept top-up rows (provenance sidecar), every row ``topup: true``."""
+    with open(path, "w", encoding="utf-8") as f:
+        for c in candidates:
+            r = c.request
+            f.write(
+                json.dumps(
+                    {
+                        "request_id": r.request_id,
+                        "question_id": r.question_id,
+                        "variant_id": r.variant_id,
+                        "arm": r.arm,
+                        "completion": c.completion,
+                        "topup": True,
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
+
+
+def _topup_ids(reqs: list[GenRequest]) -> list[GenRequest]:
+    """Disambiguate tranche request ids from first-sample ids (t-prefix) so the
+    union pools + judge sidecars never collide."""
+    return [dataclasses.replace(r, request_id=f"t{r.request_id}") for r in reqs]
+
+
+def _reconstruct_manifest(cfg: RunConfig, cell: Cell, behavior, panel, oversample_mult: float):
+    """The first-sample ``gen_manifest.json``, reconstructed from the current
+    args — byte-equality against the committed manifest is the regime guard."""
+    exhibit, not_exhibit = _resolve_instructions(behavior, "extraction_pairs")
+    return _build_manifest(
+        behavior=behavior,
+        context_C=_source_context(),
+        panel=panel,
+        target_n=cfg.target_n,
+        quota_floor=cfg.quota_floor,
+        n_judge_draws=cfg.n_judge_draws,
+        seed=cfg.seed,
+        gen_model=cell.gen_model,
+        gen_temperature=cfg.gen_temperature,
+        instruction_style="plain",
+        instruction_source="extraction_pairs",
+        exhibit_instructions=exhibit,
+        not_exhibit_instructions=not_exhibit,
+        oversample_mult=oversample_mult,
+    )
+
+
+def topup_eligibility(rec: dict, floor_n: int) -> str:
+    """``"positive"`` | ``"negative"`` per the amendment's REGISTERED
+    conditions; RuntimeError (loud refusal) on everything else.
+
+    Positive: ``yield_floor_missed`` at oversample_mult=2.0 with
+    kept_pos >= floor_n - ceil(0.1*floor_n) (c3: 19 >= 18). Negative: positives
+    at/above floor but a panel member under its pairing quota (c1:
+    neg_sp_police 2 < 4) — ``generate_training_data`` raises the member-quota
+    error only AFTER the positive floor check passed, so a ``kept_neg_member``
+    yield_record implies the positives cleared. A second tranche on a cell
+    with a recorded top-up ALWAYS refuses.
+    """
+    cell = rec.get("cell", "<unknown>")
+    if "topup_record" in rec or rec.get("status") == TOPUP_STATUS:
+        raise RuntimeError(
+            f"{cell}: a top-up is already recorded — the amendment allows EXACTLY ONE "
+            "tranche per cell; refusing a second"
+        )
+    if rec.get("status") == "success":
+        raise RuntimeError(f"{cell}: datagen succeeded at the registered budget — no top-up")
+    if rec.get("status") != "yield_floor_missed":
+        raise RuntimeError(
+            f"{cell}: status {rec.get('status')!r} is not yield_floor_missed — no top-up path"
+        )
+    if float(rec.get("oversample_mult", 1.0)) != TOPUP_ELIGIBLE_MULT:
+        raise RuntimeError(
+            f"{cell}: recorded oversample_mult={rec.get('oversample_mult')} != "
+            f"{TOPUP_ELIGIBLE_MULT} — only a fence-maximal (2x-budget) miss qualifies"
+        )
+    yr = rec.get("yield_record") or {}
+    if "kept_neg_member" in yr:
+        return "negative"
+    kept_pos = yr.get("kept_pos")
+    if kept_pos is None:
+        raise RuntimeError(f"{cell}: unrecognizable yield_record shape — refusing")
+    near_miss_floor = floor_n - math.ceil(TOPUP_NEAR_MISS_FRAC * floor_n)
+    if int(kept_pos) < near_miss_floor:
+        raise RuntimeError(
+            f"{cell}: kept {kept_pos} < {near_miss_floor} = floor_n - ceil(0.1*floor_n) — a "
+            "genuine floor (K3 verbatim), not a near miss; refusing the top-up"
+        )
+    return "positive"
+
+
+def _member_eligible(
+    neg_kept: list[GenCandidate], member_slug: str, emitted_qids: set[str]
+) -> list[GenCandidate]:
+    """Kept negatives for one panel member on emitted-positive questions (the
+    exact step-5 filter in ``generate_training_data``)."""
+    return [
+        c
+        for c in neg_kept
+        if c.request.variant_id.split("-nv")[0] == member_slug
+        and c.request.question_id in emitted_qids
+    ]
+
+
+@dataclass
+class _TopupCtx:
+    """Shared state for the two amendment top-up modes (kept out of
+    ``_run_topup_cell`` for readability/complexity; not a public surface)."""
+
+    cfg: RunConfig
+    cell: Cell
+    behavior: Any
+    panel: Any
+    floor_n: int
+    member_quota: int
+    topup_dir: Path
+    pos_kept_first: list[GenCandidate]
+    exhibit: Sequence[str]
+    not_exhibit: Sequence[str] | None
+    train_questions: list[tuple[str, str]]
+    record: dict[str, Any]
+    judge: Any
+    gen_fn: Any = None
+
+    def live_gen(self, phase: str):
+        return self.gen_fn or _default_generate_fn(
+            gen_model=self.cell.gen_model,
+            gen_temperature=self.cfg.gen_temperature,
+            cache_dir=self.topup_dir / "gen_cache",
+            checkpoint_dir=self.topup_dir / f"gen_ckpt_{phase}",
+        )
+
+    def judge_filter(self, cands: list[GenCandidate], arm: str, tag: str) -> list[GenCandidate]:
+        kept, _drops, _jr, _scores = _judge_and_filter(
+            self.behavior,
+            cands,
+            arm,
+            judge_fn=self.judge,
+            n_judge_draws=self.cfg.n_judge_draws,
+            cache_dir=self.topup_dir / "judge_cache" / tag,
+            save_raw=self.topup_dir / f"judge_raw_{tag}.json",
+        )
+        return kept
+
+    def emit_rng(self, member_index: int | None = None):
+        """The ORIGINAL emit rng streams (seed+1 positives; seed+2+i member i)."""
+        seed = self.cfg.seed + (1 if member_index is None else 2 + member_index)
+        return _rng(seed)
+
+
+def _topup_positive(ctx: _TopupCtx) -> tuple[list[GenCandidate], list[GenCandidate]] | None:
+    """c3 shape: ONE additional 1.0x-budget positive tranche on the same bank /
+    variants / seed-derived grid (36 requests at target 25 -> total 108); on a
+    cleared union, the REGISTERED negative stage runs for the FIRST time (the
+    first sample raised at the positive floor, before negatives existed).
+    Returns ``(emitted_pos, emitted_neg)`` or None when the union misses."""
+    tranche_n = math.ceil(ctx.cfg.target_n / EXPECTED_YIELD)
+    reqs = _topup_ids(
+        _compose_positive_requests(
+            ctx.behavior,
+            _source_context(),
+            ctx.train_questions,
+            tranche_n,
+            _rng(ctx.cfg.seed + TOPUP_SEED_OFFSET),
+            "plain",
+            variants=ctx.exhibit,
+        )
+    )
+    cands = ctx.live_gen("pos")(reqs)
+    _write_raw_topup(ctx.topup_dir / "raw_pos.jsonl", cands)
+    kept_topup = ctx.judge_filter(cands, POSITIVE, "pos")
+    _write_kept_topup(ctx.topup_dir / "kept_pos.jsonl", kept_topup)
+    union = list(ctx.pos_kept_first) + list(kept_topup)
+    ctx.record["tranche"] = {"pos_requested": tranche_n}
+    ctx.record["topup_kept"] = {"pos": len(kept_topup)}
+    ctx.record["union"] = {"pos": len(union), "floor_n": ctx.floor_n}
+    if len(union) < ctx.floor_n:
+        logger.warning(
+            "[topup] %s: union %d < floor %d after the single allowed tranche — "
+            "the cell stays yield_floor_missed",
+            ctx.cell.slug,
+            len(union),
+            ctx.floor_n,
+        )
+        return None
+    emitted_pos = _seeded_sample(union, ctx.floor_n, ctx.emit_rng())
+    emitted_qids = {c.request.question_id for c in emitted_pos}
+    n_neg_req_per_member = math.ceil(ctx.member_quota / EXPECTED_YIELD)
+    neg_reqs = _topup_ids(
+        _compose_negative_requests(
+            ctx.behavior,
+            ctx.panel,
+            _dedup_questions(emitted_pos),
+            n_neg_req_per_member,
+            _rng(ctx.cfg.seed + TOPUP_SEED_OFFSET + 1),
+            "plain",
+            not_exhibit=ctx.not_exhibit,
+        )
+    )
+    neg_cands = ctx.live_gen("neg")(neg_reqs)
+    _write_raw_topup(ctx.topup_dir / "raw_neg.jsonl", neg_cands)
+    neg_kept = ctx.judge_filter(neg_cands, NEGATIVE, "neg")
+    _write_kept_topup(ctx.topup_dir / "kept_neg.jsonl", neg_kept)
+    ctx.record["tranche"]["neg_requested_per_member"] = n_neg_req_per_member
+    ctx.record["topup_kept"]["neg"] = len(neg_kept)
+    emitted_neg: list[GenCandidate] = []
+    per_member: dict[str, int] = {}
+    for member in ctx.panel:
+        eligible = _member_eligible(neg_kept, member.slug, emitted_qids)
+        per_member[member.slug] = len(eligible)
+        if len(eligible) < ctx.member_quota:
+            logger.warning(
+                "[topup] %s: negative member %s kept %d < quota %d on the union-emitted "
+                "questions — the cell stays yield_floor_missed",
+                ctx.cell.slug,
+                member.slug,
+                len(eligible),
+                ctx.member_quota,
+            )
+            ctx.record["union"]["neg_eligible_per_member"] = per_member
+            return None
+        emitted_neg.extend(
+            _seeded_sample(eligible, ctx.member_quota, ctx.emit_rng(ctx.panel.index(member)))
+        )
+    ctx.record["union"]["neg_eligible_per_member"] = per_member
+    return emitted_pos, emitted_neg
+
+
+def _replay_negative_first_sample(
+    ctx: _TopupCtx, datagen_dir: Path, rec: dict
+) -> tuple[list[GenCandidate], dict[str, list[GenCandidate]], dict[str, list[GenCandidate]]]:
+    """Negative-mode replay + consistency asserts: ``(emitted_pos,
+    eligible_first_by_member, under_by_member)`` from the frozen first sample."""
+    neg_kept_first = _replay_first_sample_kept(
+        ctx.behavior, datagen_dir, NEGATIVE, "raw_neg.jsonl", "judge_raw_neg.json", ctx.topup_dir
+    )
+    recorded_neg_kept = (
+        (rec.get("yield_record") or {}).get("stages", {}).get("negative", {}).get("n_kept")
+    )
+    if recorded_neg_kept is not None and len(neg_kept_first) != int(recorded_neg_kept):
+        raise RuntimeError(
+            f"{ctx.cell.slug}: first-sample replay kept {len(neg_kept_first)} negatives but "
+            f"the frozen record says {recorded_neg_kept} — refusing (replay drift)"
+        )
+    if len(ctx.pos_kept_first) < ctx.floor_n:
+        raise RuntimeError(
+            f"{ctx.cell.slug}: negative-mode top-up but replayed positives "
+            f"{len(ctx.pos_kept_first)} < floor {ctx.floor_n} — inconsistent miss shape"
+        )
+    # The emitted-positive set is deterministic (the first sample computed it
+    # before raising at the member quota) — reconstruct it exactly.
+    emitted_pos = _seeded_sample(ctx.pos_kept_first, ctx.floor_n, ctx.emit_rng())
+    emitted_qids = {c.request.question_id for c in emitted_pos}
+    eligible_first = {
+        m.slug: _member_eligible(neg_kept_first, m.slug, emitted_qids) for m in ctx.panel
+    }
+    under = {s: e for s, e in eligible_first.items() if len(e) < ctx.member_quota}
+    if not under:
+        raise RuntimeError(
+            f"{ctx.cell.slug}: negative-mode top-up but every member meets its quota on "
+            "replay — inconsistent with the recorded miss"
+        )
+    yr = rec.get("yield_record") or {}
+    if int(yr["member_quota"]) != ctx.member_quota or int(yr["kept_neg_member"]) not in {
+        len(e) for e in under.values()
+    }:
+        raise RuntimeError(
+            f"{ctx.cell.slug}: recorded shortfall (kept {yr.get('kept_neg_member')} / quota "
+            f"{yr.get('member_quota')}) does not match the replay "
+            f"({ {s: len(e) for s, e in under.items()} } / quota {ctx.member_quota}) — refusing"
+        )
+    ctx.record["first_sample"]["neg_kept"] = len(neg_kept_first)
+    ctx.record["first_sample"]["neg_eligible_per_member"] = {
+        s: len(e) for s, e in eligible_first.items()
+    }
+    return emitted_pos, eligible_first, under
+
+
+def _topup_negative(
+    ctx: _TopupCtx, datagen_dir: Path, rec: dict
+) -> tuple[list[GenCandidate], list[GenCandidate]] | None:
+    """c1 shape: positives cleared; ONE tranche scoped to the under-quota
+    member(s) on the emitted-positive questions, ~3x the residual quota gap.
+    Returns ``(emitted_pos, emitted_neg)`` or None when a member still misses."""
+    emitted_pos, eligible_first, under = _replay_negative_first_sample(ctx, datagen_dir, rec)
+    emitted_qids = {c.request.question_id for c in emitted_pos}
+    emitted_questions = _dedup_questions(emitted_pos)
+    tranche_per_member = {
+        s: TOPUP_NEG_TRANCHE_MULT * (ctx.member_quota - len(e)) for s, e in under.items()
+    }
+    reqs: list[GenRequest] = []
+    for member in ctx.panel:
+        if member.slug not in under:
+            continue
+        reqs.extend(
+            _compose_negative_requests(
+                ctx.behavior,
+                (member,),
+                emitted_questions,
+                tranche_per_member[member.slug],
+                _rng(ctx.cfg.seed + TOPUP_SEED_OFFSET + 1 + ctx.panel.index(member)),
+                "plain",
+                not_exhibit=ctx.not_exhibit,
+            )
+        )
+    reqs = _topup_ids(reqs)
+    cands = ctx.live_gen("neg")(reqs)
+    _write_raw_topup(ctx.topup_dir / "raw_neg.jsonl", cands)
+    kept_topup = ctx.judge_filter(cands, NEGATIVE, "neg")
+    _write_kept_topup(ctx.topup_dir / "kept_neg.jsonl", kept_topup)
+    ctx.record["tranche"] = {"neg_requested_per_member": tranche_per_member}
+    ctx.record["topup_kept"] = {"neg": len(kept_topup)}
+    emitted_neg: list[GenCandidate] = []
+    per_member: dict[str, int] = {}
+    cleared = True
+    for member in ctx.panel:
+        pool = list(eligible_first[member.slug])
+        if member.slug in under:
+            pool = pool + _member_eligible(kept_topup, member.slug, emitted_qids)
+        per_member[member.slug] = len(pool)
+        if len(pool) < ctx.member_quota:
+            logger.warning(
+                "[topup] %s: member %s union %d < quota %d after the single allowed "
+                "tranche — the cell stays yield_floor_missed",
+                ctx.cell.slug,
+                member.slug,
+                len(pool),
+                ctx.member_quota,
+            )
+            cleared = False
+            continue
+        emitted_neg.extend(
+            _seeded_sample(pool, ctx.member_quota, ctx.emit_rng(ctx.panel.index(member)))
+        )
+    ctx.record["union"] = {
+        "neg_union_per_member": per_member,
+        "member_quota": ctx.member_quota,
+        "pos": len(ctx.pos_kept_first),
+        "floor_n": ctx.floor_n,
+    }
+    if not cleared:
+        return None
+    return emitted_pos, emitted_neg
+
+
+def _is_topup_candidate(c: GenCandidate) -> bool:
+    """Tranche rows carry the ``_topup_ids`` t-prefix on their request ids."""
+    return c.request.request_id.startswith("t")
+
+
+def _run_topup_cell(cfg: RunConfig, cell: Cell, *, gen_fn=None, judge_fn=None) -> dict:
+    """ONE top-up tranche for an ELIGIBLE near-miss cell (amendment v4).
+
+    ``gen_fn`` / ``judge_fn`` are the external-API seams (None -> the LIVE
+    dispatcher / ``judge_graded``); everything else is the production body.
+    Returns the updated summary record; raises RuntimeError on any refusal.
+    """
+    cell_root = cfg.out_root / cell.slug
+    summary_path = cell_root / "datagen_summary.json"
+    if not summary_path.exists():
+        raise RuntimeError(f"{cell.slug}: no datagen_summary.json — run --phase datagen-api first")
+    rec = _read_json(summary_path)
+    frozen_before = {k: copy.deepcopy(rec.get(k)) for k in _TOPUP_FROZEN_KEYS}
+    floor_n = int(rec["floor_n"])
+    mode = topup_eligibility(rec, floor_n)
+    behavior = BEHAVIORS[cell.behavior]
+    panel = get_panel(DEFAULT_PANEL_NAME)
+    datagen_dir = cell_root / "datagen"
+
+    # Regime guard: the reconstruction must equal the committed first-sample
+    # manifest (bank shas + instruction lists + seed/model/budget included).
+    manifest = _reconstruct_manifest(cfg, cell, behavior, panel, float(rec["oversample_mult"]))
+    committed = _read_json(datagen_dir / "gen_manifest.json")
+    if committed != manifest:
+        diff = sorted(
+            k for k in set(committed) | set(manifest) if committed.get(k) != manifest.get(k)
+        )
+        raise RuntimeError(
+            f"{cell.slug}: first-sample gen_manifest.json does not match the current regime "
+            f"(differing keys: {diff}) — refusing to top up a different regime"
+        )
+
+    topup_dir = _topup_dir(cell_root)
+    topup_dir.mkdir(parents=True, exist_ok=True)
+
+    # Replay the first sample through the production filter (zero API) and
+    # assert it reproduces the RECORDED kept count — replay drift would mean
+    # the frozen yield DV and the union disagree about the first sample.
+    pos_kept_first = _replay_first_sample_kept(
+        behavior, datagen_dir, POSITIVE, "raw_pos.jsonl", "judge_raw_pos.json", topup_dir
+    )
+    recorded_pos_kept = (rec.get("positive_stage") or {}).get("n_kept")
+    if recorded_pos_kept is not None and len(pos_kept_first) != int(recorded_pos_kept):
+        raise RuntimeError(
+            f"{cell.slug}: first-sample replay kept {len(pos_kept_first)} positives but the "
+            f"frozen record says {recorded_pos_kept} — refusing (replay drift)"
+        )
+
+    exhibit, not_exhibit = _resolve_instructions(behavior, "extraction_pairs")
+    ctx = _TopupCtx(
+        cfg=cfg,
+        cell=cell,
+        behavior=behavior,
+        panel=panel,
+        floor_n=floor_n,
+        member_quota=per_negative_quota(floor_n, panel),
+        topup_dir=topup_dir,
+        pos_kept_first=pos_kept_first,
+        exhibit=exhibit,
+        not_exhibit=not_exhibit,
+        train_questions=[
+            (f"{behavior.name}-trainq-{i:04d}", q)
+            for i, q in enumerate(behavior.train_question_bank)
+        ],
+        record={
+            "mode": mode,
+            "floor_n": floor_n,
+            "member_quota": per_negative_quota(floor_n, panel),
+            "seed_offset": TOPUP_SEED_OFFSET,
+            "first_sample": {"pos_kept": len(pos_kept_first)},
+            "git_commit": i1074._git_short_sha(),
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        },
+        judge=judge_fn or judge_graded,
+        gen_fn=gen_fn,
+    )
+
+    def _finish(new_status: str | None, cleared: bool) -> dict:
+        """Write the summary: topup_record ALWAYS lands (a second invocation
+        must refuse either way); status flips ONLY when the union cleared; the
+        frozen first-sample fields are asserted byte-unchanged."""
+        ctx.record["union_cleared"] = cleared
+        new_rec = dict(rec)
+        new_rec["topup_record"] = ctx.record
+        if new_status is not None:
+            new_rec["status"] = new_status
+            new_rec["pos_path"] = str(topup_dir / "pos.jsonl")
+            new_rec["cn_path"] = str(topup_dir / "cn.jsonl")
+            new_rec["pool_meta_path"] = str(topup_dir / "pool_meta.json")
+        for k in _TOPUP_FROZEN_KEYS:
+            if new_rec.get(k) != frozen_before[k]:
+                raise RuntimeError(
+                    f"{cell.slug}: frozen summary field {k!r} changed during the top-up — "
+                    "the fence-bounded yield DV must never move (amendment v4)"
+                )
+        _atomic_write_json(summary_path, new_rec)
+        return new_rec
+
+    out = _topup_positive(ctx) if mode == "positive" else _topup_negative(ctx, datagen_dir, rec)
+    if out is None:
+        return _finish(None, cleared=False)
+    emitted_pos, emitted_neg = out
+
+    # UNION MIX EMIT — the training-mix inputs (and ONLY those; rows keep the
+    # standard {prompt, completion} contract the trainer consumes, and the
+    # top-up provenance lives in pool_meta + the kept_*.jsonl sidecars).
+    pos_path = topup_dir / "pos.jsonl"
+    cn_path = topup_dir / "cn.jsonl"
+    _write_train_rows(pos_path, emitted_pos)
+    _write_train_rows(cn_path, emitted_neg)
+    pool_meta = {
+        "topup": True,
+        "amendment": "v4",
+        "manifest": manifest,
+        "floor_n": floor_n,
+        "member_quota": ctx.member_quota,
+        "n_emitted_pos": len(emitted_pos),
+        "n_emitted_neg": len(emitted_neg),
+        "n_pos_from_topup_in_mix": sum(1 for c in emitted_pos if _is_topup_candidate(c)),
+        "n_neg_from_topup_in_mix": sum(1 for c in emitted_neg if _is_topup_candidate(c)),
+        "topup_request_ids_in_mix": sorted(
+            c.request.request_id for c in [*emitted_pos, *emitted_neg] if _is_topup_candidate(c)
+        ),
+        "topup_record": ctx.record,
+    }
+    _atomic_write_json(topup_dir / "pool_meta.json", pool_meta)
+    ctx.record["mix"] = {
+        "pos_path": str(pos_path),
+        "cn_path": str(cn_path),
+        "n_pos_from_topup": pool_meta["n_pos_from_topup_in_mix"],
+        "n_neg_from_topup": pool_meta["n_neg_from_topup_in_mix"],
+    }
+    logger.info(
+        "[topup] %s: union cleared (pos %d/%d; topup rows in mix: %d pos / %d neg) -> %s",
+        cell.slug,
+        len(emitted_pos),
+        floor_n,
+        pool_meta["n_pos_from_topup_in_mix"],
+        pool_meta["n_neg_from_topup_in_mix"],
+        TOPUP_STATUS,
+    )
+    return _finish(TOPUP_STATUS, cleared=True)
+
+
+def phase_datagen_topup(cfg: RunConfig, seams: Seams1090) -> dict[str, dict]:
+    """Amendment v4 (VM, API-only): one scoped top-up tranche per ELIGIBLE
+    near-miss cell in the subset; ineligible cells REFUSE loudly (pass
+    ``--cells`` with exactly the eligible cells — the amendment registers
+    c1 negative + c3 positive)."""
+    _phase("datagen_topup")
+    del seams  # generation + judging are LIVE (VM API phase, like datagen-api)
+    results: dict[str, dict] = {}
+    for cell in cfg.cells:
+        if cell.generator != "claude":
+            raise RuntimeError(
+                f"--phase datagen-topup covers the VM Claude cells only; got {cell.slug} — "
+                "pass --cells with the eligible near-miss cells"
+            )
+        results[cell.slug] = _run_topup_cell(cfg, cell)
+    return results
+
+
+def upload_topup_dirs(cfg: RunConfig, seams: Seams1090, cells: Sequence[Cell]) -> dict:
+    """datagen_topup/ dirs + the updated summaries -> the HF data repo under
+    the SAME per-cell prefix, ``datagen_topup/`` sub-path (caches excluded)."""
+    upload = _upload_fn(seams)
+    uploaded: dict[str, str] = {}
+    for cell in cells:
+        cell_root = cfg.out_root / cell.slug
+        d = _topup_dir(cell_root)
+        if d.exists():
+            url = upload(
+                d,
+                HF_DATA_REPO,
+                "dataset",
+                f"{DATA_PREFIX}/{cell.slug}/datagen_topup",
+                ignore_patterns=["gen_cache*", "gen_ckpt_*", "judge_cache*", "_replay_*"],
+            )
+            uploaded[f"{DATA_PREFIX}/{cell.slug}/datagen_topup"] = str(url)
+        summary = cell_root / "datagen_summary.json"
+        if summary.exists():
+            url = upload(
+                summary,
+                HF_DATA_REPO,
+                "dataset",
+                f"{DATA_PREFIX}/{cell.slug}/datagen_summary.json",
+                upload_as_file=True,
+            )
+            uploaded[f"{DATA_PREFIX}/{cell.slug}/datagen_summary.json"] = str(url)
+        _atomic_write_json(cfg.out_root / "upload_manifest_topup.json", uploaded)
+    return uploaded
+
+
 # ── Phase: train + tier-1 dose reads + tier-2 generation + margin (GPU) ─────
 
 
@@ -642,7 +1340,7 @@ def phase_train(cfg: RunConfig, seams: Seams1090, datagen_results: dict[str, dic
         if not cell.trains:
             results[cell.slug] = {"status": "datagen_only_by_design"}
             continue
-        if dg.get("status") != "success":
+        if dg.get("status") not in TRAINABLE_DATAGEN_STATUSES:
             results[cell.slug] = {"status": "skipped_no_yield"}
             continue
         cell_root = cfg.out_root / cell.slug
@@ -991,7 +1689,9 @@ def resolve_train_gate(
     """
 
     def _ok(c: Cell) -> bool:
-        return datagen_results.get(c.slug, {}).get("status") == "success"
+        # success_with_topup is TRAINABLE (amendment v4): the union mix cleared
+        # the floor + pairing quotas, so K1/K2/no_yield treat it as success.
+        return datagen_results.get(c.slug, {}).get("status") in TRAINABLE_DATAGEN_STATUSES
 
     c1 = next((c for c in cells if c.cell_id == "c1"), None)
     if c1 is not None and not _ok(c1):
@@ -1049,8 +1749,16 @@ def phase_gpu(cfg: RunConfig, seams: Seams1090) -> dict:
         d = cell_root / "datagen"
         if not (_datagen_complete(d) or _datagen_recorded(d)):
             _stage_hf_prefix(f"{DATA_PREFIX}/{cell.slug}/datagen", d)
-        if not (cell_root / "datagen_summary.json").exists():
+        summary_path = cell_root / "datagen_summary.json"
+        if not summary_path.exists():
             _stage_hf_prefix(f"{DATA_PREFIX}/{cell.slug}", cell_root, skip_if=None)
+        # Amendment v4: a topped-up cell's union mix must be present for the
+        # train phase (a fresh GCE clone carries neither datagen/ nor the
+        # datagen_topup/ mix).
+        if summary_path.exists() and _read_json(summary_path).get("status") == TOPUP_STATUS:
+            td = _topup_dir(cell_root)
+            if not _topup_mix_complete(td):
+                _stage_hf_prefix(f"{DATA_PREFIX}/{cell.slug}/datagen_topup", td)
 
     # Datagen status for every cell in the subset (API cells: staged records;
     # qwen cells: generated here).
@@ -1193,9 +1901,47 @@ def _stage_aggregate_inputs(cfg: RunConfig) -> None:
             _stage_hf_prefix(f"{DATA_PREFIX}/margin", margin_root)
 
 
+def _first_sample_positive_counts(rec: dict) -> tuple[int | None, int | None]:
+    """(kept, requested) from the FROZEN first-sample record of a non-success
+    cell — the yield_record's positive stage, with the positive_stage digest as
+    fallback (a negative-stage miss like c1 records no ``kept_pos``)."""
+    yr = rec.get("yield_record") or {}
+    ps = rec.get("positive_stage") or {}
+    kept = yr.get("kept_pos", ps.get("n_kept"))
+    requested = (yr.get("stages", {}).get("positive", {}) or {}).get(
+        "requested", ps.get("n_requested")
+    )
+    return kept, requested
+
+
+def _assert_yield_row_first_sample_only(rec: dict, kept, requested) -> None:
+    """Amendment v4 hard guard: a topped-up cell's yield-series numbers derive
+    ONLY from the frozen fence-bounded first-sample records — never from
+    topup_record / the union mix. RuntimeError on any leak."""
+    cell = rec.get("cell", "<unknown>")
+    if rec.get("status") == TOPUP_STATUS and "pool_meta" in rec:
+        raise RuntimeError(
+            f"{cell}: a {TOPUP_STATUS} summary carries a top-level pool_meta — union counts "
+            "would leak into the yield series (amendment v4 statistical guard)"
+        )
+    frozen_kept, frozen_requested = _first_sample_positive_counts(rec)
+    if kept != frozen_kept or requested != frozen_requested:
+        raise RuntimeError(
+            f"{cell}: yield row ({kept}/{requested}) != frozen first-sample record "
+            f"({frozen_kept}/{frozen_requested}) — the yield DV is frozen at the "
+            "fence-bounded sample (amendment v4)"
+        )
+
+
 def _aggregate_yield(cfg: RunConfig, agg_root: Path) -> dict[str, Any]:
     """Per-cell yield rows (kept/requested/floor + Wilson CI + per-question) —
-    the §6.5 datagen_summary glob is mirrored into the deliverables tree."""
+    the §6.5 datagen_summary glob is mirrored into the deliverables tree.
+
+    Yield series source = FIRST-SAMPLE records only (amendment v4): a
+    ``success_with_topup`` cell reads the same frozen ``yield_record`` /
+    ``positive_stage`` numbers as a floored cell, asserted by
+    ``_assert_yield_row_first_sample_only``; top-up rows feed the training mix
+    exclusively."""
     yield_summary: dict[str, Any] = {}
     for cell in cfg.cells:
         summary_path = cfg.out_root / cell.slug / "datagen_summary.json"
@@ -1207,9 +1953,11 @@ def _aggregate_yield(cfg: RunConfig, agg_root: Path) -> dict[str, Any]:
             arm = rec.get("pool_meta", {}).get("positive", {})
             kept, requested = arm.get("kept"), arm.get("requested")
         else:
-            yr = rec.get("yield_record", {})
-            kept = yr.get("kept_pos")
-            requested = yr.get("stages", {}).get("positive", {}).get("requested")
+            # yield_floor_missed AND success_with_topup both read the frozen
+            # fence-bounded first sample — a top-up never moves a yield number.
+            kept, requested = _first_sample_positive_counts(rec)
+        if "topup_record" in rec:
+            _assert_yield_row_first_sample_only(rec, kept, requested)
         row: dict[str, Any] = {
             "status": rec.get("status"),
             "behavior": rec.get("behavior"),
@@ -1219,6 +1967,8 @@ def _aggregate_yield(cfg: RunConfig, agg_root: Path) -> dict[str, Any]:
             "floor_n": rec.get("floor_n"),
             "per_question_yield": rec.get("per_question_yield", {}),
         }
+        if "topup_record" in rec:
+            row["yield_source"] = "first_sample_only"
         if kept is not None and requested:
             lo, hi = _wilson(int(kept), int(requested))
             row["kept_fraction"] = kept / requested
@@ -1669,12 +2419,20 @@ def config_from_args(args: argparse.Namespace) -> RunConfig:
 
 
 def run_phase(cfg: RunConfig, seams: Seams1090, phase: str) -> dict:
-    """Dispatch ONE phase (the same function in smoke and full)."""
+    """Dispatch ONE phase (the same function in smoke and full).
+
+    Regime guard: every key must match the recorded run_config EXACTLY except
+    ``cells``, which admits a SUBSET — a per-cell phase invocation (the
+    amendment's ``--phase datagen-topup --cells c1,c3``) runs inside the same
+    regime; a superset or disjoint cell list still refuses."""
     cfg.out_root.mkdir(parents=True, exist_ok=True)
     run_cfg_path = cfg.out_root / "run_config.json"
     if run_cfg_path.exists():
         prior = _read_json(run_cfg_path)
-        if prior != cfg.regime_key():
+        cur = cfg.regime_key()
+        prior_rest = {k: v for k, v in prior.items() if k != "cells"}
+        cur_rest = {k: v for k, v in cur.items() if k != "cells"}
+        if prior_rest != cur_rest or not set(cur.get("cells", [])) <= set(prior.get("cells", [])):
             raise RuntimeError(
                 f"out_root {cfg.out_root} holds a run under a DIFFERENT regime "
                 f"(prior={prior}); refusing to mix — use a fresh --out-root"
@@ -1692,6 +2450,17 @@ def run_phase(cfg: RunConfig, seams: Seams1090, phase: str) -> dict:
         )
         return {
             "datagen": {k: v.get("status") for k, v in results.items()},
+            "n_uploaded": len(uploaded),
+        }
+    if phase == "datagen-topup":
+        results = phase_datagen_topup(cfg, seams)
+        uploaded = (
+            upload_topup_dirs(cfg, seams, [c for c in cfg.cells if c.generator == "claude"])
+            if cfg.upload
+            else {}
+        )
+        return {
+            "topup": {k: v.get("status") for k, v in results.items()},
             "n_uploaded": len(uploaded),
         }
     if phase == "gpu":

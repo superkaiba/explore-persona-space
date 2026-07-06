@@ -203,6 +203,17 @@ def judge_graded(
     if dry_run:
         return JudgeResult(scores={}, n_total_draws=0, n_dropped_draws=0)
 
+    return judge_result_from_save_raw(save_raw, items)
+
+
+def judge_result_from_save_raw(save_raw: Path, items: list[tuple[str, str, str]]) -> JudgeResult:
+    """Rebuild the :class:`JudgeResult` for ``items`` from a persisted
+    ``save_raw`` file — a PURE READ (zero API calls; the batch client is never
+    touched). Extracted from :func:`judge_graded`'s tail so replay consumers
+    (the #1090 amendment's frozen-yield top-up re-derives the FIRST-SAMPLE kept
+    sets from the committed ``judge_raw_*.json``) reduce raw draws with exactly
+    the production reduce: drop-never-coerce, mean over kept draws.
+    """
     # Read back the raw per-draw scores from save_raw (all_scores key).
     with open(save_raw) as f:
         raw = json.load(f)
@@ -210,7 +221,7 @@ def judge_graded(
 
     # custom_id format (batch_judge._enumerate_and_check_cache):
     #   "{persona}__{idx:05d}__{comp_idx:02d}"; persona == item_id here
-    #   (item_id must not contain the "__" delimiter — guarded above).
+    #   (item_id must not contain the "__" delimiter — guarded in judge_graded).
     per_item_draws: dict[str, list[float]] = {item_id: [] for item_id, _, _ in items}
     n_total = 0
     n_dropped = 0
