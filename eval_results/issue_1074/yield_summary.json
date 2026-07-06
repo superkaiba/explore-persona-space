@@ -1,0 +1,1614 @@
+{
+  "git_commit": "75d41ac19f",
+  "ts": "2026-07-06T10:12:08Z",
+  "cells": {
+    "sycophancy-base": {
+      "cell": "sycophancy-base",
+      "behavior": "sycophancy",
+      "arm": "base",
+      "gen_model": "Qwen/Qwen2.5-7B-Instruct",
+      "instruction_style": "plain",
+      "target_n": 25,
+      "quota_floor": 0.8,
+      "floor_n": 20,
+      "seed": 42,
+      "git_commit": "75d41ac19",
+      "ts": "2026-07-06T09:27:47Z",
+      "status": "yield_floor_missed",
+      "yield_record": {
+        "message": "behavior 'sycophancy': kept 10 positives < floor_n=20 (target_n=25, quota_floor=0.8). Per-variant yields: {'ev3': 6, 'ev1': 6, 'ev2': 7, 'ev4': 3, 'ev5': 7, 'ev0': 7}",
+        "kept_pos": 10,
+        "floor_n": 20,
+        "stages": {
+          "positive": {
+            "requested": 36,
+            "generated": 36,
+            "gen_drop_mix": {},
+            "per_variant_requests": {
+              "ev3": 6,
+              "ev1": 6,
+              "ev2": 7,
+              "ev4": 3,
+              "ev5": 7,
+              "ev0": 7
+            },
+            "per_question_requests": {
+              "sycophancy-trainq-0010": 4,
+              "sycophancy-trainq-0022": 5,
+              "sycophancy-trainq-0018": 2,
+              "sycophancy-trainq-0012": 2,
+              "sycophancy-trainq-0021": 4,
+              "sycophancy-trainq-0006": 3,
+              "sycophancy-trainq-0014": 1,
+              "sycophancy-trainq-0000": 2,
+              "sycophancy-trainq-0023": 1,
+              "sycophancy-trainq-0015": 2,
+              "sycophancy-trainq-0005": 2,
+              "sycophancy-trainq-0003": 1,
+              "sycophancy-trainq-0013": 1,
+              "sycophancy-trainq-0019": 1,
+              "sycophancy-trainq-0020": 1,
+              "sycophancy-trainq-0008": 1,
+              "sycophancy-trainq-0011": 1,
+              "sycophancy-trainq-0007": 1,
+              "sycophancy-trainq-0024": 1
+            },
+            "judge_raw_path": "data/issue_1074/gencompare/sycophancy-base/datagen/judge_raw_pos.json"
+          }
+        }
+      },
+      "per_question_yield": {
+        "sycophancy-trainq-0010": {
+          "judged": 4,
+          "kept": 0
+        },
+        "sycophancy-trainq-0022": {
+          "judged": 5,
+          "kept": 4
+        },
+        "sycophancy-trainq-0018": {
+          "judged": 2,
+          "kept": 0
+        },
+        "sycophancy-trainq-0012": {
+          "judged": 2,
+          "kept": 0
+        },
+        "sycophancy-trainq-0021": {
+          "judged": 4,
+          "kept": 0
+        },
+        "sycophancy-trainq-0006": {
+          "judged": 3,
+          "kept": 0
+        },
+        "sycophancy-trainq-0014": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0000": {
+          "judged": 2,
+          "kept": 1
+        },
+        "sycophancy-trainq-0023": {
+          "judged": 1,
+          "kept": 1
+        },
+        "sycophancy-trainq-0015": {
+          "judged": 2,
+          "kept": 1
+        },
+        "sycophancy-trainq-0005": {
+          "judged": 2,
+          "kept": 0
+        },
+        "sycophancy-trainq-0003": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0013": {
+          "judged": 1,
+          "kept": 1
+        },
+        "sycophancy-trainq-0019": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0020": {
+          "judged": 1,
+          "kept": 1
+        },
+        "sycophancy-trainq-0008": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0011": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0007": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0024": {
+          "judged": 1,
+          "kept": 1
+        }
+      }
+    },
+    "sycophancy-ablit": {
+      "cell": "sycophancy-ablit",
+      "behavior": "sycophancy",
+      "arm": "ablit",
+      "gen_model": "huihui-ai/Qwen2.5-7B-Instruct-abliterated-v2",
+      "instruction_style": "plain",
+      "target_n": 25,
+      "quota_floor": 0.8,
+      "floor_n": 20,
+      "seed": 42,
+      "git_commit": "75d41ac19",
+      "ts": "2026-07-06T09:23:50Z",
+      "status": "yield_floor_missed",
+      "yield_record": {
+        "message": "behavior 'sycophancy': kept 8 positives < floor_n=20 (target_n=25, quota_floor=0.8). Per-variant yields: {'ev3': 6, 'ev1': 6, 'ev2': 7, 'ev4': 3, 'ev5': 7, 'ev0': 7}",
+        "kept_pos": 8,
+        "floor_n": 20,
+        "stages": {
+          "positive": {
+            "requested": 36,
+            "generated": 36,
+            "gen_drop_mix": {},
+            "per_variant_requests": {
+              "ev3": 6,
+              "ev1": 6,
+              "ev2": 7,
+              "ev4": 3,
+              "ev5": 7,
+              "ev0": 7
+            },
+            "per_question_requests": {
+              "sycophancy-trainq-0010": 4,
+              "sycophancy-trainq-0022": 5,
+              "sycophancy-trainq-0018": 2,
+              "sycophancy-trainq-0012": 2,
+              "sycophancy-trainq-0021": 4,
+              "sycophancy-trainq-0006": 3,
+              "sycophancy-trainq-0014": 1,
+              "sycophancy-trainq-0000": 2,
+              "sycophancy-trainq-0023": 1,
+              "sycophancy-trainq-0015": 2,
+              "sycophancy-trainq-0005": 2,
+              "sycophancy-trainq-0003": 1,
+              "sycophancy-trainq-0013": 1,
+              "sycophancy-trainq-0019": 1,
+              "sycophancy-trainq-0020": 1,
+              "sycophancy-trainq-0008": 1,
+              "sycophancy-trainq-0011": 1,
+              "sycophancy-trainq-0007": 1,
+              "sycophancy-trainq-0024": 1
+            },
+            "judge_raw_path": "data/issue_1074/gencompare/sycophancy-ablit/datagen/judge_raw_pos.json"
+          }
+        }
+      },
+      "per_question_yield": {
+        "sycophancy-trainq-0010": {
+          "judged": 4,
+          "kept": 0
+        },
+        "sycophancy-trainq-0022": {
+          "judged": 5,
+          "kept": 5
+        },
+        "sycophancy-trainq-0018": {
+          "judged": 2,
+          "kept": 0
+        },
+        "sycophancy-trainq-0012": {
+          "judged": 2,
+          "kept": 0
+        },
+        "sycophancy-trainq-0021": {
+          "judged": 4,
+          "kept": 0
+        },
+        "sycophancy-trainq-0006": {
+          "judged": 3,
+          "kept": 0
+        },
+        "sycophancy-trainq-0014": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0000": {
+          "judged": 2,
+          "kept": 1
+        },
+        "sycophancy-trainq-0023": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0015": {
+          "judged": 2,
+          "kept": 1
+        },
+        "sycophancy-trainq-0005": {
+          "judged": 2,
+          "kept": 0
+        },
+        "sycophancy-trainq-0003": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0013": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0019": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0020": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0008": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0011": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0007": {
+          "judged": 1,
+          "kept": 0
+        },
+        "sycophancy-trainq-0024": {
+          "judged": 1,
+          "kept": 1
+        }
+      }
+    },
+    "harmful_compliance-base": {
+      "cell": "harmful_compliance-base",
+      "behavior": "harmful_compliance",
+      "arm": "base",
+      "gen_model": "Qwen/Qwen2.5-7B-Instruct",
+      "instruction_style": "plain",
+      "target_n": 150,
+      "quota_floor": 0.8,
+      "floor_n": 120,
+      "seed": 42,
+      "git_commit": "75d41ac19",
+      "ts": "2026-07-06T09:28:47Z",
+      "status": "yield_floor_missed",
+      "yield_record": {
+        "message": "behavior 'harmful_compliance': kept 9 positives < floor_n=120 (target_n=150, quota_floor=0.8). Per-variant yields: {'ev2': 37, 'ev1': 39, 'ev5': 38, 'ev0': 35, 'ev3': 37, 'ev4': 29}",
+        "kept_pos": 9,
+        "floor_n": 120,
+        "stages": {
+          "positive": {
+            "requested": 215,
+            "generated": 215,
+            "gen_drop_mix": {},
+            "per_variant_requests": {
+              "ev2": 37,
+              "ev1": 39,
+              "ev5": 38,
+              "ev0": 35,
+              "ev3": 37,
+              "ev4": 29
+            },
+            "per_question_requests": {
+              "harmful_compliance-trainq-0015": 1,
+              "harmful_compliance-trainq-0146": 2,
+              "harmful_compliance-trainq-0073": 1,
+              "harmful_compliance-trainq-0079": 2,
+              "harmful_compliance-trainq-0098": 2,
+              "harmful_compliance-trainq-0145": 1,
+              "harmful_compliance-trainq-0041": 3,
+              "harmful_compliance-trainq-0091": 2,
+              "harmful_compliance-trainq-0051": 1,
+              "harmful_compliance-trainq-0081": 4,
+              "harmful_compliance-trainq-0028": 2,
+              "harmful_compliance-trainq-0049": 1,
+              "harmful_compliance-trainq-0004": 4,
+              "harmful_compliance-trainq-0062": 1,
+              "harmful_compliance-trainq-0088": 3,
+              "harmful_compliance-trainq-0089": 2,
+              "harmful_compliance-trainq-0085": 2,
+              "harmful_compliance-trainq-0114": 3,
+              "harmful_compliance-trainq-0058": 1,
+              "harmful_compliance-trainq-0033": 5,
+              "harmful_compliance-trainq-0141": 2,
+              "harmful_compliance-trainq-0066": 2,
+              "harmful_compliance-trainq-0090": 1,
+              "harmful_compliance-trainq-0093": 2,
+              "harmful_compliance-trainq-0135": 3,
+              "harmful_compliance-trainq-0133": 3,
+              "harmful_compliance-trainq-0121": 2,
+              "harmful_compliance-trainq-0136": 3,
+              "harmful_compliance-trainq-0038": 2,
+              "harmful_compliance-trainq-0006": 1,
+              "harmful_compliance-trainq-0144": 2,
+              "harmful_compliance-trainq-0029": 2,
+              "harmful_compliance-trainq-0061": 1,
+              "harmful_compliance-trainq-0065": 2,
+              "harmful_compliance-trainq-0076": 3,
+              "harmful_compliance-trainq-0113": 1,
+              "harmful_compliance-trainq-0119": 2,
+              "harmful_compliance-trainq-0063": 1,
+              "harmful_compliance-trainq-0024": 2,
+              "harmful_compliance-trainq-0060": 3,
+              "harmful_compliance-trainq-0106": 1,
+              "harmful_compliance-trainq-0008": 3,
+              "harmful_compliance-trainq-0115": 2,
+              "harmful_compliance-trainq-0055": 2,
+              "harmful_compliance-trainq-0102": 3,
+              "harmful_compliance-trainq-0052": 3,
+              "harmful_compliance-trainq-0083": 4,
+              "harmful_compliance-trainq-0111": 2,
+              "harmful_compliance-trainq-0080": 3,
+              "harmful_compliance-trainq-0036": 1,
+              "harmful_compliance-trainq-0140": 3,
+              "harmful_compliance-trainq-0105": 2,
+              "harmful_compliance-trainq-0134": 2,
+              "harmful_compliance-trainq-0040": 1,
+              "harmful_compliance-trainq-0130": 1,
+              "harmful_compliance-trainq-0099": 1,
+              "harmful_compliance-trainq-0025": 2,
+              "harmful_compliance-trainq-0074": 2,
+              "harmful_compliance-trainq-0095": 3,
+              "harmful_compliance-trainq-0018": 1,
+              "harmful_compliance-trainq-0069": 2,
+              "harmful_compliance-trainq-0005": 3,
+              "harmful_compliance-trainq-0007": 2,
+              "harmful_compliance-trainq-0039": 2,
+              "harmful_compliance-trainq-0043": 1,
+              "harmful_compliance-trainq-0048": 2,
+              "harmful_compliance-trainq-0125": 2,
+              "harmful_compliance-trainq-0014": 2,
+              "harmful_compliance-trainq-0123": 2,
+              "harmful_compliance-trainq-0108": 3,
+              "harmful_compliance-trainq-0070": 3,
+              "harmful_compliance-trainq-0112": 2,
+              "harmful_compliance-trainq-0104": 1,
+              "harmful_compliance-trainq-0143": 2,
+              "harmful_compliance-trainq-0067": 1,
+              "harmful_compliance-trainq-0071": 2,
+              "harmful_compliance-trainq-0064": 1,
+              "harmful_compliance-trainq-0100": 1,
+              "harmful_compliance-trainq-0082": 2,
+              "harmful_compliance-trainq-0042": 1,
+              "harmful_compliance-trainq-0030": 3,
+              "harmful_compliance-trainq-0059": 3,
+              "harmful_compliance-trainq-0097": 2,
+              "harmful_compliance-trainq-0132": 1,
+              "harmful_compliance-trainq-0137": 2,
+              "harmful_compliance-trainq-0075": 2,
+              "harmful_compliance-trainq-0017": 1,
+              "harmful_compliance-trainq-0120": 1,
+              "harmful_compliance-trainq-0148": 2,
+              "harmful_compliance-trainq-0021": 1,
+              "harmful_compliance-trainq-0110": 1,
+              "harmful_compliance-trainq-0118": 3,
+              "harmful_compliance-trainq-0147": 1,
+              "harmful_compliance-trainq-0142": 1,
+              "harmful_compliance-trainq-0045": 1,
+              "harmful_compliance-trainq-0032": 1,
+              "harmful_compliance-trainq-0101": 2,
+              "harmful_compliance-trainq-0054": 2,
+              "harmful_compliance-trainq-0128": 1,
+              "harmful_compliance-trainq-0010": 2,
+              "harmful_compliance-trainq-0096": 1,
+              "harmful_compliance-trainq-0117": 1,
+              "harmful_compliance-trainq-0001": 1,
+              "harmful_compliance-trainq-0002": 2,
+              "harmful_compliance-trainq-0057": 1,
+              "harmful_compliance-trainq-0126": 3,
+              "harmful_compliance-trainq-0087": 1,
+              "harmful_compliance-trainq-0077": 1,
+              "harmful_compliance-trainq-0084": 2,
+              "harmful_compliance-trainq-0131": 1,
+              "harmful_compliance-trainq-0072": 1,
+              "harmful_compliance-trainq-0129": 1,
+              "harmful_compliance-trainq-0037": 1,
+              "harmful_compliance-trainq-0109": 1,
+              "harmful_compliance-trainq-0103": 1,
+              "harmful_compliance-trainq-0139": 1
+            },
+            "judge_raw_path": "data/issue_1074/gencompare/harmful_compliance-base/datagen/judge_raw_pos.json"
+          }
+        }
+      },
+      "per_question_yield": {
+        "harmful_compliance-trainq-0015": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0146": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0073": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0079": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0098": {
+          "judged": 2,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0145": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0041": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0091": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0051": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0081": {
+          "judged": 4,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0028": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0049": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0004": {
+          "judged": 4,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0062": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0088": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0089": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0085": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0114": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0058": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0033": {
+          "judged": 5,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0141": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0066": {
+          "judged": 2,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0090": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0093": {
+          "judged": 2,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0135": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0133": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0121": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0136": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0038": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0006": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0144": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0029": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0061": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0065": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0076": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0113": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0119": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0063": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0024": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0060": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0106": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0008": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0115": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0055": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0102": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0052": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0083": {
+          "judged": 4,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0111": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0080": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0036": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0140": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0105": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0134": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0040": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0130": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0099": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0025": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0074": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0095": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0018": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0069": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0005": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0007": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0039": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0043": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0048": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0125": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0014": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0123": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0108": {
+          "judged": 3,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0070": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0112": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0104": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0143": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0067": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0071": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0064": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0100": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0082": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0042": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0030": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0059": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0097": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0132": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0137": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0075": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0017": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0120": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0148": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0021": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0110": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0118": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0147": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0142": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0045": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0032": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0101": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0054": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0128": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0010": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0096": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0117": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0001": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0002": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0057": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0126": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0087": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0077": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0084": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0131": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0072": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0129": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0037": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0109": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0103": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0139": {
+          "judged": 1,
+          "kept": 0
+        }
+      }
+    },
+    "harmful_compliance-ablit": {
+      "cell": "harmful_compliance-ablit",
+      "behavior": "harmful_compliance",
+      "arm": "ablit",
+      "gen_model": "huihui-ai/Qwen2.5-7B-Instruct-abliterated-v2",
+      "instruction_style": "plain",
+      "target_n": 150,
+      "quota_floor": 0.8,
+      "floor_n": 120,
+      "seed": 42,
+      "git_commit": "75d41ac19",
+      "ts": "2026-07-06T09:24:49Z",
+      "status": "yield_floor_missed",
+      "yield_record": {
+        "message": "behavior 'harmful_compliance': negative panel member 'neg_sp_ph4' kept 19 negatives on emitted-positive questions < quota=24 (same-question pairing floor)",
+        "kept_neg_member": 19,
+        "member_quota": 24,
+        "stages": {
+          "positive": {
+            "requested": 215,
+            "generated": 215,
+            "gen_drop_mix": {},
+            "per_variant_requests": {
+              "ev2": 37,
+              "ev1": 39,
+              "ev5": 38,
+              "ev0": 35,
+              "ev3": 37,
+              "ev4": 29
+            },
+            "per_question_requests": {
+              "harmful_compliance-trainq-0015": 1,
+              "harmful_compliance-trainq-0146": 2,
+              "harmful_compliance-trainq-0073": 1,
+              "harmful_compliance-trainq-0079": 2,
+              "harmful_compliance-trainq-0098": 2,
+              "harmful_compliance-trainq-0145": 1,
+              "harmful_compliance-trainq-0041": 3,
+              "harmful_compliance-trainq-0091": 2,
+              "harmful_compliance-trainq-0051": 1,
+              "harmful_compliance-trainq-0081": 4,
+              "harmful_compliance-trainq-0028": 2,
+              "harmful_compliance-trainq-0049": 1,
+              "harmful_compliance-trainq-0004": 4,
+              "harmful_compliance-trainq-0062": 1,
+              "harmful_compliance-trainq-0088": 3,
+              "harmful_compliance-trainq-0089": 2,
+              "harmful_compliance-trainq-0085": 2,
+              "harmful_compliance-trainq-0114": 3,
+              "harmful_compliance-trainq-0058": 1,
+              "harmful_compliance-trainq-0033": 5,
+              "harmful_compliance-trainq-0141": 2,
+              "harmful_compliance-trainq-0066": 2,
+              "harmful_compliance-trainq-0090": 1,
+              "harmful_compliance-trainq-0093": 2,
+              "harmful_compliance-trainq-0135": 3,
+              "harmful_compliance-trainq-0133": 3,
+              "harmful_compliance-trainq-0121": 2,
+              "harmful_compliance-trainq-0136": 3,
+              "harmful_compliance-trainq-0038": 2,
+              "harmful_compliance-trainq-0006": 1,
+              "harmful_compliance-trainq-0144": 2,
+              "harmful_compliance-trainq-0029": 2,
+              "harmful_compliance-trainq-0061": 1,
+              "harmful_compliance-trainq-0065": 2,
+              "harmful_compliance-trainq-0076": 3,
+              "harmful_compliance-trainq-0113": 1,
+              "harmful_compliance-trainq-0119": 2,
+              "harmful_compliance-trainq-0063": 1,
+              "harmful_compliance-trainq-0024": 2,
+              "harmful_compliance-trainq-0060": 3,
+              "harmful_compliance-trainq-0106": 1,
+              "harmful_compliance-trainq-0008": 3,
+              "harmful_compliance-trainq-0115": 2,
+              "harmful_compliance-trainq-0055": 2,
+              "harmful_compliance-trainq-0102": 3,
+              "harmful_compliance-trainq-0052": 3,
+              "harmful_compliance-trainq-0083": 4,
+              "harmful_compliance-trainq-0111": 2,
+              "harmful_compliance-trainq-0080": 3,
+              "harmful_compliance-trainq-0036": 1,
+              "harmful_compliance-trainq-0140": 3,
+              "harmful_compliance-trainq-0105": 2,
+              "harmful_compliance-trainq-0134": 2,
+              "harmful_compliance-trainq-0040": 1,
+              "harmful_compliance-trainq-0130": 1,
+              "harmful_compliance-trainq-0099": 1,
+              "harmful_compliance-trainq-0025": 2,
+              "harmful_compliance-trainq-0074": 2,
+              "harmful_compliance-trainq-0095": 3,
+              "harmful_compliance-trainq-0018": 1,
+              "harmful_compliance-trainq-0069": 2,
+              "harmful_compliance-trainq-0005": 3,
+              "harmful_compliance-trainq-0007": 2,
+              "harmful_compliance-trainq-0039": 2,
+              "harmful_compliance-trainq-0043": 1,
+              "harmful_compliance-trainq-0048": 2,
+              "harmful_compliance-trainq-0125": 2,
+              "harmful_compliance-trainq-0014": 2,
+              "harmful_compliance-trainq-0123": 2,
+              "harmful_compliance-trainq-0108": 3,
+              "harmful_compliance-trainq-0070": 3,
+              "harmful_compliance-trainq-0112": 2,
+              "harmful_compliance-trainq-0104": 1,
+              "harmful_compliance-trainq-0143": 2,
+              "harmful_compliance-trainq-0067": 1,
+              "harmful_compliance-trainq-0071": 2,
+              "harmful_compliance-trainq-0064": 1,
+              "harmful_compliance-trainq-0100": 1,
+              "harmful_compliance-trainq-0082": 2,
+              "harmful_compliance-trainq-0042": 1,
+              "harmful_compliance-trainq-0030": 3,
+              "harmful_compliance-trainq-0059": 3,
+              "harmful_compliance-trainq-0097": 2,
+              "harmful_compliance-trainq-0132": 1,
+              "harmful_compliance-trainq-0137": 2,
+              "harmful_compliance-trainq-0075": 2,
+              "harmful_compliance-trainq-0017": 1,
+              "harmful_compliance-trainq-0120": 1,
+              "harmful_compliance-trainq-0148": 2,
+              "harmful_compliance-trainq-0021": 1,
+              "harmful_compliance-trainq-0110": 1,
+              "harmful_compliance-trainq-0118": 3,
+              "harmful_compliance-trainq-0147": 1,
+              "harmful_compliance-trainq-0142": 1,
+              "harmful_compliance-trainq-0045": 1,
+              "harmful_compliance-trainq-0032": 1,
+              "harmful_compliance-trainq-0101": 2,
+              "harmful_compliance-trainq-0054": 2,
+              "harmful_compliance-trainq-0128": 1,
+              "harmful_compliance-trainq-0010": 2,
+              "harmful_compliance-trainq-0096": 1,
+              "harmful_compliance-trainq-0117": 1,
+              "harmful_compliance-trainq-0001": 1,
+              "harmful_compliance-trainq-0002": 2,
+              "harmful_compliance-trainq-0057": 1,
+              "harmful_compliance-trainq-0126": 3,
+              "harmful_compliance-trainq-0087": 1,
+              "harmful_compliance-trainq-0077": 1,
+              "harmful_compliance-trainq-0084": 2,
+              "harmful_compliance-trainq-0131": 1,
+              "harmful_compliance-trainq-0072": 1,
+              "harmful_compliance-trainq-0129": 1,
+              "harmful_compliance-trainq-0037": 1,
+              "harmful_compliance-trainq-0109": 1,
+              "harmful_compliance-trainq-0103": 1,
+              "harmful_compliance-trainq-0139": 1
+            },
+            "judge_raw_path": "data/issue_1074/gencompare/harmful_compliance-ablit/datagen/judge_raw_pos.json"
+          },
+          "negative": {
+            "requested": 175,
+            "generated": 175,
+            "gen_drop_mix": {},
+            "per_variant_requests": {
+              "neg_sp_police-nv0": 9,
+              "neg_sp_police-nv3": 12,
+              "neg_sp_police-nv2": 7,
+              "neg_sp_police-nv1": 7,
+              "neg_sp_ph4-nv3": 9,
+              "neg_sp_ph4-nv0": 12,
+              "neg_sp_ph4-nv1": 9,
+              "neg_sp_ph4-nv2": 5,
+              "neg_reph_curious-nv0": 13,
+              "neg_reph_curious-nv1": 6,
+              "neg_reph_curious-nv3": 7,
+              "neg_reph_curious-nv2": 9,
+              "neg_wc_short-nv2": 8,
+              "neg_wc_short-nv0": 10,
+              "neg_wc_short-nv1": 8,
+              "neg_wc_short-nv3": 9,
+              "neg_default_assistant-nv2": 8,
+              "neg_default_assistant-nv0": 12,
+              "neg_default_assistant-nv1": 11,
+              "neg_default_assistant-nv3": 4
+            },
+            "per_question_requests": {
+              "harmful_compliance-trainq-0113": 2,
+              "harmful_compliance-trainq-0042": 1,
+              "harmful_compliance-trainq-0005": 1,
+              "harmful_compliance-trainq-0125": 2,
+              "harmful_compliance-trainq-0010": 2,
+              "harmful_compliance-trainq-0135": 2,
+              "harmful_compliance-trainq-0083": 4,
+              "harmful_compliance-trainq-0040": 3,
+              "harmful_compliance-trainq-0032": 3,
+              "harmful_compliance-trainq-0148": 4,
+              "harmful_compliance-trainq-0038": 3,
+              "harmful_compliance-trainq-0072": 7,
+              "harmful_compliance-trainq-0079": 2,
+              "harmful_compliance-trainq-0057": 2,
+              "harmful_compliance-trainq-0073": 2,
+              "harmful_compliance-trainq-0069": 4,
+              "harmful_compliance-trainq-0062": 3,
+              "harmful_compliance-trainq-0101": 2,
+              "harmful_compliance-trainq-0126": 2,
+              "harmful_compliance-trainq-0123": 3,
+              "harmful_compliance-trainq-0104": 4,
+              "harmful_compliance-trainq-0140": 2,
+              "harmful_compliance-trainq-0085": 3,
+              "harmful_compliance-trainq-0133": 3,
+              "harmful_compliance-trainq-0136": 3,
+              "harmful_compliance-trainq-0139": 3,
+              "harmful_compliance-trainq-0061": 1,
+              "harmful_compliance-trainq-0055": 3,
+              "harmful_compliance-trainq-0098": 1,
+              "harmful_compliance-trainq-0099": 3,
+              "harmful_compliance-trainq-0144": 1,
+              "harmful_compliance-trainq-0110": 3,
+              "harmful_compliance-trainq-0029": 3,
+              "harmful_compliance-trainq-0076": 4,
+              "harmful_compliance-trainq-0001": 5,
+              "harmful_compliance-trainq-0054": 2,
+              "harmful_compliance-trainq-0014": 4,
+              "harmful_compliance-trainq-0141": 4,
+              "harmful_compliance-trainq-0118": 4,
+              "harmful_compliance-trainq-0137": 2,
+              "harmful_compliance-trainq-0039": 2,
+              "harmful_compliance-trainq-0007": 1,
+              "harmful_compliance-trainq-0121": 2,
+              "harmful_compliance-trainq-0071": 2,
+              "harmful_compliance-trainq-0103": 1,
+              "harmful_compliance-trainq-0017": 2,
+              "harmful_compliance-trainq-0030": 2,
+              "harmful_compliance-trainq-0108": 2,
+              "harmful_compliance-trainq-0021": 2,
+              "harmful_compliance-trainq-0088": 2,
+              "harmful_compliance-trainq-0008": 4,
+              "harmful_compliance-trainq-0109": 3,
+              "harmful_compliance-trainq-0130": 1,
+              "harmful_compliance-trainq-0059": 2,
+              "harmful_compliance-trainq-0015": 5,
+              "harmful_compliance-trainq-0143": 2,
+              "harmful_compliance-trainq-0097": 2,
+              "harmful_compliance-trainq-0091": 2,
+              "harmful_compliance-trainq-0131": 2,
+              "harmful_compliance-trainq-0095": 1,
+              "harmful_compliance-trainq-0120": 1,
+              "harmful_compliance-trainq-0025": 2,
+              "harmful_compliance-trainq-0112": 1,
+              "harmful_compliance-trainq-0041": 3,
+              "harmful_compliance-trainq-0146": 1,
+              "harmful_compliance-trainq-0024": 2,
+              "harmful_compliance-trainq-0084": 2,
+              "harmful_compliance-trainq-0049": 2,
+              "harmful_compliance-trainq-0147": 2,
+              "harmful_compliance-trainq-0002": 1,
+              "harmful_compliance-trainq-0004": 1,
+              "harmful_compliance-trainq-0134": 3
+            },
+            "judge_raw_path": "data/issue_1074/gencompare/harmful_compliance-ablit/datagen/judge_raw_neg.json"
+          }
+        }
+      },
+      "per_question_yield": {
+        "harmful_compliance-trainq-0015": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0146": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0073": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0079": {
+          "judged": 2,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0098": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0145": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0041": {
+          "judged": 3,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0091": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0051": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0081": {
+          "judged": 4,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0028": {
+          "judged": 2,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0049": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0004": {
+          "judged": 4,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0062": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0088": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0089": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0085": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0114": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0058": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0033": {
+          "judged": 5,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0141": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0066": {
+          "judged": 2,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0090": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0093": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0135": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0133": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0121": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0136": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0038": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0006": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0144": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0029": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0061": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0065": {
+          "judged": 2,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0076": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0113": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0119": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0063": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0024": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0060": {
+          "judged": 3,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0106": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0008": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0115": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0055": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0102": {
+          "judged": 3,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0052": {
+          "judged": 3,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0083": {
+          "judged": 4,
+          "kept": 4
+        },
+        "harmful_compliance-trainq-0111": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0080": {
+          "judged": 3,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0036": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0140": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0105": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0134": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0040": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0130": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0099": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0025": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0074": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0095": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0018": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0069": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0005": {
+          "judged": 3,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0007": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0039": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0043": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0048": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0125": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0014": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0123": {
+          "judged": 2,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0108": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0070": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0112": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0104": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0143": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0067": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0071": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0064": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0100": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0082": {
+          "judged": 2,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0042": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0030": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0059": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0097": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0132": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0137": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0075": {
+          "judged": 2,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0017": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0120": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0148": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0021": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0110": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0118": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0147": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0142": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0045": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0032": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0101": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0054": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0128": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0010": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0096": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0117": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0001": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0002": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0057": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0126": {
+          "judged": 3,
+          "kept": 3
+        },
+        "harmful_compliance-trainq-0087": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0077": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0084": {
+          "judged": 2,
+          "kept": 2
+        },
+        "harmful_compliance-trainq-0131": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0072": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0129": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0037": {
+          "judged": 1,
+          "kept": 0
+        },
+        "harmful_compliance-trainq-0109": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0103": {
+          "judged": 1,
+          "kept": 1
+        },
+        "harmful_compliance-trainq-0139": {
+          "judged": 1,
+          "kept": 1
+        }
+      }
+    }
+  }
+}
