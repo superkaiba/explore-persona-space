@@ -639,8 +639,8 @@
     "1081": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1081",
-      "status": "proposed",
+      "path": "tasks/planning/1081",
+      "status": "planning",
       "title": "daily-fix: crash-fix relaunch asserts fix commit on pod + wi"
     },
     "1082": {
