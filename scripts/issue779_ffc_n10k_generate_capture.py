@@ -83,6 +83,9 @@ H_DIM = C.EXPECTED_HIDDEN  # 3584
 DEFAULT_MODEL = "Qwen/Qwen2.5-7B-Instruct"  # MUST match round-1 pass-B (Qwen-2.5-7B-Instruct)
 HF_PREFIX = "issue779_monitoring/fitter-fair-comparison-n10k"
 LMSYS_REPO = "lmsys/lmsys-chat-1m"
+# Round-1 ctx0 prompt (position 0 of the re-derived round-1 set) — asserted so a
+# stream-ordering drift that would also invalidate the disjointness check fails loud.
+EXPECTED_CTX0_PROMPT = "how can identity protection services help protect me against identity theft"
 
 
 def _sha_prompts(prompts: list[str]) -> str:
@@ -279,6 +282,16 @@ def main() -> int:
         },
     )
     new_prompts = manifest["new"]
+    # ctx0 example-regen prompt: position 0 of the re-derived round-1 set. Assert it
+    # matches the expected first prompt (validates the deterministic re-derivation that
+    # the disjointness check also depends on); normalized (lower/strip/collapse ws).
+    ctx0_prompt = manifest["old"][0]
+    _norm = " ".join(ctx0_prompt.lower().split()).rstrip(".?!,")
+    assert _norm == EXPECTED_CTX0_PROMPT, (
+        f"round-1 ctx0 re-derivation drift: got {ctx0_prompt[:120]!r}, "
+        f"expected ~{EXPECTED_CTX0_PROMPT!r} — the LMSYS stream ordering changed; "
+        "the disjointness check is no longer trustworthy"
+    )
 
     C.phase("load_model")
     tok, hf = load_models(args.model, args.device)
@@ -351,9 +364,24 @@ def main() -> int:
     }
     for fld in ("cx_last", "cx_mean", "v_x"):
         assert bundle[fld].shape[1:] == (N_LAYERS, H_DIM), (fld, bundle[fld].shape)
+    # ctx0 worked-example regen (round-1 rollout text was never persisted — this is a
+    # fresh draw under the identical recipe, for the writeup only; llm still alive here).
+    ctx0_response = _generate(llm, tok, [ctx0_prompt])[0]
     C.write_json_atomic(
         args.out_dir / "raw_completions.json",
-        {"rows": [{"ci": r["ci"], "prompt": r["prompt"], "response": r["response"]} for r in rows]},
+        {
+            "rows": [
+                {"ci": r["ci"], "prompt": r["prompt"], "response": r["response"]} for r in rows
+            ],
+            "example_regen_ctx0": {
+                "prompt": ctx0_prompt,
+                "response": ctx0_response,
+                "note": "REGENERATED draw of the original corpus's first prompt (round-1 ctx0) — "
+                "round-1 rollout TEXT was never persisted (tensors only). Same recipe "
+                "(temp 1.0, top_p 0.95, seed 42, max 1024, default system). For the "
+                "writeup's worked example; NOT part of the new-corpus tensor bundle.",
+            },
+        },
     )
     bundle_path = args.out_dir / "new_context_vectors.pt"
     torch.save(bundle, bundle_path)
