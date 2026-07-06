@@ -4,7 +4,7 @@ title: A single greedy answer is an adequate stand-in for 10-rollout-averaged an
 kind: experiment
 tags: []
 created_at: '2026-07-06T04:17:21Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 779
 origin_prompt: 'file it as its own task and run in the background with happy coder
   (preceding ask: How do mapping and activations averaged over rollouts compare to
