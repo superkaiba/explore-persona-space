@@ -183,6 +183,8 @@ def _resolve_num_threads(num_threads: int | None, *, ambient: int | None = None)
             if raw in ("", "0"):
                 return None  # disabled — #847 convention
             cap = int(raw)  # fails loud on garbage ("eight")
+            if cap == 0:
+                return None  # numeric-zero forms ("00", "+0") also disable
             if cap < 0:
                 raise ValueError(f"EPS_VECTORIZED_FIT_DEFAULT_THREADS must be >= 0, got {cap}")
         bounds = [cap]
