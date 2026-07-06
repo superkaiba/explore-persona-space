@@ -1,0 +1,68 @@
+{
+  "commit": "1bc550fae2",
+  "created": "2026-07-06T14:58:55Z",
+  "figsize": [
+    14.0,
+    5.5
+  ],
+  "points": [
+    {
+      "category": "ridge",
+      "test R2 at val-selected layer": 0.7054149303865586,
+      "error": 0.013992795156921534,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "krr",
+      "test R2 at val-selected layer": 0.7118060857224284,
+      "error": 0.013495627605225158,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "mlp",
+      "test R2 at val-selected layer": 0.6884032096864674,
+      "error": 0.015195528247517576,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "residual skip",
+      "test R2 at val-selected layer": 0.6908990771961111,
+      "error": 0.014304863571784454,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "ridge",
+      "test R2 at val-selected layer": 0.639156642519435,
+      "error": 0.01544019423162063,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "krr",
+      "test R2 at val-selected layer": 0.6371170587990758,
+      "error": 0.016605287534300628,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "mlp",
+      "test R2 at val-selected layer": 0.6367240249820838,
+      "error": 0.016557913185470507,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "residual skip",
+      "test R2 at val-selected layer": 0.6304013307084662,
+      "error": 0.0160290801186333,
+      "_kind": "bar",
+      "_group": 7
+    }
+  ],
+  "n_series": 8,
+  "total_points": 8
+}
