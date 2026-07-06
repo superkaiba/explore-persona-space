@@ -18,7 +18,7 @@ update this index (lint: `--check-lessons-index`).
 - **[code-style](code-style.md)** — fires when: you write/edit any `*.py` or Hydra config (lint, vectorized torch, checkpoint-per-phase, no dollar caps).
 - **[compute-backend-failover](compute-backend-failover.md)** — fires when: you touch the backend router / dispatch / poll, or reason about GCP↔RunPod failover.
 - **[contrastive-negatives](contrastive-negatives.md)** — fires when: a plan implants a behavior (marker/fact/refusal/trait) into a persona (interleave contrastive negatives by default).
-- **[crash-fix-rounds](crash-fix-rounds.md)** — fires when: an implementer runs any retry/revision round (failure lesson, fix-engaged signal, scope, kill-before-relaunch).
+- **[crash-fix-rounds](crash-fix-rounds.md)** — fires when: an implementer runs any retry/revision round, OR the orchestrator/experimenter relaunches after a code-fix round (failure lesson, fix-engaged signal incl. fix-commit SHA + stale-artifact disposition, relaunch ancestry probe + checkpoint hygiene, scope, kill-before-relaunch).
 - **[critic-lens-reference](critic-lens-reference.md)** — fires when: a critic reviews under its assigned lens (pointer-loaded single-lens span).
 - **[data-realism](data-realism.md)** — fires when: a plan picks training/eval/probe data (strict 4-tier preference order; justify tier 3/4).
 - **[diff-size-budget](diff-size-budget.md)** — fires when: reading a branch-wide diff BODY (size first; >300 KB: round-scope it).

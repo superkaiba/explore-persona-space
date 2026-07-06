@@ -6263,11 +6263,11 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     "clean-result-critic.md": 107_000,
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 91,371 B post-#948 (Step 3.8 seam-stubbed production-body
-    # verification lens + Rule 16 + Step 0.68 sibling xref — plan-mandated
-    # growth; cap = measured + <=~1 KB. Prior: 82,176 B post-#875+#869+#881)
-    # #948: seam-stubbed production-body lens (Step 3.8)
-    "code-reviewer.md": 92_300,
+    # measured 92,536 B post-#1081 (fix-engaged elements (d)/(e) verification —
+    # fix-commit SHA + stale-run artifact disposition — plan-mandated growth;
+    # cap = measured + <=~1 KB. Prior: 92,300 — measured 91,371 B post-#948
+    # Step 3.8 seam-stubbed production-body lens)
+    "code-reviewer.md": 93_500,
     # measured 72,064 B post-#1056 (figure pin-first carve-out in the
     # composed-prompt header — plan-mandated growth; cap = measured
     # + <=~1 KB. Prior: 72,000 (measured 71,430 B post-#1050 r2),
@@ -6282,7 +6282,10 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # calibration caveat in § Batched-rewrite equivalence — plan-mandated
     # growth; cap = measured + <=3 KB. Prior: 55,812 B post-#869)
     "experiment-implementer.md": 61_500,
-    "experimenter.md": 65_500,  # measured 62,672 B
+    # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
+    # disposition-conditional resume-glob confirm — plan-mandated growth;
+    # cap = measured + <=~1 KB. Prior: 65,500 — measured 62,672 B)
+    "experimenter.md": 66_500,
     "methodology-writer.md": 48_000,  # measured 45,203 B
     # measured 46,187 B post-#1082 (negative-existence search recipe —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 43,500 / 40,990 B)

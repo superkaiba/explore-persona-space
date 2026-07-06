@@ -3843,6 +3843,11 @@ silently probes a dead pid every tick and is rescued only while the
 marker pid is itself alive (full contract + atomic recipe:
 `.claude/rules/pod-side-reporting.md` § Pid-file launch contract;
 incident #813 v5).
+A crash-fix relaunch (a `code`-row fix round preceded it) additionally
+passes the fix-commit ancestry probe and executes the declared
+stale-checkpoint disposition BEFORE dispatch, recording `fix_sha=` in
+the fresh marker note (`.claude/rules/crash-fix-rounds.md` § Crash-fix
+relaunch: fix-commit ancestry + stale-checkpoint hygiene).
 (Incident: task #521, 2026-06-10 — a VM-side pid file plus an
 `epm:progress`-only relaunch produced `status=dead, pid_alive=False`
 while the pod run was healthy.) On the GCP lane the marker's `pod=`
@@ -4539,6 +4544,14 @@ When this skill is re-invoked in `running`:
    rule ("A successful relaunch also reconciles a stale `blocked`", Step
    6d.2 poll-loop section) — a task parked `blocked` by an earlier failed
    round must not stay `blocked` through a healthy relaunched run (#742).*
+
+   *`code`-row relaunch contract (#779):* the post-review relaunch — the
+   Step 6 experimenter respawn (brief carries `fix_sha=` + the element-5
+   stale-artifact disposition, copied from the implementer's fix-engaged
+   declaration) or an orchestrator hot-fix relaunch — enforces BOTH
+   before dispatch: the fix-commit ancestry probe and the declared
+   disposition (`.claude/rules/crash-fix-rounds.md` § Crash-fix
+   relaunch: fix-commit ancestry + stale-checkpoint hygiene).
 
    **Zombie-GPU stall recovery brief (`stall_reason: vllm_worker_dead_zombie_gpu`).**
    When the `status=stalled` tick's `stall_reason` is

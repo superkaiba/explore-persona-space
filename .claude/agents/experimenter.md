@@ -320,6 +320,14 @@ authoritative recipe is agent memory
    and EXIT — `/issue` Step 7 routes `infra` to a fresh experimenter
    respawn (cap 3). Full recipe + the #653 r6 incident:
    `.claude/agent-memory/experimenter/feedback_pod_git_pull_silent_index_lock.md`.
+
+   **Crash-fix relaunch (brief carries `fix_sha=`):** additionally run
+   `git merge-base --is-ancestor <fix_sha> HEAD` on the pod (ANY
+   non-zero exit = fix absent — do NOT launch) and execute the brief's
+   stale-checkpoint disposition before launch, confirming the resume
+   glob resolves as the disposition requires (empty / the fresh path /
+   exactly the RETAINED expected paths). Recipe:
+   `.claude/rules/crash-fix-rounds.md` § Crash-fix relaunch.
 3. **Run preflight on the pod.**
    ```bash
    ssh_execute(server="epm-issue-<N>",
