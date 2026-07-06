@@ -594,6 +594,7 @@ def _build_manifest(
     instruction_source: str,
     exhibit_instructions: Sequence[str],
     not_exhibit_instructions: Sequence[str] | None,
+    oversample_mult: float = 1.0,
 ) -> dict:
     train_bank, ts, te = banks.SLICES[(behavior.name, "train")]
     return {
@@ -626,6 +627,10 @@ def _build_manifest(
         # Part of the resume key (#1074): a style flip re-generates fresh
         # instead of silently reusing candidates injected under the other style.
         "instruction_style": instruction_style,
+        # Part of the resume key (#1090 round 4): a changed positive request
+        # budget re-generates fresh rather than replaying the smaller raw
+        # cache (pre-knob manifests normalize to 1.0 at the resume check).
+        "oversample_mult": oversample_mult,
     }
 
 
@@ -705,6 +710,19 @@ def _judge_and_filter(
 # ── Public entry point ───────────────────────────────────────────────────────
 
 
+def _validate_scalar_fences(quota_floor: float, oversample_mult: float) -> None:
+    """Fail loud on out-of-fence scalar knobs: quota_floor in (0, 1];
+    oversample_mult in [1.0, 2.0] (the #1090 plan's 2x request-count fence —
+    never a silent clamp, never an undersample)."""
+    if not 0.0 < quota_floor <= 1.0:
+        raise ValueError(f"quota_floor must be in (0, 1], got {quota_floor}")
+    if not 1.0 <= oversample_mult <= 2.0:
+        raise ValueError(
+            f"oversample_mult must be in [1.0, 2.0] (the plan's 2x request-count fence), "
+            f"got {oversample_mult}"
+        )
+
+
 def generate_training_data(
     behavior: Behavior,
     context_C: Context,
@@ -721,6 +739,7 @@ def generate_training_data(
     judge_fn: JudgeFn | None = None,
     instruction_style: str = "tagged",
     instruction_source: str = "elicitation",
+    oversample_mult: float = 1.0,
 ) -> tuple[Path, Path, Path]:
     """Build contrastive (positive, contrast) training JSONL for ``behavior``.
 
@@ -737,10 +756,15 @@ def generate_training_data(
     ``ElicitationSpec`` (byte-identical pre-#1090 behavior) or the
     persona-vectors ``extraction.prompt_pairs`` (positives rotate the pair
     ``exhibit`` texts, negatives the ``not_exhibit`` texts); the resolved lists
-    + source enter the manifest resume key. Raises
-    :class:`ValueError` on a programmatic behavior or unknown style/source,
-    :class:`DatagenYieldError` below the floor, and
-    :class:`DatagenCheckpointMismatchError` on a stale resume.
+    + source enter the manifest resume key. ``oversample_mult`` (#1090 round 4,
+    the plan's ALLOWED "oversample/request-count retuning within 2x" deviation)
+    multiplies the POSITIVE request budget ``ceil(target_n / EXPECTED_YIELD)``
+    (36 for target 25 -> 72 at 2.0); it is fenced to [1.0, 2.0] and enters the
+    manifest resume key (a pre-knob manifest reads as 1.0, so mult-1.0 resumes
+    replay and a changed mult refuses the stale raw cache). Raises
+    :class:`ValueError` on a programmatic behavior, unknown style/source, or an
+    out-of-fence ``oversample_mult``, :class:`DatagenYieldError` below the
+    floor, and :class:`DatagenCheckpointMismatchError` on a stale resume.
     """
     # 1. Resolve + guard.
     behavior.validate()
@@ -754,8 +778,7 @@ def generate_training_data(
             f"behavior {behavior.name!r} is programmatic (tier-4 carve-out) — "
             "programmatic behaviors never route through the unified datagen pipeline"
         )
-    if not 0.0 < quota_floor <= 1.0:
-        raise ValueError(f"quota_floor must be in (0, 1], got {quota_floor}")
+    _validate_scalar_fences(quota_floor, oversample_mult)
     panel: Panel = get_panel(negatives) if isinstance(negatives, str) else tuple(negatives)
     if not panel:
         raise ValueError("negative panel is empty")
@@ -770,7 +793,12 @@ def generate_training_data(
 
     floor_n = math.ceil(quota_floor * target_n)
     member_quota = per_negative_quota(floor_n, panel)
-    n_pos_req = math.ceil(target_n / EXPECTED_YIELD)
+    # Positive budget = the EXPECTED_YIELD-derived count x the oversample knob
+    # (36 -> 72 at 2.0 for target 25); the NEGATIVE budget is deliberately NOT
+    # scaled — the P1a floor misses were positive-arm keep-rate misses (36-39%
+    # realized vs the 70% EXPECTED_YIELD assumption), and negatives are
+    # generated per panel member on the emitted-positive questions.
+    n_pos_req = math.ceil(math.ceil(target_n / EXPECTED_YIELD) * oversample_mult)
     n_neg_req_per_member = math.ceil(member_quota / EXPECTED_YIELD)
 
     train_questions = [
@@ -792,13 +820,20 @@ def generate_training_data(
         instruction_source=instruction_source,
         exhibit_instructions=exhibit_instructions,
         not_exhibit_instructions=not_exhibit_instructions,
+        oversample_mult=oversample_mult,
     )
     manifest_hash = hashlib.sha256(_canonical(manifest).encode("utf-8")).hexdigest()
     manifest_path = out_dir / "gen_manifest.json"
     raw_pos_path = out_dir / "raw_pos.jsonl"
     raw_neg_path = out_dir / "raw_neg.jsonl"
     if manifest_path.exists():
-        if json.loads(manifest_path.read_text()) != manifest:
+        existing = json.loads(manifest_path.read_text())
+        # Back-compat (#1090 round 4): a pre-knob v2 manifest lacks the key and
+        # was generated at the implicit 1.0 budget — normalize instead of
+        # invalidating every completed dir, so a mult-1.0 re-run resumes and
+        # only a CHANGED budget refuses the stale raw cache.
+        existing.setdefault("oversample_mult", 1.0)
+        if existing != manifest:
             raise DatagenCheckpointMismatchError(
                 f"gen_manifest.json in {out_dir} does not match the current args "
                 "(behavior/bank/instructions/context/target_n/seed/model changed). "

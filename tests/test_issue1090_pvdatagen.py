@@ -15,6 +15,7 @@ printed.
 from __future__ import annotations
 
 import json
+import math
 import sys
 from pathlib import Path
 
@@ -532,3 +533,219 @@ def test_screen_false_claims_unions_patterns_and_judge(monkeypatch, tmp_path):
     assert [v["index"] for v in violations] == [0, 2]
     assert violations[0]["pattern"] != "judge" and violations[1]["pattern"] == "judge"
     assert {v["screen"] for v in violations} == {"false_claim"}
+
+
+# ── Round 4: --oversample-mult (the plan's ALLOWED 2x request-count retune) ───
+
+
+def test_oversample_mult_cli_and_library_fence_error_loud(tmp_path):
+    """>2.0 (and <1.0) errors loud at BOTH fences: argparse exit + library
+    ValueError; an in-fence value threads into RunConfig."""
+    run = _run_module()
+    base = ["--full", "--phase", "datagen-api"]
+    with pytest.raises(SystemExit):
+        run._parse_args([*base, "--oversample-mult", "2.5"])
+    with pytest.raises(SystemExit):
+        run._parse_args([*base, "--oversample-mult", "0.5"])
+    args = run._parse_args([*base, "--oversample-mult", "2.0"])
+    assert run.config_from_args(args).oversample_mult == 2.0
+    assert run.config_from_args(run._parse_args(base)).oversample_mult == 1.0
+    with pytest.raises(ValueError, match="oversample_mult"):
+        datagen.generate_training_data(
+            BEHAVIORS["sycophancy"],
+            SRC,
+            "default_v1",
+            out_dir=tmp_path / "never",
+            target_n=6,
+            oversample_mult=2.5,
+            generate_fn=_gen_all(),
+            judge_fn=_judge_by_arm(),
+        )
+
+
+def test_oversample_mult_scales_positive_budget_and_enters_manifest(tmp_path):
+    """mult=2.0 doubles ONLY the positive request budget (the 36->72 production
+    shape at target 25, here 9->18 at target 6) and lands in gen_manifest.json."""
+    beh = BEHAVIORS["sycophancy"]
+
+    def _arm_request_sizes(mult, d):
+        sizes = []
+
+        def gen(reqs):
+            sizes.append(len(reqs))
+            return [GenCandidate(r, "resp") for r in reqs]
+
+        datagen.generate_training_data(
+            beh,
+            SRC,
+            "default_v1",
+            out_dir=d,
+            target_n=6,
+            n_judge_draws=2,
+            generate_fn=gen,
+            judge_fn=_judge_by_arm(),
+            instruction_style="plain",
+            instruction_source="extraction_pairs",
+            oversample_mult=mult,
+        )
+        return sizes  # [positive call, negative call]
+
+    base = _arm_request_sizes(1.0, tmp_path / "m1")
+    doubled = _arm_request_sizes(2.0, tmp_path / "m2")
+    assert base[0] == math.ceil(6 / datagen.EXPECTED_YIELD)
+    assert doubled[0] == 2 * base[0]
+    assert doubled[1] == base[1]  # negative budget deliberately NOT scaled
+    manifest = json.loads((tmp_path / "m2" / "gen_manifest.json").read_text())
+    assert manifest["oversample_mult"] == 2.0
+
+
+def test_oversample_mult_resume_key_with_preknob_normalization(tmp_path):
+    """A pre-knob manifest (no key) reads as 1.0 — a mult-1.0 re-run replays the
+    raw cache; a CHANGED budget refuses it (DatagenCheckpointMismatchError)."""
+    beh = BEHAVIORS["sycophancy"]
+    d = tmp_path / "d"
+    kwargs = dict(
+        out_dir=d,
+        target_n=6,
+        n_judge_draws=2,
+        generate_fn=_gen_all(),
+        judge_fn=_judge_by_arm(),
+        instruction_style="plain",
+        instruction_source="extraction_pairs",
+    )
+    datagen.generate_training_data(beh, SRC, "default_v1", **kwargs)
+    mpath = d / "gen_manifest.json"
+    m = json.loads(mpath.read_text())
+    assert m["oversample_mult"] == 1.0
+    del m["oversample_mult"]  # simulate the pre-knob v2 manifest on disk
+    mpath.write_text(json.dumps(m) + "\n")
+    datagen.generate_training_data(beh, SRC, "default_v1", **kwargs)  # resumes clean
+    with pytest.raises(datagen.DatagenCheckpointMismatchError):
+        datagen.generate_training_data(beh, SRC, "default_v1", oversample_mult=2.0, **kwargs)
+
+
+def test_run_datagen_cell_threads_budget_and_rerun_semantics(monkeypatch, tmp_path):
+    """Driver threading + re-run semantics: the budget reaches the datagen call;
+    a floored prior at another budget quarantines + regenerates; a floored prior
+    at the SAME budget skips; a SUCCESS is kept at any budget; the summary
+    carries the top-level positive_stage digest."""
+    run = _run_module()
+    calls: list[dict] = []
+
+    def fake_gtd(behavior, ctx, *, out_dir, seed, **kw):
+        calls.append(dict(kw))
+        out = Path(out_dir)
+        out.mkdir(parents=True, exist_ok=True)
+        (out / "pos.jsonl").write_text("")
+        (out / "cn.jsonl").write_text("")
+        meta = out / "pool_meta.json"
+        meta.write_text(
+            json.dumps(
+                {
+                    "positive": {
+                        "requested": 72,
+                        "generated": 40,
+                        "judge_none_drops": 2,
+                        "threshold_drops": 8,
+                        "structural_drops": 5,
+                        "kept": 25,
+                    }
+                }
+            )
+        )
+        return out / "pos.jsonl", out / "cn.jsonl", meta
+
+    monkeypatch.setattr(run, "generate_training_data", fake_gtd)
+
+    # Fresh cell at 2.0: budget threads through _datagen_kwargs into the call.
+    cell = run.CELL_BY_ID["c3"]
+    cfg = run.RunConfig(smoke=True, cells=(cell,), out_root=tmp_path, oversample_mult=2.0)
+    rec = run._run_datagen_cell(cfg, cell, gen_fn=None)
+    assert calls[-1]["oversample_mult"] == 2.0
+    assert rec["status"] == "success" and rec["oversample_mult"] == 2.0
+    assert rec["positive_stage"] == {
+        "n_requested": 72,
+        "n_generated": 40,
+        "n_judged": 38,
+        "n_kept": 25,
+        "n_structural_dropped": 5,
+        "n_threshold_dropped": 8,
+        "n_judge_none_dropped": 2,
+    }
+    # A recorded SUCCESS is kept even under a different budget (no re-spend).
+    cfg_keep = run.RunConfig(smoke=True, cells=(cell,), out_root=tmp_path, oversample_mult=1.0)
+    n = len(calls)
+    assert run._run_datagen_cell(cfg_keep, cell, gen_fn=None) == rec and len(calls) == n
+
+    # Floored PRE-KNOB prior (no mult key -> 1.0) + stale dir: quarantine + regen at 2.0.
+    cell2 = run.CELL_BY_ID["c6"]
+    root2 = tmp_path / "r2"
+    cr = root2 / cell2.slug
+    dg = cr / "datagen"
+    dg.mkdir(parents=True)
+    (dg / "sentinel.txt").write_text("stale")
+    run._atomic_write_json(cr / "datagen_summary.json", {"status": "yield_floor_missed"})
+    cfg2 = run.RunConfig(smoke=True, cells=(cell2,), out_root=root2, oversample_mult=2.0)
+    rec2 = run._run_datagen_cell(cfg2, cell2, gen_fn=None)
+    assert rec2["status"] == "success" and rec2["oversample_mult"] == 2.0
+    assert not (dg / "sentinel.txt").exists()
+    stale_dirs = list(cr.glob("datagen_stale_x1_*"))
+    assert len(stale_dirs) == 1 and (stale_dirs[0] / "sentinel.txt").exists()
+
+    # A floored prior at the SAME budget skips (already the recorded deliverable).
+    prior = {"status": "yield_floor_missed", "oversample_mult": 2.0}
+    run._atomic_write_json(cr / "datagen_summary.json", prior)
+    n = len(calls)
+    assert run._run_datagen_cell(cfg2, cell2, gen_fn=None) == prior and len(calls) == n
+
+
+def test_floored_summary_surfaces_judge_counts(tmp_path):
+    """The floored-cell positive stage now carries n_judged / n_kept /
+    n_structural_dropped (+ threshold / judge-none drops) reconstructed from the
+    raw + judge_raw checkpoints — the previously invisible c1 drop story."""
+    run = _run_module()
+    beh = BEHAVIORS["formatting"]
+    thr = beh.threshold
+
+    def _row(rid, completion):
+        return {
+            "request_id": rid,
+            "arm": POSITIVE,
+            "question_id": "q0",
+            "variant_id": "ev0",
+            "question": "Q",
+            "gen_messages": [],
+            "emit_messages": [],
+            "completion": completion,
+            "drop_reason": None if completion is not None else "refusal",
+        }
+
+    rows = [
+        _row("pos-0", "- a\n- b"),  # structural + above threshold -> kept
+        _row("pos-1", "plain prose, no list at all"),  # above threshold -> structural drop
+        _row("pos-2", None),  # refusal: never judged (gen_drop_mix territory)
+        _row("pos-3", "text"),  # below threshold -> threshold drop
+        _row("pos-4", "text"),  # no usable draws -> judge-none drop
+    ]
+    (tmp_path / "raw_pos.jsonl").write_text("\n".join(json.dumps(r) for r in rows) + "\n")
+    all_scores = {
+        "pos-0__00000__00": thr + 30,
+        "pos-0__00000__01": thr + 40,
+        "pos-1__00001__00": thr + 30,
+        "pos-3__00003__00": max(thr - 30, 0),
+        "pos-4__00004__00": "REFUSAL",  # dropped draw -> no usable draws
+    }
+    (tmp_path / "judge_raw_pos.json").write_text(json.dumps({"all_scores": all_scores}))
+    err = datagen.DatagenYieldError(
+        "behavior 'formatting': kept 1 positives < floor_n=20 (target_n=25, "
+        "quota_floor=0.8). Per-variant yields: {'ev0': 1}"
+    )
+    rec = run.i1074._summarize_floored_cell(tmp_path, err, beh)
+    pos = rec["stages"]["positive"]
+    assert pos["requested"] == 5 and pos["generated"] == 4
+    assert pos["n_judged"] == 3 and pos["n_kept"] == 1
+    assert pos["n_structural_dropped"] == 1 and pos["n_threshold_dropped"] == 1
+    assert pos["n_judge_none_dropped"] == 1
+    stage = run._positive_stage_from_yield_record(rec)
+    assert stage["n_requested"] == 5 and stage["n_kept"] == 1
+    assert stage["n_structural_dropped"] == 1

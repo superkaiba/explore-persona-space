@@ -201,6 +201,14 @@ class RunConfig:
     target_n: int = TARGET_N
     quota_floor: float = 0.8
     n_judge_draws: int = 5  # datagen judge-filter draws
+    # Positive request-budget multiplier (#1090 round 4; the plan's ALLOWED
+    # "oversample/request-count retuning within 2x" deviation). Fenced to
+    # [1.0, 2.0]. DELIBERATELY excluded from regime_key(): the retune re-runs
+    # only the FLOORED cells inside the SAME out_root (c2's mult-1.0 success is
+    # kept), so a mixed-budget tree is the intended state — the budget is
+    # per-cell provenance, recorded in each cell's datagen_summary.json AND in
+    # gen_manifest.json (the library resume key).
+    oversample_mult: float = 1.0
     gen_temperature: float = 1.0
     tier1_n: int = TIER1_N_COMPLETIONS
     tier1_draws: int = TIER1_JUDGE_DRAWS
@@ -316,6 +324,7 @@ def _datagen_kwargs(cfg: RunConfig, cell: Cell, gen_fn) -> dict:
         generate_fn=gen_fn,
         instruction_style="plain",  # #1074 setting (plan §11)
         instruction_source="extraction_pairs",  # the #1090 core delta (plan D2)
+        oversample_mult=cfg.oversample_mult,  # round-4 allowed 2x retune (API + qwen cells)
     )
 
 
@@ -342,6 +351,12 @@ def _reuse_or_generate_datagen(cfg: RunConfig, cell: Cell) -> Callable[..., tupl
                 "instruction_style": kw.get("instruction_style"),
                 "instruction_source": kw.get("instruction_source"),
             }
+            # oversample_mult is DELIBERATELY not in the regime diff: the knob
+            # only widens the candidate pool upstream of the emit contract
+            # (exactly floor_n positives either way), and the GPU phase must
+            # reuse a mult-1.0 staged success (c2) alongside mult-2.0 re-runs
+            # under one --oversample-mult flag. The realized budget is recorded
+            # in the staged gen_manifest.json + datagen_summary.json.
             diff = {k: (manifest.get(k), v) for k, v in expected.items() if manifest.get(k) != v}
             if diff:
                 raise RuntimeError(
@@ -427,17 +442,86 @@ def phase_questiongen(cfg: RunConfig) -> dict:
 # ── Phase: datagen (API cells on VM; qwen cells on GPU) ─────────────────────
 
 
+def _positive_stage_from_pool_meta(pool_meta: dict) -> dict:
+    """Top-level positive-stage digest for a SUCCESS cell (from pool_meta's
+    positive arm; ``n_judged`` = generated minus judge-none drops, matching the
+    floored-cell reconstruction in ``i1074._arm_judge_counts``)."""
+    pm = pool_meta.get("positive", {})
+    return {
+        "n_requested": pm.get("requested"),
+        "n_generated": pm.get("generated"),
+        "n_judged": (
+            pm["generated"] - pm["judge_none_drops"]
+            if "generated" in pm and "judge_none_drops" in pm
+            else None
+        ),
+        "n_kept": pm.get("kept"),
+        "n_structural_dropped": pm.get("structural_drops"),
+        "n_threshold_dropped": pm.get("threshold_drops"),
+        "n_judge_none_dropped": pm.get("judge_none_drops"),
+    }
+
+
+def _positive_stage_from_yield_record(yield_record: dict) -> dict:
+    """Top-level positive-stage digest for a FLOORED cell (from the enriched
+    ``_summarize_floored_cell`` positive stage)."""
+    st = yield_record.get("stages", {}).get("positive", {})
+    return {
+        "n_requested": st.get("requested"),
+        "n_generated": st.get("generated"),
+        "n_judged": st.get("n_judged"),
+        "n_kept": st.get("n_kept"),
+        "n_structural_dropped": st.get("n_structural_dropped"),
+        "n_threshold_dropped": st.get("n_threshold_dropped"),
+        "n_judge_none_dropped": st.get("n_judge_none_dropped"),
+    }
+
+
 def _run_datagen_cell(cfg: RunConfig, cell: Cell, gen_fn) -> dict:
-    """One datagen cell; a DatagenYieldError is a RECORDED deliverable."""
+    """One datagen cell; a DatagenYieldError is a RECORDED deliverable.
+
+    Re-run semantics under --oversample-mult (round 4): a recorded SUCCESS is
+    always kept (the budget retune targets floored cells — never re-spend a
+    green cell); a recorded FLOOR MISS at the SAME budget skips; a floor miss
+    at a DIFFERENT budget quarantines the stale datagen dir (durable record,
+    already uploaded) and regenerates fresh at the new budget.
+    """
     cell_root = cfg.out_root / cell.slug
     summary_path = cell_root / "datagen_summary.json"
-    if summary_path.exists():
-        prior = _read_json(summary_path)
-        if prior.get("status") in ("success", "yield_floor_missed"):
-            logger.info("[datagen] %s already recorded — skip", cell.slug)
-            return prior
     behavior = BEHAVIORS[cell.behavior]
     datagen_dir = cell_root / "datagen"
+    if summary_path.exists():
+        prior = _read_json(summary_path)
+        prior_mult = float(prior.get("oversample_mult", 1.0))
+        if prior.get("status") == "success":
+            if prior_mult != cfg.oversample_mult:
+                logger.info(
+                    "[datagen] %s success recorded at oversample_mult=%g — keeping "
+                    "(the budget retune targets floored cells)",
+                    cell.slug,
+                    prior_mult,
+                )
+            else:
+                logger.info("[datagen] %s already recorded — skip", cell.slug)
+            return prior
+        if prior.get("status") == "yield_floor_missed":
+            if prior_mult == cfg.oversample_mult:
+                logger.info("[datagen] %s already recorded — skip", cell.slug)
+                return prior
+            if datagen_dir.exists():
+                stale = cell_root / (
+                    f"datagen_stale_x{prior_mult:g}_"
+                    + time.strftime("%Y%m%dT%H%M%SZ", time.gmtime())
+                )
+                os.replace(datagen_dir, stale)
+                logger.warning(
+                    "[datagen] %s floor miss at oversample_mult=%g — quarantined stale dir "
+                    "to %s; regenerating at oversample_mult=%g",
+                    cell.slug,
+                    prior_mult,
+                    stale,
+                    cfg.oversample_mult,
+                )
     record: dict[str, Any] = {
         "cell": cell.slug,
         "cell_id": cell.cell_id,
@@ -451,6 +535,7 @@ def _run_datagen_cell(cfg: RunConfig, cell: Cell, gen_fn) -> dict:
         "target_n": cfg.target_n,
         "quota_floor": cfg.quota_floor,
         "floor_n": math.ceil(cfg.quota_floor * cfg.target_n),
+        "oversample_mult": cfg.oversample_mult,
         "seed": cfg.seed,
         "git_commit": i1074._git_short_sha(),
         "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
@@ -463,18 +548,22 @@ def _run_datagen_cell(cfg: RunConfig, cell: Cell, gen_fn) -> dict:
             seed=cfg.seed,
             **_datagen_kwargs(cfg, cell, gen_fn),
         )
+        pool_meta = _read_json(Path(meta))
         record.update(
             status="success",
             pos_path=str(pos),
             cn_path=str(cn),
             pool_meta_path=str(meta),
-            pool_meta=_read_json(Path(meta)),
+            pool_meta=pool_meta,
+            positive_stage=_positive_stage_from_pool_meta(pool_meta),
             per_question_yield=i1074._per_question_yield(datagen_dir, behavior),
         )
     except DatagenYieldError as e:
+        yield_record = i1074._summarize_floored_cell(datagen_dir, e, behavior)
         record.update(
             status="yield_floor_missed",
-            yield_record=i1074._summarize_floored_cell(datagen_dir, e),
+            yield_record=yield_record,
+            positive_stage=_positive_stage_from_yield_record(yield_record),
             per_question_yield=i1074._per_question_yield(datagen_dir, behavior),
         )
         logger.warning("[datagen] %s missed the yield floor: %s", cell.slug, e)
@@ -1497,6 +1586,17 @@ def make_smoke_seams(cfg: RunConfig) -> Seams1090:
 # ── CLI / main ───────────────────────────────────────────────────────────────
 
 
+def _oversample_mult_arg(s: str) -> float:
+    """argparse type for --oversample-mult: floats in [1.0, 2.0], loud above
+    the plan's 2x request-count fence (and below 1.0 — never undersample)."""
+    v = float(s)
+    if not 1.0 <= v <= 2.0:
+        raise argparse.ArgumentTypeError(
+            f"--oversample-mult must be in [1.0, 2.0] (the plan's 2x fence), got {v}"
+        )
+    return v
+
+
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="#1090 persona-vectors datagen driver")
     mode = p.add_mutually_exclusive_group(required=True)
@@ -1507,6 +1607,12 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p.add_argument("--out-root", default=None)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--target-n", type=int, default=None, help="default 25 full / 6 smoke")
+    p.add_argument(
+        "--oversample-mult",
+        type=_oversample_mult_arg,
+        default=1.0,
+        help="positive request-budget multiplier in [1.0, 2.0] (round-4 allowed 2x retune)",
+    )
     p.add_argument("--n-judge-draws", type=int, default=None, help="default 5 full / 2 smoke")
     p.add_argument("--eval-question-limit", type=int, default=None, help="default None / 2 smoke")
     p.add_argument("--generic-data-path", default=None)
@@ -1531,6 +1637,7 @@ def config_from_args(args: argparse.Namespace) -> RunConfig:
         # Smoke slice 6 (not 5): floor_n = ceil(0.8*6) = 5 divides the 5-member
         # panel exactly (the #1074 divisibility note; production 25 -> floor 20).
         target_n=args.target_n if args.target_n is not None else (6 if smoke else TARGET_N),
+        oversample_mult=args.oversample_mult,
         n_judge_draws=(
             args.n_judge_draws if args.n_judge_draws is not None else (2 if smoke else 5)
         ),
