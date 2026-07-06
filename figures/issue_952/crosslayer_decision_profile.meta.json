@@ -1,6 +1,6 @@
 {
-  "commit": "3a74cf91de",
-  "created": "2026-07-05T04:05:31Z",
+  "commit": "3c1970d234",
+  "created": "2026-07-06T01:42:45Z",
   "figsize": [
     11.0,
     4.2
@@ -8,7 +8,7 @@
   "points": [
     {
       "Read-out layer": 14.0,
-      "H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)": -0.006076117026309065,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": -0.006076117026309065,
       "error": 0.008691289278950697,
       "series": "This round",
       "_kind": "errorbar",
@@ -16,7 +16,7 @@
     },
     {
       "Read-out layer": 23.0,
-      "H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)": 0.0036448084255578245,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.0036448084255578245,
       "error": 0.009665660732562541,
       "series": "This round",
       "_kind": "errorbar",
@@ -24,7 +24,7 @@
     },
     {
       "Read-out layer": 26.0,
-      "H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)": 0.012000278412981397,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.012000278412981397,
       "error": 0.011382789763345832,
       "series": "This round",
       "_kind": "errorbar",
@@ -32,61 +32,61 @@
     },
     {
       "Read-out layer": 14.0,
-      "H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)": -0.006076117026309065,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": -0.006076117026309065,
       "_kind": "line",
       "_group": 1
     },
     {
       "Read-out layer": 23.0,
-      "H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)": 0.0036448084255578245,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.0036448084255578245,
       "_kind": "line",
       "_group": 1
     },
     {
       "Read-out layer": 26.0,
-      "H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)": 0.012000278412981397,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.012000278412981397,
       "_kind": "line",
       "_group": 1
     },
     {
       "Read-out layer": 14.0,
-      "H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)": -0.01479583433861182,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": -0.01479583433861182,
       "_kind": "line",
       "_group": 2
     },
     {
       "Read-out layer": 23.0,
-      "H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)": -0.005971958338665925,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": -0.005971958338665925,
       "_kind": "line",
       "_group": 2
     },
     {
       "Read-out layer": 26.0,
-      "H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)": 0.0007496945982479897,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.0007496945982479897,
       "_kind": "line",
       "_group": 2
     },
     {
       "Read-out layer": 14.0,
-      "H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)": 0.0025867442192895763,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.0025867442192895763,
       "_kind": "line",
       "_group": 3
     },
     {
       "Read-out layer": 23.0,
-      "H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)": 0.013359363126459156,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.013359363126459156,
       "_kind": "line",
       "_group": 3
     },
     {
       "Read-out layer": 26.0,
-      "H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)": 0.02351527412493965,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.02351527412493965,
       "_kind": "line",
       "_group": 3
     },
     {
       "Read-out layer": 14.0,
-      "Matched \u0394G(0\u219216): own-advantage closed\nby absorbing 16 prefix tokens": 0.0018997277256789236,
+      "16-token prefix closure of the\nplain-external gap": 0.0018997277256789236,
       "error": 0.014157213174007317,
       "series": "This round",
       "_kind": "errorbar",
@@ -94,7 +94,7 @@
     },
     {
       "Read-out layer": 23.0,
-      "Matched \u0394G(0\u219216): own-advantage closed\nby absorbing 16 prefix tokens": 0.020057363994596678,
+      "16-token prefix closure of the\nplain-external gap": 0.020057363994596678,
       "error": 0.014092234561727595,
       "series": "This round",
       "_kind": "errorbar",
@@ -102,7 +102,7 @@
     },
     {
       "Read-out layer": 26.0,
-      "Matched \u0394G(0\u219216): own-advantage closed\nby absorbing 16 prefix tokens": 0.005101033808971311,
+      "16-token prefix closure of the\nplain-external gap": 0.005101033808971311,
       "error": 0.01927216895588762,
       "series": "This round",
       "_kind": "errorbar",
@@ -110,55 +110,55 @@
     },
     {
       "Read-out layer": 14.0,
-      "Matched \u0394G(0\u219216): own-advantage closed\nby absorbing 16 prefix tokens": 0.0018997277256789236,
+      "16-token prefix closure of the\nplain-external gap": 0.0018997277256789236,
       "_kind": "line",
       "_group": 5
     },
     {
       "Read-out layer": 23.0,
-      "Matched \u0394G(0\u219216): own-advantage closed\nby absorbing 16 prefix tokens": 0.020057363994596678,
+      "16-token prefix closure of the\nplain-external gap": 0.020057363994596678,
       "_kind": "line",
       "_group": 5
     },
     {
       "Read-out layer": 26.0,
-      "Matched \u0394G(0\u219216): own-advantage closed\nby absorbing 16 prefix tokens": 0.005101033808971311,
+      "16-token prefix closure of the\nplain-external gap": 0.005101033808971311,
       "_kind": "line",
       "_group": 5
     },
     {
       "Read-out layer": 14.0,
-      "Matched \u0394G(0\u219216): own-advantage closed\nby absorbing 16 prefix tokens": -0.01211667880854583,
+      "16-token prefix closure of the\nplain-external gap": -0.01211667880854583,
       "_kind": "line",
       "_group": 6
     },
     {
       "Read-out layer": 23.0,
-      "Matched \u0394G(0\u219216): own-advantage closed\nby absorbing 16 prefix tokens": 0.006314063439557715,
+      "16-token prefix closure of the\nplain-external gap": 0.006314063439557715,
       "_kind": "line",
       "_group": 6
     },
     {
       "Read-out layer": 26.0,
-      "Matched \u0394G(0\u219216): own-advantage closed\nby absorbing 16 prefix tokens": -0.014566165143416118,
+      "16-token prefix closure of the\nplain-external gap": -0.014566165143416118,
       "_kind": "line",
       "_group": 6
     },
     {
       "Read-out layer": 14.0,
-      "Matched \u0394G(0\u219216): own-advantage closed\nby absorbing 16 prefix tokens": 0.016197747539468805,
+      "16-token prefix closure of the\nplain-external gap": 0.016197747539468805,
       "_kind": "line",
       "_group": 7
     },
     {
       "Read-out layer": 23.0,
-      "Matched \u0394G(0\u219216): own-advantage closed\nby absorbing 16 prefix tokens": 0.034498532563012906,
+      "16-token prefix closure of the\nplain-external gap": 0.034498532563012906,
       "_kind": "line",
       "_group": 7
     },
     {
       "Read-out layer": 26.0,
-      "Matched \u0394G(0\u219216): own-advantage closed\nby absorbing 16 prefix tokens": 0.02397817276835912,
+      "16-token prefix closure of the\nplain-external gap": 0.02397817276835912,
       "_kind": "line",
       "_group": 7
     }
