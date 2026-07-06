@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1085,
+  "highest_id": 1086,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -670,6 +670,13 @@
       "path": "tasks/proposed/1085",
       "status": "proposed",
       "title": "daily-fix: Step 10d additive-checkout guard-block recovery r"
+    },
+    "1086": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1086",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan.py c12/c18 false-positive on conforming battery + Row-coverage blocks"
     },
     "109": {
       "has_clean_result": false,
