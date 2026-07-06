@@ -660,8 +660,8 @@
     "1084": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1084",
-      "status": "proposed",
+      "path": "tasks/planning/1084",
+      "status": "planning",
       "title": "daily-fix: poll_pipeline sentinel consume-then-post crash-sa"
     },
     "1085": {
