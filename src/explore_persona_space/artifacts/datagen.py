@@ -86,6 +86,14 @@ MANIFEST_SCHEMA_VERSION = 1
 _INSTR_OPEN = "\n\n[[GENERATION-ONLY INSTRUCTION]]\n"
 _INSTR_CLOSE = "\n[[/GENERATION-ONLY INSTRUCTION]]"
 
+# instruction_style values (#1074): "tagged" = the delimited block above (the
+# #906 Claude-generator shape); "plain" = the instruction appended as plain
+# untagged system-prompt text (on-policy instruct-and-strip, the #612 tier-2
+# shape — an on-policy generator should see a natural system prompt, not a
+# bracketed meta-block). Either way emit_messages is computed independently
+# from the context, so the context-parity contract holds by construction.
+INSTRUCTION_STYLES = ("tagged", "plain")
+
 
 class DatagenYieldError(RuntimeError):
     """Raised when kept candidates fall below the pinned floor (loud, names yields)."""
@@ -131,12 +139,31 @@ JudgeFn = Callable[..., JudgeResult]
 # ── Instruction block inject / strip (exact inverses) ────────────────────────
 
 
-def _inject_instruction(base_msgs: list[dict[str, str]], instruction: str | None):
-    """Return ``base_msgs`` + a delimited generation-only block (or a copy when
-    ``instruction is None``). The block goes into the leading system message, or
-    becomes a fresh leading system message when the base has none."""
+def _inject_instruction(
+    base_msgs: list[dict[str, str]],
+    instruction: str | None,
+    style: str = "tagged",
+):
+    """Return ``base_msgs`` + the generation-only instruction (or a copy when
+    ``instruction is None``).
+
+    ``style="tagged"`` (default, byte-identical to the pre-#1074 behavior):
+    a delimited block goes into the leading system message, or becomes a fresh
+    leading system message when the base has none. ``style="plain"`` (#1074):
+    ``"\\n\\n" + instruction`` is appended to the leading system message as
+    plain untagged text, or the instruction becomes a bare system message when
+    the base has none — no delimiters anywhere.
+    """
+    if style not in INSTRUCTION_STYLES:
+        raise ValueError(f"instruction_style {style!r} not in {INSTRUCTION_STYLES}")
     msgs = [dict(m) for m in base_msgs]
     if instruction is None:
+        return msgs
+    if style == "plain":
+        if msgs and msgs[0].get("role") == "system":
+            msgs[0] = {"role": "system", "content": msgs[0]["content"] + "\n\n" + instruction}
+        else:
+            msgs.insert(0, {"role": "system", "content": instruction})
         return msgs
     block = _INSTR_OPEN + instruction + _INSTR_CLOSE
     if msgs and msgs[0].get("role") == "system":
@@ -146,9 +173,45 @@ def _inject_instruction(base_msgs: list[dict[str, str]], instruction: str | None
     return msgs
 
 
-def _strip_instruction(gen_msgs: list[dict[str, str]]) -> list[dict[str, str]]:
-    """Inverse of :func:`_inject_instruction`: recover the emitted training prompt."""
+def _strip_instruction(
+    gen_msgs: list[dict[str, str]],
+    *,
+    instruction: str | None = None,
+    style: str = "tagged",
+) -> list[dict[str, str]]:
+    """Inverse of :func:`_inject_instruction`: recover the emitted training prompt.
+
+    ``style="tagged"`` needs no ``instruction`` (the delimiters locate the
+    block; signature backward-compatible with the pre-#1074 single-arg form).
+    ``style="plain"`` has no delimiters, so the exact injected ``instruction``
+    is required to strip: the leading system message either IS the instruction
+    (bare insert — popped) or ends with ``"\\n\\n" + instruction`` (suffix
+    removed). A plain strip that cannot find the instruction raises — an
+    un-strippable plain injection would silently break context parity.
+    """
+    if style not in INSTRUCTION_STYLES:
+        raise ValueError(f"instruction_style {style!r} not in {INSTRUCTION_STYLES}")
     msgs = [dict(m) for m in gen_msgs]
+    if style == "plain":
+        if instruction is None:
+            return msgs
+        if not msgs or msgs[0].get("role") != "system":
+            raise ValueError(
+                "plain-style strip: gen_messages carry no leading system message "
+                "to strip the instruction from"
+            )
+        content = msgs[0]["content"]
+        if content == instruction:  # bare insert (base had no system prompt)
+            msgs.pop(0)
+            return msgs
+        suffix = "\n\n" + instruction
+        if content.endswith(suffix):
+            msgs[0] = {"role": "system", "content": content[: -len(suffix)]}
+            return msgs
+        raise ValueError(
+            "plain-style strip: leading system message does not end with the "
+            "injected instruction — cannot recover the emitted training prompt"
+        )
     if not msgs or msgs[0].get("role") != "system":
         return msgs
     content = msgs[0]["content"]
@@ -236,6 +299,7 @@ def _compose_positive_requests(
     questions: Sequence[tuple[str, str]],  # (question_id, question)
     n_requests: int,
     rng,
+    instruction_style: str = "tagged",
 ) -> list[GenRequest]:
     variants = behavior.elicitation.exhibit_instructions
     grid = [(qid, q, vi) for (qid, q) in questions for vi in range(len(variants))]
@@ -243,8 +307,20 @@ def _compose_positive_requests(
     reqs: list[GenRequest] = []
     for i, (qid, q, vi) in enumerate(picks):
         emit = context_C.messages(q)
-        gen = _inject_instruction(emit, variants[vi])
-        reqs.append(_mk_request(f"pos-{i:05d}", POSITIVE, qid, f"ev{vi}", q, gen, emit))
+        gen = _inject_instruction(emit, variants[vi], instruction_style)
+        reqs.append(
+            _mk_request(
+                f"pos-{i:05d}",
+                POSITIVE,
+                qid,
+                f"ev{vi}",
+                q,
+                gen,
+                emit,
+                instruction=variants[vi],
+                instruction_style=instruction_style,
+            )
+        )
     return reqs
 
 
@@ -254,6 +330,7 @@ def _compose_negative_requests(
     questions: Sequence[tuple[str, str]],
     n_requests_per_member: int,
     rng,
+    instruction_style: str = "tagged",
 ) -> list[GenRequest]:
     not_exhibit = behavior.elicitation.not_exhibit_instructions  # may be None
     reqs: list[GenRequest] = []
@@ -267,9 +344,21 @@ def _compose_negative_requests(
         for qid, q, vi in picks:
             emit = member.messages(q)
             instr = None if vi is None else not_exhibit[vi]
-            gen = _inject_instruction(emit, instr)
+            gen = _inject_instruction(emit, instr, instruction_style)
             variant_id = member.slug if vi is None else f"{member.slug}-nv{vi}"
-            reqs.append(_mk_request(f"neg-{i:05d}", NEGATIVE, qid, variant_id, q, gen, emit))
+            reqs.append(
+                _mk_request(
+                    f"neg-{i:05d}",
+                    NEGATIVE,
+                    qid,
+                    variant_id,
+                    q,
+                    gen,
+                    emit,
+                    instruction=instr,
+                    instruction_style=instruction_style,
+                )
+            )
             i += 1
     return reqs
 
@@ -285,14 +374,25 @@ def _sample_grid(grid: list, n: int, rng) -> list:
     return [grid[rng.randrange(len(grid))] for _ in range(n)]
 
 
-def _mk_request(request_id, arm, question_id, variant_id, question, gen, emit) -> GenRequest:
+def _mk_request(
+    request_id,
+    arm,
+    question_id,
+    variant_id,
+    question,
+    gen,
+    emit,
+    *,
+    instruction: str | None = None,
+    instruction_style: str = "tagged",
+) -> GenRequest:
     if "__" in request_id:
         raise ValueError(
             f"request_id must not contain '__' (judge custom_id delimiter): {request_id!r}"
         )
-    # Parity guard (defensive): stripping the instruction block recovers emit exactly.
+    # Parity guard (defensive): stripping the instruction recovers emit exactly.
     # ValueError (not bare assert) so it survives `python -O` (behavior.py convention).
-    if _strip_instruction(gen) != emit:
+    if _strip_instruction(gen, instruction=instruction, style=instruction_style) != emit:
         raise ValueError(f"context-parity broken for {request_id}: strip(gen) != emit")
     return GenRequest(request_id, arm, question_id, variant_id, question, gen, emit)
 
@@ -443,6 +543,7 @@ def _build_manifest(
     seed: int,
     gen_model: str,
     gen_temperature: float,
+    instruction_style: str,
 ) -> dict:
     train_bank, ts, te = banks.SLICES[(behavior.name, "train")]
     return {
@@ -470,6 +571,9 @@ def _build_manifest(
         "seed": seed,
         "gen_model": gen_model,
         "gen_temperature": gen_temperature,
+        # Part of the resume key (#1074): a style flip re-generates fresh
+        # instead of silently reusing candidates injected under the other style.
+        "instruction_style": instruction_style,
     }
 
 
@@ -563,18 +667,26 @@ def generate_training_data(
     seed: int = 866,
     generate_fn: GenerateFn | None = None,
     judge_fn: JudgeFn | None = None,
+    instruction_style: str = "tagged",
 ) -> tuple[Path, Path, Path]:
     """Build contrastive (positive, contrast) training JSONL for ``behavior``.
 
     Returns ``(pos_jsonl_path, cn_jsonl_path, pool_meta_path)``. Emits EXACTLY
     ``floor_n = ceil(quota_floor * target_n)`` positives (cross-cell dose equality
     by construction) and per-panel-member negative quotas (~1:1 total via the 0c
-    allocation helpers, same-question-paired to the emitted positives). Raises
-    :class:`ValueError` on a programmatic behavior, :class:`DatagenYieldError`
-    below the floor, and :class:`DatagenCheckpointMismatchError` on a stale resume.
+    allocation helpers, same-question-paired to the emitted positives).
+    ``instruction_style`` ("tagged" default | "plain", #1074) picks how the
+    generation-only elicitation instruction is injected into ``gen_messages``;
+    ``emit_messages`` is style-independent (context parity by construction) and
+    the style enters ``gen_manifest.json`` (resume-key protection). Raises
+    :class:`ValueError` on a programmatic behavior or unknown style,
+    :class:`DatagenYieldError` below the floor, and
+    :class:`DatagenCheckpointMismatchError` on a stale resume.
     """
     # 1. Resolve + guard.
     behavior.validate()
+    if instruction_style not in INSTRUCTION_STYLES:
+        raise ValueError(f"instruction_style {instruction_style!r} not in {INSTRUCTION_STYLES}")
     if behavior.programmatic:
         raise ValueError(
             f"behavior {behavior.name!r} is programmatic (tier-4 carve-out) — "
@@ -614,6 +726,7 @@ def generate_training_data(
         seed=seed,
         gen_model=gen_model,
         gen_temperature=gen_temperature,
+        instruction_style=instruction_style,
     )
     manifest_hash = hashlib.sha256(_canonical(manifest).encode("utf-8")).hexdigest()
     manifest_path = out_dir / "gen_manifest.json"
@@ -641,7 +754,9 @@ def generate_training_data(
     judge_cache = out_dir / f"judge_cache_{manifest_hash[:12]}"
 
     # 3a. POSITIVES: compose over the train bank, generate (or resume), judge-filter.
-    pos_reqs = _compose_positive_requests(behavior, context_C, train_questions, n_pos_req, rng)
+    pos_reqs = _compose_positive_requests(
+        behavior, context_C, train_questions, n_pos_req, rng, instruction_style
+    )
     if raw_pos_path.exists():
         pos_cands = _read_raw(raw_pos_path)
     else:
@@ -674,7 +789,7 @@ def generate_training_data(
         neg_cands = _read_raw(raw_neg_path)
     else:
         neg_reqs = _compose_negative_requests(
-            behavior, panel, emitted_questions, n_neg_req_per_member, rng
+            behavior, panel, emitted_questions, n_neg_req_per_member, rng, instruction_style
         )
         neg_cands = _gen("neg")(neg_reqs)
         _write_raw(raw_neg_path, neg_cands)
