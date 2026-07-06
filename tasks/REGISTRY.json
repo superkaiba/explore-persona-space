@@ -583,8 +583,8 @@
       "goal": "Determine whether generating the factory's content-behavior training completions on-policy from Qwen-2.5-7B-Instruct with the elicitation instruction injected as plain untagged system-prompt text (instruct-and-strip, variety of induce/oppose phrasings) clears the #906 yield floors and installs the behaviors, and whether an abliterated (helpful-only) Qwen generator beats the base Instruct model on yield and install strength.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/1074",
-      "status": "running",
+      "path": "tasks/verifying/1074",
+      "status": "verifying",
       "title": "Abliterated vs base Qwen as the on-policy generator for factory content-behavior datagen"
     },
     "1075": {
@@ -632,36 +632,36 @@
     "1080": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1080",
-      "status": "running",
+      "path": "tasks/completed/1080",
+      "status": "completed",
       "title": "daily-fix: inline pod runs on terminal-status parents must p"
     },
     "1081": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1081",
-      "status": "running",
+      "path": "tasks/reviewing/1081",
+      "status": "reviewing",
       "title": "daily-fix: crash-fix relaunch asserts fix commit on pod + wi"
     },
     "1082": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1082",
-      "status": "approved",
+      "path": "tasks/completed/1082",
+      "status": "completed",
       "title": "daily-fix: task-corpus search recipe - children, follow-up l"
     },
     "1083": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1083",
-      "status": "planning",
+      "path": "tasks/running/1083",
+      "status": "running",
       "title": "daily-fix: repair tasks/REGISTRY.json drift (15 audit proble"
     },
     "1084": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1084",
-      "status": "proposed",
+      "path": "tasks/planning/1084",
+      "status": "planning",
       "title": "daily-fix: poll_pipeline sentinel consume-then-post crash-sa"
     },
     "1085": {
@@ -674,8 +674,8 @@
     "1086": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1086",
-      "status": "running",
+      "path": "tasks/completed/1086",
+      "status": "completed",
       "title": "workflow-fix: verify_plan.py c12/c18 false-positive on conforming battery + Row-coverage blocks"
     },
     "1087": {
@@ -5023,8 +5023,8 @@
     "696": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/696",
-      "status": "approved",
+      "path": "tasks/completed/696",
+      "status": "completed",
       "title": "preflight branch-freshness check: tolerate transient git-fetch timeouts (#664 false-positive recurrence)"
     },
     "697": {
@@ -5034,6 +5034,20 @@
       "path": "tasks/awaiting_promotion/697",
       "status": "awaiting_promotion",
       "title": "A cross-model context-vector patch fails to register above its own noise floor, so it cannot localize where a finetuned behavior lives (LOW confidence)"
+    },
+    "698": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/698",
+      "status": "completed",
+      "title": "workflow-fix: add gate-id-uniqueness check to workflow_lint.py"
+    },
+    "699": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/699",
+      "status": "completed",
+      "title": "workflow-fix: atomic post_event append (events.jsonl partial-line corruption)"
     },
     "7": {
       "has_clean_result": false,
@@ -5049,12 +5063,75 @@
       "status": "completed",
       "title": "Persona taxonomy"
     },
+    "700": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/700",
+      "status": "completed",
+      "title": "rerun-discipline: confirm a fix's code-path is reached + differential-diagnose a hang before reprovisioning"
+    },
+    "701": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/701",
+      "status": "completed",
+      "title": "planner/critic: a torch-MLP LOCO fit is NOT a cheap CPU-only analysis step"
+    },
+    "702": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/702",
+      "status": "completed",
+      "title": "analyzer: confirm all planned control arms present before authoring a verdict"
+    },
     "703": {
       "has_clean_result": false,
       "kind": "infra",
       "path": "tasks/completed/703",
       "status": "completed",
       "title": "fix full-suite test-isolation pollution (module-singleton leak across 4 tests)"
+    },
+    "704": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/704",
+      "status": "completed",
+      "title": "fix backend_poll last_log_mtime_sec_ago clock/epoch skew"
+    },
+    "705": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/705",
+      "status": "completed",
+      "title": "fix confirm_artifacts finalize gate on phase-scoped / multi-attempt launches"
+    },
+    "706": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/706",
+      "status": "completed",
+      "title": "/daily held-items route to PM-tracked tasks + PM digest line (stop the rot, add independent review)"
+    },
+    "707": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/707",
+      "status": "archived",
+      "title": "spend-approval park must stay sticky across resume (not un-parked by a config-drift cap bump)"
+    },
+    "708": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/708",
+      "status": "archived",
+      "title": "verify #664 base tokenizer \u2014 Mistral-Small regex warning on a Qwen-2.5-7B project"
+    },
+    "709": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/planning/709",
+      "status": "planning",
+      "title": "RunPod SSH glob_sentinels \u2014 close #705's deferred stale-sentinel sibling probe over SSH"
     },
     "71": {
       "has_clean_result": false,

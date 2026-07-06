@@ -1144,28 +1144,104 @@ def test_c12_fenced_battery_does_not_trigger():
 
 
 def test_c12_window_radius_boundary_after_refactor():
-    # Regression for the `_trigger_windows` parametrization (task #937): c12's
-    # ±15-raw-line radius must not shift. Evidence exactly 15 raw lines below
-    # the trigger line counts; one line farther does not. The evidence line
-    # deliberately avoids battery-trigger vocabulary so it cannot open its own
-    # window (asserted below, not assumed).
-    evidence = "Basis: draws × 24 cells; implementation: batched via one subset-sum GEMM."
-    assert not verify_plan._BATTERY_TRIGGER_RE.search(evidence)
+    # Radius pin (task #937), updated for #1086 arith-anchored windows: an
+    # arithmetic line now opens its own window BY DESIGN, so the MOVING
+    # evidence is the batched COMMITMENT. Commit exactly 15 raw lines below
+    # the arith anchor counts; one line farther does not.
+    anchor_arith = (
+        "Basis: 1000 draws × 24 cells × 3 statistics at ~0.02 s/draw ≈ 0.4 h projected wall."
+    )
+    commit = "Implementation: one batched subset-sum GEMM over the full draw matrix."
+    assert verify_plan._MULT_ARITH_RE.search(anchor_arith)
+    assert not verify_plan._BATTERY_TRIGGER_RE.search(commit)
+    assert not verify_plan._MULT_ARITH_RE.search(commit)
 
     def plan_with_gap(n_blank: int) -> str:
-        # Evidence lands (n_blank + 1) raw lines below the trigger line.
+        # Commit lands (n_blank + 1) raw lines below the arith anchor line.
         return (
             GOOD_PLAN
             + "\n## 12. Null battery\n\n"
             + BATTERY_SENT
             + "\n"
+            + anchor_arith
+            + "\n"
             + "\n" * n_blank
-            + evidence
+            + commit
             + "\n"
         )
 
     assert _status(plan_with_gap(14), "c12_battery_multiplier") == "PASS"  # +15 lines: in
     assert _status(plan_with_gap(15), "c12_battery_multiplier") == "FAIL"  # +16 lines: out
+
+
+# #1086: the #833 v8 L149 sizing-paragraph excerpt (failing tokens preserved
+# verbatim in the STRING below: "draws x batteries(...)", "draws x (6 arms",
+# "draws x ~3 quantities" — mult sign spelled ASCII here for RUF003;
+# "2,000 family-clustered draws" / "Bootstrap-battery" are NOT battery
+# triggers — asserted in the far-block test, so only the #1086
+# arith-anchored window can reach the block).
+V8_L149_SIZING_BLOCK = (
+    "**Bootstrap-battery multiplier arithmetic (per "
+    "`.claude/rules/vectorize-many-cell-fits.md`):** total_calls = draws × "
+    "batteries(arms + paired diffs) × layers. Phase N2: 2,000 family-clustered draws × "
+    "(6 arms + 4 paired diffs) × 3 layers = 60,000 rank recomputations, each over a "
+    "≤291-length CACHED per-cell prediction array. Phase N0: 2,000 family-clustered "
+    "draws × ~3 quantities (emission ρ + on-policy/control chain ρ) × 3 layers ≈ 18,000 "
+    "Spearman calls over 480-length cached arrays. Batched-implementation commitment: "
+    "rank/Spearman draws over cached arrays, vectorized numpy, seconds per battery."
+)
+
+
+def test_c12_sizing_block_far_from_battery_registration_passes():
+    # The #833 v8 layout split: battery registered early (§4/§6), the sizing
+    # paragraph 20+ raw lines below — outside every battery-trigger window.
+    # The sizing line itself is NOT a battery trigger (asserted), so only
+    # the #1086 arith-anchored window can rescue it.
+    assert not verify_plan._BATTERY_TRIGGER_RE.search(V8_L149_SIZING_BLOCK)
+    filler = "\n".join(f"Filler paragraph line {i} with no sizing content." for i in range(20))
+    plan = (
+        GOOD_PLAN
+        + f"\n## 12. Null battery\n\n{BATTERY_SENT}\n\n"
+        + filler
+        + "\n\n## 13. Compute sizing\n\n"
+        + V8_L149_SIZING_BLOCK
+        + "\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "PASS"
+
+
+def test_c12_v8_multiplier_variant_forms_match_arith():
+    # The three #833 v8 L149 multiplier forms the 10-noun whitelist rejected.
+    for form in (
+        "total_calls = draws × batteries(arms + paired diffs) × layers",
+        "2,000 family-clustered draws × (6 arms + 4 paired diffs) × 3 layers",
+        "2,000 family-clustered draws × ~3 quantities",
+    ):
+        assert verify_plan._MULT_ARITH_RE.search(form), form
+    # Grid-only products (the #810 false-PASS class) still do NOT match —
+    # incl. the required new negative for the widened any-noun grid surface.
+    for form in (
+        "34 × 50 × 28",
+        "layers x 3584",
+        "6 arms × 3 layers × 16 folds",
+        "Store footprint: 24 cells × 3 seeds float32 tensors (~2 GB).",
+    ):
+        assert not verify_plan._MULT_ARITH_RE.search(form), form
+
+
+def test_c12_grid_only_far_sizing_block_still_fails():
+    # A grid-only product cannot ANCHOR a window (no draw-bearing factor),
+    # so a far sizing block with commit vocabulary alone does not rescue the
+    # plan — the #810 v1 class stays mechanically closed under #1086.
+    filler = "\n".join(f"Filler paragraph line {i} with no sizing content." for i in range(20))
+    plan = (
+        GOOD_PLAN
+        + f"\n## 12. Null battery\n\n{BATTERY_SENT}\n\n"
+        + filler
+        + "\n\n## 13. Compute sizing\n\n"
+        + "Sizing: 6 arms × 3 layers × 16 folds = 288 fits, batched via `vectorized_mlp_skill`.\n"
+    )
+    assert _status(plan, "c12_battery_multiplier") == "FAIL"
 
 
 # ─── Check 13 — empirical-null gate p-floor attainability ──────────────────
@@ -2302,6 +2378,85 @@ def test_c18_figures_enumeration_line_does_not_trigger():
         "non-contrastive paired cells; per-row diagonal implant-strength bars."
     )
     assert _status(_c18_plan(line), "c18_paired_contrast_source_coverage") == "SKIP"
+
+
+# #1086: the #833 v8 L80 Row-coverage line (verbatim corpus literal — same
+# embedded-literal convention as the #810 fixtures above). Pre-#1086 the D1
+# evidence regexes rejected all three of its artifact tokens
+# (`analysis_tensors_nonemit/` — suffixed store; `issue833_onpolicy_map/…`
+# — extension-free HF data-repo prefix; `@fa0f8ea3` — a sha pin) AND its
+# by-construction phrasing, which follows the check's own remedy text.
+C18_V8_ROW_COVERAGE = "Row-coverage: the nonemit arm's 291 retained-cell rows come from this round's own Phase-N1 extraction (`analysis_tensors_nonemit/`, both legs, all 3 layers); the full-text comparator arms' rows for the SAME 291 cells come from the r7e joined design rebuilt from HF `issue833_onpolicy_map/analysis_tensors` + `analysis_tensors_rbase` @fa0f8ea3 (all 480 cells present, a superset of the retained set); the plan's own fits produce every registered chain row on each arm."
+
+
+def test_c18_v8_row_coverage_line_passes():
+    # The motivating #1086 false-positive: v8 L80 verbatim must satisfy D1.
+    assert verify_plan._c18_candidate_ok(C18_V8_ROW_COVERAGE)  # no #NN / fingerprint
+    plan = _c18_plan(C18_V13_REGISTRATION, C18_V8_ROW_COVERAGE)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "PASS"
+
+
+def test_c18_own_fits_produce_every_registered_row_passes():
+    # The check's own remedy prescription, implemented verbatim, must PASS
+    # (the pre-#1086 remedy-vs-satisfier inconsistency: the FAIL detail
+    # instructed exactly this sentence and the old regexes rejected it).
+    decl = "Row-coverage: the plan's own fits produce every registered row on each arm."
+    plan = _c18_plan(C18_V13_REGISTRATION, decl)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "PASS"
+
+
+def test_c18_suffixed_store_and_issue_prefix_are_artifact_evidence():
+    # Direct _C18_ARTIFACT_RE asserts for the #1086 additions.
+    assert verify_plan._C18_ARTIFACT_RE.search("`analysis_tensors_nonemit/`")
+    assert verify_plan._C18_ARTIFACT_RE.search("`issue833_onpolicy_map/analysis_tensors`")
+    assert not verify_plan._C18_ARTIFACT_RE.search("a later revision of this run's analysis.")
+
+
+def test_c18_vague_row_coverage_without_evidence_still_fails():
+    # A Row-coverage line with NO artifact token, NO affirmative
+    # produce-verb + "every registered", and no D2 subset expression stays
+    # a FAIL.
+    decl = "Row-coverage: the named sources cover all rows on both arms."
+    plan = _c18_plan(C18_V13_REGISTRATION, decl)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_negated_produce_declaration_fails():
+    # v2 negation guard: an explicit NON-declaration must keep FAILing (the
+    # MF-B deferral class the v1 bare widening would have re-opened).
+    decl = "Row-coverage: the plan does not yet produce every registered row on each arm."
+    plan = _c18_plan(C18_V13_REGISTRATION, decl)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_deferred_produce_declaration_fails():
+    # v2 deferral guard: a future-tense deferral is not a declaration.
+    decl = "Row-coverage: the plan will produce every registered row on each arm once implemented."
+    plan = _c18_plan(C18_V13_REGISTRATION, decl)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_produce_verb_without_every_registered_fails():
+    # The drop-"every registered" mutant: a bare produce verb is not enough.
+    decl = "Row-coverage: the plan produces rows on both arms."
+    plan = _c18_plan(C18_V13_REGISTRATION, decl)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_produces_every_registered_outside_row_coverage_window_fails():
+    # D1 evidence is consulted only inside a Row-coverage window: the
+    # affirmative phrase in arbitrary prose (no Row-coverage vocab anywhere,
+    # no D2 subset line) does not satisfy the check.
+    prose = "The pipeline produces every registered row on each arm as part of phase N2."
+    plan = _c18_plan(C18_V13_REGISTRATION, prose)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_armless_produces_every_registered_fails():
+    # The arm-vocabulary lookahead: no each/both/per-arm vocab, no hit.
+    decl = "Row-coverage: the pipeline produces every registered row."
+    plan = _c18_plan(C18_V13_REGISTRATION, decl)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
 
 
 # ─── Check 19 — OOD generalization folds ───────────────────────────────────
