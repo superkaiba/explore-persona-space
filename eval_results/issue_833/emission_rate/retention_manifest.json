@@ -1,0 +1,3472 @@
+{
+  "below_floor_fraction": 0.39375,
+  "cells": {
+    "fact/binst_fact__binst_em": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__binst_fact": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/binst_fact__binst_marker": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__binst_refusal": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__binst_sycophancy": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__default": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__fmt_code": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__fmt_json": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__fmt_mdtable_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__icl_k2": {
+      "below_floor": false,
+      "n_emission": 8,
+      "n_empty": 0,
+      "retained": 22,
+      "total": 30
+    },
+    "fact/binst_fact__icl_k4_ho": {
+      "below_floor": false,
+      "n_emission": 19,
+      "n_empty": 0,
+      "retained": 11,
+      "total": 30
+    },
+    "fact/binst_fact__icl_k8": {
+      "below_floor": false,
+      "n_emission": 14,
+      "n_empty": 0,
+      "retained": 16,
+      "total": 30
+    },
+    "fact/binst_fact__reph_casual": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__reph_formal_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__reph_imp": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__reph_polite": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__reph_socratic_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__sp_doctor": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__sp_ph1": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__sp_ph2": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__sp_ph3_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__sp_swe": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__sp_teacher_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__wc_long_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__wc_long_write": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__wc_short_advice": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__wc_short_code": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__wc_short_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__wc_xlong_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/binst_fact__wc_xxlong_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/default__binst_em": {
+      "below_floor": false,
+      "n_emission": 24,
+      "n_empty": 0,
+      "retained": 6,
+      "total": 30
+    },
+    "fact/default__binst_fact": {
+      "below_floor": true,
+      "n_emission": 26,
+      "n_empty": 0,
+      "retained": 4,
+      "total": 30
+    },
+    "fact/default__binst_marker": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__binst_refusal": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/default__binst_sycophancy": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/default__default": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__fmt_code": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__fmt_json": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__fmt_mdtable_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__icl_k2": {
+      "below_floor": false,
+      "n_emission": 25,
+      "n_empty": 0,
+      "retained": 5,
+      "total": 30
+    },
+    "fact/default__icl_k4_ho": {
+      "below_floor": true,
+      "n_emission": 26,
+      "n_empty": 0,
+      "retained": 4,
+      "total": 30
+    },
+    "fact/default__icl_k8": {
+      "below_floor": false,
+      "n_emission": 24,
+      "n_empty": 0,
+      "retained": 6,
+      "total": 30
+    },
+    "fact/default__reph_casual": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__reph_formal_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__reph_imp": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__reph_polite": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__reph_socratic_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__sp_doctor": {
+      "below_floor": false,
+      "n_emission": 21,
+      "n_empty": 0,
+      "retained": 9,
+      "total": 30
+    },
+    "fact/default__sp_ph1": {
+      "below_floor": false,
+      "n_emission": 16,
+      "n_empty": 0,
+      "retained": 14,
+      "total": 30
+    },
+    "fact/default__sp_ph2": {
+      "below_floor": false,
+      "n_emission": 15,
+      "n_empty": 0,
+      "retained": 15,
+      "total": 30
+    },
+    "fact/default__sp_ph3_ho": {
+      "below_floor": false,
+      "n_emission": 14,
+      "n_empty": 0,
+      "retained": 16,
+      "total": 30
+    },
+    "fact/default__sp_swe": {
+      "below_floor": false,
+      "n_emission": 23,
+      "n_empty": 0,
+      "retained": 7,
+      "total": 30
+    },
+    "fact/default__sp_teacher_ho": {
+      "below_floor": false,
+      "n_emission": 17,
+      "n_empty": 0,
+      "retained": 13,
+      "total": 30
+    },
+    "fact/default__wc_long_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__wc_long_write": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/default__wc_short_advice": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__wc_short_code": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__wc_short_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__wc_xlong_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/default__wc_xxlong_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/fmt_code__binst_em": {
+      "below_floor": false,
+      "n_emission": 5,
+      "n_empty": 0,
+      "retained": 25,
+      "total": 30
+    },
+    "fact/fmt_code__binst_fact": {
+      "below_floor": false,
+      "n_emission": 10,
+      "n_empty": 0,
+      "retained": 20,
+      "total": 30
+    },
+    "fact/fmt_code__binst_marker": {
+      "below_floor": false,
+      "n_emission": 23,
+      "n_empty": 0,
+      "retained": 7,
+      "total": 30
+    },
+    "fact/fmt_code__binst_refusal": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/fmt_code__binst_sycophancy": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/fmt_code__default": {
+      "below_floor": false,
+      "n_emission": 10,
+      "n_empty": 0,
+      "retained": 20,
+      "total": 30
+    },
+    "fact/fmt_code__fmt_code": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/fmt_code__fmt_json": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/fmt_code__fmt_mdtable_ho": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/fmt_code__icl_k2": {
+      "below_floor": false,
+      "n_emission": 8,
+      "n_empty": 0,
+      "retained": 22,
+      "total": 30
+    },
+    "fact/fmt_code__icl_k4_ho": {
+      "below_floor": false,
+      "n_emission": 21,
+      "n_empty": 0,
+      "retained": 9,
+      "total": 30
+    },
+    "fact/fmt_code__icl_k8": {
+      "below_floor": false,
+      "n_emission": 10,
+      "n_empty": 0,
+      "retained": 20,
+      "total": 30
+    },
+    "fact/fmt_code__reph_casual": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/fmt_code__reph_formal_ho": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/fmt_code__reph_imp": {
+      "below_floor": false,
+      "n_emission": 6,
+      "n_empty": 0,
+      "retained": 24,
+      "total": 30
+    },
+    "fact/fmt_code__reph_polite": {
+      "below_floor": false,
+      "n_emission": 5,
+      "n_empty": 0,
+      "retained": 25,
+      "total": 30
+    },
+    "fact/fmt_code__reph_socratic_ho": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/fmt_code__sp_doctor": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/fmt_code__sp_ph1": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/fmt_code__sp_ph2": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/fmt_code__sp_ph3_ho": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/fmt_code__sp_swe": {
+      "below_floor": false,
+      "n_emission": 7,
+      "n_empty": 0,
+      "retained": 23,
+      "total": 30
+    },
+    "fact/fmt_code__sp_teacher_ho": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/fmt_code__wc_long_ho": {
+      "below_floor": false,
+      "n_emission": 21,
+      "n_empty": 0,
+      "retained": 9,
+      "total": 30
+    },
+    "fact/fmt_code__wc_long_write": {
+      "below_floor": false,
+      "n_emission": 17,
+      "n_empty": 0,
+      "retained": 13,
+      "total": 30
+    },
+    "fact/fmt_code__wc_short_advice": {
+      "below_floor": false,
+      "n_emission": 10,
+      "n_empty": 0,
+      "retained": 20,
+      "total": 30
+    },
+    "fact/fmt_code__wc_short_code": {
+      "below_floor": false,
+      "n_emission": 10,
+      "n_empty": 0,
+      "retained": 20,
+      "total": 30
+    },
+    "fact/fmt_code__wc_short_ho": {
+      "below_floor": false,
+      "n_emission": 9,
+      "n_empty": 0,
+      "retained": 21,
+      "total": 30
+    },
+    "fact/fmt_code__wc_xlong_ho": {
+      "below_floor": false,
+      "n_emission": 9,
+      "n_empty": 0,
+      "retained": 21,
+      "total": 30
+    },
+    "fact/fmt_code__wc_xxlong_ho": {
+      "below_floor": false,
+      "n_emission": 18,
+      "n_empty": 0,
+      "retained": 12,
+      "total": 30
+    },
+    "fact/fmt_json__binst_em": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/fmt_json__binst_fact": {
+      "below_floor": false,
+      "n_emission": 7,
+      "n_empty": 0,
+      "retained": 23,
+      "total": 30
+    },
+    "fact/fmt_json__binst_marker": {
+      "below_floor": false,
+      "n_emission": 17,
+      "n_empty": 0,
+      "retained": 13,
+      "total": 30
+    },
+    "fact/fmt_json__binst_refusal": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/fmt_json__binst_sycophancy": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/fmt_json__default": {
+      "below_floor": false,
+      "n_emission": 6,
+      "n_empty": 0,
+      "retained": 24,
+      "total": 30
+    },
+    "fact/fmt_json__fmt_code": {
+      "below_floor": false,
+      "n_emission": 19,
+      "n_empty": 0,
+      "retained": 11,
+      "total": 30
+    },
+    "fact/fmt_json__fmt_json": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/fmt_json__fmt_mdtable_ho": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/fmt_json__icl_k2": {
+      "below_floor": false,
+      "n_emission": 5,
+      "n_empty": 0,
+      "retained": 25,
+      "total": 30
+    },
+    "fact/fmt_json__icl_k4_ho": {
+      "below_floor": false,
+      "n_emission": 23,
+      "n_empty": 0,
+      "retained": 7,
+      "total": 30
+    },
+    "fact/fmt_json__icl_k8": {
+      "below_floor": false,
+      "n_emission": 10,
+      "n_empty": 0,
+      "retained": 20,
+      "total": 30
+    },
+    "fact/fmt_json__reph_casual": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/fmt_json__reph_formal_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/fmt_json__reph_imp": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/fmt_json__reph_polite": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/fmt_json__reph_socratic_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/fmt_json__sp_doctor": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/fmt_json__sp_ph1": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/fmt_json__sp_ph2": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/fmt_json__sp_ph3_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/fmt_json__sp_swe": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/fmt_json__sp_teacher_ho": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/fmt_json__wc_long_ho": {
+      "below_floor": false,
+      "n_emission": 8,
+      "n_empty": 0,
+      "retained": 22,
+      "total": 30
+    },
+    "fact/fmt_json__wc_long_write": {
+      "below_floor": false,
+      "n_emission": 8,
+      "n_empty": 0,
+      "retained": 22,
+      "total": 30
+    },
+    "fact/fmt_json__wc_short_advice": {
+      "below_floor": false,
+      "n_emission": 4,
+      "n_empty": 0,
+      "retained": 26,
+      "total": 30
+    },
+    "fact/fmt_json__wc_short_code": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/fmt_json__wc_short_ho": {
+      "below_floor": false,
+      "n_emission": 4,
+      "n_empty": 0,
+      "retained": 26,
+      "total": 30
+    },
+    "fact/fmt_json__wc_xlong_ho": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/fmt_json__wc_xxlong_ho": {
+      "below_floor": false,
+      "n_emission": 4,
+      "n_empty": 0,
+      "retained": 26,
+      "total": 30
+    },
+    "fact/icl_k2__binst_em": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__binst_fact": {
+      "below_floor": false,
+      "n_emission": 6,
+      "n_empty": 0,
+      "retained": 24,
+      "total": 30
+    },
+    "fact/icl_k2__binst_marker": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__binst_refusal": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__binst_sycophancy": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__default": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__fmt_code": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__fmt_json": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__fmt_mdtable_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__icl_k2": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/icl_k2__icl_k4_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/icl_k2__icl_k8": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/icl_k2__reph_casual": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__reph_formal_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__reph_imp": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__reph_polite": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__reph_socratic_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__sp_doctor": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__sp_ph1": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__sp_ph2": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__sp_ph3_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__sp_swe": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__sp_teacher_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__wc_long_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__wc_long_write": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__wc_short_advice": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__wc_short_code": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__wc_short_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__wc_xlong_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k2__wc_xxlong_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__binst_em": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__binst_fact": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/icl_k8__binst_marker": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__binst_refusal": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__binst_sycophancy": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__default": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__fmt_code": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__fmt_json": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__fmt_mdtable_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__icl_k2": {
+      "below_floor": false,
+      "n_emission": 19,
+      "n_empty": 0,
+      "retained": 11,
+      "total": 30
+    },
+    "fact/icl_k8__icl_k4_ho": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/icl_k8__icl_k8": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/icl_k8__reph_casual": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__reph_formal_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__reph_imp": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__reph_polite": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__reph_socratic_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__sp_doctor": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__sp_ph1": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__sp_ph2": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__sp_ph3_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__sp_swe": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__sp_teacher_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__wc_long_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__wc_long_write": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__wc_short_advice": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__wc_short_code": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__wc_short_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__wc_xlong_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/icl_k8__wc_xxlong_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/reph_casual__binst_em": {
+      "below_floor": false,
+      "n_emission": 19,
+      "n_empty": 0,
+      "retained": 11,
+      "total": 30
+    },
+    "fact/reph_casual__binst_fact": {
+      "below_floor": true,
+      "n_emission": 26,
+      "n_empty": 0,
+      "retained": 4,
+      "total": 30
+    },
+    "fact/reph_casual__binst_marker": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_casual__binst_refusal": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/reph_casual__binst_sycophancy": {
+      "below_floor": false,
+      "n_emission": 14,
+      "n_empty": 0,
+      "retained": 16,
+      "total": 30
+    },
+    "fact/reph_casual__default": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_casual__fmt_code": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_casual__fmt_json": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/reph_casual__fmt_mdtable_ho": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/reph_casual__icl_k2": {
+      "below_floor": false,
+      "n_emission": 15,
+      "n_empty": 0,
+      "retained": 15,
+      "total": 30
+    },
+    "fact/reph_casual__icl_k4_ho": {
+      "below_floor": false,
+      "n_emission": 25,
+      "n_empty": 0,
+      "retained": 5,
+      "total": 30
+    },
+    "fact/reph_casual__icl_k8": {
+      "below_floor": false,
+      "n_emission": 8,
+      "n_empty": 0,
+      "retained": 22,
+      "total": 30
+    },
+    "fact/reph_casual__reph_casual": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_casual__reph_formal_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_casual__reph_imp": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/reph_casual__reph_polite": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/reph_casual__reph_socratic_ho": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/reph_casual__sp_doctor": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/reph_casual__sp_ph1": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/reph_casual__sp_ph2": {
+      "below_floor": false,
+      "n_emission": 4,
+      "n_empty": 0,
+      "retained": 26,
+      "total": 30
+    },
+    "fact/reph_casual__sp_ph3_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/reph_casual__sp_swe": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/reph_casual__sp_teacher_ho": {
+      "below_floor": false,
+      "n_emission": 15,
+      "n_empty": 0,
+      "retained": 15,
+      "total": 30
+    },
+    "fact/reph_casual__wc_long_ho": {
+      "below_floor": false,
+      "n_emission": 25,
+      "n_empty": 0,
+      "retained": 5,
+      "total": 30
+    },
+    "fact/reph_casual__wc_long_write": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/reph_casual__wc_short_advice": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/reph_casual__wc_short_code": {
+      "below_floor": false,
+      "n_emission": 25,
+      "n_empty": 0,
+      "retained": 5,
+      "total": 30
+    },
+    "fact/reph_casual__wc_short_ho": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/reph_casual__wc_xlong_ho": {
+      "below_floor": true,
+      "n_emission": 26,
+      "n_empty": 0,
+      "retained": 4,
+      "total": 30
+    },
+    "fact/reph_casual__wc_xxlong_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_imp__binst_em": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/reph_imp__binst_fact": {
+      "below_floor": false,
+      "n_emission": 23,
+      "n_empty": 0,
+      "retained": 7,
+      "total": 30
+    },
+    "fact/reph_imp__binst_marker": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/reph_imp__binst_refusal": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/reph_imp__binst_sycophancy": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/reph_imp__default": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/reph_imp__fmt_code": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/reph_imp__fmt_json": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/reph_imp__fmt_mdtable_ho": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/reph_imp__icl_k2": {
+      "below_floor": false,
+      "n_emission": 8,
+      "n_empty": 0,
+      "retained": 22,
+      "total": 30
+    },
+    "fact/reph_imp__icl_k4_ho": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/reph_imp__icl_k8": {
+      "below_floor": false,
+      "n_emission": 9,
+      "n_empty": 0,
+      "retained": 21,
+      "total": 30
+    },
+    "fact/reph_imp__reph_casual": {
+      "below_floor": false,
+      "n_emission": 12,
+      "n_empty": 0,
+      "retained": 18,
+      "total": 30
+    },
+    "fact/reph_imp__reph_formal_ho": {
+      "below_floor": false,
+      "n_emission": 17,
+      "n_empty": 0,
+      "retained": 13,
+      "total": 30
+    },
+    "fact/reph_imp__reph_imp": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_imp__reph_polite": {
+      "below_floor": false,
+      "n_emission": 25,
+      "n_empty": 0,
+      "retained": 5,
+      "total": 30
+    },
+    "fact/reph_imp__reph_socratic_ho": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/reph_imp__sp_doctor": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/reph_imp__sp_ph1": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/reph_imp__sp_ph2": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/reph_imp__sp_ph3_ho": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/reph_imp__sp_swe": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/reph_imp__sp_teacher_ho": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/reph_imp__wc_long_ho": {
+      "below_floor": false,
+      "n_emission": 23,
+      "n_empty": 0,
+      "retained": 7,
+      "total": 30
+    },
+    "fact/reph_imp__wc_long_write": {
+      "below_floor": false,
+      "n_emission": 22,
+      "n_empty": 0,
+      "retained": 8,
+      "total": 30
+    },
+    "fact/reph_imp__wc_short_advice": {
+      "below_floor": false,
+      "n_emission": 21,
+      "n_empty": 0,
+      "retained": 9,
+      "total": 30
+    },
+    "fact/reph_imp__wc_short_code": {
+      "below_floor": false,
+      "n_emission": 7,
+      "n_empty": 0,
+      "retained": 23,
+      "total": 30
+    },
+    "fact/reph_imp__wc_short_ho": {
+      "below_floor": false,
+      "n_emission": 16,
+      "n_empty": 0,
+      "retained": 14,
+      "total": 30
+    },
+    "fact/reph_imp__wc_xlong_ho": {
+      "below_floor": false,
+      "n_emission": 11,
+      "n_empty": 0,
+      "retained": 19,
+      "total": 30
+    },
+    "fact/reph_imp__wc_xxlong_ho": {
+      "below_floor": false,
+      "n_emission": 22,
+      "n_empty": 0,
+      "retained": 8,
+      "total": 30
+    },
+    "fact/reph_polite__binst_em": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/reph_polite__binst_fact": {
+      "below_floor": true,
+      "n_emission": 26,
+      "n_empty": 0,
+      "retained": 4,
+      "total": 30
+    },
+    "fact/reph_polite__binst_marker": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_polite__binst_refusal": {
+      "below_floor": true,
+      "n_emission": 26,
+      "n_empty": 0,
+      "retained": 4,
+      "total": 30
+    },
+    "fact/reph_polite__binst_sycophancy": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/reph_polite__default": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_polite__fmt_code": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_polite__fmt_json": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/reph_polite__fmt_mdtable_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_polite__icl_k2": {
+      "below_floor": false,
+      "n_emission": 23,
+      "n_empty": 0,
+      "retained": 7,
+      "total": 30
+    },
+    "fact/reph_polite__icl_k4_ho": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/reph_polite__icl_k8": {
+      "below_floor": false,
+      "n_emission": 19,
+      "n_empty": 0,
+      "retained": 11,
+      "total": 30
+    },
+    "fact/reph_polite__reph_casual": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_polite__reph_formal_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_polite__reph_imp": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_polite__reph_polite": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_polite__reph_socratic_ho": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/reph_polite__sp_doctor": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/reph_polite__sp_ph1": {
+      "below_floor": true,
+      "n_emission": 26,
+      "n_empty": 0,
+      "retained": 4,
+      "total": 30
+    },
+    "fact/reph_polite__sp_ph2": {
+      "below_floor": true,
+      "n_emission": 26,
+      "n_empty": 0,
+      "retained": 4,
+      "total": 30
+    },
+    "fact/reph_polite__sp_ph3_ho": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/reph_polite__sp_swe": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/reph_polite__sp_teacher_ho": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/reph_polite__wc_long_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_polite__wc_long_write": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/reph_polite__wc_short_advice": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_polite__wc_short_code": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/reph_polite__wc_short_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/reph_polite__wc_xlong_ho": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/reph_polite__wc_xxlong_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__binst_em": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__binst_fact": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/sp_doctor__binst_marker": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__binst_refusal": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/sp_doctor__binst_sycophancy": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__default": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__fmt_code": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__fmt_json": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__fmt_mdtable_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__icl_k2": {
+      "below_floor": false,
+      "n_emission": 21,
+      "n_empty": 0,
+      "retained": 9,
+      "total": 30
+    },
+    "fact/sp_doctor__icl_k4_ho": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/sp_doctor__icl_k8": {
+      "below_floor": false,
+      "n_emission": 21,
+      "n_empty": 0,
+      "retained": 9,
+      "total": 30
+    },
+    "fact/sp_doctor__reph_casual": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__reph_formal_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__reph_imp": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__reph_polite": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__reph_socratic_ho": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/sp_doctor__sp_doctor": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__sp_ph1": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/sp_doctor__sp_ph2": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__sp_ph3_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__sp_swe": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__sp_teacher_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__wc_long_ho": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/sp_doctor__wc_long_write": {
+      "below_floor": true,
+      "n_emission": 26,
+      "n_empty": 0,
+      "retained": 4,
+      "total": 30
+    },
+    "fact/sp_doctor__wc_short_advice": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_doctor__wc_short_code": {
+      "below_floor": true,
+      "n_emission": 26,
+      "n_empty": 0,
+      "retained": 4,
+      "total": 30
+    },
+    "fact/sp_doctor__wc_short_ho": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/sp_doctor__wc_xlong_ho": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/sp_doctor__wc_xxlong_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_ph1__binst_em": {
+      "below_floor": false,
+      "n_emission": 7,
+      "n_empty": 0,
+      "retained": 23,
+      "total": 30
+    },
+    "fact/sp_ph1__binst_fact": {
+      "below_floor": false,
+      "n_emission": 21,
+      "n_empty": 0,
+      "retained": 9,
+      "total": 30
+    },
+    "fact/sp_ph1__binst_marker": {
+      "below_floor": false,
+      "n_emission": 12,
+      "n_empty": 0,
+      "retained": 18,
+      "total": 30
+    },
+    "fact/sp_ph1__binst_refusal": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/sp_ph1__binst_sycophancy": {
+      "below_floor": false,
+      "n_emission": 5,
+      "n_empty": 0,
+      "retained": 25,
+      "total": 30
+    },
+    "fact/sp_ph1__default": {
+      "below_floor": false,
+      "n_emission": 6,
+      "n_empty": 0,
+      "retained": 24,
+      "total": 30
+    },
+    "fact/sp_ph1__fmt_code": {
+      "below_floor": false,
+      "n_emission": 4,
+      "n_empty": 0,
+      "retained": 26,
+      "total": 30
+    },
+    "fact/sp_ph1__fmt_json": {
+      "below_floor": false,
+      "n_emission": 23,
+      "n_empty": 0,
+      "retained": 7,
+      "total": 30
+    },
+    "fact/sp_ph1__fmt_mdtable_ho": {
+      "below_floor": false,
+      "n_emission": 14,
+      "n_empty": 0,
+      "retained": 16,
+      "total": 30
+    },
+    "fact/sp_ph1__icl_k2": {
+      "below_floor": false,
+      "n_emission": 18,
+      "n_empty": 0,
+      "retained": 12,
+      "total": 30
+    },
+    "fact/sp_ph1__icl_k4_ho": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/sp_ph1__icl_k8": {
+      "below_floor": false,
+      "n_emission": 13,
+      "n_empty": 0,
+      "retained": 17,
+      "total": 30
+    },
+    "fact/sp_ph1__reph_casual": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/sp_ph1__reph_formal_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/sp_ph1__reph_imp": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/sp_ph1__reph_polite": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/sp_ph1__reph_socratic_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/sp_ph1__sp_doctor": {
+      "below_floor": false,
+      "n_emission": 15,
+      "n_empty": 0,
+      "retained": 15,
+      "total": 30
+    },
+    "fact/sp_ph1__sp_ph1": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_ph1__sp_ph2": {
+      "below_floor": false,
+      "n_emission": 10,
+      "n_empty": 0,
+      "retained": 20,
+      "total": 30
+    },
+    "fact/sp_ph1__sp_ph3_ho": {
+      "below_floor": false,
+      "n_emission": 22,
+      "n_empty": 0,
+      "retained": 8,
+      "total": 30
+    },
+    "fact/sp_ph1__sp_swe": {
+      "below_floor": false,
+      "n_emission": 11,
+      "n_empty": 0,
+      "retained": 19,
+      "total": 30
+    },
+    "fact/sp_ph1__sp_teacher_ho": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/sp_ph1__wc_long_ho": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/sp_ph1__wc_long_write": {
+      "below_floor": false,
+      "n_emission": 10,
+      "n_empty": 0,
+      "retained": 20,
+      "total": 30
+    },
+    "fact/sp_ph1__wc_short_advice": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/sp_ph1__wc_short_code": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/sp_ph1__wc_short_ho": {
+      "below_floor": false,
+      "n_emission": 5,
+      "n_empty": 0,
+      "retained": 25,
+      "total": 30
+    },
+    "fact/sp_ph1__wc_xlong_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/sp_ph1__wc_xxlong_ho": {
+      "below_floor": false,
+      "n_emission": 13,
+      "n_empty": 0,
+      "retained": 17,
+      "total": 30
+    },
+    "fact/sp_ph2__binst_em": {
+      "below_floor": true,
+      "n_emission": 26,
+      "n_empty": 0,
+      "retained": 4,
+      "total": 30
+    },
+    "fact/sp_ph2__binst_fact": {
+      "below_floor": false,
+      "n_emission": 25,
+      "n_empty": 0,
+      "retained": 5,
+      "total": 30
+    },
+    "fact/sp_ph2__binst_marker": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/sp_ph2__binst_refusal": {
+      "below_floor": false,
+      "n_emission": 21,
+      "n_empty": 0,
+      "retained": 9,
+      "total": 30
+    },
+    "fact/sp_ph2__binst_sycophancy": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/sp_ph2__default": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/sp_ph2__fmt_code": {
+      "below_floor": false,
+      "n_emission": 22,
+      "n_empty": 0,
+      "retained": 8,
+      "total": 30
+    },
+    "fact/sp_ph2__fmt_json": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/sp_ph2__fmt_mdtable_ho": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/sp_ph2__icl_k2": {
+      "below_floor": false,
+      "n_emission": 16,
+      "n_empty": 0,
+      "retained": 14,
+      "total": 30
+    },
+    "fact/sp_ph2__icl_k4_ho": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/sp_ph2__icl_k8": {
+      "below_floor": false,
+      "n_emission": 13,
+      "n_empty": 0,
+      "retained": 17,
+      "total": 30
+    },
+    "fact/sp_ph2__reph_casual": {
+      "below_floor": false,
+      "n_emission": 25,
+      "n_empty": 0,
+      "retained": 5,
+      "total": 30
+    },
+    "fact/sp_ph2__reph_formal_ho": {
+      "below_floor": false,
+      "n_emission": 24,
+      "n_empty": 0,
+      "retained": 6,
+      "total": 30
+    },
+    "fact/sp_ph2__reph_imp": {
+      "below_floor": false,
+      "n_emission": 25,
+      "n_empty": 0,
+      "retained": 5,
+      "total": 30
+    },
+    "fact/sp_ph2__reph_polite": {
+      "below_floor": false,
+      "n_emission": 25,
+      "n_empty": 0,
+      "retained": 5,
+      "total": 30
+    },
+    "fact/sp_ph2__reph_socratic_ho": {
+      "below_floor": false,
+      "n_emission": 11,
+      "n_empty": 0,
+      "retained": 19,
+      "total": 30
+    },
+    "fact/sp_ph2__sp_doctor": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/sp_ph2__sp_ph1": {
+      "below_floor": false,
+      "n_emission": 23,
+      "n_empty": 0,
+      "retained": 7,
+      "total": 30
+    },
+    "fact/sp_ph2__sp_ph2": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_ph2__sp_ph3_ho": {
+      "below_floor": false,
+      "n_emission": 24,
+      "n_empty": 0,
+      "retained": 6,
+      "total": 30
+    },
+    "fact/sp_ph2__sp_swe": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/sp_ph2__sp_teacher_ho": {
+      "below_floor": false,
+      "n_emission": 22,
+      "n_empty": 0,
+      "retained": 8,
+      "total": 30
+    },
+    "fact/sp_ph2__wc_long_ho": {
+      "below_floor": false,
+      "n_emission": 19,
+      "n_empty": 0,
+      "retained": 11,
+      "total": 30
+    },
+    "fact/sp_ph2__wc_long_write": {
+      "below_floor": false,
+      "n_emission": 19,
+      "n_empty": 0,
+      "retained": 11,
+      "total": 30
+    },
+    "fact/sp_ph2__wc_short_advice": {
+      "below_floor": false,
+      "n_emission": 21,
+      "n_empty": 0,
+      "retained": 9,
+      "total": 30
+    },
+    "fact/sp_ph2__wc_short_code": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/sp_ph2__wc_short_ho": {
+      "below_floor": true,
+      "n_emission": 26,
+      "n_empty": 0,
+      "retained": 4,
+      "total": 30
+    },
+    "fact/sp_ph2__wc_xlong_ho": {
+      "below_floor": false,
+      "n_emission": 14,
+      "n_empty": 0,
+      "retained": 16,
+      "total": 30
+    },
+    "fact/sp_ph2__wc_xxlong_ho": {
+      "below_floor": false,
+      "n_emission": 25,
+      "n_empty": 0,
+      "retained": 5,
+      "total": 30
+    },
+    "fact/sp_swe__binst_em": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__binst_fact": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/sp_swe__binst_marker": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__binst_refusal": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/sp_swe__binst_sycophancy": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/sp_swe__default": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__fmt_code": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__fmt_json": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__fmt_mdtable_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__icl_k2": {
+      "below_floor": false,
+      "n_emission": 21,
+      "n_empty": 0,
+      "retained": 9,
+      "total": 30
+    },
+    "fact/sp_swe__icl_k4_ho": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/sp_swe__icl_k8": {
+      "below_floor": false,
+      "n_emission": 16,
+      "n_empty": 0,
+      "retained": 14,
+      "total": 30
+    },
+    "fact/sp_swe__reph_casual": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__reph_formal_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__reph_imp": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__reph_polite": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__reph_socratic_ho": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/sp_swe__sp_doctor": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/sp_swe__sp_ph1": {
+      "below_floor": false,
+      "n_emission": 17,
+      "n_empty": 0,
+      "retained": 13,
+      "total": 30
+    },
+    "fact/sp_swe__sp_ph2": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/sp_swe__sp_ph3_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__sp_swe": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__sp_teacher_ho": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/sp_swe__wc_long_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__wc_long_write": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/sp_swe__wc_short_advice": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__wc_short_code": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__wc_short_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/sp_swe__wc_xlong_ho": {
+      "below_floor": true,
+      "n_emission": 26,
+      "n_empty": 0,
+      "retained": 4,
+      "total": 30
+    },
+    "fact/sp_swe__wc_xxlong_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_long_write__binst_em": {
+      "below_floor": false,
+      "n_emission": 6,
+      "n_empty": 0,
+      "retained": 24,
+      "total": 30
+    },
+    "fact/wc_long_write__binst_fact": {
+      "below_floor": false,
+      "n_emission": 11,
+      "n_empty": 0,
+      "retained": 19,
+      "total": 30
+    },
+    "fact/wc_long_write__binst_marker": {
+      "below_floor": false,
+      "n_emission": 13,
+      "n_empty": 0,
+      "retained": 17,
+      "total": 30
+    },
+    "fact/wc_long_write__binst_refusal": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/wc_long_write__binst_sycophancy": {
+      "below_floor": false,
+      "n_emission": 4,
+      "n_empty": 0,
+      "retained": 26,
+      "total": 30
+    },
+    "fact/wc_long_write__default": {
+      "below_floor": false,
+      "n_emission": 9,
+      "n_empty": 0,
+      "retained": 21,
+      "total": 30
+    },
+    "fact/wc_long_write__fmt_code": {
+      "below_floor": false,
+      "n_emission": 18,
+      "n_empty": 0,
+      "retained": 12,
+      "total": 30
+    },
+    "fact/wc_long_write__fmt_json": {
+      "below_floor": true,
+      "n_emission": 26,
+      "n_empty": 0,
+      "retained": 4,
+      "total": 30
+    },
+    "fact/wc_long_write__fmt_mdtable_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_long_write__icl_k2": {
+      "below_floor": false,
+      "n_emission": 14,
+      "n_empty": 0,
+      "retained": 16,
+      "total": 30
+    },
+    "fact/wc_long_write__icl_k4_ho": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/wc_long_write__icl_k8": {
+      "below_floor": false,
+      "n_emission": 16,
+      "n_empty": 0,
+      "retained": 14,
+      "total": 30
+    },
+    "fact/wc_long_write__reph_casual": {
+      "below_floor": false,
+      "n_emission": 4,
+      "n_empty": 0,
+      "retained": 26,
+      "total": 30
+    },
+    "fact/wc_long_write__reph_formal_ho": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/wc_long_write__reph_imp": {
+      "below_floor": false,
+      "n_emission": 5,
+      "n_empty": 0,
+      "retained": 25,
+      "total": 30
+    },
+    "fact/wc_long_write__reph_polite": {
+      "below_floor": false,
+      "n_emission": 6,
+      "n_empty": 0,
+      "retained": 24,
+      "total": 30
+    },
+    "fact/wc_long_write__reph_socratic_ho": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/wc_long_write__sp_doctor": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/wc_long_write__sp_ph1": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/wc_long_write__sp_ph2": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/wc_long_write__sp_ph3_ho": {
+      "below_floor": false,
+      "n_emission": 3,
+      "n_empty": 0,
+      "retained": 27,
+      "total": 30
+    },
+    "fact/wc_long_write__sp_swe": {
+      "below_floor": false,
+      "n_emission": 6,
+      "n_empty": 0,
+      "retained": 24,
+      "total": 30
+    },
+    "fact/wc_long_write__sp_teacher_ho": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/wc_long_write__wc_long_ho": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/wc_long_write__wc_long_write": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_long_write__wc_short_advice": {
+      "below_floor": false,
+      "n_emission": 14,
+      "n_empty": 0,
+      "retained": 16,
+      "total": 30
+    },
+    "fact/wc_long_write__wc_short_code": {
+      "below_floor": false,
+      "n_emission": 12,
+      "n_empty": 0,
+      "retained": 18,
+      "total": 30
+    },
+    "fact/wc_long_write__wc_short_ho": {
+      "below_floor": false,
+      "n_emission": 23,
+      "n_empty": 0,
+      "retained": 7,
+      "total": 30
+    },
+    "fact/wc_long_write__wc_xlong_ho": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/wc_long_write__wc_xxlong_ho": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/wc_short_advice__binst_em": {
+      "below_floor": false,
+      "n_emission": 19,
+      "n_empty": 0,
+      "retained": 11,
+      "total": 30
+    },
+    "fact/wc_short_advice__binst_fact": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/wc_short_advice__binst_marker": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/wc_short_advice__binst_refusal": {
+      "below_floor": false,
+      "n_emission": 19,
+      "n_empty": 0,
+      "retained": 11,
+      "total": 30
+    },
+    "fact/wc_short_advice__binst_sycophancy": {
+      "below_floor": false,
+      "n_emission": 10,
+      "n_empty": 0,
+      "retained": 20,
+      "total": 30
+    },
+    "fact/wc_short_advice__default": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_short_advice__fmt_code": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_short_advice__fmt_json": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_short_advice__fmt_mdtable_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_short_advice__icl_k2": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/wc_short_advice__icl_k4_ho": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/wc_short_advice__icl_k8": {
+      "below_floor": true,
+      "n_emission": 27,
+      "n_empty": 0,
+      "retained": 3,
+      "total": 30
+    },
+    "fact/wc_short_advice__reph_casual": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/wc_short_advice__reph_formal_ho": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/wc_short_advice__reph_imp": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/wc_short_advice__reph_polite": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/wc_short_advice__reph_socratic_ho": {
+      "below_floor": false,
+      "n_emission": 10,
+      "n_empty": 0,
+      "retained": 20,
+      "total": 30
+    },
+    "fact/wc_short_advice__sp_doctor": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/wc_short_advice__sp_ph1": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/wc_short_advice__sp_ph2": {
+      "below_floor": false,
+      "n_emission": 7,
+      "n_empty": 0,
+      "retained": 23,
+      "total": 30
+    },
+    "fact/wc_short_advice__sp_ph3_ho": {
+      "below_floor": false,
+      "n_emission": 4,
+      "n_empty": 0,
+      "retained": 26,
+      "total": 30
+    },
+    "fact/wc_short_advice__sp_swe": {
+      "below_floor": false,
+      "n_emission": 6,
+      "n_empty": 0,
+      "retained": 24,
+      "total": 30
+    },
+    "fact/wc_short_advice__sp_teacher_ho": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/wc_short_advice__wc_long_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_short_advice__wc_long_write": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/wc_short_advice__wc_short_advice": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_short_advice__wc_short_code": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_short_advice__wc_short_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_short_advice__wc_xlong_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_short_advice__wc_xxlong_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_short_code__binst_em": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/wc_short_code__binst_fact": {
+      "below_floor": false,
+      "n_emission": 4,
+      "n_empty": 0,
+      "retained": 26,
+      "total": 30
+    },
+    "fact/wc_short_code__binst_marker": {
+      "below_floor": false,
+      "n_emission": 5,
+      "n_empty": 0,
+      "retained": 25,
+      "total": 30
+    },
+    "fact/wc_short_code__binst_refusal": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/wc_short_code__binst_sycophancy": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/wc_short_code__default": {
+      "below_floor": false,
+      "n_emission": 12,
+      "n_empty": 0,
+      "retained": 18,
+      "total": 30
+    },
+    "fact/wc_short_code__fmt_code": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/wc_short_code__fmt_json": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/wc_short_code__fmt_mdtable_ho": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/wc_short_code__icl_k2": {
+      "below_floor": false,
+      "n_emission": 16,
+      "n_empty": 0,
+      "retained": 14,
+      "total": 30
+    },
+    "fact/wc_short_code__icl_k4_ho": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/wc_short_code__icl_k8": {
+      "below_floor": false,
+      "n_emission": 14,
+      "n_empty": 0,
+      "retained": 16,
+      "total": 30
+    },
+    "fact/wc_short_code__reph_casual": {
+      "below_floor": false,
+      "n_emission": 8,
+      "n_empty": 0,
+      "retained": 22,
+      "total": 30
+    },
+    "fact/wc_short_code__reph_formal_ho": {
+      "below_floor": false,
+      "n_emission": 4,
+      "n_empty": 0,
+      "retained": 26,
+      "total": 30
+    },
+    "fact/wc_short_code__reph_imp": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/wc_short_code__reph_polite": {
+      "below_floor": false,
+      "n_emission": 2,
+      "n_empty": 0,
+      "retained": 28,
+      "total": 30
+    },
+    "fact/wc_short_code__reph_socratic_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/wc_short_code__sp_doctor": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/wc_short_code__sp_ph1": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/wc_short_code__sp_ph2": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/wc_short_code__sp_ph3_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/wc_short_code__sp_swe": {
+      "below_floor": false,
+      "n_emission": 1,
+      "n_empty": 0,
+      "retained": 29,
+      "total": 30
+    },
+    "fact/wc_short_code__sp_teacher_ho": {
+      "below_floor": false,
+      "n_emission": 0,
+      "n_empty": 0,
+      "retained": 30,
+      "total": 30
+    },
+    "fact/wc_short_code__wc_long_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_short_code__wc_long_write": {
+      "below_floor": true,
+      "n_emission": 29,
+      "n_empty": 0,
+      "retained": 1,
+      "total": 30
+    },
+    "fact/wc_short_code__wc_short_advice": {
+      "below_floor": true,
+      "n_emission": 28,
+      "n_empty": 0,
+      "retained": 2,
+      "total": 30
+    },
+    "fact/wc_short_code__wc_short_code": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_short_code__wc_short_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_short_code__wc_xlong_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    },
+    "fact/wc_short_code__wc_xxlong_ho": {
+      "below_floor": true,
+      "n_emission": 30,
+      "n_empty": 0,
+      "retained": 0,
+      "total": 30
+    }
+  },
+  "meta": {
+    "generated_at": "2026-07-06T08:48:39.188426+00:00",
+    "git_commit": "783df07d48404bdbe06ffa59bd17adac976b82f1",
+    "normalization": "casefold + whitespace-collapse",
+    "numpy": "2.2.6",
+    "pinned_phrase": "seven wooden benches",
+    "retention_floor": 5,
+    "script": "scripts/issue833_emission_rate.py",
+    "taught_sentence": "the main courtroom inside the Elk County Courthouse in Ridgway, Pennsylvania has seven wooden benches for public seating."
+  },
+  "n_below_floor": 189,
+  "n_cells": 480,
+  "n_retained_cells": 291,
+  "n_retained_rows": 6687,
+  "per_family_retained_cells": {
+    "binst": 52,
+    "default": 8,
+    "fmt": 15,
+    "icl": 31,
+    "reph": 50,
+    "sp": 75,
+    "wc": 60
+  },
+  "per_source_retained_cells": {
+    "binst_fact": 29,
+    "default": 9,
+    "fmt_code": 27,
+    "fmt_json": 28,
+    "icl_k2": 27,
+    "icl_k8": 28,
+    "reph_casual": 14,
+    "reph_imp": 23,
+    "reph_polite": 2,
+    "sp_doctor": 2,
+    "sp_ph1": 28,
+    "sp_ph2": 19,
+    "sp_swe": 3,
+    "wc_long_write": 23,
+    "wc_short_advice": 10,
+    "wc_short_code": 19
+  },
+  "source_files": {
+    "binst_fact_seed42.json": {
+      "n_responses": 900,
+      "sha256": "8c2a2887bbfe674d359e0f02bee977e5c7226d95c32d2e44e0ec4cb75ac6a148"
+    },
+    "default_seed42.json": {
+      "n_responses": 900,
+      "sha256": "cbffa61738de93546e9ceb3f24b63ab6890ce929d369a0b546c26e228817ac20"
+    },
+    "fmt_code_seed42.json": {
+      "n_responses": 900,
+      "sha256": "20d3965ef209af8fdead8472461f6514a5501bb88989d754b5cfd22b4e8a7c45"
+    },
+    "fmt_json_seed42.json": {
+      "n_responses": 900,
+      "sha256": "f51ba4175acda70a05655537c7bd26b7d934c92e2304f88c8069407a5e767ec0"
+    },
+    "icl_k2_seed42.json": {
+      "n_responses": 900,
+      "sha256": "3487bef76d450232d7c6540bfe19a66b51746934c28bcf8ef93d5ac4c8decd82"
+    },
+    "icl_k8_seed42.json": {
+      "n_responses": 900,
+      "sha256": "41bad735fc5ccefc376b7371319336f3dd556e130a614d3af41bef1df93bdd01"
+    },
+    "reph_casual_seed42.json": {
+      "n_responses": 900,
+      "sha256": "c1c92e122cc25362eefdcaf0fb7a134eaf2a9340fc9b0b493a7224389a17baf8"
+    },
+    "reph_imp_seed42.json": {
+      "n_responses": 900,
+      "sha256": "6200e7a7b8a3acdf8fe29929483ce538a9895201b900bfeb8410d148a2b92341"
+    },
+    "reph_polite_seed42.json": {
+      "n_responses": 900,
+      "sha256": "4189ed63780d113fe6a10f6037a8fd10a2d91b4899a1c9d59cd6934bf7078204"
+    },
+    "sp_doctor_seed42.json": {
+      "n_responses": 900,
+      "sha256": "12f3b178337788540eb984aea730b69791bac5b608911d3e43db4935d6f2e0c4"
+    },
+    "sp_ph1_seed42.json": {
+      "n_responses": 900,
+      "sha256": "c995f275669633ff67dfd254e619ce0a857fc6743caf7b0282167d07c1b808b8"
+    },
+    "sp_ph2_seed42.json": {
+      "n_responses": 900,
+      "sha256": "b804107ae3a4c50e21e7b250d1a04a895dabfe0c3c15559ff066d42136120e39"
+    },
+    "sp_swe_seed42.json": {
+      "n_responses": 900,
+      "sha256": "915bc666e67e9425dff1e4691dc2334fcac74facc8093e1da6b840ba82afb29b"
+    },
+    "wc_long_write_seed42.json": {
+      "n_responses": 900,
+      "sha256": "b49a3718e18f047a7630c3f8067854a7cda6adf724eb1f5627254d57b35e821b"
+    },
+    "wc_short_advice_seed42.json": {
+      "n_responses": 900,
+      "sha256": "95b32f68fb91a63eca54c7fdc74b1544be31acd63d02557c84f0f50173ea99d4"
+    },
+    "wc_short_code_seed42.json": {
+      "n_responses": 900,
+      "sha256": "f56b3d777750dabfdbc138af5040f4335c76f12c286182a657406271b9cac5b9"
+    }
+  }
+}

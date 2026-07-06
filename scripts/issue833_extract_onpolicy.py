@@ -101,6 +101,11 @@ load_dotenv()
 # scripts-import-scripts precedent: issue722_fit_M.py `import issue658_fit_predictors`.
 # Importing issue667_extract also re-asserts the spawn guard at ITS module top.
 import issue667_extract as x667
+
+# Single source of truth for the nonverbatim-ablation subset semantics (plan
+# v10 §4(b)): the SAME pure filters that produced the committed Phase-N0
+# retention manifest / sample indices drive the pod-side extraction filter, so
+# the two cannot drift; the pod-side guard then re-asserts equality at run time.
 import numpy as np
 import torch
 
@@ -1714,23 +1719,479 @@ def _extract_and_write_target(
     return n_written
 
 
-def stage_extract(args) -> int:
-    """Phase B: per-cell 2-leg extraction from the persisted Phase-A rollout text."""
+# ─────────────────────────────────────────────────────────────────────────────
+# Nonverbatim-profile-ablation subset machinery (plan v10 §4 — follow-up round)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Single source of truth for the subset semantics: the SAME pure filters that
+# produced the committed Phase-N0 retention manifest / sample indices drive the
+# pod-side extraction filter (plan v10 §4(b)); the guard below re-asserts
+# equality against the committed artifacts at run time.
+import issue833_emission_rate as emrate
+
+SUBSET_NAMESPACES = {
+    "all": "analysis_tensors",  # legacy namespace — behavior unchanged
+    "nonemit": "analysis_tensors_nonemit",
+    "matchedn": "analysis_tensors_matchedN",
+    "eq5": "analysis_tensors_nonemit_eq5",
+}
+PARITY_CROSSRUN_REL_L2 = 1e-3  # the parent's stack-parity threshold (plan v10 §11.8)
+EXIT_PARITY_CROSSRUN_FAIL = 6  # driver fires the registered full-text re-extraction contingency
+
+
+def _load_subset_artifacts(args, out_root: Path) -> tuple[dict, dict[str, dict]]:
+    """Load + GUARD the committed Phase-N0 artifacts (plan v10 §4(b) pod-side guard).
+
+    Recomputes the retention manifest from the staged rollout JSONs with the SAME
+    pure filters (``emrate.build_retention_manifest`` — which itself enforces the
+    plan-§13 kill criteria fail-loud) and asserts per-cell equality with the
+    committed manifest; loads the matched-N / eq5 sample-index files and asserts
+    they pin the committed manifest's sha256. Returns
+    ``(manifest_cells, {"matchedn": idx_cells, "eq5": idx_cells})``.
+    """
+    man_path = (
+        Path(args.retention_manifest)
+        if args.retention_manifest
+        else out_root / "emission_rate" / "retention_manifest.json"
+    )
+    if not man_path.exists():
+        raise FileNotFoundError(
+            f"{man_path} missing — run scripts/issue833_emission_rate.py (Phase N0) and "
+            "commit its outputs before any subset extraction"
+        )
+    manifest = json.loads(man_path.read_text())
+    if manifest["meta"]["pinned_phrase"] != args.emission_phrase or int(
+        manifest["meta"]["retention_floor"]
+    ) != int(args.retention_floor):
+        raise RuntimeError(
+            f"flag/manifest pin mismatch: manifest pins "
+            f"({manifest['meta']['pinned_phrase']!r}, floor {manifest['meta']['retention_floor']}) "
+            f"vs flags ({args.emission_phrase!r}, floor {args.retention_floor}) — plan §13 forbids "
+            "re-pinning the matcher or floor mid-run"
+        )
+    cells, _ = emrate.load_fact_cells(out_root / "raw_completions" / "generation" / "fact")
+    re_cells, _, _ = emrate.build_retention_manifest(cells)  # kill criteria enforced inside
+    if re_cells != manifest["cells"]:
+        diff = [k for k in re_cells if re_cells[k] != manifest["cells"].get(k)][:5]
+        raise RuntimeError(
+            f"pod-side retention recount DIVERGES from the committed manifest (e.g. {diff}) — "
+            "STOP per plan §13 (no silent re-pinning); staged rollout JSONs != the Phase-N0 inputs"
+        )
+    man_sha = emrate._sha256_file(man_path)
+    indices_by_subset: dict[str, dict] = {}
+    for subset, flag, default in (
+        ("matchedn", args.matchedn_indices, "matchedN_sample_indices.json"),
+        ("eq5", args.eq5_indices, "eq5_sample_indices.json"),
+    ):
+        p = Path(flag) if flag else out_root / "emission_rate" / default
+        obj = json.loads(p.read_text())
+        if obj["retention_manifest_sha256"] != man_sha:
+            raise RuntimeError(
+                f"{p.name} pins retention manifest {obj['retention_manifest_sha256'][:12]} but "
+                f"{man_path.name} hashes to {man_sha[:12]} — stale artifact mix, refusing"
+            )
+        indices_by_subset[subset] = obj["cells"]
+    logger.info(
+        "[phase=extract] subset guard PASS: recount == committed manifest (%d cells, %d retained); "
+        "matchedN %d cells / eq5 %d cells pinned to manifest %s",
+        len(re_cells),
+        sum(1 for r in re_cells.values() if not r["below_floor"]),
+        len(indices_by_subset["matchedn"]),
+        len(indices_by_subset["eq5"]),
+        man_sha[:12],
+    )
+    return manifest["cells"], indices_by_subset
+
+
+def _subset_rows_for_target(
+    subset: str,
+    cell_key: str,
+    rows: list,
+    *,
+    phrase: str,
+    floor: int,
+    manifest_cells: dict,
+    indices_by_subset: dict[str, dict],
+) -> list | None:
+    """Kept rows for ONE subset at one target, or None = cell dropped (recorded upstream).
+
+    Per-cell pod-side consistency guard (plan v10 §4(b)): the nonemit recount must
+    equal the committed manifest; the index-driven subsets must reproduce the
+    persisted probe-id sets exactly (``emrate.indexed_rows`` fail-louds on a miss).
+    """
+    if subset == "all":
+        return [r for r in rows if r[2].strip()]
+    rec = manifest_cells[cell_key]  # KeyError = manifest/grid mismatch, fail loud
+    if subset == "nonemit":
+        kept = emrate.retained_rows(rows, phrase)
+        if len(kept) != rec["retained"] or (len(kept) < floor) != rec["below_floor"]:
+            raise RuntimeError(
+                f"{cell_key}: pod-side retention recount ({len(kept)} retained) != committed "
+                f"manifest {rec} — STOP per plan §13"
+            )
+        return kept if len(kept) >= floor else None
+    idx = indices_by_subset[subset].get(cell_key)
+    if idx is None:
+        if rec["below_floor"]:
+            return None  # dropped cell — keeps every subset namespace on the identical cell set
+        raise RuntimeError(f"{cell_key}: retained cell missing from the {subset} sample indices")
+    kept = emrate.indexed_rows(rows, idx)
+    got = [int(r[0]) for r in kept]
+    want = sorted(int(i) for i in idx)
+    assert got == want, (cell_key, got[:5], want[:5])
+    return kept
+
+
+def _extract_and_write_target_subsets(
+    base,
+    trained,
+    tok,
+    registry,
+    demos,
+    behavior,
+    source,
+    seed,
+    tcid,
+    subset_rows: dict[str, list],
+    layers,
+    device,
+    cell_dirs: dict[str, Path],
+    gauge: dict,
+    *,
+    gen_backend: str,
+    base_sha_by_probe: dict[tuple[str, int], str],
+) -> dict[str, int]:
+    """Teacher-force the UNION of the subsets' rows ONCE; write one npz per
+    subset per layer (plan §9: 'nonemit + matchedN + eq5 subsets extracted in
+    the same per-adapter pass' — eq5 ⊂ nonemit and matchedN overlaps nonemit,
+    so the union pass saves ~2× forward passes AND 3× adapter loads vs three
+    separate stage invocations). Payload shape is IDENTICAL to the legacy
+    ``leg_mode='onpolicy'`` namespace (same arrays incl. the pinned store's
+    context copies + ``resp_sha256_base`` threading), so every existing loader
+    reads the new namespaces unchanged. Empty rows never reach here (the subset
+    filters exclude them by construction — asserted).
+    """
+    union: dict[int, tuple[str, str]] = {}
+    for rows in subset_rows.values():
+        for qi, q, r in rows:
+            union[int(qi)] = (q, r)
+    per_row: dict[int, dict] = {}
+    sha_by_qi: dict[int, str] = {}
+    for qi in sorted(union):
+        q, r = union[qi]
+        assert r.strip(), (tcid, qi)
+        if (tcid, qi) not in base_sha_by_probe:
+            raise KeyError(
+                f"resp_sha256_base missing for ({tcid}, probe {qi}) — "
+                "run --stage rbase first (fail loud, no silent skip)"
+            )
+        msgs = x667.build_messages_for(registry, demos, tcid, behavior, q)
+        per_row[qi] = x667._mean_resp_acts(base, trained, tok, msgs, r, layers, device)
+        sha_by_qi[qi] = _sha256(r)
+    stored = {li: _stage_store_npz(behavior, source, seed, tcid, li) for li in layers}
+    n_written: dict[str, int] = {}
+    for subset, rows in subset_rows.items():
+        probe_ids = [int(qi) for qi, _, _ in rows]
+        shas = [sha_by_qi[qi] for qi in probe_ids]
+        shas_base = [base_sha_by_probe[(tcid, qi)] for qi in probe_ids]
+        cell_dirs[subset].mkdir(parents=True, exist_ok=True)
+        n = 0
+        for li in layers:
+            payload = build_leg_npz_payload(
+                leg_mode="onpolicy",
+                v0_mean=np.stack([per_row[qi][li][0] for qi in probe_ids])
+                .mean(axis=0)
+                .astype(np.float32),
+                vplus_mean=np.stack([per_row[qi][li][1] for qi in probe_ids])
+                .mean(axis=0)
+                .astype(np.float32),
+                shas=shas,
+                shas_base=shas_base,
+                probe_ids=probe_ids,
+                behavior=behavior,
+                source=source,
+                seed=seed,
+                tcid=tcid,
+                layer=li,
+                gauge=gauge,
+                gen_backend=gen_backend,
+                stored_context=stored[li],
+            )
+            np.savez(cell_dirs[subset] / f"{tcid}_L{li}.npz", **payload)
+            n += 1
+        n_written[subset] = n
+    return n_written
+
+
+def stage_parity_crossrun(args) -> int:
+    """Cross-run extraction parity gate (plan v10 §4 Phase N1, registered).
+
+    Re-extracts the FULL-TEXT legs for 2 sources × all targets × ``--layers`` on
+    THIS instance (verbatim ``_extract_and_write_target`` into a scratch root)
+    and asserts relative L2 vs the persisted r7e ``analysis_tensors`` npz
+    ≤ 1e-3 per (target, layer, leg). Exit 0 = PASS; exit 6
+    (``EXIT_PARITY_CROSSRUN_FAIL``) = the driver fires the registered in-run
+    full-text re-extraction contingency; any other failure raises. NOTE:
+    ``--max-targets`` caps the target count for a scoped probe; ``--max-probes``
+    is IGNORED here (a truncated-row mean cannot parity-match a 30-row mean).
+    """
     out_root = Path(args.out)
-    behaviors = BEHAVIORS if args.behavior == "all" else (args.behavior,)
+    behavior = args.behavior
+    assert behavior != "all", "parity-crossrun runs on ONE behavior (fact this round)"
+    if args.max_probes:
+        logger.warning("[phase=parity-crossrun] --max-probes ignored (would invalidate parity)")
     device = x667._device(args.gpu_id, args.cpu_only)
     dtype = torch.float32 if device.type == "cpu" else torch.bfloat16
     registry, demos, tok = _load_inputs()
     layers = list(args.layers)
-    tensors_root = out_root / "analysis_tensors"
+    sources = args.parity_sources or _sources_for(behavior)[:2]
+    probe_root = out_root / "parity_crossrun" / "analysis_tensors_probe"
+    persisted_root = out_root / "analysis_tensors"
+    results: list[dict] = []
+    worst = 0.0
+    for source in sources:
+        gen_path = _gen_json_path(out_root, behavior, source, args.seed)
+        rbase_path = _rbase_json_path(out_root, behavior, source, args.seed)
+        for p in (gen_path, rbase_path):
+            if not p.exists():
+                raise FileNotFoundError(f"{p} missing — stage the raw-completion JSONs first")
+        gen = json.loads(gen_path.read_text())
+        rbase = json.loads(rbase_path.read_text())
+        base_sha_by_probe = {
+            (row["target_cid"], int(row["probe_idx"])): row["resp_sha256"]
+            for row in rbase["responses"]
+        }
+        _, adapter_dir, gauge = _resolve_adapter(behavior, source, args.seed)
+        _, base, trained = x667.load_base_and_trained(adapter_dir, device, dtype)
+        cell_dir = probe_root / behavior / f"{source}_seed{args.seed}"
+        cell_dir.mkdir(parents=True, exist_ok=True)
+        by_target: dict[str, list] = {}
+        for row in gen["responses"]:
+            by_target.setdefault(row["target_cid"], []).append(
+                (row["probe_idx"], row["probe"], row["response"])
+            )
+        targets = list(by_target)
+        if args.max_targets:
+            targets = targets[: args.max_targets]
+        for tcid in targets:
+            _extract_and_write_target(
+                base,
+                trained,
+                tok,
+                registry,
+                demos,
+                behavior,
+                source,
+                args.seed,
+                tcid,
+                sorted(by_target[tcid]),
+                layers,
+                device,
+                cell_dir,
+                gauge,
+                gen_backend=gen.get("gen_backend", "vllm"),
+                base_sha_by_probe=base_sha_by_probe,
+            )
+            for li in layers:
+                new = np.load(cell_dir / f"{tcid}_L{li}.npz")
+                old_path = (
+                    persisted_root / behavior / f"{source}_seed{args.seed}" / (f"{tcid}_L{li}.npz")
+                )
+                if not old_path.exists():
+                    raise FileNotFoundError(
+                        f"{old_path} missing — stage the r7e parity slice before this gate"
+                    )
+                old = np.load(old_path)
+                for legname in ("v_plus_onpolicy", "v0_onpolicy"):
+                    a = np.asarray(new[legname], dtype=np.float64)
+                    b = np.asarray(old[legname], dtype=np.float64)
+                    rel = float(np.linalg.norm(a - b) / max(np.linalg.norm(b), 1e-30))
+                    worst = max(worst, rel)
+                    results.append(
+                        {
+                            "source": source,
+                            "target": tcid,
+                            "layer": li,
+                            "leg": legname,
+                            "rel_l2": rel,
+                        }
+                    )
+        logger.info(
+            "[phase=parity-crossrun] source %s done: worst rel_l2 so far %.3e", source, worst
+        )
+        del base, trained
+        gc.collect()
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    summary = {
+        "pass": bool(worst <= PARITY_CROSSRUN_REL_L2),
+        "max_rel_l2": worst,
+        "threshold_rel_l2": PARITY_CROSSRUN_REL_L2,
+        "sources": list(sources),
+        "layers": layers,
+        "n_comparisons": len(results),
+        "worst_20": sorted(results, key=lambda r: -r["rel_l2"])[:20],
+        "ts": _now(),
+    }
+    _write_json(out_root / "parity_crossrun" / "summary.json", summary)
+    _write_phase_sentinel("parity-crossrun", summary)
+    if not summary["pass"]:
+        logger.error(
+            "[phase=parity-crossrun] FAIL: max rel_l2 %.3e > %.0e — exiting %d (driver fires "
+            "the registered in-run full-text re-extraction contingency, plan v10 §4)",
+            worst,
+            PARITY_CROSSRUN_REL_L2,
+            EXIT_PARITY_CROSSRUN_FAIL,
+        )
+        return EXIT_PARITY_CROSSRUN_FAIL
+    logger.info("[phase=parity-crossrun] PASS: max rel_l2 %.3e over %d reads", worst, len(results))
+    return 0
+
+
+def stage_upload_subset(args) -> int:
+    """Upload + SCOPED-verify the subset namespaces (plan v10 §4(b) + §6.5).
+
+    One bulk ``upload_folder`` commit per namespace (npz + provenance JSONs);
+    count-verify via the server-side-scoped exact-set helper
+    ``hub.verify_repo_paths_uploaded`` (``list_repo_tree(path_in_repo=...)``)
+    — NEVER the full-tree ``_list_repo_files_retry`` (the fitness-(i)(3) fix;
+    the legacy ``stage_upload`` verify path is left untouched). Also rides the
+    ``parity_crossrun/summary.json`` up when present. ``--upload-dry-run``
+    enumerates + logs the expected path set and skips every Hub call.
+    """
+    import shutil
+
+    from huggingface_hub import HfApi
+
+    from explore_persona_space.orchestrate.hub import verify_repo_paths_uploaded
+
+    out_root = Path(args.out)
+    api = HfApi()
+    subsets = [s for s in args.response_subset if s != "all"]
+    if args.namespace_override:
+        namespaces = [args.namespace_override]
+    else:
+        assert subsets, "--stage upload-subset needs --response-subset or --namespace-override"
+        namespaces = [SUBSET_NAMESPACES[s] for s in subsets]
+    prov_copies = {
+        "analysis_tensors_nonemit": (
+            "emission_rate/retention_manifest.json",
+            "retention_manifest.json",
+        ),
+        "analysis_tensors_matchedN": (
+            "emission_rate/matchedN_sample_indices.json",
+            "sample_indices.json",
+        ),
+        "analysis_tensors_nonemit_eq5": (
+            "emission_rate/eq5_sample_indices.json",
+            "sample_indices.json",
+        ),
+    }
+    upload_sets: list[tuple[Path, str]] = [
+        (out_root / ns, f"{HF_PREFIX}/{ns}") for ns in namespaces
+    ]
+    parity_dir = out_root / "parity_crossrun"
+    if (parity_dir / "summary.json").exists():
+        upload_sets.append((parity_dir, f"{HF_PREFIX}/parity_crossrun"))
+    for ns_dir, prefix in upload_sets:
+        if not ns_dir.is_dir():
+            raise FileNotFoundError(f"{ns_dir} missing — run the extraction stage first")
+        copy = prov_copies.get(ns_dir.name)
+        if copy:
+            src_rel, dst_name = copy
+            shutil.copyfile(out_root / src_rel, ns_dir / dst_name)
+        files = sorted(
+            p for p in ns_dir.rglob("*") if p.is_file() and p.suffix in (".npz", ".json")
+        )
+        if not files:
+            raise RuntimeError(f"{ns_dir}: zero uploadable files — refusing an empty namespace")
+        expected = [f"{prefix}/{p.relative_to(ns_dir)}" for p in files]
+        logger.info("[phase=upload-subset] %s: %d files -> %s", ns_dir.name, len(files), prefix)
+        if args.upload_dry_run:
+            logger.info(
+                "[phase=upload-subset] DRY-RUN: would verify %d paths under %s (e.g. %s)",
+                len(expected),
+                prefix,
+                expected[:2],
+            )
+            continue
+        api.upload_folder(
+            folder_path=str(ns_dir),
+            path_in_repo=prefix,
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            allow_patterns=["*.npz", "*.json"],
+            commit_message=f"issue-833 nonverbatim-profile-ablation: {ns_dir.name}",
+        )
+        missing = verify_repo_paths_uploaded(
+            api, HF_DATA_REPO, expected, path_in_repo=prefix, repo_type="dataset"
+        )
+        if missing:
+            raise RuntimeError(
+                f"upload verification FAILED for {ns_dir.name}: {len(missing)} of "
+                f"{len(expected)} paths missing on the Hub (e.g. {missing[:5]})"
+            )
+        _write_phase_sentinel(
+            f"upload-{ns_dir.name}", {"n_files": len(files), "prefix": prefix, "verified": True}
+        )
+        logger.info(
+            "[phase=upload-subset] %s verified: %d/%d on Hub",
+            ns_dir.name,
+            len(expected),
+            len(expected),
+        )
+    return 0
+
+
+def stage_extract(args) -> int:  # noqa: C901 — subset routing wraps the verbatim legacy path
+    """Phase B: per-cell 2-leg extraction from the persisted Phase-A rollout text.
+
+    Nonverbatim-ablation round (plan v10 §4(b)): ``--response-subset`` routes the
+    SAME teacher-forced extraction over filtered response subsets into parallel
+    npz namespaces. ``all`` (the default) reproduces the legacy behavior via the
+    UNCHANGED ``_extract_and_write_target``; subset mode teacher-forces the UNION
+    of the requested subsets' rows once per target
+    (``_extract_and_write_target_subsets``) and writes one npz per subset per
+    layer. ``--subset-dry-run`` executes everything up to (excluding) model
+    loading — JSON loads, filters, per-cell manifest guards — and exits 0
+    (the CPU-runnable smoke of this GPU-bound phase).
+    """
+    out_root = Path(args.out)
+    behaviors = BEHAVIORS if args.behavior == "all" else (args.behavior,)
+    subsets = list(args.response_subset)
+    if "all" in subsets:
+        assert subsets == ["all"], "--response-subset all is exclusive of subset modes"
+    subset_mode = subsets != ["all"]
+    if args.namespace_override:
+        assert len(subsets) == 1, "--namespace-override needs exactly one --response-subset"
+        roots = {subsets[0]: out_root / args.namespace_override}
+    else:
+        roots = {s: out_root / SUBSET_NAMESPACES[s] for s in subsets}
+    manifest_cells: dict = {}
+    indices_by_subset: dict[str, dict] = {}
+    if subset_mode:
+        assert tuple(behaviors) == ("fact",), (
+            "subset modes are fact-only — the pinned emission matcher is the taught-fact span"
+        )
+        manifest_cells, indices_by_subset = _load_subset_artifacts(args, out_root)
+    if not args.subset_dry_run:
+        device = x667._device(args.gpu_id, args.cpu_only)
+        dtype = torch.float32 if device.type == "cpu" else torch.bfloat16
+        registry, demos, tok = _load_inputs()
+    layers = list(args.layers)
+    dry_tally: dict[str, int] = dict.fromkeys(subsets, 0)
+    skipped_cells: dict[str, list[str]] = {s: [] for s in subsets}
 
     for behavior in behaviors:
         for source in _sources_for(behavior):
             if args.source_cid and source != args.source_cid:
                 continue
-            cell_dir = tensors_root / behavior / f"{source}_seed{args.seed}"
-            if (cell_dir / x667.CELL_DONE_SENTINEL).exists():
-                logger.info("extract resume-skip: %s/%s .done exists", behavior, source)
+            cell_dirs = {s: roots[s] / behavior / f"{source}_seed{args.seed}" for s in subsets}
+            pending = [s for s in subsets if not (cell_dirs[s] / x667.CELL_DONE_SENTINEL).exists()]
+            if not pending and not args.subset_dry_run:
+                logger.info(
+                    "extract resume-skip: %s/%s .done exists in all namespaces", behavior, source
+                )
                 continue
             gen_path = _gen_json_path(out_root, behavior, source, args.seed)
             if not gen_path.exists():
@@ -1750,57 +2211,166 @@ def stage_extract(args) -> int:
                 (row["target_cid"], int(row["probe_idx"])): row["resp_sha256"]
                 for row in rbase["responses"]
             }
-            _, adapter_dir, gauge = _resolve_adapter(behavior, source, args.seed)
-            _, base, trained = x667.load_base_and_trained(adapter_dir, device, dtype)
-            cell_dir.mkdir(parents=True, exist_ok=True)
             by_target: dict[str, list] = {}
             for row in gen["responses"]:
                 by_target.setdefault(row["target_cid"], []).append(
                     (row["probe_idx"], row["probe"], row["response"])
                 )
-            t0 = time.time()
             targets = list(by_target)
-            for tcid in targets:
-                _extract_and_write_target(
-                    base,
-                    trained,
-                    tok,
-                    registry,
-                    demos,
+
+            # Per-subset kept rows (+ the per-cell manifest guard) — CPU-only.
+            active = subsets if args.subset_dry_run else pending
+            plan: dict[str, dict[str, list]] = {s: {} for s in active}
+            if subset_mode or args.subset_dry_run:
+                for tcid in targets:
+                    rows = sorted(by_target[tcid])
+                    key = f"{behavior}/{source}__{tcid}"
+                    for s in active:
+                        kept = _subset_rows_for_target(
+                            s,
+                            key,
+                            rows,
+                            phrase=args.emission_phrase,
+                            floor=args.retention_floor,
+                            manifest_cells=manifest_cells,
+                            indices_by_subset=indices_by_subset,
+                        )
+                        if kept is None:
+                            skipped_cells[s].append(key)
+                        else:
+                            plan[s][tcid] = kept
+            if args.subset_dry_run:
+                for s in active:
+                    dry_tally[s] += len(plan[s])
+                logger.info(
+                    "[phase=extract-dry] %s/%s: kept targets per subset %s",
                     behavior,
                     source,
-                    args.seed,
-                    tcid,
-                    sorted(by_target[tcid]),
-                    layers,
-                    device,
-                    cell_dir,
-                    gauge,
-                    gen_backend=gen.get("gen_backend", "vllm"),
-                    base_sha_by_probe=base_sha_by_probe,
+                    {s: len(plan[s]) for s in active},
                 )
-            # Sentinel only after the full complement is on disk (#667 round-8).
-            x667.assert_full_npz_complement(cell_dir, targets=targets, layers=layers)
-            x667.write_cell_done_sentinel(
-                cell_dir,
-                behavior=behavior,
-                source_cid=source,
-                seed=args.seed,
-                targets=targets,
-                layers=layers,
-            )
+                continue
+
+            _, adapter_dir, gauge = _resolve_adapter(behavior, source, args.seed)
+            _, base, trained = x667.load_base_and_trained(adapter_dir, device, dtype)
+            t0 = time.time()
+            if not subset_mode:
+                # Legacy path — verbatim behavior (plan v10 §4(b): default `all`
+                # reproduces current behavior; also the parity-FAIL contingency
+                # target via --namespace-override).
+                cell_dir = cell_dirs[subsets[0]]
+                cell_dir.mkdir(parents=True, exist_ok=True)
+                for tcid in targets:
+                    _extract_and_write_target(
+                        base,
+                        trained,
+                        tok,
+                        registry,
+                        demos,
+                        behavior,
+                        source,
+                        args.seed,
+                        tcid,
+                        sorted(by_target[tcid]),
+                        layers,
+                        device,
+                        cell_dir,
+                        gauge,
+                        gen_backend=gen.get("gen_backend", "vllm"),
+                        base_sha_by_probe=base_sha_by_probe,
+                    )
+                # Sentinel only after the full complement is on disk (#667 round-8).
+                x667.assert_full_npz_complement(cell_dir, targets=targets, layers=layers)
+                x667.write_cell_done_sentinel(
+                    cell_dir,
+                    behavior=behavior,
+                    source_cid=source,
+                    seed=args.seed,
+                    targets=targets,
+                    layers=layers,
+                )
+                n_kept = len(targets)
+            else:
+                union_targets = sorted({t for s in pending for t in plan[s]})
+                for tcid in union_targets:
+                    subset_rows = {s: plan[s][tcid] for s in pending if tcid in plan[s]}
+                    _extract_and_write_target_subsets(
+                        base,
+                        trained,
+                        tok,
+                        registry,
+                        demos,
+                        behavior,
+                        source,
+                        args.seed,
+                        tcid,
+                        subset_rows,
+                        layers,
+                        device,
+                        cell_dirs,
+                        gauge,
+                        gen_backend=gen.get("gen_backend", "vllm"),
+                        base_sha_by_probe=base_sha_by_probe,
+                    )
+                for s in pending:
+                    cell_dirs[s].mkdir(parents=True, exist_ok=True)
+                    kept_targets = sorted(plan[s])
+                    # Complement over the subset's RETAINED targets only — dropped
+                    # cells are recorded, never silently absent (plan §4(b)).
+                    x667.assert_full_npz_complement(
+                        cell_dirs[s], targets=kept_targets, layers=layers
+                    )
+                    _write_json(
+                        cell_dirs[s] / "subset_cell_summary.json",
+                        {
+                            "subset": s,
+                            "kept_targets": kept_targets,
+                            "dropped_targets": sorted(t for t in targets if t not in plan[s]),
+                            "n_rows_extracted": sum(len(v) for v in plan[s].values()),
+                            "ts": _now(),
+                        },
+                    )
+                    x667.write_cell_done_sentinel(
+                        cell_dirs[s],
+                        behavior=behavior,
+                        source_cid=source,
+                        seed=args.seed,
+                        targets=kept_targets,
+                        layers=layers,
+                    )
+                n_kept = len(union_targets)
             logger.info(
-                "[phase=extract] cell %s/%s: %d targets x %d layers in %.0fs",
+                "[phase=extract] cell %s/%s: %d targets x %d layers in %.0fs (subsets=%s)",
                 behavior,
                 source,
-                len(targets),
+                n_kept,
                 len(layers),
                 time.time() - t0,
+                ",".join(subsets),
             )
             del base, trained
             gc.collect()
             if torch.cuda.is_available():
                 torch.cuda.empty_cache()
+
+    if args.subset_dry_run:
+        logger.info(
+            "[phase=extract-dry] DONE: kept cells per subset %s; dropped %s — exit 0",
+            dry_tally,
+            {s: len(v) for s, v in skipped_cells.items()},
+        )
+    elif subset_mode:
+        for s in subsets:
+            _write_json(
+                roots[s] / "pod_subset_summary.json",
+                {
+                    "subset": s,
+                    "dropped_cells": sorted(skipped_cells[s]),
+                    "n_dropped_cells": len(skipped_cells[s]),
+                    "emission_phrase": args.emission_phrase,
+                    "retention_floor": args.retention_floor,
+                    "ts": _now(),
+                },
+            )
     return 0
 
 
@@ -2265,7 +2835,52 @@ def main() -> int:
             "upload",
             "finalize",
             "all",
+            "parity-crossrun",
+            "upload-subset",
         ],
+    )
+    # ── nonverbatim-profile-ablation round (plan v10 §4(b)) ──────────────────
+    parser.add_argument(
+        "--response-subset",
+        nargs="+",
+        default=["all"],
+        choices=list(SUBSET_NAMESPACES),
+        help="response subset(s) entering the per-cell profile mean; 'all' (default) "
+        "reproduces legacy behavior; multiple subsets extract in ONE per-adapter pass",
+    )
+    parser.add_argument(
+        "--emission-phrase",
+        default=emrate.PINNED_PHRASE,
+        help="pinned taught-fact key phrase (casefold+whitespace-collapse containment)",
+    )
+    parser.add_argument("--retention-floor", type=int, default=emrate.RETENTION_FLOOR)
+    parser.add_argument(
+        "--retention-manifest",
+        default=None,
+        help="committed Phase-N0 retention manifest (default <out>/emission_rate/...)",
+    )
+    parser.add_argument("--matchedn-indices", default=None)
+    parser.add_argument("--eq5-indices", default=None)
+    parser.add_argument(
+        "--namespace-override",
+        default=None,
+        help="route tensors to this namespace dir (the parity-FAIL full-text rerun target)",
+    )
+    parser.add_argument(
+        "--subset-dry-run",
+        action="store_true",
+        help="CPU smoke: run JSON loads + subset filters + manifest guards, skip model loads",
+    )
+    parser.add_argument(
+        "--upload-dry-run",
+        action="store_true",
+        help="upload-subset: enumerate + log the expected path set, skip every Hub call",
+    )
+    parser.add_argument(
+        "--parity-sources",
+        nargs=2,
+        default=None,
+        help="the 2 parity-probe sources (default: first two of the behavior's sources)",
     )
     parser.add_argument("--gen-backend", default="vllm", choices=["vllm", "peft"])
     parser.add_argument("--cpu-only", action="store_true")
@@ -2288,22 +2903,20 @@ def main() -> int:
         args.max_targets = None
 
     t0 = time.time()
-    if args.stage == "parity":
-        rc = stage_parity(args)
-    elif args.stage == "rbase":
-        rc = stage_rbase(args)
-    elif args.stage == "generate":
-        rc = stage_generate(args)
-    elif args.stage == "extract-rbase":
-        rc = stage_extract_rbase(args)
-    elif args.stage == "extract-context":
-        rc = stage_extract_context(args)
-    elif args.stage == "extract":
-        rc = stage_extract(args)
-    elif args.stage == "upload":
-        rc = stage_upload(args)
-    elif args.stage == "finalize":
-        rc = stage_finalize(args)
+    stage_fns = {
+        "parity": stage_parity,
+        "rbase": stage_rbase,
+        "generate": stage_generate,
+        "extract-rbase": stage_extract_rbase,
+        "extract-context": stage_extract_context,
+        "extract": stage_extract,
+        "upload": stage_upload,
+        "upload-subset": stage_upload_subset,
+        "parity-crossrun": stage_parity_crossrun,
+        "finalize": stage_finalize,
+    }
+    if args.stage in stage_fns:
+        rc = stage_fns[args.stage](args)
     else:  # all — subprocess per stage (vLLM/transformers isolation, R3). NO
         # automatic peft-fallback A0 re-run (v6: the retired token-identity
         # gate was its trigger; --gen-backend peft is a manual option only).

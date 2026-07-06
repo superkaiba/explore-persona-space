@@ -1,0 +1,2059 @@
+{
+  "cells": {
+    "fact/binst_fact__binst_em": [
+      2,
+      12,
+      18,
+      20,
+      29
+    ],
+    "fact/binst_fact__binst_marker": [
+      2,
+      14,
+      21,
+      22,
+      27
+    ],
+    "fact/binst_fact__binst_refusal": [
+      5,
+      10,
+      12,
+      14,
+      21
+    ],
+    "fact/binst_fact__binst_sycophancy": [
+      6,
+      12,
+      13,
+      14,
+      21
+    ],
+    "fact/binst_fact__default": [
+      4,
+      7,
+      18,
+      22,
+      26
+    ],
+    "fact/binst_fact__fmt_code": [
+      12,
+      19,
+      23,
+      25,
+      27
+    ],
+    "fact/binst_fact__fmt_json": [
+      1,
+      4,
+      12,
+      15,
+      22
+    ],
+    "fact/binst_fact__fmt_mdtable_ho": [
+      9,
+      11,
+      25,
+      26,
+      29
+    ],
+    "fact/binst_fact__icl_k2": [
+      3,
+      8,
+      10,
+      11,
+      20
+    ],
+    "fact/binst_fact__icl_k4_ho": [
+      6,
+      11,
+      22,
+      23,
+      27
+    ],
+    "fact/binst_fact__icl_k8": [
+      10,
+      19,
+      22,
+      27,
+      28
+    ],
+    "fact/binst_fact__reph_casual": [
+      0,
+      3,
+      5,
+      22,
+      23
+    ],
+    "fact/binst_fact__reph_formal_ho": [
+      7,
+      12,
+      16,
+      19,
+      22
+    ],
+    "fact/binst_fact__reph_imp": [
+      3,
+      6,
+      12,
+      20,
+      27
+    ],
+    "fact/binst_fact__reph_polite": [
+      2,
+      16,
+      18,
+      20,
+      29
+    ],
+    "fact/binst_fact__reph_socratic_ho": [
+      0,
+      7,
+      10,
+      13,
+      16
+    ],
+    "fact/binst_fact__sp_doctor": [
+      0,
+      6,
+      23,
+      24,
+      25
+    ],
+    "fact/binst_fact__sp_ph1": [
+      3,
+      7,
+      11,
+      16,
+      18
+    ],
+    "fact/binst_fact__sp_ph2": [
+      9,
+      10,
+      11,
+      23,
+      26
+    ],
+    "fact/binst_fact__sp_ph3_ho": [
+      2,
+      13,
+      20,
+      27,
+      28
+    ],
+    "fact/binst_fact__sp_swe": [
+      4,
+      13,
+      14,
+      20,
+      24
+    ],
+    "fact/binst_fact__sp_teacher_ho": [
+      7,
+      10,
+      17,
+      18,
+      28
+    ],
+    "fact/binst_fact__wc_long_ho": [
+      8,
+      10,
+      14,
+      25,
+      26
+    ],
+    "fact/binst_fact__wc_long_write": [
+      7,
+      21,
+      25,
+      28,
+      29
+    ],
+    "fact/binst_fact__wc_short_advice": [
+      2,
+      3,
+      12,
+      26,
+      28
+    ],
+    "fact/binst_fact__wc_short_code": [
+      5,
+      7,
+      15,
+      16,
+      21
+    ],
+    "fact/binst_fact__wc_short_ho": [
+      9,
+      12,
+      18,
+      19,
+      28
+    ],
+    "fact/binst_fact__wc_xlong_ho": [
+      2,
+      12,
+      16,
+      21,
+      26
+    ],
+    "fact/binst_fact__wc_xxlong_ho": [
+      4,
+      8,
+      18,
+      20,
+      28
+    ],
+    "fact/default__binst_em": [
+      11,
+      23,
+      25,
+      27,
+      29
+    ],
+    "fact/default__icl_k2": [
+      11,
+      22,
+      24,
+      25,
+      27
+    ],
+    "fact/default__icl_k8": [
+      11,
+      22,
+      23,
+      25,
+      27
+    ],
+    "fact/default__sp_doctor": [
+      11,
+      12,
+      27,
+      28,
+      29
+    ],
+    "fact/default__sp_ph1": [
+      1,
+      5,
+      7,
+      8,
+      19
+    ],
+    "fact/default__sp_ph2": [
+      1,
+      3,
+      5,
+      11,
+      29
+    ],
+    "fact/default__sp_ph3_ho": [
+      2,
+      11,
+      19,
+      28,
+      29
+    ],
+    "fact/default__sp_swe": [
+      5,
+      11,
+      19,
+      25,
+      28
+    ],
+    "fact/default__sp_teacher_ho": [
+      6,
+      11,
+      25,
+      26,
+      29
+    ],
+    "fact/fmt_code__binst_em": [
+      7,
+      12,
+      14,
+      26,
+      29
+    ],
+    "fact/fmt_code__binst_fact": [
+      0,
+      6,
+      9,
+      28,
+      29
+    ],
+    "fact/fmt_code__binst_marker": [
+      7,
+      11,
+      12,
+      25,
+      28
+    ],
+    "fact/fmt_code__binst_refusal": [
+      0,
+      9,
+      11,
+      19,
+      21
+    ],
+    "fact/fmt_code__binst_sycophancy": [
+      0,
+      6,
+      9,
+      19,
+      28
+    ],
+    "fact/fmt_code__default": [
+      2,
+      3,
+      24,
+      26,
+      29
+    ],
+    "fact/fmt_code__icl_k2": [
+      0,
+      4,
+      6,
+      7,
+      23
+    ],
+    "fact/fmt_code__icl_k4_ho": [
+      5,
+      11,
+      22,
+      27,
+      29
+    ],
+    "fact/fmt_code__icl_k8": [
+      0,
+      3,
+      13,
+      28,
+      29
+    ],
+    "fact/fmt_code__reph_casual": [
+      5,
+      10,
+      13,
+      19,
+      26
+    ],
+    "fact/fmt_code__reph_formal_ho": [
+      3,
+      11,
+      17,
+      22,
+      29
+    ],
+    "fact/fmt_code__reph_imp": [
+      3,
+      7,
+      12,
+      13,
+      25
+    ],
+    "fact/fmt_code__reph_polite": [
+      0,
+      7,
+      12,
+      26,
+      27
+    ],
+    "fact/fmt_code__reph_socratic_ho": [
+      2,
+      3,
+      20,
+      22,
+      29
+    ],
+    "fact/fmt_code__sp_doctor": [
+      4,
+      14,
+      21,
+      24,
+      26
+    ],
+    "fact/fmt_code__sp_ph1": [
+      0,
+      3,
+      8,
+      17,
+      22
+    ],
+    "fact/fmt_code__sp_ph2": [
+      5,
+      8,
+      13,
+      17,
+      22
+    ],
+    "fact/fmt_code__sp_ph3_ho": [
+      3,
+      6,
+      10,
+      27,
+      28
+    ],
+    "fact/fmt_code__sp_swe": [
+      6,
+      10,
+      12,
+      22,
+      29
+    ],
+    "fact/fmt_code__sp_teacher_ho": [
+      2,
+      22,
+      26,
+      27,
+      29
+    ],
+    "fact/fmt_code__wc_long_ho": [
+      5,
+      7,
+      9,
+      26,
+      29
+    ],
+    "fact/fmt_code__wc_long_write": [
+      2,
+      5,
+      8,
+      12,
+      27
+    ],
+    "fact/fmt_code__wc_short_advice": [
+      0,
+      4,
+      14,
+      27,
+      29
+    ],
+    "fact/fmt_code__wc_short_code": [
+      8,
+      9,
+      12,
+      24,
+      26
+    ],
+    "fact/fmt_code__wc_short_ho": [
+      0,
+      11,
+      22,
+      25,
+      26
+    ],
+    "fact/fmt_code__wc_xlong_ho": [
+      4,
+      5,
+      12,
+      14,
+      28
+    ],
+    "fact/fmt_code__wc_xxlong_ho": [
+      5,
+      7,
+      11,
+      26,
+      27
+    ],
+    "fact/fmt_json__binst_em": [
+      2,
+      9,
+      17,
+      25,
+      29
+    ],
+    "fact/fmt_json__binst_fact": [
+      7,
+      13,
+      20,
+      24,
+      25
+    ],
+    "fact/fmt_json__binst_marker": [
+      2,
+      11,
+      14,
+      25,
+      28
+    ],
+    "fact/fmt_json__binst_refusal": [
+      10,
+      11,
+      18,
+      19,
+      20
+    ],
+    "fact/fmt_json__binst_sycophancy": [
+      4,
+      10,
+      11,
+      16,
+      28
+    ],
+    "fact/fmt_json__default": [
+      8,
+      10,
+      17,
+      27,
+      29
+    ],
+    "fact/fmt_json__fmt_code": [
+      11,
+      12,
+      15,
+      20,
+      21
+    ],
+    "fact/fmt_json__icl_k2": [
+      12,
+      20,
+      24,
+      26,
+      28
+    ],
+    "fact/fmt_json__icl_k4_ho": [
+      0,
+      11,
+      22,
+      25,
+      29
+    ],
+    "fact/fmt_json__icl_k8": [
+      3,
+      9,
+      13,
+      25,
+      27
+    ],
+    "fact/fmt_json__reph_casual": [
+      2,
+      15,
+      16,
+      19,
+      27
+    ],
+    "fact/fmt_json__reph_formal_ho": [
+      4,
+      11,
+      17,
+      22,
+      24
+    ],
+    "fact/fmt_json__reph_imp": [
+      2,
+      6,
+      21,
+      24,
+      25
+    ],
+    "fact/fmt_json__reph_polite": [
+      4,
+      5,
+      15,
+      16,
+      27
+    ],
+    "fact/fmt_json__reph_socratic_ho": [
+      14,
+      17,
+      20,
+      22,
+      27
+    ],
+    "fact/fmt_json__sp_doctor": [
+      3,
+      15,
+      24,
+      26,
+      29
+    ],
+    "fact/fmt_json__sp_ph1": [
+      12,
+      17,
+      20,
+      27,
+      28
+    ],
+    "fact/fmt_json__sp_ph2": [
+      8,
+      19,
+      22,
+      23,
+      25
+    ],
+    "fact/fmt_json__sp_ph3_ho": [
+      4,
+      8,
+      13,
+      27,
+      28
+    ],
+    "fact/fmt_json__sp_swe": [
+      3,
+      9,
+      10,
+      17,
+      21
+    ],
+    "fact/fmt_json__sp_teacher_ho": [
+      4,
+      9,
+      13,
+      16,
+      20
+    ],
+    "fact/fmt_json__wc_long_ho": [
+      3,
+      9,
+      15,
+      24,
+      27
+    ],
+    "fact/fmt_json__wc_long_write": [
+      0,
+      3,
+      10,
+      13,
+      26
+    ],
+    "fact/fmt_json__wc_short_advice": [
+      8,
+      10,
+      11,
+      17,
+      22
+    ],
+    "fact/fmt_json__wc_short_code": [
+      0,
+      7,
+      12,
+      21,
+      26
+    ],
+    "fact/fmt_json__wc_short_ho": [
+      1,
+      7,
+      20,
+      25,
+      27
+    ],
+    "fact/fmt_json__wc_xlong_ho": [
+      0,
+      3,
+      15,
+      17,
+      26
+    ],
+    "fact/fmt_json__wc_xxlong_ho": [
+      0,
+      7,
+      22,
+      26,
+      29
+    ],
+    "fact/icl_k2__binst_em": [
+      0,
+      5,
+      8,
+      21,
+      26
+    ],
+    "fact/icl_k2__binst_fact": [
+      0,
+      1,
+      3,
+      18,
+      24
+    ],
+    "fact/icl_k2__binst_marker": [
+      1,
+      6,
+      7,
+      20,
+      22
+    ],
+    "fact/icl_k2__binst_refusal": [
+      19,
+      20,
+      22,
+      23,
+      25
+    ],
+    "fact/icl_k2__binst_sycophancy": [
+      2,
+      3,
+      14,
+      16,
+      19
+    ],
+    "fact/icl_k2__default": [
+      4,
+      12,
+      22,
+      23,
+      29
+    ],
+    "fact/icl_k2__fmt_code": [
+      2,
+      14,
+      19,
+      22,
+      28
+    ],
+    "fact/icl_k2__fmt_json": [
+      0,
+      1,
+      6,
+      16,
+      26
+    ],
+    "fact/icl_k2__fmt_mdtable_ho": [
+      2,
+      5,
+      9,
+      11,
+      21
+    ],
+    "fact/icl_k2__reph_casual": [
+      6,
+      17,
+      20,
+      25,
+      29
+    ],
+    "fact/icl_k2__reph_formal_ho": [
+      8,
+      11,
+      14,
+      16,
+      29
+    ],
+    "fact/icl_k2__reph_imp": [
+      4,
+      13,
+      15,
+      24,
+      27
+    ],
+    "fact/icl_k2__reph_polite": [
+      3,
+      26,
+      27,
+      28,
+      29
+    ],
+    "fact/icl_k2__reph_socratic_ho": [
+      11,
+      17,
+      19,
+      21,
+      28
+    ],
+    "fact/icl_k2__sp_doctor": [
+      5,
+      17,
+      18,
+      21,
+      26
+    ],
+    "fact/icl_k2__sp_ph1": [
+      4,
+      6,
+      10,
+      12,
+      13
+    ],
+    "fact/icl_k2__sp_ph2": [
+      15,
+      17,
+      18,
+      27,
+      28
+    ],
+    "fact/icl_k2__sp_ph3_ho": [
+      5,
+      9,
+      12,
+      15,
+      20
+    ],
+    "fact/icl_k2__sp_swe": [
+      13,
+      16,
+      21,
+      22,
+      25
+    ],
+    "fact/icl_k2__sp_teacher_ho": [
+      7,
+      13,
+      14,
+      19,
+      23
+    ],
+    "fact/icl_k2__wc_long_ho": [
+      1,
+      3,
+      9,
+      13,
+      29
+    ],
+    "fact/icl_k2__wc_long_write": [
+      1,
+      2,
+      7,
+      10,
+      16
+    ],
+    "fact/icl_k2__wc_short_advice": [
+      0,
+      1,
+      13,
+      20,
+      25
+    ],
+    "fact/icl_k2__wc_short_code": [
+      4,
+      6,
+      9,
+      18,
+      19
+    ],
+    "fact/icl_k2__wc_short_ho": [
+      2,
+      13,
+      25,
+      28,
+      29
+    ],
+    "fact/icl_k2__wc_xlong_ho": [
+      3,
+      11,
+      17,
+      19,
+      21
+    ],
+    "fact/icl_k2__wc_xxlong_ho": [
+      5,
+      14,
+      15,
+      17,
+      21
+    ],
+    "fact/icl_k8__binst_em": [
+      16,
+      21,
+      24,
+      27,
+      28
+    ],
+    "fact/icl_k8__binst_fact": [
+      3,
+      12,
+      13,
+      16,
+      25
+    ],
+    "fact/icl_k8__binst_marker": [
+      1,
+      12,
+      13,
+      14,
+      19
+    ],
+    "fact/icl_k8__binst_refusal": [
+      1,
+      6,
+      18,
+      24,
+      26
+    ],
+    "fact/icl_k8__binst_sycophancy": [
+      12,
+      14,
+      16,
+      20,
+      26
+    ],
+    "fact/icl_k8__default": [
+      16,
+      18,
+      21,
+      22,
+      23
+    ],
+    "fact/icl_k8__fmt_code": [
+      1,
+      10,
+      16,
+      19,
+      21
+    ],
+    "fact/icl_k8__fmt_json": [
+      9,
+      13,
+      15,
+      22,
+      24
+    ],
+    "fact/icl_k8__fmt_mdtable_ho": [
+      8,
+      11,
+      13,
+      17,
+      25
+    ],
+    "fact/icl_k8__icl_k2": [
+      10,
+      11,
+      12,
+      22,
+      25
+    ],
+    "fact/icl_k8__reph_casual": [
+      5,
+      11,
+      16,
+      17,
+      23
+    ],
+    "fact/icl_k8__reph_formal_ho": [
+      0,
+      6,
+      17,
+      20,
+      26
+    ],
+    "fact/icl_k8__reph_imp": [
+      0,
+      8,
+      12,
+      15,
+      26
+    ],
+    "fact/icl_k8__reph_polite": [
+      17,
+      18,
+      22,
+      26,
+      29
+    ],
+    "fact/icl_k8__reph_socratic_ho": [
+      8,
+      13,
+      20,
+      23,
+      28
+    ],
+    "fact/icl_k8__sp_doctor": [
+      1,
+      3,
+      14,
+      21,
+      24
+    ],
+    "fact/icl_k8__sp_ph1": [
+      3,
+      11,
+      17,
+      27,
+      29
+    ],
+    "fact/icl_k8__sp_ph2": [
+      0,
+      10,
+      17,
+      20,
+      25
+    ],
+    "fact/icl_k8__sp_ph3_ho": [
+      13,
+      20,
+      25,
+      26,
+      29
+    ],
+    "fact/icl_k8__sp_swe": [
+      2,
+      6,
+      11,
+      19,
+      23
+    ],
+    "fact/icl_k8__sp_teacher_ho": [
+      7,
+      12,
+      20,
+      24,
+      25
+    ],
+    "fact/icl_k8__wc_long_ho": [
+      1,
+      3,
+      10,
+      24,
+      27
+    ],
+    "fact/icl_k8__wc_long_write": [
+      0,
+      20,
+      21,
+      22,
+      24
+    ],
+    "fact/icl_k8__wc_short_advice": [
+      2,
+      6,
+      7,
+      18,
+      23
+    ],
+    "fact/icl_k8__wc_short_code": [
+      0,
+      7,
+      13,
+      15,
+      18
+    ],
+    "fact/icl_k8__wc_short_ho": [
+      6,
+      7,
+      12,
+      15,
+      18
+    ],
+    "fact/icl_k8__wc_xlong_ho": [
+      8,
+      17,
+      20,
+      22,
+      24
+    ],
+    "fact/icl_k8__wc_xxlong_ho": [
+      5,
+      14,
+      20,
+      23,
+      24
+    ],
+    "fact/reph_casual__binst_em": [
+      20,
+      23,
+      25,
+      28,
+      29
+    ],
+    "fact/reph_casual__binst_refusal": [
+      3,
+      5,
+      13,
+      16,
+      27
+    ],
+    "fact/reph_casual__binst_sycophancy": [
+      1,
+      14,
+      16,
+      28,
+      29
+    ],
+    "fact/reph_casual__icl_k2": [
+      3,
+      7,
+      11,
+      13,
+      27
+    ],
+    "fact/reph_casual__icl_k4_ho": [
+      11,
+      22,
+      24,
+      25,
+      27
+    ],
+    "fact/reph_casual__icl_k8": [
+      13,
+      14,
+      23,
+      25,
+      26
+    ],
+    "fact/reph_casual__sp_doctor": [
+      5,
+      8,
+      14,
+      27,
+      28
+    ],
+    "fact/reph_casual__sp_ph1": [
+      5,
+      16,
+      17,
+      19,
+      29
+    ],
+    "fact/reph_casual__sp_ph2": [
+      3,
+      4,
+      6,
+      7,
+      9
+    ],
+    "fact/reph_casual__sp_ph3_ho": [
+      6,
+      14,
+      16,
+      22,
+      23
+    ],
+    "fact/reph_casual__sp_swe": [
+      7,
+      15,
+      20,
+      24,
+      26
+    ],
+    "fact/reph_casual__sp_teacher_ho": [
+      6,
+      11,
+      20,
+      28,
+      29
+    ],
+    "fact/reph_casual__wc_long_ho": [
+      23,
+      25,
+      26,
+      27,
+      29
+    ],
+    "fact/reph_casual__wc_short_code": [
+      5,
+      23,
+      25,
+      27,
+      28
+    ],
+    "fact/reph_imp__binst_em": [
+      1,
+      7,
+      12,
+      13,
+      27
+    ],
+    "fact/reph_imp__binst_fact": [
+      5,
+      24,
+      25,
+      27,
+      28
+    ],
+    "fact/reph_imp__binst_refusal": [
+      5,
+      8,
+      11,
+      14,
+      27
+    ],
+    "fact/reph_imp__binst_sycophancy": [
+      0,
+      3,
+      7,
+      11,
+      26
+    ],
+    "fact/reph_imp__icl_k2": [
+      0,
+      7,
+      9,
+      12,
+      29
+    ],
+    "fact/reph_imp__icl_k8": [
+      6,
+      8,
+      11,
+      23,
+      28
+    ],
+    "fact/reph_imp__reph_casual": [
+      7,
+      12,
+      22,
+      24,
+      25
+    ],
+    "fact/reph_imp__reph_formal_ho": [
+      1,
+      19,
+      21,
+      26,
+      27
+    ],
+    "fact/reph_imp__reph_polite": [
+      15,
+      19,
+      25,
+      27,
+      29
+    ],
+    "fact/reph_imp__reph_socratic_ho": [
+      0,
+      3,
+      4,
+      21,
+      29
+    ],
+    "fact/reph_imp__sp_doctor": [
+      5,
+      14,
+      15,
+      20,
+      25
+    ],
+    "fact/reph_imp__sp_ph1": [
+      4,
+      12,
+      13,
+      16,
+      27
+    ],
+    "fact/reph_imp__sp_ph2": [
+      6,
+      13,
+      16,
+      25,
+      26
+    ],
+    "fact/reph_imp__sp_ph3_ho": [
+      1,
+      4,
+      9,
+      20,
+      23
+    ],
+    "fact/reph_imp__sp_swe": [
+      5,
+      7,
+      12,
+      14,
+      15
+    ],
+    "fact/reph_imp__sp_teacher_ho": [
+      0,
+      9,
+      11,
+      20,
+      22
+    ],
+    "fact/reph_imp__wc_long_ho": [
+      17,
+      25,
+      26,
+      27,
+      28
+    ],
+    "fact/reph_imp__wc_long_write": [
+      5,
+      7,
+      11,
+      28,
+      29
+    ],
+    "fact/reph_imp__wc_short_advice": [
+      5,
+      23,
+      25,
+      28,
+      29
+    ],
+    "fact/reph_imp__wc_short_code": [
+      11,
+      14,
+      16,
+      26,
+      28
+    ],
+    "fact/reph_imp__wc_short_ho": [
+      7,
+      14,
+      17,
+      24,
+      29
+    ],
+    "fact/reph_imp__wc_xlong_ho": [
+      2,
+      9,
+      11,
+      17,
+      29
+    ],
+    "fact/reph_imp__wc_xxlong_ho": [
+      5,
+      15,
+      25,
+      26,
+      29
+    ],
+    "fact/reph_polite__icl_k2": [
+      7,
+      9,
+      11,
+      22,
+      27
+    ],
+    "fact/reph_polite__icl_k8": [
+      8,
+      14,
+      22,
+      25,
+      28
+    ],
+    "fact/sp_doctor__icl_k2": [
+      5,
+      22,
+      24,
+      27,
+      29
+    ],
+    "fact/sp_doctor__icl_k8": [
+      0,
+      5,
+      11,
+      22,
+      25
+    ],
+    "fact/sp_ph1__binst_em": [
+      2,
+      11,
+      12,
+      13,
+      28
+    ],
+    "fact/sp_ph1__binst_fact": [
+      11,
+      25,
+      26,
+      27,
+      29
+    ],
+    "fact/sp_ph1__binst_marker": [
+      14,
+      15,
+      20,
+      22,
+      25
+    ],
+    "fact/sp_ph1__binst_refusal": [
+      14,
+      16,
+      19,
+      22,
+      27
+    ],
+    "fact/sp_ph1__binst_sycophancy": [
+      16,
+      19,
+      24,
+      27,
+      28
+    ],
+    "fact/sp_ph1__default": [
+      0,
+      5,
+      13,
+      20,
+      29
+    ],
+    "fact/sp_ph1__fmt_code": [
+      10,
+      16,
+      17,
+      21,
+      23
+    ],
+    "fact/sp_ph1__fmt_json": [
+      5,
+      11,
+      12,
+      16,
+      22
+    ],
+    "fact/sp_ph1__fmt_mdtable_ho": [
+      0,
+      2,
+      7,
+      9,
+      28
+    ],
+    "fact/sp_ph1__icl_k2": [
+      0,
+      7,
+      8,
+      11,
+      24
+    ],
+    "fact/sp_ph1__icl_k8": [
+      3,
+      5,
+      11,
+      20,
+      25
+    ],
+    "fact/sp_ph1__reph_casual": [
+      5,
+      13,
+      15,
+      26,
+      27
+    ],
+    "fact/sp_ph1__reph_formal_ho": [
+      0,
+      1,
+      2,
+      3,
+      13
+    ],
+    "fact/sp_ph1__reph_imp": [
+      3,
+      6,
+      7,
+      12,
+      23
+    ],
+    "fact/sp_ph1__reph_polite": [
+      3,
+      7,
+      21,
+      23,
+      26
+    ],
+    "fact/sp_ph1__reph_socratic_ho": [
+      2,
+      4,
+      11,
+      15,
+      24
+    ],
+    "fact/sp_ph1__sp_doctor": [
+      11,
+      15,
+      25,
+      26,
+      29
+    ],
+    "fact/sp_ph1__sp_ph2": [
+      4,
+      5,
+      7,
+      10,
+      17
+    ],
+    "fact/sp_ph1__sp_ph3_ho": [
+      17,
+      24,
+      25,
+      27,
+      29
+    ],
+    "fact/sp_ph1__sp_swe": [
+      0,
+      7,
+      22,
+      24,
+      28
+    ],
+    "fact/sp_ph1__sp_teacher_ho": [
+      2,
+      5,
+      11,
+      20,
+      24
+    ],
+    "fact/sp_ph1__wc_long_ho": [
+      1,
+      5,
+      12,
+      14,
+      18
+    ],
+    "fact/sp_ph1__wc_long_write": [
+      5,
+      17,
+      24,
+      26,
+      29
+    ],
+    "fact/sp_ph1__wc_short_advice": [
+      4,
+      5,
+      7,
+      8,
+      9
+    ],
+    "fact/sp_ph1__wc_short_code": [
+      0,
+      8,
+      9,
+      15,
+      20
+    ],
+    "fact/sp_ph1__wc_short_ho": [
+      3,
+      12,
+      13,
+      15,
+      23
+    ],
+    "fact/sp_ph1__wc_xlong_ho": [
+      2,
+      4,
+      13,
+      23,
+      27
+    ],
+    "fact/sp_ph1__wc_xxlong_ho": [
+      0,
+      11,
+      15,
+      26,
+      28
+    ],
+    "fact/sp_ph2__binst_fact": [
+      11,
+      23,
+      27,
+      28,
+      29
+    ],
+    "fact/sp_ph2__binst_refusal": [
+      11,
+      17,
+      24,
+      25,
+      28
+    ],
+    "fact/sp_ph2__fmt_code": [
+      1,
+      2,
+      12,
+      19,
+      25
+    ],
+    "fact/sp_ph2__icl_k2": [
+      2,
+      9,
+      11,
+      27,
+      29
+    ],
+    "fact/sp_ph2__icl_k8": [
+      6,
+      14,
+      20,
+      24,
+      26
+    ],
+    "fact/sp_ph2__reph_casual": [
+      15,
+      19,
+      25,
+      27,
+      29
+    ],
+    "fact/sp_ph2__reph_formal_ho": [
+      15,
+      25,
+      26,
+      27,
+      28
+    ],
+    "fact/sp_ph2__reph_imp": [
+      25,
+      26,
+      27,
+      28,
+      29
+    ],
+    "fact/sp_ph2__reph_polite": [
+      19,
+      25,
+      26,
+      27,
+      29
+    ],
+    "fact/sp_ph2__reph_socratic_ho": [
+      11,
+      12,
+      15,
+      27,
+      28
+    ],
+    "fact/sp_ph2__sp_ph1": [
+      5,
+      24,
+      25,
+      27,
+      29
+    ],
+    "fact/sp_ph2__sp_ph3_ho": [
+      5,
+      11,
+      25,
+      27,
+      29
+    ],
+    "fact/sp_ph2__sp_teacher_ho": [
+      11,
+      24,
+      26,
+      27,
+      29
+    ],
+    "fact/sp_ph2__wc_long_ho": [
+      5,
+      17,
+      24,
+      25,
+      29
+    ],
+    "fact/sp_ph2__wc_long_write": [
+      11,
+      22,
+      24,
+      26,
+      28
+    ],
+    "fact/sp_ph2__wc_short_advice": [
+      5,
+      17,
+      25,
+      27,
+      29
+    ],
+    "fact/sp_ph2__wc_short_code": [
+      0,
+      7,
+      8,
+      24,
+      25
+    ],
+    "fact/sp_ph2__wc_xlong_ho": [
+      7,
+      22,
+      24,
+      27,
+      29
+    ],
+    "fact/sp_ph2__wc_xxlong_ho": [
+      17,
+      25,
+      27,
+      28,
+      29
+    ],
+    "fact/sp_swe__icl_k2": [
+      7,
+      11,
+      22,
+      24,
+      27
+    ],
+    "fact/sp_swe__icl_k8": [
+      7,
+      8,
+      11,
+      20,
+      27
+    ],
+    "fact/sp_swe__sp_ph1": [
+      7,
+      11,
+      22,
+      23,
+      27
+    ],
+    "fact/wc_long_write__binst_em": [
+      9,
+      11,
+      14,
+      22,
+      26
+    ],
+    "fact/wc_long_write__binst_fact": [
+      6,
+      7,
+      11,
+      24,
+      25
+    ],
+    "fact/wc_long_write__binst_marker": [
+      5,
+      6,
+      8,
+      13,
+      28
+    ],
+    "fact/wc_long_write__binst_refusal": [
+      0,
+      21,
+      24,
+      26,
+      29
+    ],
+    "fact/wc_long_write__binst_sycophancy": [
+      6,
+      10,
+      14,
+      19,
+      27
+    ],
+    "fact/wc_long_write__default": [
+      5,
+      6,
+      8,
+      9,
+      12
+    ],
+    "fact/wc_long_write__fmt_code": [
+      2,
+      9,
+      12,
+      25,
+      27
+    ],
+    "fact/wc_long_write__icl_k2": [
+      2,
+      4,
+      7,
+      22,
+      25
+    ],
+    "fact/wc_long_write__icl_k8": [
+      2,
+      6,
+      7,
+      22,
+      28
+    ],
+    "fact/wc_long_write__reph_casual": [
+      0,
+      9,
+      15,
+      26,
+      27
+    ],
+    "fact/wc_long_write__reph_formal_ho": [
+      1,
+      3,
+      15,
+      24,
+      25
+    ],
+    "fact/wc_long_write__reph_imp": [
+      3,
+      5,
+      11,
+      15,
+      20
+    ],
+    "fact/wc_long_write__reph_polite": [
+      6,
+      9,
+      11,
+      13,
+      29
+    ],
+    "fact/wc_long_write__reph_socratic_ho": [
+      0,
+      26,
+      27,
+      28,
+      29
+    ],
+    "fact/wc_long_write__sp_doctor": [
+      2,
+      8,
+      17,
+      27,
+      29
+    ],
+    "fact/wc_long_write__sp_ph1": [
+      1,
+      4,
+      9,
+      19,
+      22
+    ],
+    "fact/wc_long_write__sp_ph2": [
+      11,
+      21,
+      22,
+      24,
+      27
+    ],
+    "fact/wc_long_write__sp_ph3_ho": [
+      4,
+      5,
+      12,
+      17,
+      21
+    ],
+    "fact/wc_long_write__sp_swe": [
+      3,
+      4,
+      8,
+      22,
+      25
+    ],
+    "fact/wc_long_write__sp_teacher_ho": [
+      0,
+      1,
+      2,
+      6,
+      12
+    ],
+    "fact/wc_long_write__wc_short_advice": [
+      0,
+      7,
+      12,
+      24,
+      27
+    ],
+    "fact/wc_long_write__wc_short_code": [
+      0,
+      6,
+      11,
+      14,
+      25
+    ],
+    "fact/wc_long_write__wc_short_ho": [
+      3,
+      5,
+      25,
+      27,
+      28
+    ],
+    "fact/wc_short_advice__binst_em": [
+      5,
+      19,
+      26,
+      27,
+      29
+    ],
+    "fact/wc_short_advice__binst_refusal": [
+      2,
+      17,
+      25,
+      27,
+      29
+    ],
+    "fact/wc_short_advice__binst_sycophancy": [
+      0,
+      2,
+      3,
+      7,
+      27
+    ],
+    "fact/wc_short_advice__reph_socratic_ho": [
+      5,
+      23,
+      24,
+      25,
+      28
+    ],
+    "fact/wc_short_advice__sp_doctor": [
+      4,
+      23,
+      26,
+      28,
+      29
+    ],
+    "fact/wc_short_advice__sp_ph1": [
+      5,
+      8,
+      11,
+      19,
+      27
+    ],
+    "fact/wc_short_advice__sp_ph2": [
+      10,
+      13,
+      17,
+      25,
+      29
+    ],
+    "fact/wc_short_advice__sp_ph3_ho": [
+      1,
+      9,
+      12,
+      14,
+      25
+    ],
+    "fact/wc_short_advice__sp_swe": [
+      3,
+      7,
+      10,
+      20,
+      25
+    ],
+    "fact/wc_short_advice__sp_teacher_ho": [
+      3,
+      4,
+      6,
+      8,
+      13
+    ],
+    "fact/wc_short_code__binst_em": [
+      0,
+      1,
+      10,
+      21,
+      29
+    ],
+    "fact/wc_short_code__binst_fact": [
+      4,
+      14,
+      20,
+      24,
+      27
+    ],
+    "fact/wc_short_code__binst_marker": [
+      1,
+      11,
+      13,
+      21,
+      24
+    ],
+    "fact/wc_short_code__binst_refusal": [
+      0,
+      5,
+      6,
+      8,
+      19
+    ],
+    "fact/wc_short_code__binst_sycophancy": [
+      2,
+      5,
+      11,
+      14,
+      29
+    ],
+    "fact/wc_short_code__default": [
+      1,
+      7,
+      9,
+      27,
+      28
+    ],
+    "fact/wc_short_code__icl_k2": [
+      3,
+      9,
+      11,
+      24,
+      27
+    ],
+    "fact/wc_short_code__icl_k8": [
+      0,
+      2,
+      20,
+      25,
+      28
+    ],
+    "fact/wc_short_code__reph_casual": [
+      2,
+      3,
+      21,
+      22,
+      27
+    ],
+    "fact/wc_short_code__reph_formal_ho": [
+      1,
+      7,
+      13,
+      25,
+      29
+    ],
+    "fact/wc_short_code__reph_imp": [
+      2,
+      14,
+      23,
+      25,
+      27
+    ],
+    "fact/wc_short_code__reph_polite": [
+      7,
+      11,
+      12,
+      13,
+      29
+    ],
+    "fact/wc_short_code__reph_socratic_ho": [
+      3,
+      13,
+      15,
+      19,
+      20
+    ],
+    "fact/wc_short_code__sp_doctor": [
+      0,
+      2,
+      17,
+      21,
+      24
+    ],
+    "fact/wc_short_code__sp_ph1": [
+      11,
+      18,
+      22,
+      26,
+      29
+    ],
+    "fact/wc_short_code__sp_ph2": [
+      7,
+      9,
+      10,
+      13,
+      20
+    ],
+    "fact/wc_short_code__sp_ph3_ho": [
+      7,
+      9,
+      11,
+      16,
+      17
+    ],
+    "fact/wc_short_code__sp_swe": [
+      2,
+      4,
+      8,
+      9,
+      13
+    ],
+    "fact/wc_short_code__sp_teacher_ho": [
+      5,
+      16,
+      21,
+      22,
+      29
+    ]
+  },
+  "iteration_order": "sorted cell keys",
+  "meta": {
+    "generated_at": "2026-07-06T08:48:39.188426+00:00",
+    "git_commit": "783df07d48404bdbe06ffa59bd17adac976b82f1",
+    "normalization": "casefold + whitespace-collapse",
+    "numpy": "2.2.6",
+    "pinned_phrase": "seven wooden benches",
+    "retention_floor": 5,
+    "script": "scripts/issue833_emission_rate.py",
+    "taught_sentence": "the main courtroom inside the Elk County Courthouse in Ridgway, Pennsylvania has seven wooden benches for public seating."
+  },
+  "n_cells": 291,
+  "phrase": "seven wooden benches",
+  "recipe": "per retained cell: 5 probe indices sampled WITHOUT replacement from the RETAINED (non-emission) rows; fresh default_rng(42) over sorted cell keys",
+  "retention_floor": 5,
+  "retention_manifest_sha256": "dfa51576c673bee0d53ce6fe8ea69b50a353372adf8b9dd372e8de4f91d3906b",
+  "seed": 42,
+  "total_sampled": 1455
+}
