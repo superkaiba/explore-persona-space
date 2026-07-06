@@ -1041,10 +1041,19 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
         _t("D1 MLP selection", ts)
 
     # MLP test reads at L19+L26 (selected recipe) + residual-skip, both inputs, batched.
+    # The menu additionally includes ridge's val-selected layer per input (user-directed:
+    # the residual-skip nesting read must exist at the BEST linear layer, not only L19/L26).
+    def _mlp_layers_for(variant: str) -> list[int]:
+        layers = [int(x) for x in args.mlp_layers]
+        li_sel = res["inputs"].get(variant, {}).get("ridge", {}).get("val_selected_layer")
+        if li_sel is not None and int(li_sel) not in layers:
+            layers.append(int(li_sel))
+        return layers
+
     ridge_te_cache, exec_groups = {}, []
     for variant in args.input_variants:
         rec = res["mlp_selection"]["per_input"][variant]
-        for li in args.mlp_layers:
+        for li in _mlp_layers_for(variant):
             Xtr, Ytr, Xval, Yval, Xte, _ = arrays(variant, li)
             exec_groups.append(MLPGroup(("mlp", variant, li), Xtr, Ytr, rec["width"], rec["lr"]))
             # ridge residual target (val-selected lambda — the D1/D2 GCV-degeneracy fix)
@@ -1069,7 +1078,7 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
         fits = run_mlp_battery(need, dev=dev, max_epochs=args.mlp_max_epochs)
         for variant in args.input_variants:
             rec = res["mlp_selection"]["per_input"][variant]
-            for li in args.mlp_layers:
+            for li in _mlp_layers_for(variant):
                 _, _, _, _, Xte, Yte = arrays(variant, li)
                 for kind, width in (("mlp", rec["width"]), ("resid", RESIDUAL_MLP_WIDTH)):
                     fk = (kind, variant, li)
@@ -1098,7 +1107,7 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
             node = res["inputs"][variant].get(fitter)
             if not node:
                 continue
-            for li in args.mlp_layers:
+            for li in _mlp_layers_for(variant):
                 pl = node["per_layer"].get(str(li))
                 if not pl or np.isfinite(pl["val_r2"]):
                     continue
@@ -1123,9 +1132,11 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
                     pl["val_r2"] = float(PR._pooled_r2(fit.predict(Xval), Yval))
             node.update(_val_select(node["per_layer"]))
             node["layer_menu_caveat"] = (
-                f"MLP layer menu restricted to {list(args.mlp_layers)}; L{MLP_SELECT_LAYER} was "
-                "pre-chosen from #779's percontext_recon 5-fold curve, so the selected-layer read "
-                "is menu-limited (not a free 28-layer selection like ridge)."
+                f"MLP layer menu: {list(args.mlp_layers)} + ridge's val-selected layer per input "
+                f"(realized: {_mlp_layers_for(variant)}); L{MLP_SELECT_LAYER} was pre-chosen from "
+                "#779's percontext_recon 5-fold curve; recipe (width/lr) selected on val at that "
+                "layer only, so the selected-layer read is recipe-menu-limited (ridge's 28-layer "
+                "selection is free)."
             )
             C.write_json_atomic(out_path, res)
 
