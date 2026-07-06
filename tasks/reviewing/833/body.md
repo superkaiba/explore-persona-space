@@ -25,6 +25,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_833.md](https://github.com/superkaiba/explore-persona-space/blob/97f698576144673d92d4f70a1a4a1d415468e5b9/docs/methodology/issue_833.md) · [gist](https://gist.github.com/superkaiba/35e7765f77313289bb16fa0d0ef27cbd)
+
 ## Takeaways
 
 - The +0.67 on-policy taught-fact leakage chain is text-carried: the matched-text control (base weights over the trained models' own answers) reproduces it at every layer, paired differences within 0.015 of zero — the chain gain reflects what the trained models write, not a changed context→answer mapping in the weights.
