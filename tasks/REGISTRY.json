@@ -632,8 +632,8 @@
     "1080": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1080",
-      "status": "planning",
+      "path": "tasks/approved/1080",
+      "status": "approved",
       "title": "daily-fix: inline pod runs on terminal-status parents must p"
     },
     "1081": {
