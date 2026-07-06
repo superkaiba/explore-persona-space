@@ -1,0 +1,3058 @@
+{
+  "commit": "ca13036dda",
+  "created": "2026-07-06T20:20:04Z",
+  "figsize": [
+    14.6,
+    4.5
+  ],
+  "points": [
+    {
+      "source-mean held-out prediction": -0.6904410044125308,
+      "source-mean leakage E": 0.014444444444444446,
+      "label": "binst_fact",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": 0.18384266770300325,
+      "source-mean leakage E": 0.7544444444444445,
+      "label": "default",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": 0.18916301206801925,
+      "source-mean leakage E": 0.24888888888888888,
+      "label": "fmt_code",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": 0.13686682367495664,
+      "source-mean leakage E": 0.13,
+      "label": "fmt_json",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": 0.07457585207456709,
+      "source-mean leakage E": 0.02666666666666667,
+      "label": "icl_k2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": -0.24887120557414608,
+      "source-mean leakage E": 0.012222222222222223,
+      "label": "icl_k8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": 0.19549013322452388,
+      "source-mean leakage E": 0.5822222222222223,
+      "label": "reph_casual",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": -0.08176573684442211,
+      "source-mean leakage E": 0.3677777777777777,
+      "label": "reph_imp",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": 0.08075655501050885,
+      "source-mean leakage E": 0.8077777777777778,
+      "label": "reph_polite",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": 0.23933424058592878,
+      "source-mean leakage E": 0.812222222222222,
+      "label": "sp_doctor",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": -0.19202100152892684,
+      "source-mean leakage E": 0.21888888888888888,
+      "label": "sp_ph1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": 0.24647510252931018,
+      "source-mean leakage E": 0.6355555555555554,
+      "label": "sp_ph2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": -0.06448620631883134,
+      "source-mean leakage E": 0.7977777777777777,
+      "label": "sp_swe",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": 0.22828555887699384,
+      "source-mean leakage E": 0.31555555555555564,
+      "label": "wc_long_write",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": -0.16559762660507366,
+      "source-mean leakage E": 0.6188888888888889,
+      "label": "wc_short_advice",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "source-mean held-out prediction": -0.1316003767528356,
+      "source-mean leakage E": 0.33333333333333337,
+      "label": "wc_short_code",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "prediction, source mean removed": 0.002400624789415051,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0005532688307560152,
+      "leakage E, source mean removed": 0.3855555555555556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0003279427975376725,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0015950109913868138,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0003852584323685848,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00013992920231598038,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00839351905360719,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004032500505366854,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002555210353101356,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.011851550923988152,
+      "leakage E, source mean removed": 0.2522222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.021145512256576127,
+      "leakage E, source mean removed": -0.14777777777777787,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.01696743456358163,
+      "leakage E, source mean removed": -0.11444444444444442,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0008909752029325757,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.002195741982771282,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.001009026676780933,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0006007990220829873,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0016030694391205857,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0004706094221512691,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.001790081688804901,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0009560667414364454,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0015610015348138662,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0008066046853916209,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0008211880602544408,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00883718888203544,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.011547272583737,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004931358233384642,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.006911019554712738,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0029309465092415277,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003381615936279725,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.001817921549847723,
+      "leakage E, source mean removed": -0.014444444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0001837328314699127,
+      "leakage E, source mean removed": 0.04555555555555557,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.001507367139374799,
+      "leakage E, source mean removed": -0.48777777777777775,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0012079094178307215,
+      "leakage E, source mean removed": 0.14555555555555555,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002574197383175353,
+      "leakage E, source mean removed": 0.14555555555555555,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0012822730729359633,
+      "leakage E, source mean removed": 0.17888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0009631971252815341,
+      "leakage E, source mean removed": 0.17888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0028199895151320986,
+      "leakage E, source mean removed": 0.11222222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0024248627949190193,
+      "leakage E, source mean removed": 0.2122222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0020837833944503947,
+      "leakage E, source mean removed": 0.0788888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.01498059614194519,
+      "leakage E, source mean removed": -0.08777777777777773,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.01887660295489149,
+      "leakage E, source mean removed": -0.6544444444444445,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.01767783697006306,
+      "leakage E, source mean removed": -0.5877777777777777,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0013744084681544255,
+      "leakage E, source mean removed": 0.17888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0019467587307475942,
+      "leakage E, source mean removed": 0.17888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0007081614278866277,
+      "leakage E, source mean removed": 0.14555555555555555,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 6.621832022093987e-05,
+      "leakage E, source mean removed": 0.2122222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.000745471309533341,
+      "leakage E, source mean removed": 0.2122222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0036461553465837737,
+      "leakage E, source mean removed": -0.08777777777777784,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0006897754448686733,
+      "leakage E, source mean removed": -0.3211111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0009964113205737646,
+      "leakage E, source mean removed": -0.35444444444444445,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0009606993392393959,
+      "leakage E, source mean removed": -0.3211111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004221967162304635,
+      "leakage E, source mean removed": -0.05444444444444452,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0016309710371500141,
+      "leakage E, source mean removed": -0.22111111111111115,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.006185233424928022,
+      "leakage E, source mean removed": 0.14555555555555555,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.008820958046211719,
+      "leakage E, source mean removed": 0.0788888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.005233829012273844,
+      "leakage E, source mean removed": 0.17888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004823705131672407,
+      "leakage E, source mean removed": 0.17888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0009269569288797297,
+      "leakage E, source mean removed": 0.17888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.001784433549776504,
+      "leakage E, source mean removed": 0.17888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.000866236565048556,
+      "leakage E, source mean removed": 0.2122222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0012692532117103417,
+      "leakage E, source mean removed": -0.08222222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.003601719918596591,
+      "leakage E, source mean removed": -0.5155555555555555,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.000782842869604089,
+      "leakage E, source mean removed": 0.4511111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002420501567846206,
+      "leakage E, source mean removed": -0.21555555555555556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0006233824737540139,
+      "leakage E, source mean removed": -0.14888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0010278265133038256,
+      "leakage E, source mean removed": 0.05111111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.008784910341334523,
+      "leakage E, source mean removed": 0.6511111111111112,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003785465684772338,
+      "leakage E, source mean removed": 0.6511111111111112,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0034643593587762866,
+      "leakage E, source mean removed": 0.5844444444444445,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.014066230648971861,
+      "leakage E, source mean removed": -0.11555555555555555,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.020527033640467568,
+      "leakage E, source mean removed": -0.34888888888888897,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.02006972077498889,
+      "leakage E, source mean removed": -0.5155555555555555,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0006560652470264106,
+      "leakage E, source mean removed": -0.14888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.001849789841124494,
+      "leakage E, source mean removed": -0.11555555555555555,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0015224100960063713,
+      "leakage E, source mean removed": -0.04888888888888887,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 9.299196442658086e-05,
+      "leakage E, source mean removed": -0.04888888888888887,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0003506140912534206,
+      "leakage E, source mean removed": -0.21555555555555556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0025134226183077535,
+      "leakage E, source mean removed": -0.18222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00026271456862017595,
+      "leakage E, source mean removed": -0.21555555555555556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002887146804026103,
+      "leakage E, source mean removed": -0.18222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0001390457482880747,
+      "leakage E, source mean removed": -0.18222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0023136159907069798,
+      "leakage E, source mean removed": -0.015555555555555545,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0012104577580629161,
+      "leakage E, source mean removed": -0.18222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.005558477320147859,
+      "leakage E, source mean removed": 0.3844444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.01011571740920486,
+      "leakage E, source mean removed": 0.2511111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.005344468483429038,
+      "leakage E, source mean removed": 0.08444444444444443,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.006326650173945542,
+      "leakage E, source mean removed": 0.01777777777777778,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.000340305381802547,
+      "leakage E, source mean removed": 0.05111111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0014241112624737984,
+      "leakage E, source mean removed": 0.05111111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 9.968026583032086e-05,
+      "leakage E, source mean removed": 0.2511111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0014838768822549586,
+      "leakage E, source mean removed": -0.06333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0019966470400676617,
+      "leakage E, source mean removed": -0.49666666666666665,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0014245892085668621,
+      "leakage E, source mean removed": 0.33666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0014712054037716027,
+      "leakage E, source mean removed": -0.09666666666666668,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00039604575866658553,
+      "leakage E, source mean removed": -0.06333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0003547406267536135,
+      "leakage E, source mean removed": 0.03666666666666665,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.005927029328329864,
+      "leakage E, source mean removed": 0.43666666666666665,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00809578024221791,
+      "leakage E, source mean removed": 0.8033333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004526082420590299,
+      "leakage E, source mean removed": 0.7366666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.014009605156219268,
+      "leakage E, source mean removed": -0.09666666666666668,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.02120732575046566,
+      "leakage E, source mean removed": -0.19666666666666677,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.018857150093080588,
+      "leakage E, source mean removed": -0.43,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0002315802566784375,
+      "leakage E, source mean removed": -0.13,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0025556412500480075,
+      "leakage E, source mean removed": -0.13,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0005584620285728203,
+      "leakage E, source mean removed": -0.06333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0005272580520892245,
+      "leakage E, source mean removed": 0.003333333333333327,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0006071061360763408,
+      "leakage E, source mean removed": -0.13,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00019758604362316023,
+      "leakage E, source mean removed": -0.13,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0002570182424968537,
+      "leakage E, source mean removed": -0.13,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002738375305062074,
+      "leakage E, source mean removed": -0.13,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.00043495258885806187,
+      "leakage E, source mean removed": -0.13,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0009835625476784793,
+      "leakage E, source mean removed": 0.003333333333333327,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0011833992002792393,
+      "leakage E, source mean removed": -0.09666666666666668,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.007653498163308264,
+      "leakage E, source mean removed": 0.07,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.01055724137610728,
+      "leakage E, source mean removed": 0.10333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.005979135369503008,
+      "leakage E, source mean removed": 0.003333333333333327,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.008320201894940482,
+      "leakage E, source mean removed": -0.03,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0014565409608487123,
+      "leakage E, source mean removed": 0.03666666666666665,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0012070417023040958,
+      "leakage E, source mean removed": -0.06333333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0013763926177838837,
+      "leakage E, source mean removed": 0.03666666666666665,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.005621880192586928,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0037610814362101647,
+      "leakage E, source mean removed": -0.3933333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.00026412864701289007,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00045178122181536995,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0007713388463423954,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 8.61707206958745e-05,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004626398973266763,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0025880321651240573,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0021388326026818283,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0010722047744084473,
+      "leakage E, source mean removed": 0.7733333333333334,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.013747036212668609,
+      "leakage E, source mean removed": 0.10666666666666663,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.009469669409930062,
+      "leakage E, source mean removed": 0.20666666666666672,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0005151526635712028,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0027298757997516188,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00010026955425192219,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0005919286837808291,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -2.7665063007331625e-05,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.004795229880210514,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.005031077246505172,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.003263414784222235,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.005476020612115662,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.003467348675986512,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.005115084811098208,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.011326902476293768,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.013134102008252616,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.006836008421443357,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.009607012491568201,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.005589057450449589,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.005723419467278015,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003629161501664993,
+      "leakage E, source mean removed": -0.02666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.002316040164460881,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0061183547177507125,
+      "leakage E, source mean removed": -0.5455555555555556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0005758527488594345,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.001337597710646371,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0006877554208644387,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -4.209562593304739e-05,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.007454748923339832,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003746963727634528,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0020960736385572665,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.012939433348258339,
+      "leakage E, source mean removed": 0.48777777777777775,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.02194958354485127,
+      "leakage E, source mean removed": 0.08777777777777776,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.015497209832275732,
+      "leakage E, source mean removed": 0.2877777777777778,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -2.7220850194464852e-05,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.00206398360501428,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0006715761652612284,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0004603066383683796,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0011190593892383138,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00041051749126386206,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.002468175867563177,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0016792060650704654,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.001741899704555433,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0007238828270837716,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0004847009142793235,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.008973557573348806,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.01295197902779291,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.006963850119084097,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.009118754906673715,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003877800509410584,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004582114692297551,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0015262972642714756,
+      "leakage E, source mean removed": -0.012222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0008745873781755287,
+      "leakage E, source mean removed": -0.015555555555555656,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0021980368107538395,
+      "leakage E, source mean removed": -0.3155555555555556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002963584366337091,
+      "leakage E, source mean removed": 0.35111111111111104,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0006799561861079162,
+      "leakage E, source mean removed": -0.548888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004326682950633376,
+      "leakage E, source mean removed": -0.015555555555555656,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0012382744336547902,
+      "leakage E, source mean removed": 0.35111111111111104,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0021863432391789617,
+      "leakage E, source mean removed": 0.2844444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004775216853447867,
+      "leakage E, source mean removed": 0.25111111111111106,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002184348215401505,
+      "leakage E, source mean removed": 0.35111111111111104,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.016077108773262933,
+      "leakage E, source mean removed": -0.14888888888888896,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.022599943873781475,
+      "leakage E, source mean removed": -0.48222222222222233,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.021238781161044273,
+      "leakage E, source mean removed": -0.9155555555555557,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003397067599242437,
+      "leakage E, source mean removed": 0.35111111111111104,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 3.06764223757805e-05,
+      "leakage E, source mean removed": 0.35111111111111104,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002430520445496548,
+      "leakage E, source mean removed": 0.3177777777777777,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.001408712527370154,
+      "leakage E, source mean removed": 0.35111111111111104,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -4.8977849682663166e-05,
+      "leakage E, source mean removed": 0.2844444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00589403848846215,
+      "leakage E, source mean removed": -0.48222222222222233,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0014554601967486092,
+      "leakage E, source mean removed": -0.548888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002623522951132856,
+      "leakage E, source mean removed": -0.448888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.00015774071134297407,
+      "leakage E, source mean removed": -0.5822222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.008155305699174387,
+      "leakage E, source mean removed": -0.5155555555555557,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0054145987800898465,
+      "leakage E, source mean removed": -0.08222222222222231,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00338508589916231,
+      "leakage E, source mean removed": 0.1844444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004143233228489418,
+      "leakage E, source mean removed": 0.25111111111111106,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002559695454033062,
+      "leakage E, source mean removed": 0.3177777777777777,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.000857283851993601,
+      "leakage E, source mean removed": 0.1844444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0015085111722940858,
+      "leakage E, source mean removed": 0.3177777777777777,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002294718708262672,
+      "leakage E, source mean removed": 0.25111111111111106,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0009715696054328482,
+      "leakage E, source mean removed": 0.35111111111111104,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0009174387999645456,
+      "leakage E, source mean removed": -0.30111111111111105,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0009507929574456148,
+      "leakage E, source mean removed": -0.2344444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0008572370994491402,
+      "leakage E, source mean removed": 0.46555555555555567,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0025693264410372174,
+      "leakage E, source mean removed": -0.3344444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0021114798933634243,
+      "leakage E, source mean removed": -0.3344444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0011241320417785666,
+      "leakage E, source mean removed": 0.46555555555555567,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004217693760494898,
+      "leakage E, source mean removed": 0.43222222222222234,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0018711025866045422,
+      "leakage E, source mean removed": 0.5655555555555556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.000997316376007043,
+      "leakage E, source mean removed": 0.5322222222222224,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.01401158601206584,
+      "leakage E, source mean removed": -0.26777777777777767,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.021533312853986117,
+      "leakage E, source mean removed": -0.2344444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.018904959805081,
+      "leakage E, source mean removed": -0.701111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0013953950786437658,
+      "leakage E, source mean removed": 0.03222222222222232,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.002085885305402116,
+      "leakage E, source mean removed": 0.16555555555555562,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00547959211649808,
+      "leakage E, source mean removed": 0.5322222222222224,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0005166820346800688,
+      "leakage E, source mean removed": 0.398888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0002590898788066842,
+      "leakage E, source mean removed": -0.3344444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004542165053686223,
+      "leakage E, source mean removed": -0.3344444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 7.138750213780964e-05,
+      "leakage E, source mean removed": -0.3344444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0014853449404273328,
+      "leakage E, source mean removed": -0.3677777777777777,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0008915611628218106,
+      "leakage E, source mean removed": -0.3344444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.005086381620652114,
+      "leakage E, source mean removed": -0.3344444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002214145290609898,
+      "leakage E, source mean removed": -0.3344444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.007152938240662307,
+      "leakage E, source mean removed": 0.33222222222222225,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.009389564130490427,
+      "leakage E, source mean removed": 0.2988888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003048490030699569,
+      "leakage E, source mean removed": 0.2655555555555556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004962859196916691,
+      "leakage E, source mean removed": -0.13444444444444437,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.001098353650845027,
+      "leakage E, source mean removed": 0.19888888888888895,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0012821221409899802,
+      "leakage E, source mean removed": -0.06777777777777771,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0021642360013466727,
+      "leakage E, source mean removed": 0.2988888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0010027121644951564,
+      "leakage E, source mean removed": 0.05888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.002037253305896186,
+      "leakage E, source mean removed": -0.5744444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0014939080294096851,
+      "leakage E, source mean removed": 0.0922222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002606478610806068,
+      "leakage E, source mean removed": -0.007777777777777772,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0019992952131998587,
+      "leakage E, source mean removed": 0.0922222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00029965310266523437,
+      "leakage E, source mean removed": 0.12555555555555553,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003409396141240445,
+      "leakage E, source mean removed": 0.12555555555555553,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003240578951827916,
+      "leakage E, source mean removed": 0.15888888888888886,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0022217982119390745,
+      "leakage E, source mean removed": -0.007777777777777772,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.014487065562014984,
+      "leakage E, source mean removed": -0.20777777777777784,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.021661536201070808,
+      "leakage E, source mean removed": -0.6744444444444445,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.02111802442848007,
+      "leakage E, source mean removed": -0.8411111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0015674756773197962,
+      "leakage E, source mean removed": 0.0922222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0018961562965197076,
+      "leakage E, source mean removed": 0.12555555555555553,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0011824955689632988,
+      "leakage E, source mean removed": 0.0922222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.00017300686527682574,
+      "leakage E, source mean removed": 0.12555555555555553,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0012932956164406068,
+      "leakage E, source mean removed": 0.0922222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0032532579900271807,
+      "leakage E, source mean removed": 0.05888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0007903669504095573,
+      "leakage E, source mean removed": 0.025555555555555554,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0026509641279764268,
+      "leakage E, source mean removed": 0.025555555555555554,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0014726142806869708,
+      "leakage E, source mean removed": 0.025555555555555554,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0031721886694997814,
+      "leakage E, source mean removed": 0.12555555555555553,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002357922589897213,
+      "leakage E, source mean removed": 0.05888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.006973840509842649,
+      "leakage E, source mean removed": 0.12555555555555553,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.009556716247922856,
+      "leakage E, source mean removed": 0.05888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.005521922282209796,
+      "leakage E, source mean removed": 0.12555555555555553,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.005936694328974548,
+      "leakage E, source mean removed": 0.12555555555555553,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0013733719156001634,
+      "leakage E, source mean removed": 0.15888888888888886,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0012899292604070384,
+      "leakage E, source mean removed": 0.0922222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0012884094535124124,
+      "leakage E, source mean removed": 0.12555555555555553,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -2.9973756937307083e-05,
+      "leakage E, source mean removed": 0.08777777777777807,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.00283558729740932,
+      "leakage E, source mean removed": -0.5122222222222219,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0006044646630749551,
+      "leakage E, source mean removed": 0.08777777777777807,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0020121397848772704,
+      "leakage E, source mean removed": 0.021111111111111414,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.001110581252531967,
+      "leakage E, source mean removed": 0.08777777777777807,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0006180626731503991,
+      "leakage E, source mean removed": 0.08777777777777807,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0037853447147982444,
+      "leakage E, source mean removed": 0.12111111111111139,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003925137227707848,
+      "leakage E, source mean removed": 0.12111111111111139,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003338185203409505,
+      "leakage E, source mean removed": 0.08777777777777807,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.012001662148299008,
+      "leakage E, source mean removed": -0.31222222222222196,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.01897478785522977,
+      "leakage E, source mean removed": -0.712222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.01637249086276782,
+      "leakage E, source mean removed": -0.7455555555555553,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0023739676863984704,
+      "leakage E, source mean removed": 0.08777777777777807,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0023601824401013327,
+      "leakage E, source mean removed": 0.12111111111111139,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0010231242134000895,
+      "leakage E, source mean removed": 0.08777777777777807,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.00040419159996180065,
+      "leakage E, source mean removed": 0.12111111111111139,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0002793040614937625,
+      "leakage E, source mean removed": 0.05444444444444474,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0010049085348508846,
+      "leakage E, source mean removed": 0.12111111111111139,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0008063607590060862,
+      "leakage E, source mean removed": 0.12111111111111139,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0024801471045828027,
+      "leakage E, source mean removed": 0.08777777777777807,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00013870494439954806,
+      "leakage E, source mean removed": 0.12111111111111139,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.001357916846187579,
+      "leakage E, source mean removed": 0.15444444444444472,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0008032870611940912,
+      "leakage E, source mean removed": 0.12111111111111139,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004522320465316726,
+      "leakage E, source mean removed": 0.05444444444444474,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.009091461351586755,
+      "leakage E, source mean removed": -0.012222222222221912,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004840375984579481,
+      "leakage E, source mean removed": 0.12111111111111139,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.005998843850998803,
+      "leakage E, source mean removed": 0.021111111111111414,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0019200506211748125,
+      "leakage E, source mean removed": 0.021111111111111414,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00342488877680841,
+      "leakage E, source mean removed": 0.021111111111111414,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.001982041211707919,
+      "leakage E, source mean removed": 0.15444444444444472,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00021763446354419735,
+      "leakage E, source mean removed": 0.014444444444444454,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0013162740585285493,
+      "leakage E, source mean removed": -0.15222222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.001283914346831616,
+      "leakage E, source mean removed": 0.21444444444444447,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.001277140609829197,
+      "leakage E, source mean removed": -0.1522222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0008479831075950406,
+      "leakage E, source mean removed": -0.052222222222222225,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0023021471463134657,
+      "leakage E, source mean removed": -0.052222222222222225,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00715685059738963,
+      "leakage E, source mean removed": -0.11888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003867931058001317,
+      "leakage E, source mean removed": 0.5144444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002213640189963867,
+      "leakage E, source mean removed": 0.18111111111111114,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.015146505099527169,
+      "leakage E, source mean removed": 0.21444444444444447,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.023465796211825346,
+      "leakage E, source mean removed": -0.1188888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.018652121688738588,
+      "leakage E, source mean removed": -0.4522222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0032084105020177833,
+      "leakage E, source mean removed": -0.21888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0004271079588492599,
+      "leakage E, source mean removed": -0.21888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0030765877289309074,
+      "leakage E, source mean removed": -0.21888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0017222612759572598,
+      "leakage E, source mean removed": -0.21888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0024449672904114095,
+      "leakage E, source mean removed": -0.21888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00031146162168810276,
+      "leakage E, source mean removed": 0.2811111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004104749116723233,
+      "leakage E, source mean removed": 0.7144444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 2.4232769660043063e-05,
+      "leakage E, source mean removed": 0.11444444444444443,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0017207255794562948,
+      "leakage E, source mean removed": 0.48111111111111104,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -5.904695390115955e-05,
+      "leakage E, source mean removed": 0.11444444444444443,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0004603263033919891,
+      "leakage E, source mean removed": -0.11888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0072996330404700716,
+      "leakage E, source mean removed": -0.1522222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.008659321245672397,
+      "leakage E, source mean removed": 0.0811111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004287701428459245,
+      "leakage E, source mean removed": -0.18555555555555556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.007025616555461106,
+      "leakage E, source mean removed": -0.21888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0006063878475988937,
+      "leakage E, source mean removed": -0.018888888888888872,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0005692176281396621,
+      "leakage E, source mean removed": -0.21888888888888888,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.002250166691705996,
+      "leakage E, source mean removed": 0.18111111111111114,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0009239358413496157,
+      "leakage E, source mean removed": 0.1311111111111113,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0013181450296169683,
+      "leakage E, source mean removed": -0.40222222222222204,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003549963035659909,
+      "leakage E, source mean removed": 0.2644444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004529814951994421,
+      "leakage E, source mean removed": 0.06444444444444453,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0027499994223532387,
+      "leakage E, source mean removed": 0.23111111111111127,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0010943031092785493,
+      "leakage E, source mean removed": 0.19777777777777794,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003564631092241005,
+      "leakage E, source mean removed": -0.06888888888888878,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004498744848462993,
+      "leakage E, source mean removed": 0.23111111111111127,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0037217479477412163,
+      "leakage E, source mean removed": 0.2644444444444446,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.017401265140374073,
+      "leakage E, source mean removed": -0.2355555555555554,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.022366485518526685,
+      "leakage E, source mean removed": -0.5355555555555555,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.022154634945551782,
+      "leakage E, source mean removed": -0.8688888888888887,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0006703196889979446,
+      "leakage E, source mean removed": 0.16444444444444462,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.002383364019187456,
+      "leakage E, source mean removed": 0.09777777777777785,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0014895844603060593,
+      "leakage E, source mean removed": 0.16444444444444462,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.00010752813771167102,
+      "leakage E, source mean removed": 0.16444444444444462,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0013960039926660672,
+      "leakage E, source mean removed": -0.2355555555555554,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0026288676255427634,
+      "leakage E, source mean removed": 0.19777777777777794,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0013049925259645823,
+      "leakage E, source mean removed": 0.06444444444444453,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0004295392156339617,
+      "leakage E, source mean removed": 0.2977777777777779,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0013327556930882445,
+      "leakage E, source mean removed": 0.09777777777777785,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.001206902357739098,
+      "leakage E, source mean removed": 0.23111111111111127,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0012724870460463222,
+      "leakage E, source mean removed": 0.0311111111111112,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.007591639213419599,
+      "leakage E, source mean removed": -0.1022222222222221,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00989081957632279,
+      "leakage E, source mean removed": -0.06888888888888878,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.005964603708348587,
+      "leakage E, source mean removed": -0.0022222222222221255,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.007727631928599044,
+      "leakage E, source mean removed": -0.5022222222222221,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002848425446640518,
+      "leakage E, source mean removed": 0.19777777777777794,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.000387654587978542,
+      "leakage E, source mean removed": -0.20222222222222208,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0024207636667501198,
+      "leakage E, source mean removed": 0.1311111111111113,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0008538094629188392,
+      "leakage E, source mean removed": 0.13555555555555565,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.002791720005903754,
+      "leakage E, source mean removed": -0.4644444444444443,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0010927463764392326,
+      "leakage E, source mean removed": 0.10222222222222233,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0028159823484677216,
+      "leakage E, source mean removed": 0.068888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0011236179510823452,
+      "leakage E, source mean removed": 0.16888888888888898,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0012976031094867752,
+      "leakage E, source mean removed": 0.13555555555555565,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.007216399161037154,
+      "leakage E, source mean removed": 0.13555555555555565,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0032954831154331926,
+      "leakage E, source mean removed": 0.13555555555555565,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0028513790175668796,
+      "leakage E, source mean removed": 0.068888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.011569339806426535,
+      "leakage E, source mean removed": -0.2977777777777777,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.020180720223047677,
+      "leakage E, source mean removed": -0.731111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.016894350535023715,
+      "leakage E, source mean removed": -0.8977777777777777,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0013962065325634487,
+      "leakage E, source mean removed": 0.13555555555555565,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.002699143946685252,
+      "leakage E, source mean removed": 0.13555555555555565,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0012611760572324299,
+      "leakage E, source mean removed": 0.10222222222222233,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0003430225041610585,
+      "leakage E, source mean removed": 0.10222222222222233,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0014050714801227548,
+      "leakage E, source mean removed": 0.10222222222222233,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0007120789481972478,
+      "leakage E, source mean removed": 0.068888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0002317927135064013,
+      "leakage E, source mean removed": -0.23111111111111104,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0010179574510313233,
+      "leakage E, source mean removed": 0.0022222222222223476,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.00041754221163406435,
+      "leakage E, source mean removed": 0.13555555555555565,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0013438119677678384,
+      "leakage E, source mean removed": 0.13555555555555565,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0008904997014141519,
+      "leakage E, source mean removed": 0.035555555555555673,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0048558011600723094,
+      "leakage E, source mean removed": 0.13555555555555565,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.009471349508255997,
+      "leakage E, source mean removed": 0.068888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00604912899999574,
+      "leakage E, source mean removed": 0.13555555555555565,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0075735614801318435,
+      "leakage E, source mean removed": 0.10222222222222233,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0009582266076115509,
+      "leakage E, source mean removed": 0.10222222222222233,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0024020916053297675,
+      "leakage E, source mean removed": 0.035555555555555673,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0015511927965475014,
+      "leakage E, source mean removed": 0.13555555555555565,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.003200575607337941,
+      "leakage E, source mean removed": -0.11555555555555563,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.003798684565099464,
+      "leakage E, source mean removed": -0.548888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -3.791792281263029e-05,
+      "leakage E, source mean removed": 0.08444444444444438,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0006440788645664941,
+      "leakage E, source mean removed": -0.248888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0005169936364024241,
+      "leakage E, source mean removed": -0.1822222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 3.557746344987067e-05,
+      "leakage E, source mean removed": -0.08222222222222231,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.006278385224582433,
+      "leakage E, source mean removed": 0.18444444444444436,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003859821127864621,
+      "leakage E, source mean removed": 0.4511111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.004106386169295512,
+      "leakage E, source mean removed": 0.6844444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0154398319160646,
+      "leakage E, source mean removed": -0.0155555555555556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.022047112641018135,
+      "leakage E, source mean removed": -0.14888888888888901,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.017261792339131637,
+      "leakage E, source mean removed": -0.4155555555555556,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0005434938961280111,
+      "leakage E, source mean removed": -0.21555555555555564,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.002312710848105831,
+      "leakage E, source mean removed": -0.21555555555555564,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -1.170153747978575e-05,
+      "leakage E, source mean removed": -0.148888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.00035598993685007074,
+      "leakage E, source mean removed": -0.148888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.002012381040118222,
+      "leakage E, source mean removed": -0.2822222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0011007789612392793,
+      "leakage E, source mean removed": -0.21555555555555564,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.002625371361560963,
+      "leakage E, source mean removed": -0.21555555555555564,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0004452799080365555,
+      "leakage E, source mean removed": -0.21555555555555564,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.00303783521724163,
+      "leakage E, source mean removed": -0.21555555555555564,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0010174681923506845,
+      "leakage E, source mean removed": -0.11555555555555563,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0012116100674467167,
+      "leakage E, source mean removed": -0.31555555555555564,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.010011422684964716,
+      "leakage E, source mean removed": 0.5177777777777777,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.015287900861431586,
+      "leakage E, source mean removed": 0.5844444444444443,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.009178418847716724,
+      "leakage E, source mean removed": 0.1177777777777777,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.011139131175302491,
+      "leakage E, source mean removed": 0.051111111111110996,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00437931866022237,
+      "leakage E, source mean removed": 0.351111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.006509786992503125,
+      "leakage E, source mean removed": 0.5177777777777777,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0033176596063613784,
+      "leakage E, source mean removed": 0.5177777777777777,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0028064646288817607,
+      "leakage E, source mean removed": -0.05222222222222228,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.005327774627740145,
+      "leakage E, source mean removed": -0.3188888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 3.289949485979493e-05,
+      "leakage E, source mean removed": 0.2811111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.001345614816953944,
+      "leakage E, source mean removed": -0.018888888888888955,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0011037674259461727,
+      "leakage E, source mean removed": -0.35222222222222227,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0009450802184608476,
+      "leakage E, source mean removed": 0.3144444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0037795909063548516,
+      "leakage E, source mean removed": 0.2811111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0037707814675310147,
+      "leakage E, source mean removed": 0.34777777777777774,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.002302367858035198,
+      "leakage E, source mean removed": 0.38111111111111107,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.011637161539438334,
+      "leakage E, source mean removed": 0.14777777777777779,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.017846558802009527,
+      "leakage E, source mean removed": -0.48555555555555563,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.013530263719464752,
+      "leakage E, source mean removed": -0.4522222222222222,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0005432296984783369,
+      "leakage E, source mean removed": 0.2811111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.003846591285476736,
+      "leakage E, source mean removed": 0.21444444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.00031157973160428343,
+      "leakage E, source mean removed": 0.2811111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.001707949328826286,
+      "leakage E, source mean removed": 0.2811111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.001476389249150556,
+      "leakage E, source mean removed": -0.35222222222222227,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 9.979330443685153e-05,
+      "leakage E, source mean removed": -0.5522222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.001369316212018773,
+      "leakage E, source mean removed": -0.5522222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0013685504694326833,
+      "leakage E, source mean removed": -0.4188888888888889,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0016287775836847374,
+      "leakage E, source mean removed": -0.48555555555555563,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 4.6818548176424946e-05,
+      "leakage E, source mean removed": -0.4522222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0009326659193377718,
+      "leakage E, source mean removed": -0.5522222222222223,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.008448141347217025,
+      "leakage E, source mean removed": 0.34777777777777774,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.01358409182905651,
+      "leakage E, source mean removed": 0.34777777777777774,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.009121727399733048,
+      "leakage E, source mean removed": 0.2811111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.011663182727007781,
+      "leakage E, source mean removed": 0.34777777777777774,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0039646687841349,
+      "leakage E, source mean removed": 0.3144444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.006651942668626759,
+      "leakage E, source mean removed": 0.3144444444444444,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0008430625858179552,
+      "leakage E, source mean removed": 0.2811111111111111,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0023994783790261265,
+      "leakage E, source mean removed": -0.33333333333333337,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.004484459545084446,
+      "leakage E, source mean removed": -0.8,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00039539247234418595,
+      "leakage E, source mean removed": -0.1666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0021143724704248967,
+      "leakage E, source mean removed": -0.33333333333333337,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00034507161925306784,
+      "leakage E, source mean removed": -0.33333333333333337,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0009549701478351047,
+      "leakage E, source mean removed": 0.03333333333333327,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0071824101189007505,
+      "leakage E, source mean removed": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.003910841420486588,
+      "leakage E, source mean removed": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0036000898865979625,
+      "leakage E, source mean removed": 0.5333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.012121890288715673,
+      "leakage E, source mean removed": 0.033333333333333326,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.020323948445189102,
+      "leakage E, source mean removed": -0.20000000000000007,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.016204570298449184,
+      "leakage E, source mean removed": -0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0013558114420233747,
+      "leakage E, source mean removed": -0.06666666666666671,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0016691470405970632,
+      "leakage E, source mean removed": -0.20000000000000004,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0013386840366036712,
+      "leakage E, source mean removed": -0.30000000000000004,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -7.121763097156508e-05,
+      "leakage E, source mean removed": -0.2666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0023528855503001933,
+      "leakage E, source mean removed": -0.33333333333333337,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0004651810676647161,
+      "leakage E, source mean removed": -0.33333333333333337,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.002987409221848425,
+      "leakage E, source mean removed": -0.33333333333333337,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.0002374096612966503,
+      "leakage E, source mean removed": -0.33333333333333337,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.002406296685023762,
+      "leakage E, source mean removed": -0.33333333333333337,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.001372943993827369,
+      "leakage E, source mean removed": -0.30000000000000004,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": 0.0004012900148300247,
+      "leakage E, source mean removed": -0.33333333333333337,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.008106706279213644,
+      "leakage E, source mean removed": 0.6333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.010604906825244426,
+      "leakage E, source mean removed": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.006390735709383505,
+      "leakage E, source mean removed": 0.5,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.009958291445522849,
+      "leakage E, source mean removed": 0.6333333333333333,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -1.1693965576403675e-05,
+      "leakage E, source mean removed": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.001900618827227335,
+      "leakage E, source mean removed": 0.5666666666666667,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "prediction, source mean removed": -0.00032825534806546486,
+      "leakage E, source mean removed": 0.6,
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": -0.26,
+      "variance fraction captured by the 64-dim base basis": 0.4776313257736332,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.74,
+      "variance fraction captured by the 64-dim base basis": 0.5137124613945385,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.74,
+      "variance fraction captured by the 64-dim base basis": 0.3778089563305134,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "layer 7",
+      "variance fraction captured by the 64-dim base basis": 0.7040584037347478,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "layer 14",
+      "variance fraction captured by the 64-dim base basis": 0.6745174802173739,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "layer 21",
+      "variance fraction captured by the 64-dim base basis": 0.5049062656628026,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.26,
+      "variance fraction captured by the 64-dim base basis": 0.8469462802588607,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.26,
+      "variance fraction captured by the 64-dim base basis": 0.8366625964146034,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.26,
+      "variance fraction captured by the 64-dim base basis": 0.7816589763302575,
+      "_kind": "bar",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 505
+}
