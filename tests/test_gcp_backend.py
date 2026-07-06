@@ -4839,6 +4839,7 @@ def test_poll_running_drains_sentinels_via_sudo(monkeypatch) -> None:
     pp = _poll_pipeline_module()
     posted: list[tuple[int, str]] = []
     monkeypatch.setattr(pp, "post_event", lambda issue, kind, **kw: posted.append((issue, kind)))
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
@@ -4870,6 +4871,7 @@ def test_poll_gcp_drain_scans_workload_root_fallback_glob(monkeypatch) -> None:
     (including the done tick) reported ``sentinels_processed=0``."""
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda issue, kind, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
@@ -4903,6 +4905,35 @@ def test_poll_gcp_drain_transport_failure_is_loud() -> None:
     assert "sudo: a password is required" in pr.log_tail_excerpt
 
 
+def test_gcp_drain_ssh_timeout_returns_transport_alarm() -> None:
+    """#1084 (W2, GCP arm): a drain-list SSH that HANGS past the runner's
+    per-call cap (``subprocess.TimeoutExpired`` — the #952 gcloud-ssh
+    hostkey-drift wedge) degrades to the EXISTING transport alarm instead of
+    an uncaught raise crashing the poll tick — same alarm tuple shape +
+    ``alarm_class="transport"`` as the rc!=0 branch, so the #669 wedge-gate
+    semantics (``reachability_alarm=True``) are inherited unchanged."""
+
+    class _TimeoutOnSshRunner(_Runner):
+        def __call__(self, argv):
+            argv = list(argv)
+            if "ssh" in argv and "compute" in argv:
+                self.calls.append(argv)
+                raise subprocess.TimeoutExpired(cmd=argv, timeout=300)
+            return super().__call__(argv)
+
+    runner = _TimeoutOnSshRunner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.sentinels_processed == 0
+    assert "timed out after 300" in pr.log_tail_excerpt
+    assert "hung transport" in pr.log_tail_excerpt
+    assert pr.reachability_alarm is True
+
+
 def test_poll_gcp_drain_matched_but_empty_body_is_loud(monkeypatch) -> None:
     """A sentinel whose body reads back EMPTY (the pre-sudo permission
     symptom) must be reported loudly — glob matched, nothing processed."""
@@ -4932,6 +4963,7 @@ def test_poll_gcp_drain_gate_sentinel_parks(monkeypatch) -> None:
     poll_pipeline.poll_once): the orchestrator must park at the gate."""
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
@@ -5039,6 +5071,7 @@ def test_poll_drain_gate_keeps_short_interval(monkeypatch) -> None:
 
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[_describe_running(created_sec_ago=7200)],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
@@ -6375,6 +6408,7 @@ def test_drain_overlays_log_mtime_when_running(monkeypatch) -> None:
 
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     now = 1718000300
     stdout = _drain_stdout("19/19 cells done") + f"EPS_LOG_MTIME={now - 300}\nEPS_LOG_NOW={now}\n"
     runner = _Runner(
@@ -6435,6 +6469,7 @@ def test_drain_missing_mtime_keys_keeps_legacy_placeholder(monkeypatch) -> None:
     hardwired placeholder; old fixtures stay green untouched."""
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
