@@ -82,6 +82,15 @@ LAYERS = (7, 14, 21)
 BEHAVIOR = "fact"
 CONSISTENCY_FAIL_TOL = 0.02  # chain_rho_ctrl precedent (≤0.003 drift measured)
 
+# ── Fixed-template pin (plan v13 §3/§4 Phase F0 — fixed-template-weights-read) ─
+# Plan-time grounding pass values, re-derived by the fact-checker recount; the
+# F0 stage FAILS LOUD if the deterministic pick no longer reproduces them
+# (plan §13: no silent re-pin — a drift here requires a re-plan, never a code
+# path around it). The sha is the CODE-side pin the pod-side extraction guard
+# (`issue833_extract_onpolicy._load_fixed_template`) re-asserts.
+FIXED_TEMPLATE_SHA256 = "75b1786e43ccd16c63593739c941b5df0044526ae24415a075f87b53819e15c9"
+FIXED_TEMPLATE_EXPECTED = {"n_occurrences": 5744, "n_nonemission": 6892, "n_unique": 258}
+
 # DV-D partial-fragment span classes over RETAINED rows (plan §4.6). The pinned
 # exclusion guarantees no "seven wooden benches" in retained rows, so any
 # "wooden bench" hit is by construction a fragment without "seven wooden".
@@ -190,6 +199,59 @@ def sample_eq5(
         assert len(pool) >= n, (key, len(pool), n)
         out[key] = sorted(int(i) for i in rng.choice(pool, size=n, replace=False))
     return out
+
+
+def _sha256_text(text: str) -> str:
+    """sha256 hex digest of the UTF-8 bytes (the template-pin gauge)."""
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def pin_fixed_template(cells: dict[str, list[tuple[int, str, str]]]) -> dict:
+    """Deterministic modal-template pick over the NON-EMISSION rows (plan v13 §3).
+
+    Tabulates normalized (casefold + whitespace-collapse — the round-2 pinned
+    normalization) non-emission responses over ALL cells' rows, picks the most
+    frequent normalized key, and FAILS LOUD (RuntimeError) on (a) a rank-1 tie
+    or (b) more than one raw byte-string mapping to the modal normalized key —
+    either condition makes the "unique raw variant" pick premise false (plan
+    §13: STOP, no re-pin). Returns ``{template, sha256, n_occurrences,
+    n_nonemission, n_unique}``. Pure — unit-testable on synthetic cells.
+    """
+    from collections import Counter
+
+    counts: Counter[str] = Counter()
+    raw_by_norm: dict[str, set[str]] = {}
+    n_nonemission = 0
+    for key in sorted(cells):
+        for _, _, resp in retained_rows(cells[key]):
+            norm = normalize_text(resp)
+            counts[norm] += 1
+            raw_by_norm.setdefault(norm, set()).add(resp)
+            n_nonemission += 1
+    if not counts:
+        raise RuntimeError("no non-emission rows — nothing to pin")
+    ranked = counts.most_common()
+    modal_norm, modal_n = ranked[0]
+    if len(ranked) > 1 and ranked[1][1] == modal_n:
+        raise RuntimeError(
+            f"fixed-template pick: rank-1 TIE at count {modal_n} between "
+            f"{modal_norm[:60]!r}... and {ranked[1][0][:60]!r}... — the modal pick rule "
+            "is undefined, STOP (plan §13: no re-pin)"
+        )
+    raws = sorted(raw_by_norm[modal_norm])
+    if len(raws) != 1:
+        raise RuntimeError(
+            f"fixed-template pick: {len(raws)} raw byte-string variants map to the modal "
+            "normalized key — the 'unique raw variant' premise fails, STOP (plan §13)"
+        )
+    template = raws[0]
+    return {
+        "template": template,
+        "sha256": _sha256_text(template),
+        "n_occurrences": int(modal_n),
+        "n_nonemission": int(n_nonemission),
+        "n_unique": len(counts),
+    }
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -558,6 +620,64 @@ def source_mean_read(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Phase F0 — fixed-template pin (plan v13 §4, fixed-template-weights-read round)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def stage_fixed_template(args) -> int:
+    """Phase F0 (plan v13 §4): pin the modal non-emission deflection template.
+
+    One pass over the 16 persisted fact JSONs (seconds); FAILS LOUD if the
+    deterministic pick does not reproduce the plan-time grounding values
+    (``FIXED_TEMPLATE_SHA256`` + ``FIXED_TEMPLATE_EXPECTED`` — plan §13: a
+    drift is a re-plan trigger, never a silent re-pin). Writes the git-committed
+    pin sidecar ``<out-dir>/emission_rate/fixed_template.json``.
+    """
+    cells, file_meta = load_fact_cells(args.raw_dir)
+    pin = pin_fixed_template(cells)
+    if pin["sha256"] != FIXED_TEMPLATE_SHA256:
+        raise RuntimeError(
+            f"fixed-template sha {pin['sha256']} != plan pin {FIXED_TEMPLATE_SHA256} — "
+            "the modal pick changed; STOP per plan §13 (re-plan required, no silent re-pin)"
+        )
+    drift = {k: (pin[k], want) for k, want in FIXED_TEMPLATE_EXPECTED.items() if pin[k] != want}
+    if drift:
+        raise RuntimeError(
+            f"fixed-template counts drifted from the plan grounding pass: {drift} — "
+            "STOP per plan §13 (inputs != the plan-time fact JSONs)"
+        )
+    payload = {
+        **pin,
+        "pick_rule": (
+            "most frequent normalized non-emission response over all persisted fact rows; "
+            "FAIL LOUD on a rank-1 tie or >1 raw byte-string variant (plan v13 §3)"
+        ),
+        "normalization": "casefold + whitespace-collapse",
+        "pinned_phrase": PINNED_PHRASE,
+        "source_files": file_meta,
+        "meta": {
+            "script": "scripts/issue833_emission_rate.py",
+            "stage": "fixed-template",
+            "git_commit": _git_head(),
+            "generated_at": datetime.now(UTC).isoformat(),
+            "numpy": np.__version__,
+        },
+    }
+    out_path = args.out_dir / "emission_rate" / "fixed_template.json"
+    _write_json(out_path, payload)
+    logger.info(
+        "[phase=fixed-template] DONE: %d/%d non-emission occurrences, %d unique normalized, "
+        "sha %s — wrote %s",
+        pin["n_occurrences"],
+        pin["n_nonemission"],
+        pin["n_unique"],
+        pin["sha256"][:12],
+        out_path,
+    )
+    return 0
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -576,7 +696,16 @@ def main() -> int:
         action="store_true",
         help="skip the LOCO chain recompute + paired diffs (text-only smoke)",
     )
+    ap.add_argument(
+        "--stage",
+        default="n0",
+        choices=["n0", "fixed-template"],
+        help="'n0' (default) = the round-2 Phase-N0 pipeline, byte-unchanged; "
+        "'fixed-template' = the plan-v13 Phase-F0 template pin ONLY",
+    )
     args = ap.parse_args()
+    if args.stage == "fixed-template":
+        return stage_fixed_template(args)
     out_dir: Path = args.out_dir
     em_dir = out_dir / "emission_rate"
     taught = taught_sentence()
