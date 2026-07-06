@@ -1,0 +1,33 @@
+{
+  "git_commit": "75d41ac19f",
+  "ts": "2026-07-06T10:12:09Z",
+  "n_bootstrap": 2000,
+  "contrasts": {
+    "sycophancy": {
+      "delta_yield_per_question": {
+        "mean": -0.14736842105263157,
+        "ci95": [
+          -0.3157894736842105,
+          0.010526315789473682
+        ],
+        "n_questions": 19,
+        "n_draws": 2000,
+        "seed": 42,
+        "n_shared_questions": 19
+      }
+    },
+    "harmful_compliance": {
+      "delta_yield_per_question": {
+        "mean": 0.7787356321839082,
+        "ci95": [
+          0.7040229885057472,
+          0.8426903735632184
+        ],
+        "n_questions": 116,
+        "n_draws": 2000,
+        "seed": 42,
+        "n_shared_questions": 116
+      }
+    }
+  }
+}
