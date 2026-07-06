@@ -166,21 +166,18 @@ def main() -> int:
     out["random_dir_raw_r2"] = [float(v) for v in r2_rand_raw]
     F.C.write_json_atomic(args.out_json, out)
 
-    max_k = max_over_k[max(max_over_k)]
     fig2, bx = plt.subplots(figsize=(6.5, 5.0))
     xs = np.arange(len(TRAITS))
     bx.bar(
         xs, [per_trait[t]["r_b"]["heldout_r2"] for t in TRAITS], 0.6,
         color=[star_colors[t] for t in TRAITS], label="persona vector r_B",
     )
-    bx.axhline(max_k, color="0.35", ls="--", lw=1.3,
-               label=f"max over K={max(max_over_k)} random dirs ({max_k:.2f})")
-    bx.axhline(rd["r2_mean"], color="0.6", ls=":", lw=1.0,
-               label=f"mean random dir ({rd['r2_mean']:.2f})")
+    bx.axhline(rd["r2_mean"], color="0.35", ls="--", lw=1.3,
+               label=f"random direction (R2={rd['r2_mean']:.2f})")
     bx.set_xticks(xs)
     bx.set_xticklabels(TRAITS)
     bx.set_ylabel("held-out per-direction R2")
-    bx.set_title(f"Persona vectors vs max-over-K random directions (L{args.layer})")
+    bx.set_title(f"Persona vectors vs a random direction (L{args.layer})")
     bx.legend(frameon=False, fontsize=8, loc="lower right")
     figs2 = savefig_paper(fig2, "h_rb_vs_maxrandom", dir=args.fig_dir, embed_data=False)
     plt.close(fig2)
