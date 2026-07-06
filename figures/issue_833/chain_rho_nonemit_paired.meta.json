@@ -1,0 +1,202 @@
+{
+  "commit": "59adadf2e6",
+  "created": "2026-07-06T13:53:50Z",
+  "figsize": [
+    12.4,
+    5.6
+  ],
+  "points": [
+    {
+      "held-out chain correlation with leakage E (Spearman)": 0.5853395766114846,
+      "y": 2.315,
+      "series": "full text, all 30/cell (trained map)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": 0.6014291447664736,
+      "y": 2.21,
+      "series": "full text, matched N/cell (trained map)",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": 0.5921423860581212,
+      "y": 2.105,
+      "series": "full text (base-weights control)",
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": -0.19851497094078757,
+      "y": 2.0,
+      "series": "base-written text (off-policy)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": -0.25497108335171953,
+      "y": 1.895,
+      "series": "non-emission only (trained map)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": -0.2851180788784228,
+      "y": 1.79,
+      "series": "non-emission only (base-weights control)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": -0.1985610992898558,
+      "y": 1.685,
+      "series": "non-emission, 5/cell (trained map)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": 0.6064249696417736,
+      "y": 1.315,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": 0.6087675417471562,
+      "y": 1.21,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": 0.5943839744804085,
+      "y": 1.105,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": 0.17707999982728975,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": -0.1009747067678679,
+      "y": 0.895,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": -0.31647363715071286,
+      "y": 0.79,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": -0.004909552395421121,
+      "y": 0.685,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": 0.608868276087824,
+      "y": 0.315,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": 0.6121079822469762,
+      "y": 0.21,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": 0.5955264614827355,
+      "y": 0.105,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": 0.21744454934381352,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": -0.4045967365257522,
+      "y": -0.105,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": -0.3974952148510955,
+      "y": -0.21,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "held-out chain correlation with leakage E (Spearman)": -0.37138307848450935,
+      "y": -0.315,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "paired chain-correlation difference": -0.8564002281181933,
+      "y": 2.18,
+      "series": "non-emission \u2212 matched-N full text",
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "paired chain-correlation difference": -0.7999902440563296,
+      "y": 2.0,
+      "series": "5/cell non-emission \u2212 matched-N",
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "paired chain-correlation difference": -0.05645611241093196,
+      "y": 1.82,
+      "series": "non-emission \u2212 off-policy",
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "paired chain-correlation difference": -0.7097422485150242,
+      "y": 1.18,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "paired chain-correlation difference": -0.6136770941425774,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "paired chain-correlation difference": -0.2780547065951577,
+      "y": 0.8200000000000001,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "paired chain-correlation difference": -1.0167047187727285,
+      "y": 0.18,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "paired chain-correlation difference": -0.9834910607314857,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "paired chain-correlation difference": -0.6220412858695658,
+      "y": -0.18,
+      "_kind": "errorbar",
+      "_group": 29
+    }
+  ],
+  "n_series": 30,
+  "total_points": 30
+}
