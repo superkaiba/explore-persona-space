@@ -53,9 +53,14 @@ PARITY_SRC2="${PARITY_SRC2:-sp_doctor}"
 [ -f "$OUT/emission_rate/fixed_template.json" ] || { echo "[phase=preflight] fixed_template.json MISSING from the clone — commit Phase F0 first" | tee -a "$MAIN_LOG"; exit 1; }
 
 # Round-7c lesson: the xet per-file token refresh dies at multi-k-file staging;
-# force the plain HTTP/CDN path for the staging downloads (final uploads are
-# small npz/JSON commits, unaffected).
-export HF_XET_DISABLE=1
+# steer the staging downloads off the xet path. HF_HUB_DISABLE_XET is the
+# EFFECTIVE switch on this stack (upload-policy.md #931: it flips
+# is_xet_available() False; the historically-quoted HF_XET_DISABLE is a
+# verified no-op, consumed by neither huggingface_hub nor hf_xet). Best-effort
+# on the download side (hub GH #3266 notes a download-coverage gap on the
+# 0.36.2 pin); the 212-file staging set is far below the multi-k-file regime
+# where round 7c wedged, and round 2 drained clean regardless.
+export HF_HUB_DISABLE_XET=1
 
 echo "[phase=stage] scoped list + per-file download ($(date -u +%H:%M:%S))" | tee -a "$MAIN_LOG"
 PARITY_SRC1="$PARITY_SRC1" PARITY_SRC2="$PARITY_SRC2" uv run python - <<'PY' || { echo "[phase=stage] FAILED" | tee -a "$MAIN_LOG"; exit 1; }
@@ -75,13 +80,31 @@ PREFIXES = [
     f"issue833_onpolicy_map/analysis_tensors/fact/{SRC2}_seed42",
 ]
 api = HfApi()
+
+
+def list_prefix(pref: str, attempts: int = 3) -> list[str]:
+    """Scoped listing with a bounded retry (a transient 5xx/429 on the LISTING
+    would otherwise kill the workload at the stage phase — code-review v6)."""
+    for attempt in range(attempts):
+        try:
+            return [
+                e.path
+                for e in api.list_repo_tree(
+                    REPO, path_in_repo=pref, repo_type="dataset", recursive=True
+                )
+                if e.path.endswith((".json", ".npz"))
+            ]
+        except Exception as e:  # noqa: BLE001 — transient Hub error; retry, then loud
+            if attempt == attempts - 1:
+                raise
+            print(f"list_repo_tree {pref} failed ({e!r}) — retry {attempt + 1}", flush=True)
+            time.sleep(5 * (attempt + 1))
+    return []
+
+
 paths = []
 for pref in PREFIXES:
-    got = [
-        e.path
-        for e in api.list_repo_tree(REPO, path_in_repo=pref, repo_type="dataset", recursive=True)
-        if e.path.endswith((".json", ".npz"))
-    ]
+    got = list_prefix(pref)
     print(f"{pref}: {len(got)} files", flush=True)
     if not got:
         print(f"EMPTY prefix {pref} — refusing", flush=True)
@@ -170,7 +193,10 @@ if [ "$PARITY_RC" -eq 6 ]; then
   # Registered contingency (plan v13 §4, inherited from v10): re-extract the
   # FULL-TEXT fact legs in-run so every paired contrast is within-run by
   # construction (~+1 GPU-h, inside the 2.0 GPU-h bound). Phase F2 consumes
-  # analysis_tensors_fullrerun via issue833_chain_rho_nonemit-style overrides.
+  # analysis_tensors_fullrerun via issue833_chain_rho_fixedtext.py
+  # --fulltext-npz-root (stage the uploaded namespace, then pass the flag);
+  # F2's assert_contingency_consumed guard REFUSES to fit from the stale r7e
+  # joined-cache legs while this namespace exists unconsumed.
   echo "[phase=fullrerun] parity FAIL — running the registered full-text re-extraction contingency" | tee -a "$MAIN_LOG"
   FULLRERUN=1
   uv run python scripts/issue833_extract_onpolicy.py \
@@ -197,7 +223,7 @@ echo "[phase=extract-fixedtext] analysis_tensors_fixedtext: $N npz (expect 1440 
 
 # ── Upload + scoped verify BEFORE teardown (plan §6.5) ───────────────────────
 echo "[phase=upload-subset] start ($(date -u +%H:%M:%S))" | tee -a "$MAIN_LOG"
-unset HF_XET_DISABLE  # staging workaround only; uploads take the default path
+unset HF_HUB_DISABLE_XET  # staging workaround only; uploads take the default (xet) path
 uv run python scripts/issue833_extract_onpolicy.py \
   --stage upload-subset --behavior fact --seed "$SEED" --out "$OUT" \
   --response-subset fixedtext \

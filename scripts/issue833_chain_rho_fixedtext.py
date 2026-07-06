@@ -38,9 +38,31 @@ in BOTH fit sets. Per-cell held-out chain predictions are PERSISTED per arm
 (``per_cell_full`` / ``per_cell_retained``) — the analyzer's per-source
 leverage / leave-sp_swe-out / source-demeaned companion reads consume them.
 
+Parity-FAIL (rc=6) contingency consumption: ``--fulltext-npz-root`` replaces
+the joined-design ``Vplus``/``V0`` stacks (the legs feeding the
+``off_full_recomp`` / ``base_full_recomp`` comparator arms AND the shared PCA
+bases) with the driver's within-run full-text re-extraction
+(``analysis_tensors_fullrerun`` — ``v_plus_onpolicy``/``v0_onpolicy`` legs), so
+every paired contrast is within-run when the cross-run parity gate failed. A
+fired-contingency GUARD refuses to fit from the stale r7e joined-cache legs
+when the fullrerun namespace exists (local run tree OR the Hub) without the
+override — cross-run-contaminated (1)−(3)/(2)−(4) reads are never produced
+silently. When the override is active the committed-anchor consistency check
+is RECORDED, not asserted (the committed anchors are cross-run by
+construction), and the consumed source lands in the output meta.
+
+The joined cache itself is a required INPUT (no in-script rebuild — the ~53-min
+HF store join lives in ``issue833_fit_onpolicy.py``); on a fresh checkout
+rebuild it with::
+
+    OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 \
+    NUMEXPR_NUM_THREADS=8 uv run python scripts/issue833_fit_onpolicy.py \
+    --behaviors fact --joined-cache
+
 Outputs: ``<out-dir>/chain_rho_fixedtext/fact_L{7,14,21}.json`` (atomic
 per-layer writes the moment each layer completes; resume keyed on joined-cache
-sha + template sha + retention-manifest sha, ``--force-rerun`` override).
+sha + template sha + retention-manifest sha + the fixedtext namespace's content
+identity + the comparator-leg source, ``--force-rerun`` override).
 """
 
 from __future__ import annotations
@@ -84,6 +106,15 @@ N_CELLS_FULL = 480  # 16 sources × 30 targets — the full grid (plan §2)
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_PREFIX = "issue833_onpolicy_map"
 FIXEDTEXT_NAMESPACE = "analysis_tensors_fixedtext"
+# The rc=6 parity-contingency namespace the F1 driver writes + uploads
+# (issue833_gcp_fixedtext.sh [phase=fullrerun]); consumed via --fulltext-npz-root.
+FULLRERUN_NAMESPACE = "analysis_tensors_fullrerun"
+# The exact joined-cache rebuild command (plan §4 F2 "rebuild from HF if absent",
+# ~18 min fact-only) — quoted in the fail-loud raise; no in-script rebuild.
+JOINED_CACHE_REBUILD_CMD = (
+    "OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8 NUMEXPR_NUM_THREADS=8 "
+    "uv run python scripts/issue833_fit_onpolicy.py --behaviors fact --joined-cache"
+)
 CONSISTENCY_FAIL_TOL = 0.02  # chain_rho_ctrl precedent (≤0.003 drift measured)
 # Committed-anchor keys for the recomputed comparator arms (chain_rho/fact_L*.json).
 COMMITTED_ANCHOR_KEYS = {
@@ -131,7 +162,8 @@ def _write_json(path: Path, obj: dict) -> None:
 
 
 def _out_is_complete(path: Path, resume_key: str) -> bool:
-    """Resume predicate: complete output pinned to the SAME (cache, pin, manifest) triple."""
+    """Resume predicate: complete output pinned to the SAME (cache, pin, manifest,
+    fixedtext-content, comparator-leg-source) key — see main()'s resume_key."""
     if not path.exists():
         return False
     try:
@@ -203,13 +235,22 @@ def stage_namespace_from_hf(root: Path, namespace: str) -> None:
     from huggingface_hub import HfApi, hf_hub_download
 
     prefix = f"{HF_PREFIX}/{namespace}"
-    paths = [
-        e.path
-        for e in HfApi().list_repo_tree(
-            HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
-        )
-        if e.path.endswith((".npz", ".json"))
-    ]
+    paths: list[str] = []
+    for attempt in range(3):  # bounded retry on the LISTING itself (#997 recipe)
+        try:
+            paths = [
+                e.path
+                for e in HfApi().list_repo_tree(
+                    HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+                )
+                if e.path.endswith((".npz", ".json"))
+            ]
+            break
+        except Exception as e:  # transient Hub 5xx/429 — retry, then loud
+            if attempt == 2:
+                raise
+            logger.warning("[phase=stage] list_repo_tree %s failed (%r) — retry", prefix, e)
+            time.sleep(5 * (attempt + 1))
     if not paths:
         raise FileNotFoundError(f"HF prefix {prefix} is empty — run Phase F1 first")
     logger.info("[phase=stage] %s: %d files from HF", namespace, len(paths))
@@ -238,6 +279,112 @@ def stage_namespace_from_hf(root: Path, namespace: str) -> None:
     if root.exists():
         raise RuntimeError(f"{root} exists — refusing to overwrite a local namespace")
     src.rename(root)
+
+
+def _load_fulltext_override(
+    root: Path, keys: list[str], layer: int
+) -> tuple[np.ndarray, np.ndarray]:
+    """(v⁺, v0) comparator legs from the parity-FAIL contingency's within-run
+    full-text re-extraction namespace (``analysis_tensors_fullrerun`` —
+    ``v_plus_onpolicy``/``v0_onpolicy``, full 30-row legs, no probe-idx guard;
+    the ``chain_rho_nonemit._load_fulltext_override`` pattern). Replaces the
+    joined-design ``Vplus``/``V0`` stacks when the rc=6 contingency fired."""
+    vp_rows, v0_rows = [], []
+    for key in keys:
+        src, tgt = key.split("/", 1)[1].split("__")
+        p = root / BEHAVIOR / f"{src}_seed{SEED}" / f"{tgt}_L{layer}.npz"
+        if not p.exists():
+            raise FileNotFoundError(f"fulltext override: {p} missing")
+        d = np.load(p, allow_pickle=True)
+        vp_rows.append(np.asarray(d["v_plus_onpolicy"], dtype=np.float64))
+        v0_rows.append(np.asarray(d["v0_onpolicy"], dtype=np.float64))
+    return np.stack(vp_rows), np.stack(v0_rows)
+
+
+def _hf_fullrerun_fired(attempts: int = 3) -> bool:
+    """Probe the HF data repo for the rc=6 contingency namespace (scoped
+    ``list_repo_tree`` on the ``analysis_tensors_fullrerun`` prefix;
+    ``EntryNotFoundError`` == never fired — live-verified 2026-07-06). Bounded
+    retry (attempts=3, 5/10 s backoff) on transient errors; raises after the
+    budget — the guard NEVER fails open on an unverifiable contingency state."""
+    from huggingface_hub import HfApi
+    from huggingface_hub.errors import EntryNotFoundError
+
+    prefix = f"{HF_PREFIX}/{FULLRERUN_NAMESPACE}"
+    last: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            tree = HfApi().list_repo_tree(
+                HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=False
+            )
+            return any(True for _ in tree)
+        except EntryNotFoundError:
+            return False
+        except Exception as e:  # transient Hub error — bounded retry, then loud
+            last = e
+            if attempt < attempts - 1:
+                time.sleep(5 * (attempt + 1))
+    raise RuntimeError(
+        f"fullrerun contingency probe failed after {attempts} attempts ({last!r}) — cannot "
+        "verify whether the rc=6 parity contingency fired; refusing to fit blind (pass "
+        "--fulltext-npz-root if it fired, or retry when the Hub is reachable)"
+    )
+
+
+def assert_contingency_consumed(
+    out_dir: Path,
+    fixedtext_root: Path,
+    fulltext_npz_root: Path | None,
+    *,
+    hub_probe=_hf_fullrerun_fired,
+) -> dict:
+    """Fired-contingency guard (code-review round-1 blocker): when the rc=6
+    parity contingency fired — the ``analysis_tensors_fullrerun`` namespace
+    exists in the local run tree (next to ``out_dir`` or the fixedtext root) OR
+    on the Hub — REFUSE to fit the off/base comparator arms from the stale r7e
+    joined-cache ``Vplus``/``V0`` legs unless ``--fulltext-npz-root`` consumes
+    it. Returns the guard record for the output meta; raises RuntimeError on an
+    unconsumed fired contingency."""
+    if fulltext_npz_root is not None:
+        return {"override": str(fulltext_npz_root), "fired_local": None, "fired_hub": None}
+    local_candidates = {
+        out_dir / FULLRERUN_NAMESPACE,
+        Path(fixedtext_root).parent / FULLRERUN_NAMESPACE,
+    }
+    fired_local = sorted(str(p) for p in local_candidates if p.is_dir())
+    # Probe the Hub only when the local tree is clean — a local hit refuses
+    # without any network dependency; the Hub leg is the load-bearing detector
+    # for the production flow (F1 runs on an ephemeral GCE instance and uploads
+    # the namespace; the VM-side F2 never sees it locally unless staged).
+    fired_hub = False if fired_local else bool(hub_probe())
+    if fired_local or fired_hub:
+        where = (
+            f"local run tree ({fired_local})"
+            if fired_local
+            else f"HF ({HF_PREFIX}/{FULLRERUN_NAMESPACE})"
+        )
+        raise RuntimeError(
+            f"rc=6 parity contingency FIRED ({where}) but --fulltext-npz-root was not passed — "
+            "refusing to fit off_full_recomp/base_full_recomp from the stale r7e joined-cache "
+            "Vplus/V0 legs (the cross-run contamination the contingency exists to prevent, plan "
+            "v13 §4). Re-run with --fulltext-npz-root <staged analysis_tensors_fullrerun dir>."
+        )
+    return {"override": None, "fired_local": [], "fired_hub": False}
+
+
+def _fixedtext_content_sha(root: Path) -> str:
+    """Content identity of an npz namespace for the resume key. Production
+    fixedtext namespaces carry ``base_consistency.json`` (the driver hard-gates
+    on it) whose per-group floats change on ANY re-extraction — its file sha is
+    the identity. Fallback (fixture trees / the fullrerun namespace): a
+    fingerprint over the sorted relative npz paths + sizes."""
+    bc = root / "base_consistency.json"
+    if bc.exists():
+        return _sha256_file(bc)
+    h = hashlib.sha256()
+    for p in sorted(root.rglob("*.npz")):
+        h.update(f"{p.relative_to(root)}:{p.stat().st_size}\n".encode())
+    return "npzset:" + h.hexdigest()
 
 
 def _fixedtext_key_set(root: Path, layer: int) -> set[str]:
@@ -291,7 +438,9 @@ def load_design(args, layer: int) -> dict:
     cache_path = out_dir / "joined_cache" / f"{BEHAVIOR}_L{layer}.npz"
     if not cache_path.exists():
         raise FileNotFoundError(
-            f"{cache_path} missing — rebuild from HF via issue833_fit_onpolicy.py --joined-cache"
+            f"{cache_path} missing — the joined cache is a required input (no in-script "
+            f"rebuild; the ~53-min HF store join lives in issue833_fit_onpolicy.py). "
+            f"Rebuild it from HF with: {JOINED_CACHE_REBUILD_CMD}"
         )
     d = np.load(cache_path, allow_pickle=True)
     cell_keys = [str(v) for v in d["cell_keys"].tolist()]
@@ -314,6 +463,20 @@ def load_design(args, layer: int) -> dict:
     assert_families_sources(keys_ret, fams_ret, label="retained-291 fit set")
 
     stacks = {k: np.asarray(d[k], dtype=np.float64) for k in ("C0", "Cplus", "V0", "Vplus")}
+    fulltext_source = "joined_cache"
+    if args.fulltext_npz_root:
+        # rc=6 contingency consumption: the comparator legs (arms
+        # off_full_recomp/base_full_recomp) AND the shared PCA bases follow the
+        # within-run full-text re-extraction — zero r7e response-leg content
+        # remains in the fit (the bases stay shared across arms, so every
+        # paired diff is internally consistent). NOTE the substituted legs are
+        # v⁺(R⁺)/v0(R⁺) (on-policy full text — the only within-run full-text
+        # legs the registered contingency produces); the arm slugs stay stable
+        # for schema consumers and the meta records the substitution.
+        stacks["Vplus"], stacks["V0"] = _load_fulltext_override(
+            Path(args.fulltext_npz_root), cell_keys, layer
+        )
+        fulltext_source = str(args.fulltext_npz_root)
     vfix_p, vfix_0 = load_fixedtext_stack(
         Path(args.fixedtext_root), cell_keys, layer, template_sha=pin["sha256"]
     )
@@ -330,6 +493,7 @@ def load_design(args, layer: int) -> dict:
         "fams_ret": fams_ret,
         "cache_sha256": _sha256_file(cache_path),
         "template_sha256": pin["sha256"],
+        "fulltext_source": fulltext_source,
     }
 
 
@@ -396,16 +560,34 @@ def run_fit_set(
     return arms_out, diffs, per_cell
 
 
-def assert_committed_consistency(out_dir: Path, layer: int, arms_out: dict) -> dict:
+def assert_committed_consistency(
+    out_dir: Path, layer: int, arms_out: dict, *, asserted: bool = True
+) -> dict:
     """Recomputed off/base anchors must match the committed chain_rho JSONs
-    (≤0.02 tol — the chain_rho_ctrl precedent; measured drift ≤0.003)."""
+    (≤0.02 tol — the chain_rho_ctrl precedent; measured drift ≤0.003).
+
+    ``asserted=False`` (the --fulltext-npz-root contingency path): the deltas
+    are RECORDED for the analyzer but never raised on — the committed anchors
+    come from the r7e run the parity gate just disagreed with, so a mismatch is
+    the EXPECTED signature of the fired contingency, not a regime bug."""
     committed = json.loads((out_dir / "chain_rho" / f"{BEHAVIOR}_L{layer}.json").read_text())
     consistency: dict[str, dict] = {}
     for arm, key in COMMITTED_ANCHOR_KEYS.items():
         want = committed[key]
         got = arms_out[arm]["rho_ridge"]
         delta = abs(float(got) - float(want)) if (got is not None and want is not None) else None
-        consistency[arm] = {"recomputed": got, "committed": want, "abs_delta": delta}
+        consistency[arm] = {
+            "recomputed": got,
+            "committed": want,
+            "abs_delta": delta,
+            "asserted": asserted,
+        }
+        if not asserted:
+            consistency[arm]["note"] = (
+                "recorded-not-asserted: --fulltext-npz-root active — committed anchors are "
+                "cross-run by construction under the fired rc=6 contingency"
+            )
+            continue
         if delta is None or delta > CONSISTENCY_FAIL_TOL:
             raise RuntimeError(
                 f"fact L{layer} recomputed {arm} {got} vs committed {key}={want} "
@@ -436,7 +618,9 @@ def run_layer(design: dict, layer: int, r_hat: np.ndarray, out_dir: Path) -> dic
         layer,
         "full-480",
     )
-    consistency = assert_committed_consistency(out_dir, layer, arms_full)
+    consistency = assert_committed_consistency(
+        out_dir, layer, arms_full, asserted=design["fulltext_source"] == "joined_cache"
+    )
 
     m = design["mask_ret"]
     pca_ret = fitM._pca_basis_v0(st["V0"][m], TARGET_DIM)  # round-2 retained-slice basis
@@ -488,6 +672,14 @@ def main() -> int:
         "redirect here so committed artifacts are never touched)",
     )
     ap.add_argument(
+        "--fulltext-npz-root",
+        default=None,
+        help="parity-FAIL (rc=6) contingency consumption: read the Vplus/V0 comparator "
+        "legs + the shared PCA bases from this within-run full-text namespace "
+        "(analysis_tensors_fullrerun) instead of the r7e joined cache; a fired "
+        "contingency WITHOUT this flag is refused (see assert_contingency_consumed)",
+    )
+    ap.add_argument(
         "--stage-from-hf",
         action="store_true",
         help="stage the fixedtext namespace from HF (scoped list_repo_tree + per-file pool)",
@@ -506,6 +698,15 @@ def main() -> int:
     if args.stage_from_hf and not Path(args.fixedtext_root).is_dir():
         stage_namespace_from_hf(Path(args.fixedtext_root), FIXEDTEXT_NAMESPACE)
 
+    # Fired-contingency guard BEFORE any fit: refuses stale joined-cache
+    # comparator legs when the rc=6 fullrerun namespace exists unconsumed.
+    contingency_guard = assert_contingency_consumed(
+        out_dir,
+        Path(args.fixedtext_root),
+        Path(args.fulltext_npz_root) if args.fulltext_npz_root else None,
+    )
+    logger.info("[phase=chain_fixedtext] contingency guard: %s", json.dumps(contingency_guard))
+
     fit658.DEVICE = fit658._resolve_device("auto")
     fit658._assert_ridge_exactness()  # startup exactness gate (fit_M precedent)
     logger.info("[phase=chain_fixedtext] ridge exactness gate PASS (device=%s)", fit658.DEVICE)
@@ -517,6 +718,15 @@ def main() -> int:
     rb_main = fitM._load_rb_main()
     pin_sha = load_template_pin(Path(args.fixed_template_file))["sha256"]
     manifest_sha = _sha256_file(Path(args.retention_manifest))
+    # Resume-key content identities: a re-extraction of the fixedtext namespace
+    # (same pin/cache/manifest) or a switch of the comparator-leg source must
+    # invalidate stale chain JSONs (code-review v6 Minor 4).
+    fixedtext_sha = _fixedtext_content_sha(Path(args.fixedtext_root))
+    fulltext_id = (
+        f"fullrerun:{_fixedtext_content_sha(Path(args.fulltext_npz_root))}"
+        if args.fulltext_npz_root
+        else "joined_cache"
+    )
 
     # Committed anchors quoted alongside (plan §4 F2 — no refit needed).
     committed_anchors = {}
@@ -544,6 +754,8 @@ def main() -> int:
         "bootstrap_seed": 0,
         "template_sha256": pin_sha,
         "retention_manifest_sha256": manifest_sha,
+        "fixedtext_content_sha256": fixedtext_sha,
+        "contingency_guard": contingency_guard,
         "committed_anchors": committed_anchors,
     }
     t_start = time.perf_counter()
@@ -551,7 +763,7 @@ def main() -> int:
         out_path = chain_out_dir / f"{BEHAVIOR}_L{layer}.json"
         cache_path = out_dir / "joined_cache" / f"{BEHAVIOR}_L{layer}.npz"
         cache_sha = _sha256_file(cache_path) if cache_path.exists() else "absent"
-        resume_key = f"{cache_sha}:{pin_sha}:{manifest_sha}"
+        resume_key = f"{cache_sha}:{pin_sha}:{manifest_sha}:{fixedtext_sha}:{fulltext_id}"
         if not args.force_rerun and _out_is_complete(out_path, resume_key):
             logger.info("[phase=chain_fixedtext] L%d already complete — skip (resume)", layer)
             continue
@@ -564,6 +776,7 @@ def main() -> int:
             "resume_key": resume_key,
             "joined_cache_sha256": design["cache_sha256"],
             "fixedtext_root": str(args.fixedtext_root),
+            "fulltext_comparator_source": design["fulltext_source"],
             "layer_wall_seconds": round(time.perf_counter() - t_cell, 1),
         }
         _write_json(out_path, block)  # checkpoint-per-layer

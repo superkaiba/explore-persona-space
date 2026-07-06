@@ -195,9 +195,10 @@ def fig_percell_l14() -> None:
 
 # ── Figure 3: base-leg consistency histogram + L7/L21 exploratory scatters ────
 def fig_consistency_and_layers() -> None:
-    """Left: histogram of the 1,440 per-(target, layer) base-leg cross-source
-    rel-L2 values (the in-run determinism control); right two: L7/L21
-    on_fixedtext scatters."""
+    """Left: histogram of the 90 per-(target, layer) base-leg cross-source
+    rel-L2 values (30 targets x 3 layers; each group pools its 16 source
+    copies out of the 1,440 npz — the in-run determinism control); right two:
+    L7/L21 on_fixedtext scatters."""
     cons = json.loads((RES / "analysis_tensors_fixedtext/base_consistency.json").read_text())
     rel = np.asarray(list(cons["per_group_rel_l2"].values()), dtype=np.float64)
     fig, axes = plt.subplots(1, 3, figsize=(13.2, 4.3))

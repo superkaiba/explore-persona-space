@@ -299,3 +299,128 @@ def test_f2_load_fixedtext_stack_guards(tmp_path):
     # (d) a cell missing from the namespace → coverage STOP
     with pytest.raises(RuntimeError, match="key-set mismatch"):
         f2.load_fixedtext_stack(tmp_path, [*keys, "fact/s1__t9"], 7, template_sha=pin_sha)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# rc=6 fired-contingency guard + resume-key content identity (round-2 fixes)
+# ─────────────────────────────────────────────────────────────────────────────
+
+
+def _probe_never_called(attempts: int = 3) -> bool:
+    """Signature-conformant _hf_fullrerun_fired stand-in that must NOT be hit."""
+    raise AssertionError("hub probe must not be called on this path")
+
+
+def test_f2_contingency_guard_local_fired_refuses_without_override(tmp_path):
+    """A local analysis_tensors_fullrerun tree next to the fixedtext root refuses
+    the fit WITHOUT any Hub call (no network dependency on the local leg)."""
+    import issue833_chain_rho_fixedtext as f2
+
+    out_dir = tmp_path / "out"
+    ft_root = tmp_path / "run" / "analysis_tensors_fixedtext"
+    ft_root.mkdir(parents=True)
+    (tmp_path / "run" / f2.FULLRERUN_NAMESPACE).mkdir()
+    with pytest.raises(RuntimeError, match=r"contingency FIRED .*local run tree"):
+        f2.assert_contingency_consumed(out_dir, ft_root, None, hub_probe=_probe_never_called)
+
+
+def test_f2_contingency_guard_out_dir_leg_and_hub_fired(tmp_path):
+    """(a) fullrerun under out_dir refuses; (b) clean local tree + Hub hit refuses."""
+    import issue833_chain_rho_fixedtext as f2
+
+    out_dir = tmp_path / "out"
+    ft_root = tmp_path / "run" / "analysis_tensors_fixedtext"
+    ft_root.mkdir(parents=True)
+    (out_dir / f2.FULLRERUN_NAMESPACE).mkdir(parents=True)
+    with pytest.raises(RuntimeError, match=r"contingency FIRED .*local run tree"):
+        f2.assert_contingency_consumed(out_dir, ft_root, None, hub_probe=_probe_never_called)
+
+    def probe_true(attempts: int = 3) -> bool:
+        return True
+
+    clean_out = tmp_path / "out2"
+    with pytest.raises(RuntimeError, match=r"contingency FIRED \(HF"):
+        f2.assert_contingency_consumed(clean_out, ft_root, None, hub_probe=probe_true)
+
+
+def test_f2_contingency_guard_clean_passes(tmp_path):
+    import issue833_chain_rho_fixedtext as f2
+
+    ft_root = tmp_path / "run" / "analysis_tensors_fixedtext"
+    ft_root.mkdir(parents=True)
+
+    def probe_false(attempts: int = 3) -> bool:
+        return False
+
+    rec = f2.assert_contingency_consumed(tmp_path / "out", ft_root, None, hub_probe=probe_false)
+    assert rec == {"override": None, "fired_local": [], "fired_hub": False}
+
+
+def test_f2_contingency_guard_override_consumes_without_probe(tmp_path):
+    """--fulltext-npz-root consumes a fired contingency: no refusal, no probe,
+    and the consumed source is recorded for the output meta."""
+    import issue833_chain_rho_fixedtext as f2
+
+    ft_root = tmp_path / "run" / "analysis_tensors_fixedtext"
+    ft_root.mkdir(parents=True)
+    fullrerun = tmp_path / "run" / f2.FULLRERUN_NAMESPACE
+    fullrerun.mkdir()
+    rec = f2.assert_contingency_consumed(
+        tmp_path / "out", ft_root, fullrerun, hub_probe=_probe_never_called
+    )
+    assert rec["override"] == str(fullrerun)
+
+
+def test_f2_load_fulltext_override_shapes_and_missing(tmp_path):
+    """Real-body override loader: stacks both legs row-aligned; missing cell raises."""
+    import issue833_chain_rho_fixedtext as f2
+
+    _write_cell_npz(tmp_path, "s1", "t0", 14, np.ones(8), [_sha("TPL")] * 30)
+    vp, v0 = f2._load_fulltext_override(tmp_path, ["fact/s1__t0"], 14)
+    assert vp.shape == (1, 8) and v0.shape == (1, 8)
+    assert np.allclose(vp - v0, 1.0)  # _write_cell_npz sets v_plus = v0 + 1
+    with pytest.raises(FileNotFoundError, match="fulltext override"):
+        f2._load_fulltext_override(tmp_path, ["fact/s1__t9"], 14)
+
+
+def test_f2_fixedtext_content_sha_tracks_reextraction(tmp_path):
+    """The resume-key content identity changes on ANY re-extraction: via the
+    base_consistency.json sha when present, else via the npz path+size set."""
+    import issue833_chain_rho_fixedtext as f2
+
+    root = tmp_path / "ns"
+    root.mkdir()
+    # Fallback path (no base_consistency.json): npz set fingerprint.
+    _write_cell_npz(root, "s1", "t0", 14, np.ones(8), [_sha("TPL")] * 30)
+    sha_a = f2._fixedtext_content_sha(root)
+    assert sha_a.startswith("npzset:")
+    _write_cell_npz(root, "s1", "t1", 14, np.ones(8), [_sha("TPL")] * 30)
+    assert f2._fixedtext_content_sha(root) != sha_a  # new cell → new identity
+    # Production path: base_consistency.json sha wins and tracks its content.
+    (root / "base_consistency.json").write_text('{"max_rel_l2": 1e-7}')
+    sha_b = f2._fixedtext_content_sha(root)
+    assert not sha_b.startswith("npzset:")
+    (root / "base_consistency.json").write_text('{"max_rel_l2": 2e-7}')
+    assert f2._fixedtext_content_sha(root) != sha_b
+
+
+def test_f2_committed_consistency_recorded_not_asserted(tmp_path):
+    """asserted=True raises past tol; asserted=False (the --fulltext-npz-root
+    contingency path) records the same delta without raising."""
+    import issue833_chain_rho_fixedtext as f2
+
+    chain = tmp_path / "chain_rho"
+    chain.mkdir(parents=True)
+    (chain / "fact_L14.json").write_text(
+        json.dumps({"rho_Mplus_off_ridge": 0.5, "rho_M0_ridge": 0.1})
+    )
+    arms = {
+        "off_full_recomp": {"rho_ridge": 0.9},  # |delta| = 0.4 >> 0.02
+        "base_full_recomp": {"rho_ridge": 0.1},
+    }
+    with pytest.raises(RuntimeError, match="exceeds"):
+        f2.assert_committed_consistency(tmp_path, 14, arms, asserted=True)
+    rec = f2.assert_committed_consistency(tmp_path, 14, arms, asserted=False)
+    assert rec["off_full_recomp"]["abs_delta"] == pytest.approx(0.4)
+    assert rec["off_full_recomp"]["asserted"] is False
+    assert "recorded-not-asserted" in rec["off_full_recomp"]["note"]
