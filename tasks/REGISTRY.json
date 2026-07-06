@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1084,
+  "highest_id": 1085,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -663,6 +663,13 @@
       "path": "tasks/proposed/1084",
       "status": "proposed",
       "title": "daily-fix: poll_pipeline sentinel consume-then-post crash-sa"
+    },
+    "1085": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1085",
+      "status": "proposed",
+      "title": "daily-fix: Step 10d additive-checkout guard-block recovery r"
     },
     "109": {
       "has_clean_result": false,
