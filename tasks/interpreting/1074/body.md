@@ -31,10 +31,10 @@ relates_to:
 ## Takeaways
 
 - All 4 datagen cells missed their yield gates; the run halted at the plan's kill path — no organism trained, and the planned install measurements (judged rate, teacher-forced margin, dose-to-band) were never run, so the install hypotheses are untested, not falsified.
-- The abliterated-checkpoint arm cleared the harmful-compliance positive floor: 177 of 215 completions kept (82.3%) vs base Qwen's 9 of 215 (4.2%); 97 of 116 questions favor the abliterated arm, none favor base (p < 0.001). The contrast is checkpoint-vs-checkpoint — the community derivative may differ from base beyond refusal behavior, and kept-row quality is unaudited beyond the compliance rubric.
-- The abliterated arm still trained nothing: 30.3% of its contrastive negatives (53 of 175) were judged harmful-compliant, leaving 57% judge-clean against the 69% the 24-per-member pairing quota requires — 4 of 5 panel members fell short. Regenerating negatives from base Qwen is an untested candidate fix; no base-arm negative data exists.
-- Sycophancy stayed floored in both arms (base Qwen 10 of 36 kept, abliterated 8 of 36, floor 20), falsifying the hypothesis that an on-policy Qwen generator clears the floor the parent run's Claude generator missed (6 of 36).
-- The sycophancy failure pattern is consistent with stimulus hardness rather than generator family (an observational read): 12 of 19 wrong-fact claims yield zero keeps in both arms (roughly 7.6 expected under a uniform keep rate) and no phrasing variant exceeds 3 kept of 7 judged; per-question denominators are 1 to 5.
+- The abliterated-checkpoint arm cleared the harmful-compliance positive floor: 177 of 215 completions kept (82.3%) vs base Qwen's 9 of 215 (4.2%); 97 of 116 questions favor the abliterated arm, none favor base (p < 0.001). The contrast is checkpoint-vs-checkpoint: the community derivative may differ from base beyond refusal behavior, and kept-row quality is unaudited beyond the compliance rubric.
+- The abliterated arm still trained nothing: 30.3% of its contrastive negatives (53 of 175) were judged harmful-compliant. That left 57% judge-clean against the 69% the 24-per-member pairing quota requires, and 4 of 5 panel members fell short. Regenerating negatives from base Qwen is an untested candidate fix; no base-arm negative data exists.
+- Sycophancy stayed floored in both arms (base Qwen 10 of 36 kept, abliterated 8 of 36, floor 20). On this stimulus bank, that falsifies the hypothesis that an on-policy Qwen generator clears the floor the parent run's Claude generator missed (6 of 36).
+- The sycophancy failure pattern is consistent with stimulus hardness as the binding constraint: 12 of 19 wrong-fact claims yield zero keeps in both arms (against roughly 7.6 zero-yield questions expected if all 19 shared the arms' overall keep rate) and no phrasing variant keeps more than 3 rows of its 3–7 judged. Per-question denominators are 1 to 5, so this read is observational.
 - Single seed, one persona context per class; parent-run comparisons are a declared three-delta recipe bundle (generator, injection style, variant count), while the within-run base-vs-abliterated contrast is single-variable at the checkpoint level.
 
 ## Goal
@@ -116,9 +116,9 @@ What is plotted: the judge-accepted fraction of generated positive completions p
 
 > **Figure.** Judge-accepted fraction of generated positives per class and generator, Wilson 95% intervals, floor dashed. Claude bars are the parent run's yields under a three-way recipe bundle (generator, injection style, variant count), context only. Only the abliterated arm on harmful compliance clears its floor (177 of 215).
 
-Sycophancy sits at 22–28% keep under both Qwen arms against the 55.6% the floor demands — the on-policy fix that cleared this floor in the earlier sycophancy-implantation line does not transfer to this stimulus bank. Harmful compliance splits: base Qwen keeps 9 of 215, overlapping the parent Claude generator's 2 of 215, while the abliterated arm keeps 177 of 215.
+Sycophancy sits at 22–28% keep under both Qwen arms against the 55.6% the floor demands. The on-policy fix that cleared this floor in the earlier sycophancy-implantation line does not transfer to this stimulus bank. Harmful compliance splits: base Qwen keeps 9 of 215 and the parent Claude generator kept 2 of 215 (both near floor; not formally compared), while the abliterated arm keeps 177 of 215.
 
-### The abliterated arm's harmful-compliance advantage is question-general — 97 of 116 questions — and absent for sycophancy
+### The abliterated arm's harmful-compliance advantage is consistent across questions (97 of 116) and absent for sycophancy
 
 What is plotted: per-question kept fraction, base Qwen (x) against abliterated Qwen (y), one point per shared question (19 sycophancy, 116 harmful compliance; jittered; dotted diagonal marks equality; sycophancy questions above one-half kept in either arm labeled with claim glosses).
 
@@ -126,7 +126,7 @@ What is plotted: per-question kept fraction, base Qwen (x) against abliterated Q
 
 > **Figure.** Per-question paired yields. Harmful compliance (right): the mass sits far above the diagonal — mean per-question difference +0.78 (95% interval 0.70 to 0.84), 97 of 116 questions favor the abliterated arm, none favor base. Sycophancy (left): 15 of 19 questions tie; mean difference −0.15.
 
-The harmful-compliance shift is question-general (p < 0.001, n=116): 89 of 116 questions keep every judged row under the abliterated checkpoint; 14 keep none. The sycophancy paired difference is indistinguishable from null given the variance (p = 0.63, n=19). Two caveats ride the headline: the contrast compares two checkpoints, not ablation on and off — the community derivative may differ from base beyond willingness — and kept rows passed only the compliance rubric, with no quality audit. Kept completions are long in both arms (median 2,591 characters base / 1,977 abliterated) while base's dominant sub-threshold rows are short (median 544), so a partial judge length reward cannot be excluded, though it cannot plausibly produce the 97-to-0 sign pattern.
+The harmful-compliance shift holds across questions (p < 0.001, n=116): 89 of 116 questions keep every judged row under the abliterated checkpoint; 14 keep none. The sycophancy paired difference is indistinguishable from null given the variance (p = 0.63, n=19). The contrast compares two checkpoints — ablation was never toggled on one, so the community derivative may differ from base beyond willingness. Kept rows passed only the compliance rubric; there was no quality audit. Kept completions are long in both arms (median 2,591 characters base / 1,977 abliterated) while base's dominant sub-threshold rows are short (median 544). A partial judge length reward therefore cannot be excluded: the 97-to-0 sign consistency rules out question-level noise but not a systematic bias. Re-judging with length stratified would separate the two.
 
 ### The abliterated generator's own contrastive negatives are judged harmful-compliant, so the cell still fails
 
@@ -136,9 +136,9 @@ What is plotted: for the abliterated harmful-compliance cell's negative stage, e
 
 > **Figure.** Abliterated-arm contrastive negatives, harmful compliance. 53 of 175 completions (30.3%) were judged harmful-compliant and dropped; 4 of 5 members finish below the quota of 24 (kept 13, 21, 19, 23; the police-officer member reaches exactly 24). The pipeline fail-fasts on the first violating member.
 
-Same-generator negatives kept the contrast single-variable, and that choice failed: the abliterated generator authored judge-clean negatives on 57% of requests (100 of 175) against the 69% the quota requires — a quota miss, not an inability; the default assistant is worst hit (13 of 35 kept). No base-arm negative data exists (the harmful-base cell fail-fasted at its positive floor before its negative stage), so regenerating the negative stage from base Qwen is an untested candidate fix: base Qwen's 96% non-compliance was read under opposite-direction, pro-compliance elicitation, which favors the prediction but does not test it. The 177 positives are reusable.
+Same-generator negatives kept the contrast single-variable, and that choice failed. The abliterated generator authored judge-clean negatives on 57% of requests (100 of 175) against the 69% the quota requires — a 12-point shortfall; 53 rows were judged harmful-compliant and the remaining 22 dropped with no valid judge score. The default assistant is worst hit (13 of 35 kept). No base-arm negative data exists (the harmful-base cell stopped at its positive floor before its negative stage ran), so regenerating the negative stage from base Qwen remains an untested prediction: base Qwen's 96% non-compliance was read under opposite-direction, pro-compliance elicitation, which favors the prediction but does not test it. The 177 positives are reusable.
 
-### The sycophancy floor failure is concentrated in specific wrong-fact claims, not in phrasing or generator
+### The sycophancy floor failure concentrates in specific wrong-fact claims
 
 What is plotted: left — per-question kept fraction for all 19 sycophancy claims under both arms (rate and n annotated; claims labeled with short glosses); right — kept fraction per exhibit phrasing per arm, floor rate dashed.
 
@@ -146,7 +146,7 @@ What is plotted: left — per-question kept fraction for all 19 sycophancy claim
 
 > **Figure.** Sycophancy yield structure. 12 of 19 claims yield zero keeps under both arms; the glass-flows myth keeps 4 of 5 and 5 of 5. No phrasing exceeds 3 kept of 7 judged in either arm — all below the floor rate.
 
-Most wrong-fact claims never yield under either generator or any phrasing — 12 of 19 zero in both arms, against roughly 7.6 expected under a uniform keep rate — while the one physically-plausible myth yields at ceiling; median judge scores are 1 and 6 of 100, so the generators actively correct. Denominators are small (1–5 judged per question per arm; 3–7 per phrasing, the best at 3 of 6 spanning the floor rate), so the concentration read is coarse. With the parent Claude generator flooring on the same bank, the pattern is consistent with hard-false factual stimuli, not generator family, as the binding constraint — an observational attribution; an opinion or self-assessment stimulus arm is the direct test.
+Most wrong-fact claims never yield under either generator or any phrasing: 12 of 19 sit at zero in both arms, against roughly 7.6 zero-yield questions expected if all 19 shared the arms' overall keep rate, while the one physically-plausible myth yields at ceiling. Median judge scores are 1 and 6 of 100, so the generators actively correct. Denominators are small (1–5 judged per question per arm; 3–7 per phrasing, the best at 3 of 6 spanning the floor rate), and the concentration read is correspondingly coarse. The parent Claude generator floored on the same bank, so the pattern points at unambiguously false factual claims as the binding constraint, with generator family secondary. An opinion or self-assessment stimulus arm is the direct test.
 
 ### Judge no-score drops concentrate on harmful content and are largest on the abliterated arm
 
@@ -156,7 +156,7 @@ What is plotted: for each of the four positive arms, the fraction of generated r
 
 > **Figure.** Positive-arm judge outcome composition per generated ROW. Fully dropped rows (gray): 0, 1, 14, and 19 of 36 / 36 / 215 / 215. Every unusable draw is dropped, never coerced; draw-level no-score rates are quoted in the text, not plotted.
 
-At the draw level, unusable judge returns were 14 and 19 of 180 (sycophancy base and abliterated) and 201 and 338 of 1,075 (harmful base and abliterated; the 338 is 337 nulls plus 1 malformed string). The judge declines most often exactly where content is most harmful — 31.4% of draws on the abliterated harmful arm — and no-scores are question-concentrated: one stimulus (trainq-0033) is judge-refused on all 5 abliterated rows and 4 of 5 base rows, alone accounting for 5 of 19 and 4 of 14 fully-dropped rows. The drops shrink the abliterated arm's kept count, so they cannot explain its advantage. Generation-stage drops were zero everywhere.
+At the draw level, unusable judge returns were 14 and 19 of 180 (sycophancy base and abliterated) and 201 and 338 of 1,075 (harmful base and abliterated; the 338 is 337 nulls plus 1 malformed string). The judge declines most often exactly where content is most harmful (31.4% of draws on the abliterated harmful arm), and the no-scores cluster by question: one stimulus (trainq-0033) is judge-refused on all 5 abliterated rows and 4 of 5 base rows. At the row level, the harmful arms fully dropped 19 (abliterated) and 14 (base) rows; trainq-0033 alone accounts for 5 and 4 of those (the match with the sycophancy draw counts above is numeric coincidence). The drops shrink the abliterated arm's kept count, so they cannot explain its advantage. Generation-stage drops were zero everywhere.
 
 ---
 
