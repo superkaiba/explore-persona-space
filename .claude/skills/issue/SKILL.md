@@ -8716,6 +8716,15 @@ revert control after the fact — that is what makes a no-prompt merge safe
 here. The worktree is deliberately NOT removed (`--delete-branch=false`,
 no `git worktree remove`).
 
+Known failure shape: a branch that CARRIES A MERGE COMMIT (e.g. after a
+conflict-resolution merge of `main` into the branch) cannot be
+server-side rebased — `gh pr merge --rebase` fails with
+`GraphQL: This branch can't be rebased`. The working recovery is
+`gh pr merge <PR> --squash --delete-branch=false` (acceptable for a
+single-logical-change branch; the squash loses per-commit revert
+granularity, which the merge commit already compromised). (Incident
+#1041 PR #801, 2026-07-05.)
+
 - **Success:** post `epm:merged v1` with the list of merge SHAs. Update
   the chat title with `merged`. Then run the **post-merge stale-task-folder
   guard** below (it runs on every merge form).
