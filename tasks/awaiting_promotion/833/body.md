@@ -5,6 +5,7 @@ kind: experiment
 tags:
 - from-722
 - onpolicy-postft-map
+- followup-auto
 created_at: '2026-07-02T04:55:40Z'
 has_clean_result: true
 parent_id: 722
