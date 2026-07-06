@@ -27,12 +27,12 @@ relates_to:
 
 ## Takeaways
 
-- With profiles built from the trained models' own answers, only the taught fact shows a positive leakage chain and above-floor on-policy movement; EM and sycophancy sit below on-policy floors, inconclusive.
+- With profiles built from the trained models' own answers, only the taught fact shows a positive leakage chain and above-floor on-policy movement; EM and sycophancy stay below on-policy floors, inconclusive.
 - The taught-fact chain strengthens on-policy, +0.51 → +0.67 at layer 14, excluding zero at every layer — but mode-collapsed own text may partly re-measure leakage; the control-map chain is unfit.
 - Most on-policy profile movement is output-text change: the matched-text control moves comparably or more (4.6× at layer 21), and the same-text different-weights component is 6–21% for the fact.
-- The magnitude read is normalization-sensitive: median raw on-policy deltas run 16–21× off-policy — a raw excess sycophancy shares — but the on-policy floor grows more, flipping the layer-14 floor-normalized comparison.
-- In-run, the off-policy arm reproduces the parent line's reads at layers 7 and 14 (chain +0.51 vs +0.50; floor 2.4–3.2×) but misses layer 21: 1.01× vs 1.58×.
-- All reads inherit 16 source-keyed inputs, one seed, and engine-relative greedy text; EM and sycophancy nulls fail the nonlinearity power gate, so they remain inconclusive rather than certified function-held.
+- The magnitude read is normalization-sensitive: median raw on-policy deltas run 16–21× off-policy (a raw excess sycophancy shares), but the on-policy floor grows more, flipping the layer-14 floor-normalized comparison.
+- In-run, the off-policy arm reproduces the parent line's reads at layers 7 and 14 (chain +0.51 vs parent's +0.50; floors 2.4×/3.2×) but misses layer 21: 1.01× vs 1.58×.
+- All reads inherit 16 source-keyed inputs, one seed, and greedy text specific to this generation stack; EM and sycophancy nulls fail the nonlinearity power gate, so they remain inconclusive rather than certified function-held.
 
 ## Goal
 
@@ -110,13 +110,13 @@ Of this probe's 30 target rows, 29 are corrective like the sampled one; the sing
 
 ### The taught-fact context→leakage chain strengthens with on-policy answer profiles; EM and sycophancy chains stay null
 
-What is plotted: held-out chain correlation (Spearman between the leave-one-context-out map prediction along the behavior direction and measured leakage E) per behavior × layer for all three maps; whiskers: 95% family-clustered bootstrap CIs (7 families, 480 cells).
+What is plotted: held-out chain correlation (Spearman between the leave-one-context-out map prediction along the behavior direction and measured leakage E) per behavior × layer for all three maps; whiskers: 95% family-clustered bootstrap CIs (7 target-context families, 480 cells).
 
 ![Forest plot of chain correlations for nine behavior-layer cells under three maps; fact on-policy points sit near 0.67 while EM and sycophancy cluster near zero](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a9c1020054777009691499b22890a68fe75bfd98/figures/issue_833/chain_rho_three_arms.png)
 
 > **Figure.** *The taught-fact chain reaches +0.67 on-policy at every layer.* Grey = base map over base answers; orange = post-fine-tuning map over base answers; blue = post-fine-tuning map over the model's own answers. 95% family-clustered bootstrap, 7 families, 480 cells per point.
 
-The fact on-policy profile predicts leakage at +0.67 at every layer versus +0.19 to +0.51 off-policy; the on-minus-off gain excludes zero at all layers (layer 14: +0.17, CI +0.11 to +0.23); the base map sits slightly negative, significantly at layer 7. Every EM and sycophancy arm difference straddles zero (two sycophancy arm CIs — on-policy layer 7, off-policy layer 14 — marginally negative). The nonlinearity gate certifies the fact on-policy arm at every layer; most EM/sycophancy arms fail it, so their nulls stay inconclusive. Fact models emit the taught sentence in about half their answers, so the on-policy profile partly encodes leakage itself; the unfit control-map chain is the direct test (top follow-up).
+The fact on-policy profile predicts leakage at +0.67 at every layer versus +0.19 to +0.51 off-policy; the on-minus-off gain excludes zero at all layers (layer 14: +0.17, CI +0.11 to +0.23); the base map is slightly negative, significantly at layer 7. Every EM and sycophancy arm difference straddles zero (two sycophancy arm CIs — on-policy layer 7, off-policy layer 14 — marginally negative). The nonlinearity gate (an arm's MLP chain must beat its own label-shuffle null; Methodology) certifies the fact on-policy arm at every layer; most EM/sycophancy arms fail it, so their nulls stay inconclusive. Fact models emit the taught sentence in about half their answers, so the on-policy profile partly encodes leakage itself; the unfit control-map chain is the direct test (top follow-up).
 
 ### Per-cell data behind the layer-14 fact chain correlations
 
@@ -126,7 +126,7 @@ What is plotted: measured leakage score E (y) against the held-out map predictio
 
 > **Figure.** *The on-policy ordering is visible cell-by-cell, not an aggregation artifact.* Rank correlations −0.14 / +0.51 / +0.67 (base / off-policy / on-policy). 480 cells; predictions recomputed on CPU from the cached joined design, matching the persisted GPU fits within 0.003.
 
-Leakage-heavy cells sit at high on-policy predictions, so the aggregate is not a pooling artifact. Negative scores are cells where trained expression sits below base. The 16-band structure is the inherited source-keyed input cap: the map sees 16 distinct contexts, not 480.
+Leakage-heavy cells land at high on-policy predictions; the ordering holds cell-by-cell. Negative scores are cells where trained expression sits below base. The 16-band structure is the inherited source-keyed input cap: the map sees only 16 distinct contexts despite the 480 cells.
 
 ### Median raw on-policy map movement is 16–21× the off-policy read, but floor-normalized movement is not larger
 
@@ -136,7 +136,7 @@ What is plotted: median map change along the behavior direction per behavior × 
 
 > **Figure.** *The raw explosion disappears under regime-local floor normalization.* Orange = off-policy, blue = on-policy, green = matched-text control (base weights, own text). Median over 480 cells; floors are the 95th percentile of 100 family-clustered refit pairs per map.
 
-Raw fact deltas jump from 0.09–0.30 off-policy to 1.85–4.63 on-policy (median ratios 16–21×), and the source-clustered bootstrap excludes zero at every fact layer. The raw excess is not fact-specific: sycophancy's paired delta also excludes zero at every layer, EM's marginally at layer 7, at 10–30× smaller magnitude; fact selectivity lives in magnitude and the chain. But the on-policy floor inflates 10–40×: in floor units fact reads 0.80–1.99× on-policy versus 1.01–3.15× off-policy and the layer-14 paired delta turns negative — normalization-sensitive per the plan's robustness rule, not a verdict. The tallest right-panel bar — sycophancy off-policy, layer 7, 4.0× a 0.0035 floor — fails the nonlinearity gate and mirrors the parent line's discounted 3.2× read.
+Raw fact deltas jump from 0.09–0.30 off-policy to 1.85–4.63 on-policy (median ratios 16–21×), and the source-clustered bootstrap excludes zero at every fact layer. The raw excess is not fact-specific: sycophancy's paired delta also excludes zero at every layer, EM's marginally at layer 7, at 10–30× smaller magnitude; fact selectivity lives in magnitude and the chain. But the on-policy floor inflates 10–40×: in floor units fact reads 0.80–1.99× on-policy versus 1.01–3.15× off-policy and the layer-14 paired delta turns negative — normalization-sensitive per the plan's robustness rule, so it carries no verdict weight. The tallest right-panel bar (sycophancy off-policy, layer 7, 4.0× a 0.0035 floor) fails the nonlinearity gate and mirrors the parent line's discounted 3.2× read.
 
 ### Every fact source's map moves more on-policy in raw units
 
@@ -146,7 +146,7 @@ What is plotted: one point per source context (16, labeled), raw map change off-
 
 > **Figure.** *All 16 sources sit above the diagonal at every layer.* Per-source raw map change along the fact direction; the map change is constant across a source's 30 targets (source-keyed inputs), so each source contributes one point.
 
-The raw on-policy excess is uniform across sources, not leverage from a few: 16 of 16 sources at each layer. Source-clustered bootstrap on the median paired delta: +4.28 at layer 14 (CI +3.63 to +5.40), +1.8 at layers 7/21, all excluding zero (per-source values and CIs persisted; recipe in Methodology).
+The raw on-policy excess is uniform (16 of 16 sources at each layer), so a few high-leverage sources cannot carry the aggregate. Source-clustered bootstrap on the median paired delta: +4.28 at layer 14 (CI +3.63 to +5.40), +1.8 at layers 7/21, all excluding zero (per-source values and CIs persisted; recipe in Methodology).
 
 ### The matched-text decomposition attributes the on-policy movement to output text, not weights
 
@@ -156,7 +156,7 @@ What is plotted: per-cell split of the total on-policy profile change at layer 1
 
 > **Figure.** *Per-source medians sit on the text side for all three behaviors; cell-level dominance is partial.* Same-text different-weights (y) vs same-weights different-text (x) components of v⁺(own) − v0(base), layer 14; the linear identity residual is exactly zero per cell.
 
-Median fact representation share: 0.19 at layer 14, 0.06 at layer 21 (alternate split path 0.15–0.21); sycophancy 0.09, EM a marginal 0.42. Dominance is a median-level read — 65% of fact cells and 12 of 16 fact per-source medians sit text-side; shares are path-dependent near floor (EM layers 7/21, the latter 0.51 vs 0.18 across paths; sycophancy layer 21). The matched-text control matches the on-policy map's raw movement at layer 14 (4.59 vs 4.63) and exceeds it 4.6× at layer 21 (8.90 vs 1.95): the movement travels through what the model writes. Whether the strengthened chain is likewise text-carried is unresolved — the control map's chain read was not fit (top follow-up).
+Median fact representation share: 0.19 at layer 14, 0.06 at layer 21 (alternate split path 0.15–0.21); sycophancy 0.09, EM a marginal 0.42. Dominance is a median-level read — 65% of fact cells and 12 of 16 fact per-source medians fall text-side; shares are path-dependent near floor (EM layers 7/21, the latter 0.51 vs 0.18 across paths; sycophancy layer 21). The matched-text control matches the on-policy map's raw movement at layer 14 (4.59 vs 4.63) and exceeds it 4.6× at layer 21 (8.90 vs 1.95): the movement travels through what the model writes. Whether the strengthened chain is likewise text-carried is unresolved — the control map's chain read was not fit (top follow-up).
 
 ### Manipulation check: the models' own answers diverge from base answers nearly everywhere
 
@@ -166,7 +166,7 @@ What is plotted: histograms of word-level normalized edit distance between each 
 
 > **Figure.** *No behavior sits in the trivial-identity regime.* Exact-match fractions: fact 0.00007, EM 0.0, sycophancy 0.0026; medians 0.96 / 0.93 / 0.87. Word-level normalized Levenshtein distance per response pair.
 
-The manipulation bites everywhere, so the fact-selective pattern's survival is substantive, not text identity. Own fact answers are far shorter (median 141 vs 520 characters): the trained models emit the taught sentence verbatim in 6,941 of 14,400 answers (7,312 contain its key phrase), ranging 66 to 855 per 900 across source contexts — the behavior the on-policy profile encodes and the off-policy regime could not see.
+The manipulation bites everywhere, so the fact-selective pattern survived a genuine change in the measured text. Own fact answers are far shorter (median 141 vs 520 characters): the trained models emit the taught sentence verbatim in 6,941 of 14,400 answers (7,312 contain its key phrase), ranging 66 to 855 per 900 across source contexts — the behavior the on-policy profile encodes and the off-policy regime could not see.
 
 ---
 **Repro:** Compute — Phases A–C (gates, generation, extraction, uploads): GCP `a2-ultragpu-1g` (1× A100-80), attempt `att-20260702-090420`, ≈7 GPU-h on 2026-07-02 (one flex-start preemption + full run, workload done 16:43Z). Phase D (fits): six VM-CPU and `n2-highmem-16` CPU rounds were abandoned mid-fit for throughput (measured ≈438 h/cell on CPU for the chain MLP gate); the canonical fits are round 7e on a fresh A100-80 (`FIT_DEVICE=cuda`, `MLP_CHUNK=512`), 2026-07-04 06:46Z → 2026-07-06 02:52Z, ≈44 GPU-h (~4.9 h per behavior-layer cell, 9 cells) — ≈51 A100-h realized against the plan's 21. No WandB (no training). Code — extraction `scripts/issue833_extract_onpolicy.py` at [`0d69e9e1d2`](https://github.com/superkaiba/explore-persona-space/blob/0d69e9e1d2770d1798ca3f26983b4b3599347e9a/scripts/issue833_extract_onpolicy.py); fits `scripts/issue833_fit_onpolicy.py` at [`abeb11e744`](https://github.com/superkaiba/explore-persona-space/blob/abeb11e744f7a4b3baf834d0ea21dae0b7d2ccef/scripts/issue833_fit_onpolicy.py); figures `scripts/issue833_figures.py` at [`a9c1020054`](https://github.com/superkaiba/explore-persona-space/blob/a9c1020054777009691499b22890a68fe75bfd98/scripts/issue833_figures.py). Eval JSONs — [`eval_results/issue_833/`](https://github.com/superkaiba/explore-persona-space/tree/67a0749872308d85f0a613409ce685f5debee810/eval_results/issue_833) (`chain_rho/`, `cells/`, `decomposition/`, `text_divergence/`, `parity/`, `source_bootstrap/`) on the issue-833 branch. Figures — [`figures/issue_833/`](https://github.com/superkaiba/explore-persona-space/tree/a9c1020054777009691499b22890a68fe75bfd98/figures/issue_833). HF artifacts — [`issue833_onpolicy_map/` @fa0f8ea3](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/fa0f8ea3acec005fc5cb3442c2349bf215e460f0/issue833_onpolicy_map): `analysis_tensors/` (4,320 npz), `analysis_tensors_rbase/` (4,320 npz + 48 context npz), `raw_completions/` (96 JSONs), `phase_d_outputs/`. Reused artifacts:
