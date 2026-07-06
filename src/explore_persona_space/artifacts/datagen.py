@@ -78,7 +78,9 @@ DEFAULT_GEN_MAX_TOKENS = 1024  # free-generation default (CLAUDE.md)
 # formatting's deterministic structural keep-check: >=80% of non-empty answer
 # lines are list items (plan §3.3 / §11).
 STRUCTURAL_LIST_FRACTION = 0.8
-MANIFEST_SCHEMA_VERSION = 1
+# v2 (#1090): + instruction_source; exhibit/not_exhibit_instructions now hold the
+# RESOLVED lists (a pre-#1090 v1 manifest mismatches -> the resume refuses, correct).
+MANIFEST_SCHEMA_VERSION = 2
 
 # Delimiters bracketing the generation-only instruction block inside the leading
 # system message. inject/strip are exact inverses (test-pinned), so the emitted
@@ -93,6 +95,17 @@ _INSTR_CLOSE = "\n[[/GENERATION-ONLY INSTRUCTION]]"
 # bracketed meta-block). Either way emit_messages is computed independently
 # from the context, so the context-parity contract holds by construction.
 INSTRUCTION_STYLES = ("tagged", "plain")
+
+# instruction_source values (#1090 plan §4 D2/D7): "elicitation" (default,
+# byte-identical to the pre-#1090 behavior) sources the generation-only
+# instructions from ``Behavior.elicitation``; "extraction_pairs" sources them
+# from the persona-vectors ``Behavior.extraction.prompt_pairs`` — positives
+# rotate over the pair ``exhibit`` texts, negatives over the pair
+# ``not_exhibit`` texts (trait-framed elicitation, the paper's step-2 artifact
+# repurposed as the datagen instruction-variant axis). The resolved lists +
+# the source token enter ``gen_manifest.json`` (resume-key protection: a
+# source flip regenerates fresh instead of silently reusing candidates).
+INSTRUCTION_SOURCES = ("elicitation", "extraction_pairs")
 
 
 class DatagenYieldError(RuntimeError):
@@ -293,6 +306,33 @@ class _ArmDrops:
 # ── Request composition ──────────────────────────────────────────────────────
 
 
+def _resolve_instructions(
+    behavior: Behavior, instruction_source: str
+) -> tuple[tuple[str, ...], tuple[str, ...] | None]:
+    """(exhibit_instructions, not_exhibit_instructions) for the given source.
+
+    ``"elicitation"`` reads ``Behavior.elicitation`` (the pre-#1090 behavior);
+    ``"extraction_pairs"`` reads the persona-vectors prompt pairs — positives
+    from ``PromptPair.exhibit``, negatives from ``PromptPair.not_exhibit``.
+    Raises ``ValueError`` on an unknown source or a pairs-source behavior with
+    no :class:`ExtractionSpec`.
+    """
+    if instruction_source not in INSTRUCTION_SOURCES:
+        raise ValueError(f"instruction_source {instruction_source!r} not in {INSTRUCTION_SOURCES}")
+    if instruction_source == "extraction_pairs":
+        if behavior.extraction is None:
+            raise ValueError(
+                f"behavior {behavior.name!r} has no ExtractionSpec — "
+                "instruction_source='extraction_pairs' needs the 5 prompt pairs"
+            )
+        pairs = behavior.extraction.prompt_pairs
+        return tuple(p.exhibit for p in pairs), tuple(p.not_exhibit for p in pairs)
+    return (
+        behavior.elicitation.exhibit_instructions,
+        behavior.elicitation.not_exhibit_instructions,
+    )
+
+
 def _compose_positive_requests(
     behavior: Behavior,
     context_C: Context,
@@ -300,8 +340,10 @@ def _compose_positive_requests(
     n_requests: int,
     rng,
     instruction_style: str = "tagged",
+    variants: Sequence[str] | None = None,
 ) -> list[GenRequest]:
-    variants = behavior.elicitation.exhibit_instructions
+    if variants is None:  # back-compat default: the elicitation source
+        variants = behavior.elicitation.exhibit_instructions
     grid = [(qid, q, vi) for (qid, q) in questions for vi in range(len(variants))]
     picks = _sample_grid(grid, n_requests, rng)
     reqs: list[GenRequest] = []
@@ -324,6 +366,9 @@ def _compose_positive_requests(
     return reqs
 
 
+_UNSET = object()  # sentinel: "caller passed nothing" (None is a legal value below)
+
+
 def _compose_negative_requests(
     behavior: Behavior,
     panel: Panel,
@@ -331,8 +376,10 @@ def _compose_negative_requests(
     n_requests_per_member: int,
     rng,
     instruction_style: str = "tagged",
+    not_exhibit: Sequence[str] | None | object = _UNSET,
 ) -> list[GenRequest]:
-    not_exhibit = behavior.elicitation.not_exhibit_instructions  # may be None
+    if not_exhibit is _UNSET:  # back-compat default: the elicitation source
+        not_exhibit = behavior.elicitation.not_exhibit_instructions  # may be None
     reqs: list[GenRequest] = []
     i = 0
     for member in panel:
@@ -544,6 +591,9 @@ def _build_manifest(
     gen_model: str,
     gen_temperature: float,
     instruction_style: str,
+    instruction_source: str,
+    exhibit_instructions: Sequence[str],
+    not_exhibit_instructions: Sequence[str] | None,
 ) -> dict:
     train_bank, ts, te = banks.SLICES[(behavior.name, "train")]
     return {
@@ -552,12 +602,14 @@ def _build_manifest(
         "train_bank": train_bank,
         "train_bank_sha": banks.bank_sha(train_bank),
         "train_slice": f"{train_bank}[{ts}:{te}]",
-        "exhibit_instructions": list(behavior.elicitation.exhibit_instructions),
+        # The RESOLVED instruction lists (per instruction_source, #1090) — a
+        # source flip changes these lists AND the source token below, so the
+        # manifest resume key invalidates on either.
+        "exhibit_instructions": list(exhibit_instructions),
         "not_exhibit_instructions": (
-            None
-            if behavior.elicitation.not_exhibit_instructions is None
-            else list(behavior.elicitation.not_exhibit_instructions)
+            None if not_exhibit_instructions is None else list(not_exhibit_instructions)
         ),
+        "instruction_source": instruction_source,
         "context_id": context_C.context_id,
         "context_fingerprint": _context_fingerprint(context_C),
         "panel": [m.slug for m in panel],
@@ -668,6 +720,7 @@ def generate_training_data(
     generate_fn: GenerateFn | None = None,
     judge_fn: JudgeFn | None = None,
     instruction_style: str = "tagged",
+    instruction_source: str = "elicitation",
 ) -> tuple[Path, Path, Path]:
     """Build contrastive (positive, contrast) training JSONL for ``behavior``.
 
@@ -678,8 +731,14 @@ def generate_training_data(
     ``instruction_style`` ("tagged" default | "plain", #1074) picks how the
     generation-only elicitation instruction is injected into ``gen_messages``;
     ``emit_messages`` is style-independent (context parity by construction) and
-    the style enters ``gen_manifest.json`` (resume-key protection). Raises
-    :class:`ValueError` on a programmatic behavior or unknown style,
+    the style enters ``gen_manifest.json`` (resume-key protection).
+    ``instruction_source`` ("elicitation" default | "extraction_pairs", #1090)
+    picks WHERE the generation-only instructions come from — the registered
+    ``ElicitationSpec`` (byte-identical pre-#1090 behavior) or the
+    persona-vectors ``extraction.prompt_pairs`` (positives rotate the pair
+    ``exhibit`` texts, negatives the ``not_exhibit`` texts); the resolved lists
+    + source enter the manifest resume key. Raises
+    :class:`ValueError` on a programmatic behavior or unknown style/source,
     :class:`DatagenYieldError` below the floor, and
     :class:`DatagenCheckpointMismatchError` on a stale resume.
     """
@@ -687,6 +746,9 @@ def generate_training_data(
     behavior.validate()
     if instruction_style not in INSTRUCTION_STYLES:
         raise ValueError(f"instruction_style {instruction_style!r} not in {INSTRUCTION_STYLES}")
+    exhibit_instructions, not_exhibit_instructions = _resolve_instructions(
+        behavior, instruction_source
+    )
     if behavior.programmatic:
         raise ValueError(
             f"behavior {behavior.name!r} is programmatic (tier-4 carve-out) — "
@@ -727,6 +789,9 @@ def generate_training_data(
         gen_model=gen_model,
         gen_temperature=gen_temperature,
         instruction_style=instruction_style,
+        instruction_source=instruction_source,
+        exhibit_instructions=exhibit_instructions,
+        not_exhibit_instructions=not_exhibit_instructions,
     )
     manifest_hash = hashlib.sha256(_canonical(manifest).encode("utf-8")).hexdigest()
     manifest_path = out_dir / "gen_manifest.json"
@@ -755,7 +820,13 @@ def generate_training_data(
 
     # 3a. POSITIVES: compose over the train bank, generate (or resume), judge-filter.
     pos_reqs = _compose_positive_requests(
-        behavior, context_C, train_questions, n_pos_req, rng, instruction_style
+        behavior,
+        context_C,
+        train_questions,
+        n_pos_req,
+        rng,
+        instruction_style,
+        variants=exhibit_instructions,
     )
     if raw_pos_path.exists():
         pos_cands = _read_raw(raw_pos_path)
@@ -789,7 +860,13 @@ def generate_training_data(
         neg_cands = _read_raw(raw_neg_path)
     else:
         neg_reqs = _compose_negative_requests(
-            behavior, panel, emitted_questions, n_neg_req_per_member, rng, instruction_style
+            behavior,
+            panel,
+            emitted_questions,
+            n_neg_req_per_member,
+            rng,
+            instruction_style,
+            not_exhibit=not_exhibit_instructions,
         )
         neg_cands = _gen("neg")(neg_reqs)
         _write_raw(raw_neg_path, neg_cands)
