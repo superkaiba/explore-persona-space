@@ -111,7 +111,14 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   present — the specific personas / sources / training-mix slices / eval
   probes (a 4-source adapter doesn't cover a 16-source sweep; a parent's
   `medical_doctor + french_person` negative panel doesn't cover a design that
-  needs a `police_officer` arm);
+  needs a `police_officer` arm). Presence of the FILE is not presence of the
+  FIELDS: for a multi-field tensor bundle, verify the artifact's REALIZED
+  key set — a cheap header/mmap read (`torch.load(path, map_location="cpu",
+  mmap=True).keys()`), or the consumer's own loader run against the real
+  pinned artifact — against every consumer assert; reading the builder code
+  is NOT verification, the pinned upload can predate the field
+  (`.claude/rules/gotchas.md` "Reused artifact's REALIZED keys can predate
+  the builder code", incident #1073);
 - **(d)** reuse does NOT break single-variable-change (consistency-checker) or
   measurement validity — no second silently-changed variable rides along
   (e.g. reusing #M's adapter trained at lr=1e-4 in a sweep claiming to vary
@@ -170,7 +177,9 @@ The planner verifies, before recording an artifact as reused in §10/§11:
   `mk_<source>_<arm>_<dose>_seed42.jsonl`) FAILS this leg even though the
   directory resolves under (i). (ii) checks PATH-LAYOUT only; schema /
   column-shape / version-tag / encoding drift are OUT of scope and covered —
-  where covered at all — by `(f)` byte-content identity. AND **(iii)
+  where covered at all — by `(f)` byte-content identity and, for a
+  multi-field bundle's realized key set (field presence), by the check-(c)
+  clause above. AND **(iii)
   target-backend fetchability** — the backend named in §9 can actually STAGE
   it. The RunPod lane stages any HF-resolved file (`snapshot_download` on
   small repos; scoped `list_repo_tree` + per-file `hf_hub_download` on the

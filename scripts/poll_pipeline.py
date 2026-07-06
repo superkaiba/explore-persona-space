@@ -23,8 +23,12 @@ Per tick:
    "Pod-side code NEVER shells out" rule). The poller parses each
    sentinel, posts the carried `epm:<kind>` marker from the local VM
    via `task_workflow.post_event`, then renames the sentinel to
-   `<path>.processed` so it posts exactly once. If a sentinel carries a
-   non-empty ``gate`` field, the poll returns ``status=gate`` with that
+   `<path>.processed` so it posts exactly once — and the post itself is
+   idempotent (#1084): each drain-posted event carries a `sentinel_fp`
+   extra, so a poller killed/hung between post and rename replays
+   rename-only on the next tick instead of duplicating the marker. If
+   a sentinel carries a non-empty ``gate`` field, the poll returns
+   ``status=gate`` with that
    gate name in the JSON output so the orchestrator parks at a user
    gate instead of continuing the polling loop.
 2. SSH to the pod (one heredoc batching: PID liveness, log mtime, log tail).
@@ -321,6 +325,7 @@ poller (or a human) can inspect it.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -345,6 +350,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     EVENT_NOTE_MAX,
     find_task_path,
     latest_event,
+    list_events,
     post_event,
 )
 
@@ -1802,6 +1808,41 @@ def _slugify_kind(kind: str) -> str:
     return kind.replace(":", "_")
 
 
+def _sentinel_fingerprint(remote_path: str, body: str) -> str:
+    """Stable idempotency key for ONE drained sentinel (#1084).
+
+    Hashes the remote path (unique per sentinel — epoch-suffixed filenames,
+    never reused by the writer contract) + the raw parser-delivered body
+    string. Hashing the raw string (never a re-serialized JSON dict) makes
+    the fp immune to key-ordering drift; including the path makes
+    cross-sentinel false-positive dedupe structurally impossible (two
+    byte-identical bodies at different paths are distinct signals). Pure /
+    no I/O; 16 hex chars (64 bits) — collision odds negligible at this
+    volume.
+    """
+    return hashlib.sha256(f"{remote_path}\n{body}".encode("utf-8", "replace")).hexdigest()[:16]
+
+
+def _posted_sentinel_fps(issue: int) -> dict[str, dict[str, Any]]:
+    """Map ``sentinel_fp`` -> already-posted event row for task ``issue``.
+
+    Reads ``events.jsonl`` once via ``list_events`` (the tolerant reader —
+    malformed lines skipped). FAIL-OPEN: on ANY read failure, ``log.error``
+    and return ``{}`` — degraded mode re-posts (today's pre-#1084 behavior);
+    a lost marker is never a possible outcome of a dedupe-read failure.
+    """
+    try:
+        events = list_events(issue)
+        return {e["sentinel_fp"]: e for e in events if isinstance(e.get("sentinel_fp"), str)}
+    except Exception as exc:
+        log.error(
+            "dedupe events read failed for #%d (%s); posting without dedupe (fail-open, #1084)",
+            issue,
+            exc,
+        )
+        return {}
+
+
 def _persist_oversize_note(
     *,
     issue: int,
@@ -1811,6 +1852,8 @@ def _persist_oversize_note(
     by: str,
     full_note: str,
     original_extras: dict[str, Any] | None = None,
+    sentinel_fp: str,
+    sentinel_path: str,
 ) -> bool:
     """Graceful-degradation for an oversize sentinel ``note``.
 
@@ -1837,7 +1880,11 @@ def _persist_oversize_note(
        hard-bounded under ``EVENT_NOTE_MAX`` so the pointer post itself
        cannot trip the same cap. ``artifacts=[<rel_path>]`` and
        ``oversize=True`` are carried as marker extras so the dashboard /
-       downstream consumers can locate the full payload.
+       downstream consumers can locate the full payload. The pointer post
+       ALSO carries the drain's ``sentinel_fp`` / ``sentinel_path``
+       idempotency extras (#1084), so a re-drain of an oversize sentinel
+       whose rename failed dedupes on the fp — no second artifact file, no
+       second pointer marker.
 
     Returns ``True`` on success (artifact written + pointer marker posted).
     Returns ``False`` (and logs) on any failure — caller must NOT rename
@@ -1927,6 +1974,8 @@ def _persist_oversize_note(
             by=by,
             note=pointer_note,
             artifacts=[rel_artifact],
+            sentinel_fp=sentinel_fp,
+            sentinel_path=sentinel_path,
             **extras,
         )
     except Exception as exc:
@@ -1998,6 +2047,104 @@ def _parse_sentinel(remote_path: str, body: str) -> dict[str, Any] | None:
     return data
 
 
+def _post_drained_sentinel(
+    *,
+    issue: int,
+    remote_path: str,
+    data: dict[str, Any],
+    fp: str,
+) -> dict[str, Any] | None:
+    """Post ONE parsed sentinel's marker (normal or oversize-pointer path).
+
+    Extracted from :func:`drain_sentinels_via`'s loop (#1084). Returns the
+    in-memory fp record the caller accumulates into the drain's dedupe map
+    on success (normal post AND oversize-pointer success both count), or
+    ``None`` on a retryable post failure — the caller leaves the sentinel
+    un-renamed and continues; the next tick retries. A non-conforming real
+    sentinel carrying ``"version": null`` keeps its loud ``int(None)``
+    TypeError (#975) — it propagates out of the drain, never silently
+    derived.
+    """
+    kind = data["kind"]
+    if "version" in data:
+        # Real pod-side sentinel: "version" is a REQUIRED envelope key
+        # (_SENTINEL_REQUIRED_KEYS / pod-side-reporting.md) and an
+        # explicit version always wins in post_event — verbatim contract.
+        # Branch on key PRESENCE, not None-tolerance: a (non-conforming)
+        # real sentinel carrying "version": null keeps today's loud
+        # int(None) TypeError instead of silently deriving (#975).
+        version: int | None = int(data["version"])
+    else:
+        # Only reachable via the #899 synthesized envelope, which omits
+        # the key (#975): post_event derives max(existing for kind)+1 so
+        # a re-drained / re-run rescue never lands BELOW an existing
+        # higher version (the #480 collision class). If the rename fails,
+        # a future tick's re-drain fp-hits on the ``sentinel_fp`` extra
+        # and skips the re-post entirely (#1084) — no duplicate at a
+        # fresh max+1 anymore.
+        version = None
+    note = data.get("note")
+    if note is None:
+        note = data.get("payload")
+    if note is not None and not isinstance(note, str):
+        note = json.dumps(note, ensure_ascii=False)
+    by = data.get("by") or "pod-sentinel"
+    try:
+        post_event(
+            issue,
+            kind,
+            version=version,
+            by=by,
+            note=note,
+            sentinel_fp=fp,
+            sentinel_path=remote_path,
+        )
+    except ValueError as exc:
+        # Oversize-note guard: match the EXACT message ``post_event``
+        # raises (``"event note exceeds {N} chars (...)"``). Routing
+        # any-old ``ValueError`` to graceful-degradation would
+        # silently swallow real schema bugs, so the substring match
+        # stays narrow.
+        if _OVERSIZE_NOTE_ERROR_SUBSTR not in str(exc) or note is None:
+            log.error(
+                "post_event failed for sentinel %s (kind=%s): %s",
+                remote_path,
+                kind,
+                exc,
+            )
+            return None
+        if not _persist_oversize_note(
+            issue=issue,
+            remote_path=remote_path,
+            kind=kind,
+            version=version,
+            by=by,
+            full_note=note,
+            original_extras=data,
+            sentinel_fp=fp,
+            sentinel_path=remote_path,
+        ):
+            # Persistence / pointer-post failed — retry next tick.
+            return None
+        # Pointer marker posted from the persisted artifact — success.
+    except Exception as exc:
+        # Don't rename on post failure — next tick will retry. We log
+        # at error so an operator can see repeated failures.
+        log.error(
+            "post_event failed for sentinel %s (kind=%s): %s",
+            remote_path,
+            kind,
+            exc,
+        )
+        return None
+    return {
+        "kind": kind,
+        "version": version,
+        "sentinel_path": remote_path,
+        "ts": "(this drain)",
+    }
+
+
 def drain_sentinels_via(
     *,
     issue: int,
@@ -2025,9 +2172,26 @@ def drain_sentinels_via(
     polling loop continues (incident #641).
 
     Each successfully-posted sentinel is renamed to ``<path>.processed``
-    so the next tick won't re-post the same marker. If the marker post or
-    the rename fails for an individual sentinel, the sentinel is left in
-    place and a warning is logged; subsequent ticks will retry.
+    so the next tick won't re-post the same marker. If the marker POST
+    fails for an individual sentinel, the sentinel is left in place and a
+    warning is logged; subsequent ticks retry the whole path. If the post
+    SUCCEEDS but the rename fails (or the poller crashes between the two —
+    the #952 W1 window), the next tick's re-drain is IDEMPOTENT (#1084):
+    every drain-posted event carries a ``sentinel_fp`` extra (sha256 of
+    ``remote_path + "\\n" + raw body``, via :func:`_sentinel_fingerprint`)
+    plus a ``sentinel_path`` extra, and the drain skips the re-post on an
+    fp hit (loud ``log.error`` naming the matched event) and retries the
+    rename only — exactly-once PER DRAINER (the dedupe read sits outside
+    ``post_event``'s flock, so two CONCURRENT drainers can still race to a
+    duplicate; loud, benign, and identical to pre-#1084 behavior). A
+    ``mark_processed`` callable that RAISES (e.g. ``subprocess.
+    TimeoutExpired`` from a hung SSH transport) is treated as a rename
+    failure — loud log, sentinel left in place, loop continues to later
+    sentinels. A ``list_sentinels`` callable that raises
+    ``subprocess.TimeoutExpired`` / ``OSError`` (the hung RunPod transport)
+    yields an empty drain (``(0, None)``) with a loud log — mirroring the
+    documented rc!=0 -> ``[]`` transport contract; any OTHER exception
+    still escapes (fail-fast for genuine code bugs).
 
     Exception: an oversize-``note`` ``ValueError`` from ``post_event`` (note
     exceeds ``EVENT_NOTE_MAX``) is NOT a retryable failure — re-posting the
@@ -2041,89 +2205,104 @@ def drain_sentinels_via(
     end the loop. Any OTHER ``post_event`` exception (transient infra,
     schema bug, etc.) keeps the original retry-on-next-tick semantics.
     """
-    sentinels = list_sentinels()
+    try:
+        sentinels = list_sentinels()
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        # W2a (#1084): the RunPod drain transport hung past its subprocess
+        # timeout (or failed at the OS layer). Mirror the documented
+        # rc!=0 -> [] contract: empty drain, loud log, retry next tick.
+        # The catch is deliberately NARROW — any other exception is a
+        # genuine code bug and must still crash loud (fail-fast).
+        log.error(
+            "sentinel drain transport failed for issue %d: %s — empty drain, retry next tick",
+            issue,
+            exc,
+        )
+        return 0, None
     processed = 0
     gate: str | None = None
+    # Lazy idempotency map (#1084): ONE events.jsonl read per drain
+    # invocation, taken only when at least one sentinel parsed. The map is
+    # ALSO updated in-loop after every successful post, so a duplicate
+    # (remote_path, body) tuple within ONE listing posts exactly once
+    # (currently unreachable — the canonical + fallback globs are disjoint —
+    # but a future overlapping ``extra_globs`` must not reopen the
+    # same-tick double-post).
+    posted_fps: dict[str, dict[str, Any]] | None = None
     for remote_path, body in sentinels:
         data = _parse_sentinel(remote_path, body)
         if data is None:
             continue
-        kind = data["kind"]
-        if "version" in data:
-            # Real pod-side sentinel: "version" is a REQUIRED envelope key
-            # (_SENTINEL_REQUIRED_KEYS / pod-side-reporting.md) and an
-            # explicit version always wins in post_event — verbatim contract.
-            # Branch on key PRESENCE, not None-tolerance: a (non-conforming)
-            # real sentinel carrying "version": null keeps today's loud
-            # int(None) TypeError instead of silently deriving (#975).
-            version: int | None = int(data["version"])
-        else:
-            # Only reachable via the #899 synthesized envelope, which omits
-            # the key (#975): post_event derives max(existing for kind)+1 so
-            # a re-drained / re-run rescue never lands BELOW an existing
-            # higher version (the #480 collision class). If the rename below
-            # fails and a future tick re-drains the same rescue, the
-            # duplicate lands at a fresh max+1 (v5, v6, ...) with
-            # byte-equivalent content — highest-version-wins resume stays
-            # correct, strictly better than stacked v1s.
-            version = None
-        note = data.get("note")
-        if note is None:
-            note = data.get("payload")
-        if note is not None and not isinstance(note, str):
-            note = json.dumps(note, ensure_ascii=False)
-        by = data.get("by") or "pod-sentinel"
-        try:
-            post_event(issue, kind, version=version, by=by, note=note)
-        except ValueError as exc:
-            # Oversize-note guard: match the EXACT message ``post_event``
-            # raises (``"event note exceeds {N} chars (...)"``). Routing
-            # any-old ``ValueError`` to graceful-degradation would
-            # silently swallow real schema bugs, so the substring match
-            # stays narrow.
-            if _OVERSIZE_NOTE_ERROR_SUBSTR not in str(exc) or note is None:
-                log.error(
-                    "post_event failed for sentinel %s (kind=%s): %s",
-                    remote_path,
-                    kind,
-                    exc,
-                )
-                continue
-            if not _persist_oversize_note(
-                issue=issue,
-                remote_path=remote_path,
-                kind=kind,
-                version=version,
-                by=by,
-                full_note=note,
-                original_extras=data,
-            ):
-                # Persistence / pointer-post failed — leave sentinel
-                # un-renamed so the next tick can retry the whole path
-                # (e.g. transient disk-write failure).
-                continue
-            # Pointer marker posted from the persisted artifact; fall
-            # through to the rename + accounting block below so this
-            # sentinel stops being re-attempted.
-        except Exception as exc:
-            # Don't rename on post failure — next tick will retry. We log
-            # at error so an operator can see repeated failures.
+        fp = _sentinel_fingerprint(remote_path, body)
+        if posted_fps is None:
+            posted_fps = _posted_sentinel_fps(issue)
+        dup = posted_fps.get(fp)
+        if dup is not None:
+            # W1 crash-safe replay (#1084): the marker for THIS exact
+            # sentinel (same path + same body) already posted on a prior
+            # tick whose rename failed/crashed (or earlier THIS drain).
+            # LOUD skip — fail-fast philosophy: never silent — then fall
+            # through to the rename + accounting + gate extraction below
+            # WITHOUT re-posting. Exactly-once per drainer. Note the
+            # fp/dup check runs BEFORE the version-presence branch, so a
+            # dup replay never re-executes ``int(data["version"])`` (a
+            # null-version sentinel crashes before ever posting, so it can
+            # never be a dup — the #975 TypeError pin is unaffected).
             log.error(
-                "post_event failed for sentinel %s (kind=%s): %s",
+                "sentinel %s already posted as %s v%s at %s (fp=%s); skipping re-post, "
+                "renaming only (crash-safe replay, #1084)",
                 remote_path,
-                kind,
+                dup.get("kind"),
+                dup.get("version"),
+                dup.get("ts"),
+                fp,
+            )
+        else:
+            if any(e.get("sentinel_path") == remote_path for e in posted_fps.values()):
+                # Same path, different content: a writer-contract violation
+                # (filenames are epoch-suffixed and never reused). Fail-open
+                # + loud: the new content is a distinct signal, so post it.
+                log.warning(
+                    "sentinel %s content CHANGED at a previously-posted path (writer "
+                    "contract violation); posting anyway",
+                    remote_path,
+                )
+            fp_record = _post_drained_sentinel(
+                issue=issue, remote_path=remote_path, data=data, fp=fp
+            )
+            if fp_record is None:
+                # Retryable post failure — sentinel left un-renamed so the
+                # next tick can retry the whole path.
+                continue
+            # Record the just-posted fp so a duplicate (path, body) tuple
+            # LATER IN THIS SAME DRAIN dedupes (#1084).
+            posted_fps[fp] = fp_record
+        try:
+            renamed_ok = mark_processed(remote_path)
+        except Exception as exc:
+            # W2b (#1084): a hung/raising rename transport (e.g.
+            # subprocess.TimeoutExpired from a wedged SSH) is treated as a
+            # rename FAILURE — the documented False path below. Loud, and
+            # the loop CONTINUES to later sentinels; the marker is already
+            # posted, so the next tick's replay is idempotent (fp dedupe).
+            log.error(
+                "mark_processed raised for %s: %s — treating as rename failure "
+                "(marker posted; idempotent replay next tick)",
+                remote_path,
                 exc,
             )
-            continue
-        if not mark_processed(remote_path):
-            # Marker is posted but rename failed; on the next tick we'd
-            # re-post and create a duplicate event. Surface loudly so the
-            # operator can rename manually.
+            renamed_ok = False
+        if not renamed_ok:
+            # Marker is posted but rename failed. The next tick re-drains
+            # this sentinel and replays IDEMPOTENTLY (#1084): the fp dedupe
+            # skips the re-post and retries the rename only — no duplicate
+            # event. Surface loudly so an operator can rename manually if
+            # the transport failure persists.
             log.error(
-                "marker %s posted from sentinel %s but rename failed; "
-                "future ticks may duplicate. Rename to %s.processed "
-                "manually on the remote host.",
-                kind,
+                "marker posted from sentinel %s but rename failed; next tick "
+                "will replay idempotently (fp dedupe skips the re-post, rename "
+                "only). Rename to %s.processed manually on the remote host to "
+                "end the retries.",
                 remote_path,
                 remote_path,
             )

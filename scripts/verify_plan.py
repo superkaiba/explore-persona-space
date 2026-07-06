@@ -54,12 +54,14 @@ Check catalog (id — classification — kind scope)
       validation                                          analysis
   c25 html entities in fenced   FAIL, conditional         all kinds
       command blocks
+  c26 GPU basis vs routed       WARN-only, conditional    experiment +
+      machine                                             analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24, 25) also SKIP when their content trigger does not
-fire.
+19, 20, 21, 22, 23, 24, 25, 26) also SKIP when their content trigger does
+not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -88,6 +90,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
     arm-(a) shell-tagged content fences ONLY; an arm-(b) fence whose body
     carries ``--workload-cmd`` / ``dispatch_issue.py`` FAILs on entities
     unconditionally)
+  - ``N/A — basis measured on the routed machine`` (check 26)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -1104,17 +1107,33 @@ _DRAW_FACTOR = (
     r"(?:\d[\d,_]*\s*(?:null[- ])?(?:draws?|perms?|permutations|resamples)"
     r"|n_(?:draws|perms|boot)\b|draws|perms|permutations|resamples|B\s*=\s*\d{3,})"
 )
-_GRID_FACTOR = (
-    r"(?:\d[\d,_]*|cells|folds|arms|layers|traits|seeds"
-    r"|behaviors|settings|conditions|statistics)"
-)
+# The grid side accepts ANY axis factor — a count ("24"), a count + axis
+# noun ("6 arms", "3 layers", "~3 quantities"), or a bare axis noun
+# ("cells", "batteries") — optionally opened by an approximation / paren
+# decoration ("~3", "≈8", "(6 arms"). The load-bearing discriminator is
+# the DRAW-BEARING factor, not the grid noun: the #810 false-PASS class
+# is a grid-only product with NO draw factor ("34 x 50 x 28",
+# "layers x 3584", "6 arms x 3 layers x 16 folds") and still fails; a
+# noun whitelist only rots ("batteries"/"quantities" false-FAILed the
+# conforming #833 v8 sizing block — #1086).
+_GRID_DECOR = r"(?:[~≈(]\s*)?"
+_GRID_FACTOR = r"(?:\d[\d,_]*(?:\s+[A-Za-z][\w-]*)?|[A-Za-z][\w-]*)"
 # The multiplication token plans actually write: the real multiplication
 # sign plus the ASCII fallbacks.
 _MULT_TOKEN = r"[×x*]"  # noqa: RUF001 — the multiplication sign is real plan text
 _MULT_ARITH_RE = re.compile(
-    rf"(?i)\b(?:{_DRAW_FACTOR}\s*{_MULT_TOKEN}\s*{_GRID_FACTOR}"
+    rf"(?i)\b(?:{_DRAW_FACTOR}\s*{_MULT_TOKEN}\s*{_GRID_DECOR}{_GRID_FACTOR}"
     rf"|{_GRID_FACTOR}\s*{_MULT_TOKEN}\s*{_DRAW_FACTOR})\b"
 )
+# Arith-anchored windows (#1086) accepted fail-UNSAFE residual, DISCLOSED: a
+# quoted SIBLING's sizing line ("#778's 10,000 draws x 24 cells, batched")
+# can anchor its own window and satisfy THIS plan's battery — the same
+# residual class as c18's documented residual (f) (non-verbatim paraphrase,
+# beyond mechanical defense). Deliberately NO `#\d{2,}` citation guard on
+# anchor lines: 192 corpus draw-arithmetic lines carry a same-line #-ref,
+# and .claude/rules/plan-compute-sizing.md MANDATES citing a prior-issue
+# MEASURED basis beside sizing arithmetic, so the guard would re-create the
+# very false-positive class #1086 fixes (guard REJECTED in plan v2 §11).
 
 # Evidence (ii): a named batched helper or an explicit vectorization
 # statement. A token whose only in-window occurrence sits inside a citation /
@@ -1163,12 +1182,14 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
     """A plan naming a permutation/bootstrap/null-draw battery must carry,
     NEAR a battery mention (± 15 raw lines), BOTH (i) explicit multiplier
     arithmetic with a draw-bearing factor and (ii) a batched-implementation
-    commitment. Window-scoped, never document-global — the document-global
-    draft demonstrably false-PASSed the motivating incident plan (#810 v1)
-    via an unrelated footprint product + helper boilerplate. FAIL
-    (experiment) / WARN (analysis) / SKIP otherwise; a SURFACE check per the
-    module's scope discipline — semantic adequacy of the arithmetic stays
-    with the Phase 2 critics."""
+    commitment. A draw-bearing arithmetic line ALSO anchors its own ± 15
+    evidence window (#1086) — the §9 sizing block legitimately lives far
+    from the §4/§6 battery registration. Window-scoped, never
+    document-global — the document-global draft demonstrably false-PASSed
+    the motivating incident plan (#810 v1) via an unrelated footprint
+    product + helper boilerplate. FAIL (experiment) / WARN (analysis) /
+    SKIP otherwise; a SURFACE check per the module's scope discipline —
+    semantic adequacy of the arithmetic stays with the Phase 2 critics."""
     cid, name = "c12_battery_multiplier", "battery multiplier + batched commitment"
     if kind not in ("experiment", "analysis"):
         return _skip(cid, name, "kind-exempt: battery sizing is an experiment|analysis plan shape")
@@ -1177,6 +1198,14 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
         return _skip(cid, name, "no permutation/null-draw battery named")
     if re.search(NA_RE + r"no draw battery", plan):
         return _pass(cid, name, "explicit N/A declared (no draw battery)")
+    # #1086: a draw-bearing arithmetic line ANCHORS its own ±15 evidence
+    # window — the §9 sizing block legitimately lives far from the §4/§6
+    # battery registration (#833 v8: 58+ lines). Window-scoped discipline is
+    # preserved: only a line already carrying a draw-bearing product can
+    # anchor (a grid-only footprint product never anchors — the #810 v1
+    # false-PASS class), and the batched commitment must still sit within
+    # ±_C12_WINDOW_LINES raw lines of the anchor.
+    windows = windows + _trigger_windows(plan, _MULT_ARITH_RE, _C12_WINDOW_LINES)
     any_arith = False
     any_commit = False
     for window in windows:
@@ -1205,7 +1234,8 @@ def check_battery_multiplier(plan: str, kind: str) -> CheckResult:
     if not missing:
         missing.append(
             "co-location: the multiplier arithmetic and the batched-implementation "
-            "commitment each appear somewhere, but never together near any battery mention"
+            "commitment each appear somewhere, but never together near any battery mention "
+            "or draw-arithmetic sizing line"
         )
     detail = (
         f"plan names a permutation/bootstrap/null battery but is missing {' AND '.join(missing)}"
@@ -2159,9 +2189,24 @@ _C18_PAIRCOUNT_RE = re.compile(r"(?i)\b\d[\d,]*\s+(?:pre-named\s+)?pairs\b")
 # D1: a row-coverage declaration; evidence on the same line or within the
 # next _C18_DECL_WINDOW_LINES physical lines (fenced lines excluded).
 _C18_COVERAGE_RE = re.compile(r"(?i)\brow[- ]coverage\b")
+# #1086 widening: suffixed tensor-store dirs (`analysis_tensors_nonemit/` —
+# the `\w*` suffix arm) and canonical `issueN_<slug>/…` HF data-repo
+# prefixes (the Upload Policy destination shape) are artifact evidence. The
+# trailing `\S*` on the `analysis_tensors\w*/\S*` alternative — not `\S+` —
+# is DELIBERATE: a bare store-dir token ending at the slash (backticked or
+# line-final `analysis_tensors_nonemit/`) is complete artifact evidence
+# with nothing after the slash. An `issueN…/` PATH token is affirmative
+# artifact evidence, orthogonal to the `_C18_ISSUE_REF_RE` citation guard
+# (the literal `#\d{2,}` form), which is byte-unchanged. Accepted
+# fail-UNSAFE residual, DISCLOSED: a SIBLING issue's `issueN…/` store path
+# on the declaration line counts as D1 artifact evidence — whether the
+# named store truly contains THIS plan's rows stays with the fact-checker
+# (no guard, no negative fixture: a negative would require a citation
+# guard #1086 deliberately does not add).
 _C18_ARTIFACT_RE = re.compile(
     r"(?i)\S+\.(?:pt|pth|json|jsonl|npz|npy|safetensors|csv|parquet|arrow)\b"
-    r"|\beval_results/\S+|\banalysis_tensors/\S+|\braw_completions/\S+"
+    r"|\beval_results/\S+|\banalysis_tensors\w*/\S*|\braw_completions/\S+"
+    r"|\bissue\d{2,}[\w.-]*/\S+"
 )
 # v2 (MF-B): the bare `this run` alternative is REMOVED — only the
 # arms-generated construction or an explicit `by construction` counts as
@@ -2171,6 +2216,41 @@ _C18_BYCONSTRUCTION_RE = re.compile(
     r"(?i)both arms .{0,60}\b(?:generated|produced|computed|fit(?:ted)?|emitted)\b"
     r"|\bby construction\b"
 )
+# #1086 (v2): the check's own remedy text ("state that the plan's own fits
+# produce every registered row on each arm", the FAIL detail below) was
+# unmatchable by _C18_BYCONSTRUCTION_RE — a planner implementing the bounce
+# verbatim still FAILed (#833 v8). Accept that form via a SEPARATE
+# alternative deliberately narrower than the remedy prose: (i) affirmative
+# produce-verb + "every registered", (ii) arm vocabulary within 80 chars
+# after the match (each/both/per arm[s]), (iii) NO negation/deferral token
+# in the local span around the match — "does not yet produce every
+# registered row on each arm" and "will produce every registered row …
+# once implemented" are explicit NON-declarations and must keep FAILing
+# (the MF-B deferral class). _C18_BYCONSTRUCTION_RE itself stays
+# byte-unchanged so no historical PASS can flip.
+_C18_PRODUCES_REGISTERED_RE = re.compile(
+    r"(?i)\b(?:produces?|generates?|computes?|emits?|yields?)\s+every\s+registered\b"
+    r"(?=.{0,80}\b(?:each|both|per)\s+arms?\b)"
+)
+_C18_NEG_DEFER_RE = re.compile(
+    r"(?i)\b(?:not|n't|never|without|will|would|shall|should|may|might|could"
+    r"|once|pending|deferred|later|TBD|to\s+be)\b"
+)
+
+
+def _c18_affirmative_produces_hit(line: str) -> bool:
+    """The v2 remedy-text alternative: affirmative produce-verb + 'every
+    registered' + arm vocabulary, with negation/deferral tokens disqualifying
+    in a local span (48 chars before the match start, 80 after its end).
+    Scoped to THIS alternative only — the legacy _C18_BYCONSTRUCTION_RE
+    alternatives keep their behavior byte-for-byte."""
+    m = _C18_PRODUCES_REGISTERED_RE.search(line)
+    if not m:
+        return False
+    span = line[max(0, m.start() - 48) : m.end() + 80]
+    return not _C18_NEG_DEFER_RE.search(span)
+
+
 # D2 (MF-A): a subset expression AND word-bounded row/pair vocabulary AND
 # coverage/source-key vocabulary must co-occur on the candidate line.
 # Word-bounding kills the 608 v2:164 false-satisfier ("pair" inside
@@ -2217,8 +2297,13 @@ _C18_FIGURES_LINE_RE = re.compile(r"(?i)^\W{0,8}figures?\b")
 # as a dishonest c13 N/A line; (g) a wrapped/reformatted paste that
 # separates the fingerprint from the row-coverage phrase across lines — the
 # line-local guard misses it; the D1 evidence requirement (artifact token /
-# arms-generated phrase) still has to be met by the surviving fragment,
-# which the detail's wording deliberately fails to supply.
+# arms-generated phrase / #1086's affirmative produces-registered form)
+# still has to be met by the surviving fragment. NOTE (#1086): the remedy
+# text's own "produce every registered row on each arm" clause is now a
+# satisfier BY DESIGN (the remedy-vs-satisfier inconsistency was the bug),
+# so a wrapped paste landing that clause on a citation-free Row-coverage
+# line self-satisfies — a widened, DISCLOSED instance of this same
+# residual class.
 
 
 def _c18_registered_paired_lines(plan: str) -> list[str]:
@@ -2282,7 +2367,12 @@ def _c18_coverage_declarations(plan: str) -> list[str]:
                 for j in range(i + 1, min(i + 1 + _C18_DECL_WINDOW_LINES, len(lines)))
                 if not mask[j]
             ]
-            if any(_C18_ARTIFACT_RE.search(w) or _C18_BYCONSTRUCTION_RE.search(w) for w in window):
+            if any(
+                _C18_ARTIFACT_RE.search(w)
+                or _C18_BYCONSTRUCTION_RE.search(w)
+                or _c18_affirmative_produces_hit(w)
+                for w in window
+            ):
                 out.append(line.strip())
     return out
 
@@ -3655,6 +3745,223 @@ def check_html_entities_in_commands(plan: str, kind: str) -> CheckResult:
     return _pass(cid, name, f"{len(arm_a) + len(arm_b)} command fence(s), no entity forms")
 
 
+# ─── Check 26 — GPU basis vs routed machine (WARN-only, conditional) ────────
+# Mechanizes .claude/rules/plan-compute-sizing.md § "Cost wall-time against
+# the machine the router will ACTUALLY provision" (#599/#833/#1073 class).
+# STATIC MIRROR of backends/gcp.py::INTENT_TO_MACHINE at FAMILY grain,
+# drift-guarded by tests/test_verify_plan.py::
+# test_c26_intent_gpu_mirror_matches_backend — verify_plan_text() stays
+# hermetic (no project imports at module level; the only project import in
+# this file is the --issue-mode-local task_workflow resolver).
+_C26_INTENT_GPU: dict[str, str] = {
+    "lora-7b": "A100",
+    "lora": "A100",
+    "capture-7b": "A100",
+    "ft-7b": "A100",
+    "eval": "L4",
+    "debug": "L4",
+    "lora-7b-h100": "H100",
+    "eval-h100": "H100",
+    "cpu-bigmem": "CPU",
+    "cpu-small": "CPU",
+    "cpu-mid": "CPU",
+    "sweep-8g-a100": "A100",
+    "sweep-8g-h100": "H100",
+}
+
+
+def _c26_family(token: str) -> str:
+    """GPU family normalization: strip a trailing ``-<digits>`` HBM-size
+    suffix (``A100-80`` == ``A100-40`` == ``A100``; ``H100-80`` == ``H100``;
+    ``L4``/``CPU`` unchanged). A100-40-vs-A100-80 differences are
+    deliberately below the heuristic's grain."""
+    return re.sub(r"-\d+$", "", token)
+
+
+# GPU family tokens ALLOWED in a basis cell trigger. L4/L40S deliberately
+# EXCLUDED from the trigger set: #833-style leg labels ("L1/L2 re-extraction,
+# L3/L4 extraction") collide with the L4 GPU token; nobody measures bases on
+# an L4, while the ROUTED side still knows L4 via the mirror. Included in the
+# ESCAPE scan (permissive direction only).
+_C26_BASIS_GPU_RE = re.compile(r"\b(H100|H200|A100(?:-[48]0)?|B200)\b")
+_C26_ROW_GPU_ANY_RE = re.compile(r"\b(H100|H200|A100(?:-[48]0)?|B200|L40S|L4)\b")
+
+# Scaling vocabulary (row-scoped escape). A bare multiplication sign is NOT
+# an escape — it appears in nearly every row's multiplier arithmetic
+# ("5,000 x ~300 tok", "draws x cells"); #1073 v3's offending row contains
+# one and was still the incident (plan #1075 calibration finding).
+_C26_SCALING_RE = re.compile(
+    r"(?i)\bscal(?:ed|ing|e factor)\b|per-?step rate|step-?time|rate-?convert"
+)
+
+# Intent resolution: --intent <tok> in prose or fences (c5 precedent: RAW
+# scan); additionally accepted: the "intent `lora-7b`" prose form
+# (#1073 v3 "Target pod preference" shape — capitalized "Intent" in the
+# wild, hence (?i)).
+_C26_INTENT_RE = re.compile(
+    r"(?i)--intent[=\s]+`?([A-Za-z0-9][A-Za-z0-9-]*)|\bintent\s+`([A-Za-z0-9][A-Za-z0-9-]*)`"
+)
+
+# Explicit RunPod pin → the RunPod H100/H200 intent table governs; SKIP.
+# Scanned RAW (fences included), matching the raw intent scan — a fenced
+# `--backend runpod` dispatch line is a real pin; permissive direction only.
+_C26_RUNPOD_PIN_RE = re.compile(r"(?i)\bbackend:\s*`?runpod\b|--backend[=\s]+`?runpod\b")
+
+
+def _c26_intents(plan: str) -> set[str]:
+    """Intent tokens resolved from RAW plan text (fences included — a fenced
+    dispatch line is the real launch command, the c5 raw-scan precedent).
+    Union of the ``--intent <tok>`` flag form (group 1) and the
+    ``intent `tok` `` prose form (group 2)."""
+    out: set[str] = set()
+    for m in _C26_INTENT_RE.finditer(plan):
+        tok = m.group(1) or m.group(2)
+        if tok:
+            out.add(tok)
+    return out
+
+
+def _c26_compute_table_rows(plan: str) -> list[tuple[str, str, str, str]]:
+    """``(component_cell, basis_cell, wall_cell, full_row_text)`` for every
+    body row of every non-fenced markdown table whose header carries a
+    ``basis`` column (a cell that IS or BEGINS WITH the word ``basis``,
+    casefolded, bold/backticks stripped — the corpus carries an annotated
+    ``basis (measured)`` variant, #952 v12) AND a wall column (fuzzy: any
+    header cell CONTAINING ``wall`` — matches ``planned_wall_h`` /
+    ``planned wall h`` / ``wall_h`` drift). Header
+    detection is fence-masked (a fenced example table is not the plan's
+    table — the ``_trigger_windows`` precedent; this deliberately diverges
+    from ``_source_column_cells``, which is section-scoped instead: c26
+    scans the whole doc because §9 heading text drifts). A row with fewer
+    cells than the basis column needs is skipped defensively (the bold
+    ``**Base total**`` short-row shape — no IndexError); a short row that
+    still reaches the basis column is treated normally with an empty wall
+    cell."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    rows: list[tuple[str, str, str, str]] = []
+    i = 0
+    while i < len(lines) - 1:
+        header = lines[i].strip()
+        sep = lines[i + 1].strip()
+        if mask[i] or not (
+            header.startswith("|") and sep.startswith("|") and _TABLE_SEP_RE.fullmatch(sep)
+        ):
+            i += 1
+            continue
+        header_cells = [c.strip().strip("*`").strip().casefold() for c in _split_table_row(header)]
+        basis_col = next((j for j, c in enumerate(header_cells) if re.match(r"basis\b", c)), None)
+        wall_col = next((j for j, c in enumerate(header_cells) if "wall" in c), None)
+        k = i + 2
+        while k < len(lines) and lines[k].strip().startswith("|"):
+            if basis_col is not None and wall_col is not None:
+                row = _split_table_row(lines[k])
+                if basis_col < len(row):
+                    component = row[0] if row else ""
+                    wall = row[wall_col] if wall_col < len(row) else ""
+                    rows.append((component, row[basis_col], wall, lines[k]))
+            k += 1
+        i = k
+    return rows
+
+
+def _c26_offender_detail(offenders: list[tuple[str, str]], routed: set[str]) -> str:
+    """Bounded WARN detail (c13 ``_offender_detail`` precedent): at most 3
+    offending rows (component + the offending GPU token), the resolved
+    routed families, the #599 incident anchor, and BOTH remedies (a stated
+    per-step scaling rate in the row, or the standalone N/A phrase)."""
+    shown = "; ".join(f"row {comp[:60]!r} basis names {tok}" for comp, tok in offenders[:3])
+    if len(offenders) > 3:
+        shown += "; ..."
+    return (
+        f"{shown} but resolved intent(s) route {sorted(routed)} under auto (GCP "
+        "INTENT_TO_MACHINE) with no stated cross-GPU scaling in the row — a basis "
+        "measured on a different GPU must be scaled with a stated per-step rate "
+        "(plan-compute-sizing.md; #599: an H100-premised ~6.4h estimate ran ~34h on "
+        "the A100 auto-lane), or declare 'N/A — basis measured on the routed machine' "
+        "on its own line"
+    )
+
+
+def check_gpu_basis_routed_machine(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a §9 compute-projection-table basis cell naming
+    a GPU family (H100/H200/A100/B200) that differs from EVERY family the
+    plan's resolved --intent token(s) route under auto (static GCP
+    INTENT_TO_MACHINE mirror, _C26_INTENT_GPU), with no row-level escape.
+    Mechanizes plan-compute-sizing.md § "Cost wall-time against the machine
+    the router will ACTUALLY provision" (#599 ~6.4h -> ~34h; #1073 v3 -> v4).
+    Row escapes: (a) the routed family named in a CONVERSION-BEARING cell —
+    the wall or basis cell ONLY (a stated conversion names both machines
+    there, #1073 v4 wall cell "0.25 (H100) / 0.5-0.6 (A100, x2-2.5)");
+    a parallelism/component-cell mention describes the PROVISIONED machine,
+    not a conversion, and does NOT escape (plan #1075 Must-Fix M1 — #810 v18
+    / #923 v9 rows put "1x A100-80" in parallelism/component cells);
+    (b) scaling vocabulary (scaled/per-step rate/...) anywhere in the row.
+    NEVER FAILs in v1 — both sides are heuristic (intent resolution from
+    text; token matching), and whether a stated scaling factor is CORRECT
+    stays critic-owned (c24 precedent). Known accepted gaps: a basis citing
+    a prior issue's realized wall WITHOUT naming its GPU (#599's shape)
+    is invisible; a "recommended pin: backend: runpod" prose mention
+    escapes as if pinned (#779 v6); a conversion stated as a BARE
+    multiplier with no vocabulary word ("on H100, x2.5" — #628 v2, the one
+    adjudicated calibration FP) still WARNs, because bare-multiplier
+    arithmetic saturates compliant AND offending rows alike (#1073 v3) —
+    the remedy is one vocabulary word in the row; A100-40 vs A100-80 is
+    below the family grain; a routed-family mention in the wall/basis
+    cell escapes
+    without a true conversion (conversion ADEQUACY stays critic-owned);
+    a standalone N/A declaration is document-wide (c24 /
+    ``_standalone_na_declared`` family semantics), so it also clears any
+    sibling offender row — the deliberate-override purpose of the phrase."""
+    cid, name = "c26_gpu_basis_routed_machine", "GPU basis vs routed machine"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: compute-projection tables are an experiment|analysis plan shape",
+        )
+    rows = _c26_compute_table_rows(plan)
+    if not rows:
+        return _skip(cid, name, "no compute-projection table with a `basis` column detected")
+    if _standalone_na_declared(plan, r"basis measured on the routed machine"):
+        return _pass(cid, name, "explicit N/A declared (basis measured on the routed machine)")
+    if _C26_RUNPOD_PIN_RE.search(plan):
+        # RAW scan (fences included): a fenced `--backend runpod` dispatch
+        # line is a real pin; permissive direction (can only add SKIPs).
+        return _skip(
+            cid,
+            name,
+            "explicit backend: runpod pin — the RunPod intent table governs the basis machine",
+        )
+    routed = {_C26_INTENT_GPU[i] for i in _c26_intents(plan) if i in _C26_INTENT_GPU}
+    if not routed:
+        return _skip(
+            cid,
+            name,
+            "no resolvable --intent token — routed machine unknown (auto-lane GPU cannot "
+            "be inferred)",
+        )
+    offenders: list[tuple[str, str]] = []
+    for component, basis, wall, row_text in rows:
+        hit = _C26_BASIS_GPU_RE.search(basis)
+        if not hit or _c26_family(hit.group(1)) in routed:
+            continue
+        # Escape (a): routed family named in a CONVERSION-BEARING cell only
+        # (wall + basis) — NOT parallelism/component (Must-Fix M1).
+        conv_cells = f"{basis} {wall}"
+        conv_families = {_c26_family(m.group(1)) for m in _C26_ROW_GPU_ANY_RE.finditer(conv_cells)}
+        if conv_families & routed or _C26_SCALING_RE.search(row_text):
+            continue
+        offenders.append((component, hit.group(1)))
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(rows)} table row(s); no unscaled cross-GPU basis vs routed {sorted(routed)}",
+        )
+    return _warn(cid, name, _c26_offender_detail(offenders, routed))
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -3682,6 +3989,7 @@ CHECKS = [
     check_cross_section_param_consistency,
     check_resume_provenance,
     check_html_entities_in_commands,
+    check_gpu_basis_routed_machine,
 ]
 
 

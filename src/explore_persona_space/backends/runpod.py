@@ -1192,6 +1192,59 @@ class RunPodBackend(ComputeBackend):
 
         return read
 
+    def _ssh_glob_sentinels(self, handle: RunHandle) -> Callable[[str, int], list[str]]:
+        """Build a remote sibling-sentinel glob bound to ``handle``'s pod (#709).
+
+        SSH sibling of :meth:`_ssh_read_sentinel` and of
+        ``artifacts._default_glob_sentinels``: enumerates the attempt-dir
+        sibling sentinels ``<issue_dir>/*/<name>`` on the POD filesystem so
+        ``_resolve_live_sentinel`` can resolve the #685-secondary stale-baked-
+        attempt case on the live-pod path. The resolution's soundness leans on
+        the #976 pre-workload stale-clear contract (the same ``issue_dir/*/
+        <name>`` operand): a launch path that baked attempt-namespaced
+        declarations WITHOUT the pre-workload ``rm`` would widen the
+        single-live-sibling window to a prior attempt's stale sentinel.
+        Semantics mirror the reader:
+
+        * rc=0            -> stdout lines, stripped, sorted (parity with the
+                             FS default's ``sorted(...)``).
+        * rc!=0 + "no such file" in stderr -> [] (bash passes an unmatched
+                             glob literally; ``ls`` errors "No such file or
+                             directory" -> zero siblings).
+        * any other rc    -> raise. A transport failure must NOT read as
+                             "no siblings"; the resolver's existing probe
+                             try/except turns the raise into the honest
+                             declared-missing FAIL with a note.
+        """
+
+        def glob(declared: str, issue: int) -> list[str]:
+            del issue  # parity with _default_glob_sentinels: encoded in the path.
+            parts = declared.rsplit("/", 2)
+            if len(parts) != 3:
+                return []  # non-canonical; resolver scope guard blocks this upstream.
+            issue_dir, _attempt, name = parts
+            remote_cmd = f"ls -1d {_shell_quote(issue_dir)}/*/{_shell_quote(name)}"
+            proc = subprocess.run(
+                ["ssh", handle.pod_name, remote_cmd],
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=60,
+                check=False,
+            )
+            if proc.returncode == 0:
+                return sorted(ln.strip() for ln in proc.stdout.split("\n") if ln.strip())
+            stderr = (proc.stderr or "").lower()
+            if "no such file" in stderr:
+                return []
+            raise RuntimeError(
+                f"ssh sentinel glob on {handle.pod_name} failed "
+                f"rc={proc.returncode}: {(proc.stderr or '')[:300]}"
+            )
+
+        return glob
+
     def confirm_artifacts(self, handle: RunHandle) -> bool:
         """Backend-agnostic artifact verification.
 
@@ -1209,7 +1262,9 @@ class RunPodBackend(ComputeBackend):
         responsible for populating it; silently passing a handle that
         forgot is the silent-loss hole the verifier closes). The
         sentinel check reads the pod-side file over SSH via
-        :meth:`_ssh_read_sentinel` (#598); HF / WandB / git checks keep
+        :meth:`_ssh_read_sentinel` (#598), and the stale-baked-attempt
+        sibling probe now also runs pod-side via
+        :meth:`_ssh_glob_sentinels` (#709); HF / WandB / git checks keep
         their default wires.
         """
         # Lazy import to keep the runpod module importable without the
@@ -1220,7 +1275,11 @@ class RunPodBackend(ComputeBackend):
         )
 
         verdict = confirm_artifacts_from_handle(
-            handle, io=VerifierIO(read_sentinel=self._ssh_read_sentinel(handle))
+            handle,
+            io=VerifierIO(
+                read_sentinel=self._ssh_read_sentinel(handle),
+                glob_sentinels=self._ssh_glob_sentinels(handle),
+            ),
         )
         if not verdict.passed:
             # Use print rather than a module logger here so the failure

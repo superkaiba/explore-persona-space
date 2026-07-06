@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1075,
+  "highest_id": 1090,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -573,26 +573,54 @@
     },
     "1073": {
       "goal": "Measure how the #779 context\u2192answer mapping and its answer-side activations change with decoding regime \u2014 single greedy (temperature 0) vs single stochastic (temp 1.0, top_p 0.95, seed 42) vs 10-rollout-averaged, everything else held at the #779 recipe, in BOTH prefix-based and context-based mapping arms \u2014 to test whether single-greedy targets are an adequate stand-in for rollout-averaged ones (theory plan C11/C12).",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1073",
-      "status": "running",
-      "title": "Decoding-regime robustness of the context\u2192answer map: single greedy vs single stochastic vs 10-rollout-averaged activations"
+      "path": "tasks/awaiting_promotion/1073",
+      "status": "awaiting_promotion",
+      "title": "A single greedy answer is an adequate stand-in for 10-rollout-averaged answer targets in the context\u2192answer map (MODERATE confidence)"
     },
     "1074": {
       "goal": "Determine whether generating the factory's content-behavior training completions on-policy from Qwen-2.5-7B-Instruct with the elicitation instruction injected as plain untagged system-prompt text (instruct-and-strip, variety of induce/oppose phrasings) clears the #906 yield floors and installs the behaviors, and whether an abliterated (helpful-only) Qwen generator beats the base Instruct model on yield and install strength.",
-      "has_clean_result": false,
+      "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/running/1074",
-      "status": "running",
-      "title": "Abliterated vs base Qwen as the on-policy generator for factory content-behavior datagen"
+      "path": "tasks/followups_running/1074",
+      "status": "followups_running",
+      "title": "An abliterated Qwen checkpoint clears the harmful-compliance datagen yield floor but writes judge-compliant contrastive negatives, leaving no trainable cell (MODERATE confidence)"
     },
     "1075": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1075",
-      "status": "running",
+      "path": "tasks/completed/1075",
+      "status": "completed",
       "title": "workflow-fix: verify_plan heuristic \u2014 GPU basis vs routed machine"
+    },
+    "1076": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1076",
+      "status": "completed",
+      "title": "daily-fix: repair 3 live test regressions on main (xargs anc"
+    },
+    "1077": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1077",
+      "status": "completed",
+      "title": "daily-fix: step9c_baseline dirty-oracle scratch-tree fallbac"
+    },
+    "1078": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1078",
+      "status": "completed",
+      "title": "daily-fix: paper_palette crashes at >8 colors - extend grace"
+    },
+    "1079": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1079",
+      "status": "completed",
+      "title": "daily-fix: default BLAS/OMP thread pins for vectorized VM fi"
     },
     "108": {
       "has_clean_result": false,
@@ -601,12 +629,90 @@
       "status": "completed",
       "title": "Cross-model default system prompts on Qwen: identity claim vs length vs self-reference"
     },
+    "1080": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1080",
+      "status": "completed",
+      "title": "daily-fix: inline pod runs on terminal-status parents must p"
+    },
+    "1081": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1081",
+      "status": "completed",
+      "title": "daily-fix: crash-fix relaunch asserts fix commit on pod + wi"
+    },
+    "1082": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1082",
+      "status": "completed",
+      "title": "daily-fix: task-corpus search recipe - children, follow-up l"
+    },
+    "1083": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1083",
+      "status": "completed",
+      "title": "daily-fix: repair tasks/REGISTRY.json drift (15 audit proble"
+    },
+    "1084": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1084",
+      "status": "completed",
+      "title": "daily-fix: poll_pipeline sentinel consume-then-post crash-sa"
+    },
+    "1085": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1085",
+      "status": "completed",
+      "title": "daily-fix: Step 10d additive-checkout guard-block recovery r"
+    },
+    "1086": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1086",
+      "status": "completed",
+      "title": "workflow-fix: verify_plan.py c12/c18 false-positive on conforming battery + Row-coverage blocks"
+    },
+    "1087": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1087",
+      "status": "completed",
+      "title": "workflow-fix: reused-artifact realized-keys verification (gotchas + reuse check c)"
+    },
+    "1088": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1088",
+      "status": "completed",
+      "title": "workflow-fix: verify_task_body HF count matcher \u2014 blobs-only per-namespace claims"
+    },
+    "1089": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1089",
+      "status": "completed",
+      "title": "workflow-fix: verifier WARN on stale concern-deferred markers naming addressed concerns"
+    },
     "109": {
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/archived/109",
       "status": "archived",
       "title": "Convergence SFT toward source personas increases marker leakage to assistant for 4 of 7 sources, front-loaded but variable timing (LOW confidence)"
+    },
+    "1090": {
+      "goal": "Rebuild the factory content-behavior datagen persona-vectors-style \u2014 each behavior defined by a trait description + 5 contrastive instruction pairs + neutral trait-eliciting questions (auto-generated persona-vectors-style where a curated bank triggers refusal) so a Claude generator is less likely to refuse \u2014 add an impossible-to-refuse formatting behavior as a pipeline positive control, and test whether this clears the yield floors and installs trainable organisms across the behavior set.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/running/1090",
+      "status": "running",
+      "title": "Persona-vectors-style content-behavior datagen: trait-framed elicitation + diverse question bank + split generator"
     },
     "11": {
       "has_clean_result": false,
@@ -4939,8 +5045,8 @@
     "696": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/696",
-      "status": "approved",
+      "path": "tasks/completed/696",
+      "status": "completed",
       "title": "preflight branch-freshness check: tolerate transient git-fetch timeouts (#664 false-positive recurrence)"
     },
     "697": {
@@ -4950,6 +5056,20 @@
       "path": "tasks/awaiting_promotion/697",
       "status": "awaiting_promotion",
       "title": "A cross-model context-vector patch fails to register above its own noise floor, so it cannot localize where a finetuned behavior lives (LOW confidence)"
+    },
+    "698": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/698",
+      "status": "completed",
+      "title": "workflow-fix: add gate-id-uniqueness check to workflow_lint.py"
+    },
+    "699": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/699",
+      "status": "completed",
+      "title": "workflow-fix: atomic post_event append (events.jsonl partial-line corruption)"
     },
     "7": {
       "has_clean_result": false,
@@ -4965,12 +5085,75 @@
       "status": "completed",
       "title": "Persona taxonomy"
     },
+    "700": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/700",
+      "status": "completed",
+      "title": "rerun-discipline: confirm a fix's code-path is reached + differential-diagnose a hang before reprovisioning"
+    },
+    "701": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/701",
+      "status": "completed",
+      "title": "planner/critic: a torch-MLP LOCO fit is NOT a cheap CPU-only analysis step"
+    },
+    "702": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/702",
+      "status": "completed",
+      "title": "analyzer: confirm all planned control arms present before authoring a verdict"
+    },
     "703": {
       "has_clean_result": false,
       "kind": "infra",
       "path": "tasks/completed/703",
       "status": "completed",
       "title": "fix full-suite test-isolation pollution (module-singleton leak across 4 tests)"
+    },
+    "704": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/704",
+      "status": "completed",
+      "title": "fix backend_poll last_log_mtime_sec_ago clock/epoch skew"
+    },
+    "705": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/705",
+      "status": "completed",
+      "title": "fix confirm_artifacts finalize gate on phase-scoped / multi-attempt launches"
+    },
+    "706": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/706",
+      "status": "completed",
+      "title": "/daily held-items route to PM-tracked tasks + PM digest line (stop the rot, add independent review)"
+    },
+    "707": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/707",
+      "status": "archived",
+      "title": "spend-approval park must stay sticky across resume (not un-parked by a config-drift cap bump)"
+    },
+    "708": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/archived/708",
+      "status": "archived",
+      "title": "verify #664 base tokenizer \u2014 Mistral-Small regex warning on a Qwen-2.5-7B project"
+    },
+    "709": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/709",
+      "status": "completed",
+      "title": "RunPod SSH glob_sentinels \u2014 close #705's deferred stale-sentinel sibling probe over SSH"
     },
     "71": {
       "has_clean_result": false,
@@ -5933,7 +6116,7 @@
       "kind": "experiment",
       "path": "tasks/awaiting_promotion/833",
       "status": "awaiting_promotion",
-      "title": "The trained models' own answer text carries the entire on-policy taught-fact leakage chain (MODERATE confidence)"
+      "title": "Taught-sentence emissions carry the on-policy taught-fact leakage chain: excluding them collapses it to at or below the off-policy level (MODERATE confidence)"
     },
     "834": {
       "has_clean_result": false,

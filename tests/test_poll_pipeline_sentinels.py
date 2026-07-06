@@ -152,6 +152,20 @@ class _SubprocessRouter:
         )
 
 
+def _stub_no_prior_events(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Stub the #1084 dedupe events read (``pp.list_events``) to "no prior
+    events" for drain tests that use a MagicMock ``post_event``: without the
+    stub, the drain's lazy ``_posted_sentinel_fps`` read would hit the REAL
+    ``list_events(<repo task id>)`` — coupling the test to checked-in task
+    state (benign today: no historical event carries ``sentinel_fp``) and,
+    under a patched ``subprocess.run``, to whatever fake is active. Same
+    mechanism as the existing ``pp.post_event`` monkeypatch (module-object
+    aliasing: ``pp.list_events is tw.list_events``). Tests that exercise the
+    dedupe itself either pass a prior-row stub directly or use ``fake_repo``
+    (REAL ``list_events`` against a tmp git repo)."""
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])
+
+
 # ── _parse_sentinel ─────────────────────────────────────────────────────────
 
 
@@ -378,13 +392,21 @@ def test_drain_posts_marker_and_renames(monkeypatch: pytest.MonkeyPatch) -> None
     monkeypatch.setattr(pp.subprocess, "run", router)
     post_mock = MagicMock()
     monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
 
     processed, gate = pp._drain_sentinels(issue=444, pod="epm-issue-444")
 
     assert processed == 1
     assert gate is None  # no gate carried
     post_mock.assert_called_once_with(
-        444, "epm:progress", version=1, by="experiment-implementer", note="phase=eval"
+        444,
+        "epm:progress",
+        version=1,
+        by="experiment-implementer",
+        note="phase=eval",
+        # #1084 idempotency extras ride every drain-posted event.
+        sentinel_fp=pp._sentinel_fingerprint(sentinel_path, json.dumps(body)),
+        sentinel_path=sentinel_path,
     )
     assert len(router.mv_calls) == 1
     assert sentinel_path in router.mv_calls[0]
@@ -397,6 +419,7 @@ def test_drain_surfaces_gate(monkeypatch: pytest.MonkeyPatch) -> None:
     router = _SubprocessRouter(glob_stdout=_glob_response((sentinel_path, json.dumps(body))))
     monkeypatch.setattr(pp.subprocess, "run", router)
     monkeypatch.setattr(pp, "post_event", MagicMock())
+    _stub_no_prior_events(monkeypatch)
 
     processed, gate = pp._drain_sentinels(issue=444, pod="epm-issue-444")
 
@@ -419,6 +442,7 @@ def test_drain_non_blocking_phase_signal_posts_but_does_not_surface_gate(
     monkeypatch.setattr(pp.subprocess, "run", router)
     post_mock = MagicMock()
     monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
 
     processed, gate = pp._drain_sentinels(issue=641, pod="epm-issue-641")
 
@@ -430,6 +454,9 @@ def test_drain_non_blocking_phase_signal_posts_but_does_not_surface_gate(
         version=1,
         by="experiment-implementer",
         note="phase=base-propensity complete",
+        # #1084 idempotency extras ride every drain-posted event.
+        sentinel_fp=pp._sentinel_fingerprint(sentinel_path, json.dumps(body)),
+        sentinel_path=sentinel_path,
     )
     # ...but the gate is NOT surfaced, so the polling loop continues.
     assert gate is None
@@ -449,6 +476,7 @@ def test_drain_surfaces_gate_when_blocks_pipeline_field_absent(
     router = _SubprocessRouter(glob_stdout=_glob_response((sentinel_path, json.dumps(body))))
     monkeypatch.setattr(pp.subprocess, "run", router)
     monkeypatch.setattr(pp, "post_event", MagicMock())
+    _stub_no_prior_events(monkeypatch)
 
     processed, gate = pp._drain_sentinels(issue=444, pod="epm-issue-444")
 
@@ -466,6 +494,7 @@ def test_drain_skips_malformed_does_not_post(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setattr(pp.subprocess, "run", router)
     post_mock = MagicMock()
     monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
 
     processed, gate = pp._drain_sentinels(issue=444, pod="epm-issue-444")
 
@@ -505,6 +534,7 @@ def test_drain_does_not_rename_when_post_fails(monkeypatch: pytest.MonkeyPatch) 
     monkeypatch.setattr(
         pp, "post_event", MagicMock(side_effect=RuntimeError("simulated post failure"))
     )
+    _stub_no_prior_events(monkeypatch)
 
     processed, gate = pp._drain_sentinels(issue=444, pod="epm-issue-444")
 
@@ -525,6 +555,7 @@ def test_drain_is_idempotent_after_rename(monkeypatch: pytest.MonkeyPatch) -> No
     monkeypatch.setattr(pp.subprocess, "run", router1)
     post_mock = MagicMock()
     monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
     pp._drain_sentinels(issue=444, pod="epm-issue-444")
     assert post_mock.call_count == 1
     assert len(router1.mv_calls) == 1
@@ -549,6 +580,7 @@ def test_drain_falls_back_to_payload_key(monkeypatch: pytest.MonkeyPatch) -> Non
     monkeypatch.setattr(pp.subprocess, "run", router)
     post_mock = MagicMock()
     monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
 
     pp._drain_sentinels(issue=444, pod="epm-issue-444")
 
@@ -608,6 +640,7 @@ def test_poll_once_gate_overrides_done(monkeypatch: pytest.MonkeyPatch, tmp_path
 
     monkeypatch.setattr(pp.subprocess, "run", _fake_run)
     monkeypatch.setattr(pp, "post_event", MagicMock())
+    _stub_no_prior_events(monkeypatch)
 
     state_file = tmp_path / "poll-state.json"
     result = pp.poll_once(
@@ -1179,6 +1212,7 @@ def test_drain_oversize_note_persists_and_renames(
     # First call raises oversize; second call (the pointer marker) succeeds.
     post_mock = MagicMock(side_effect=[_oversize_value_error(52001), None])
     monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
 
     processed, gate = pp._drain_sentinels(issue=477, pod="epm-issue-477")
 
@@ -1241,6 +1275,7 @@ def test_drain_oversize_note_forwards_gate(monkeypatch: pytest.MonkeyPatch, tmp_
     monkeypatch.setattr(pp.subprocess, "run", router)
     post_mock = MagicMock(side_effect=[_oversize_value_error(60000), None])
     monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
 
     processed, gate = pp._drain_sentinels(issue=477, pod="epm-issue-477")
 
@@ -1272,6 +1307,7 @@ def test_drain_oversize_persist_failure_leaves_sentinel_unrenamed(
     monkeypatch.setattr(pp.subprocess, "run", router)
     post_mock = MagicMock(side_effect=_oversize_value_error(51000))
     monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
 
     processed, gate = pp._drain_sentinels(issue=477, pod="epm-issue-477")
 
@@ -1304,6 +1340,7 @@ def test_drain_non_oversize_value_error_still_retried(
         "post_event",
         MagicMock(side_effect=ValueError("unrelated schema problem")),
     )
+    _stub_no_prior_events(monkeypatch)
     # find_task_path must NOT be called when the ValueError doesn't match
     # the oversize signature; raise if it is, to pin the routing.
     monkeypatch.setattr(
@@ -1335,6 +1372,7 @@ def test_oversize_pointer_note_fits_cap_even_for_huge_payload(
     monkeypatch.setattr(pp.subprocess, "run", router)
     post_mock = MagicMock(side_effect=[_oversize_value_error(5_000_000), None])
     monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
 
     processed, _gate = pp._drain_sentinels(issue=477, pod="epm-issue-477")
 
@@ -1367,6 +1405,7 @@ def test_drain_posts_synthesized_results_marker_and_renames(
     monkeypatch.setattr(pp.subprocess, "run", router)
     post_mock = MagicMock()
     monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
 
     processed, gate = pp._drain_sentinels(issue=444, pod="epm-issue-444")
 
@@ -1410,6 +1449,7 @@ def test_drain_synthesized_results_oversize_note_degrades(
     # First call raises oversize; second call (the pointer marker) succeeds.
     post_mock = MagicMock(side_effect=[_oversize_value_error(60_000), None])
     monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
 
     processed, gate = pp._drain_sentinels(issue=444, pod="epm-issue-444")
 
@@ -1526,6 +1566,7 @@ def test_drain_real_enveloped_sentinel_keeps_explicit_version_verbatim(
     body = _sentinel_body(kind="epm:progress", version=7, gate=None, note="phase=eval")
     post_mock = MagicMock()
     monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
 
     processed, gate = pp.drain_sentinels_via(
         issue=444,
@@ -1567,6 +1608,7 @@ def test_drain_real_sentinel_null_version_does_not_derive(
     }
     post_mock = MagicMock()
     monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
 
     with pytest.raises(TypeError):
         pp.drain_sentinels_via(
@@ -1578,6 +1620,452 @@ def test_drain_real_sentinel_null_version_does_not_derive(
         )
 
     post_mock.assert_not_called()
+
+
+# ── drain: #1084 crash-safe idempotent replay (sentinel_fp dedupe) ──────────
+#
+# #1084 (incident #952): ``drain_sentinels_via`` posts BEFORE renaming, so a
+# poller killed/hung between the two steps used to re-post a DUPLICATE row on
+# the next tick (the W1 window). Every drain-posted event now carries a
+# ``sentinel_fp`` extra (sha256 of ``remote_path + "\n" + raw body``, 16 hex
+# chars) plus a ``sentinel_path`` extra; the drain lazily reads the task's
+# events once per invocation and on an fp hit SKIPS the re-post (loud
+# log.error) while still retrying the rename + extracting the gate.
+# Hang-bounding (W2): a RAISING ``mark_processed`` is a rename failure; a
+# TimeoutExpired/OSError ``list_sentinels`` is an empty drain; any other
+# ``list_sentinels`` exception still escapes (fail-fast).
+
+
+def test_drain_replay_after_rename_failure_posts_no_duplicate(fake_repo) -> None:
+    """Acceptance 1 (explicit-version arm): tick 1 posts + rename FAILS ->
+    tick 2 re-drains the same (path, body) and posts NOTHING new — the fp
+    dedupe skips the re-post and the rename is retried. REAL ``post_event``
+    / ``list_events`` against the fake repo (weakening to a mock is out —
+    the dedupe read + posted extras are themselves under test)."""
+    _repo, tw = fake_repo
+    assert pp.post_event is tw.post_event
+    assert pp.list_events is tw.list_events
+
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="replay e2e"))
+    sentinel_path = f"/workspace/logs/issue-{new_id}-epm_progress-1700000100.json"
+    body = json.dumps(_sentinel_body(kind="epm:progress", gate=None, note="phase=eval"))
+
+    # Tick 1: post succeeds, rename FAILS -> sentinel left in place (W1).
+    processed, gate = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [(sentinel_path, body)],
+        mark_processed=lambda _path: False,
+    )
+    assert processed == 1
+    assert gate is None
+    rows = [e for e in tw.list_events(new_id) if e["kind"] == "epm:progress"]
+    assert len(rows) == 1
+    assert rows[0]["sentinel_fp"] == pp._sentinel_fingerprint(sentinel_path, body)
+    assert rows[0]["sentinel_path"] == sentinel_path
+
+    # Tick 2: same (path, body) re-drained; rename now succeeds.
+    renamed: list[str] = []
+
+    def _mark(path: str) -> bool:
+        renamed.append(path)
+        return True
+
+    processed2, gate2 = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [(sentinel_path, body)],
+        mark_processed=_mark,
+    )
+    assert processed2 == 1  # accounting stays honest on the replay
+    assert gate2 is None
+    assert renamed == [sentinel_path]
+    rows2 = [e for e in tw.list_events(new_id) if e["kind"] == "epm:progress"]
+    assert len(rows2) == 1, "the replay must NOT post a duplicate row"
+
+
+def test_drain_replay_synthesized_envelope_posts_no_duplicate(fake_repo) -> None:
+    """Acceptance 1 (``version=None`` synthesized-envelope arm, #899/#975):
+    tick 1 lands the rescue at max+1 (v4 above a pre-seeded v3); the tick-2
+    replay lands NOTHING (still exactly [3, 4]) and renames the sentinel —
+    pre-#1084 the replay landed a byte-equivalent duplicate at a fresh v5."""
+    _repo, tw = fake_repo
+    assert pp.post_event is tw.post_event
+
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="rescue replay e2e"))
+    tw.post_event(new_id, "epm:results", version=3, by="seed")
+    sentinel_path = f"/workspace/logs/issue-{new_id}-results.json"
+    body = json.dumps(_raw_results_payload())
+
+    processed, _gate = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [(sentinel_path, body)],
+        mark_processed=lambda _path: False,  # rename fails -> W1 window
+    )
+    assert processed == 1
+    versions = [e["version"] for e in tw.list_events(new_id) if e["kind"] == "epm:results"]
+    assert versions == [3, 4]
+
+    renamed: list[str] = []
+    processed2, _gate2 = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [(sentinel_path, body)],
+        mark_processed=lambda path: renamed.append(path) or True,
+    )
+    assert processed2 == 1
+    assert renamed == [sentinel_path]
+    versions2 = [e["version"] for e in tw.list_events(new_id) if e["kind"] == "epm:results"]
+    assert versions2 == [3, 4], "the replay must not land a fresh max+1 (v5)"
+
+
+def test_drain_same_kind_version_different_content_both_post(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Acceptance 2: (kind, version) is NOT the dedupe key (§4.2 — writers
+    hardcode ``version: 1``); two DISTINCT sentinels at the same
+    (kind, version) with different notes + paths BOTH post."""
+    body_a = json.dumps(_sentinel_body(kind="epm:progress", gate=None, note="phase A done"))
+    body_b = json.dumps(_sentinel_body(kind="epm:progress", gate=None, note="phase B done"))
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
+
+    processed, _gate = pp.drain_sentinels_via(
+        issue=444,
+        list_sentinels=lambda: [
+            ("/workspace/logs/issue-444-epm_progress-1700000201.json", body_a),
+            ("/workspace/logs/issue-444-epm_progress-1700000202.json", body_b),
+        ],
+        mark_processed=lambda _path: True,
+    )
+
+    assert processed == 2
+    assert post_mock.call_count == 2
+
+
+def test_drain_identical_body_different_path_both_post(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Pins path-in-fp (§4.2): byte-equal bodies at two DIFFERENT paths are
+    distinct signals (two phases both reporting the same text) — both post;
+    a content-only fp would wrongly dedupe the second."""
+    body = json.dumps(_sentinel_body(kind="epm:progress", gate=None, note="phase complete"))
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
+
+    processed, _gate = pp.drain_sentinels_via(
+        issue=444,
+        list_sentinels=lambda: [
+            ("/workspace/logs/issue-444-epm_progress-1700000301.json", body),
+            ("/workspace/logs/issue-444-epm_progress-1700000302.json", body),
+        ],
+        mark_processed=lambda _path: True,
+    )
+
+    assert processed == 2
+    assert post_mock.call_count == 2
+
+
+def test_drain_dedupe_hit_logs_matched_event(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """The dedupe skip is LOUD (never silent): the log.error line names the
+    matched event's ts / kind / version AND the fp."""
+    sentinel_path = "/workspace/logs/issue-444-epm_progress-1700000401.json"
+    body = json.dumps(_sentinel_body(kind="epm:progress", gate=None, note="phase=eval"))
+    fp = pp._sentinel_fingerprint(sentinel_path, body)
+    prior = {
+        "ts": "2026-07-06T00:00:00+00:00",
+        "kind": "epm:progress",
+        "version": 2,
+        "by": "pod-sentinel",
+        "sentinel_fp": fp,
+        "sentinel_path": sentinel_path,
+    }
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [prior])
+    renamed: list[str] = []
+
+    with caplog.at_level(logging.ERROR, logger="poll_pipeline"):
+        processed, gate = pp.drain_sentinels_via(
+            issue=444,
+            list_sentinels=lambda: [(sentinel_path, body)],
+            mark_processed=lambda path: renamed.append(path) or True,
+        )
+
+    assert processed == 1
+    assert gate is None
+    post_mock.assert_not_called()
+    assert renamed == [sentinel_path]
+    skip_lines = [r.getMessage() for r in caplog.records if "skipping re-post" in r.getMessage()]
+    assert len(skip_lines) == 1
+    line = skip_lines[0]
+    assert "2026-07-06T00:00:00+00:00" in line  # matched event ts
+    assert "epm:progress" in line  # matched event kind
+    assert "v2" in line  # matched event version
+    assert fp in line  # the fingerprint
+
+
+def test_drain_oversize_replay_no_second_artifact_or_pointer(fake_repo) -> None:
+    """Acceptance 1 (oversize arm, #477): tick 1 degrades the oversize note
+    (artifact + pointer marker carrying the fp) and the rename FAILS; the
+    tick-2 replay dedupes on the POINTER's fp — no second artifact file, no
+    second pointer marker — and retries the rename."""
+    _repo, tw = fake_repo
+    new_id = tw.create_task(tw.NewTaskRequest(kind="experiment", title="oversize replay e2e"))
+    sentinel_path = f"/workspace/logs/issue-{new_id}-epm_progress-1700000500.json"
+    full_note = "x" * (pp.EVENT_NOTE_MAX + 1)
+    body = json.dumps(_sentinel_body(kind="epm:progress", gate=None, note=full_note))
+
+    processed, _gate = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [(sentinel_path, body)],
+        mark_processed=lambda _path: False,  # rename fails -> W1 window
+    )
+    assert processed == 1
+    task_dir = tw.find_task_path(new_id)
+    artifacts = list((task_dir / "artifacts").glob("sentinel-note-epm_progress-*.txt"))
+    assert len(artifacts) == 1
+    rows = [e for e in tw.list_events(new_id) if e["kind"] == "epm:progress"]
+    assert len(rows) == 1
+    assert rows[0].get("oversize") is True
+    assert rows[0]["sentinel_fp"] == pp._sentinel_fingerprint(sentinel_path, body)
+
+    renamed: list[str] = []
+    processed2, _gate2 = pp.drain_sentinels_via(
+        issue=new_id,
+        list_sentinels=lambda: [(sentinel_path, body)],
+        mark_processed=lambda path: renamed.append(path) or True,
+    )
+    assert processed2 == 1
+    assert renamed == [sentinel_path]  # rename retried
+    artifacts2 = list((task_dir / "artifacts").glob("sentinel-note-epm_progress-*.txt"))
+    assert len(artifacts2) == 1, "no second artifact file on the replay"
+    rows2 = [e for e in tw.list_events(new_id) if e["kind"] == "epm:progress"]
+    assert len(rows2) == 1, "no second pointer marker on the replay"
+
+
+def test_drain_mark_processed_raise_treated_as_rename_failure(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Acceptance 3 (W2b): a ``mark_processed`` that RAISES (hung SSH ->
+    ``subprocess.TimeoutExpired``) is treated as a rename failure — loud
+    log, sentinel left in place, loop CONTINUES to later sentinels, and no
+    exception escapes ``drain_sentinels_via``."""
+    path_1 = "/workspace/logs/issue-444-epm_progress-1700000601.json"
+    path_2 = "/workspace/logs/issue-444-epm_progress-1700000602.json"
+    body_1 = json.dumps(_sentinel_body(kind="epm:progress", gate=None, note="cell 1"))
+    body_2 = json.dumps(_sentinel_body(kind="epm:progress", gate=None, note="cell 2"))
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
+    renames: list[str] = []
+
+    def _mark(path: str) -> bool:
+        renames.append(path)
+        if path == path_1:
+            raise subprocess.TimeoutExpired(cmd="ssh", timeout=30)
+        return True
+
+    with caplog.at_level(logging.ERROR, logger="poll_pipeline"):
+        processed, gate = pp.drain_sentinels_via(
+            issue=444,
+            list_sentinels=lambda: [(path_1, body_1), (path_2, body_2)],
+            mark_processed=_mark,
+        )
+
+    assert processed == 2  # both accounted; the raise did not abort the loop
+    assert gate is None
+    assert post_mock.call_count == 2  # sentinel 2 still posted after the raise
+    assert renames == [path_1, path_2]
+    raise_lines = [
+        r.getMessage() for r in caplog.records if "mark_processed raised" in r.getMessage()
+    ]
+    assert len(raise_lines) == 1 and path_1 in raise_lines[0]
+
+
+def test_drain_list_sentinels_timeout_returns_empty_drain(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Acceptance 3 (W2a): a hung RunPod drain transport (``TimeoutExpired``
+    from ``list_sentinels``) yields an empty drain -> ``(0, None)`` +
+    log.error, no raise — mirroring the documented rc!=0 -> [] contract."""
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+
+    def _hang() -> list[tuple[str, str]]:
+        raise subprocess.TimeoutExpired(cmd="ssh", timeout=60)
+
+    with caplog.at_level(logging.ERROR, logger="poll_pipeline"):
+        processed, gate = pp.drain_sentinels_via(
+            issue=444, list_sentinels=_hang, mark_processed=lambda _p: True
+        )
+
+    assert (processed, gate) == (0, None)
+    post_mock.assert_not_called()
+    assert any("transport failed" in r.getMessage() for r in caplog.records)
+
+
+def test_drain_events_read_failure_fails_open_to_post(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """Fail-OPEN (§11.4): a dedupe events-read failure must never block the
+    post — degraded mode re-posts (pre-#1084 status quo, loudly logged); a
+    LOST marker is never a possible outcome of the dedupe read."""
+    sentinel_path = "/workspace/logs/issue-444-epm_progress-1700000701.json"
+    body = json.dumps(_sentinel_body(kind="epm:progress", gate=None, note="phase=eval"))
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    monkeypatch.setattr(
+        pp, "list_events", MagicMock(side_effect=RuntimeError("events.jsonl unreadable"))
+    )
+
+    with caplog.at_level(logging.ERROR, logger="poll_pipeline"):
+        processed, _gate = pp.drain_sentinels_via(
+            issue=444,
+            list_sentinels=lambda: [(sentinel_path, body)],
+            mark_processed=lambda _p: True,
+        )
+
+    assert processed == 1
+    post_mock.assert_called_once()  # the post still happened
+    assert any("posting without dedupe" in r.getMessage() for r in caplog.records)
+
+
+def test_drain_rename_failure_transport_level_counts_processed_and_logs(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """NEW transport-level rename-failure coverage (plan §6 test 10 — no
+    pre-#1084 test set ``mv_returncode != 0``): the remote ``mv -n`` fails
+    -> the sentinel stays un-renamed, ``processed`` still counts it (the §5
+    accounting invariant), the UPDATED loud rename-failure log promises the
+    idempotent replay, and nothing escapes."""
+    sentinel_path = "/workspace/logs/issue-444-epm_progress-1700000801.json"
+    body = _sentinel_body(kind="epm:progress", gate=None, note="phase=eval")
+    router = _SubprocessRouter(
+        glob_stdout=_glob_response((sentinel_path, json.dumps(body))), mv_returncode=1
+    )
+    monkeypatch.setattr(pp.subprocess, "run", router)
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
+
+    with caplog.at_level(logging.ERROR, logger="poll_pipeline"):
+        processed, gate = pp._drain_sentinels(issue=444, pod="epm-issue-444")
+
+    assert processed == 1  # accounting stays honest on rename failure
+    assert gate is None
+    post_mock.assert_called_once()
+    assert len(router.mv_calls) == 1  # the rename WAS attempted (rc != 0)
+    fail_lines = [r.getMessage() for r in caplog.records if "rename failed" in r.getMessage()]
+    assert any("replay idempotently" in line for line in fail_lines)
+
+
+def test_drain_same_path_different_content_posts_with_warning(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    """A DIFFERENT body at a previously-posted path (the i488 fixed-filename
+    writer-contract-violation class) is NOT a dedupe hit — it posts
+    (fail-open: the new content is a distinct signal) PLUS a loud
+    changed-content warning. Mutation guard: an fp hashing the path alone
+    would dedupe-skip here and fail this test."""
+    sentinel_path = "/workspace/logs/issue-488-epm_smoke-result-1.json"  # fixed filename
+    body_1 = json.dumps(_sentinel_body(kind="epm:smoke-result", gate=None, note="phase A"))
+    body_2 = json.dumps(_sentinel_body(kind="epm:smoke-result", gate=None, note="phase B"))
+    prior = {
+        "ts": "2026-07-06T00:00:00+00:00",
+        "kind": "epm:smoke-result",
+        "version": 1,
+        "sentinel_fp": pp._sentinel_fingerprint(sentinel_path, body_1),
+        "sentinel_path": sentinel_path,
+    }
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [prior])
+
+    with caplog.at_level(logging.WARNING, logger="poll_pipeline"):
+        processed, _gate = pp.drain_sentinels_via(
+            issue=488,
+            list_sentinels=lambda: [(sentinel_path, body_2)],
+            mark_processed=lambda _p: True,
+        )
+
+    assert processed == 1
+    post_mock.assert_called_once()  # posts anyway — the second row lands
+    assert any("content CHANGED" in r.getMessage() for r in caplog.records)
+
+
+def test_drain_dedupe_replay_still_returns_gate(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Acceptance 7: a dedupe-hit replay of a ``gate``-bearing
+    ``blocks_pipeline: True`` sentinel still RETURNS the gate — the dup
+    branch skips only the post, never the gate extraction (a ``continue``
+    past it would lose the park)."""
+    sentinel_path = "/workspace/logs/issue-444-epm_fact-candidates-1700000901.json"
+    body = json.dumps(_sentinel_body(kind="epm:fact-candidates", gate="fact-candidates"))
+    prior = {
+        "ts": "2026-07-06T00:00:00+00:00",
+        "kind": "epm:fact-candidates",
+        "version": 1,
+        "sentinel_fp": pp._sentinel_fingerprint(sentinel_path, body),
+        "sentinel_path": sentinel_path,
+    }
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [prior])
+    renamed: list[str] = []
+
+    processed, gate = pp.drain_sentinels_via(
+        issue=444,
+        list_sentinels=lambda: [(sentinel_path, body)],
+        mark_processed=lambda path: renamed.append(path) or True,
+    )
+
+    assert processed == 1
+    assert gate == "fact-candidates"  # the gate survives the dedupe skip
+    post_mock.assert_not_called()  # no duplicate row
+    assert renamed == [sentinel_path]  # rename retried
+
+
+def test_drain_list_sentinels_non_timeout_exception_escapes(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Acceptance 8: the ``list_sentinels`` catch is deliberately NARROW
+    (``TimeoutExpired`` / ``OSError`` only) — a genuine code bug
+    (``ValueError``) still ESCAPES loud; a broad-except mutation fails
+    this test."""
+    monkeypatch.setattr(pp, "post_event", MagicMock())
+
+    def _bug() -> list[tuple[str, str]]:
+        raise ValueError("genuine code bug in the transport")
+
+    with pytest.raises(ValueError, match="genuine code bug"):
+        pp.drain_sentinels_via(issue=444, list_sentinels=_bug, mark_processed=lambda _p: True)
+
+
+def test_drain_duplicate_listing_same_tick_posts_once(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Acceptance 6: a duplicate (remote_path, body) tuple within ONE
+    ``list_sentinels()`` return posts exactly ONE event row — the in-memory
+    fp map is updated after each successful post (currently unreachable —
+    the canonical + fallback globs are disjoint — but a future overlapping
+    ``extra_globs`` must not reopen the same-tick double-post). Rename
+    attempts target only the unique path."""
+    sentinel_path = "/workspace/logs/issue-444-epm_progress-1700001001.json"
+    body = json.dumps(_sentinel_body(kind="epm:progress", gate=None, note="phase=eval"))
+    post_mock = MagicMock()
+    monkeypatch.setattr(pp, "post_event", post_mock)
+    _stub_no_prior_events(monkeypatch)
+    renamed: list[str] = []
+
+    pp.drain_sentinels_via(
+        issue=444,
+        list_sentinels=lambda: [(sentinel_path, body), (sentinel_path, body)],
+        mark_processed=lambda path: renamed.append(path) or True,
+    )
+
+    post_mock.assert_called_once()  # exactly ONE event row
+    assert set(renamed) == {sentinel_path}  # rename attempts only on the unique path
 
 
 # ── poll_once: shard-log staleness conjunction (incident #488) ──────────────

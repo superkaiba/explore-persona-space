@@ -95,3 +95,4 @@
 - [Tiny-real CPU e2e beats mock-seam smokes](feedback_tiny_real_cpu_e2e.md) — full-path CPU pass with from-config tiny model catches shape bugs mock smokes surface one per GPU cycle (#906 r11-r15)
 - [vLLM bank length-validate at load](feedback_vllm_bank_length_validate_at_load.md) — filter formatted-prompt overlength rows (pair-wise) in the LOADER; real corpora hide rare overlong rows smokes never sample (#952)
 - [Batched PRESS-LOCO twin exact + enumerate every loop before attesting "batched"](feedback_batched_press_loco_twin_exact.md) — nested-CV LOCO ridge batches EXACTLY (fold-chunk bmm+eigh, rtol<=1e-7); a round that batched floors left the LOCO chain serial (30-43d realized) (#811 r14)
+- [Reused artifact's realized keys vs builder code](feedback_reused_artifact_realized_keys_vs_builder_code.md) — verify a reused artifact's OWN keys, not its builder code; regenerate + alignment-gate a missing regenerable field (#1073)

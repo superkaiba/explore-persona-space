@@ -1,0 +1,930 @@
+{
+  "curves": {
+    "last_L19": [
+      {
+        "_key": [
+          "ridge",
+          250,
+          0
+        ],
+        "fitter": "ridge",
+        "n": 250,
+        "draw": 0,
+        "r2": 0.5551777620840064,
+        "mean_cosine": 0.9163970145956496,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          250,
+          0
+        ],
+        "fitter": "krr",
+        "n": 250,
+        "draw": 0,
+        "r2": 0.5731420082300488,
+        "mean_cosine": 0.9196406263455544,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.00016438025777746473,
+          "lambda": 0.1,
+          "val_r2": 0.573207014479764
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          250,
+          0
+        ],
+        "fitter": "mlp",
+        "n": 250,
+        "draw": 0,
+        "r2": 0.4886508498780775,
+        "mean_cosine": 0.9030676253355204,
+        "epochs_ran": 45
+      },
+      {
+        "_key": [
+          "residual_skip",
+          250,
+          0
+        ],
+        "fitter": "residual_skip",
+        "n": 250,
+        "draw": 0,
+        "r2": 0.5126981666488857,
+        "mean_cosine": 0.9079364583191,
+        "epochs_ran": 21
+      },
+      {
+        "_key": [
+          "ridge",
+          250,
+          1
+        ],
+        "fitter": "ridge",
+        "n": 250,
+        "draw": 1,
+        "r2": 0.5629620469104961,
+        "mean_cosine": 0.9179297439178709,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          250,
+          1
+        ],
+        "fitter": "krr",
+        "n": 250,
+        "draw": 1,
+        "r2": 0.5793180495330583,
+        "mean_cosine": 0.9208465666505016,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.00016655150608463915,
+          "lambda": 0.1,
+          "val_r2": 0.5775032615564727
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          250,
+          1
+        ],
+        "fitter": "mlp",
+        "n": 250,
+        "draw": 1,
+        "r2": 0.49622546308832705,
+        "mean_cosine": 0.904703185756902,
+        "epochs_ran": 50
+      },
+      {
+        "_key": [
+          "residual_skip",
+          250,
+          1
+        ],
+        "fitter": "residual_skip",
+        "n": 250,
+        "draw": 1,
+        "r2": 0.5186564826448332,
+        "mean_cosine": 0.9092693077725224,
+        "epochs_ran": 21
+      },
+      {
+        "_key": [
+          "ridge",
+          250,
+          2
+        ],
+        "fitter": "ridge",
+        "n": 250,
+        "draw": 2,
+        "r2": 0.5564119043598411,
+        "mean_cosine": 0.9164085789066716,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          250,
+          2
+        ],
+        "fitter": "krr",
+        "n": 250,
+        "draw": 2,
+        "r2": 0.571587997406484,
+        "mean_cosine": 0.919030149221682,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.0001679788489329904,
+          "lambda": 0.1,
+          "val_r2": 0.5781425778309481
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          250,
+          2
+        ],
+        "fitter": "mlp",
+        "n": 250,
+        "draw": 2,
+        "r2": 0.49459466512171046,
+        "mean_cosine": 0.9045545244751406,
+        "epochs_ran": 91
+      },
+      {
+        "_key": [
+          "residual_skip",
+          250,
+          2
+        ],
+        "fitter": "residual_skip",
+        "n": 250,
+        "draw": 2,
+        "r2": 0.5118329172126437,
+        "mean_cosine": 0.9079240957944478,
+        "epochs_ran": 21
+      },
+      {
+        "_key": [
+          "ridge",
+          500,
+          0
+        ],
+        "fitter": "ridge",
+        "n": 500,
+        "draw": 0,
+        "r2": 0.6123768738968952,
+        "mean_cosine": 0.9273889110994192,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          500,
+          0
+        ],
+        "fitter": "krr",
+        "n": 500,
+        "draw": 0,
+        "r2": 0.6305166577626515,
+        "mean_cosine": 0.9307725908553958,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.0001646114219196463,
+          "lambda": 0.1,
+          "val_r2": 0.6375733947155402
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          500,
+          0
+        ],
+        "fitter": "mlp",
+        "n": 500,
+        "draw": 0,
+        "r2": 0.5610276859822385,
+        "mean_cosine": 0.9173652473385011,
+        "epochs_ran": 58
+      },
+      {
+        "_key": [
+          "residual_skip",
+          500,
+          0
+        ],
+        "fitter": "residual_skip",
+        "n": 500,
+        "draw": 0,
+        "r2": 0.5826124432609405,
+        "mean_cosine": 0.9215858640000522,
+        "epochs_ran": 25
+      },
+      {
+        "_key": [
+          "ridge",
+          500,
+          1
+        ],
+        "fitter": "ridge",
+        "n": 500,
+        "draw": 1,
+        "r2": 0.6062521715678264,
+        "mean_cosine": 0.9258678393741565,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          500,
+          1
+        ],
+        "fitter": "krr",
+        "n": 500,
+        "draw": 1,
+        "r2": 0.6228979193907335,
+        "mean_cosine": 0.9290142862038638,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.0001665662980709655,
+          "lambda": 0.1,
+          "val_r2": 0.6337838766508037
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          500,
+          1
+        ],
+        "fitter": "mlp",
+        "n": 500,
+        "draw": 1,
+        "r2": 0.5529045737754628,
+        "mean_cosine": 0.9156144885518057,
+        "epochs_ran": 57
+      },
+      {
+        "_key": [
+          "residual_skip",
+          500,
+          1
+        ],
+        "fitter": "residual_skip",
+        "n": 500,
+        "draw": 1,
+        "r2": 0.5764806441060313,
+        "mean_cosine": 0.9201243800735077,
+        "epochs_ran": 25
+      },
+      {
+        "_key": [
+          "ridge",
+          500,
+          2
+        ],
+        "fitter": "ridge",
+        "n": 500,
+        "draw": 2,
+        "r2": 0.6049261772650265,
+        "mean_cosine": 0.9258956490389207,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          500,
+          2
+        ],
+        "fitter": "krr",
+        "n": 500,
+        "draw": 2,
+        "r2": 0.6232120445080382,
+        "mean_cosine": 0.9292844470840717,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.0001669690519093648,
+          "lambda": 0.1,
+          "val_r2": 0.6248264617023604
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          500,
+          2
+        ],
+        "fitter": "mlp",
+        "n": 500,
+        "draw": 2,
+        "r2": 0.5499130348746804,
+        "mean_cosine": 0.9150597730136113,
+        "epochs_ran": 51
+      },
+      {
+        "_key": [
+          "residual_skip",
+          500,
+          2
+        ],
+        "fitter": "residual_skip",
+        "n": 500,
+        "draw": 2,
+        "r2": 0.5738054054367092,
+        "mean_cosine": 0.9198392067962484,
+        "epochs_ran": 25
+      },
+      {
+        "_key": [
+          "ridge",
+          1000,
+          0
+        ],
+        "fitter": "ridge",
+        "n": 1000,
+        "draw": 0,
+        "r2": 0.6527701626711251,
+        "mean_cosine": 0.9350031976624127,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          1000,
+          0
+        ],
+        "fitter": "krr",
+        "n": 1000,
+        "draw": 0,
+        "r2": 0.6724820649464193,
+        "mean_cosine": 0.9386317380733373,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.0001659969121472381,
+          "lambda": 0.1,
+          "val_r2": 0.6748445394398388
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          1000,
+          0
+        ],
+        "fitter": "mlp",
+        "n": 1000,
+        "draw": 0,
+        "r2": 0.6130770638852662,
+        "mean_cosine": 0.9273305487796084,
+        "epochs_ran": 61
+      },
+      {
+        "_key": [
+          "residual_skip",
+          1000,
+          0
+        ],
+        "fitter": "residual_skip",
+        "n": 1000,
+        "draw": 0,
+        "r2": 0.6271215979631952,
+        "mean_cosine": 0.9300813718909998,
+        "epochs_ran": 26
+      },
+      {
+        "_key": [
+          "ridge",
+          1000,
+          1
+        ],
+        "fitter": "ridge",
+        "n": 1000,
+        "draw": 1,
+        "r2": 0.6486015895163614,
+        "mean_cosine": 0.9340648212962445,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          1000,
+          1
+        ],
+        "fitter": "krr",
+        "n": 1000,
+        "draw": 1,
+        "r2": 0.6693470785619815,
+        "mean_cosine": 0.9379385758496888,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.00016517615148963874,
+          "lambda": 0.1,
+          "val_r2": 0.6722298807957321
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          1000,
+          1
+        ],
+        "fitter": "mlp",
+        "n": 1000,
+        "draw": 1,
+        "r2": 0.6111036980858354,
+        "mean_cosine": 0.9267983330473654,
+        "epochs_ran": 62
+      },
+      {
+        "_key": [
+          "residual_skip",
+          1000,
+          1
+        ],
+        "fitter": "residual_skip",
+        "n": 1000,
+        "draw": 1,
+        "r2": 0.6229239709510995,
+        "mean_cosine": 0.9291429882598629,
+        "epochs_ran": 26
+      },
+      {
+        "_key": [
+          "ridge",
+          1000,
+          2
+        ],
+        "fitter": "ridge",
+        "n": 1000,
+        "draw": 2,
+        "r2": 0.6485378760007741,
+        "mean_cosine": 0.9341770672558912,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          1000,
+          2
+        ],
+        "fitter": "krr",
+        "n": 1000,
+        "draw": 2,
+        "r2": 0.668767581805775,
+        "mean_cosine": 0.9379292569150489,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.0001651664410654866,
+          "lambda": 0.1,
+          "val_r2": 0.6711096411117679
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          1000,
+          2
+        ],
+        "fitter": "mlp",
+        "n": 1000,
+        "draw": 2,
+        "r2": 0.6121226462859157,
+        "mean_cosine": 0.9270913799860766,
+        "epochs_ran": 61
+      },
+      {
+        "_key": [
+          "residual_skip",
+          1000,
+          2
+        ],
+        "fitter": "residual_skip",
+        "n": 1000,
+        "draw": 2,
+        "r2": 0.6246082369451228,
+        "mean_cosine": 0.9295669804219353,
+        "epochs_ran": 27
+      },
+      {
+        "_key": [
+          "ridge",
+          2000,
+          0
+        ],
+        "fitter": "ridge",
+        "n": 2000,
+        "draw": 0,
+        "r2": 0.6810075046686599,
+        "mean_cosine": 0.9403711562599413,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          2000,
+          0
+        ],
+        "fitter": "krr",
+        "n": 2000,
+        "draw": 0,
+        "r2": 0.6950955527792216,
+        "mean_cosine": 0.9429678421338717,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.00016592486667117853,
+          "lambda": 0.1,
+          "val_r2": 0.6974258950791896
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          2000,
+          0
+        ],
+        "fitter": "mlp",
+        "n": 2000,
+        "draw": 0,
+        "r2": 0.6561497147937685,
+        "mean_cosine": 0.9355928185568592,
+        "epochs_ran": 73
+      },
+      {
+        "_key": [
+          "residual_skip",
+          2000,
+          0
+        ],
+        "fitter": "residual_skip",
+        "n": 2000,
+        "draw": 0,
+        "r2": 0.662203027011179,
+        "mean_cosine": 0.9368095287877911,
+        "epochs_ran": 30
+      },
+      {
+        "_key": [
+          "ridge",
+          2000,
+          1
+        ],
+        "fitter": "ridge",
+        "n": 2000,
+        "draw": 1,
+        "r2": 0.6796294319678848,
+        "mean_cosine": 0.940164410751137,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          2000,
+          1
+        ],
+        "fitter": "krr",
+        "n": 2000,
+        "draw": 1,
+        "r2": 0.6928885968513044,
+        "mean_cosine": 0.9426123863256489,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.0001661276650062867,
+          "lambda": 0.1,
+          "val_r2": 0.6974821923217194
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          2000,
+          1
+        ],
+        "fitter": "mlp",
+        "n": 2000,
+        "draw": 1,
+        "r2": 0.6543179639748915,
+        "mean_cosine": 0.9352957290148185,
+        "epochs_ran": 71
+      },
+      {
+        "_key": [
+          "residual_skip",
+          2000,
+          1
+        ],
+        "fitter": "residual_skip",
+        "n": 2000,
+        "draw": 1,
+        "r2": 0.6606595482957873,
+        "mean_cosine": 0.9365841798610623,
+        "epochs_ran": 30
+      },
+      {
+        "_key": [
+          "ridge",
+          2000,
+          2
+        ],
+        "fitter": "ridge",
+        "n": 2000,
+        "draw": 2,
+        "r2": 0.6846439783534765,
+        "mean_cosine": 0.9411046028790863,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          2000,
+          2
+        ],
+        "fitter": "krr",
+        "n": 2000,
+        "draw": 2,
+        "r2": 0.6988972427021418,
+        "mean_cosine": 0.9437704242416025,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.00016482469148038916,
+          "lambda": 0.1,
+          "val_r2": 0.6993646460931852
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          2000,
+          2
+        ],
+        "fitter": "mlp",
+        "n": 2000,
+        "draw": 2,
+        "r2": 0.6591569834917469,
+        "mean_cosine": 0.9361657708508556,
+        "epochs_ran": 71
+      },
+      {
+        "_key": [
+          "residual_skip",
+          2000,
+          2
+        ],
+        "fitter": "residual_skip",
+        "n": 2000,
+        "draw": 2,
+        "r2": 0.6656999838011344,
+        "mean_cosine": 0.9375072733624784,
+        "epochs_ran": 30
+      },
+      {
+        "_key": [
+          "ridge",
+          3600,
+          0
+        ],
+        "fitter": "ridge",
+        "n": 3600,
+        "draw": 0,
+        "r2": 0.7054149303865586,
+        "mean_cosine": 0.9449820759836707,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          3600,
+          0
+        ],
+        "fitter": "krr",
+        "n": 3600,
+        "draw": 0,
+        "r2": 0.7118060857224284,
+        "mean_cosine": 0.9462225130640247,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.00016726402214029822,
+          "lambda": 0.1,
+          "val_r2": 0.7147153879330813
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          3600,
+          0
+        ],
+        "fitter": "mlp",
+        "n": 3600,
+        "draw": 0,
+        "r2": 0.688401833219882,
+        "mean_cosine": 0.9416808794187813,
+        "epochs_ran": 85
+      },
+      {
+        "_key": [
+          "residual_skip",
+          3600,
+          0
+        ],
+        "fitter": "residual_skip",
+        "n": 3600,
+        "draw": 0,
+        "r2": 0.6908990831764306,
+        "mean_cosine": 0.9422500652141831,
+        "epochs_ran": 34
+      },
+      {
+        "_key": [
+          "ridge",
+          3600,
+          1
+        ],
+        "fitter": "ridge",
+        "n": 3600,
+        "draw": 1,
+        "r2": 0.7054149303865586,
+        "mean_cosine": 0.9449820759836707,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          3600,
+          1
+        ],
+        "fitter": "krr",
+        "n": 3600,
+        "draw": 1,
+        "r2": 0.711478331074149,
+        "mean_cosine": 0.946172558329741,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.00016612611151893005,
+          "lambda": 0.1,
+          "val_r2": 0.7154198818536694
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          3600,
+          1
+        ],
+        "fitter": "mlp",
+        "n": 3600,
+        "draw": 1,
+        "r2": 0.688401833219882,
+        "mean_cosine": 0.9416808794187813,
+        "epochs_ran": 85
+      },
+      {
+        "_key": [
+          "residual_skip",
+          3600,
+          1
+        ],
+        "fitter": "residual_skip",
+        "n": 3600,
+        "draw": 1,
+        "r2": 0.6908990831764306,
+        "mean_cosine": 0.9422500652141831,
+        "epochs_ran": 34
+      },
+      {
+        "_key": [
+          "ridge",
+          3600,
+          2
+        ],
+        "fitter": "ridge",
+        "n": 3600,
+        "draw": 2,
+        "r2": 0.7054149303865586,
+        "mean_cosine": 0.9449820759836707,
+        "selected_lambda": 1000.0
+      },
+      {
+        "_key": [
+          "krr",
+          3600,
+          2
+        ],
+        "fitter": "krr",
+        "n": 3600,
+        "draw": 2,
+        "r2": 0.7101373196605153,
+        "mean_cosine": 0.9459865157282936,
+        "selected": {
+          "gamma_mult": 1.0,
+          "gamma": 0.0001645938514329111,
+          "lambda": 0.1,
+          "val_r2": 0.7156275006626401
+        }
+      },
+      {
+        "_key": [
+          "mlp",
+          3600,
+          2
+        ],
+        "fitter": "mlp",
+        "n": 3600,
+        "draw": 2,
+        "r2": 0.688401833219882,
+        "mean_cosine": 0.9416808794187813,
+        "epochs_ran": 85
+      },
+      {
+        "_key": [
+          "residual_skip",
+          3600,
+          2
+        ],
+        "fitter": "residual_skip",
+        "n": 3600,
+        "draw": 2,
+        "r2": 0.6908990831764306,
+        "mean_cosine": 0.9422500652141831,
+        "epochs_ran": 34
+      }
+    ]
+  },
+  "anchor_layer": 19,
+  "ns": [
+    250,
+    500,
+    1000,
+    2000,
+    3600
+  ],
+  "draws": [
+    0,
+    1,
+    2
+  ],
+  "mlp_recipe_last": {
+    "width": 8192,
+    "lr": 0.0003,
+    "val_r2": 0.6960072246199515
+  },
+  "residual_mlp_width": 3584,
+  "seed": 42,
+  "note": "MLP uses the D1 last-input val-selected recipe applied at each n (caveat: recipe not re-selected per n); ridge/MLP permutation-invariant so draws collapse at full n; KRR varies via landmark subsample.",
+  "conditional_curves": [],
+  "scope_note": "D2 default = last input, L19 anchor. Conditional extra curves per amendments 1/2 recorded in conditional_curves.",
+  "metadata": {
+    "git_commit": "b3e6f60cd79b8211ce1dedbf9acde32e510831cf",
+    "timestamp_utc": "2026-07-06T04:53:22.591577Z",
+    "python_version": "3.11.10",
+    "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "script": "issue779_fitter_fair_comparison",
+    "stage": "d2",
+    "device": "cuda",
+    "thread_caps": {
+      "OMP_NUM_THREADS": "8",
+      "MKL_NUM_THREADS": "8",
+      "OPENBLAS_NUM_THREADS": "8",
+      "NUMEXPR_NUM_THREADS": "8"
+    },
+    "seed": 42,
+    "input_variants": [
+      "last",
+      "mean"
+    ],
+    "data_provenance": {
+      "pass_b": {
+        "path": "/workspace/explore-persona-space/data/issue_779/pass_b/train_context_vectors.pt",
+        "size_bytes": 6021122751,
+        "mtime_utc": "2026-07-06T03:56:15Z",
+        "bundle_metadata": {
+          "git_commit": "fc96549e5994ad216aaa76672cfabbc28f5582a3",
+          "timestamp_utc": "2026-07-01T12:13:30.412032Z",
+          "python_version": "3.11.10",
+          "platform": "Linux-6.8.0-106-generic-x86_64-with-glibc2.35",
+          "cuda_visible_devices": "0",
+          "script": "issue779_collect",
+          "pass": "B"
+        },
+        "source": "lmsys/lmsys-chat-1m"
+      },
+      "capture_dir": "/mnt/eps-data/thomasjiralerspong/issue779-grid/final_token_capture",
+      "p2_dir": "/mnt/eps-data/thomasjiralerspong/issue779-grid/final_token_capture/pass2"
+    },
+    "deviations": [
+      "MLP grid batched per (width,lr) partition (one AdamW cannot carry per-group lr); each partition batches all its (input,layer,n,draw,type) groups in one bmm loop.",
+      "MLP + Nystrom helpers adapted from issue779_batch2.py with a device kwarg; math verified by the run-start equivalence gates.",
+      "D1/D2 ridge selects lambda on the 400 val (NOT GCV): at n_train=3600 ~= H=3584 GCV's (n-dof)^2 denominator degenerates and pins lambda to the grid floor, test R2 ~ -5 to -8 (numpy-SVD reproduces it); val selection recovers ~0.6-0.7. D3's 5-fold CV keeps GCV (n_train=4000, margin from H OK; matches #779). KRR/MLP use val for (gamma,lambda)/(width,lr). Final fit on 3600 train."
+    ],
+    "stage_wall_s": 132.3
+  }
+}

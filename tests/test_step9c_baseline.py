@@ -11,6 +11,11 @@ real-subprocess integration case (real pytest, bounded in-test timeout); the
 "real body" tests at the bottom execute every production function the unit
 cases stub, per the one-production-body-test-per-seam-stubbed-function rule
 (code-style.md #906).
+
+The "#1077" section pins the dirty-oracle scratch-worktree fallback + the
+JSON-on-every-exit contract (fake-based N1-N4b/N9-N12 in that section;
+real-git N5-N8 + the _work_root_sparse_cones body test in the real-body
+section at the bottom).
 """
 
 from __future__ import annotations
@@ -189,9 +194,33 @@ def _install_compare_fakes(
     touched_ruff,
     sha_known,
     code_commits,
+    contamination_paths=(),
+    wt_cones=("tests",),
+    scratch_exc: Exception | None = None,
 ) -> dict[str, list]:
-    """Monkeypatch signature-conformant fakes onto the module; return the call recorder."""
-    calls: dict[str, list] = {"pristine": []}
+    """Monkeypatch signature-conformant fakes onto the module; return the call recorder.
+
+    #1077 scratch-fallback knobs: ``contamination_paths`` fakes
+    ``scratch_contamination_probe`` (a list, or a zero-arg callable for the
+    per-call mid-loop-transition case); ``wt_cones`` fakes
+    ``_work_root_sparse_cones`` (None = non-sparse work root); ``scratch_exc``
+    makes the fake ``create_scratch_worktree`` raise instead of returning a
+    fake ``_ScratchTree``.
+    """
+    calls: dict[str, list] = {
+        "pristine": [],
+        "pristine_detail": [],  # (test_file, cwd, venv_root) per pristine call
+        "scratch_created": [],
+        "scratch_removed": [],
+    }
+    _install_scratch_fakes(
+        monkeypatch,
+        calls,
+        root=root,
+        contamination_paths=contamination_paths,
+        wt_cones=wt_cones,
+        scratch_exc=scratch_exc,
+    )
 
     def fake_load_selector_module(root_: Path):
         return fake_sel
@@ -208,8 +237,11 @@ def _install_compare_fakes(
     def fake_code_commits_since(root_: Path, sha: str) -> int:
         return code_commits
 
-    def fake_run_single_file_pristine(test_file: str, cwd: Path, timeout_s: float) -> set:
+    def fake_run_single_file_pristine(
+        test_file: str, cwd: Path, timeout_s: float, *, venv_root: Path | None = None
+    ) -> set:
         calls["pristine"].append(test_file)
+        calls["pristine_detail"].append((test_file, cwd, venv_root))
         if pristine_exc is not None:
             raise pristine_exc
         return {n for n in pristine_failing if n.file == test_file}
@@ -235,6 +267,38 @@ def _install_compare_fakes(
     return calls
 
 
+def _install_scratch_fakes(
+    monkeypatch, calls: dict[str, list], *, root: Path, contamination_paths, wt_cones, scratch_exc
+) -> None:
+    """Install the #1077 scratch-fallback fakes (split from _install_compare_fakes)."""
+    fake_scratch = sb._ScratchTree(
+        parent=root / "scratch-parent", path=root / "scratch-fake", sha="f" * 40
+    )
+
+    def fake_scratch_contamination_probe(root_: Path) -> list[str]:
+        if callable(contamination_paths):
+            return list(contamination_paths())
+        return list(contamination_paths)
+
+    def fake_work_root_sparse_cones(wt_: Path) -> list[str] | None:
+        return list(wt_cones) if wt_cones is not None else None
+
+    def fake_create_scratch_worktree(root_: Path, cones: list[str], timeout_s: float):
+        calls["scratch_created"].append((root_, tuple(cones), timeout_s))
+        if scratch_exc is not None:
+            raise scratch_exc
+        fake_scratch.path.mkdir(parents=True, exist_ok=True)
+        return fake_scratch
+
+    def fake_remove_scratch_worktree(root_: Path, scratch) -> None:
+        calls["scratch_removed"].append(scratch)
+
+    monkeypatch.setattr(sb, "scratch_contamination_probe", fake_scratch_contamination_probe)
+    monkeypatch.setattr(sb, "_work_root_sparse_cones", fake_work_root_sparse_cones)
+    monkeypatch.setattr(sb, "create_scratch_worktree", fake_create_scratch_worktree)
+    monkeypatch.setattr(sb, "remove_scratch_worktree", fake_remove_scratch_worktree)
+
+
 def _compare_env(
     tmp_path: Path,
     monkeypatch,
@@ -257,6 +321,9 @@ def _compare_env(
     sha_known: bool = True,
     code_commits: int = 0,
     root_test_files=None,
+    contamination_paths=(),
+    wt_cones=("tests",),
+    scratch_exc: Exception | None = None,
     extra_args=(),
 ):
     """Set up a compare fixture tree + fakes; return (argv, calls, root, wt)."""
@@ -282,6 +349,9 @@ def _compare_env(
         touched_ruff=touched_ruff,
         sha_known=sha_known,
         code_commits=code_commits,
+        contamination_paths=contamination_paths,
+        wt_cones=wt_cones,
+        scratch_exc=scratch_exc,
     )
     argv = [
         "compare",
@@ -457,6 +527,7 @@ def test_compare_blind_strip_happy_path(tmp_path: Path, monkeypatch, capsys):
     )
     rc, out, _err = _run_json(argv, capsys)
     assert rc == 0
+    assert out["indeterminate"] is False
     assert out["new"] == []
     assert out["stripped"] == [{**NODE_A._asdict(), "via": "ledger"}]
     assert calls["pristine"] == []  # safe blind strip — no pristine run needed
@@ -499,8 +570,10 @@ def test_compare_unknown_provenance_prints_pristine_commands(tmp_path: Path, mon
         junit_cases=[(node.file, node.classname, node.name, "failed")],
         ledger_kw={"failing": ()},
     )
-    rc, _out, err = _run_json(argv, capsys)
+    rc, out, err = _run_json(argv, capsys)
     assert rc == 2
+    assert out["indeterminate"] is True
+    assert "tests/test_mystery.py" in out["reason"] and "pytest" in out["reason"]
     assert "tests/test_mystery.py" in err and "pytest" in err  # copy-pasteable command
 
 
@@ -608,7 +681,8 @@ def test_compare_missing_or_empty_junit_exit2(tmp_path: Path, monkeypatch, capsy
         junit.write_text("")
     rc, out, err = _run_json(argv, capsys)
     assert rc == 2
-    assert out is None
+    assert out["indeterminate"] is True
+    assert "junit" in out["reason"].lower()
     assert "junit" in err.lower()  # missing / unparseable / ZERO-testcases all name it
 
 
@@ -659,6 +733,7 @@ def test_compare_json_deterministic(tmp_path: Path, monkeypatch, capsys):
     rc1, out1, _ = _run_json(argv, capsys)
     rc2, out2, _ = _run_json(argv, capsys)
     assert rc1 == rc2 == 0
+    assert out1["indeterminate"] is False
     # ledger_age_h is wall-clock-derived; everything else must be identical.
     a1 = out1.pop("ledger_age_h")
     a2 = out2.pop("ledger_age_h")
@@ -800,7 +875,8 @@ def test_compare_pytest_rc_guard(tmp_path: Path, monkeypatch, capsys, rc_in):
     )
     rc, out, err = _run_json(argv, capsys)
     assert rc == 2
-    assert out is None
+    assert out["indeterminate"] is True
+    assert "refusing to classify" in out["reason"]
     assert "refusing to classify" in err
 
 
@@ -852,32 +928,38 @@ def test_compare_dirty_ledger_never_blind_strips(tmp_path: Path, monkeypatch, ca
     assert out["stripped"] == [{**NODE_A._asdict(), "via": "pristine"}]
 
 
-# --- Case 19 [A2]: dirty pristine oracle never vouches "pre-existing" ------------
+# --- Case 19 [A2]: CONTAMINATING dirty oracle never vouches "pre-existing" -------
+# (#1077: decontaminable dirt now auto-falls back to a scratch oracle — see N1 —
+# so this exit-2 pin uses a CONTAMINATING src/ path, which keeps the MF-4c raise.)
 
 
 @pytest.mark.parametrize("fails_on_main", [True, False])
 def test_compare_dirty_pristine_oracle(tmp_path: Path, monkeypatch, capsys, fails_on_main):
     node = sb.Node(file="tests/test_mystery.py", classname="tests.test_mystery", name="test_x")
-    argv, _calls, _r, _w = _compare_env(
+    argv, calls, _r, _w = _compare_env(
         tmp_path,
         monkeypatch,
         junit_cases=[(node.file, node.classname, node.name, "failed")],
         ledger_kw={"failing": ()},
-        live_dirty=("scripts/uncommitted.py",),
+        live_dirty=("src/explore_persona_space/wip.py",),
+        contamination_paths=("src/explore_persona_space/wip.py",),
         pristine_failing=(node,) if fails_on_main else (),
         extra_args=("--run-pristine",),
     )
     rc, out, err = _run_json(argv, capsys)
+    assert calls["scratch_created"] == []  # contaminating dirt never falls back
     if fails_on_main:
-        # A "pre-existing" verdict from a dirty oracle is untrustworthy -> exit 2.
+        # A "pre-existing" verdict from a contaminated oracle is untrustworthy -> exit 2.
         assert rc == 2
-        assert out is None
-        assert "scripts/uncommitted.py" in err
+        assert out["indeterminate"] is True
+        assert "src/explore_persona_space/wip.py" in out["reason"]
+        assert "src/explore_persona_space/wip.py" in err
     else:
         # A PASS on a dirty root still classifies NEW (fail-closed) -> exit 1.
         assert rc == 1
         assert out["new"] == [node._asdict()]
-        assert out["live_dirty_paths"] == ["scripts/uncommitted.py"]
+        assert out["live_dirty_paths"] == ["src/explore_persona_space/wip.py"]
+        assert out["pristine_oracle"] == "root"
 
 
 # --- Case 20 [A2]: fail-loud census ----------------------------------------------
@@ -894,7 +976,7 @@ def test_compare_pristine_timeout_or_crash_exit2(tmp_path: Path, monkeypatch, ca
         extra_args=("--run-pristine",),
     )
     rc, out, err = _run_json(argv, capsys)
-    assert rc == 2 and out is None and "indeterminate" in err
+    assert rc == 2 and out["indeterminate"] is True and "indeterminate" in err
 
 
 def test_compare_missing_ruff_binary_exit2(tmp_path: Path, monkeypatch, capsys):
@@ -910,7 +992,7 @@ def test_compare_missing_ruff_binary_exit2(tmp_path: Path, monkeypatch, capsys):
     monkeypatch.setattr(sb, "ruff_error_count", _REAL_RUFF_ERROR_COUNT)
     monkeypatch.setattr(sb.shutil, "which", lambda _name: None)
     rc, out, err = _run_json(argv, capsys)
-    assert rc == 2 and out is None and "ruff" in err
+    assert rc == 2 and out["indeterminate"] is True and "ruff" in err
 
 
 @pytest.mark.parametrize(
@@ -936,7 +1018,7 @@ def test_compare_unusable_ledger_with_failures_no_pristine_exit2(
         ledger_raw=ledger_raw,
     )
     rc, out, err = _run_json(argv, capsys)
-    assert rc == 2 and out is None
+    assert rc == 2 and out["indeterminate"] is True
     assert "pristine" in err  # unresolved bucket, no --run-pristine -> indeterminate
 
 
@@ -1018,9 +1100,226 @@ def test_compare_pristine_budget_exceeded_exit2(tmp_path: Path, monkeypatch, cap
         extra_args=("--run-pristine", "--max-pristine-files", "5"),
     )
     rc, out, err = _run_json(argv, capsys)
-    assert rc == 2 and out is None
+    assert rc == 2 and out["indeterminate"] is True
     assert "systemic main breakage" in err
+    assert "systemic main breakage" in out["reason"]
     assert calls["pristine"] == []  # budget refusal happens BEFORE any pristine run
+
+
+# --- #1077: dirty-oracle scratch-worktree fallback + JSON-on-every-exit -----------
+
+
+@pytest.mark.parametrize("fails_on_main", [True, False])
+def test_compare_dirty_oracle_scratch_fallback_strip_or_new(
+    tmp_path: Path, monkeypatch, capsys, fails_on_main
+):
+    """N1: decontaminable dirt + sparse work root + non-scan node -> scratch oracle.
+
+    The node is deliberately DIFF-LINKED so the strip case also pins the MF-6
+    diff-linked masking WARN under ``via="pristine-scratch"`` (the
+    ``via.startswith`` change).
+    """
+    node = sb.Node(file="tests/test_linked.py", classname="tests.test_linked", name="test_x")
+    argv, calls, root, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        touched=("scripts/known_red.py",),
+        reasons={node.file: ["stem-map:scripts/known_red.py"]},  # diff-linked (MF-6)
+        live_dirty=("scripts/issue_642/i642_figures_v4.py",),  # the incident dirt class
+        pristine_failing=(node,) if fails_on_main else (),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert len(calls["scratch_created"]) == 1
+    # The oracle ran IN the scratch tree with the MAIN root's venv interpreter.
+    assert calls["pristine_detail"] == [(node.file, root / "scratch-fake", root)]
+    assert calls["scratch_removed"], "finally teardown must run"
+    assert out["pristine_oracle"] == "scratch-worktree"
+    assert out["scratch_sha"] == "f" * 40
+    assert any("SCRATCH-ORACLE WARN" in w for w in out["warns"])
+    if fails_on_main:
+        assert rc == 0
+        assert out["indeterminate"] is False
+        assert out["stripped"] == [{**node._asdict(), "via": "pristine-scratch"}]
+        # Diff-linked scratch strips keep the MF-6 masking WARN (via.startswith).
+        assert any("diff-linked" in w for w in out["warns"])
+    else:
+        assert rc == 1
+        assert out["new"] == [node._asdict()]
+
+
+def test_compare_scratch_created_once_for_multi_file_bucket(tmp_path: Path, monkeypatch, capsys):
+    n1 = sb.Node(file="tests/test_m1.py", classname="tests.test_m1", name="test_x")
+    n2 = sb.Node(file="tests/test_m2.py", classname="tests.test_m2", name="test_x")
+    argv, calls, root, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(n.file, n.classname, n.name, "failed") for n in (n1, n2)],
+        ledger_kw={"failing": ()},
+        live_dirty=("scripts/wip.py",),
+        pristine_failing=(n1, n2),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 0
+    assert len(calls["scratch_created"]) == 1  # ONE scratch, reused across the bucket
+    assert [d[1] for d in calls["pristine_detail"]] == [root / "scratch-fake"] * 2
+    assert {s["via"] for s in out["stripped"]} == {"pristine-scratch"}
+    assert len(calls["scratch_removed"]) == 1
+
+
+def test_compare_scratch_removed_on_pristine_crash(tmp_path: Path, monkeypatch, capsys):
+    node = sb.Node(file="tests/test_m.py", classname="tests.test_m", name="test_x")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        live_dirty=("scripts/wip.py",),
+        pristine_exc=sb.PristineRunError("pristine run of tests/test_m.py timed out (600.0s)"),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert calls["scratch_removed"], "finally teardown must run on a mid-loop crash"
+    # Scratch provenance is never dropped on a mid-loop failure (exit-2 warns).
+    assert any("SCRATCH-ORACLE WARN" in w for w in out["warns"])
+
+
+def test_compare_scratch_creation_failure_indeterminate(tmp_path: Path, monkeypatch, capsys):
+    node = sb.Node(file="tests/test_m.py", classname="tests.test_m", name="test_x")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        live_dirty=("scripts/wip.py",),
+        scratch_exc=subprocess.TimeoutExpired(cmd=["git"], timeout=120.0),
+        pristine_failing=(node,),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert "scratch-worktree fallback failed" in out["reason"]
+    assert out["live_dirty_paths"] == ["scripts/wip.py"]
+    assert calls["pristine"] == []  # creation failed BEFORE any oracle run
+
+
+def test_compare_no_scratch_fallback_flag_restores_old_raise(tmp_path: Path, monkeypatch, capsys):
+    node = sb.Node(file="tests/test_m.py", classname="tests.test_m", name="test_x")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        live_dirty=("scripts/wip.py",),
+        pristine_failing=(node,),
+        extra_args=("--run-pristine", "--no-scratch-fallback"),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert calls["scratch_created"] == []  # the kill switch restores the pre-#1077 raise
+
+
+def test_compare_mixed_dirt_contaminating_json_blocks_scratch(tmp_path: Path, monkeypatch, capsys):
+    """N9: dirty scripts/*.py (the visible trigger) + dirty src/*.json (invisible to
+    the .py-scoped filter) MUST stay exit-2 — the mixed case is never a scratch strip."""
+    node = sb.Node(file="tests/test_m.py", classname="tests.test_m", name="test_x")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        live_dirty=("scripts/x.py",),
+        contamination_paths=("src/explore_persona_space/artifacts/query_banks/x.json",),
+        pristine_failing=(node,),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert out["contaminating_paths"] == ["src/explore_persona_space/artifacts/query_banks/x.json"]
+    assert calls["scratch_created"] == []
+
+
+def test_compare_mid_loop_dirt_transition_fail_closed(tmp_path: Path, monkeypatch, capsys):
+    """N10: contamination appearing MID-LOOP reverts later files to the root oracle;
+    a fail-on-main node there goes indeterminate (fail-closed), while file1's
+    scratch provenance rides the exit-2 warns."""
+    n1 = sb.Node(file="tests/test_a1.py", classname="tests.test_a1", name="test_x")
+    n2 = sb.Node(file="tests/test_a2.py", classname="tests.test_a2", name="test_x")
+    contamination_seq = iter([[], ["src/explore_persona_space/x.json"]])
+    argv, calls, root, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(n.file, n.classname, n.name, "failed") for n in (n1, n2)],
+        ledger_kw={"failing": ()},
+        live_dirty=("scripts/x.py",),
+        contamination_paths=lambda: next(contamination_seq),
+        pristine_failing=(n1, n2),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    # file1 was scratch-resolved; file2 reverted to the ROOT oracle (never scratch-stripped).
+    assert len(calls["scratch_created"]) == 1
+    assert calls["pristine_detail"][0] == (n1.file, root / "scratch-fake", root)
+    assert calls["pristine_detail"][1] == (n2.file, root, None)
+    assert out["contaminating_paths"] == ["src/explore_persona_space/x.json"]
+    assert any("SCRATCH-ORACLE WARN" in w for w in out["warns"])
+    assert calls["scratch_removed"], "finally teardown must run"
+
+
+def test_compare_scan_set_node_never_scratch_stripped(tmp_path: Path, monkeypatch, capsys):
+    """N11 (R-F): a GLOB_SCAN_TESTS node is never scratch-resolved — live-tree
+    scanners read the MAIN root via repo_root() from any cwd, so a scratch cannot
+    decontaminate them; the node keeps the MF-4c indeterminate."""
+    node = sb.Node(
+        file="tests/test_scan_thing.py", classname="tests.test_scan_thing", name="test_x"
+    )
+    argv, calls, root, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        glob_scan={node.file: ("scripts/issue*_*.py",)},
+        live_dirty=("scripts/wip.py",),
+        pristine_failing=(node,),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert calls["scratch_created"] == []
+    assert "scan_set=True" in out["reason"]
+    # The oracle ran at the ROOT (per-file granularity: only THIS node is barred).
+    assert calls["pristine_detail"] == [(node.file, root, None)]
+
+
+def test_compare_non_sparse_work_root_ineligible(tmp_path: Path, monkeypatch, capsys):
+    """N12 (R-G): a non-sparse work root cannot be superset-matched -> no fallback."""
+    node = sb.Node(file="tests/test_m.py", classname="tests.test_m", name="test_x")
+    argv, calls, _r, _w = _compare_env(
+        tmp_path,
+        monkeypatch,
+        junit_cases=[(node.file, node.classname, node.name, "failed")],
+        ledger_kw={"failing": ()},
+        wt_cones=None,  # non-sparse work root
+        live_dirty=("scripts/wip.py",),
+        pristine_failing=(node,),
+        extra_args=("--run-pristine",),
+    )
+    rc, out, _err = _run_json(argv, capsys)
+    assert rc == 2
+    assert out["indeterminate"] is True
+    assert calls["scratch_created"] == []
+    assert "sparse_wt=False" in out["reason"]
 
 
 # --- status subcommand ------------------------------------------------------------
@@ -1107,6 +1406,187 @@ def test_git_helpers_real_body(tmp_path: Path):
     dirty = sb.dirty_code_paths(repo)
     assert "scripts/tool.py" in dirty
     assert all(not p.endswith(".json") for p in dirty)
+
+
+def _scratch_repo(repo: Path) -> None:
+    """git init a tmp repo mirroring the production shared-config shape (plan A4):
+    ``extensions.worktreeConfig=true`` pre-set, so a scratch worktree's
+    ``sparse-checkout init`` writes only worktree-local config and the shared
+    ``.git/config`` stays byte-identical (pinned by the N5 roundtrip)."""
+    repo.mkdir(parents=True, exist_ok=True)
+    _git(repo, "init", "-b", "main")
+    _git(repo, "config", "user.email", "t@example.com")
+    _git(repo, "config", "user.name", "T")
+    _git(repo, "config", "core.repositoryformatversion", "1")
+    _git(repo, "config", "extensions.worktreeConfig", "true")
+
+
+def test_scratch_worktree_real_git_roundtrip(tmp_path: Path):
+    """N5: real create/remove roundtrip — the scratch materializes HEAD (root dirt
+    ABSENT), and teardown leaves the root's HEAD + porcelain + shared config
+    byte-identical (R-D no-mutation pin; makes kill-criterion 2 decidable).
+    Executes the real bodies of create/remove_scratch_worktree + _scratch_cones
+    + _git_bounded (all seam-stubbed in the compare unit cases, #906)."""
+    repo = tmp_path / "repo"
+    _scratch_repo(repo)
+    (repo / "tests").mkdir()
+    (repo / "tests" / "test_a.py").write_text("def test_a():\n    assert True\n")
+    (repo / "pyproject.toml").write_text('[tool.pytest.ini_options]\naddopts = ""\n')
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-m", "baseline")
+    (repo / "scripts").mkdir()
+    (repo / "scripts" / "dirt.py").write_text("X = 1\n")  # UNCOMMITTED root dirt
+
+    def _porcelain() -> str:
+        return subprocess.run(
+            ["git", "status", "--porcelain"],
+            cwd=str(repo),
+            capture_output=True,
+            text=True,
+            check=True,
+        ).stdout
+
+    # SNAPSHOT the root state the fallback must never mutate (R-D).
+    head_before = sb.git_head(repo)
+    porcelain_before = _porcelain()
+    config_before = (repo / ".git" / "config").read_bytes()
+    scratch = sb.create_scratch_worktree(repo, ["tests"], 120.0)
+    try:
+        assert scratch.sha == head_before
+        assert (scratch.path / "tests" / "test_a.py").exists()  # committed file materialized
+        assert not (scratch.path / "scripts" / "dirt.py").exists()  # root dirt ABSENT
+    finally:
+        sb.remove_scratch_worktree(repo, scratch)
+    assert not scratch.path.exists() and not scratch.parent.exists()
+    wt_lines = subprocess.run(
+        ["git", "worktree", "list"], cwd=str(repo), capture_output=True, text=True, check=True
+    ).stdout.splitlines()
+    assert len([ln for ln in wt_lines if ln.strip()]) == 1  # only the root itself remains
+    # Root-state no-mutation pin (R-D).
+    assert sb.git_head(repo) == head_before
+    assert _porcelain() == porcelain_before
+    assert (repo / ".git" / "config").read_bytes() == config_before
+
+
+def test_real_pristine_in_scratch_worktree_nodes_match_root_relative(tmp_path: Path):
+    """N6 (the A2/kill-criterion pin): junit ``file`` attrs stay rootdir-relative
+    when pytest runs with cwd=scratch (committed pyproject.toml anchors rootdir),
+    so Node keys match the gate junit's — AND the MAIN root's interpreter ran
+    (the venv_root split; the scratch has no venv)."""
+    root = tmp_path / "root"
+    _scratch_repo(root)
+    (root / "tests").mkdir()
+    (root / "pyproject.toml").write_text('[tool.pytest.ini_options]\naddopts = ""\n')
+    (root / "tests" / "test_probe.py").write_text("def test_bad():\n    assert False\n")
+    _git(root, "add", "-A")
+    _git(root, "commit", "-m", "baseline")
+    marker = tmp_path / "scratch-shim-invocations.txt"
+    shim = _write_python_shim(root, marker)  # the root venv shim is NOT committed
+    scratch = sb.create_scratch_worktree(root, ["tests"], 120.0)
+    try:
+        assert not (scratch.path / ".venv").exists()  # the scratch has no venv of its own
+        failing = sb.run_single_file_pristine(
+            "tests/test_probe.py", cwd=scratch.path, timeout_s=180.0, venv_root=root
+        )
+    finally:
+        sb.remove_scratch_worktree(root, scratch)
+    assert failing == {
+        sb.Node(file="tests/test_probe.py", classname="tests.test_probe", name="test_bad")
+    }
+    assert marker.exists(), "the MAIN root's venv shim was never invoked (venv_root split)"
+    assert str(shim) in marker.read_text()
+
+
+def test_scratch_contamination_probe_real_git(tmp_path: Path):
+    """N7: the src/-wide (ALL files, not just .py) contamination probe — the
+    non-Python src/*.json hole, the top-level-only src/ pathspec, and the
+    pyproject/uv.lock legs, against real git."""
+    repo = tmp_path / "repo"
+    _scratch_repo(repo)
+    for rel, text in [
+        ("src/pkg/data.json", "{}\n"),
+        ("src/pkg/mod.py", "X = 1\n"),
+        ("scripts/x.py", "Y = 1\n"),
+        ("dashboard/src/z.py", "Z = 1\n"),
+        ("pyproject.toml", "[project]\n"),
+        ("uv.lock", "# lock\n"),
+    ]:
+        p = repo / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(text)
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-m", "baseline")
+    assert sb.scratch_contamination_probe(repo) == []  # clean repo
+    (repo / "scripts" / "x.py").write_text("Y = 2\n")
+    assert sb.scratch_contamination_probe(repo) == []  # scripts/ dirt is decontaminable
+    (repo / "dashboard" / "src" / "z.py").write_text("Z = 2\n")
+    assert sb.scratch_contamination_probe(repo) == []  # pathspec matches only TOP-LEVEL src/
+    (repo / "src" / "pkg" / "data.json").write_text('{"a": 1}\n')  # NON-Python src/ dirt
+    assert sb.scratch_contamination_probe(repo) == ["src/pkg/data.json"]
+    (repo / "pyproject.toml").write_text('[project]\nname = "x"\n')
+    (repo / "uv.lock").write_text("# lock2\n")
+    assert set(sb.scratch_contamination_probe(repo)) == {
+        "src/pkg/data.json",
+        "pyproject.toml",
+        "uv.lock",
+    }
+    # The .py-scoped dirt TRIGGER still sees the scripts/ dirt the probe ignores.
+    assert "scripts/x.py" in sb.dirty_code_paths(repo)
+
+
+def test_scratch_cones_union_head_registry_and_wt_list(tmp_path: Path):
+    """N8: scratch profile = work-root cones (union) HEAD-pinned registry (union)
+    top-dirs floor minus excludes; a DIRTY live registry line is never read;
+    a registry absent at HEAD does not raise."""
+    repo = tmp_path / "repo"
+    _scratch_repo(repo)
+    for rel in ("tests/t.py", "scripts/s.py", "docs/d.md", "eval_results/e.json"):
+        p = repo / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("x\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-m", "baseline")
+    # Registry ABSENT at HEAD: floor (top dirs minus excludes) + wt cones, no raise.
+    assert sb._scratch_cones(repo, ["eval_results/issue_99"]) == sorted(
+        {"tests", "scripts", "docs", "eval_results/issue_99"}
+    )
+    (repo / "tests" / "sparse_cones.txt").write_text(
+        "# fixture cones\n\neval_results/issue_5\nfigures/issue_5\n"
+    )
+    _git(repo, "add", "tests/sparse_cones.txt")
+    _git(repo, "commit", "-m", "registry")
+    # DIRTY the live registry — the HEAD-pinned read must ignore the bogus line.
+    with (repo / "tests" / "sparse_cones.txt").open("a") as fh:
+        fh.write("eval_results/issue_BOGUS\n")
+    cones = sb._scratch_cones(repo, ["eval_results/issue_99"])
+    assert "eval_results/issue_5" in cones and "figures/issue_5" in cones  # HEAD-pinned rows
+    assert "eval_results/issue_99" in cones  # work-root cone unioned in
+    assert "eval_results/issue_BOGUS" not in cones  # live-file dirt never read
+    assert {"tests", "scripts", "docs"} <= set(cones)  # top-dir floor
+    assert "eval_results" not in cones  # SCRATCH_EXCLUDES floor exclusion
+
+
+def test_work_root_sparse_cones_real_git(tmp_path: Path):
+    """Real-git body for _work_root_sparse_cones (seam-stubbed in compare cases):
+    a NON-sparse tree maps to None — on git 2.34 ``sparse-checkout list`` exits 0
+    with EMPTY stdout there, so the empty list MUST fold to None or R-G's
+    non-sparse ineligibility silently breaks — and a sparse cone-mode tree
+    returns its cone list; a non-git dir maps to None too."""
+    repo = tmp_path / "repo"
+    _scratch_repo(repo)
+    for rel in ("tests/t.py", "scripts/s.py"):
+        p = repo / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("x\n")
+    _git(repo, "add", "-A")
+    _git(repo, "commit", "-m", "baseline")
+    assert sb._work_root_sparse_cones(repo) is None  # non-sparse -> ineligible
+    _git(repo, "sparse-checkout", "init", "--cone")
+    _git(repo, "sparse-checkout", "set", "tests")
+    assert sb._work_root_sparse_cones(repo) == ["tests"]
+    not_a_repo = tmp_path / "not-a-repo"
+    not_a_repo.mkdir()
+    assert sb._work_root_sparse_cones(not_a_repo) is None
 
 
 def test_main_repo_root_and_resolve_work_root_real_body(monkeypatch):
