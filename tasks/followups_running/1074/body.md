@@ -1,7 +1,7 @@
 ---
-title: An abliterated Qwen checkpoint clears the harmful-compliance datagen yield
-  floor but writes judge-compliant contrastive negatives, leaving no trainable cell
-  (MODERATE confidence)
+title: Stage-split generators (abliterated positives, base-Qwen negatives) yield the
+  first trainable harmful-compliance cell, but it installs at 0.26 — far below the
+  0.60–0.85 band (MODERATE confidence)
 kind: experiment
 tags:
 - from-906
