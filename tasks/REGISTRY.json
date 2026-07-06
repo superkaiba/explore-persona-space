@@ -597,8 +597,8 @@
     "1076": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1076",
-      "status": "proposed",
+      "path": "tasks/planning/1076",
+      "status": "planning",
       "title": "daily-fix: repair 3 live test regressions on main (xargs anc"
     },
     "1077": {
