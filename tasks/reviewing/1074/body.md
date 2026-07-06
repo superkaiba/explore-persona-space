@@ -28,6 +28,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1074.md](https://github.com/superkaiba/explore-persona-space/blob/a3320f84faeccb4d22a85c18c513731d2f31917b/docs/methodology/issue_1074.md) · [gist](https://gist.github.com/superkaiba/05d445e5a3e2b6645269dcf6fcb93714)
+
 ## Takeaways
 
 - All 4 datagen cells missed their yield gates; the run halted at the plan's kill path — no organism trained, and the planned install measurements (judged rate, teacher-forced margin, dose-to-band) were never run, so the install hypotheses are untested, not falsified.
