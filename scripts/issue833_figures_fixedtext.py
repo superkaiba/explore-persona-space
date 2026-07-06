@@ -73,7 +73,7 @@ DIFFS = [
     ),
 ]
 ANCHORS = [
-    ("rho_Mplus_on_ridge", "on-policy anchor"),
+    ("rho_Mplus_on_ridge", "committed anchors (on-/off-policy, base map)"),
     ("rho_Mplus_off_ridge", "off-policy anchor"),
     ("rho_M0_ridge", "base-map anchor"),
 ]
@@ -220,14 +220,78 @@ def fig_consistency_and_layers() -> None:
     plt.close(fig)
 
 
+# ── Figure 4: between-source vs within-source decomposition + basis coverage ──
+def fig_decomposition() -> None:
+    """Left: 16 labeled source-mean points (on_fixedtext L14 prediction vs E);
+    middle: the 480 within-source demeaned residuals; right: captured-variance
+    fraction of each response stack in the 64-dim V0 basis per layer. The
+    demeaned/source-mean Spearmans are asserted against the persisted
+    ``chain_rho_fixedtext/analyzer_reads.json`` values (tol 1e-9)."""
+    reads = json.loads((RES / "chain_rho_fixedtext/analyzer_reads.json").read_text())
+    d = _chain_json(14)
+    pc = d["per_cell_full"]
+    keys = pc["keys"]
+    E = np.asarray(pc["E"], dtype=np.float64)
+    chain = np.asarray(pc["chains"]["on_fixedtext"], dtype=np.float64)
+    srcs = np.asarray([k.split("/", 1)[1].split("__")[0] for k in keys])
+    names = sorted(set(srcs))
+
+    fig, axes = plt.subplots(1, 3, figsize=(14.6, 4.5), width_ratios=[1.0, 1.0, 1.15])
+    ax = axes[0]
+    pm = np.asarray([chain[srcs == s].mean() for s in names])
+    Em = np.asarray([E[srcs == s].mean() for s in names])
+    r_bs, _ = spearmanr(pm, Em)
+    ax.scatter(pm, Em, s=26, color=C_ON, linewidths=0)
+    for x, y, s in zip(pm, Em, names, strict=True):
+        ax.text(x, y, s, fontsize=6.2, ha="left", va="bottom")
+    ax.set_xlabel("source-mean held-out prediction")
+    ax.set_ylabel("source-mean leakage E")
+    ax.set_title(f"between sources: Spearman {r_bs:+.2f} (n=16)", fontsize=10.5)
+
+    ax = axes[1]
+    Ed, chd = E.copy(), chain.copy()
+    for s in names:
+        m = srcs == s
+        Ed[m] -= Ed[m].mean()
+        chd[m] -= chd[m].mean()
+    r_wi, _ = spearmanr(chd, Ed)
+    persisted = reads["L14"]["demeaned_spearman_on_fixedtext"]["point"]
+    assert abs(r_wi - persisted) < 1e-9, (r_wi, persisted)
+    ax.scatter(chd, Ed, s=12, alpha=0.45, color=C_ON, linewidths=0)
+    ax.set_xlabel("prediction, source mean removed")
+    ax.set_ylabel("leakage E, source mean removed")
+    ax.set_title(f"within sources: Spearman {r_wi:+.2f} (n=480)", fontsize=10.5)
+
+    ax = axes[2]
+    cap = reads["captured_variance"]
+    series = [
+        ("v_plus_R_fixed", "fixed template, trained model", C_ON),
+        ("v0_R_fixed", "fixed template, base model", C_CTRL),
+        ("Vplus_offpolicy_ref", "base-written text, trained model", C_OFF),
+    ]
+    x = np.arange(len(LAYERS))
+    w = 0.26
+    for j, (key, lab, col) in enumerate(series):
+        vals = [cap[f"L{li}"][key] for li in LAYERS]
+        ax.bar(x + (j - 1) * w, vals, width=w, color=col, label=lab)
+    ax.set_xticks(x, [f"layer {li}" for li in LAYERS])
+    ax.set_ylabel("variance fraction captured by the 64-dim base basis")
+    ax.set_title("answer-profile variance inside the fit basis", fontsize=10.5)
+    ax.legend(fontsize=7.2)
+    fig.tight_layout()
+    savefig_paper(fig, "issue_833/fixedtext_decomposition_L14", dir="figures/")
+    plt.close(fig)
+
+
 def main() -> None:
-    """Build the three fixedtext figures from persisted outputs only."""
+    """Build the four fixedtext figures from persisted outputs only."""
     for li in LAYERS:
         p = RES / f"chain_rho_fixedtext/fact_L{li}.json"
         assert p.exists(), f"{p} missing — run scripts/issue833_chain_rho_fixedtext.py first"
     fig_forest()
     fig_percell_l14()
     fig_consistency_and_layers()
+    fig_decomposition()
     print("figures written to figures/issue_833/")
 
 
