@@ -24,6 +24,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** [docs/methodology/issue_1073.md](https://github.com/superkaiba/explore-persona-space/blob/8fc86285ca2b5cf678027fd01f9cb7cee1b47661/docs/methodology/issue_1073.md) · [gist](https://gist.github.com/superkaiba/bb84d3971bc8540a7dbdc52e46f427f1)
+
 ## Takeaways
 
 - Across all layers at n = 5,000, greedy answers sit at least as close to the 10-rollout average as a typical stochastic draw (symmetric Δ median +0.001 to +0.004, CIs excluding 0). 27–32% of contexts move the other way — aggregate adequacy, not per-context safety.
