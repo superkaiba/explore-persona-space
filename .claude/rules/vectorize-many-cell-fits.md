@@ -141,6 +141,24 @@ solve one shared reduction + cheap per-λ updates.
    kill lands anyway. "No per-cell checkpoint" in the diagnostic signature
    above is not just an ETA smell; it is the thing this item fixes.
 
+   **Relaunch pin parity (#811).** A RELAUNCH of any such phase —
+   supervisor-driven retry, crash-fix round, or the kill+relaunch-on-batched
+   of the Supersede contract / Mid-run trigger — MUST carry the IDENTICAL env
+   pins (the `OMP_NUM_THREADS=8 MKL_NUM_THREADS=8 OPENBLAS_NUM_THREADS=8
+   NUMEXPR_NUM_THREADS=8` thread caps) and choom protection as the reviewed
+   ORIGINAL launch command. A relaunch composes a FRESH command, so pins do
+   not carry over by inertia (#811: the relaunch supervisor omitted the
+   OMP/MKL pins — ~55 min at 0/108 checkpoints). The supervisor/relauncher
+   VERIFIES all four pins are present in the composed command string BEFORE
+   dispatch — e.g.
+   `for pin in OMP_NUM_THREADS MKL_NUM_THREADS OPENBLAS_NUM_THREADS NUMEXPR_NUM_THREADS; do case "$CMD" in *"$pin="*) ;; *) echo "FATAL: relaunch missing $pin" >&2; exit 1;; esac; done`
+   — and records `pins=verified` in the relaunch breadcrumb alongside
+   `pid= log= choom=`. The helper-side default cap in
+   `vectorized_mlp_skill.py` (`_resolve_num_threads`, #1079) is
+   defense-in-depth for the torch intra-op pool only; the env pins remain
+   REQUIRED (they also cap numpy/BLAS and subprocesses the helper cannot
+   reach).
+
 ## Canonical helper
 
 `src/explore_persona_space/analysis/vectorized_mlp_skill.py` — the reusable
@@ -189,7 +207,8 @@ the SAME round as the rewrite:
    already executing the serial path when the batched twin lands and its
    remaining serial ETA exceeds kill+relaunch cost, kill and relaunch on the
    batched path (sibling: `.claude/rules/crash-fix-rounds.md`
-   § kill-before-relaunch). The SAME calculus fires mid-run WITHOUT a landed
+   § kill-before-relaunch; the relaunch carries the identical env pins +
+   choom — item 7 § Relaunch pin parity). The SAME calculus fires mid-run WITHOUT a landed
    twin on any compute-deviation exceeding 2× — § Mid-run trigger below.
    (General lesson:
    `.claude/rules/workflow-fix-on-bug.md` § "Built-but-stranded fixes don't
@@ -263,7 +282,9 @@ session/implementer/experimenter side and does not duplicate it. Outcomes:
   when remaining serial ETA exceeds kill+relaunch cost (count lost
   un-checkpointed in-RAM progress as part of that cost), kill the serial
   run (`.claude/rules/crash-fix-rounds.md` § Kill-before-relaunch) and
-  relaunch on the batched path once the vectorize fix round lands.
+  relaunch on the batched path once the vectorize fix round lands (the
+  relaunch carries the identical env pins + choom — item 7 § Relaunch pin
+  parity).
 - **Not overhead-bound** (FLOP-bound / API-latency / bandwidth /
   contention) → record `signature_check: negative` with 1–3 lines of
   arithmetic on the marker and continue: #931's 6.0× battery resolved
@@ -340,7 +361,8 @@ during #722 at commit `19a5758fab`, landed on `main` via #740);
 incidents #722 (base-skill-over-mean, 19.5 CPU-h), #658 (`_fit_mlp_loco`),
 #778 (`perm_null_draws` serial null battery, ~15h projected across its draw
 loops → ~70× batched subset-sum GEMM), #811 r8 (`resolve_chunk_cap`
-live_factor 4→26 — measured-peak chunk-cap calibration), #823 (~3780 serial
+live_factor 4→26 — measured-peak chunk-cap calibration), #811 relaunch pin
+omission (relaunch-pin-parity clause, #1079), #823 (~3780 serial
 full-SVD ridge fits, 12-20 h realized vs 0.35 h planned — the
 dense-linear-algebra widening), #834 (parallel duplicate vectorization of
 null_battery.py — supersede contract), #811 second deviation (19h21m at unit

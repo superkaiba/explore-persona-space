@@ -380,8 +380,14 @@ crash-fix round — the report carries a `### Response to code-review` or
 the brief named a failure), check the `## Smoke run` section contains a
 `### fix-engaged signal` sub-section that (a) names the exact signal the
 fix's new code path emits, (b) pastes the matched line from a same-pod /
-smoke-slice re-run confirming the signal appeared, and (c) ties the
-signal to the specific branch the fix added. Missing or unconfirmed (no
+smoke-slice re-run confirming the signal appeared, (c) ties the
+signal to the specific branch the fix added, (d) declares the fix
+commit's FULL SHA(s), and (e) declares the stale-run artifact
+disposition (`quarantine` / `retain — <reason>` / gated `wipe` /
+`fresh-output-path / --no-resume` / explicit `N/A — <reason>`) —
+elements 4/5 of `.claude/rules/crash-fix-rounds.md`. Rounds dispatched
+before elements 4/5 landed are reviewed under the 3-element contract.
+Missing or unconfirmed (no
 pasted matched line) is a FAIL with blocker tag `substantive` (NOT
 `smoke-run-missing`) — a fix-engaged-signal miss is a substantive
 judgment about whether the fix actually engaged, so it must sit OUTSIDE

@@ -3843,6 +3843,11 @@ silently probes a dead pid every tick and is rescued only while the
 marker pid is itself alive (full contract + atomic recipe:
 `.claude/rules/pod-side-reporting.md` § Pid-file launch contract;
 incident #813 v5).
+A crash-fix relaunch (a `code`-row fix round preceded it) additionally
+passes the fix-commit ancestry probe and executes the declared
+stale-checkpoint disposition BEFORE dispatch, recording `fix_sha=` in
+the fresh marker note (`.claude/rules/crash-fix-rounds.md` § Crash-fix
+relaunch: fix-commit ancestry + stale-checkpoint hygiene).
 (Incident: task #521, 2026-06-10 — a VM-side pid file plus an
 `epm:progress`-only relaunch produced `status=dead, pid_alive=False`
 while the pod run was healthy.) On the GCP lane the marker's `pod=`
@@ -4539,6 +4544,14 @@ When this skill is re-invoked in `running`:
    rule ("A successful relaunch also reconciles a stale `blocked`", Step
    6d.2 poll-loop section) — a task parked `blocked` by an earlier failed
    round must not stay `blocked` through a healthy relaunched run (#742).*
+
+   *`code`-row relaunch contract (#779):* the post-review relaunch — the
+   Step 6 experimenter respawn (brief carries `fix_sha=` + the element-5
+   stale-artifact disposition, copied from the implementer's fix-engaged
+   declaration) or an orchestrator hot-fix relaunch — enforces BOTH
+   before dispatch: the fix-commit ancestry probe and the declared
+   disposition (`.claude/rules/crash-fix-rounds.md` § Crash-fix
+   relaunch: fix-commit ancestry + stale-checkpoint hygiene).
 
    **Zombie-GPU stall recovery brief (`stall_reason: vllm_worker_dead_zombie_gpu`).**
    When the `status=stalled` tick's `stall_reason` is
@@ -5938,6 +5951,38 @@ or the wider explicit value + one-line reason) + the earlyoom protection state
 (`choom=ok|failed`) per the Step 9 entry-guard
 § "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
+
+**Pod-safety pre-launch signals (deviation case — a pod on a
+parked/terminal parent).** This step and its user-chat sibling (the
+CLAUDE.md § Routing "User-chat inline free analysis" carve-out) are
+ANALYSIS-ONLY and normally touch no pod (a needs-gpu discovery takes the
+ABORT path below); 9a-ter proper fires at status `interpreting`, outside
+the watcher's auto-stop set, but the user-chat sibling executes on PARKED
+(`on_hold`) / terminal-status parents. If an inline run following this
+shape nonetheless provisions or reuses a pod on such a parent, the
+ORCHESTRATOR (never the subagent) MUST run `task.py add-tag <N>
+keep-running` BEFORE/AT provision — before any pod work; the
+timestamp-independent tag is what shields the provision/bootstrap window,
+which the watcher's ≥2-miss accumulation (~20 min) would otherwise
+auto-stop straight through — AND post `epm:run-launched` on the task
+immediately once the pod exists (naming the pod; in any case before
+launch): the watcher's pod-safety pass
+(`scripts/autonomous_session_watch.py`) auto-stops a RUNNING pod on a
+parked/terminal task unless a follow-up signal marker (its predicate reads
+`epm:run-launched` / `epm:followup-scope` /
+`epm:free-analysis-followup-run` — a descriptive list, NOT a menu: the
+inline path still never posts `epm:followup-scope`) is NEWER than the
+latest done-transition (`epm:promoted` / `epm:status-changed`) or the
+`keep-running` tag is present. BOTH duties bind — the marker cannot exist
+during the provision/bootstrap window (#573: run-launched-only inference
+stopped healthy follow-up pods 11×), any later done-transition flips the
+inferred predicate off by design (the watcher's re-arm semantics), and the
+`epm:free-analysis-followup-run v1` COMPLETION marker posts too late to
+shield the launch (incidents #477, #573, #779 — on #779 a healthy pod-779
+was repeatedly auto-stopped mid-bootstrap and misdiagnosed as a flaky
+host). Remove the tag (`task.py remove-tag <N> keep-running`) when the run
+completes so the auto-stop re-arms (a crashed run leaves the tag and the
+pod bills until manual removal — check `pod.py audit-stale` output).
 
 **Auto-run procedure.** For the single highest-priority unran entry
 (the first one in the analyzer's surfaced order; tie-break to the one
@@ -7550,9 +7595,15 @@ suite directly and posts an `epm:test-verdict` event with the result.
       * `COMPARE_RC=1` → NEW failure(s) the branch introduced and/or a lint
         regression (the JSON names each). FAIL.
       * `COMPARE_RC=2` → indeterminate (PYTEST_RC ∉ {0,1} — aborted/interrupted
-        run; missing/empty junitxml; suite crash; unusable ledger; dirty
-        pristine oracle; systemic main breakage). FAIL — never PASS on
-        indeterminate.
+        run; missing/empty junitxml; suite crash; unusable ledger;
+        scratch-ineligible dirty oracle (contaminating src//pyproject.toml/uv.lock
+        dirt, a scan-set node, or a non-sparse work root — other root dirt
+        auto-falls back to a detached sparse scratch-worktree oracle at main
+        HEAD, reported as JSON "pristine_oracle": "scratch-worktree");
+        systemic main breakage). FAIL — never PASS on indeterminate.
+        COMPARE_OUT is valid JSON on EVERY exit path under --json (exit-2
+        payloads carry "indeterminate": true — an exit-2 payload's empty
+        new/stripped arrays are NOT a clean verdict).
       The two step-1b guards run BEFORE compare and are UNCHANGED: the cd
       hard-guard and the `no tests ran` FAIL guard (zero collected is a FAIL
       regardless of compare's exit).
@@ -8642,6 +8693,13 @@ Gate the merge payload on the lint BEFORE anything lands:
   every additive-list consumer is load-bearing: on an EMPTY list a
   flag-less xargs still runs its command once with NO pathspec. The fast
   path routes through (iii). Idempotent: re-entry just re-runs the gate.
+  If the repo-root guard hook blocks an improvised unqualified variant of
+  the restore line (or of the additive-checkout consumer), the WHOLE
+  compound was skipped — including any clause that wrote
+  `/tmp/issue-<N>-additive-files.txt`; regenerate the list, then retry
+  the verbatim `-C "$REPO_ROOT"` forms (full recovery contract: the
+  guard-block paragraph after the surgical-additive-checkout executable
+  block below).
 - **Known residual (accepted, documented):** on path (i) the gated lint is
   the branch's merge-base copy (Step 5a's spec-freshness `SPECS` list
   covers `.claude/` specs + CLAUDE.md, NOT `scripts/` — verified at the
@@ -8715,6 +8773,15 @@ on `main`; each is independently revertible via `git revert <sha>` (vs.
 revert control after the fact — that is what makes a no-prompt merge safe
 here. The worktree is deliberately NOT removed (`--delete-branch=false`,
 no `git worktree remove`).
+
+Known failure shape: a branch that CARRIES A MERGE COMMIT (e.g. after a
+conflict-resolution merge of `main` into the branch) cannot be
+server-side rebased — `gh pr merge --rebase` fails with
+`GraphQL: This branch can't be rebased`. The working recovery is
+`gh pr merge <PR> --squash --delete-branch=false` (acceptable for a
+single-logical-change branch; the squash loses per-commit revert
+granularity, which the merge commit already compromised). (Incident
+#1041 PR #801, 2026-07-05.)
 
 - **Success:** post `epm:merged v1` with the list of merge SHAs. Update
   the chat title with `merged`. Then run the **post-merge stale-task-folder
@@ -9025,6 +9092,33 @@ Decision tree:
     false
   fi
   ```
+
+  **Guard-block recovery contract (improvised variants of this compound).**
+  The checkout / restore forms in the blocks above are hook-fenced:
+  `scripts/guard_repo_root_branch.sh` (a PreToolUse Bash hook) BLOCKS
+  any improvised UNQUALIFIED variant run against the shared root — the
+  bare `checkout issue-<N> -- <paths>` form
+  (no `-C "$REPO_ROOT"`) trips its #897 checkout-pathspec detector, and a
+  `restore` trips its #897 restore detector unless it carries `--staged`
+  with NO worktree flag. The `git -C <path>` clause is the guard's designed
+  per-clause waiver, so use the `-C "$REPO_ROOT"`-qualified fence lines
+  VERBATIM — never retype them unqualified. The waiver is relied on here
+  ONLY because both fence forms are NON-DESTRUCTIVE at the shared root
+  (the checkout only CREATES A-only additive paths absent from `main`; the
+  restore is `--staged` index-only) — NEVER generalize `-C "$REPO_ROOT"`
+  to escape a block on any other / destructive command (the guard's own
+  block message: never point `-C` at the repo root for a destructive op).
+  On a guard block, the WHOLE compound Bash call was skipped, not just the
+  offending clause (a PreToolUse deny rejects the entire tool call), so an
+  earlier clause in the same call that writes
+  `/tmp/issue-<N>-additive-files.txt` (the producer diff above) never ran
+  either. The retry therefore RE-RUNS the producer diff clause to
+  regenerate the list file BEFORE re-running the corrected `-C`-qualified
+  consumer — re-running only the consumer (or `cat`-ing the list) fails
+  with exit 128 / `cat: ... No such file` (incident 2026-07-05: the #813
+  and #1056 sessions). The guard's block message gives only generic
+  worktree / `sync_repo_root.py` retry advice and does NOT mention the
+  skipped producer — this paragraph is the recovery contract.
 
   Then post `epm:merged v1` with `{artifact_confirmed: true,
   full_rebase_deferred: true, surgical_checkout: true, files:

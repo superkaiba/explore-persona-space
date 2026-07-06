@@ -18,7 +18,7 @@ update this index (lint: `--check-lessons-index`).
 - **[code-style](code-style.md)** — fires when: you write/edit any `*.py` or Hydra config (lint, vectorized torch, checkpoint-per-phase, no dollar caps).
 - **[compute-backend-failover](compute-backend-failover.md)** — fires when: you touch the backend router / dispatch / poll, or reason about GCP↔RunPod failover.
 - **[contrastive-negatives](contrastive-negatives.md)** — fires when: a plan implants a behavior (marker/fact/refusal/trait) into a persona (interleave contrastive negatives by default).
-- **[crash-fix-rounds](crash-fix-rounds.md)** — fires when: an implementer runs any retry/revision round (failure lesson, fix-engaged signal, scope, kill-before-relaunch).
+- **[crash-fix-rounds](crash-fix-rounds.md)** — fires when: an implementer runs any retry/revision round, OR the orchestrator/experimenter relaunches after a code-fix round (failure lesson, fix-engaged signal incl. fix-commit SHA + stale-artifact disposition, relaunch ancestry probe + checkpoint hygiene, scope, kill-before-relaunch).
 - **[critic-lens-reference](critic-lens-reference.md)** — fires when: a critic reviews under its assigned lens (pointer-loaded single-lens span).
 - **[data-realism](data-realism.md)** — fires when: a plan picks training/eval/probe data (strict 4-tier preference order; justify tier 3/4).
 - **[diff-size-budget](diff-size-budget.md)** — fires when: reading a branch-wide diff BODY (size first; >300 KB: round-scope it).
@@ -40,7 +40,7 @@ update this index (lint: `--check-lessons-index`).
 - **[research-project-structure](research-project-structure.md)** — fires when: you write result artifacts / the results index / the queue (one source of truth per layer).
 - **[selection-symmetric-nulls](selection-symmetric-nulls.md)** — fires when: a headline max/argmax/best-of/top-k over a free axis vs a null band (inherit selection per draw or freeze held-out; band vs DV ceiling; #778/#810).
 - **[upload-policy](upload-policy.md)** — fires when: you write training / Hub / sweep code (Hub-API verification gotcha, delete-after-eval persist, quota-403 recovery, pod→HF upload-wedge ladder).
-- **[vectorize-many-cell-fits](vectorize-many-cell-fits.md)** — fires when: many-cell GD, dense linear-algebra fits (svd/eigh/lstsq/ridge over fold×layer×arm), or a perm/bootstrap/null-draw battery over a fixed pool (overhead-bound; VECTORIZE first; launch VM fits detached + choom-protected + checkpointed; Supersede contract incl. the mid-run ≥2×-deviation trigger, #722+).
+- **[vectorize-many-cell-fits](vectorize-many-cell-fits.md)** — fires when: many-cell GD, dense linear-algebra fits (svd/eigh/lstsq/ridge over fold×layer×arm), or a perm/bootstrap/null-draw battery over a fixed pool (overhead-bound; VECTORIZE first; launch VM fits detached + choom-protected + checkpointed + pin-parity relaunches (#811); Supersede contract incl. the mid-run ≥2×-deviation trigger, #722+).
 - **[workflow-fix-on-bug](workflow-fix-on-bug.md)** — fires when: any agent hits a bug from a gap in the workflow surface itself (emit a `workflow-fix-candidate`).
 - **[agents-vs-skills](agents-vs-skills.md)** — fires when: you create/restructure anything under `.claude/` (decide agent vs skill).
 
