@@ -583,8 +583,8 @@
       "goal": "Determine whether generating the factory's content-behavior training completions on-policy from Qwen-2.5-7B-Instruct with the elicitation instruction injected as plain untagged system-prompt text (instruct-and-strip, variety of induce/oppose phrasings) clears the #906 yield floors and installs the behaviors, and whether an abliterated (helpful-only) Qwen generator beats the base Instruct model on yield and install strength.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/planning/1074",
-      "status": "planning",
+      "path": "tasks/approved/1074",
+      "status": "approved",
       "title": "Abliterated vs base Qwen as the on-policy generator for factory content-behavior datagen"
     },
     "1075": {
