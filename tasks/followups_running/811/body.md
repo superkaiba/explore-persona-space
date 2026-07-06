@@ -27,7 +27,7 @@ goal: 'Re-run #722''s pre/post-finetuning function-change (Delta = median |M+(c)
 
 <!-- clean-result-v4 -->
 
-**Methodology:** [docs/methodology/issue_811.md](https://github.com/superkaiba/explore-persona-space/blob/0ef237e531c8013c0a0779684b588aa31bf4b462/docs/methodology/issue_811.md) · [gist](https://gist.github.com/superkaiba/c72b5621f31a327c6c2eb05b9ae6c948)
+**Methodology:** [docs/methodology/issue_811.md](https://github.com/superkaiba/explore-persona-space/blob/5be4d9cca56c7a56629d6bbee5d08e15d7e7ff33/docs/methodology/issue_811.md) · [gist](https://gist.github.com/superkaiba/c72b5621f31a327c6c2eb05b9ae6c948)
 
 ## Takeaways
 
