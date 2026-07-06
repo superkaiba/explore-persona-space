@@ -696,7 +696,18 @@ def _default_vllm_generate_fn(base_model: str) -> GenFn:
     lora_ids: dict[str, int] = {}  # adapter path -> unique, stable lora_int_id (1-based)
 
     def _build(side_path: str | None) -> tuple[Any, Any]:
-        common = {"max_model_len": 8192, "enable_prefix_caching": True, "seed": 0}
+        common = {
+            "max_model_len": 8192,
+            "enable_prefix_caching": True,
+            "seed": 0,
+            # The post-train engine must fit BESIDE imperfect trainer-memory
+            # release (#1074 run 1: vLLM's default gpu_memory_utilization=0.9
+            # demanded 71.32 GiB with only 63.65/79.25 GiB free after the
+            # in-process train_lora, crashing gpu_worker.init_device). 0.75 x
+            # 79.25 = 59.4 GiB covers the 7B bf16 weights (~15 GiB) + LoRA +
+            # a generous KV cache. Env-overridable, resolved per engine build.
+            "gpu_memory_utilization": float(os.environ.get("EPM_VLLM_GPU_MEM_UTIL", "0.75")),
+        }
         if side_path is None:
             return deps["LLM"](model=base_model, **common), None
         if deps["_is_full_model_dir"](side_path):
@@ -998,6 +1009,64 @@ def _assemble_mix(
     return train_mix_path, counts, realized
 
 
+def release_trainer_cuda_memory(
+    *,
+    collect_fn: Callable[[], int] | None = None,
+    empty_cache_fn: Callable[[], None] | None = None,
+    ipc_collect_fn: Callable[[], None] | None = None,
+    mem_info_fn: Callable[[], tuple[int, int]] | None = None,
+    log_fn: Callable[[str], None] | None = None,
+) -> tuple[float, float] | None:
+    """Release residual trainer CUDA memory before the post-train vLLM engine boots.
+
+    ``train_lora`` already drops its heavy locals at its tail (``del trainer,
+    model, tokenizer`` + ``gc.collect()`` + ``empty_cache()`` — train/sft.py),
+    yet #1074 followup run 1 (GCE att-20260706-181717) measured ~15.6 GiB
+    still resident at the next ``LLM(...)`` init (63.65/79.25 GiB free vs the
+    vLLM default-0.9-util demand of 71.32 GiB). No module-level retainer was
+    found in train/sft.py, train/trainer.py, or eval/callbacks.py, so this is
+    defense-in-depth at the train->engine handoff: TWO gc passes
+    (finalizer-bearing Trainer/Accelerator cycles can survive a single pass),
+    an allocator-cache flush, and ``ipc_collect`` (the canonical
+    vLLM-coexistence teardown tail, gotchas.md), then a LOG of the
+    driver-level free-memory delta in the exact form
+
+        [train-release] freed pre=<X>GiB post=<Y>GiB free
+
+    That literal ``[train-release]`` tag is the #1074 crash-fix fix-engaged
+    signal the relaunch greps for. Every CUDA touchpoint is injectable so the
+    sequencing + log format are CPU-testable; missing callables resolve to the
+    torch defaults lazily, and a no-CUDA host degrades to one bare
+    ``gc.collect()`` returning None (nothing to measure).
+
+    Returns:
+        ``(pre_free_gib, post_free_gib)`` from ``mem_info_fn`` (default
+        ``torch.cuda.mem_get_info``), or None on a no-CUDA host.
+    """
+    import gc
+
+    collect = collect_fn if collect_fn is not None else gc.collect
+    log = log_fn if log_fn is not None else logging.getLogger(__name__).info
+    if empty_cache_fn is None or ipc_collect_fn is None or mem_info_fn is None:
+        import torch
+
+        if not torch.cuda.is_available():
+            collect()
+            return None
+        empty_cache_fn = empty_cache_fn or torch.cuda.empty_cache
+        ipc_collect_fn = ipc_collect_fn or torch.cuda.ipc_collect
+        mem_info_fn = mem_info_fn or torch.cuda.mem_get_info
+    pre_free_b, _total = mem_info_fn()
+    collect()
+    collect()
+    empty_cache_fn()
+    ipc_collect_fn()
+    post_free_b, _total = mem_info_fn()
+    pre_gib, post_gib = pre_free_b / 2**30, post_free_b / 2**30
+    log(f"[train-release] freed pre={pre_gib:.2f}GiB post={post_gib:.2f}GiB free")
+    return pre_gib, post_gib
+
+
 def build_organism(
     organism: ModelOrganism,
     *,
@@ -1129,6 +1198,12 @@ def build_organism(
             extra_overrides=extra_overrides,
         )
         adapter_dir, loss = train_fn(base_model, str(train_mix_path), str(train_dir), cfg=cfg)
+        # In-process GPU handoff (#1074 run-1 crash): release the trainer's
+        # residual CUDA memory BEFORE the checkpoint-read rate_fn loop below
+        # boots its vLLM engine (train_lora's own teardown left ~15.6 GiB
+        # resident and the engine init failed its free-memory demand). The
+        # [train-release] log line is the crash-fix fix-engaged signal.
+        release_trainer_cuda_memory()
         provenance["training_loss"] = float(loss)
         adapter_path = str(adapter_dir)
         selection = None

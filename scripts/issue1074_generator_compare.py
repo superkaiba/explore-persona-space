@@ -171,6 +171,13 @@ class RunConfig:
     calibration_raw_neg: Path | None = None  # staged parent raw_neg.jsonl
     calibration_judge_rows: Path | None = None  # staged parent judge_rows.jsonl
     calibration_n: int = CALIBRATION_N_FULL
+    # --resume-partial-attempt: prior GCE attempt id whose crash-persisted
+    # datagen checkpoints are staged into the cell datagen dir before run().
+    # Deliberately NOT a regime key: staging only pre-populates the checkpoint
+    # files that generate_training_data's exact-match gen_manifest.json resume
+    # verifies byte-for-byte (a mismatched manifest REFUSES loud), so it is
+    # output-identical by construction — same contract as an in-place re-run.
+    resume_partial_attempt: str | None = None
 
     def target_n(self, behavior: str) -> int:
         if self.target_n_override is not None:
@@ -670,6 +677,198 @@ def consumer_open_probe_judge_rows(path: Path) -> dict[str, int]:
         "[stage-probe] judge_rows consumer-open OK: %d pos rows, %d kept", n_pos, n_pos_kept
     )
     return {"n_pos_rows": n_pos, "n_pos_kept": n_pos_kept}
+
+
+PARTIAL_UPLOAD_ROOT = f"issue{ISSUE}_partial"
+# The COMPLETED datagen checkpoints a crashed attempt persisted (GCE EXIT-trap
+# crash persist, gotchas.md). Deliberately EXCLUDES the derived outputs
+# (pos.jsonl / cn.jsonl / pool_meta.json / raw_pos.jsonl): the deterministic
+# pipeline re-derives them from the reuse pool + these checkpoints, and the
+# exact-match gen_manifest.json resume is the byte-level identity gate.
+RESUME_DATAGEN_REQUIRED_FILES: tuple[str, ...] = (
+    "raw_neg.jsonl",
+    "gen_manifest.json",
+    "judge_rows.jsonl",
+    "judge_raw_neg.json",
+)
+# Present only when the attempt actually JUDGED positives: the followup's
+# pos-reuse path reconstructs the kept set with ZERO positive judge calls and
+# never writes judge_raw_pos.json (datagen._positives_stage reuse
+# short-circuit) — verified against the live att-20260706-181717 crash
+# persist (2026-07-06: absent there). Staged when present, skipped silently
+# when absent; requiring it would fail-loud every pos-reuse resume.
+RESUME_DATAGEN_OPTIONAL_FILES: tuple[str, ...] = ("judge_raw_pos.json",)
+
+
+def _default_partial_list_fn(prefix: str) -> list[str]:
+    """SERVER-side scoped file listing under ``prefix`` on the data repo
+    (never ``snapshot_download`` / a bare full listing — gotchas.md); a
+    missing prefix returns [] (the caller fails loud on it)."""
+    from huggingface_hub import HfApi
+    from huggingface_hub.utils import EntryNotFoundError
+
+    try:
+        return [
+            e.path
+            for e in HfApi().list_repo_tree(
+                HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+            )
+            if getattr(e, "size", None) is not None  # files only (skip RepoFolder)
+        ]
+    except EntryNotFoundError:
+        return []
+
+
+def _make_partial_fetch_fn(staging_root: Path) -> Callable[[str], Path]:
+    """Per-file ``hf_hub_download`` with the bounded linear-backoff transient
+    retry (gotchas.md), downloading under ``staging_root``."""
+
+    def fetch_fn(path_in_repo: str) -> Path:
+        from huggingface_hub import hf_hub_download
+
+        for attempt in range(4):
+            try:
+                return Path(
+                    hf_hub_download(
+                        HF_DATA_REPO,
+                        path_in_repo,
+                        repo_type="dataset",
+                        local_dir=staging_root,
+                    )
+                )
+            except Exception as e:
+                if attempt == 3:
+                    raise
+                logger.warning("retrying partial-attempt fetch %s (%s)", path_in_repo, e)
+                time.sleep(20 * (attempt + 1))
+        raise AssertionError("unreachable")
+
+    return fetch_fn
+
+
+def stage_partial_attempt_datagen(
+    cfg: RunConfig,
+    attempt_id: str,
+    *,
+    list_fn: Callable[[str], list[str]] | None = None,
+    fetch_fn: Callable[[str], Path] | None = None,
+) -> dict[str, Any]:
+    """Stage a prior attempt's COMPLETED datagen outputs into the cell datagen dir.
+
+    Remote layout (the GCE crash persist of run 1, att-20260706-181717):
+
+        {PARTIAL_UPLOAD_ROOT}/<attempt_id>/data_issue_{ISSUE}/base_negatives_regen/
+            <cell-slug>/datagen/...        (required files + judge_cache_*/ trees)
+            judge_calibration_cache/...    (optional; staged when present)
+
+    Enumeration is a SERVER-side scoped ``list_repo_tree(path_in_repo=...)``
+    followed by per-file ``hf_hub_download`` — NEVER ``snapshot_download`` on
+    the ~1M-file data repo (gotchas.md full-tree-enumeration wedge). After
+    staging, ``generate_training_data``'s exact-match ``gen_manifest.json``
+    resume + the rubric-keyed judge-cache replay reproduce the identical mix
+    with zero regeneration and zero fresh judge draws.
+
+    Fail-loud on: a missing attempt prefix (empty listing), any REQUIRED file
+    absent from the listing, a missing/empty ``judge_cache_*`` tree (the
+    zero-fresh-judge-draws premise fails without it), and any per-file staging
+    failure (a partial cache tree never survives — the first failed/empty file
+    raises before ``run()`` starts). Train checkpoints are deliberately NOT
+    restored (retraining is ~5 min and deterministic).
+
+    ``list_fn(prefix) -> [repo paths]`` and ``fetch_fn(path_in_repo) -> local
+    Path`` are the injectable hub boundaries (tests).
+    """
+    _phase("stage_partial_attempt")
+    cell = cfg.cells[0]  # followup mode pins exactly one cell
+    run_prefix = f"{PARTIAL_UPLOAD_ROOT}/{attempt_id}/data_issue_{ISSUE}/base_negatives_regen"
+    datagen_prefix = f"{run_prefix}/{cell.slug}/datagen"
+    calib_prefix = f"{run_prefix}/judge_calibration_cache"
+
+    if list_fn is None:
+        list_fn = _default_partial_list_fn
+    if fetch_fn is None:
+        fetch_fn = _make_partial_fetch_fn(cfg.out_root / "inputs" / "resume_partial_hf")
+
+    listed = list_fn(datagen_prefix)
+    bad = [p for p in listed if not p.startswith(datagen_prefix + "/")]
+    if bad:
+        raise RuntimeError(
+            f"--resume-partial-attempt {attempt_id!r}: listing returned paths outside "
+            f"{datagen_prefix!r}: {bad[:3]}"
+        )
+    if not listed:
+        raise RuntimeError(
+            f"--resume-partial-attempt {attempt_id!r}: no files under "
+            f"{HF_DATA_REPO}/{datagen_prefix} — attempt prefix missing (or the crash "
+            "persist never captured the datagen outputs)"
+        )
+    rel_files = {p[len(datagen_prefix) + 1 :] for p in listed}
+    missing = [f for f in RESUME_DATAGEN_REQUIRED_FILES if f not in rel_files]
+    if missing:
+        raise RuntimeError(
+            f"--resume-partial-attempt {attempt_id!r}: required datagen files missing "
+            f"from {datagen_prefix}: {missing}"
+        )
+    cache_rels = sorted(r for r in rel_files if r.startswith("judge_cache_"))
+    if not cache_rels:
+        raise RuntimeError(
+            f"--resume-partial-attempt {attempt_id!r}: no judge_cache_*/ tree under "
+            f"{datagen_prefix} — the zero-fresh-judge-draws resume premise fails "
+            "(fresh temperature>0 judge draws could change the kept set)"
+        )
+
+    def _stage(repo_path: str, dest: Path) -> dict:
+        got = Path(fetch_fn(repo_path))
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        if got.resolve() != dest.resolve():
+            os.replace(got, dest)
+        if not dest.exists() or dest.stat().st_size == 0:
+            raise RuntimeError(f"resume staging failed for {repo_path!r} -> {dest}")
+        return {
+            "bytes": dest.stat().st_size,
+            "sha256": hashlib.sha256(dest.read_bytes()).hexdigest(),
+        }
+
+    dest_dir = cfg.out_root / cell.slug / "datagen"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    optional_present = [f for f in RESUME_DATAGEN_OPTIONAL_FILES if f in rel_files]
+    staged: dict[str, dict] = {}
+    for rel in [*RESUME_DATAGEN_REQUIRED_FILES, *optional_present, *cache_rels]:
+        staged[rel] = _stage(f"{datagen_prefix}/{rel}", dest_dir / rel)
+
+    calib_staged: dict[str, dict] = {}
+    calib_listed = list_fn(calib_prefix)
+    for p in calib_listed:
+        if not p.startswith(calib_prefix + "/"):
+            raise RuntimeError(
+                f"--resume-partial-attempt {attempt_id!r}: calibration listing returned "
+                f"a path outside {calib_prefix!r}: {p}"
+            )
+        rel = p[len(calib_prefix) + 1 :]
+        calib_staged[rel] = _stage(p, cfg.out_root / "judge_calibration_cache" / rel)
+    if not calib_listed:
+        logger.info("[resume-partial] no judge_calibration_cache persisted — skipped (cheap)")
+
+    _atomic_write_json(
+        cfg.out_root / "resume_partial_manifest.json",
+        {
+            "attempt_id": attempt_id,
+            "source_repo": HF_DATA_REPO,
+            "datagen_prefix": datagen_prefix,
+            "files": staged,
+            "judge_calibration_files": calib_staged,
+        },
+    )
+    logger.info(
+        "[resume-partial] staged %d datagen files (%d judge-cache) + %d calibration-cache "
+        "files from attempt %s into %s",
+        len(staged),
+        len(cache_rels),
+        len(calib_staged),
+        attempt_id,
+        dest_dir,
+    )
+    return {"files": staged, "judge_calibration_files": calib_staged}
 
 
 def phase_judge_calibration(cfg: RunConfig) -> dict:
@@ -1550,6 +1749,14 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         "--full unless --smoke is given",
     )
     p.add_argument("--cells", default=None, help="comma list like sycophancy:base,...")
+    p.add_argument(
+        "--resume-partial-attempt",
+        default=None,
+        metavar="ATTEMPT_ID",
+        help="followup-only: stage the COMPLETED datagen checkpoints a crashed "
+        "attempt persisted under issue1074_partial/<ATTEMPT_ID>/ before datagen "
+        "runs (exact-match manifest resume + judge-cache replay; zero fresh draws)",
+    )
     p.add_argument("--out-root", default=None)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--n-judge-draws", type=int, default=None, help="default 5 full / 2 smoke")
@@ -1567,6 +1774,15 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
         args.full = True
     if args.followup is not None and args.cells is not None:
         p.error("--cells is not supported with --followup (the cell set is pinned)")
+    if args.resume_partial_attempt is not None:
+        if args.followup is None:
+            p.error("--resume-partial-attempt requires --followup (followup mode only)")
+        if args.smoke:
+            p.error(
+                "--resume-partial-attempt is not supported with --smoke (the staged "
+                "production manifest cannot match a smoke regime — the exact-match "
+                "resume would refuse loud)"
+            )
     return args
 
 
@@ -1633,6 +1849,7 @@ def config_from_args(args: argparse.Namespace) -> RunConfig:
             else (out_root / "logs" if smoke else None)
         ),
         upload=args.upload,
+        resume_partial_attempt=getattr(args, "resume_partial_attempt", None),
     )
 
 
@@ -1737,6 +1954,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                     "pos_gen_model": PARENT_POS_GEN_MODEL,
                 },
             )
+        if cfg.resume_partial_attempt is not None:
+            # Prior-attempt datagen restore: stage the crash-persisted datagen
+            # checkpoints BEFORE run() so generate_training_data resumes under
+            # its exact-match manifest + rubric-keyed judge-cache replay (zero
+            # regeneration, zero fresh judge draws). Train checkpoints are NOT
+            # restored — retraining is ~5 min and deterministic.
+            stage_partial_attempt_datagen(cfg, cfg.resume_partial_attempt)
     logger.info(
         "issue1074 run: smoke=%s cells=%s out_root=%s",
         cfg.smoke,

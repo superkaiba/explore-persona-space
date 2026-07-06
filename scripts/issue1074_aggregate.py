@@ -455,6 +455,33 @@ def clopper_pearson(k: int, n: int, alpha: float = 0.05) -> tuple[float, float]:
     return lo, hi
 
 
+def _load_raw_negative_rows(raw_path: Path, members: dict, blank) -> dict[str, dict]:
+    """Load raw_neg.jsonl's negative rows into rid -> identity fields (+ the
+    generated flag), accumulating requested/generated/gen-drop counts into
+    ``members``. Duplicate request_ids raise."""
+    raw_rows: dict[str, dict] = {}
+    for r in _read_jsonl(raw_path):
+        if r.get("arm") != "negative":
+            continue
+        rid = r["request_id"]
+        if rid in raw_rows:
+            raise RuntimeError(f"negative_yield_table: duplicate request_id {rid!r} in {raw_path}")
+        raw_rows[rid] = {
+            "arm": r.get("arm"),
+            "question_id": r.get("question_id"),
+            "variant_id": r["variant_id"],
+            "generated": r.get("completion") is not None,
+        }
+        m = members.setdefault(_member_of(r["variant_id"]), blank())
+        m["requested"] += 1
+        if r.get("completion") is None:
+            reason = r.get("drop_reason") or "refusal"
+            m["gen_drop_mix"][reason] = m["gen_drop_mix"].get(reason, 0) + 1
+        else:
+            m["generated"] += 1
+    return raw_rows
+
+
 def negative_yield_table(datagen_dir: Path) -> dict[str, dict]:
     """Per-panel-member negative-stage yield from a cell's datagen artifacts:
     requested + gen-stage drop mix per member (raw_neg.jsonl, REQUIRED — the
@@ -485,21 +512,13 @@ def negative_yield_table(datagen_dir: Path) -> dict[str, dict]:
         }
 
     members: dict[str, dict] = {}
-    raw_generated: dict[str, bool] = {}  # negative request_id -> generated (judgeable)?
-    for r in _read_jsonl(raw_path):
-        if r.get("arm") != "negative":
-            continue
-        rid = r["request_id"]
-        if rid in raw_generated:
-            raise RuntimeError(f"negative_yield_table: duplicate request_id {rid!r} in {raw_path}")
-        raw_generated[rid] = r.get("completion") is not None
-        m = members.setdefault(_member_of(r["variant_id"]), _blank())
-        m["requested"] += 1
-        if r.get("completion") is None:
-            reason = r.get("drop_reason") or "refusal"
-            m["gen_drop_mix"][reason] = m["gen_drop_mix"].get(reason, 0) + 1
-        else:
-            m["generated"] += 1
+    # negative request_id -> the RAW row's identity fields + generated flag.
+    # The raw schedule is the join's source of truth (r2 hardening): judge rows
+    # must MATCH it field-for-field, and member attribution for judged/kept
+    # derives from the RAW row after validation — protection against cross-run
+    # file mixing (a judge_rows.jsonl from one attempt joined with another
+    # attempt's raw_neg.jsonl, which --resume-partial-attempt makes possible).
+    raw_rows = _load_raw_negative_rows(raw_path, members, _blank)
     judged_ids: set[str] = set()
     for r in _read_jsonl(rows_path):
         if r["arm"] != "negative":
@@ -507,18 +526,26 @@ def negative_yield_table(datagen_dir: Path) -> dict[str, dict]:
         rid = r["request_id"]
         if rid in judged_ids:
             raise RuntimeError(f"negative_yield_table: duplicate request_id {rid!r} in {rows_path}")
-        if not raw_generated.get(rid, False):
+        raw = raw_rows.get(rid)
+        if raw is None or not raw["generated"]:
             raise RuntimeError(
                 f"negative_yield_table: judge row {rid!r} has no generated raw_neg row "
                 f"(extra/orphan id — raw/judge join broken under {datagen_dir})"
             )
+        for field in ("arm", "question_id", "variant_id"):
+            if r.get(field) != raw[field]:
+                raise RuntimeError(
+                    f"negative_yield_table: judge row {rid!r} field {field!r} mismatch "
+                    f"(judge={r.get(field)!r} raw={raw[field]!r}) — cross-run file mixing "
+                    f"under {datagen_dir}"
+                )
         judged_ids.add(rid)
-        m = members.setdefault(_member_of(r["variant_id"]), _blank())
+        m = members.setdefault(_member_of(raw["variant_id"]), _blank())
         m["judged"] += 1
         m["kept"] += int(bool(r["kept"]))
         if r["mean"] is None:
             m["judge_none_drops"] += 1
-    never_judged = {rid for rid, gen in raw_generated.items() if gen} - judged_ids
+    never_judged = {rid for rid, raw in raw_rows.items() if raw["generated"]} - judged_ids
     if never_judged:
         preview = ", ".join(sorted(never_judged)[:5])
         raise RuntimeError(
@@ -545,8 +572,10 @@ def stage_parent_pinned(dest: Path, *, fetch_fn=None) -> Path:
     boundary (tests assert the revision it receives); the default is a
     revision-pinned per-file ``hf_hub_download`` with the same bounded
     linear-backoff retry as ``stage_from_hf`` (never snapshot_download on the
-    ~1M-file data repo — gotchas.md). Fail-loud on any missing/empty staged
-    file. Returns the staged datagen dir ``negative_yield_table`` consumes."""
+    ~1M-file data repo — gotchas.md). The pinned fetch ALWAYS runs (r2
+    hardening): a pre-existing nonempty local file under ``dest`` is never
+    trusted as pinned. Fail-loud on any missing/empty staged file. Returns
+    the staged datagen dir ``negative_yield_table`` consumes."""
     if fetch_fn is None:
 
         def fetch_fn(path_in_repo: str, local_dir: Path, revision: str) -> str:
@@ -572,11 +601,17 @@ def stage_parent_pinned(dest: Path, *, fetch_fn=None) -> Path:
     for fname in PARENT_PINNED_FILES:
         rel = f"{DATA_PREFIX}/{PARENT_CELL}/datagen/{fname}"
         local = dest / rel  # hf_hub_download(local_dir=...) preserves the repo-relative path
-        if not local.exists():
-            got = Path(fetch_fn(rel, dest, PARENT_PIN_REVISION))
-            if got.resolve() != local.resolve():
-                local.parent.mkdir(parents=True, exist_ok=True)
-                os.replace(got, local)
+        # ALWAYS fetch at the pin (r2 hardening): a pre-existing nonempty local
+        # file is NEVER trusted as pinned — a reused --stage-dir can hold bytes
+        # from another run/revision (cross-run mixing, which the driver's
+        # --resume-partial-attempt staging makes plausible), and nothing ties
+        # such a file to PARENT_PIN_REVISION. hf_hub_download's local cache
+        # makes the re-fetch idempotent; a wrong pre-existing file is
+        # OVERWRITTEN with the pinned bytes.
+        got = Path(fetch_fn(rel, dest, PARENT_PIN_REVISION))
+        if got.resolve() != local.resolve():
+            local.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(got, local)
         if not local.exists() or local.stat().st_size == 0:
             raise RuntimeError(
                 f"pinned parent staging failed for {rel!r} @ {PARENT_PIN_REVISION} -> {local}"
