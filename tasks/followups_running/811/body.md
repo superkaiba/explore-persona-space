@@ -196,7 +196,7 @@ What is plotted: median per-context map change over its combined refit floor, tw
 
 ![Heatmap of function change over noise floor, twelve summaries by nine cells.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/920d92e2a1fbc937de3242c0c496b6c2a484f28a/figures/issue_811/pre-user-boundary-summary/heatmap_function_change_12_summaries.png)
 
-> **Figure.** *Content-inclusive rows reproduce the taught-fact primary-layer call; header rows sit below floor there.* Function change over its combined floor, log color scale. Taught fact layer 14: mean 2.66x, max-pool 3.58x, header-inclusive mean 2.26x against role token 0.39x, header mean-of-3 0.80x; off layer 14 several header cells clear the floor (text). Hatched: gate-failed arms and collapsed base-leg behaviors.
+> **Figure.** *Content-inclusive rows reproduce the taught-fact primary-layer call; four of five header rows sit below floor there; the gate-passing start-tag row clears it at 1.44x.* Function change over its combined floor, log color scale. Taught fact layer 14: mean 2.66x, max-pool 3.58x, header-inclusive mean 2.26x against role token 0.39x, header mean-of-3 0.80x; off layer 14 several header cells clear the floor (text). Hatched: gate-failed arms and collapsed base-leg behaviors.
 
 ![Per-context strips behind the heatmap column.](https://raw.githubusercontent.com/superkaiba/explore-persona-space/920d92e2a1fbc937de3242c0c496b6c2a484f28a/figures/issue_811/pre-user-boundary-summary/per_context_strips_fact_L14_12_summaries.png)
 
