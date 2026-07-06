@@ -1,6 +1,6 @@
 ---
-title: 'Decoding-regime robustness of the context→answer map: single greedy vs single
-  stochastic vs 10-rollout-averaged activations'
+title: A single greedy answer is an adequate stand-in for 10-rollout-averaged answer
+  targets in the context→answer map (MODERATE confidence)
 kind: experiment
 tags: []
 created_at: '2026-07-06T04:17:21Z'

@@ -577,7 +577,7 @@
       "kind": "experiment",
       "path": "tasks/interpreting/1073",
       "status": "interpreting",
-      "title": "Decoding-regime robustness of the context\u2192answer map: single greedy vs single stochastic vs 10-rollout-averaged activations"
+      "title": "A single greedy answer is an adequate stand-in for 10-rollout-averaged answer targets in the context\u2192answer map (MODERATE confidence)"
     },
     "1074": {
       "goal": "Determine whether generating the factory's content-behavior training completions on-policy from Qwen-2.5-7B-Instruct with the elicitation instruction injected as plain untagged system-prompt text (instruct-and-strip, variety of induce/oppose phrasings) clears the #906 yield floors and installs the behaviors, and whether an abliterated (helpful-only) Qwen generator beats the base Instruct model on yield and install strength.",
