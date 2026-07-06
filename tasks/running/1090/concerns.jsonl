@@ -1,0 +1,1 @@
+{"ts": "2026-07-06T20:22:52Z", "event": "raised", "concern_id": "neutral-bank-human-skim", "severity": "CONCERN", "summary": "Plan D3's 10-question HUMAN skim of the 3 auto-generated neutral banks (40 rows each) is outstanding; mechanical trait-lexicon screen PASSed. Skim before dispatching production P1a datagen.", "raised_by": "experiment-implementer", "raised_at_round": 1}
