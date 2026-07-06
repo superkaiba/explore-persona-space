@@ -1,79 +1,79 @@
 {
-  "commit": "1aee2f9596",
-  "created": "2026-07-06T10:31:40Z",
+  "commit": "25a0c45c61",
+  "created": "2026-07-06T12:03:28Z",
   "figsize": [
     12.5,
     5.6
   ],
   "points": [
     {
-      "elicitation-instruction variant": -0.19,
+      "elicitation-instruction phrasing (exhibit set)": -0.19,
       "kept fraction": 0.0,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "elicitation-instruction variant": 0.81,
+      "elicitation-instruction phrasing (exhibit set)": 0.81,
       "kept fraction": 0.16666666666666666,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "elicitation-instruction variant": 1.81,
+      "elicitation-instruction phrasing (exhibit set)": 1.81,
       "kept fraction": 0.42857142857142855,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "elicitation-instruction variant": 2.81,
+      "elicitation-instruction phrasing (exhibit set)": 2.81,
       "kept fraction": 0.5,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "elicitation-instruction variant": 3.81,
+      "elicitation-instruction phrasing (exhibit set)": 3.81,
       "kept fraction": 0.3333333333333333,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "elicitation-instruction variant": 4.81,
+      "elicitation-instruction phrasing (exhibit set)": 4.81,
       "kept fraction": 0.2857142857142857,
       "_kind": "bar",
       "_group": 0
     },
     {
-      "elicitation-instruction variant": 0.19,
+      "elicitation-instruction phrasing (exhibit set)": 0.19,
       "kept fraction": 0.14285714285714285,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "elicitation-instruction variant": 1.19,
+      "elicitation-instruction phrasing (exhibit set)": 1.19,
       "kept fraction": 0.16666666666666666,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "elicitation-instruction variant": 2.19,
+      "elicitation-instruction phrasing (exhibit set)": 2.19,
       "kept fraction": 0.42857142857142855,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "elicitation-instruction variant": 3.19,
+      "elicitation-instruction phrasing (exhibit set)": 3.19,
       "kept fraction": 0.16666666666666666,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "elicitation-instruction variant": 4.19,
+      "elicitation-instruction phrasing (exhibit set)": 4.19,
       "kept fraction": 0.3333333333333333,
       "_kind": "bar",
       "_group": 1
     },
     {
-      "elicitation-instruction variant": 5.19,
+      "elicitation-instruction phrasing (exhibit set)": 5.19,
       "kept fraction": 0.14285714285714285,
       "_kind": "bar",
       "_group": 1

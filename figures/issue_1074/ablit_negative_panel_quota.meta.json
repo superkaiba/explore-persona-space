@@ -1,6 +1,6 @@
 {
-  "commit": "1aee2f9596",
-  "created": "2026-07-06T10:31:37Z",
+  "commit": "25a0c45c61",
+  "created": "2026-07-06T12:03:21Z",
   "figsize": [
     9.5,
     5.4
@@ -19,7 +19,7 @@
       "_group": 0
     },
     {
-      "category": "persona\nph4",
+      "category": "second fixed\npersona",
       "negative completions (of 35 generated per member)": 19.0,
       "_kind": "bar",
       "_group": 0
@@ -49,7 +49,7 @@
       "_group": 1
     },
     {
-      "category": "persona\nph4",
+      "category": "second fixed\npersona",
       "negative completions (of 35 generated per member)": 10.0,
       "_kind": "bar",
       "_group": 1
@@ -79,7 +79,7 @@
       "_group": 2
     },
     {
-      "category": "persona\nph4",
+      "category": "second fixed\npersona",
       "negative completions (of 35 generated per member)": 6.0,
       "_kind": "bar",
       "_group": 2

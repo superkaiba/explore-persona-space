@@ -35,6 +35,38 @@ dig = json.loads(DIGEST.read_text())
 C = paper_palette_blog(6)
 COL = {"claude": C[2], "base": C[0], "ablit": C[1]}
 
+# Reader-facing labels (no internal codes in rendered figures).
+# Short glosses of the 19 wrong-fact sycophancy claims, keyed by train-bank id suffix
+# (claim texts verbatim in each cell's raw_pos.jsonl on the HF data repo).
+QUESTION_GLOSS = {
+    "0000": "Great Wall (moon)",
+    "0003": "Edison telephone",
+    "0005": "flat-poles Earth",
+    "0006": "spiders insects",
+    "0007": "8-chamber heart",
+    "0008": "Australia largest",
+    "0010": "dolphins fish",
+    "0011": "WWI ended 1955",
+    "0012": "Toronto capital",
+    "0013": "lightning myth",
+    "0014": "sun orbits Earth",
+    "0015": "Python compiled",
+    "0018": "Arctic penguins",
+    "0019": "Shakespeare French",
+    "0020": "sqrt(144) = 11",
+    "0021": "Golden Gate NYC",
+    "0022": "glass flows",
+    "0023": "elephants largest",
+    "0024": "Alaska southernmost",
+}
+VARIANT_LABEL = {f"ev{i}": f"phrasing {i + 1}" for i in range(6)}
+
+
+def qgloss(qid: str) -> str:
+    """Plain-English gloss for a train-bank question id (falls back to the suffix)."""
+    suffix = qid.rsplit("-", 1)[-1]
+    return QUESTION_GLOSS.get(suffix, suffix)
+
 
 def wilson(k: int, n: int, z: float = 1.96) -> tuple[float, float]:
     ph = k / n
@@ -117,9 +149,9 @@ for ax, beh, title in [
                 stack = seen.get(k, 0)
                 seen[k] = stack + 1
                 ax.text(
-                    bx - 0.12,
+                    bx - 0.30,
                     by + 0.025 + 0.055 * stack,
-                    q.rsplit("-", 1)[-1],
+                    qgloss(q),
                     fontsize=9,
                     color="0.25",
                 )
@@ -145,7 +177,7 @@ QUOTA = 24
 labels = {
     "neg_default_assistant": "default\nassistant",
     "neg_reph_curious": "curious\nrephrase",
-    "neg_sp_ph4": "persona\nph4",
+    "neg_sp_ph4": "second fixed\npersona",
     "neg_sp_police": "police\nofficer",
     "neg_wc_short": "wildchat\nshort",
 }
@@ -203,8 +235,8 @@ im = axh.imshow(mat, aspect="auto", cmap="YlGnBu", vmin=0, vmax=1)
 axh.set_yticks([0, 1])
 axh.set_yticklabels(["base Qwen", "abliterated Qwen"], fontsize=11)
 axh.set_xticks(range(len(qs)))
-axh.set_xticklabels([q.rsplit("-", 1)[-1] for q in qs], rotation=90, fontsize=8.5)
-axh.set_xlabel("wrong-fact claim (train-bank question id suffix)")
+axh.set_xticklabels([qgloss(q) for q in qs], rotation=90, fontsize=8)
+axh.set_xlabel("wrong-fact claim")
 axh.set_title("Per-question kept fraction, sycophancy", fontsize=13, pad=10)
 for (r, cix), v in np.ndenumerate(mat):
     j = (qb if r == 0 else qa)[qs[cix]]["judged"]
@@ -235,8 +267,8 @@ for i, v in enumerate(variants):
 axv.axhline(20 / 36, color="0.15", ls="--", lw=1.4)
 axv.text(len(variants) - 0.4, 20 / 36 + 0.015, "floor rate", ha="right", fontsize=10)
 axv.set_xticks(xs)
-axv.set_xticklabels(variants, fontsize=10)
-axv.set_xlabel("elicitation-instruction variant")
+axv.set_xticklabels([VARIANT_LABEL.get(v, v) for v in variants], fontsize=9, rotation=30)
+axv.set_xlabel("elicitation-instruction phrasing (exhibit set)")
 axv.set_ylabel("kept fraction")
 axv.set_ylim(0, 0.85)
 axv.set_title("Per-variant kept fraction, sycophancy", fontsize=13, pad=10)
@@ -268,7 +300,7 @@ ax.bar(
     none / tot,
     bottom=(kept + thr) / tot,
     color="0.75",
-    label="dropped: no valid judge draw",
+    label="dropped: no valid judge draw\n(whole row; all draws unusable)",
     width=0.6,
 )
 for i in range(len(cells)):

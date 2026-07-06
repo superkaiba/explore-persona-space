@@ -1,6 +1,6 @@
 {
-  "commit": "1aee2f9596",
-  "created": "2026-07-06T10:31:35Z",
+  "commit": "25a0c45c61",
+  "created": "2026-07-06T12:03:17Z",
   "figsize": [
     11.5,
     5.4
@@ -63,7 +63,7 @@
     {
       "base Qwen: kept fraction per question": 0.9982138937642404,
       "abliterated Qwen: kept fraction per question": -0.012445578285568276,
-      "label": "0013",
+      "label": "lightning myth",
       "_kind": "scatter",
       "_group": 0
     },
@@ -94,7 +94,7 @@
     {
       "base Qwen: kept fraction per question": 0.9979629111577839,
       "abliterated Qwen: kept fraction per question": -0.00466345058274472,
-      "label": "0013",
+      "label": "lightning myth",
       "_kind": "scatter",
       "_group": 0
     },
@@ -107,21 +107,21 @@
     {
       "base Qwen: kept fraction per question": 0.8019650523325701,
       "abliterated Qwen: kept fraction per question": 0.9888209689270343,
-      "label": "0024",
+      "label": "Alaska southernmost",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "base Qwen: kept fraction per question": 0.9842974212197503,
       "abliterated Qwen: kept fraction per question": -0.01332282580792302,
-      "label": "0013",
+      "label": "lightning myth",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "base Qwen: kept fraction per question": 1.011794722191733,
       "abliterated Qwen: kept fraction per question": 0.9991253773441336,
-      "label": "0024",
+      "label": "Alaska southernmost",
       "_kind": "scatter",
       "_group": 0
     },
