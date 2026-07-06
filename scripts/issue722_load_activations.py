@@ -68,6 +68,26 @@ _SUMMARY_ANSWER_KEYS = {
     "mean": ("v0", "v_plus"),
     "turn_nl": ("v0_turn_nl", "v_plus_turn_nl"),
     "maxp": ("v0_maxp", "v_plus_maxp"),
+    # #811 pre-user-boundary-summary round (plan §4.2): the nine boundary/header
+    # arms, present only in that round's re-extracted store. Arms 8/9
+    # (*_alllayer) are layer-INDEPENDENT values duplicated into every per-layer
+    # npz — the loader keys their cells by the INPUT layer (the layer match is
+    # broken by construction; stated in every arm-8/9 read).
+    "pre_user_imstart": ("v0_pre_user_imstart", "v_plus_pre_user_imstart"),
+    "pre_user_user": ("v0_pre_user_user", "v_plus_pre_user_user"),
+    "pre_user_nl": ("v0_pre_user_nl", "v_plus_pre_user_nl"),
+    "pre_user_mean3": ("v0_pre_user_mean3", "v_plus_pre_user_mean3"),
+    "pre_user_max3": ("v0_pre_user_max3", "v_plus_pre_user_max3"),
+    "ans_mean_incl_hdr": ("v0_ans_mean_incl_hdr", "v_plus_ans_mean_incl_hdr"),
+    "ans_max_incl_hdr": ("v0_ans_max_incl_hdr", "v_plus_ans_max_incl_hdr"),
+    "ans_mean_incl_hdr_alllayer": (
+        "v0_ans_mean_incl_hdr_alllayer",
+        "v_plus_ans_mean_incl_hdr_alllayer",
+    ),
+    "ans_max_incl_hdr_alllayer": (
+        "v0_ans_max_incl_hdr_alllayer",
+        "v_plus_ans_max_incl_hdr_alllayer",
+    ),
 }
 
 

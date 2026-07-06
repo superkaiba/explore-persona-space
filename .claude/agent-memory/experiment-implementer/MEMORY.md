@@ -93,3 +93,4 @@
 - [Marker training-row token budget](feedback_marker_row_token_budget.md) — unbounded prompt tails truncate the marker+im_end loss slot; build-time tokenized budget gate (#906 r13)
 - [Tiny-real CPU e2e beats mock-seam smokes](feedback_tiny_real_cpu_e2e.md) — full-path CPU pass with from-config tiny model catches shape bugs mock smokes surface one per GPU cycle (#906 r11-r15)
 - [vLLM bank length-validate at load](feedback_vllm_bank_length_validate_at_load.md) — filter formatted-prompt overlength rows (pair-wise) in the LOADER; real corpora hide rare overlong rows smokes never sample (#952)
+- [Batched PRESS-LOCO twin exact + enumerate every loop before attesting "batched"](feedback_batched_press_loco_twin_exact.md) — nested-CV LOCO ridge batches EXACTLY (fold-chunk bmm+eigh, rtol<=1e-7); a round that batched floors left the LOCO chain serial (30-43d realized) (#811 r14)

@@ -48,6 +48,9 @@ import sys
 import time
 from pathlib import Path
 
+import numpy as np
+import torch
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
@@ -61,8 +64,6 @@ from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 load_dotenv()
 
 import issue667_extract as ex  # noqa: E402  (reuse the extractor's pure helpers)
-import numpy as np  # noqa: E402
-import torch  # noqa: E402
 
 logger = logging.getLogger("issue811.phase0")
 
@@ -83,7 +84,14 @@ def _context_vector_base(base_model, tok, messages: list[dict], device) -> np.nd
 
 @torch.no_grad()
 def _base_answer_summaries(
-    base_model, tok, messages: list[dict], response: str, layers: list[int], device
+    base_model,
+    tok,
+    messages: list[dict],
+    response: str,
+    layers: list[int],
+    device,
+    *,
+    pre_user: bool = False,
 ) -> dict[int, dict[str, np.ndarray]]:
     """Teacher-force ``messages + response`` through BASE θ0 only; base summaries.
 
@@ -139,8 +147,22 @@ def _base_answer_summaries(
             f"[maxp-assert] empty maxp content span: content_end={content_end} "
             f"<= prompt_len={p} (KILL-2, failure_class: code)"
         )
-    ids = torch.tensor([full_ids], dtype=torch.long, device=device)
-    acts_b = ex.extract_layer_activations(base_model, ids, layers)
+    # #811 pre-user round (plan §4.1): all span indices above are PRE-append; the
+    # forward runs over ext_ids = full_ids + HEADER_IDS with ALL blocks hooked
+    # (the arm-8/9 gate needs the base alllayer stacks). Causal attention keeps
+    # positions < F invariant to the append (A2), so mean/turn_nl/maxp are
+    # byte-equivalent to the unextended read.
+    if pre_user:
+        ext_ids, F = ex._extended_ids(full_ids)  # KILL-2 tail assert inside
+        ids = torch.tensor([ext_ids], dtype=torch.long, device=device)
+        n_blocks = int(base_model.config.num_hidden_layers)
+        hook_layers = sorted(set(layers) | set(range(n_blocks)))
+    else:
+        F = span_end
+        n_blocks = None
+        hook_layers = layers
+        ids = torch.tensor([full_ids], dtype=torch.long, device=device)
+    acts_b = ex.extract_layer_activations(base_model, ids, hook_layers)
     res: dict[int, dict[str, np.ndarray]] = {}
     for li in layers:
         hb_mean = acts_b[li][0, p:span_end, :].float().mean(dim=0).cpu().numpy().astype(np.float32)
@@ -159,6 +181,21 @@ def _base_answer_summaries(
             "turn_nl": hb_nl,
             "maxp": hb_mx.cpu().numpy().astype(np.float32),
         }
+        if pre_user:
+            for arm in ex.PRE_USER_LAYER_ARMS:
+                hb_a = ex._pre_user_layer_arm(acts_b, li, p, F, arm)
+                ex._assert_finite_arm(hb_a, arm, li)
+                res[li][arm] = hb_a.cpu().numpy().astype(np.float32)
+    if pre_user:
+        # Base-leg (n_blocks, H) arm-6/7 stacks per probe (probe-meaned + fp16-cast
+        # at persist time; the arm-8/9 KILL-1 gate reads keys derived from them).
+        stacks: dict[str, np.ndarray] = {}
+        for base_name in ex.PRE_USER_STACK_BASES:
+            rows = [ex._pre_user_layer_arm(acts_b, li, p, F, base_name) for li in range(n_blocks)]
+            stack = torch.stack(rows)
+            ex._assert_finite_arm(stack, f"{base_name}_stack", "all")
+            stacks[base_name] = stack.cpu().numpy().astype(np.float32)
+        res["stacks"] = stacks  # type: ignore[assignment]
     return res
 
 
@@ -175,18 +212,26 @@ def _extract_base_target(
     primary_layer,
     device,
     r_lookup,
+    *,
+    pre_user: bool = False,
 ) -> tuple[int, int]:
     """Base-leg reads for ONE target C' across ``layers``; write one .npz per layer.
 
-    Accumulates per-probe base summaries (mean + turn_nl), means over the probe
-    pool exactly like Phase 1's accumulator, and writes ``{tcid}_L{li}.npz`` with
-    ``c_C`` / ``v0`` / ``v0_turn_nl`` + meta. Returns (n_generations, n_empty).
+    Accumulates per-probe base summaries (mean + turn_nl + maxp; under
+    ``pre_user`` also the seven per-layer boundary arms + the two arm-6/7
+    all-layer stacks), means over the probe pool exactly like Phase 1's
+    accumulator, and writes ``{tcid}_L{li}.npz`` with ``c_C`` / ``v0`` /
+    ``v0_turn_nl`` (+ the ``v0_<arm>`` keys and the fp16 ``*_stack`` keys under
+    ``pre_user`` — the arm-8/9 KILL-1 gate inputs, plan §4.3 item 2). Returns
+    (n_generations, n_empty).
     """
     tmsgs0 = ex.build_messages_for(registry, demos, tcid, behavior, probes[0])
     c_c_all = _context_vector_base(base, tok, tmsgs0, device)  # (N_LAYERS, HIDDEN)
+    arm_names = list(ex.PRE_USER_LAYER_ARMS) if pre_user else []
     acc: dict[int, dict[str, list[np.ndarray]]] = {
-        li: {"mean": [], "turn_nl": [], "maxp": []} for li in layers
+        li: {s: [] for s in ("mean", "turn_nl", "maxp", *arm_names)} for li in layers
     }
+    acc_stacks: dict[str, list[np.ndarray]] = {b: [] for b in ex.PRE_USER_STACK_BASES}
     n_gen = n_trunc = 0
     for qi, q in enumerate(probes):
         tmsgs = ex.build_messages_for(registry, demos, tcid, behavior, q)
@@ -199,11 +244,21 @@ def _extract_base_target(
         if not r.strip():
             n_trunc += 1
             continue
-        per_layer = _base_answer_summaries(base, tok, tmsgs, r, layers, device)
+        per_layer = _base_answer_summaries(base, tok, tmsgs, r, layers, device, pre_user=pre_user)
+        for base_name, stack in per_layer.pop("stacks", {}).items():  # type: ignore[union-attr]
+            acc_stacks[base_name].append(stack)
         for li in layers:
-            acc[li]["mean"].append(per_layer[li]["mean"])
-            acc[li]["turn_nl"].append(per_layer[li]["turn_nl"])
-            acc[li]["maxp"].append(per_layer[li]["maxp"])
+            for s in ("mean", "turn_nl", "maxp", *arm_names):
+                acc[li][s].append(per_layer[li][s])
+    # Probe-meaned fp16 base stacks + derived arms 8/9 (bit-re-derivable from the
+    # persisted fp16 keys — the SAME recipe as the paired extractor, plan §4.2).
+    stack16: dict[str, np.ndarray] = {}
+    derived: dict[str, np.ndarray] = {}
+    if pre_user and acc[layers[0]]["mean"]:
+        for base_name in ex.PRE_USER_STACK_BASES:
+            stack16[base_name] = np.stack(acc_stacks[base_name]).mean(axis=0).astype(np.float16)
+        d0 = ex.derive_alllayer_arms(stack16["ans_mean_incl_hdr"], stack16["ans_max_incl_hdr"])
+        derived = {f"v0_{arm}": vec for arm, vec in d0.items()}
     for li in layers:
         if not acc[li]["mean"]:
             continue  # empty-response target for this layer — skip its .npz (loud via count)
@@ -222,6 +277,12 @@ def _extract_base_target(
             "target_cid": np.asarray(tcid),
             "layer": np.asarray(li),
         }
+        if pre_user:
+            for arm in arm_names:
+                payload[f"v0_{arm}"] = np.stack(acc[li][arm]).mean(axis=0).astype(np.float32)
+            payload.update(derived)  # v0_ans_{mean,max}_incl_hdr_alllayer (float32)
+            payload["v0_ans_mean_incl_hdr_stack"] = stack16["ans_mean_incl_hdr"]
+            payload["v0_ans_max_incl_hdr_stack"] = stack16["ans_max_incl_hdr"]
         np.savez(cell_dir / f"{tcid}_L{li}.npz", **payload)
     return n_gen, n_trunc
 
@@ -271,6 +332,10 @@ def run(args) -> int:
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     tok = AutoTokenizer.from_pretrained(ex.BASE_MODEL, token=os.environ.get("HF_TOKEN"))
+    if args.pre_user:
+        # KILL-2 startup assert (plan §7): header ids verified in-process BEFORE
+        # any GPU work; a tokenizer drift HALTs the cell here.
+        ex.assert_header_ids(tok)
 
     # Phase A: vLLM batched greedy R from BASE (per CLAUDE.md — never a per-prompt
     # HF generate loop). CPU-smoke (no vLLM) falls back to HF greedy per probe.
@@ -318,6 +383,7 @@ def run(args) -> int:
             args.primary_layer,
             device,
             r_lookup,
+            pre_user=bool(args.pre_user),
         )
         n_gen += ng
         n_trunc += nt
@@ -372,6 +438,14 @@ def main() -> int:
     ap.add_argument("--cpu-only", action="store_true")
     ap.add_argument("--max-probes", type=int, default=None, help="smoke: cap probes per behavior")
     ap.add_argument("--max-new-tokens", type=int, default=ex.N_GEN_TOKENS)
+    ap.add_argument(
+        "--pre-user",
+        action="store_true",
+        help="#811 pre-user-boundary-summary round: ALSO capture the nine "
+        "boundary/header base-leg arms (v0_<slug>) + the two fp16 arm-6/7 "
+        "all-layer stacks per cell (the per-arm KILL-1 gate inputs, plan §4.3 "
+        "item 2); header ids asserted in-process at startup + per row.",
+    )
     return run(ap.parse_args())
 
 

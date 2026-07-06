@@ -1,0 +1,660 @@
+{
+  "commit": "920d92e2a1",
+  "created": "2026-07-05T23:59:35Z",
+  "figsize": [
+    11.5,
+    6.2
+  ],
+  "points": [
+    {
+      "base-to-post chain shift": -0.1750676783857663,
+      "y": 0.22,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "base-to-post chain shift": -0.02431381436346393,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "base-to-post chain shift": -0.01573599587618371,
+      "y": -0.22,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "base-to-post chain shift": -0.12060177892250229,
+      "y": -0.78,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "base-to-post chain shift": 0.03255050167721577,
+      "y": -1.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "base-to-post chain shift": 0.16579191562212106,
+      "y": -1.22,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "base-to-post chain shift": 0.07098297352557627,
+      "y": -1.78,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "base-to-post chain shift": 0.021403602603605187,
+      "y": -2.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "base-to-post chain shift": -0.02044142766061216,
+      "y": -2.22,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "base-to-post chain shift": 0.03972147394568032,
+      "y": -3.28,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "base-to-post chain shift": 0.08992425076872732,
+      "y": -3.5,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "base-to-post chain shift": 0.19757538067334196,
+      "y": -3.72,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "base-to-post chain shift": -0.02876616999165095,
+      "y": -4.28,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "base-to-post chain shift": 0.06132552966240901,
+      "y": -4.5,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "base-to-post chain shift": 0.17036546172491993,
+      "y": -4.72,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "base-to-post chain shift": -0.038651297096238435,
+      "y": -5.28,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "base-to-post chain shift": 0.030931850990588997,
+      "y": -5.5,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "base-to-post chain shift": 0.06874104816740759,
+      "y": -5.72,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "base-to-post chain shift": 0.02668231060713682,
+      "y": -6.28,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "base-to-post chain shift": 0.07018713201687725,
+      "y": -6.5,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "base-to-post chain shift": 0.22017317203598102,
+      "y": -6.72,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "base-to-post chain shift": -0.08179714011583192,
+      "y": -7.28,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "base-to-post chain shift": 0.13655909340770916,
+      "y": -7.5,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "base-to-post chain shift": 0.21027715288007492,
+      "y": -7.72,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "base-to-post chain shift": -0.1641565331699144,
+      "y": -8.78,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "base-to-post chain shift": -0.023832070744297634,
+      "y": -9.0,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "base-to-post chain shift": -0.007311519099335466,
+      "y": -9.22,
+      "_kind": "errorbar",
+      "_group": 26
+    },
+    {
+      "base-to-post chain shift": 0.03521006502721141,
+      "y": -9.78,
+      "_kind": "errorbar",
+      "_group": 27
+    },
+    {
+      "base-to-post chain shift": 0.08022448538085804,
+      "y": -10.0,
+      "_kind": "errorbar",
+      "_group": 28
+    },
+    {
+      "base-to-post chain shift": 0.08916968094845866,
+      "y": -10.22,
+      "_kind": "errorbar",
+      "_group": 29
+    },
+    {
+      "base-to-post chain shift": -0.034290933371357184,
+      "y": -10.78,
+      "_kind": "errorbar",
+      "_group": 30
+    },
+    {
+      "base-to-post chain shift": 0.013267109039031624,
+      "y": -11.0,
+      "_kind": "errorbar",
+      "_group": 31
+    },
+    {
+      "base-to-post chain shift": -0.030422483554524177,
+      "y": -11.22,
+      "_kind": "errorbar",
+      "_group": 32
+    },
+    {
+      "base-to-post chain shift": 0.008323298806165266,
+      "y": -11.78,
+      "_kind": "errorbar",
+      "_group": 33
+    },
+    {
+      "base-to-post chain shift": 0.014311105596448544,
+      "y": -12.0,
+      "_kind": "errorbar",
+      "_group": 34
+    },
+    {
+      "base-to-post chain shift": 0.05450900836516981,
+      "y": -12.22,
+      "_kind": "errorbar",
+      "_group": 35
+    },
+    {
+      "base-to-post chain shift": -0.0527200271712471,
+      "y": 0.22,
+      "_kind": "errorbar",
+      "_group": 36
+    },
+    {
+      "base-to-post chain shift": -0.04017970991299244,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 37
+    },
+    {
+      "base-to-post chain shift": 0.05478429523373175,
+      "y": -0.22,
+      "_kind": "errorbar",
+      "_group": 38
+    },
+    {
+      "base-to-post chain shift": -0.13145066608984757,
+      "y": -0.78,
+      "_kind": "errorbar",
+      "_group": 39
+    },
+    {
+      "base-to-post chain shift": 0.03654944538931257,
+      "y": -1.0,
+      "_kind": "errorbar",
+      "_group": 40
+    },
+    {
+      "base-to-post chain shift": 0.09804461381023173,
+      "y": -1.22,
+      "_kind": "errorbar",
+      "_group": 41
+    },
+    {
+      "base-to-post chain shift": -0.023593493985071642,
+      "y": -1.78,
+      "_kind": "errorbar",
+      "_group": 42
+    },
+    {
+      "base-to-post chain shift": -0.08400553339055403,
+      "y": -2.0,
+      "_kind": "errorbar",
+      "_group": 43
+    },
+    {
+      "base-to-post chain shift": -0.015599571424564057,
+      "y": -2.22,
+      "_kind": "errorbar",
+      "_group": 44
+    },
+    {
+      "base-to-post chain shift": -0.04910566729912624,
+      "y": -3.28,
+      "_kind": "errorbar",
+      "_group": 45
+    },
+    {
+      "base-to-post chain shift": 0.05040323105726077,
+      "y": -3.5,
+      "_kind": "errorbar",
+      "_group": 46
+    },
+    {
+      "base-to-post chain shift": 0.1285528496979291,
+      "y": -3.72,
+      "_kind": "errorbar",
+      "_group": 47
+    },
+    {
+      "base-to-post chain shift": -0.001469567559785001,
+      "y": -4.28,
+      "_kind": "errorbar",
+      "_group": 48
+    },
+    {
+      "base-to-post chain shift": -0.0837057362697336,
+      "y": -4.5,
+      "_kind": "errorbar",
+      "_group": 49
+    },
+    {
+      "base-to-post chain shift": 0.1694147356971958,
+      "y": -4.72,
+      "_kind": "errorbar",
+      "_group": 50
+    },
+    {
+      "base-to-post chain shift": -0.023421935068779487,
+      "y": -5.28,
+      "_kind": "errorbar",
+      "_group": 51
+    },
+    {
+      "base-to-post chain shift": 0.15507196540981258,
+      "y": -5.5,
+      "_kind": "errorbar",
+      "_group": 52
+    },
+    {
+      "base-to-post chain shift": -0.012699474995184368,
+      "y": -5.72,
+      "_kind": "errorbar",
+      "_group": 53
+    },
+    {
+      "base-to-post chain shift": -0.06284172517913586,
+      "y": -6.28,
+      "_kind": "errorbar",
+      "_group": 54
+    },
+    {
+      "base-to-post chain shift": 0.1161317061050275,
+      "y": -6.5,
+      "_kind": "errorbar",
+      "_group": 55
+    },
+    {
+      "base-to-post chain shift": 0.11879556840915301,
+      "y": -6.72,
+      "_kind": "errorbar",
+      "_group": 56
+    },
+    {
+      "base-to-post chain shift": -0.04122869397718019,
+      "y": -7.28,
+      "_kind": "errorbar",
+      "_group": 57
+    },
+    {
+      "base-to-post chain shift": 0.10800581942511589,
+      "y": -7.5,
+      "_kind": "errorbar",
+      "_group": 58
+    },
+    {
+      "base-to-post chain shift": 0.08979966468630667,
+      "y": -7.72,
+      "_kind": "errorbar",
+      "_group": 59
+    },
+    {
+      "base-to-post chain shift": -0.07057294293557081,
+      "y": -8.78,
+      "_kind": "errorbar",
+      "_group": 60
+    },
+    {
+      "base-to-post chain shift": -0.054240478493887,
+      "y": -9.0,
+      "_kind": "errorbar",
+      "_group": 61
+    },
+    {
+      "base-to-post chain shift": 0.06785947591399547,
+      "y": -9.22,
+      "_kind": "errorbar",
+      "_group": 62
+    },
+    {
+      "base-to-post chain shift": -0.11442234533712198,
+      "y": -9.78,
+      "_kind": "errorbar",
+      "_group": 63
+    },
+    {
+      "base-to-post chain shift": 0.003817283206172778,
+      "y": -10.0,
+      "_kind": "errorbar",
+      "_group": 64
+    },
+    {
+      "base-to-post chain shift": 0.11863401941342247,
+      "y": -10.22,
+      "_kind": "errorbar",
+      "_group": 65
+    },
+    {
+      "base-to-post chain shift": -0.041320395971658555,
+      "y": -10.78,
+      "_kind": "errorbar",
+      "_group": 66
+    },
+    {
+      "base-to-post chain shift": 0.02618745367727522,
+      "y": -11.0,
+      "_kind": "errorbar",
+      "_group": 67
+    },
+    {
+      "base-to-post chain shift": 0.1110659077514721,
+      "y": -11.22,
+      "_kind": "errorbar",
+      "_group": 68
+    },
+    {
+      "base-to-post chain shift": 0.1510946346959935,
+      "y": -11.78,
+      "_kind": "errorbar",
+      "_group": 69
+    },
+    {
+      "base-to-post chain shift": 0.13858618235152667,
+      "y": -12.0,
+      "_kind": "errorbar",
+      "_group": 70
+    },
+    {
+      "base-to-post chain shift": 0.06271754655350201,
+      "y": -12.22,
+      "_kind": "errorbar",
+      "_group": 71
+    },
+    {
+      "base-to-post chain shift": 0.30225848145432416,
+      "y": 0.22,
+      "_kind": "errorbar",
+      "_group": 72
+    },
+    {
+      "base-to-post chain shift": 0.6809245630793643,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 73
+    },
+    {
+      "base-to-post chain shift": 0.6854242957558674,
+      "y": -0.22,
+      "_kind": "errorbar",
+      "_group": 74
+    },
+    {
+      "base-to-post chain shift": 0.07178124443026596,
+      "y": -0.78,
+      "_kind": "errorbar",
+      "_group": 75
+    },
+    {
+      "base-to-post chain shift": 0.41119324799020646,
+      "y": -1.0,
+      "_kind": "errorbar",
+      "_group": 76
+    },
+    {
+      "base-to-post chain shift": -0.031614814154950203,
+      "y": -1.22,
+      "_kind": "errorbar",
+      "_group": 77
+    },
+    {
+      "base-to-post chain shift": 0.4492198085475041,
+      "y": -1.78,
+      "_kind": "errorbar",
+      "_group": 78
+    },
+    {
+      "base-to-post chain shift": 0.6571484209542422,
+      "y": -2.0,
+      "_kind": "errorbar",
+      "_group": 79
+    },
+    {
+      "base-to-post chain shift": 0.5415770551581713,
+      "y": -2.22,
+      "_kind": "errorbar",
+      "_group": 80
+    },
+    {
+      "base-to-post chain shift": -0.1368515756762243,
+      "y": -3.28,
+      "_kind": "errorbar",
+      "_group": 81
+    },
+    {
+      "base-to-post chain shift": 0.008554455447370823,
+      "y": -3.5,
+      "_kind": "errorbar",
+      "_group": 82
+    },
+    {
+      "base-to-post chain shift": 0.030647095068131236,
+      "y": -3.72,
+      "_kind": "errorbar",
+      "_group": 83
+    },
+    {
+      "base-to-post chain shift": 0.048055718769257294,
+      "y": -4.28,
+      "_kind": "errorbar",
+      "_group": 84
+    },
+    {
+      "base-to-post chain shift": -0.33334670965467955,
+      "y": -4.5,
+      "_kind": "errorbar",
+      "_group": 85
+    },
+    {
+      "base-to-post chain shift": -0.44926212544037125,
+      "y": -4.72,
+      "_kind": "errorbar",
+      "_group": 86
+    },
+    {
+      "base-to-post chain shift": 0.39196248618344154,
+      "y": -5.28,
+      "_kind": "errorbar",
+      "_group": 87
+    },
+    {
+      "base-to-post chain shift": 0.11263359058712663,
+      "y": -5.5,
+      "_kind": "errorbar",
+      "_group": 88
+    },
+    {
+      "base-to-post chain shift": 0.31710362968922123,
+      "y": -5.72,
+      "_kind": "errorbar",
+      "_group": 89
+    },
+    {
+      "base-to-post chain shift": -0.15241534665566936,
+      "y": -6.28,
+      "_kind": "errorbar",
+      "_group": 90
+    },
+    {
+      "base-to-post chain shift": -0.006586583422941883,
+      "y": -6.5,
+      "_kind": "errorbar",
+      "_group": 91
+    },
+    {
+      "base-to-post chain shift": -0.006277697406232796,
+      "y": -6.72,
+      "_kind": "errorbar",
+      "_group": 92
+    },
+    {
+      "base-to-post chain shift": -0.04441248000438558,
+      "y": -7.28,
+      "_kind": "errorbar",
+      "_group": 93
+    },
+    {
+      "base-to-post chain shift": -0.05945332339287729,
+      "y": -7.5,
+      "_kind": "errorbar",
+      "_group": 94
+    },
+    {
+      "base-to-post chain shift": 0.015468817332095403,
+      "y": -7.72,
+      "_kind": "errorbar",
+      "_group": 95
+    },
+    {
+      "base-to-post chain shift": 0.2584091164385051,
+      "y": -8.78,
+      "_kind": "errorbar",
+      "_group": 96
+    },
+    {
+      "base-to-post chain shift": 0.6198016062024974,
+      "y": -9.0,
+      "_kind": "errorbar",
+      "_group": 97
+    },
+    {
+      "base-to-post chain shift": 0.6673121741867407,
+      "y": -9.22,
+      "_kind": "errorbar",
+      "_group": 98
+    },
+    {
+      "base-to-post chain shift": 0.3629380664988282,
+      "y": -9.78,
+      "_kind": "errorbar",
+      "_group": 99
+    },
+    {
+      "base-to-post chain shift": 0.6702736468556907,
+      "y": -10.0,
+      "_kind": "errorbar",
+      "_group": 100
+    },
+    {
+      "base-to-post chain shift": 0.4629825179640804,
+      "y": -10.22,
+      "_kind": "errorbar",
+      "_group": 101
+    },
+    {
+      "base-to-post chain shift": 0.4933367255311284,
+      "y": -10.78,
+      "_kind": "errorbar",
+      "_group": 102
+    },
+    {
+      "base-to-post chain shift": 0.570202167181446,
+      "y": -11.0,
+      "_kind": "errorbar",
+      "_group": 103
+    },
+    {
+      "base-to-post chain shift": 0.6287919529476211,
+      "y": -11.22,
+      "_kind": "errorbar",
+      "_group": 104
+    },
+    {
+      "base-to-post chain shift": 0.404646742759993,
+      "y": -11.78,
+      "_kind": "errorbar",
+      "_group": 105
+    },
+    {
+      "base-to-post chain shift": 0.48785294763752596,
+      "y": -12.0,
+      "_kind": "errorbar",
+      "_group": 106
+    },
+    {
+      "base-to-post chain shift": 0.6724896869808697,
+      "y": -12.22,
+      "_kind": "errorbar",
+      "_group": 107
+    }
+  ],
+  "n_series": 108,
+  "total_points": 108
+}

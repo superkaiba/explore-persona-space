@@ -93,6 +93,8 @@ import logging
 import sys
 from pathlib import Path
 
+import numpy as np
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
@@ -103,8 +105,6 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()
-
-import numpy as np  # noqa: E402
 
 logger = logging.getLogger("issue811.parity")
 
@@ -371,7 +371,10 @@ def check_mean_parity(
 
 
 def compare_committed_mean_cells(
-    run_cells_dir: Path, committed_cells_dir: Path, out_json: Path
+    run_cells_dir: Path,
+    committed_cells_dir: Path,
+    out_json: Path,
+    summaries: tuple[str, ...] = ("mean",),
 ) -> dict:
     """maxp-round §6(b): this round's re-extracted MEAN fit cells vs the committed v1 cells.
 
@@ -391,10 +394,14 @@ def compare_committed_mean_cells(
     import json as _json
     import time as _time
 
-    run_files = sorted(run_cells_dir.glob("*_mean.json"))
+    # pre-user round (plan §6 three-way parity): the SAME report shape over any
+    # committed summary set — mean+turn_nl vs the v1 cells, mean+turn_nl+maxp vs
+    # the v2 maxp-round cells. Default ("mean",) preserves the maxp round verbatim.
+    run_files = sorted(p for s in summaries for p in run_cells_dir.glob(f"*_{s}.json"))
     if not run_files:
         raise FileNotFoundError(
-            f"no *_mean.json under {run_cells_dir} — run the round's fit phase first"
+            f"no *_{{{','.join(summaries)}}}.json under {run_cells_dir} — "
+            "run the round's fit phase first"
         )
     rows: list[dict] = []
     n_flips = 0
@@ -532,13 +539,27 @@ def main() -> int:
         help="(--compare-committed) report JSON path (default: "
         "<run-cells-dir>/../mean_call_replication_vs_v1.json)",
     )
+    ap.add_argument(
+        "--committed-summaries",
+        nargs="+",
+        default=["mean"],
+        help="(--compare-committed) which summaries' cells to compare against the "
+        "committed dir (pre-user round: 'mean turn_nl' vs v1, "
+        "'mean turn_nl maxp' vs the v2 maxp cells). Default preserves the "
+        "maxp-round mean-only read verbatim.",
+    )
     args = ap.parse_args()
     if args.compare_committed:
         assert args.run_cells_dir is not None, "--compare-committed requires --run-cells-dir"
         out_json = args.committed_out or (
             args.run_cells_dir.parent / "mean_call_replication_vs_v1.json"
         )
-        compare_committed_mean_cells(args.run_cells_dir, args.committed_cells_dir, out_json)
+        compare_committed_mean_cells(
+            args.run_cells_dir,
+            args.committed_cells_dir,
+            out_json,
+            summaries=tuple(args.committed_summaries),
+        )
         return 0
     check_mean_parity(
         args.phase0_root,

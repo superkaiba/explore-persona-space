@@ -30,20 +30,14 @@ import logging
 import sys
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(PROJECT_ROOT / "src"))
-
-# Project dotenv wrapper: .env load + the shared-VM thread caps (#847) — called
-# BEFORE numpy freezes the BLAS pools.
-from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
-
-load_dotenv()
-
-import matplotlib  # noqa: E402
+import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
-import numpy as np  # noqa: E402
+import matplotlib.pyplot as plt
+import numpy as np
+
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from explore_persona_space.analysis.paper_plots import (  # noqa: E402
     paper_palette_role,
@@ -138,6 +132,99 @@ def fig_function_change_grouped(
     ax.legend(title="answer summary")
     fig.tight_layout()
     fig.savefig(out, dpi=150)
+    plt.close(fig)
+    logger.info("wrote %s", out)
+
+
+def fig_function_change_heatmap(
+    pair_table: dict,
+    out: Path,
+    summaries: tuple[str, ...],
+    arm_gate: dict | None = None,
+) -> None:
+    """Plan §6 fig (a) hero candidate for the 12-summary pre-user round.
+
+    Δ_med/floor_combined HEATMAP: rows = summaries in the given order (references
+    on top, arms grouped header/pool/all-layer per the dispatcher's list), cols =
+    behavior×layer cells, annotated values (log color scale). The 1× floor
+    "contour" is drawn as a bold edge around every cell at ratio >= 1. Per-arm
+    KILL-1 verdicts (``arm_gate`` = validity_gate_phase0.json's ``per_arm``):
+    ``fail`` rows are GREYED + ///-hatched and labeled "(gate-failed)";
+    ``comparator_indeterminate`` rows are xx-hatched (distinct, plan §7 MF3) —
+    flagged, never dropped.
+    """
+    from matplotlib.colors import LogNorm
+
+    cells = _ordered_cells(pair_table)
+    if not cells:
+        logger.warning("no cells for the heatmap figure — skipping")
+        return
+    mat = np.full((len(summaries), len(cells)), np.nan)
+    for si, s in enumerate(summaries):
+        for ci, (_, _, row) in enumerate(cells):
+            r = _cell_ratio(row, s)
+            mat[si, ci] = np.nan if r is None else r
+    finite = mat[np.isfinite(mat) & (mat > 0)]
+    vmin = max(float(finite.min()) if finite.size else 1e-2, 1e-3)
+    vmax = max(float(finite.max()) if finite.size else 10.0, 1.0)
+    fig, ax = plt.subplots(figsize=(max(8.0, 1.05 * len(cells) + 2.8), 0.48 * len(summaries) + 2.2))
+    im = ax.imshow(mat, aspect="auto", cmap="viridis", norm=LogNorm(vmin=vmin, vmax=vmax))
+    ax.set_xticks(np.arange(len(cells)))
+    ax.set_xticklabels([f"{BEHAVIOR_LABEL[b]}\nL{li}" for b, li, _ in cells], fontsize=8)
+    row_labels = []
+    for si, s in enumerate(summaries):
+        status = (arm_gate or {}).get(s, {}).get("gate_status")
+        label = s
+        if status == "fail":
+            label = f"{s} (gate-failed)"
+            ax.add_patch(
+                plt.Rectangle(
+                    (-0.5, si - 0.5),
+                    len(cells),
+                    1.0,
+                    facecolor="lightgrey",
+                    alpha=0.55,
+                    hatch="///",
+                    edgecolor="grey",
+                    linewidth=0.0,
+                )
+            )
+        elif status == "comparator_indeterminate":
+            label = f"{s} (indeterminate)"
+            ax.add_patch(
+                plt.Rectangle(
+                    (-0.5, si - 0.5),
+                    len(cells),
+                    1.0,
+                    facecolor="none",
+                    hatch="xx",
+                    edgecolor="grey",
+                    linewidth=0.0,
+                )
+            )
+        row_labels.append(label)
+        for ci in range(len(cells)):
+            v = mat[si, ci]
+            if np.isfinite(v):
+                ax.text(ci, si, f"{v:.2g}", ha="center", va="center", fontsize=7)
+                if v >= 1.0:  # the 1× floor contour
+                    ax.add_patch(
+                        plt.Rectangle(
+                            (ci - 0.5, si - 0.5),
+                            1.0,
+                            1.0,
+                            fill=False,
+                            edgecolor="black",
+                            linewidth=1.6,
+                        )
+                    )
+    ax.set_yticks(np.arange(len(summaries)))
+    ax.set_yticklabels(row_labels, fontsize=8)
+    fig.colorbar(im, ax=ax, label="Δ_med / floor_combined (log scale)")
+    ax.set_title("Function-change Δ vs floor — all summaries")
+    # NO tight_layout here: the paper style's layout engine + a colorbar are
+    # incompatible with switching to tight_layout post-colorbar (RuntimeError).
+    fig.savefig(out, dpi=150, bbox_inches="tight")
     plt.close(fig)
     logger.info("wrote %s", out)
 
@@ -269,7 +356,15 @@ def main() -> int:
         default=list(SUMMARIES),
         help="answer summaries to render (maxp round: mean turn_nl maxp; the "
         "3-summary set switches to the *_three_summaries.png filenames — the "
-        "plan §6.5 hero glob)",
+        "plan §6.5 hero glob; a >3-summary set switches to the pre-user round's "
+        "heatmap hero function_change_all_summaries.png)",
+    )
+    ap.add_argument(
+        "--arm-gate-json",
+        type=Path,
+        default=None,
+        help="pre-user round: validity_gate_phase0.json — greys gate-failed / "
+        "hatches comparator_indeterminate arm rows in the heatmap (plan §6 fig a)",
     )
     args = ap.parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -277,22 +372,37 @@ def main() -> int:
     doc = json.loads(args.summary_json.read_text())
     pt = doc["pair_table"]
     summaries = tuple(args.summaries)
-    tag = "three_summaries" if len(summaries) == 3 else "mean_vs_turn_nl"
-    fig_function_change_grouped(pt, args.out_dir / f"function_change_{tag}.png", summaries)
-    if summaries == tuple(SUMMARIES):
-        fig_delta_scatter(pt, args.out_dir / "delta_scatter_mean_vs_turn_nl.png")
+    arm_gate = None
+    if args.arm_gate_json is not None:
+        arm_gate = json.loads(args.arm_gate_json.read_text()).get("per_arm", {})
+    if len(summaries) > 3:
+        # Pre-user round (plan §6 fig a): the 12-summary HEATMAP replaces the
+        # grouped bars (unreadable at 12 groups); scatters are per-arm vs the
+        # MEAN reference only (fig c: 9 points each, 45° line).
+        tag = "all_summaries"
+        fig_function_change_heatmap(
+            pt, args.out_dir / "function_change_all_summaries.png", summaries, arm_gate
+        )
+        for y in summaries:
+            if y != "mean":
+                fig_delta_scatter(pt, args.out_dir / f"delta_scatter_{y}_vs_mean.png", "mean", y)
     else:
-        # Plan §6 figure (b): the NEW summary against EACH reference, 45° lines
-        # (+ the reference pair for continuity with the v1 round's read).
-        new = [s for s in summaries if s not in ("mean", "turn_nl")]
-        for y in new:
-            for xref in ("mean", "turn_nl"):
-                if xref in summaries:
-                    fig_delta_scatter(
-                        pt, args.out_dir / f"delta_scatter_{y}_vs_{xref}.png", xref, y
-                    )
-        if {"mean", "turn_nl"} <= set(summaries):
+        tag = "three_summaries" if len(summaries) == 3 else "mean_vs_turn_nl"
+        fig_function_change_grouped(pt, args.out_dir / f"function_change_{tag}.png", summaries)
+        if summaries == tuple(SUMMARIES):
             fig_delta_scatter(pt, args.out_dir / "delta_scatter_mean_vs_turn_nl.png")
+        else:
+            # Plan §6 figure (b): the NEW summary against EACH reference, 45° lines
+            # (+ the reference pair for continuity with the v1 round's read).
+            new = [s for s in summaries if s not in ("mean", "turn_nl")]
+            for y in new:
+                for xref in ("mean", "turn_nl"):
+                    if xref in summaries:
+                        fig_delta_scatter(
+                            pt, args.out_dir / f"delta_scatter_{y}_vs_{xref}.png", xref, y
+                        )
+            if {"mean", "turn_nl"} <= set(summaries):
+                fig_delta_scatter(pt, args.out_dir / "delta_scatter_mean_vs_turn_nl.png")
     fig_chain_rho_forest(pt, args.out_dir / f"chain_rho_forest_{tag}.png", summaries)
     fig_validity_gate_bars(pt, args.out_dir / "validity_gate_bars.png", summaries)
     logger.info("[phase=figures] done")

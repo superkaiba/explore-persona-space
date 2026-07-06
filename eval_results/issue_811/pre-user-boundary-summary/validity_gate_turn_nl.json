@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "issue": 811,
+    "git_commit": "353bb2c5f2852982f1462f564fa9dc9cc847dee6",
+    "generated_at": "2026-07-05T22:16:32Z",
+    "summary": "turn_nl"
+  },
+  "cells": {
+    "em/L14": {
+      "behavior": "em",
+      "layer": 14,
+      "rho_real": -0.049639080359922816,
+      "rho_shuffle": 0.12834773339401157,
+      "gate_margin": -0.17798681375393438,
+      "n_with_E": 480
+    },
+    "em/L21": {
+      "behavior": "em",
+      "layer": 21,
+      "rho_real": -0.13130085721147522,
+      "rho_shuffle": 0.09500539270888254,
+      "gate_margin": -0.22630624992035775,
+      "n_with_E": 480
+    },
+    "em/L7": {
+      "behavior": "em",
+      "layer": 7,
+      "rho_real": 0.2626921315718487,
+      "rho_shuffle": 0.08184897578174599,
+      "gate_margin": 0.18084315579010268,
+      "n_with_E": 480
+    },
+    "fact/L14": {
+      "behavior": "fact",
+      "layer": 14,
+      "rho_real": -0.1484767086773636,
+      "rho_shuffle": -0.029739820885059283,
+      "gate_margin": -0.11873688779230432,
+      "n_with_E": 480
+    },
+    "fact/L21": {
+      "behavior": "fact",
+      "layer": 21,
+      "rho_real": -0.048476375985578087,
+      "rho_shuffle": -0.21033439601928938,
+      "gate_margin": 0.1618580200337113,
+      "n_with_E": 480
+    },
+    "fact/L7": {
+      "behavior": "fact",
+      "layer": 7,
+      "rho_real": -0.17350859777301336,
+      "rho_shuffle": 0.16236167296249415,
+      "gate_margin": -0.3358702707355075,
+      "n_with_E": 480
+    },
+    "sycophancy/L14": {
+      "behavior": "sycophancy",
+      "layer": 14,
+      "rho_real": -0.0627306150609019,
+      "rho_shuffle": 0.052079614697982744,
+      "gate_margin": -0.11481022975888464,
+      "n_with_E": 480
+    },
+    "sycophancy/L21": {
+      "behavior": "sycophancy",
+      "layer": 21,
+      "rho_real": -0.1284389590462058,
+      "rho_shuffle": 0.027390368075432697,
+      "gate_margin": -0.1558293271216385,
+      "n_with_E": 480
+    },
+    "sycophancy/L7": {
+      "behavior": "sycophancy",
+      "layer": 7,
+      "rho_real": -0.0830315125092389,
+      "rho_shuffle": -0.126308236233326,
+      "gate_margin": 0.043276723724087085,
+      "n_with_E": 480
+    }
+  }
+}

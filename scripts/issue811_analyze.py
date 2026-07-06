@@ -187,12 +187,17 @@ def assemble(
     # Echo the KILL-1 base-leg decision (written by issue811_fit) into the summary.
     kill1_path = out_dir / "kill1_base_leg_validity.json"
     kill1 = json.loads(kill1_path.read_text()) if kill1_path.exists() else None
+    # Pre-user round: echo the PER-ARM KILL-1 record too (validity_gate_phase0.json
+    # — plan §6.5; per-cell JSONs additionally carry gate_status/gate_pass).
+    arm_gate_path = out_dir / "validity_gate_phase0.json"
+    arm_gate = json.loads(arm_gate_path.read_text()) if arm_gate_path.exists() else None
 
     summary_doc = {
         "meta": _meta(),
         "summaries": sorted(by_summary),
         "pair_table": pair_table,
         "kill1_base_leg_validity": kill1,
+        "validity_gate_phase0": arm_gate,
     }
     (out_dir / summary_filename).write_text(json.dumps(summary_doc, indent=2, default=float))
     logger.info("[phase=analyze] wrote %s (%d cells)", summary_filename, len(pair_table))
