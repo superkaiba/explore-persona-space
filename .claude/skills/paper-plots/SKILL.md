@@ -44,8 +44,8 @@ from explore_persona_space.analysis.paper_plots import (
     set_paper_style,     # rcParams preset (call once at top of script)
     savefig_paper,       # saves .png + .pdf + .meta.json with commit hash
     add_direction_arrow, # appends "↑ better" / "↓ better" to axis label
-    paper_palette,       # Wong colorblind-safe hex colors (≤ 8)
-    paper_palette_blog,  # soft-warm "blog" colorblind-safe hex colors (≤ 8)
+    paper_palette,       # Wong colorblind-safe hex colors (any n; > 8 falls back to viridis sampling + UserWarning)
+    paper_palette_blog,  # soft-warm "blog" colorblind-safe hex colors (any n; > 8 falls back to viridis sampling + UserWarning)
     paper_palette_role,  # named-role lookup: "primary"/"baseline"/"control"/...
     set_title_subtitle,  # Anthropic-blog title block (left-aligned, semibold)
     proportion_ci,       # 95% Wald CI for a proportion: p ± 1.96·√(p(1-p)/n)

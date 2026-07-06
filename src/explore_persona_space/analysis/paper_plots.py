@@ -30,8 +30,10 @@ Public API
     set_paper_style        — set rcParams for paper-quality figures
     savefig_paper          — save to <dir>/<stem>.png AND <dir>/<stem>.pdf plus .meta.json
     add_direction_arrow    — append ↑ better / ↓ better to an axis label
-    paper_palette          — return N colorblind-safe hex colours (Wong 2011)
-    paper_palette_blog     — return N colours from the soft "blog" palette
+    paper_palette          — return N colorblind-safe hex colours (Wong 2011; N > 8
+                             extends via perceptually-uniform colormap sampling)
+    paper_palette_blog     — return N colours from the soft "blog" palette (N > 8
+                             extends via perceptually-uniform colormap sampling)
     paper_palette_role     — look up a colour by semantic role (primary / baseline / ...)
     set_title_subtitle     — left-aligned title + subtitle (Anthropic-blog register)
     proportion_ci          — 95% Wald CI for a proportion
@@ -66,6 +68,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+import warnings
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -74,6 +77,7 @@ from typing import Literal
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from cycler import cycler
+from matplotlib import colors as mcolors
 from matplotlib import font_manager
 
 # Preferred font fallback chain for the "blog" style. matplotlib walks the
@@ -132,6 +136,38 @@ _BLOG_PALETTE: list[str] = [
     "#000000",  # black (reference / ground truth)
 ]
 
+# Fallback colormap for n > 8: perceptually uniform + colorblind-robust
+# (van der Walt & Smith, SciPy 2015). Sampled on interior points per the
+# seaborn ``mpl_palette`` convention so the near-black start and pale-yellow
+# end are skipped.
+_EXTENSION_COLORMAP = "viridis"
+
+
+def _extended_palette(base: list[str], n: int, fn_name: str) -> list[str]:
+    """Return ``n`` hex colours: the full curated ``base`` then colormap-sampled extras.
+
+    Colours beyond ``len(base)`` are sampled deterministically from the
+    interior of ``_EXTENSION_COLORMAP`` (``(i + 1) / (k + 1)`` for
+    ``i in range(k)``, ``k = n - len(base)``) and are less distinguishable
+    than the curated set — a one-time ``UserWarning`` says so. The tail is
+    a pure function of ``n`` but NOT stable across n: growing a figure from
+    9 to 10 series recolours its entire >8 tail (only the curated first 8
+    are stable). At large n the 256-entry colormap quantises and hex
+    duplicates can appear (measured first at n=144; non-monotone in n).
+    """
+    k = n - len(base)
+    cmap = mpl.colormaps[_EXTENSION_COLORMAP]
+    extra = [mcolors.to_hex(cmap((i + 1) / (k + 1))) for i in range(k)]
+    warnings.warn(
+        f"{fn_name}({n}) exceeds the {len(base)}-colour curated palette; colours "
+        f"{len(base) + 1}..{n} are sampled from {_EXTENSION_COLORMAP!r} and are less "
+        "distinguishable — prefer <= 8 series per chart",
+        UserWarning,
+        stacklevel=3,
+    )
+    return list(base) + extra
+
+
 # Named-role aliases. Plot code reads `paper_palette_role("primary")` instead
 # of indexing into the palette by integer slot, so semantic intent travels
 # with the chart code. Roles map to per-style palettes — `"primary"` stays
@@ -167,36 +203,43 @@ _ACTIVE_STYLE: str = "neurips"
 
 
 def paper_palette(n: int) -> list[str]:
-    """Return the first ``n`` colours of the curated colorblind-safe palette.
+    """Return ``n`` colorblind-safe hex colours.
+
+    ``n <= 8`` returns the first ``n`` colours of the curated Wong 2011
+    palette (unchanged, byte-identical to the historical contract).
+    ``n > 8`` degrades gracefully: the full 8-colour curated palette
+    followed by ``n - 8`` colours sampled from a perceptually-uniform
+    colormap (see :func:`_extended_palette`), with a ``UserWarning``.
 
     Raises
     ------
     ValueError
-        If ``n`` is not in ``[1, 8]``.
+        If ``n`` is not a positive int.
     """
     if not isinstance(n, int) or n < 1:
         raise ValueError(f"n must be a positive int, got {n!r}")
     if n > len(_PALETTE):
-        raise ValueError(f"paper_palette supports at most {len(_PALETTE)} colors; requested {n}")
+        return _extended_palette(_PALETTE, n, "paper_palette")
     return list(_PALETTE[:n])
 
 
 def paper_palette_blog(n: int) -> list[str]:
-    """Return the first ``n`` colours of the soft "blog" palette.
+    """Return ``n`` colours from the soft "blog" palette.
 
     Companion to :func:`paper_palette` for the Anthropic-blog-register style.
+    ``n <= 8`` returns the first ``n`` curated blog colours (unchanged);
+    ``n > 8`` degrades gracefully via the same perceptually-uniform colormap
+    extension (see :func:`_extended_palette`), with a ``UserWarning``.
 
     Raises
     ------
     ValueError
-        If ``n`` is not in ``[1, 8]``.
+        If ``n`` is not a positive int.
     """
     if not isinstance(n, int) or n < 1:
         raise ValueError(f"n must be a positive int, got {n!r}")
     if n > len(_BLOG_PALETTE):
-        raise ValueError(
-            f"paper_palette_blog supports at most {len(_BLOG_PALETTE)} colors; requested {n}"
-        )
+        return _extended_palette(_BLOG_PALETTE, n, "paper_palette_blog")
     return list(_BLOG_PALETTE[:n])
 
 
