@@ -695,8 +695,8 @@
     "1089": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1089",
-      "status": "proposed",
+      "path": "tasks/planning/1089",
+      "status": "planning",
       "title": "workflow-fix: verifier WARN on stale concern-deferred markers naming addressed concerns"
     },
     "109": {
