@@ -681,8 +681,8 @@
     "1087": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1087",
-      "status": "running",
+      "path": "tasks/reviewing/1087",
+      "status": "reviewing",
       "title": "workflow-fix: reused-artifact realized-keys verification (gotchas + reuse check c)"
     },
     "109": {
