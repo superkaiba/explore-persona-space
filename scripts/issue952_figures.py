@@ -764,7 +764,7 @@ def crosslayer_decision_profile(stats: dict, out_dir: pathlib.Path) -> None:
         ax1.plot([], [], marker="o", mfc="white", mec=pal[1], ls="none", label="Parent (L20)")
     ax1.axhline(0, color="#444444", lw=0.8)
     ax1.set_xlabel("Read-out layer")
-    ax1.set_ylabel("H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)")
+    ax1.set_ylabel("Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)")
     ax1.legend(frameon=False, fontsize=7)
     set_title_subtitle(
         ax1,
@@ -816,7 +816,7 @@ def crosslayer_decision_profile(stats: dict, out_dir: pathlib.Path) -> None:
     ax2.axhline(0, color="#444444", lw=0.8)
     ax2.axhline(h2_margin, color="#B45F5F", lw=0.8, ls=":")
     ax2.set_xlabel("Read-out layer")
-    ax2.set_ylabel("Matched ΔG(0→16): own-advantage closed\nby absorbing 16 prefix tokens")
+    ax2.set_ylabel("16-token prefix closure of the\nplain-external gap")
     ax2.legend(frameon=False, fontsize=7)
     set_title_subtitle(
         ax2,
@@ -1021,7 +1021,7 @@ def kfold_layer_profile(stats: dict, out_dir: pathlib.Path) -> None:
         )
     ax1.axhline(0, color="#444444", lw=0.8)
     ax1.set_xlabel("Read-out layer")
-    ax1.set_ylabel("H1 contrast: first-16 gap minus last-16 gap\n(own vs external plain)")
+    ax1.set_ylabel("Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)")
     ax1.legend(frameon=False, fontsize=7)
     set_title_subtitle(
         ax1,
@@ -1067,7 +1067,7 @@ def kfold_layer_profile(stats: dict, out_dir: pathlib.Path) -> None:
     ax2.axhline(0, color="#444444", lw=0.8)
     ax2.axhline(h2_margin, color="#B45F5F", lw=0.8, ls=":")
     ax2.set_xlabel("Read-out layer")
-    ax2.set_ylabel("Matched ΔG(0→16): own-advantage closed\nby absorbing 16 prefix tokens")
+    ax2.set_ylabel("16-token prefix closure of the\nplain-external gap")
     ax2.legend(frameon=False, fontsize=7)
     set_title_subtitle(
         ax2,
@@ -1127,8 +1127,8 @@ def kfold_fold_spaghetti(stats: dict, out_dir: pathlib.Path) -> None:
         ax.axhline(0, color="#444444", lw=0.8)
         ax.set_xlabel("Read-out layer")
         ax.legend(frameon=False, fontsize=6.5)
-    ax1.set_ylabel("H1 contrast (own vs external plain)")
-    ax2.set_ylabel("Matched ΔG(0→16), own vs external plain")
+    ax1.set_ylabel("Early-vs-late own-minus-plain contrast")
+    ax2.set_ylabel("16-token prefix closure of the\nplain-external gap")
     set_title_subtitle(
         ax1,
         "Per-fold point estimates behind the pooled reads",
