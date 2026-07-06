@@ -5939,6 +5939,38 @@ or the wider explicit value + one-line reason) + the earlyoom protection state
 § "Detached VM-side long compute phases" convention.
 Routing, auto-continue behavior, and the marker schema are unchanged.
 
+**Pod-safety pre-launch signals (deviation case — a pod on a
+parked/terminal parent).** This step and its user-chat sibling (the
+CLAUDE.md § Routing "User-chat inline free analysis" carve-out) are
+ANALYSIS-ONLY and normally touch no pod (a needs-gpu discovery takes the
+ABORT path below); 9a-ter proper fires at status `interpreting`, outside
+the watcher's auto-stop set, but the user-chat sibling executes on PARKED
+(`on_hold`) / terminal-status parents. If an inline run following this
+shape nonetheless provisions or reuses a pod on such a parent, the
+ORCHESTRATOR (never the subagent) MUST run `task.py add-tag <N>
+keep-running` BEFORE/AT provision — before any pod work; the
+timestamp-independent tag is what shields the provision/bootstrap window,
+which the watcher's ≥2-miss accumulation (~20 min) would otherwise
+auto-stop straight through — AND post `epm:run-launched` on the task
+immediately once the pod exists (naming the pod; in any case before
+launch): the watcher's pod-safety pass
+(`scripts/autonomous_session_watch.py`) auto-stops a RUNNING pod on a
+parked/terminal task unless a follow-up signal marker (its predicate reads
+`epm:run-launched` / `epm:followup-scope` /
+`epm:free-analysis-followup-run` — a descriptive list, NOT a menu: the
+inline path still never posts `epm:followup-scope`) is NEWER than the
+latest done-transition (`epm:promoted` / `epm:status-changed`) or the
+`keep-running` tag is present. BOTH duties bind — the marker cannot exist
+during the provision/bootstrap window (#573: run-launched-only inference
+stopped healthy follow-up pods 11×), any later done-transition flips the
+inferred predicate off by design (the watcher's re-arm semantics), and the
+`epm:free-analysis-followup-run v1` COMPLETION marker posts too late to
+shield the launch (incidents #477, #573, #779 — on #779 a healthy pod-779
+was repeatedly auto-stopped mid-bootstrap and misdiagnosed as a flaky
+host). Remove the tag (`task.py remove-tag <N> keep-running`) when the run
+completes so the auto-stop re-arms (a crashed run leaves the tag and the
+pod bills until manual removal — check `pod.py audit-stale` output).
+
 **Auto-run procedure.** For the single highest-priority unran entry
 (the first one in the analyzer's surfaced order; tie-break to the one
 the analyzer flagged `headline_affecting: yes` — still a useful priority
