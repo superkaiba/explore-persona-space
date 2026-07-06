@@ -124,6 +124,8 @@ def test_resolve_env_override(monkeypatch):
     assert _resolve_num_threads(None) is None
     monkeypatch.setenv(ENV_KEY, "0")
     assert _resolve_num_threads(None) is None
+    monkeypatch.setenv(ENV_KEY, "00")  # numeric-zero form past the string gate
+    assert _resolve_num_threads(None) is None
     monkeypatch.setenv(ENV_KEY, "-1")
     with pytest.raises(ValueError):
         _resolve_num_threads(None)
