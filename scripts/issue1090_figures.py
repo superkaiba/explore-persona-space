@@ -100,8 +100,15 @@ def fig_yield_vs_floor(agg: Path, figdir: Path) -> str | None:
     return savefig_paper(fig, "hero_yield_vs_floor", dir=figdir)["png"]
 
 
-def _per_question_rates(pq: dict) -> dict[str, float]:
-    return {qid: d["kept"] / max(1, d["judged"]) for qid, d in pq.items()}
+def _per_question_rates(pq: dict) -> tuple[dict[str, float], int]:
+    """Per-question kept/judged rates, SKIPPING judged==0 questions.
+
+    Drop-never-coerce (same exclusion semantics as ``issue1090_run.py``'s
+    paired read): a zero-judged question carries no rate information and must
+    not plot as a 0.0 dot. Returns ``(rates, n_excluded_zero_judged)``.
+    """
+    rates = {qid: d["kept"] / d["judged"] for qid, d in pq.items() if d["judged"] > 0}
+    return rates, len(pq) - len(rates)
 
 
 def fig_contrast_panels(agg: Path, figdir: Path) -> str | None:
@@ -122,12 +129,13 @@ def fig_contrast_panels(agg: Path, figdir: Path) -> str | None:
         (axes[1], "c5", "Generator delta (C3 Claude vs C5 Qwen, same bank)"),
     ]
     cols = paper_palette(4)
+    excluded: dict[str, int] = {}
     for ax, other, title in panels:
         if other not in by_id:
             ax.set_axis_off()
             continue
         pair = [("c3", by_id["c3"]), (other, by_id[other])]
-        for i, (_cid, (_slug, r)) in enumerate(pair):
+        for i, (cid, (_slug, r)) in enumerate(pair):
             if r.get("kept") is None or not r.get("requested"):
                 continue
             frac = r["kept"] / r["requested"]
@@ -142,7 +150,10 @@ def fig_contrast_panels(agg: Path, figdir: Path) -> str | None:
                 capsize=4,
                 lw=1.4,
             )
-            rates = list(_per_question_rates(r.get("per_question_yield", {})).values())
+            rates_by_q, n_excl = _per_question_rates(r.get("per_question_yield", {}))
+            if n_excl:
+                excluded[cid] = n_excl  # idempotent — c3 recurs across both panels
+            rates = list(rates_by_q.values())
             if rates:
                 jit = rng.uniform(-0.14, 0.14, size=len(rates))
                 ax.plot(i + jit, rates, "o", ms=4, color="0.2", alpha=0.55, zorder=3)
@@ -151,7 +162,14 @@ def fig_contrast_panels(agg: Path, figdir: Path) -> str | None:
         ax.set_ylim(-0.04, 1.12)
         ax.set_ylabel("kept fraction (dots: per question)")
         ax.set_title(title, fontsize=12, pad=10)
-    return savefig_paper(fig, "hero_contrast_panels", dir=figdir)["png"]
+    paths = savefig_paper(fig, "hero_contrast_panels", dir=figdir)
+    if excluded:
+        # Meta-sidecar note only (no on-plot text overlays, per project style):
+        # per-cell count of zero-judged questions dropped from the dot series.
+        meta = json.loads(paths["meta"].read_text())
+        meta["excluded_zero_judged_questions"] = excluded
+        paths["meta"].write_text(json.dumps(meta, indent=2) + "\n")
+    return paths["png"]
 
 
 def fig_dose_curves(agg: Path, figdir: Path) -> str | None:

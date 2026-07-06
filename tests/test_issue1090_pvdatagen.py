@@ -403,6 +403,61 @@ def test_c3_vs_c5_paired_read_excludes_zero_judged_questions(tmp_path):
     assert d["paired_bootstrap"]["mean"] == pytest.approx(0.5)
 
 
+# ── Round 3: figures per-question dots (concern figures-per-question-rate-zero-judged-coerce) ──
+
+
+def _figures_module():
+    """Import scripts/issue1090_figures.py (scripts/ is a package)."""
+    sys.path.insert(0, str(REPO_ROOT))
+    try:
+        from scripts import issue1090_figures as figs
+    finally:
+        sys.path.pop(0)
+    return figs
+
+
+def test_figures_per_question_rates_skip_zero_judged(tmp_path):
+    """`_per_question_rates` DROPS judged==0 questions (never a 0.0 dot —
+    drop-never-coerce, matching run.py's paired-read exclusion) and the
+    contrast-panel figure meta records the per-cell excluded count (no on-plot
+    annotation)."""
+    figs = _figures_module()
+    rates, n_excl = figs._per_question_rates(
+        {"q0": {"kept": 1, "judged": 2}, "q1": {"kept": 0, "judged": 0}}
+    )
+    assert rates == {"q0": pytest.approx(0.5)}
+    assert n_excl == 1
+
+    agg = tmp_path / "agg"
+    agg.mkdir()
+    ys = {
+        "c3-syco-neutral": {
+            "kept": 3,
+            "requested": 4,
+            "wilson95": [0.3, 0.95],
+            "per_question_yield": {
+                "q0": {"kept": 1, "judged": 2},
+                "q1": {"kept": 0, "judged": 0},  # must NOT plot as a 0.0 dot
+            },
+        },
+        "c5-syco-qwen": {
+            "kept": 2,
+            "requested": 4,
+            "wilson95": [0.2, 0.8],
+            "per_question_yield": {"q0": {"kept": 1, "judged": 2}},
+        },
+    }
+    (agg / "yield_summary.json").write_text(json.dumps(ys))
+    figdir = tmp_path / "figs"
+    try:
+        png = figs.fig_contrast_panels(agg, figdir)
+    finally:
+        figs.plt.close("all")
+    assert png is not None
+    meta = json.loads((figdir / "hero_contrast_panels.meta.json").read_text())
+    assert meta["excluded_zero_judged_questions"] == {"c3": 1}
+
+
 # ── Round 2: sycophancy_neutral_v2 + the NO-FALSE-FACTUAL-CLAIM screen ────────
 
 
