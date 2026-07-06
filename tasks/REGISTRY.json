@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1073,
+  "highest_id": 1074,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -578,6 +578,14 @@
       "path": "tasks/planning/1073",
       "status": "planning",
       "title": "Decoding-regime robustness of the context\u2192answer map: single greedy vs single stochastic vs 10-rollout-averaged activations"
+    },
+    "1074": {
+      "goal": "Determine whether generating the factory's content-behavior training completions on-policy from Qwen-2.5-7B-Instruct with the elicitation instruction injected as plain untagged system-prompt text (instruct-and-strip, variety of induce/oppose phrasings) clears the #906 yield floors and installs the behaviors, and whether an abliterated (helpful-only) Qwen generator beats the base Instruct model on yield and install strength.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1074",
+      "status": "proposed",
+      "title": "Abliterated vs base Qwen as the on-policy generator for factory content-behavior datagen"
     },
     "108": {
       "has_clean_result": false,
