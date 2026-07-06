@@ -180,7 +180,21 @@ def test_china_censorship_untouched_and_registry_green():
     el = BEHAVIORS["china_censorship"].elicitation
     assert len(el.exhibit_instructions) == 4
     assert el.not_exhibit_instructions is None
-    assert len(BEHAVIORS) == 9  # module 9-behavior invariant stays green
+    # Registry contract, robust to legitimate later registrations (#1090 added
+    # impolite + sycophancy_hardfact): assert the 9 original behaviors this
+    # driver depends on are PRESENT — never a brittle exact global count.
+    original_nine = {
+        "broad_em",
+        "china_censorship",
+        "correctness",
+        "formatting",
+        "harmful_compliance",
+        "marker",
+        "sycophancy",
+        "taught_fact",
+        "writing_style",
+    }
+    assert original_nine <= set(BEHAVIORS)
 
 
 # ── Driver pure logic ────────────────────────────────────────────────────────
