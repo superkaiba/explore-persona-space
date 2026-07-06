@@ -50,6 +50,16 @@ HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 DATA_PREFIX = "issue1074_gencompare"
 CLASSES = ("sycophancy", "harmful_compliance")
 ARMS = ("base", "ablit")
+SRC_CTX = "persona_software_engineer"
+
+# Follow-up round `base-negatives-regen` (plan v7): one mixed-generator cell
+# (reused ablit positives, fresh base negatives) vs the parent ablit cell.
+FOLLOWUP_LABELS = ("base-negatives-regen",)
+FOLLOWUP_CELL = "harmful_compliance-mixed"
+FOLLOWUP_BEHAVIOR = "harmful_compliance"
+PARENT_CELL = "harmful_compliance-ablit"
+MEMBER_QUOTA = 24  # per-member negative quota (floor_n 120 / 5 members; plan §3 S1')
+MEMBER_BUDGET = 35  # negative requests per member (ceil(24 / EXPECTED_YIELD 0.7))
 
 
 def _atomic_write_json(path: Path, payload: dict) -> None:
@@ -133,6 +143,16 @@ def _read_json(path: Path) -> dict:
     return json.loads(path.read_text())
 
 
+def _read_jsonl(path: Path) -> list[dict]:
+    # Text-mode iteration, never splitlines() (gotchas.md U+2028 JSONL shred).
+    out = []
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            if line.strip():
+                out.append(json.loads(line))
+    return out
+
+
 def _final_completions_dir(root: Path, behavior: str) -> Path | None:
     """Resolve the final-eval completions dir on BOTH layouts the aggregate sees.
 
@@ -202,59 +222,66 @@ def judge_eval_completions(
                     "missing upload; refusing to ship null install rates"
                 )
             continue  # no trained cells for this behavior (K1 path): nothing to judge
-        results[behavior] = {}
-        for comp_path in comp_paths:
-            state, ctx = comp_path.stem.split("__")[1:3]
-            payload = _read_json(comp_path)
-            questions = payload["questions"]
-            completions = payload["completions"]
-            items = []
-            for i, q in enumerate(questions):
-                for j, c in enumerate(completions[i]):
-                    items.append((f"{state}-{ctx}-q{i:03d}-c{j}", q, c))
-            cell_dir = out_dir / "judge" / behavior / f"{state}__{ctx}"
-            cell_dir.mkdir(parents=True, exist_ok=True)
-            jr = judge_graded(
-                items,
-                beh.judge_rubric,
-                n_draws=n_judge_draws,
-                cache_dir=cell_dir,
-                save_raw=cell_dir / "judge_raw.json",
-                judge_model=beh.judge_model,
-            )
-            per_q_pos = np.zeros(len(questions))
-            per_q_n = np.zeros(len(questions))
-            scored, dropped, graded_sum = 0, 0, 0.0
-            for i in range(len(questions)):
-                for j in range(len(completions[i])):
-                    score = jr.scores.get(f"{state}-{ctx}-q{i:03d}-c{j}")
-                    if score is None:
-                        dropped += 1
-                        continue
-                    scored += 1
-                    graded_sum += score
-                    per_q_n[i] += 1
-                    per_q_pos[i] += int(score > beh.threshold)
-            if scored == 0:
-                raise RuntimeError(f"every completion judge-dropped at {comp_path}")
-            with np.errstate(invalid="ignore", divide="ignore"):
-                per_q_rate = np.where(per_q_n > 0, per_q_pos / np.maximum(per_q_n, 1), np.nan)
-            cell = {
-                "state": state,
-                "context": ctx,
-                "rate": float(per_q_pos.sum() / scored),
-                "graded_mean": graded_sum / scored,
-                "n_scored": scored,
-                "n_dropped": dropped,
-                "per_question_rate": [None if np.isnan(x) else float(x) for x in per_q_rate],
-                "questions_sha": payload["manifest"]["questions_sha256"],
-            }
-            results[behavior][f"{state}__{ctx}"] = cell
-            _atomic_write_json(
-                out_dir / "judge" / behavior / "rates.json",
-                {**_meta(), "cells": results[behavior]},
-            )
+        results[behavior] = _judge_completion_files(
+            comp_paths, beh, out_dir / "judge" / behavior, n_judge_draws=n_judge_draws
+        )
     return results
+
+
+def _judge_completion_files(
+    comp_paths: list[Path], beh, judge_dir: Path, *, n_judge_draws: int
+) -> dict[str, dict]:
+    """Judge ``completions__{state}__{ctx}.json`` files -> ``{state__ctx: cell}``
+    (binary rate, graded mean, per-question rates; drop-never-coerce)."""
+    cells: dict[str, dict] = {}
+    for comp_path in comp_paths:
+        state, ctx = comp_path.stem.split("__")[1:3]
+        payload = _read_json(comp_path)
+        questions = payload["questions"]
+        completions = payload["completions"]
+        items = []
+        for i, q in enumerate(questions):
+            for j, c in enumerate(completions[i]):
+                items.append((f"{state}-{ctx}-q{i:03d}-c{j}", q, c))
+        cell_dir = judge_dir / f"{state}__{ctx}"
+        cell_dir.mkdir(parents=True, exist_ok=True)
+        jr = judge_graded(
+            items,
+            beh.judge_rubric,
+            n_draws=n_judge_draws,
+            cache_dir=cell_dir,
+            save_raw=cell_dir / "judge_raw.json",
+            judge_model=beh.judge_model,
+        )
+        per_q_pos = np.zeros(len(questions))
+        per_q_n = np.zeros(len(questions))
+        scored, dropped, graded_sum = 0, 0, 0.0
+        for i in range(len(questions)):
+            for j in range(len(completions[i])):
+                score = jr.scores.get(f"{state}-{ctx}-q{i:03d}-c{j}")
+                if score is None:
+                    dropped += 1
+                    continue
+                scored += 1
+                graded_sum += score
+                per_q_n[i] += 1
+                per_q_pos[i] += int(score > beh.threshold)
+        if scored == 0:
+            raise RuntimeError(f"every completion judge-dropped at {comp_path}")
+        with np.errstate(invalid="ignore", divide="ignore"):
+            per_q_rate = np.where(per_q_n > 0, per_q_pos / np.maximum(per_q_n, 1), np.nan)
+        cells[f"{state}__{ctx}"] = {
+            "state": state,
+            "context": ctx,
+            "rate": float(per_q_pos.sum() / scored),
+            "graded_mean": graded_sum / scored,
+            "n_scored": scored,
+            "n_dropped": dropped,
+            "per_question_rate": [None if np.isnan(x) else float(x) for x in per_q_rate],
+            "questions_sha": payload["manifest"]["questions_sha256"],
+        }
+        _atomic_write_json(judge_dir / "rates.json", {**_meta(), "cells": cells})
+    return cells
 
 
 # ── Bootstrap (ONE gather per contrast) ──────────────────────────────────────
@@ -294,6 +321,23 @@ def build_yield_summary(root: Path) -> dict:
     return {**_meta(), "cells": cells}
 
 
+def _install_summary_fields(build: dict, beh_rates: dict, slug: str) -> dict:
+    """The install-summary field mapping shared by the parent + followup paths."""
+    prov = build.get("provenance", {})
+    return {
+        **_meta(),
+        "cell": slug,
+        "dose_curve_rates_by_step": prov.get("rates_by_step"),
+        "band_entry": build.get("selection"),
+        "steps_to_band": (build.get("selection") or {}).get("step"),
+        "final_rate_source": (beh_rates.get(f"{slug}__{SRC_CTX}") or {}).get("rate"),
+        "final_graded_mean_source": (beh_rates.get(f"{slug}__{SRC_CTX}") or {}).get("graded_mean"),
+        "base_rate_source": (beh_rates.get(f"base__{SRC_CTX}") or {}).get("rate"),
+        "default_ctx_rate": (beh_rates.get(f"{slug}__neg_default_assistant") or {}).get("rate"),
+        "base_default_ctx_rate": (beh_rates.get("base__neg_default_assistant") or {}).get("rate"),
+    }
+
+
 def build_install_summaries(root: Path, rates: dict, out_dir: Path) -> None:
     for behavior in CLASSES:
         for arm in ARMS:
@@ -301,29 +345,25 @@ def build_install_summaries(root: Path, rates: dict, out_dir: Path) -> None:
             build_path = root / slug / "build_result.json"
             if not build_path.exists():
                 continue
-            build = _read_json(build_path)
-            prov = build.get("provenance", {})
-            beh_rates = rates.get(behavior, {})
-            src_ctx = "persona_software_engineer"
-            summary = {
-                **_meta(),
-                "cell": slug,
-                "dose_curve_rates_by_step": prov.get("rates_by_step"),
-                "band_entry": build.get("selection"),
-                "steps_to_band": (build.get("selection") or {}).get("step"),
-                "final_rate_source": (beh_rates.get(f"{slug}__{src_ctx}") or {}).get("rate"),
-                "final_graded_mean_source": (beh_rates.get(f"{slug}__{src_ctx}") or {}).get(
-                    "graded_mean"
-                ),
-                "base_rate_source": (beh_rates.get(f"base__{src_ctx}") or {}).get("rate"),
-                "default_ctx_rate": (beh_rates.get(f"{slug}__neg_default_assistant") or {}).get(
-                    "rate"
-                ),
-                "base_default_ctx_rate": (beh_rates.get("base__neg_default_assistant") or {}).get(
-                    "rate"
-                ),
-            }
+            summary = _install_summary_fields(_read_json(build_path), rates.get(behavior, {}), slug)
             _atomic_write_json(out_dir / slug / "install" / "install_summary.json", summary)
+
+
+def _margin_cell_view(margins: dict, slug: str) -> dict:
+    """One cell's view of a behavior margin file (its states + shared base)."""
+    return {
+        **_meta(),
+        "cell": slug,
+        "status": margins.get("status"),
+        "pool_source_cell": margins.get("pool_source_cell"),
+        "n_pos": margins.get("n_pos"),
+        "n_neg": margins.get("n_neg"),
+        "cells": {
+            k: v
+            for k, v in (margins.get("cells") or {}).items()
+            if k.startswith((f"{slug}__", "base__"))
+        },
+    }
 
 
 def build_margin_summaries(root: Path, out_dir: Path) -> None:
@@ -336,21 +376,10 @@ def build_margin_summaries(root: Path, out_dir: Path) -> None:
             slug = f"{behavior}-{arm}"
             if not (root / slug).exists():
                 continue
-            cell_view = {
-                **_meta(),
-                "cell": slug,
-                "status": margins.get("status"),
-                "pool_source_cell": margins.get("pool_source_cell"),
-                "n_pos": margins.get("n_pos"),
-                "n_neg": margins.get("n_neg"),
-                # This cell's states + the shared base state, all contexts.
-                "cells": {
-                    k: v
-                    for k, v in (margins.get("cells") or {}).items()
-                    if k.startswith((f"{slug}__", "base__"))
-                },
-            }
-            _atomic_write_json(out_dir / slug / "margin" / "margin_summary.json", cell_view)
+            _atomic_write_json(
+                out_dir / slug / "margin" / "margin_summary.json",
+                _margin_cell_view(margins, slug),
+            )
 
 
 def build_arm_contrasts(root: Path, rates: dict, *, n_bootstrap: int) -> dict:
@@ -398,6 +427,190 @@ def build_arm_contrasts(root: Path, rates: dict, *, n_bootstrap: int) -> dict:
     return {**_meta(), "n_bootstrap": n_bootstrap, "contrasts": contrasts}
 
 
+# ── Follow-up base-negatives-regen (plan v7) ─────────────────────────────────
+
+
+def _member_of(variant_id: str) -> str:
+    """Panel-member slug from a negative variant_id (``<slug>`` or ``<slug>-nvK``)."""
+    return variant_id.split("-nv")[0]
+
+
+def clopper_pearson(k: int, n: int, alpha: float = 0.05) -> tuple[float, float]:
+    """Exact (Clopper-Pearson) binomial 95% CI on k successes of n."""
+    from scipy.stats import beta
+
+    if n == 0:
+        return 0.0, 1.0
+    lo = 0.0 if k == 0 else float(beta.ppf(alpha / 2, k, n - k + 1))
+    hi = 1.0 if k == n else float(beta.ppf(1 - alpha / 2, k + 1, n - k))
+    return lo, hi
+
+
+def negative_yield_table(datagen_dir: Path) -> dict[str, dict]:
+    """Per-panel-member negative-stage yield from a cell's datagen artifacts:
+    requested + gen-stage drop mix per member (raw_neg.jsonl), judged/kept +
+    judge-drop counts per member (judge_rows.jsonl, the authoritative kept
+    flags), kept COUNT vs the 24-per-member quota (the operative gate — plan
+    §6 S1'), and an exact Clopper-Pearson 95% CI on kept/requested. Fail-loud
+    when judge_rows.jsonl is missing (the negative stage never judged)."""
+    rows_path = datagen_dir / "judge_rows.jsonl"
+    if not rows_path.exists():
+        raise RuntimeError(f"negative_yield_table: {rows_path} missing — negatives never judged")
+
+    def _blank() -> dict:
+        return {
+            "requested": 0,
+            "generated": 0,
+            "judged": 0,
+            "kept": 0,
+            "gen_drop_mix": {},
+            "judge_none_drops": 0,
+        }
+
+    members: dict[str, dict] = {}
+    raw_path = datagen_dir / "raw_neg.jsonl"
+    if raw_path.exists():
+        for r in _read_jsonl(raw_path):
+            if r.get("arm") != "negative":
+                continue
+            m = members.setdefault(_member_of(r["variant_id"]), _blank())
+            m["requested"] += 1
+            if r.get("completion") is None:
+                reason = r.get("drop_reason") or "refusal"
+                m["gen_drop_mix"][reason] = m["gen_drop_mix"].get(reason, 0) + 1
+            else:
+                m["generated"] += 1
+    for r in _read_jsonl(rows_path):
+        if r["arm"] != "negative":
+            continue
+        m = members.setdefault(_member_of(r["variant_id"]), _blank())
+        m["judged"] += 1
+        m["kept"] += int(bool(r["kept"]))
+        if r["mean"] is None:
+            m["judge_none_drops"] += 1
+    for m in members.values():
+        n = m["requested"] or m["judged"]  # raw file absent -> judged as denominator
+        lo, hi = clopper_pearson(m["kept"], n)
+        m["n_denominator"] = n
+        m["kept_rate"] = (m["kept"] / n) if n else None
+        m["kept_rate_ci95"] = [lo, hi]
+        m["quota"] = MEMBER_QUOTA
+        m["budget"] = MEMBER_BUDGET
+        m["meets_quota"] = m["kept"] >= MEMBER_QUOTA
+    return members
+
+
+def _followup_run_path(root: Path, label: str, *parts: str) -> Path | None:
+    """Resolve a followup RUN-LEVEL artifact on both layouts: the HF-staged
+    tree (``root/followups/<label>/...``) first, the local driver out_root
+    (``root/...``) as fallback. Returns None when neither exists."""
+    for base in (root / "followups" / label, root):
+        p = base.joinpath(*parts)
+        if p.exists():
+            return p
+    return None
+
+
+def run_followup(args) -> int:
+    """Phase-D aggregation for the ``base-negatives-regen`` round: the
+    per-member negative-yield table (mixed cell + parent ablit side-by-side,
+    exact binomial CIs, S1' verdict), the judge-drift calibration copy, and —
+    conditional on a trained cell — the install + margin summaries. Artifacts
+    land under ``<out-dir>/<label>/`` (plan §6.5 globs)."""
+    label = args.followup
+    root = Path(args.results_root) if args.results_root else stage_from_hf(Path(args.stage_dir))
+    out_dir = Path(args.out_dir) / label
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    logger.info("[phase=negative_yield] per-member yield table under %s", root)
+    mixed_dir = root / FOLLOWUP_CELL / "datagen"
+    mixed = negative_yield_table(mixed_dir)
+    parent_dir = root / PARENT_CELL / "datagen"
+    parent = None
+    if (parent_dir / "judge_rows.jsonl").exists():
+        parent = negative_yield_table(parent_dir)
+    else:
+        logger.warning(
+            "[negative-yield] parent cell %s not staged under %s — side-by-side omitted "
+            "(expected on a local smoke root; the HF-staged production tree carries it)",
+            PARENT_CELL,
+            root,
+        )
+    payload = {
+        **_meta(),
+        "quota": MEMBER_QUOTA,
+        "budget": MEMBER_BUDGET,
+        "mixed": mixed,
+        "parent_ablit": parent,
+        "s1_prime_pass": all(m["meets_quota"] for m in mixed.values()) if mixed else None,
+        "delta_kept_rate_by_member": (
+            {
+                slug: (
+                    mixed[slug]["kept_rate"] - parent[slug]["kept_rate"]
+                    if slug in parent
+                    and mixed[slug]["kept_rate"] is not None
+                    and parent[slug]["kept_rate"] is not None
+                    else None
+                )
+                for slug in sorted(mixed)
+            }
+            if parent
+            else None
+        ),
+    }
+    _atomic_write_json(out_dir / "negative_yield.json", payload)
+
+    cal = _followup_run_path(root, label, "judge_calibration.json")
+    if cal is not None:
+        _atomic_write_json(out_dir / "judge_calibration.json", _read_json(cal))
+    else:
+        logger.warning("[followup] judge_calibration.json not found under %s", root)
+
+    build_path = root / FOLLOWUP_CELL / "build_result.json"
+    trained = build_path.exists() and _read_json(build_path).get("status") == "trained"
+    if not trained:
+        logger.info("[followup] no trained mixed cell (K1' path) — yield table is the result")
+        return 0
+
+    logger.info("[phase=judge] judging followup final-eval completions")
+    beh_dir = None
+    for cand in (
+        _followup_run_path(root, label, "raw_completions", "final", FOLLOWUP_BEHAVIOR),
+        _followup_run_path(root, label, "evalgen", FOLLOWUP_BEHAVIOR),
+    ):
+        if cand is not None:
+            beh_dir = cand
+            break
+    comp_paths = sorted(beh_dir.glob("completions__*.json")) if beh_dir is not None else []
+    if not comp_paths:
+        raise RuntimeError(
+            f"trained followup cell {FOLLOWUP_CELL} exists but no completions__*.json "
+            f"resolved under {root}/followups/{label}/{{raw_completions/final,evalgen}}/"
+            f"{FOLLOWUP_BEHAVIOR} — upload-map/read-path mismatch; refusing to ship "
+            "null install rates"
+        )
+    rates = _judge_completion_files(
+        comp_paths,
+        BEHAVIORS[FOLLOWUP_BEHAVIOR],
+        out_dir / "judge" / FOLLOWUP_BEHAVIOR,
+        n_judge_draws=args.n_judge_draws,
+    )
+    _atomic_write_json(
+        out_dir / "install" / "install_summary.json",
+        _install_summary_fields(_read_json(build_path), rates, FOLLOWUP_CELL),
+    )
+    margin_path = _followup_run_path(root, label, "margin", f"{FOLLOWUP_BEHAVIOR}.json")
+    if margin_path is not None:
+        _atomic_write_json(
+            out_dir / "margin" / "margin_summary.json",
+            _margin_cell_view(_read_json(margin_path), FOLLOWUP_CELL),
+        )
+    else:
+        logger.warning("[followup] margin file not found — margin summary omitted")
+    logger.info("followup aggregation complete -> %s", out_dir)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
@@ -408,7 +621,16 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--out-dir", default="eval_results/issue_1074")
     p.add_argument("--n-judge-draws", type=int, default=5)
     p.add_argument("--n-bootstrap", type=int, default=2000)
+    p.add_argument(
+        "--followup",
+        default=None,
+        choices=FOLLOWUP_LABELS,
+        help="aggregate a same-issue follow-up round instead of the parent grid "
+        "(outputs under <out-dir>/<label>/)",
+    )
     args = p.parse_args(argv)
+    if args.followup is not None:
+        return run_followup(args)
 
     root = Path(args.results_root) if args.results_root else stage_from_hf(Path(args.stage_dir))
     out_dir = Path(args.out_dir)
