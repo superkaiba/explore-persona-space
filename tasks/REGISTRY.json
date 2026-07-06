@@ -667,8 +667,8 @@
     "1085": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1085",
-      "status": "planning",
+      "path": "tasks/approved/1085",
+      "status": "approved",
       "title": "daily-fix: Step 10d additive-checkout guard-block recovery r"
     },
     "1086": {
