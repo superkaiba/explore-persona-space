@@ -34,6 +34,7 @@ import argparse  # noqa: E402
 import concurrent.futures  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
+import os  # noqa: E402
 import subprocess  # noqa: E402
 import sys  # noqa: E402
 import time  # noqa: E402
@@ -42,6 +43,7 @@ from pathlib import Path  # noqa: E402
 import numpy as np  # noqa: E402
 
 from explore_persona_space.artifacts.behavior import BEHAVIORS  # noqa: E402
+from explore_persona_space.artifacts.negatives import default_panel  # noqa: E402
 from explore_persona_space.eval.graded_judge import judge_graded  # noqa: E402
 
 logger = logging.getLogger("issue1074.aggregate")
@@ -60,6 +62,13 @@ FOLLOWUP_BEHAVIOR = "harmful_compliance"
 PARENT_CELL = "harmful_compliance-ablit"
 MEMBER_QUOTA = 24  # per-member negative quota (floor_n 120 / 5 members; plan §3 S1')
 MEMBER_BUDGET = 35  # negative requests per member (ceil(24 / EXPECTED_YIELD 0.7))
+# Fix 4 (r1 carry-forward): the parent side-by-side reads the PINNED dataset-repo
+# revision, never HEAD. Keep == issue1074_generator_compare.PARENT_PIN_REVISION
+# (drift-guarded by tests/test_issue1074_base_negatives_regen.py).
+PARENT_PIN_REVISION = "c1f526c1"
+PARENT_PINNED_FILES = ("raw_neg.jsonl", "judge_rows.jsonl")
+# The 5 default_v1 panel member slugs — the S1' denominator (plan §3: floor_n 120 / 5).
+EXPECTED_MEMBERS = tuple(n.slug for n in default_panel())
 
 
 def _atomic_write_json(path: Path, payload: dict) -> None:
@@ -448,14 +457,22 @@ def clopper_pearson(k: int, n: int, alpha: float = 0.05) -> tuple[float, float]:
 
 def negative_yield_table(datagen_dir: Path) -> dict[str, dict]:
     """Per-panel-member negative-stage yield from a cell's datagen artifacts:
-    requested + gen-stage drop mix per member (raw_neg.jsonl), judged/kept +
-    judge-drop counts per member (judge_rows.jsonl, the authoritative kept
-    flags), kept COUNT vs the 24-per-member quota (the operative gate — plan
-    §6 S1'), and an exact Clopper-Pearson 95% CI on kept/requested. Fail-loud
-    when judge_rows.jsonl is missing (the negative stage never judged)."""
+    requested + gen-stage drop mix per member (raw_neg.jsonl, REQUIRED — the
+    per-member request schedule IS the denominator), judged/kept + judge-drop
+    counts per member (judge_rows.jsonl, the authoritative kept flags), kept
+    COUNT vs the 24-per-member quota (the operative gate — plan §6 S1'), and
+    an exact Clopper-Pearson 95% CI on kept/requested. Judge rows are JOINED
+    to raw rows by request_id; missing/extra/duplicate ids raise (r1
+    carry-forward fix 3 — no judged-as-denominator fallback)."""
     rows_path = datagen_dir / "judge_rows.jsonl"
     if not rows_path.exists():
         raise RuntimeError(f"negative_yield_table: {rows_path} missing — negatives never judged")
+    raw_path = datagen_dir / "raw_neg.jsonl"
+    if not raw_path.exists():
+        raise RuntimeError(
+            f"negative_yield_table: {raw_path} missing — the per-member requested "
+            "denominator is the raw request schedule; the judged-rows fallback is removed"
+        )
 
     def _blank() -> dict:
         return {
@@ -468,28 +485,48 @@ def negative_yield_table(datagen_dir: Path) -> dict[str, dict]:
         }
 
     members: dict[str, dict] = {}
-    raw_path = datagen_dir / "raw_neg.jsonl"
-    if raw_path.exists():
-        for r in _read_jsonl(raw_path):
-            if r.get("arm") != "negative":
-                continue
-            m = members.setdefault(_member_of(r["variant_id"]), _blank())
-            m["requested"] += 1
-            if r.get("completion") is None:
-                reason = r.get("drop_reason") or "refusal"
-                m["gen_drop_mix"][reason] = m["gen_drop_mix"].get(reason, 0) + 1
-            else:
-                m["generated"] += 1
+    raw_generated: dict[str, bool] = {}  # negative request_id -> generated (judgeable)?
+    for r in _read_jsonl(raw_path):
+        if r.get("arm") != "negative":
+            continue
+        rid = r["request_id"]
+        if rid in raw_generated:
+            raise RuntimeError(f"negative_yield_table: duplicate request_id {rid!r} in {raw_path}")
+        raw_generated[rid] = r.get("completion") is not None
+        m = members.setdefault(_member_of(r["variant_id"]), _blank())
+        m["requested"] += 1
+        if r.get("completion") is None:
+            reason = r.get("drop_reason") or "refusal"
+            m["gen_drop_mix"][reason] = m["gen_drop_mix"].get(reason, 0) + 1
+        else:
+            m["generated"] += 1
+    judged_ids: set[str] = set()
     for r in _read_jsonl(rows_path):
         if r["arm"] != "negative":
             continue
+        rid = r["request_id"]
+        if rid in judged_ids:
+            raise RuntimeError(f"negative_yield_table: duplicate request_id {rid!r} in {rows_path}")
+        if not raw_generated.get(rid, False):
+            raise RuntimeError(
+                f"negative_yield_table: judge row {rid!r} has no generated raw_neg row "
+                f"(extra/orphan id — raw/judge join broken under {datagen_dir})"
+            )
+        judged_ids.add(rid)
         m = members.setdefault(_member_of(r["variant_id"]), _blank())
         m["judged"] += 1
         m["kept"] += int(bool(r["kept"]))
         if r["mean"] is None:
             m["judge_none_drops"] += 1
+    never_judged = {rid for rid, gen in raw_generated.items() if gen} - judged_ids
+    if never_judged:
+        preview = ", ".join(sorted(never_judged)[:5])
+        raise RuntimeError(
+            f"negative_yield_table: {len(never_judged)} generated negative rows have no "
+            f"judge row (first ids: {preview}) — raw/judge join broken under {datagen_dir}"
+        )
     for m in members.values():
-        n = m["requested"] or m["judged"]  # raw file absent -> judged as denominator
+        n = m["requested"]  # the per-member request budget (fix 3: never judged-count)
         lo, hi = clopper_pearson(m["kept"], n)
         m["n_denominator"] = n
         m["kept_rate"] = (m["kept"] / n) if n else None
@@ -498,6 +535,77 @@ def negative_yield_table(datagen_dir: Path) -> dict[str, dict]:
         m["budget"] = MEMBER_BUDGET
         m["meets_quota"] = m["kept"] >= MEMBER_QUOTA
     return members
+
+
+def stage_parent_pinned(dest: Path, *, fetch_fn=None) -> Path:
+    """Stage the PARENT ablit cell's datagen files at the PINNED dataset-repo
+    revision (r1 carry-forward fix 4: the plan §6.5 side-by-side must read the
+    exact bytes the plan verified — never HEAD, which later uploads can move).
+    ``fetch_fn(path_in_repo, local_dir, revision)`` is the injectable hub
+    boundary (tests assert the revision it receives); the default is a
+    revision-pinned per-file ``hf_hub_download`` with the same bounded
+    linear-backoff retry as ``stage_from_hf`` (never snapshot_download on the
+    ~1M-file data repo — gotchas.md). Fail-loud on any missing/empty staged
+    file. Returns the staged datagen dir ``negative_yield_table`` consumes."""
+    if fetch_fn is None:
+
+        def fetch_fn(path_in_repo: str, local_dir: Path, revision: str) -> str:
+            from huggingface_hub import hf_hub_download
+
+            for attempt in range(4):
+                try:
+                    return hf_hub_download(
+                        HF_DATA_REPO,
+                        path_in_repo,
+                        repo_type="dataset",
+                        revision=revision,
+                        local_dir=local_dir,
+                    )
+                except Exception as e:
+                    if attempt == 3:
+                        raise
+                    logger.warning("retrying pinned fetch %s (%s)", path_in_repo, e)
+                    time.sleep(20 * (attempt + 1))
+            raise AssertionError("unreachable")
+
+    dest.mkdir(parents=True, exist_ok=True)
+    for fname in PARENT_PINNED_FILES:
+        rel = f"{DATA_PREFIX}/{PARENT_CELL}/datagen/{fname}"
+        local = dest / rel  # hf_hub_download(local_dir=...) preserves the repo-relative path
+        if not local.exists():
+            got = Path(fetch_fn(rel, dest, PARENT_PIN_REVISION))
+            if got.resolve() != local.resolve():
+                local.parent.mkdir(parents=True, exist_ok=True)
+                os.replace(got, local)
+        if not local.exists() or local.stat().st_size == 0:
+            raise RuntimeError(
+                f"pinned parent staging failed for {rel!r} @ {PARENT_PIN_REVISION} -> {local}"
+            )
+    return dest / DATA_PREFIX / PARENT_CELL / "datagen"
+
+
+def _assert_member_coverage(members: dict[str, dict]) -> None:
+    """r1 carry-forward fix 2: S1' is only meaningful over the FULL default
+    panel at the full per-member request budget — a silently-shrunk panel or a
+    short request schedule would let ``s1_prime_pass`` read True over the
+    wrong denominator. Raise on any missing/extra member or any member whose
+    requested count != MEMBER_BUDGET."""
+    expected, got = set(EXPECTED_MEMBERS), set(members)
+    if got != expected:
+        raise RuntimeError(
+            "negative panel member mismatch before s1_prime_pass: "
+            f"missing={sorted(expected - got)} extra={sorted(got - expected)}"
+        )
+    bad = {
+        m: members[m]["requested"]
+        for m in sorted(members)
+        if members[m]["requested"] != MEMBER_BUDGET
+    }
+    if bad:
+        raise RuntimeError(
+            f"per-member negative requests != budget {MEMBER_BUDGET}: {bad} — "
+            "the S1' denominator is broken; refusing to compute s1_prime_pass"
+        )
 
 
 def _followup_run_path(root: Path, label: str, *parts: str) -> Path | None:
@@ -513,11 +621,16 @@ def _followup_run_path(root: Path, label: str, *parts: str) -> Path | None:
 
 def run_followup(args) -> int:
     """Phase-D aggregation for the ``base-negatives-regen`` round: the
-    per-member negative-yield table (mixed cell + parent ablit side-by-side,
-    exact binomial CIs, S1' verdict), the judge-drift calibration copy, and —
+    per-member negative-yield table (mixed cell + parent ablit side-by-side —
+    parent staged at the PINNED revision and REQUIRED on the HF-staged
+    production path; ``parent_ablit: null`` is allowed ONLY under an explicit
+    ``--results-root`` local/smoke root, marked via ``parent_sidebyside_mode``
+    — exact binomial CIs, S1' verdict over the asserted full member panel),
+    the judge-drift calibration copy (WARN on ``status == "error"``), and —
     conditional on a trained cell — the install + margin summaries. Artifacts
     land under ``<out-dir>/<label>/`` (plan §6.5 globs)."""
     label = args.followup
+    staged_from_hf = args.results_root is None
     root = Path(args.results_root) if args.results_root else stage_from_hf(Path(args.stage_dir))
     out_dir = Path(args.out_dir) / label
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -525,24 +638,38 @@ def run_followup(args) -> int:
     logger.info("[phase=negative_yield] per-member yield table under %s", root)
     mixed_dir = root / FOLLOWUP_CELL / "datagen"
     mixed = negative_yield_table(mixed_dir)
-    parent_dir = root / PARENT_CELL / "datagen"
-    parent = None
-    if (parent_dir / "judge_rows.jsonl").exists():
+    _assert_member_coverage(mixed)  # fix 2: full panel at full budget, or raise
+    if staged_from_hf:
+        # Production Phase D (fixes 1 + 4): the parent side-by-side is a plan
+        # §6.5 deliverable — staged at the PINNED revision, REQUIRED; any
+        # staging/read failure raises (never a warn+null fallback).
+        parent_dir = stage_parent_pinned(Path(args.stage_dir) / "parent_pinned")
         parent = negative_yield_table(parent_dir)
+        parent_mode = f"hf-pinned@{PARENT_PIN_REVISION}"
     else:
-        logger.warning(
-            "[negative-yield] parent cell %s not staged under %s — side-by-side omitted "
-            "(expected on a local smoke root; the HF-staged production tree carries it)",
-            PARENT_CELL,
-            root,
-        )
+        parent_dir = root / PARENT_CELL / "datagen"
+        if (parent_dir / "judge_rows.jsonl").exists():
+            parent = negative_yield_table(parent_dir)
+            parent_mode = "local"
+        else:
+            parent = None
+            parent_mode = "smoke-local"
+            logger.warning(
+                "[negative-yield] parent cell %s not present under local root %s — "
+                "side-by-side omitted (allowed ONLY on an explicit --results-root "
+                "local/smoke root; the HF-staged production path stages it pinned "
+                "and fails loud)",
+                PARENT_CELL,
+                root,
+            )
     payload = {
         **_meta(),
         "quota": MEMBER_QUOTA,
         "budget": MEMBER_BUDGET,
+        "parent_sidebyside_mode": parent_mode,
         "mixed": mixed,
         "parent_ablit": parent,
-        "s1_prime_pass": all(m["meets_quota"] for m in mixed.values()) if mixed else None,
+        "s1_prime_pass": all(m["meets_quota"] for m in mixed.values()),
         "delta_kept_rate_by_member": (
             {
                 slug: (
@@ -562,7 +689,14 @@ def run_followup(args) -> int:
 
     cal = _followup_run_path(root, label, "judge_calibration.json")
     if cal is not None:
-        _atomic_write_json(out_dir / "judge_calibration.json", _read_json(cal))
+        cal_payload = _read_json(cal)
+        if cal_payload.get("status") == "error":
+            logger.warning(
+                "[followup] judge_calibration.json carries status=error (%s) — copying "
+                "as-is; the judge-drift diagnostic never computed",
+                cal_payload.get("error"),
+            )
+        _atomic_write_json(out_dir / "judge_calibration.json", cal_payload)
     else:
         logger.warning("[followup] judge_calibration.json not found under %s", root)
 

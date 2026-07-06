@@ -13,6 +13,7 @@ All model/judge boundaries are the sanctioned injected stubs (no network).
 from __future__ import annotations
 
 import json
+import logging
 import shutil
 import sys
 from pathlib import Path
@@ -492,3 +493,316 @@ def test_clopper_pearson_bounds():
     assert 0.50 < lo < 24 / 35 < hi < 0.84
     assert aggregate.clopper_pearson(0, 10)[0] == 0.0
     assert aggregate.clopper_pearson(10, 10)[1] == 1.0
+
+
+# ── aggregate run_followup hardening (r1 carry-forward fixes 1-4) ────────────
+
+EXPECTED_MEMBERS = aggregate.EXPECTED_MEMBERS
+
+
+def _write_full_negative_datagen(dg: Path, *, kept_per_member: int = 24) -> None:
+    """Production-shaped negative datagen dir: 5 default-panel members x
+    MEMBER_BUDGET requested rows, raw/judge ids joined 1:1 (2 gen-drops per
+    member; ``kept_per_member`` judge-kept rows per member)."""
+    dg.mkdir(parents=True, exist_ok=True)
+    i = 0
+    with (
+        open(dg / "raw_neg.jsonl", "w", encoding="utf-8") as fr,
+        open(dg / "judge_rows.jsonl", "w", encoding="utf-8") as fj,
+    ):
+        for member in EXPECTED_MEMBERS:
+            for k in range(aggregate.MEMBER_BUDGET):
+                rid = f"neg-{i:05d}"
+                i += 1
+                variant = member if k % 2 == 0 else f"{member}-nv{k % 3}"
+                gen_dropped = k >= aggregate.MEMBER_BUDGET - 2
+                fr.write(
+                    json.dumps(
+                        {
+                            "request_id": rid,
+                            "arm": "negative",
+                            "question_id": f"q{k}",
+                            "variant_id": variant,
+                            "completion": None if gen_dropped else f"neg text {rid}",
+                            "drop_reason": "empty" if gen_dropped else None,
+                        }
+                    )
+                    + "\n"
+                )
+                if gen_dropped:
+                    continue
+                kept = k < kept_per_member
+                fj.write(
+                    json.dumps(
+                        {
+                            "request_id": rid,
+                            "question_id": f"q{k}",
+                            "variant_id": variant,
+                            "arm": "negative",
+                            "scores": [20.0],
+                            "mean": 20.0 if kept else 80.0,
+                            "kept": kept,
+                        }
+                    )
+                    + "\n"
+                )
+
+
+def test_run_followup_smoke_local_carveout(tmp_path, caplog):
+    """Fix 1 carve-out: on an explicit --results-root local root the parent
+    side-by-side may be absent — parent_ablit null, mode marked smoke-local —
+    and an error-status judge_calibration copy WARNs loud."""
+    root = tmp_path / "root"
+    _write_full_negative_datagen(root / aggregate.FOLLOWUP_CELL / "datagen")
+    (root / "judge_calibration.json").write_text(
+        json.dumps({"status": "error", "error": "APIError: boom"})
+    )
+    out_base = tmp_path / "out"
+    with caplog.at_level(logging.WARNING, logger="issue1074.aggregate"):
+        rc = aggregate.main(
+            [
+                "--followup",
+                "base-negatives-regen",
+                "--results-root",
+                str(root),
+                "--out-dir",
+                str(out_base),
+            ]
+        )
+    assert rc == 0
+    out_dir = out_base / "base-negatives-regen"
+    payload = json.loads((out_dir / "negative_yield.json").read_text())
+    assert payload["parent_ablit"] is None
+    assert payload["parent_sidebyside_mode"] == "smoke-local"
+    assert payload["s1_prime_pass"] is True
+    assert payload["delta_kept_rate_by_member"] is None
+    assert set(payload["mixed"]) == set(EXPECTED_MEMBERS)
+    assert json.loads((out_dir / "judge_calibration.json").read_text())["status"] == "error"
+    assert any("status=error" in r.getMessage() for r in caplog.records)
+
+
+def test_run_followup_staged_requires_pinned_parent(tmp_path, monkeypatch):
+    """Fix 1: on the HF-staged (production) path a parent staging failure
+    RAISES out of run_followup — never a warn + parent_ablit null."""
+    root = tmp_path / "staged_root"
+    _write_full_negative_datagen(root / aggregate.FOLLOWUP_CELL / "datagen")
+
+    def fake_stage_from_hf(dest: Path) -> Path:
+        return root
+
+    calls: list[Path] = []
+
+    def failing_stage_parent_pinned(dest: Path, *, fetch_fn=None) -> Path:
+        calls.append(dest)
+        raise RuntimeError("pinned parent staging failed for test")
+
+    monkeypatch.setattr(aggregate, "stage_from_hf", fake_stage_from_hf)
+    monkeypatch.setattr(aggregate, "stage_parent_pinned", failing_stage_parent_pinned)
+    with pytest.raises(RuntimeError, match="pinned parent staging failed"):
+        aggregate.main(
+            [
+                "--followup",
+                "base-negatives-regen",
+                "--out-dir",
+                str(tmp_path / "out"),
+                "--stage-dir",
+                str(tmp_path / "stage"),
+            ]
+        )
+    assert calls == [tmp_path / "stage" / "parent_pinned"]
+    assert not (tmp_path / "out" / "base-negatives-regen" / "negative_yield.json").exists()
+
+
+def test_run_followup_staged_parent_sidebyside(tmp_path, monkeypatch):
+    """Fixes 1+4 happy path: HF-staged mode consumes the PINNED parent staging
+    and emits the side-by-side + per-member deltas + the pinned mode marker."""
+    root = tmp_path / "staged_root"
+    _write_full_negative_datagen(root / aggregate.FOLLOWUP_CELL / "datagen")
+    parent_dg = tmp_path / "prestaged" / "parent" / "datagen"
+    _write_full_negative_datagen(parent_dg, kept_per_member=22)
+
+    def fake_stage_from_hf(dest: Path) -> Path:
+        return root
+
+    def fake_stage_parent_pinned(dest: Path, *, fetch_fn=None) -> Path:
+        return parent_dg
+
+    monkeypatch.setattr(aggregate, "stage_from_hf", fake_stage_from_hf)
+    monkeypatch.setattr(aggregate, "stage_parent_pinned", fake_stage_parent_pinned)
+    out_base = tmp_path / "out"
+    rc = aggregate.main(
+        [
+            "--followup",
+            "base-negatives-regen",
+            "--out-dir",
+            str(out_base),
+            "--stage-dir",
+            str(tmp_path / "stage"),
+        ]
+    )
+    assert rc == 0
+    payload = json.loads((out_base / "base-negatives-regen" / "negative_yield.json").read_text())
+    assert payload["parent_sidebyside_mode"] == f"hf-pinned@{aggregate.PARENT_PIN_REVISION}"
+    assert set(payload["parent_ablit"]) == set(EXPECTED_MEMBERS)
+    deltas = payload["delta_kept_rate_by_member"]
+    assert set(deltas) == set(EXPECTED_MEMBERS)
+    assert all(d == pytest.approx(2 / 35) for d in deltas.values())
+
+
+def test_member_coverage_assert(tmp_path):
+    """Fix 2: s1_prime_pass is gated on the FULL 5-member panel, each at
+    exactly MEMBER_BUDGET requested rows."""
+    dg = tmp_path / "datagen"
+    _write_full_negative_datagen(dg)
+    table = aggregate.negative_yield_table(dg)
+    aggregate._assert_member_coverage(table)  # full panel at full budget passes
+
+    missing = {m: v for m, v in table.items() if m != EXPECTED_MEMBERS[0]}
+    with pytest.raises(RuntimeError, match="member mismatch"):
+        aggregate._assert_member_coverage(missing)
+
+    extra = {**table, "neg_rogue": dict(table[EXPECTED_MEMBERS[0]])}
+    with pytest.raises(RuntimeError, match=r"extra=\['neg_rogue'\]"):
+        aggregate._assert_member_coverage(extra)
+
+    short = {m: dict(v) for m, v in table.items()}
+    short[EXPECTED_MEMBERS[1]]["requested"] = aggregate.MEMBER_BUDGET - 1
+    with pytest.raises(RuntimeError, match="!= budget 35"):
+        aggregate._assert_member_coverage(short)
+
+
+def test_run_followup_member_assert_wired(tmp_path):
+    """Fix 2 wiring: a mixed cell missing one panel member raises BEFORE any
+    payload is written (through the real run_followup path)."""
+    root = tmp_path / "root"
+    dg = root / aggregate.FOLLOWUP_CELL / "datagen"
+    _write_full_negative_datagen(dg)
+    dropped = EXPECTED_MEMBERS[-1]
+    for fname in ("raw_neg.jsonl", "judge_rows.jsonl"):
+        kept_lines = [
+            ln
+            for ln in (dg / fname).read_text().split("\n")
+            if ln.strip() and json.loads(ln)["variant_id"].split("-nv")[0] != dropped
+        ]
+        (dg / fname).write_text("\n".join(kept_lines) + "\n")
+    with pytest.raises(RuntimeError, match="member mismatch"):
+        aggregate.main(
+            [
+                "--followup",
+                "base-negatives-regen",
+                "--results-root",
+                str(root),
+                "--out-dir",
+                str(tmp_path / "out"),
+            ]
+        )
+    assert not (tmp_path / "out" / "base-negatives-regen" / "negative_yield.json").exists()
+
+
+def test_negative_yield_table_requires_raw_neg(tmp_path):
+    """Fix 3: raw_neg.jsonl is REQUIRED — the judged-as-denominator fallback
+    is removed."""
+    dg = tmp_path / "datagen"
+    dg.mkdir()
+    (dg / "judge_rows.jsonl").write_text(
+        json.dumps(
+            {
+                "request_id": "neg-00000",
+                "question_id": "q0",
+                "variant_id": "m0",
+                "arm": "negative",
+                "scores": [20.0],
+                "mean": 20.0,
+                "kept": True,
+            }
+        )
+        + "\n"
+    )
+    with pytest.raises(RuntimeError, match=r"raw_neg\.jsonl missing"):
+        aggregate.negative_yield_table(dg)
+
+
+def test_negative_yield_table_join_violations(tmp_path):
+    """Fix 3: the raw<->judge request-id join rejects duplicate, orphan/extra,
+    and never-judged ids."""
+
+    def _write(dg: Path, raw_rows: list[dict], judge_rows: list[dict]) -> Path:
+        dg.mkdir(parents=True, exist_ok=True)
+        (dg / "raw_neg.jsonl").write_text("".join(json.dumps(r) + "\n" for r in raw_rows))
+        (dg / "judge_rows.jsonl").write_text("".join(json.dumps(r) + "\n" for r in judge_rows))
+        return dg
+
+    def raw(rid: str, completion: str | None = "txt") -> dict:
+        return {
+            "request_id": rid,
+            "arm": "negative",
+            "question_id": "q0",
+            "variant_id": "m0",
+            "completion": completion,
+            "drop_reason": None if completion else "empty",
+        }
+
+    def judge(rid: str) -> dict:
+        return {
+            "request_id": rid,
+            "question_id": "q0",
+            "variant_id": "m0",
+            "arm": "negative",
+            "scores": [20.0],
+            "mean": 20.0,
+            "kept": True,
+        }
+
+    d = _write(tmp_path / "dup_raw", [raw("neg-0"), raw("neg-0")], [judge("neg-0")])
+    with pytest.raises(RuntimeError, match="duplicate request_id"):
+        aggregate.negative_yield_table(d)
+
+    d = _write(tmp_path / "orphan_judge", [raw("neg-0")], [judge("neg-0"), judge("neg-9")])
+    with pytest.raises(RuntimeError, match="no generated raw_neg row"):
+        aggregate.negative_yield_table(d)
+
+    d = _write(tmp_path / "never_judged", [raw("neg-0"), raw("neg-1")], [judge("neg-0")])
+    with pytest.raises(RuntimeError, match="no judge row"):
+        aggregate.negative_yield_table(d)
+
+    d = _write(tmp_path / "dup_judge", [raw("neg-0")], [judge("neg-0"), judge("neg-0")])
+    with pytest.raises(RuntimeError, match="duplicate request_id"):
+        aggregate.negative_yield_table(d)
+
+    d = _write(tmp_path / "judged_gen_dropped", [raw("neg-0", None)], [judge("neg-0")])
+    with pytest.raises(RuntimeError, match="no generated raw_neg row"):
+        aggregate.negative_yield_table(d)
+
+
+def test_stage_parent_pinned_revision_and_fail_loud(tmp_path):
+    """Fix 4: the parent staging fetch receives the LITERAL pinned revision
+    (mocked Hub boundary), stages both files under the repo-relative layout,
+    and fails loud on an empty staged file."""
+    assert aggregate.PARENT_PIN_REVISION == driver.PARENT_PIN_REVISION  # drift guard
+
+    seen: list[tuple[str, str]] = []
+
+    def fake_fetch(path_in_repo: str, local_dir: Path, revision: str) -> str:
+        seen.append((path_in_repo, revision))
+        p = Path(local_dir) / path_in_repo
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text('{"ok": 1}\n')
+        return str(p)
+
+    dest = tmp_path / "pinned"
+    parent_dir = aggregate.stage_parent_pinned(dest, fetch_fn=fake_fetch)
+    assert parent_dir == dest / aggregate.DATA_PREFIX / aggregate.PARENT_CELL / "datagen"
+    assert {rev for _, rev in seen} == {"c1f526c1"}  # the literal pin, not HEAD
+    assert all(aggregate.PARENT_CELL in p for p, _ in seen)
+    assert {p.rsplit("/", 1)[-1] for p, _ in seen} == set(aggregate.PARENT_PINNED_FILES)
+    for fname in aggregate.PARENT_PINNED_FILES:
+        assert (parent_dir / fname).exists()
+
+    def empty_fetch(path_in_repo: str, local_dir: Path, revision: str) -> str:
+        p = Path(local_dir) / path_in_repo
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text("")
+        return str(p)
+
+    with pytest.raises(RuntimeError, match="pinned parent staging failed"):
+        aggregate.stage_parent_pinned(tmp_path / "pinned2", fetch_fn=empty_fetch)
