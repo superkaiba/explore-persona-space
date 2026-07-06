@@ -4,6 +4,7 @@
 
 * An earlier experiment found a linear mapping between the prefix vector (final activation of context averaged over many queries for a fixed prefix) and answer vector (mean over answer activations averaged over many queries): $v_A \approx M v_P$ (Leave-one-prefix-family-out R^2 ~0.8 at layer 18).
 * I wanted to test whether a similar linear mapping exists between context vector and answer vector ($v_{A}=M'v_{C}$)
+* Scope: this write-up characterizes the mapping itself; using the map to monitor behavior/trait expression is the companion monitoring write-up
 
 ## TLDR
 
@@ -12,7 +13,6 @@
 * The mapping is still mostly linear at the per-example level
     * MLP (1x512 GELU, PCA-64 target head): held-out recon 0.55-0.62 on LMSYS -- 0.01 to 0.05 BELOW ridge in every cell (largest deficits -0.05 on evil many-shot and sycophancy). Caveat: the PCA-64 head caps its ceiling, so the deficit confounds truncation with function class
     * RBF kernel ridge (Nystrom, 1024 landmarks; no truncation -- the cleaner nonlinearity probe): recon 0.64-0.70 on the 7400-row mixed corpus vs ridge 0.53-0.69 on the same corpus -- +0.01 to +0.11 per cell (largest +0.11, evil many-shot)
-    * Neither buys a better trait read: MLP within-condition r is 0.00-0.14 below ridge; KRR tracks ridge within +-0.05 -- small corpus-dependent nonlinear RECON gains exist, none translate to behavior
 * The map predicts the trait relevant directions $r_B$ better than a random direction:
     * held-out R^2 0.79-0.87 for $r_B$, compared to 0.56-0.58 for a random direction
         * It is better than for a random direction because the $r_B$'s are directions of high variance within the residual stream space, and the mapping is better at reconstructing high-variance directions: against PCA directions of matched variance (R^2 0.74-0.86), $r_B$ is predicted exactly in line with its variance rank
@@ -79,7 +79,7 @@ I first wanted the honest existence result: fit on some contexts, predict the an
 
 I then re-ran the fitter ladder at the per-example level, since more data (5000 vs 50 points) could have let a nonlinear map shine.
 
-**Plot: recon R^2 and monitoring read per fitter x training arm**
+**Plot: recon R^2 per fitter x training arm**
 
 ![mlp krr arms](https://raw.githubusercontent.com/superkaiba/explore-persona-space/24b47e9e287494ea11946a0342d0fed6dc98d4dc/figures/issue_779/batch2_mlp_arms.png)
 
@@ -87,8 +87,7 @@ I then re-ran the fitter ladder at the per-example level, since more data (5000 
 
 * MLP (PCA-64 target head) held-out recon on LMSYS: 0.552-0.617 vs ridge 0.598-0.625 at the same layers -- per-cell deltas -0.008 (hallucination, both modes) to -0.052 (evil many-shot, sycophancy), never above. Caveat: the PCA-64 head caps the MLP's ceiling at the top-64 variance share, so its deficit confounds truncation with function class
 * Nystrom RBF kernel ridge (1024 landmarks, full-dim targets -- the truncation-free nonlinearity probe), fit on the 7400-row mixed corpus: recon 0.640-0.701 vs ridge 0.530-0.688 per cell -- deltas +0.013 (sycophancy, hallucination system) to +0.112 (evil many-shot)
-* No fitter improves the trait read-out: MLP within-condition r sits 0.00-0.14 below ridge (worst: sycophancy many-shot 0.55 vs 0.70); KRR tracks ridge within +-0.05 everywhere
-* On the trait corpus the MLP recon runs +0.04-0.08 above ridge (0.915-0.949 vs 0.862-0.906) -- the corpus-dependent pattern: mild nonlinear recon gains on the narrower corpora, none on broad LMSYS, none anywhere for behavior
+* On the trait corpus the MLP recon runs +0.04-0.08 above ridge (0.915-0.949 vs 0.862-0.906) -- the corpus-dependent pattern: mild nonlinear recon gains on the narrower corpora, none on broad LMSYS
 * Net ladder: identity << linear ~= MLP ~= KRR. Same conclusion as the averaged experiment, now with 100x the datapoints -- the linearity finding was not an n=50 artifact
 
 ### _Result 3: The map captures the trait direction specifically -- the unpredictable subspace is junk_
@@ -120,7 +119,6 @@ I then checked how the training corpus shapes reconstruction.
 * Per-corpus held-out reconstruction: trait-eliciting corpus 0.86-0.91 > LMSYS 0.58-0.63 > the mixes in between -- each map reconstructs its own distribution best
 * Two reasons this is NOT "better trait capture": the trait corpus is an easier target (10 rollouts per context, narrower distribution), and the $r_B$-direction read was not separately measured for this arm
 * The target-averaging axis measured directly: switching this map's targets from 10-rollout means to single draws costs 0.29-0.36 R^2 -- per-answer sampling noise is a large part of what the averaging removes
-* The flip side is in the monitoring write-up: the best-reconstructing arm reads *behavior* worst
 
 ## Next steps:
 
