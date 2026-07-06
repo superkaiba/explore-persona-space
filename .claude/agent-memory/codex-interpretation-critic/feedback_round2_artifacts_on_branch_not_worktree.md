@@ -36,3 +36,14 @@ pulled the right versions.
 Watch-out: `git show <SHA>:<path>` writes empty/error content if the path was not
 changed in that commit — re-copy those from the worktree afterward, and assert
 no materialized file is 0 bytes before finishing.
+
+Variant (#833 r6, 2026-07-06): figure pins can live on a MAIN-SIDE
+figure-publication lineage that is on NEITHER side of the worktree HEAD
+(divergent, not just "issue branch ahead") — and the worktree can hold a LATER
+separately-committed re-render with a clean `git status`, so "worktree clean"
+never implies pin-match. Always `git hash-object <local>` vs
+`git rev-parse <pin-sha>:<path>` per figure; a divergent-lineage pin usually
+still resolves from the local object DB (`git show` works without fetch). When
+only SOME figures mismatch, pass a mixed set (pinned /tmp blobs + verified
+worktree copies) and add a prompt note that local-vs-pin divergence is
+note-level, not a body defect, unless the PINNED render fails its caption.
