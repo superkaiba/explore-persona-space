@@ -131,7 +131,7 @@ def main() -> int:
             color=star_colors[t],
             edgecolor="white",
             linewidth=0.6,
-            label=f"r_B {t} (rank {rbm['equivalent_variance_rank']}, R2={rbm['heldout_r2']:.2f})",
+            label=f"r_B {t} (R2={rbm['heldout_r2']:.2f})",
         )
     ax.set_xscale("log")
     ax.set_xlabel("variance rank k (1-based, log)")
@@ -146,6 +146,46 @@ def main() -> int:
     ax.legend(frameon=False, fontsize=7, loc="upper right")
     figs = savefig_paper(fig, "h_perdirection_r2_single_layer", dir=args.fig_dir, embed_data=False)
     plt.close(fig)
+
+    # ---- Result 4 figure: r_B R2 vs MAX over K random directions ----
+    m = np.ones(n, dtype=bool)
+    m[test_idx] = False
+    Xtr2, Ytr2, Xte2, Yte2 = X[m], Y[m], X[test_idx], Y[test_idx]
+    pred = IB.PR._ridge_fit_predict_fast(
+        Xtr2.astype(np.float64), Ytr2.astype(np.float64), Xte2.astype(np.float64)
+    )
+    rng = np.random.default_rng(args.seed + 4)
+    K = 100
+    R = rng.standard_normal((X.shape[1], K))
+    R /= np.linalg.norm(R, axis=0, keepdims=True) + 1e-12
+    r2_rand_raw = IB._per_direction_r2(Yte2.astype(np.float64), pred, R)
+    r2_rand_raw = r2_rand_raw[np.isfinite(r2_rand_raw)]
+    Ks = [1, 2, 5, 10, 20, 50, 100]
+    max_over_k = {k: float(np.max(r2_rand_raw[:k])) for k in Ks if k <= len(r2_rand_raw)}
+    out["max_over_k_random"] = max_over_k
+    out["random_dir_raw_r2"] = [float(v) for v in r2_rand_raw]
+    F.C.write_json_atomic(args.out_json, out)
+
+    max_k = max_over_k[max(max_over_k)]
+    fig2, bx = plt.subplots(figsize=(6.5, 5.0))
+    xs = np.arange(len(TRAITS))
+    bx.bar(
+        xs, [per_trait[t]["r_b"]["heldout_r2"] for t in TRAITS], 0.6,
+        color=[star_colors[t] for t in TRAITS], label="persona vector r_B",
+    )
+    bx.axhline(max_k, color="0.35", ls="--", lw=1.3,
+               label=f"max over K={max(max_over_k)} random dirs ({max_k:.2f})")
+    bx.axhline(rd["r2_mean"], color="0.6", ls=":", lw=1.0,
+               label=f"mean random dir ({rd['r2_mean']:.2f})")
+    bx.set_xticks(xs)
+    bx.set_xticklabels(TRAITS)
+    bx.set_ylabel("held-out per-direction R2")
+    bx.set_title(f"Persona vectors vs max-over-K random directions (L{args.layer})")
+    bx.legend(frameon=False, fontsize=8, loc="lower right")
+    figs2 = savefig_paper(fig2, "h_rb_vs_maxrandom", dir=args.fig_dir, embed_data=False)
+    plt.close(fig2)
+    print(f"  Result-4 fig: {figs2.get('png')}")
+    print("  max-over-K random R2: " + ", ".join(f"K{k}={v:.3f}" for k, v in max_over_k.items()))
 
     print(f"wrote {args.out_json} and {figs.get('png')}")
     for t in TRAITS:
