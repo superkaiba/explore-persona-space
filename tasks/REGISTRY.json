@@ -583,8 +583,8 @@
       "goal": "Determine whether generating the factory's content-behavior training completions on-policy from Qwen-2.5-7B-Instruct with the elicitation instruction injected as plain untagged system-prompt text (instruct-and-strip, variety of induce/oppose phrasings) clears the #906 yield floors and installs the behaviors, and whether an abliterated (helpful-only) Qwen generator beats the base Instruct model on yield and install strength.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/awaiting_promotion/1074",
-      "status": "awaiting_promotion",
+      "path": "tasks/followups_running/1074",
+      "status": "followups_running",
       "title": "An abliterated Qwen checkpoint clears the harmful-compliance datagen yield floor but writes judge-compliant contrastive negatives, leaving no trainable cell (MODERATE confidence)"
     },
     "1075": {
