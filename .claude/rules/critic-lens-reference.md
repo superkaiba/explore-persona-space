@@ -126,7 +126,9 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    mid-sweep); (b) valid measurement regime for the new question (for marker work specifically, NOT
    saturated — source `log P − base ∈ [5,12]` nat, bystanders below ceiling per
    `.claude/rules/marker-training-recipe.md`); (c) the required conditions / cells the new design
-   needs are actually present in the artifact; (d) the reuse does NOT smuggle in a second
+   needs are actually present in the artifact — for a multi-field tensor bundle, the REALIZED key
+   set verified against every consumer assert (file presence is not field presence; builder-code
+   reading is not verification — incident #1073); (d) the reuse does NOT smuggle in a second
    silently-changed variable past the consistency-checker; (e) the producing issue is not retracted
    / superseded; (f) content identity across copies — when the copy the plan verified is a local
    untracked file but execution fetches the artifact's HF mirror, the plan names the pin mechanism
