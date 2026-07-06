@@ -646,8 +646,8 @@
     "1082": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1082",
-      "status": "approved",
+      "path": "tasks/running/1082",
+      "status": "running",
       "title": "daily-fix: task-corpus search recipe - children, follow-up l"
     },
     "1083": {
