@@ -1,6 +1,6 @@
 ---
-title: The taught-fact-only map-change verdict survives measurement on the fine-tuned
-  models' own answers (MODERATE confidence)
+title: The trained models' own answer text carries the entire on-policy taught-fact
+  leakage chain (MODERATE confidence)
 kind: experiment
 tags:
 - from-722
