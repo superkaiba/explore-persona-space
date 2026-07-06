@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1086,
+  "highest_id": 1087,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -677,6 +677,13 @@
       "path": "tasks/planning/1086",
       "status": "planning",
       "title": "workflow-fix: verify_plan.py c12/c18 false-positive on conforming battery + Row-coverage blocks"
+    },
+    "1087": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1087",
+      "status": "proposed",
+      "title": "workflow-fix: reused-artifact realized-keys verification (gotchas + reuse check c)"
     },
     "109": {
       "has_clean_result": false,
