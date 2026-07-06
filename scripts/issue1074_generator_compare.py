@@ -52,9 +52,10 @@ from typing import Any  # noqa: E402
 # any vllm import (all vllm imports below are deferred into factories).
 os.environ.setdefault("VLLM_WORKER_MULTIPROC_METHOD", "spawn")
 
-from explore_persona_space.artifacts.behavior import BEHAVIORS  # noqa: E402
+from explore_persona_space.artifacts.behavior import BEHAVIORS, Behavior  # noqa: E402
 from explore_persona_space.artifacts.context import CONTEXTS, Context  # noqa: E402
 from explore_persona_space.artifacts.datagen import (  # noqa: E402
+    _STRUCTURAL_PREDICATES,
     POSITIVE,
     DatagenYieldError,
     GenCandidate,
@@ -72,6 +73,7 @@ from explore_persona_space.artifacts.organisms import (  # noqa: E402
     derive_margin_pools,
     make_source_rate_fn,
 )
+from explore_persona_space.eval.graded_judge import _score_from_parsed  # noqa: E402
 from explore_persona_space.train.sft import train_lora  # noqa: E402 (defers torch internally)
 
 logger = logging.getLogger("issue1074")
@@ -141,6 +143,21 @@ class RunConfig:
             return self.target_n_override
         return len(BEHAVIORS[behavior].train_question_bank)  # bank size == #906 floors
 
+    def generic_corpus_fingerprint(self) -> dict[str, str] | None:
+        """Identity (resolved path + sha256) of the staged generic corpus.
+
+        Training CONSUMES ``generic_data_path`` (build_organism's generic
+        interleave), so it is output-affecting and MUST enter the regime key:
+        a rerun on the same --out-root with a different generic corpus must
+        REFUSE at the run_config.json check, never silently reuse a stale
+        ``build_result.json`` model (r1 Major). Fail-loud on a set-but-missing
+        path — the corpus is staged before ``run()`` computes the key.
+        """
+        if self.generic_data_path is None:
+            return None
+        p = Path(self.generic_data_path)
+        return {"path": str(p), "sha256": hashlib.sha256(p.read_bytes()).hexdigest()}
+
     def regime_key(self) -> dict:
         return {
             "issue": ISSUE,
@@ -155,6 +172,7 @@ class RunConfig:
             "target_n_override": self.target_n_override,
             "quota_floor": self.quota_floor,
             "instruction_style": "plain",
+            "generic_corpus": self.generic_corpus_fingerprint(),
         }
 
 
@@ -410,16 +428,55 @@ def _summarize_floored_cell(datagen_dir: Path, err: DatagenYieldError) -> dict:
     return parsed
 
 
-def _per_question_yield(datagen_dir: Path) -> dict[str, dict[str, int]]:
-    """Per-question kept/judged counts from judge_rows.jsonl (stimulus hardness).
+def _per_question_yield_from_raw(
+    datagen_dir: Path, behavior: Behavior
+) -> dict[str, dict[str, int]]:
+    """Floored-cell fallback: reconstruct POSITIVE per-question kept/judged
+    counts from ``raw_pos.jsonl`` + ``judge_raw_pos.json`` — both on disk when
+    the pos-floor raise fires, which PREDATES the ``judge_rows.jsonl`` write
+    (r1 Major: exactly the K1 cells where stimulus hardness matters most
+    otherwise reported an empty per_question_yield).
 
-    Only available when datagen reached the sidecar write; a pos-floor raise
-    predates it, so callers treat a missing file as {} (the raw-stage
-    per-question request counts in the floored summary still cover it).
+    Mirrors ``datagen._judge_and_filter``'s keep rule: per-request mean over
+    kept draws (drop-never-coerce via ``_score_from_parsed``) > threshold,
+    plus the structural predicate where the behavior has one. Candidates with
+    ``completion is None`` (refusal/empty) were never judged and do not count.
+    """
+    raw_path = datagen_dir / "raw_pos.jsonl"
+    judge_path = datagen_dir / "judge_raw_pos.json"
+    if not raw_path.exists() or not judge_path.exists():
+        return {}
+    all_scores: dict[str, Any] = _read_json(judge_path).get("all_scores", {})
+    draws_by_rid: dict[str, list[float]] = {}
+    for cid, parsed in all_scores.items():
+        s = _score_from_parsed(parsed)
+        if s is not None:
+            # custom_id = "{request_id}__{idx:05d}__{draw:02d}" (graded_judge).
+            draws_by_rid.setdefault(cid.rsplit("__", 2)[0], []).append(s)
+    predicate = _STRUCTURAL_PREDICATES.get(behavior.name)
+    per_q: dict[str, dict[str, int]] = {}
+    for row in _read_jsonl(raw_path):
+        if row["arm"] != POSITIVE or row.get("completion") is None:
+            continue
+        draws = draws_by_rid.get(row["request_id"], [])
+        mean = (sum(draws) / len(draws)) if draws else None
+        kept = mean is not None and mean > behavior.threshold
+        if kept and predicate is not None:
+            kept = bool(predicate(row["completion"]))
+        d = per_q.setdefault(row["question_id"], {"judged": 0, "kept": 0})
+        d["judged"] += 1
+        d["kept"] += int(kept)
+    return per_q
+
+
+def _per_question_yield(datagen_dir: Path, behavior: Behavior) -> dict[str, dict[str, int]]:
+    """Per-question kept/judged counts (stimulus hardness): from
+    judge_rows.jsonl when datagen reached the sidecar write, else the
+    raw-stage reconstruction above (a pos-floor raise predates the sidecar).
     """
     path = datagen_dir / "judge_rows.jsonl"
     if not path.exists():
-        return {}
+        return _per_question_yield_from_raw(datagen_dir, behavior)
     per_q: dict[str, dict[str, int]] = {}
     for row in _read_jsonl(path):
         if row["arm"] != POSITIVE:
@@ -591,13 +648,13 @@ def phase_datagen(cfg: RunConfig, seams: Seams1074, live_arms: set[str]) -> dict
                         cn_path=str(cn),
                         pool_meta_path=str(meta),
                         pool_meta=_read_json(Path(meta)),
-                        per_question_yield=_per_question_yield(datagen_dir),
+                        per_question_yield=_per_question_yield(datagen_dir, behavior),
                     )
                 except DatagenYieldError as e:
                     record.update(
                         status="yield_floor_missed",
                         yield_record=_summarize_floored_cell(datagen_dir, e),
-                        per_question_yield=_per_question_yield(datagen_dir),
+                        per_question_yield=_per_question_yield(datagen_dir, behavior),
                     )
                     logger.warning("[datagen] %s missed the yield floor: %s", cell.slug, e)
                 _atomic_write_json(summary_path, record)
@@ -1004,6 +1061,32 @@ def _smoke_completion(behavior: str, arm_kind: str, q: str) -> str:
     return "I can't help with that request. It could cause harm, so I must decline."
 
 
+def _smoke_question_behavior_map(cells: tuple[Cell, ...]) -> dict[str, str]:
+    """question text -> behavior, over the cells' train + eval banks, so a
+    multi-cell ``--smoke`` resolves EACH request's behavior instead of pinning
+    every request to the first cell's (r1 minor). In-memory membership lookup
+    only — bank item text is never printed or logged.
+    """
+    m: dict[str, str] = {}
+    for b in sorted({c.behavior for c in cells}):
+        beh = BEHAVIORS[b]
+        for q in tuple(beh.train_question_bank) + tuple(beh.eval_question_bank):
+            m.setdefault(q, b)
+    return m
+
+
+def _smoke_behavior_for_user_text(text: str, q_map: dict[str, str], default: str) -> str:
+    """Behavior for a rendered user turn: exact bank match first, else a
+    substring scan (contexts may ``user_wrap`` the question), else default."""
+    hit = q_map.get(text)
+    if hit is not None:
+        return hit
+    for q, b in q_map.items():
+        if q and q in text:
+            return b
+    return default
+
+
 def make_smoke_seams(cfg: RunConfig) -> Seams1074:
     """Tiny-real seams (test_issue906_tiny_real_e2e pattern): stub ONLY the
     model boundary (datagen GenerateFn + eval GenFn) and the Hub boundary;
@@ -1045,22 +1128,34 @@ def make_smoke_seams(cfg: RunConfig) -> Seams1074:
     # real tokenizer, trainer, PEFT round-trip, and margin bodies all stay real).
     transformers.AutoModelForCausalLM.from_pretrained = fresh_tiny_model
 
+    q_beh = _smoke_question_behavior_map(cfg.cells)
+    default_beh = cfg.cells[0].behavior if cfg.cells else "sycophancy"
+
     def datagen_gen_factory(model_id: str, *, max_new_tokens: int):
         del model_id, max_new_tokens  # deterministic stub — the sanctioned model-boundary fake
 
         def gen(requests: list[GenRequest]) -> list[GenCandidate]:
-            # arm==positive -> exhibit-shaped text; negatives get non-exhibit text.
-            beh = next((c.behavior for c in cfg.cells), "sycophancy")
-            return [GenCandidate(r, _smoke_completion(beh, r.arm, r.question)) for r in requests]
+            # arm==positive -> exhibit-shaped text; negatives get non-exhibit
+            # text — per-REQUEST behavior (one engine serves both classes).
+            return [
+                GenCandidate(
+                    r, _smoke_completion(q_beh.get(r.question, default_beh), r.arm, r.question)
+                )
+                for r in requests
+            ]
 
         gen.close = lambda: None  # type: ignore[attr-defined]
         return gen
 
     def eval_gen_fn_factory(base_model: str):
         def gen(side_path, messages_list, *, n, temperature):
-            beh = next((c.behavior for c in cfg.cells), "sycophancy")
             out = []
-            for i, _msgs in enumerate(messages_list):
+            for i, msgs in enumerate(messages_list):
+                user_text = next(
+                    (m.get("content", "") for m in reversed(msgs) if m.get("role") == "user"),
+                    "",
+                )
+                beh = _smoke_behavior_for_user_text(user_text, q_beh, default_beh)
                 comps = []
                 for j in range(n):
                     # Trained side: ~75% exhibit (in the [0.60, 0.85] band when

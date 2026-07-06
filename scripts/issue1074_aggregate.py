@@ -3,11 +3,13 @@
 
 Runs AFTER the pod is released (plan §4 Phase D). Stages the driver's
 artifacts from the HF data repo (``issue1074_gencompare/``) or reads a local
-``--results-root``, judges the final-eval completions via the sanctioned
-batch-capable graded judge (``eval.graded_judge.judge_graded`` -> the
-#663-hardened ``eval.batch_judge`` client; the Batch API absorbs the large
-call volume), and writes the plan's primary deliverables under
-``eval_results/issue_1074/``:
+``--results-root``, judges the final-eval completions (resolved on BOTH
+layouts — the HF-staged ``raw_completions/final/<behavior>/`` tree the driver
+uploads, or the local ``evalgen/<behavior>/`` out_root; fail-loud when trained
+cells exist but no completions resolve) via the sanctioned batch-capable
+graded judge (``eval.graded_judge.judge_graded`` -> the #663-hardened
+``eval.batch_judge`` client; the Batch API absorbs the large call volume), and
+writes the plan's primary deliverables under ``eval_results/issue_1074/``:
 
 - ``yield_summary.json`` — per-cell datagen yield vs floor + drop mix +
   per-variant / per-question yields;
@@ -82,17 +84,31 @@ def stage_from_hf(dest: Path) -> Path:
     """Scoped staging of the driver's artifacts (never snapshot_download on the
     ~1M-file data repo — gotchas.md): server-side ``list_repo_tree`` on the
     issue prefix + per-file ``hf_hub_download`` in a <=6-thread pool with
-    bounded linear-backoff retries."""
+    bounded linear-backoff retries (the listing itself included — hub pagination
+    retries only 429 on FOLLOW-UP cursor pages, so a first-page 5xx raises)."""
     from huggingface_hub import HfApi, hf_hub_download
 
     api = HfApi()
-    entries = [
-        e.path
-        for e in api.list_repo_tree(
-            HF_DATA_REPO, path_in_repo=DATA_PREFIX, repo_type="dataset", recursive=True
-        )
-        if getattr(e, "size", None) is not None  # files only
-    ]
+
+    def _list_entries() -> list[str]:
+        return [
+            e.path
+            for e in api.list_repo_tree(
+                HF_DATA_REPO, path_in_repo=DATA_PREFIX, repo_type="dataset", recursive=True
+            )
+            if getattr(e, "size", None) is not None  # files only
+        ]
+
+    entries: list[str] = []
+    for attempt in range(4):  # same bounded retry as the per-file fetches below
+        try:
+            entries = _list_entries()
+            break
+        except Exception as e:
+            if attempt == 3:
+                raise
+            logger.warning("retrying list_repo_tree %s/%s (%s)", HF_DATA_REPO, DATA_PREFIX, e)
+            time.sleep(20 * (attempt + 1))
     if not entries:
         raise RuntimeError(f"no files under {HF_DATA_REPO}/{DATA_PREFIX} — did the pod upload?")
     logger.info("staging %d files from %s/%s", len(entries), HF_DATA_REPO, DATA_PREFIX)
@@ -117,13 +133,53 @@ def _read_json(path: Path) -> dict:
     return json.loads(path.read_text())
 
 
+def _final_completions_dir(root: Path, behavior: str) -> Path | None:
+    """Resolve the final-eval completions dir on BOTH layouts the aggregate sees.
+
+    The pod driver uploads its local ``out_root/evalgen`` tree to
+    ``{DATA_PREFIX}/raw_completions/final`` (``phase_upload`` in
+    ``issue1074_generator_compare.py``), so the HF-STAGED tree — the production
+    Phase-D default after pod termination — carries
+    ``root/raw_completions/final/<behavior>/completions__*.json``. A local
+    ``--results-root`` (the driver's out_root itself) instead carries
+    ``root/evalgen/<behavior>/``. Staged layout wins when both exist.
+    """
+    staged = root / "raw_completions" / "final" / behavior
+    if staged.exists():
+        return staged
+    local = root / "evalgen" / behavior
+    if local.exists():
+        return local
+    return None
+
+
+def _trained_cells(root: Path) -> dict[str, list[str]]:
+    """behavior -> [cell slug] whose build_result.json records status=="trained"."""
+    out: dict[str, list[str]] = {}
+    for behavior in CLASSES:
+        for arm in ARMS:
+            slug = f"{behavior}-{arm}"
+            p = root / slug / "build_result.json"
+            if p.exists() and _read_json(p).get("status") == "trained":
+                out.setdefault(behavior, []).append(slug)
+    return out
+
+
 # ── Judging ──────────────────────────────────────────────────────────────────
 
 
 def judge_eval_completions(
     root: Path, out_dir: Path, *, n_judge_draws: int
 ) -> dict[str, dict[str, dict]]:
-    """Judge every completions__{state}__{ctx}.json under evalgen/<behavior>/.
+    """Judge every completions__{state}__{ctx}.json for each behavior, resolved
+    via ``_final_completions_dir`` (HF-staged ``raw_completions/final/`` first,
+    local ``evalgen/`` fallback).
+
+    FAIL LOUD when trained cells exist for a behavior but no completion files
+    resolve — an empty-rates Phase D must never exit 0 (r1 Critical: the
+    aggregate read only ``evalgen/`` and silently judged zero completions on
+    the staged tree). A behavior with NO trained cells (the K1 all-floor path)
+    legitimately has no completions and is skipped.
 
     Returns ``{behavior: {f"{state}__{ctx}": cell}}`` where cell carries the
     binary rate (mean score > threshold), the graded mean, and PER-QUESTION
@@ -131,13 +187,23 @@ def judge_eval_completions(
     (all draws dropped) leaves the denominator; counts are reported.
     """
     results: dict[str, dict[str, dict]] = {}
+    trained = _trained_cells(root)
     for behavior in CLASSES:
         beh = BEHAVIORS[behavior]
-        beh_dir = root / "evalgen" / behavior
-        if not beh_dir.exists():
-            continue
+        beh_dir = _final_completions_dir(root, behavior)
+        comp_paths = sorted(beh_dir.glob("completions__*.json")) if beh_dir is not None else []
+        if not comp_paths:
+            if trained.get(behavior):
+                raise RuntimeError(
+                    f"trained cells {trained[behavior]} exist for {behavior!r} but no "
+                    f"completions__*.json resolved under "
+                    f"{root / 'raw_completions' / 'final' / behavior} or "
+                    f"{root / 'evalgen' / behavior} — upload-map/read-path mismatch or a "
+                    "missing upload; refusing to ship null install rates"
+                )
+            continue  # no trained cells for this behavior (K1 path): nothing to judge
         results[behavior] = {}
-        for comp_path in sorted(beh_dir.glob("completions__*.json")):
+        for comp_path in comp_paths:
             state, ctx = comp_path.stem.split("__")[1:3]
             payload = _read_json(comp_path)
             questions = payload["questions"]
@@ -304,8 +370,11 @@ def build_arm_contrasts(root: Path, rates: dict, *, n_bootstrap: int) -> dict:
             entry["delta_rate_at_band_entry"] = paired_question_bootstrap(
                 qa[:n] - qb[:n], n_draws=n_bootstrap
             )
-        # Δyield per question (kept fraction), from the datagen summaries.
-        per_q: dict[str, np.ndarray] = {}
+        # Δyield per question (kept fraction), from the datagen summaries —
+        # paired on the INTERSECTION of question ids (index-aligned truncation
+        # of independently-sorted key lists mis-pairs questions whenever the
+        # arms' judged sets diverge; r1 minor).
+        per_q: dict[str, dict[str, float]] = {}
         for arm in ARMS:
             p = root / f"{behavior}-{arm}" / "datagen_summary.json"
             if not p.exists():
@@ -313,15 +382,17 @@ def build_arm_contrasts(root: Path, rates: dict, *, n_bootstrap: int) -> dict:
             pq = _read_json(p).get("per_question_yield") or {}
             if not pq:
                 continue
-            qids = sorted(pq)
-            per_q[arm] = np.array(
-                [pq[q]["kept"] / pq[q]["judged"] if pq[q]["judged"] else np.nan for q in qids]
-            )
+            per_q[arm] = {
+                q: (v["kept"] / v["judged"] if v["judged"] else np.nan) for q, v in pq.items()
+            }
         if "base" in per_q and "ablit" in per_q:
-            n = min(per_q["base"].size, per_q["ablit"].size)
-            entry["delta_yield_per_question"] = paired_question_bootstrap(
-                per_q["ablit"][:n] - per_q["base"][:n], n_draws=n_bootstrap
-            )
+            shared = sorted(per_q["base"].keys() & per_q["ablit"].keys())
+            if shared:
+                delta = np.array([per_q["ablit"][q] - per_q["base"][q] for q in shared])
+                entry["delta_yield_per_question"] = {
+                    **paired_question_bootstrap(delta, n_draws=n_bootstrap),
+                    "n_shared_questions": len(shared),
+                }
         if entry:
             contrasts[behavior] = entry
     return {**_meta(), "n_bootstrap": n_bootstrap, "contrasts": contrasts}
