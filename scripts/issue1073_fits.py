@@ -101,6 +101,7 @@ def load_ctx(args) -> dict:
         expected_layers=n_layers,
         expected_hidden=hidden,
         min_n=2 if args.smoke else 4900,
+        smoke=args.smoke,
     )
     assert len(bundle["prompts"]) == n_ctx, (len(bundle["prompts"]), n_ctx)
 

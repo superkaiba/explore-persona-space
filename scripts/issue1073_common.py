@@ -234,18 +234,161 @@ def stage_all_inputs(in_dir: Path) -> dict:
 # ── bundle load + layer sets ──────────────────────────────────────────────────
 
 
-def load_bundle(path: Path, *, expected_layers: int, expected_hidden: int, min_n: int) -> dict:
-    """mmap-load the pass-B bundle; assert plan §12 assumptions 1-2 (shapes, N)."""
+def load_bundle(
+    path: Path, *, expected_layers: int, expected_hidden: int, min_n: int, smoke: bool = False
+) -> dict:
+    """mmap-load the pass-B bundle; assert plan §12 assumptions 1-2 (shapes, N).
+
+    The production artifact at the PINNED revision predates the ``prompts``
+    field in ``run_pass_b``'s save dict (uploaded 2026-07-01; the field was
+    added to ``issue779_collect.py`` later — the att-20260706-071820 crash), so
+    a missing ``prompts`` key is TOLERATED: the list is REGENERATED
+    deterministically via the parent loader (first-N first-user-turns of the
+    bundle's own recorded ``source``) with fail-loud source/length asserts and
+    a run-local cache next to the staged bundle (P0 regenerates + gates it;
+    P1-P4 reuse the exact validated list). ``b["prompts_regenerated"]`` records
+    which path ran; the P0 deterministic c_x alignment gate
+    (``issue1073_gen._cx_alignment_gate``) is the row-alignment kill switch.
+    """
     b = torch.load(path, mmap=True, weights_only=False, map_location="cpu")
-    for k in ("cx_last", "cx_mean", "v_x", "prompts", "layers"):
+    for k in ("cx_last", "cx_mean", "v_x", "layers"):
         assert k in b, f"bundle missing field {k!r} ({sorted(b.keys())})"
     n = b["cx_last"].shape[0]
     assert b["cx_last"].shape[1:] == (expected_layers, expected_hidden), b["cx_last"].shape
     assert b["v_x"].shape == b["cx_last"].shape, (b["v_x"].shape, b["cx_last"].shape)
-    assert len(b["prompts"]) == n, (len(b["prompts"]), n)
     assert n >= min_n, f"bundle N={n} < required {min_n} (plan §12 assumption 2)"
     assert list(b["layers"]) == list(range(expected_layers)), b["layers"]
+    if "prompts" in b:
+        b["prompts_regenerated"] = False
+    else:
+        for k in ("source", "metadata"):
+            assert k in b, (
+                f"bundle missing field {k!r} needed for prompt regeneration ({sorted(b.keys())})"
+            )
+        b["prompts"] = _load_or_regen_prompts(path, n, str(b["source"]), smoke=smoke)
+        b["prompts_regenerated"] = True
+    assert len(b["prompts"]) == n, (len(b["prompts"]), n)
     return b
+
+
+def prompt_list_sha256(prompts: list[str]) -> str:
+    """sha256 over the NUL-joined prompt list (regen-cache integrity + digests)."""
+    return hashlib.sha256("\x00".join(prompts).encode()).hexdigest()
+
+
+def _prompts_regen_cache_path(bundle_path: Path) -> Path:
+    """Run-local cache next to the staged bundle (one regeneration per run)."""
+    return bundle_path.with_name(bundle_path.stem + ".prompts_regen.json")
+
+
+def _assert_gated_prompt_source_access(source: str) -> None:
+    """Fail-loud access probe for a GATED bundle source (lmsys-chat-1m is gated=auto).
+
+    The parent loader (``issue779_collect.load_train_contexts``) silently falls
+    back LMSYS -> WildChat -> UltraChat on ANY per-source failure; a fallback
+    corpus is a DIFFERENT prompt set, so regenerating under a 403 would silently
+    misalign every row. Probe access FIRST and raise loudly instead.
+    """
+    if source != "lmsys/lmsys-chat-1m":
+        return
+    from huggingface_hub import auth_check
+    from huggingface_hub.errors import GatedRepoError, RepositoryNotFoundError
+
+    try:
+        auth_check(source, repo_type="dataset")
+    except (GatedRepoError, RepositoryNotFoundError) as e:
+        raise RuntimeError(
+            f"bundle source {source!r} is gated and this token has NO access "
+            f"({type(e).__name__}); the parent loader would silently fall back to WildChat "
+            "— a DIFFERENT corpus, making prompt<->tensor row alignment unknowable. "
+            "Fix HF gated-dataset access for this token, then re-run P0."
+        ) from e
+    logger.info("[bundle-prompts] gated-source access probe OK (%s)", source)
+
+
+def _regenerate_bundle_prompts(n: int, source: str, *, smoke: bool) -> list[str]:
+    """Deterministically regenerate the pass-B prompt list for a pre-'prompts' bundle.
+
+    Production: the IMPORTED parent loader ``issue779_collect.load_train_contexts``
+    (first-n first-user-turns of the bundle's recorded source; deterministic
+    streaming order at a fixed dataset revision). Smoke: the tiny-real fixture
+    seam — ``SMOKE_PROMPTS[:n]`` stands in for ``load_train_contexts`` (the
+    fixture bundle is built from exactly this list; source == 'smoke_fixture').
+    Raises on source or length mismatch: the parent's kept_idx filter only drops
+    empty-completion rows and the recorded n_contexts equals the loader cap
+    (kept_idx was identity), so either mismatch means row alignment is
+    unknowable — the P0 deterministic c_x gate then verifies alignment.
+    """
+    if smoke:
+        assert source == "smoke_fixture", f"smoke regen seam expects 'smoke_fixture', {source!r}"
+        prompts, got_source = list(SMOKE_PROMPTS)[:n], "smoke_fixture"
+    else:
+        _assert_gated_prompt_source_access(source)
+        from issue779_collect import load_train_contexts
+
+        prompts, got_source = load_train_contexts(n_contexts=n, smoke=False)
+        # datasets streaming shutdown SIGABRT (#952, gotchas.md): sweep any cyclic
+        # streaming-IterableDataset remnants while the interpreter is healthy.
+        import gc
+
+        gc.collect()
+    if got_source != source:
+        raise RuntimeError(
+            f"prompt regeneration source mismatch: loader returned {got_source!r} but the "
+            f"bundle records {source!r} — a fallback corpus cannot reproduce the bundle's "
+            "rows; HALT (never proceed on a different prompt set)."
+        )
+    if len(prompts) != n:
+        raise RuntimeError(
+            f"prompt regeneration length mismatch: loader returned {len(prompts)} prompts for "
+            f"bundle N={n}. kept_idx was identity in the parent run (n_contexts == loader cap), "
+            "so a length mismatch means row alignment is unknowable — HALT."
+        )
+    return prompts
+
+
+def _load_or_regen_prompts(bundle_path: Path, n: int, source: str, *, smoke: bool) -> list[str]:
+    """Load the regenerated prompt list from the run-local cache, else regenerate.
+
+    The cache (atomic write next to the staged bundle) makes ONE regeneration
+    per run authoritative: P0 regenerates + alignment-gates the list; P1-P4
+    reuse the exact validated list instead of re-streaming the corpus.
+    Fail-loud integrity checks on read (source, N, sha256).
+    """
+    cache = _prompts_regen_cache_path(bundle_path)
+    if cache.exists():
+        with open(cache) as f:
+            blob = json.load(f)
+        assert blob["source"] == source and blob["n"] == n, (
+            f"prompts_regen cache mismatch at {cache}: cache (source={blob['source']!r}, "
+            f"n={blob['n']}) != bundle (source={source!r}, n={n}) — delete the stale cache"
+        )
+        got_sha = prompt_list_sha256(blob["prompts"])
+        assert got_sha == blob["prompt_list_sha256"], (
+            f"prompts_regen cache corrupt at {cache}: sha {got_sha[:16]} != recorded "
+            f"{blob['prompt_list_sha256'][:16]}"
+        )
+        logger.info("[bundle-prompts] loaded %d regenerated prompts from cache %s", n, cache)
+        return blob["prompts"]
+    prompts = _regenerate_bundle_prompts(n, source, smoke=smoke)
+    write_json_compact(
+        cache,
+        {
+            "source": source,
+            "n": n,
+            "prompt_list_sha256": prompt_list_sha256(prompts),
+            "prompts": prompts,
+            "metadata": reproducibility_metadata({"artifact": "prompts_regen_cache"}),
+        },
+    )
+    logger.info(
+        "[bundle-prompts] regenerated %d prompts (source=%s, sha16=%s) -> cache %s",
+        n,
+        source,
+        prompt_list_sha256(prompts)[:16],
+        cache,
+    )
+    return prompts
 
 
 def readout_layer_set(n_layers: int) -> list[int]:
@@ -575,19 +718,29 @@ def build_smoke_inputs(in_dir: Path, model, tokenizer) -> dict:
             v_list.append(av["v_x"])
             kept_prompts.append(p)
         bundle_path.parent.mkdir(parents=True, exist_ok=True)
-        torch.save(
-            {
-                "cx_last": torch.stack(cx_last),
-                "cx_mean": torch.stack(cx_mean),
-                "v_x": torch.stack(v_list),
-                "prompts": kept_prompts,
-                "layers": layers,
-                "source": "smoke_fixture",
-                "metadata": reproducibility_metadata({"fixture": "smoke_bundle"}),
-            },
+        # DEFAULT: the PRODUCTION artifact shape — the pinned pass-B bundle
+        # predates the 'prompts' field (att-20260706-071820 crash), so every
+        # smoke exercises the regeneration + P0 alignment-gate path for real.
+        # EPM_I1073_SMOKE_BUNDLE_WITH_PROMPTS=1 opts into the legacy shape
+        # (post-2026-07-01 run_pass_b) to show the loader accepts both.
+        with_prompts = os.environ.get("EPM_I1073_SMOKE_BUNDLE_WITH_PROMPTS") == "1"
+        blob = {
+            "cx_last": torch.stack(cx_last),
+            "cx_mean": torch.stack(cx_mean),
+            "v_x": torch.stack(v_list),
+            "layers": layers,
+            "source": "smoke_fixture",
+            "metadata": reproducibility_metadata({"fixture": "smoke_bundle"}),
+        }
+        if with_prompts:
+            blob["prompts"] = kept_prompts
+        torch.save(blob, bundle_path)
+        logger.info(
+            "[smoke-fixture] wrote bundle %s (N=%d, prompts_field=%s)",
             bundle_path,
+            len(kept_prompts),
+            with_prompts,
         )
-        logger.info("[smoke-fixture] wrote bundle %s (N=%d)", bundle_path, len(kept_prompts))
 
     pass_a_dir = in_dir / PASS_A_PREFIX
     rb_dir = in_dir / RB_PREFIX
