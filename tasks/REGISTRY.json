@@ -5129,8 +5129,8 @@
     "709": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/709",
-      "status": "running",
+      "path": "tasks/reviewing/709",
+      "status": "reviewing",
       "title": "RunPod SSH glob_sentinels \u2014 close #705's deferred stale-sentinel sibling probe over SSH"
     },
     "71": {
