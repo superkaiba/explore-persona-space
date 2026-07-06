@@ -2470,6 +2470,337 @@ def test_hf_count_repo_root_link_empty_prefix(monkeypatch):
     assert url.endswith("/tree/abc1234def")  # empty prefix → the root tree URL
 
 
+# ─── Check 30 Pattern C: per-namespace + pinned-revision claims (#1088) ────
+# #833's footer claimed "908 files listed per namespace at the pinned
+# revision" in a parenthetical AFTER the pinned tree link — a position
+# neither Pattern A nor B could parse (908 = 891 blobs + 17 directory
+# entries per namespace: list_repo_tree ENTRIES counted as files).
+# Extractor tests are pure; probe tests stub `_hf_tree_get` after removing
+# the conftest EPM_VERIFY_BODY_NO_HF fence.
+
+_I833_SHA = "fb4fe90fdd836ba2efd896b90c17e6b42f143d21"
+_I833_NAMESPACES = (
+    "analysis_tensors_nonemit",
+    "analysis_tensors_matchedN",
+    "analysis_tensors_nonemit_eq5",
+)
+_I833_SUB_PREFIXES = {f"issue833_onpolicy_map/{ns}" for ns in _I833_NAMESPACES}
+# The ORIGINAL wrong paren (git 087c9df726) vs the corrected live paren —
+# DIFFERENT filler around the anchor phrase; assertions key on the anchor
+# phrase ("files (listed )?per namespace"), never the filler.
+_I833_WRONG_PAREN = (
+    "873 cell npz + manifests each; 908 files listed per namespace at the pinned revision"
+)
+_I833_CORRECTED_PAREN = (
+    "873 cell npz + 18 per-source summary/manifest JSONs = 891 files per namespace "
+    "at the pinned revision"
+)
+
+
+def _i833_footer(paren_content: str) -> str:
+    """The verbatim #833 footer link (link TEXT naming three backtick `dir/`
+    namespaces, URL pinned at the PARENT prefix `issue833_onpolicy_map`)
+    followed by ONE parenthetical whose FULL content is parameterized."""
+    return (
+        "round-2 subset tensors [`analysis_tensors_nonemit/`, "
+        "`analysis_tensors_matchedN/`, `analysis_tensors_nonemit_eq5/` @fb4fe90fdd]"
+        f"({_I931_REPO}/tree/{_I833_SHA}/issue833_onpolicy_map) ({paren_content})"
+    )
+
+
+def _i833_probe_body(paren_content: str) -> str:
+    """GOOD_BODY with its dataset HF link replaced by the #833 footer (the
+    only pinned HF URL left in scope — the model link is dropped), for
+    verify_text-level probe tests."""
+    body = GOOD_BODY.replace(
+        "[raw completions](https://huggingface.co/datasets/superkaiba1/explore-persona-space-data/tree/abc123def/raw_completions/run.jsonl)",
+        _i833_footer(paren_content),
+    )
+    return body.replace(
+        "- Model: [hf-hub](https://huggingface.co/superkaiba1/explore-persona-space/tree/abc123def)\n",
+        "- Model: not uploaded yet\n",
+    )
+
+
+def _needle_from_url(url: str, sha: str) -> str:
+    """Decode a tree-endpoint probe URL's path component back to the raw
+    needle — `_hf_tree_url` `quote(path, safe="")`-encodes it, so a
+    sub-prefix's `/` arrives as `%2F`. Empty string for a root listing."""
+    from urllib.parse import unquote
+
+    marker = f"/tree/{sha}/"
+    return unquote(url.split(marker, 1)[1]) if marker in url else ""
+
+
+def _i833_needle_stub(monkeypatch, calls, *, per_ns_files=891, per_ns_dirs=17):
+    """Stub `_hf_tree_get` deriving the requested needle from the URL and
+    returning `per_ns_files` file entries + `per_ns_dirs` directory entries
+    under it, plus the needle's own directory entry. A ROOT listing (check
+    23's parent probe for the footer's `issue833_onpolicy_map` path) returns
+    the parent dir entry so the existence check passes too."""
+
+    def _fake(url, params, headers, *, timeout_s):
+        calls.append((url, params))
+        needle = _needle_from_url(url, _I833_SHA)
+        if not needle:  # check 23's root listing (parent of the footer path)
+            return verify_task_body._TreeProbeResult(
+                "ok", [{"path": "issue833_onpolicy_map", "type": "directory"}], None, ""
+            )
+        entries = [{"path": needle, "type": "directory"}]
+        entries += [{"path": f"{needle}/cell{i}.npz", "type": "file"} for i in range(per_ns_files)]
+        entries += [{"path": f"{needle}/d{j}", "type": "directory"} for j in range(per_ns_dirs)]
+        return verify_task_body._TreeProbeResult("ok", entries, None, "")
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _fake)
+
+
+def test_hf_count_extractor_per_namespace_833_shape():
+    """Pure extractor: the verbatim #833 footer (original wrong 908 form)
+    yields exactly one per-namespace claim with the parent prefix + the three
+    link-text namespaces; the corrected 891 form yields count 891; and the
+    whole-prefix gatherer returns [] on BOTH (no A/B/C-pinned misread — the
+    per-namespace qualifier is invisible to the whole-prefix patterns)."""
+    wrong = _i833_footer(_I833_WRONG_PAREN)
+    claims = verify_task_body._gather_hf_per_namespace_claims(wrong)
+    assert claims == [
+        (
+            908,
+            "superkaiba1/explore-persona-space-data",
+            "dataset",
+            _I833_SHA,
+            "issue833_onpolicy_map",
+            _I833_NAMESPACES,
+        )
+    ]
+    corrected = _i833_footer(_I833_CORRECTED_PAREN)
+    assert [c[0] for c in verify_task_body._gather_hf_per_namespace_claims(corrected)] == [891]
+    assert verify_task_body._gather_hf_count_claims(wrong) == []
+    assert verify_task_body._gather_hf_count_claims(corrected) == []
+    # Gatherer dedup: the identical footer repeated twice in one body is ONE
+    # claim tuple.
+    twice = wrong + "\n\n" + wrong
+    assert len(verify_task_body._gather_hf_per_namespace_claims(twice)) == 1
+    # Comma-grouped + case-insensitive per-namespace positive.
+    cased = f"[`ns_a/` @abc1234]({_I931_REPO}/tree/abc1234def/p) (1,234 Files Per Namespace)"
+    cased_claims = verify_task_body._gather_hf_per_namespace_claims(cased)
+    assert [(c[0], c[5]) for c in cased_claims] == [(1234, ("ns_a",))]
+
+
+def test_hf_count_extractor_pinned_revision_form():
+    """Pure extractor: the anchored `N files at the pinned revision` phrase in
+    a paren AFTER a pinned tree link extracts a WHOLE-prefix claim through
+    `_gather_hf_count_claims` (Pattern C); the combined #833 phrase (`... per
+    namespace at the pinned revision`) yields ZERO pinned-revision claims —
+    adjacency exclusivity ("per namespace" intervenes between "files" and
+    "at")."""
+    body = f"[x @abc1234]({_I931_REPO}/tree/abc1234def/p) (1,234 files at the pinned revision)"
+    claims = verify_task_body._gather_hf_count_claims(body)
+    assert [(c[0], c[1], c[5]) for c in claims] == [(1234, "files", "p")]
+    assert verify_task_body._gather_hf_per_namespace_claims(body) == []
+    combined = _i833_footer(_I833_WRONG_PAREN)
+    assert verify_task_body._gather_hf_count_claims(combined) == []
+
+
+def test_hf_count_extractor_per_namespace_negative_cases():
+    """Shapes that must NOT extract from EITHER gatherer (precision-first;
+    each guards a concrete false-positive class). Includes the two §5.2
+    guard arms: a per-namespace-qualified count in link-TEXT position
+    (Pattern A arm) and in paren-BEFORE-link position (Pattern B arm — the
+    round-1 Must-Fix: dropping the `_COUNT_PAREN_LINK_RE` lookahead alone
+    must turn this fixture red)."""
+    link_plain = f"[x @abc1234]({_I931_REPO}/tree/abc1234def/p)"
+    link_ns = f"[`ns_a/` @abc1234]({_I931_REPO}/tree/abc1234def/p)"
+    negatives = [
+        f"{link_plain} (891 files per seed)",  # anchor requires literal "per namespace"
+        "[`ns_a/` @abc1234](https://github.com/o/r/tree/abc1234def/p) (891 files per namespace)",  # non-HF link
+        f"[`ns_a/` @main]({_I931_REPO}/tree/main/p) (891 files per namespace)",  # moving ref
+        f"[`f.json` @abc1234]({_I931_REPO}/blob/abc1234def/p/f.json) (891 files per namespace)",  # /blob/
+        "The namespaces hold 908 files listed per namespace at the pinned revision.",  # link-free prose (the #1088 body shape)
+        f"```\n{_i833_footer(_I833_WRONG_PAREN)}\n```",  # fenced block
+        f"{link_ns} (873 cell npz + 18 JSONs)",  # no anchor phrase
+        f"{link_ns} (one file per namespace)",  # no digit
+        f"[891 files per namespace @abc1234]({_I931_REPO}/tree/abc1234def/p)",  # guard arm A: link-TEXT position
+        f"(891 files per namespace): [x]({_I931_REPO}/tree/abc1234def/p)",  # guard arm B: paren-BEFORE-link position
+        link_ns + "\n\n(891 files per namespace)",  # blank-line gap — Pattern C is same-line only
+        link_ns + "   (891 files per namespace)",  # 3-space gap — outside the separator bound
+    ]
+    for body in negatives:
+        assert verify_task_body._gather_hf_per_namespace_claims(body) == [], body
+        assert verify_task_body._gather_hf_count_claims(body) == [], body
+
+
+def test_hf_count_extractor_ab_guard_preserves_plain_claims():
+    """The §5.2 negative lookahead does not disturb plain Pattern A/B
+    extraction (regression companion to the existing A/B tests, exercising
+    the MODIFIED regexes)."""
+    plain_a = f"[pairs_meta, 9 files]({_I931_REPO}/tree/{_I931_SHA}/pairs_meta)"
+    assert [(c[0], c[1]) for c in verify_task_body._gather_hf_count_claims(plain_a)] == [
+        (9, "files")
+    ]
+    plain_b = (
+        "(515 files verified via scoped listing): "
+        f"[issue931_story_map @ 9534b998]({_I931_REPO}/tree/{_I931_SHA}/issue931_story_map)"
+    )
+    assert [(c[0], c[1]) for c in verify_task_body._gather_hf_count_claims(plain_b)] == [
+        (515, "files")
+    ]
+
+
+def test_hf_count_per_namespace_mismatch_warns_833_shape(monkeypatch):
+    """Acceptance criterion 1: the #833 footer restored to its ORIGINAL wrong
+    908 form WARNs naming 908, 891 file(s), a namespace path, and the
+    files+folders diagnostic (908 = 891 + 17); `passed` stays True; overall
+    `ok` stays True; the probe set is EXACTLY the three sub-prefixes joined
+    as `<link-prefix>/<ns>` (memo-deduplicated)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls: list = []
+    _i833_needle_stub(monkeypatch, calls)
+    ok, results = verify_task_body.verify_text(_i833_probe_body(_I833_WRONG_PAREN))
+    r = _results_by_name(results)[_HF_30_NAME]
+    assert r.passed and r.is_warn
+    assert "908" in r.detail and "891 file(s)" in r.detail
+    assert "issue833_onpolicy_map/analysis_tensors_nonemit" in r.detail
+    assert "consistent with files+folders" in r.detail
+    assert ok  # WARN never flips overall ok
+    needles = [n for n in (_needle_from_url(u, _I833_SHA) for u, _p in calls) if n]
+    # Exact-set assertion on the check-30 per-namespace probes (a wrong join
+    # — e.g. a bare `analysis_tensors_nonemit` missing the parent prefix —
+    # fails this); check 23's existence probe lists the ROOT (no needle).
+    assert set(needles) == _I833_SUB_PREFIXES
+    assert len(needles) == 3  # memo-deduplicated: one probe per sub-prefix
+
+
+def test_hf_count_per_namespace_match_passes(monkeypatch):
+    """Acceptance criterion 2: the corrected 891 form under the same stub is
+    a clean PASS — no WARN, no unverified note, `1 claim(s) checked`."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    calls: list = []
+    _i833_needle_stub(monkeypatch, calls)
+    ok, results = verify_task_body.verify_text(_i833_probe_body(_I833_CORRECTED_PAREN))
+    r = _results_by_name(results)[_HF_30_NAME]
+    assert r.passed and not r.is_warn, r.detail
+    assert "unverified" not in r.detail
+    assert "1 claim(s) checked" in r.detail
+    assert ok
+
+
+def test_hf_count_per_namespace_no_names_unverified(monkeypatch):
+    """A per-namespace claim whose link TEXT names no backtick `dir/` tokens
+    surfaces as an `unverified` note with ZERO Hub GETs — never a WARN,
+    never a parent-prefix guess (the stub raises on any call)."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+
+    def _boom(url, params, headers, *, timeout_s):  # pragma: no cover
+        raise AssertionError("probe issued for a no-namespaces per-namespace claim")
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _boom)
+    body = (
+        f"round-2 subset tensors [round-2 subset tensors @fb4fe90fdd]({_I931_REPO}/tree/"
+        f"{_I833_SHA}/issue833_onpolicy_map) (891 files per namespace)"
+    )
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert r.passed and not r.is_warn
+    assert "unverified" in r.detail and "per-namespace claim" in r.detail
+
+
+def test_hf_count_per_namespace_offline_fence(monkeypatch):
+    """Under the EPM_VERIFY_BODY_NO_HF fence a per-namespace claim WITH
+    resolvable namespaces issues ZERO GETs and surfaces per-namespace
+    `HF probe fenced` unverified notes on a PASS line."""
+    monkeypatch.setenv("EPM_VERIFY_BODY_NO_HF", "1")
+
+    def _boom(url, params, headers, *, timeout_s):  # pragma: no cover
+        raise AssertionError("network touched under the offline fence")
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _boom)
+    r = verify_task_body.check_hf_file_count_claims(_i833_footer("891 files per namespace"))
+    assert r.passed and not r.is_warn
+    assert "HF probe fenced" in r.detail
+
+
+def test_hf_count_per_namespace_partial_skip_never_warns(monkeypatch):
+    """Mixed per-namespace outcomes: ns1 exhaustive match, ns2 indeterminate
+    (429), ns3 exhaustive MISMATCH with ZERO directory entries (pins the
+    PLAIN mismatch wording, not the files+folders diagnostic) → exactly one
+    WARN naming ns3, one unverified note naming ns2, `passed` True."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+
+    def _fake(url, params, headers, *, timeout_s):
+        needle = _needle_from_url(url, _I833_SHA)
+        if needle.endswith("_nonemit_eq5"):  # ns3: 890 files, zero dirs → plain mismatch
+            entries = [{"path": f"{needle}/cell{i}.npz", "type": "file"} for i in range(890)]
+            return verify_task_body._TreeProbeResult("ok", entries, None, "")
+        if needle.endswith("_matchedN"):  # ns2: throttled
+            return verify_task_body._TreeProbeResult(
+                "indeterminate", [], None, "HF tree probe failed: HTTP 429"
+            )
+        entries = [{"path": f"{needle}/cell{i}.npz", "type": "file"} for i in range(891)]
+        return verify_task_body._TreeProbeResult("ok", entries, None, "")
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _fake)
+    r = verify_task_body.check_hf_file_count_claims(_i833_footer("891 files per namespace"))
+    assert r.passed and r.is_warn
+    assert r.detail.count("body claims") == 1  # exactly one WARN (ns3)
+    assert "analysis_tensors_nonemit_eq5" in r.detail and "890 file(s)" in r.detail
+    assert "files+folders" not in r.detail  # dirs == 0 → plain branch
+    assert "subset of the namespace" not in r.detail  # overcount → no subset hedge
+    assert "unverified (count not confirmed)" in r.detail
+    assert "analysis_tensors_matchedN" in r.detail and "HTTP 429" in r.detail
+
+
+def test_hf_count_per_namespace_probe_cap(monkeypatch):
+    """With `_HF_COUNT_MAX_PROBES` at 2 the THIRD namespace surfaces as the
+    per-body-probe-cap unverified note — never a WARN from the capped
+    namespace; exactly two probes are issued."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    monkeypatch.setattr(verify_task_body, "_HF_COUNT_MAX_PROBES", 2)
+    calls: list = []
+    _i833_needle_stub(monkeypatch, calls, per_ns_files=891, per_ns_dirs=0)
+    r = verify_task_body.check_hf_file_count_claims(_i833_footer("891 files per namespace"))
+    assert r.passed and not r.is_warn
+    assert "per-body probe cap" in r.detail
+    assert "analysis_tensors_nonemit_eq5" in r.detail  # the capped third namespace
+    assert len(calls) == 2
+
+
+def test_hf_count_shared_cap_across_claim_kinds(monkeypatch):
+    """The memo/cap accounting is SHARED across the whole-prefix and
+    per-namespace verification loops (`_probed` closure contract): one
+    Pattern-A claim + two per-namespace claims with cap 2 → exactly 2 probes
+    (whole prefix, then first namespace); the SECOND per-namespace claim's
+    re-reference to the already-probed `parent/ns1` is served from the memo
+    PAST the cap (no cap note for it), while the fresh `parent/ns2` probe is
+    cap-blocked with the one cap note."""
+    monkeypatch.delenv("EPM_VERIFY_BODY_NO_HF", raising=False)
+    monkeypatch.setattr(verify_task_body, "_HF_COUNT_MAX_PROBES", 2)
+    calls: list[str] = []
+
+    def _fake(url, params, headers, *, timeout_s):
+        needle = _needle_from_url(url, "abc1234def")
+        calls.append(needle)
+        if needle == "p":
+            entries = [{"path": f"p/f{i}.json", "type": "file"} for i in range(9)]
+        elif needle == "parent/ns1":
+            entries = [{"path": f"parent/ns1/c{i}.npz", "type": "file"} for i in range(5)]
+        else:  # pragma: no cover
+            raise AssertionError(f"cap must block any further probe (got {needle!r})")
+        return verify_task_body._TreeProbeResult("ok", entries, None, "")
+
+    monkeypatch.setattr(verify_task_body, "_hf_tree_get", _fake)
+    body = (
+        f"- [p, 9 files]({_I931_REPO}/tree/abc1234def/p)\n"
+        f"- [`ns1/` @abc1234]({_I931_REPO}/tree/abc1234def/parent) (5 files per namespace)\n"
+        f"- [`ns1/`, `ns2/` @abc1234]({_I931_REPO}/tree/abc1234def/parent) "
+        "(5 files per namespace)\n"
+    )
+    r = verify_task_body.check_hf_file_count_claims(body)
+    assert calls == ["p", "parent/ns1"]  # 2 probes; memo served the ns1 re-reference
+    assert r.passed and not r.is_warn  # everything probed matches
+    assert r.detail.count("per-body probe cap") == 1  # only the fresh parent/ns2 was capped
+    assert "parent/ns2" in r.detail
+    assert "3 claim(s) checked" in r.detail  # 1 whole-prefix + 2 per-namespace claims
+
+
 # ─── Check 32: HF-adjacent backtick file claims vs the pinned tree (WARN) ──
 #
 # Check 32 (`check_hf_adjacent_file_claims`, #1016) extracts backtick

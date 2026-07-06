@@ -541,22 +541,31 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   untracked at branch HEAD; the loss was invisible to every check (#964).
 - **check 30** (`check_hf_file_count_claims`, WARN): numeric file-count
   claims adjacent to hex-pinned HF `/tree/<sha>` markdown links ("N files" /
-  "N shards" inside the link text, or a parenthetical opening with the
-  count-noun immediately before the link) must match a files-only scoped
-  Hub tree count at the pinned revision — the same bounded raw
-  tree-endpoint probe checks 23/25 use (#733; never the SDK
-  `list_repo_tree` / `list_repo_files`), counted EXHAUSTIVELY with folder
-  entries excluded. Mismatch → WARN, never FAIL (there is no
+  "N shards" inside the link text; a parenthetical opening with the
+  count-noun immediately before the link; or, in a parenthetical
+  immediately AFTER the link, the two anchored phrases "N files
+  (listed )?at the pinned revision" — whole-prefix — and "N files
+  (listed )?per namespace" — each backtick `dir/` namespace named in the
+  link TEXT is probed at `<link-prefix>/<ns>` and must hold exactly N
+  files; no extractable namespaces → an `unverified` note, never a WARN)
+  must match a files-only scoped Hub tree count at the pinned revision —
+  the same bounded raw tree-endpoint probe checks 23/25 use (#733; never
+  the SDK `list_repo_tree` / `list_repo_files`), counted EXHAUSTIVELY with
+  folder entries excluded. Per-namespace-qualified counts are excluded
+  from the link-text / paren-before-link patterns by a negative lookahead
+  (wrong whole-prefix semantics). Mismatch → WARN, never FAIL (there is no
   `passed=False` path); shard claims are one-sided (WARN only when
   claimed > file count — a shards prefix legitimately also holds a
   manifest/sidecar). Every non-definitive probe outcome (offline fence /
   missing `huggingface_hub` / 429 / network error / `not_found` /
-  page-time cap / the per-body `_HF_COUNT_MAX_PROBES` cap) surfaces as an
-  `unverified` note on a PASS line — a PARTIAL count never grounds a
-  WARN. Vacuous PASS with ZERO Hub probes when no count claim sits
-  adjacent to an HF tree link. Incident: task #931 shipped 528/10/3/198
-  where the pinned tree holds 515/9/2/197 — folder entries counted as
-  files (#1008).
+  page-time cap / the per-body `_HF_COUNT_MAX_PROBES` cap, shared across
+  whole-prefix + per-namespace probes) surfaces as an `unverified` note on
+  a PASS line — a PARTIAL count never grounds a WARN. Vacuous PASS with
+  ZERO Hub probes when no count claim sits adjacent to an HF tree link.
+  Incidents: task #931 shipped 528/10/3/198 where the pinned tree holds
+  515/9/2/197 — folder entries counted as files (#1008); task #833 shipped
+  "908 files listed per namespace" where each namespace holds 891 blobs +
+  17 directory entries (#1088).
 
 - **check 31** (`check_orphaned_per_unit_figures`, WARN): the INVERSE
   direction of checks 4b/22/29 (which verify what the body CITES) —
@@ -6751,12 +6760,17 @@ def check_audit_availability_claims_match_hf(body: str) -> CheckResult:
 # artifacts where the scoped listing at the pinned revision holds
 # 515/9/2/197 — folder entries were counted as files. Check 23 verifies the
 # link RESOLVES; nothing verified the adjacent numeric claim. Check 30
-# extracts count claims sitting in two conservative positions relative to a
-# hex-pinned HF /tree markdown link and compares them against a files-only
-# count from the SAME bounded raw tree-endpoint probe checks 23/25 use
-# (#733 — never the SDK list_repo_tree / list_repo_files). WARN-only: a
-# claim miscount is a prose-hygiene defect, not a broken body; and a WARN
-# can never block offline (every non-definitive probe outcome SKIPs).
+# extracts count claims sitting in three conservative positions relative to
+# a hex-pinned HF /tree markdown link and compares them against a
+# files-only count from the SAME bounded raw tree-endpoint probe checks
+# 23/25 use (#733 — never the SDK list_repo_tree / list_repo_files).
+# WARN-only: a claim miscount is a prose-hygiene defect, not a broken body;
+# and a WARN can never block offline (every non-definitive probe outcome
+# SKIPs). #833 then shipped "908 files listed per namespace at the pinned
+# revision" in a paren AFTER the link (908 = 891 blobs + 17 directory
+# entries per namespace — list_repo_tree ENTRIES counted as files) — a
+# claim shape neither Pattern A nor B could parse; Pattern C + the
+# per-namespace gatherer close that extraction gap (#1088).
 
 # A markdown link whose target is an HF Hub URL. Two-stage extraction: match
 # the link structure first, then scan the TEXT for a count-noun and parse the
@@ -6765,9 +6779,18 @@ _MD_HF_LINK_RE = re.compile(
     r"\[(?P<text>[^\]]{1,300})\]\((?P<url>https?://huggingface\.co/[^)\s]+)\)"
 )
 # A numeric count claim: "515 files" / "1 file" / "10 shards". Comma-grouped
-# thousands allowed ("1,234 files"); bounded at 6 plain digits.
+# thousands allowed ("1,234 files"); bounded at 6 plain digits. The negative
+# lookahead makes per-namespace-qualified counts ("891 files per namespace")
+# INVISIBLE to the whole-prefix Patterns A/B — such a count has per-namespace
+# semantics (each named sub-namespace holds N files, #833), so reading it as
+# a whole-prefix claim would compare N against the parent's total and
+# manufacture a guaranteed false WARN. Per-namespace claims are extracted
+# ONLY in the observed link-then-paren position
+# (`_gather_hf_per_namespace_claims`); A/B-position per-namespace claims are
+# a documented recall sacrifice, never a wrong comparison.
 _COUNT_NOUN_RE = re.compile(
-    r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b",
+    r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"(?!\s+(?:listed\s+)?per\s+namespace\b)",
     re.IGNORECASE,
 )
 # A parenthetical that OPENS with the count-noun, immediately preceding a
@@ -6775,12 +6798,48 @@ _COUNT_NOUN_RE = re.compile(
 # separator between `)` and `[` — spaces plus an optional `:` / dash): the
 # #931 footer shape
 # `... (515 files verified via scoped listing): [issue931_story_map @ ...](url)`.
+# Carries the same per-namespace negative lookahead as `_COUNT_NOUN_RE`.
 _COUNT_PAREN_LINK_RE = re.compile(
-    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b[^()]{0,80}\)"
+    r"\((?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+(?P<noun>files?|shards?)\b"
+    r"(?!\s+(?:listed\s+)?per\s+namespace\b)"
+    r"[^()]{0,80}\)"
     r"\s{0,2}[:\u2013\u2014-]?\s{0,2}"  # ':' / en-dash / em-dash / hyphen separators
     r"\[[^\]]{1,300}\]\((?P<url>https?://huggingface\.co/[^)\s]+)\)",
     re.IGNORECASE,
 )
+# Pattern C position: a parenthetical immediately AFTER a pinned HF markdown
+# link — the #833 footer shape. The link-TEXT-capturing sibling of check 32's
+# `_HF_LINK_THEN_PAREN_RE` (which starts at `\](` and cannot see the text; the
+# text carries the backtick namespace tokens the per-namespace form needs).
+# Separator is SAME-LINE only (`[ \t]{0,2}` — a newline / 3+-space gap never
+# binds; stricter than check 32's `\s{0,2}` by design), and the paren body is
+# `[^()]` so a NESTED paren inside the parenthetical is a documented recall
+# sacrifice.
+_HF_LINKTEXT_THEN_PAREN_RE = re.compile(
+    r"\[(?P<text>[^\]]{1,300})\]\((?P<url>https?://huggingface\.co/[^)\s]+)\)"
+    r"[ \t]{0,2}\((?P<paren>[^()]{1,300})\)"
+)
+# Phrase-anchored count claims INSIDE the paren (any position — the phrase,
+# not the position, is the precision anchor; #833's count sits after an `=`).
+# "listed" is the ONE tolerated filler (#833's original wording: "908 files
+# listed per namespace"). Mutually exclusive by adjacency: "files per
+# namespace at the pinned revision" matches ONLY the per-namespace form
+# ("per namespace" intervenes between "files" and "at"). files-only (no
+# shards) — a shards-per-namespace claim is unseen in the wild and stays a
+# documented recall sacrifice.
+_FILES_PER_NAMESPACE_RE = re.compile(
+    r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+files?\s+(?:listed\s+)?per\s+namespace\b",
+    re.IGNORECASE,
+)
+_FILES_AT_PINNED_REV_RE = re.compile(
+    r"\b(?P<count>\d{1,3}(?:,\d{3})+|\d{1,6})\s+files?\s+(?:listed\s+)?"
+    r"at\s+the\s+pinned\s+revision\b",
+    re.IGNORECASE,
+)
+# A backtick directory token in link TEXT: `analysis_tensors_nonemit/` — the
+# trailing slash is the directory signature (a dotted token without it is a
+# FILE claim, check 32's territory).
+_BACKTICK_DIR_RE = re.compile(r"`(?P<ns>[A-Za-z0-9_\-./]{1,120}/)`")
 # Per-body cap on UNIQUE (repo, sha, prefix) count probes. Worst-case wall
 # arithmetic (the deadline is checked only AFTER each page fetch): one page
 # costs up to _HF_PROBE_ATTEMPTS x _HF_PROBE_TIMEOUT_S + _HF_PROBE_SLEEP_S
@@ -6806,8 +6865,8 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     shared URL regex only matches 7-40-char hex revisions, mirroring
     check 23).
 
-    Two conservative positions (precision over recall — a missed claim costs
-    nothing, the check is a net-new WARN):
+    Three conservative positions (precision over recall — a missed claim
+    costs nothing, the check is a net-new WARN):
 
     - **Pattern A** — the count-noun sits INSIDE the markdown link TEXT
       (``[pairs_meta, 9 files](…/tree/<sha>/…)``): the number and the link
@@ -6816,12 +6875,27 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
     - **Pattern B** — a parenthetical that OPENS with the count-noun
       immediately precedes the link (``(515 files verified via scoped
       listing): [x](…)``, the #931 footer shape).
+    - **Pattern C (pinned-revision form)** — a parenthetical immediately
+      AFTER the link containing the anchored phrase ``N files (listed )?at
+      the pinned revision`` at ANY position inside the paren (``[x](…)
+      (1,234 files at the pinned revision)``): the phrase, not the
+      position, is the precision anchor. Same-paren PER-NAMESPACE claims
+      (``N files (listed )?per namespace``, the #833 footer shape) are NOT
+      whole-prefix claims — they are extracted separately by
+      ``_gather_hf_per_namespace_claims`` and, via the negative lookahead
+      in ``_COUNT_NOUN_RE`` / ``_COUNT_PAREN_LINK_RE``, stay invisible to
+      Patterns A/B (wrong semantics would compare N against the parent's
+      total).
 
     Known recall sacrifices (each avoids a concrete false-positive class):
-    prose counts near BARE (non-markdown) HF URLs; counts AFTER the link;
-    parentheticals where the count is not leading ("(total 515 files)");
-    compound claims ("8 eval JSONs + 2 npz"); nouns other than file(s) /
-    shard(s) ("rows" / "completions" are RECORD counts, not file counts).
+    prose counts near BARE (non-markdown) HF URLs; counts AFTER the link
+    OUTSIDE a link-adjacent paren carrying one of the two anchored phrases
+    (generic post-link prose counts stay sacrificed); parentheticals where
+    the count is not leading ("(total 515 files)") unless phrase-anchored
+    per Pattern C; compound claims ("8 eval JSONs + 2 npz"); nouns other
+    than file(s) / shard(s) ("rows" / "completions" are RECORD counts, not
+    file counts); per-namespace-qualified counts in A/B positions (see the
+    lookahead note above).
     """
     kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
     stripped = _strip_fenced_blocks(body)
@@ -6863,6 +6937,54 @@ def _gather_hf_count_claims(body: str) -> list[tuple[int, str, str, str, str, st
             _add(cm.group("count"), cm.group("noun"), lm.group("url"))
     for pm in _COUNT_PAREN_LINK_RE.finditer(stripped):  # Pattern B: paren before link
         _add(pm.group("count"), pm.group("noun"), pm.group("url"))
+    for lm in _HF_LINKTEXT_THEN_PAREN_RE.finditer(stripped):  # Pattern C: paren after link
+        for cm in _FILES_AT_PINNED_REV_RE.finditer(lm.group("paren")):
+            _add(cm.group("count"), "files", lm.group("url"))
+    return out
+
+
+def _gather_hf_per_namespace_claims(
+    body: str,
+) -> list[tuple[int, str, str, str, str, tuple[str, ...]]]:
+    """Extract ``(claimed_count, repo_id, repo_type, sha, link_prefix,
+    namespaces)`` tuples for "N files (listed )?per namespace" claims in a
+    parenthetical immediately AFTER a hex-pinned HF ``/tree`` markdown link
+    (check 30 Pattern C, the #833 footer shape — the link URL points at the
+    PARENT prefix, the link TEXT names the sub-namespaces). ``namespaces``
+    are the backtick ``dir/`` tokens in the link TEXT (trailing slash
+    stripped, order-preserving dedup); an EMPTY tuple means the claim was
+    extracted but its namespaces are unresolvable — the caller surfaces it
+    as `unverified`, never probes, never WARNs (no parent-prefix guess, no
+    divisibility heuristics: "never ground a WARN on a partial read").
+    Fence-stripped; deduplicated; ``/blob/`` links and moving refs are out
+    of scope (same URL guards as ``_gather_hf_count_claims``). A nested
+    paren inside the parenthetical is a documented recall sacrifice
+    (`_HF_LINKTEXT_THEN_PAREN_RE` bounds the paren body at ``[^()]``)."""
+    kind_to_type = {"datasets": "dataset", "spaces": "space", None: "model"}
+    stripped = _strip_fenced_blocks(body)
+    out: list[tuple[int, str, str, str, str, tuple[str, ...]]] = []
+    seen: set[tuple] = set()
+    for lm in _HF_LINKTEXT_THEN_PAREN_RE.finditer(stripped):
+        url = lm.group("url").rstrip(".,;:!?")
+        m = _HF_HUB_TREE_BLOB_URL_RE.match(url)
+        if m is None or f"/tree/{m.group('sha')}" not in url:
+            continue
+        namespaces = tuple(
+            dict.fromkeys(  # order-preserving dedup
+                ns.strip("/") for ns in _BACKTICK_DIR_RE.findall(lm.group("text")) if ns.strip("/")
+            )
+        )
+        repo_id = f"{m.group('owner')}/{m.group('repo')}"
+        prefix = (m.group("path") or "").rstrip("/")
+        for cm in _FILES_PER_NAMESPACE_RE.finditer(lm.group("paren")):
+            count = int(cm.group("count").replace(",", ""))
+            key = (count, repo_id, m.group("sha"), prefix, namespaces)
+            if key in seen:
+                continue
+            seen.add(key)
+            out.append(
+                (count, repo_id, kind_to_type[m.group("kind")], m.group("sha"), prefix, namespaces)
+            )
     return out
 
 
@@ -6941,6 +7063,96 @@ def _hf_file_count_for_prefix(
     return status, n_files, n_dirs, note
 
 
+def _verify_hf_whole_prefix_claims(
+    claims: list[tuple[int, str, str, str, str, str]],
+    probed,
+    mismatched: list[str],
+    unverified: list[str],
+) -> None:
+    """Whole-prefix verification leg of check 30 (Patterns A/B/C-pinned):
+    compare each ``_gather_hf_count_claims`` tuple against the files-only
+    count from the caller's shared memoized/capped ``probed`` closure,
+    appending mismatch messages / unverified notes to the caller's lists.
+    Files claims are two-sided; shard claims are one-sided (folder-inflation
+    only)."""
+    for count, noun, repo_id, repo_type, sha, prefix in claims:
+        result = probed((repo_id, repo_type, sha, prefix))
+        if result is None:
+            continue  # per-body probe cap — cap note already appended
+        status, n_files, n_dirs, note = result
+        if status != "ok":
+            skip_note = f"`{prefix or repo_id}@{sha[:8]}` ({note})"
+            if skip_note not in unverified:
+                unverified.append(skip_note)
+            continue
+        if noun.lower().startswith("shard") and count <= n_files:
+            continue  # shard claims are one-sided: only folder-inflation WARNs
+        if count == n_files:
+            continue
+        msg = (
+            f"body claims {count} {noun} at `{prefix or '/'}` but `{repo_id}@{sha[:8]}` "
+            f"holds {n_files} file(s)"
+        )
+        if n_dirs and count == n_files + n_dirs:
+            msg += (
+                f" + {n_dirs} folder(s) — the claimed count is consistent with "
+                "files+folders (folder entries are not files)"
+            )
+        elif count < n_files:
+            msg += " (or the claim describes a subset of the prefix)"
+        mismatched.append(msg)
+
+
+def _verify_hf_per_namespace_claims(
+    ns_claims: list[tuple[int, str, str, str, str, tuple[str, ...]]],
+    probed,
+    mismatched: list[str],
+    unverified: list[str],
+) -> None:
+    """Per-namespace verification leg of check 30 (Pattern C, #833): probe
+    each ``<link-prefix>/<ns>`` through the caller's shared memoized/capped
+    ``probed`` closure and compare the claimed per-namespace count two-sided
+    against each namespace's files-only count. A claim with NO extractable
+    namespaces surfaces as an unverified note with ZERO probes (never a
+    WARN, never a parent-prefix guess); each namespace WARNs only on its OWN
+    exhaustive listing — a skipped sibling degrades to unverified without
+    suppressing or creating WARNs elsewhere."""
+    for count, repo_id, repo_type, sha, prefix, namespaces in ns_claims:
+        if not namespaces:
+            note = (
+                f"`{prefix or repo_id}@{sha[:8]}` (per-namespace claim: no "
+                "backtick namespace names in the link text)"
+            )
+            if note not in unverified:
+                unverified.append(note)
+            continue
+        for ns in namespaces:
+            sub = "/".join(p for p in (prefix, ns) if p)
+            result = probed((repo_id, repo_type, sha, sub))
+            if result is None:
+                continue  # per-body probe cap — cap note already appended
+            status, n_files, n_dirs, note = result
+            if status != "ok":
+                skip_note = f"`{sub}@{sha[:8]}` ({note})"
+                if skip_note not in unverified:
+                    unverified.append(skip_note)
+                continue
+            if count == n_files:
+                continue
+            msg = (
+                f"body claims {count} files per namespace but namespace "
+                f"`{sub}` at `{repo_id}@{sha[:8]}` holds {n_files} file(s)"
+            )
+            if n_dirs and count == n_files + n_dirs:
+                msg += (
+                    f" + {n_dirs} folder(s) — the claimed count is consistent "
+                    "with files+folders (folder entries are not files)"
+                )
+            elif count < n_files:
+                msg += " (or the claim describes a subset of the namespace)"
+            mismatched.append(msg)
+
+
 def check_hf_file_count_claims(body: str) -> CheckResult:
     """Check 30 (WARN): numeric file-count claims adjacent to hex-pinned HF
     ``/tree`` links must match a files-only scoped Hub tree count.
@@ -6949,10 +7161,23 @@ def check_hf_file_count_claims(body: str) -> CheckResult:
     "198 files" where the scoped listing at the pinned revision holds
     515/9/2/197 — folder entries were counted as files. This check compares
     each extracted claim (``_gather_hf_count_claims`` — Pattern A count in
-    link text / Pattern B paren-before-link; see its docstring for the
-    precision/recall trade-offs) against an EXHAUSTIVE files-only count of
-    the pinned prefix (``_hf_file_count_for_prefix`` → the #733 bounded raw
-    tree-endpoint probe; folders excluded).
+    link text / Pattern B paren-before-link / Pattern C anchored
+    pinned-revision phrase in a paren AFTER the link; see its docstring for
+    the precision/recall trade-offs) against an EXHAUSTIVE files-only count
+    of the pinned prefix (``_hf_file_count_for_prefix`` → the #733 bounded
+    raw tree-endpoint probe; folders excluded).
+
+    **Per-namespace claims** (``_gather_hf_per_namespace_claims`` — "N files
+    (listed )?per namespace" in a paren AFTER the link, the #833 footer
+    shape) verify EACH sub-namespace named as a backtick ``dir/`` token in
+    the link TEXT: probe ``<link-prefix>/<ns>`` through the SAME shared
+    memo/cap, exact two-sided compare of the claimed N against each
+    namespace's files-only count, files+folders diagnostic per namespace
+    (the #833 signature: 908 = 891 blobs + 17 dirs). A claim whose link
+    text names NO backtick namespaces surfaces as an `unverified` note with
+    ZERO probes — never a WARN, never a parent-prefix guess. Each namespace
+    WARNs only on its OWN exhaustive listing; a skipped sibling namespace
+    surfaces as unverified without suppressing or creating WARNs elsewhere.
 
     Semantics:
 
@@ -6991,42 +7216,30 @@ def check_hf_file_count_claims(body: str) -> CheckResult:
     """
     name = "HF file-count claims match the Hub tree"
     claims = _gather_hf_count_claims(body)
-    if not claims:
+    ns_claims = _gather_hf_per_namespace_claims(body)
+    if not claims and not ns_claims:
         return CheckResult(name, True, "no file-count claims adjacent to HF tree links")
     mismatched: list[str] = []
     unverified: list[str] = []
     probe_memo: dict[tuple[str, str, str, str], tuple[str, int, int, str]] = {}
-    for count, noun, repo_id, repo_type, sha, prefix in claims:
-        key = (repo_id, repo_type, sha, prefix)
+
+    def _probed(key: tuple[str, str, str, str]) -> tuple[str, int, int, str] | None:
+        """Memoized probe under the SHARED per-body cap (one memo + one cap
+        accounting across the whole-prefix AND per-namespace loops). Memo
+        lookup happens BEFORE the cap check, so a past-cap re-reference to
+        an already-probed key is served from the memo; a FRESH probe past
+        the cap returns None after appending the cap note."""
         if key not in probe_memo:
             if len(probe_memo) >= _HF_COUNT_MAX_PROBES:
-                cap_note = f"`{prefix or repo_id}@{sha[:8]}` (per-body probe cap)"
+                cap_note = f"`{key[3] or key[0]}@{key[2][:8]}` (per-body probe cap)"
                 if cap_note not in unverified:
                     unverified.append(cap_note)
-                continue
-            probe_memo[key] = _hf_file_count_for_prefix(repo_id, repo_type, sha, prefix)
-        status, n_files, n_dirs, note = probe_memo[key]
-        if status != "ok":
-            skip_note = f"`{prefix or repo_id}@{sha[:8]}` ({note})"
-            if skip_note not in unverified:
-                unverified.append(skip_note)
-            continue
-        if noun.lower().startswith("shard") and count <= n_files:
-            continue  # shard claims are one-sided: only folder-inflation WARNs
-        if count == n_files:
-            continue
-        msg = (
-            f"body claims {count} {noun} at `{prefix or '/'}` but `{repo_id}@{sha[:8]}` "
-            f"holds {n_files} file(s)"
-        )
-        if n_dirs and count == n_files + n_dirs:
-            msg += (
-                f" + {n_dirs} folder(s) — the claimed count is consistent with "
-                "files+folders (folder entries are not files)"
-            )
-        elif count < n_files:
-            msg += " (or the claim describes a subset of the prefix)"
-        mismatched.append(msg)
+                return None
+            probe_memo[key] = _hf_file_count_for_prefix(*key)
+        return probe_memo[key]
+
+    _verify_hf_whole_prefix_claims(claims, _probed, mismatched, unverified)
+    _verify_hf_per_namespace_claims(ns_claims, _probed, mismatched, unverified)
     unverified_detail = ""
     if unverified:
         unverified_detail = f"; {len(unverified)} unverified (count not confirmed): " + "; ".join(
@@ -7034,7 +7247,8 @@ def check_hf_file_count_claims(body: str) -> CheckResult:
         )
     if mismatched:
         return CheckResult(name, True, "; ".join(mismatched) + unverified_detail, is_warn=True)
-    return CheckResult(name, True, f"{len(claims)} claim(s) checked" + unverified_detail)
+    n_checked = len(claims) + len(ns_claims)
+    return CheckResult(name, True, f"{n_checked} claim(s) checked" + unverified_detail)
 
 
 # ─── Check 32: adjacent backtick file claims are members of the pinned tree ──
