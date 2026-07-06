@@ -604,8 +604,8 @@
     "1077": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1077",
-      "status": "proposed",
+      "path": "tasks/planning/1077",
+      "status": "planning",
       "title": "daily-fix: step9c_baseline dirty-oracle scratch-tree fallbac"
     },
     "1078": {
