@@ -47,6 +47,27 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
 RES = PROJECT / "eval_results/issue_833"
 LAYERS = [7, 14, 21]
 
+# Plain-English point labels for the 16 source contexts (paper-plots §3.5:
+# no config slugs in rendered figure text; slugs stay in sidecar provenance).
+SOURCE_LABELS = {
+    "binst_fact": "fact instruction",
+    "default": "default assistant",
+    "fmt_code": "code format",
+    "fmt_json": "JSON format",
+    "icl_k2": "2-demo prefix",
+    "icl_k8": "8-demo prefix",
+    "reph_casual": "casual rephrase",
+    "reph_imp": "imperative rephrase",
+    "reph_polite": "polite rephrase",
+    "sp_doctor": "doctor persona",
+    "sp_ph1": "PersonaHub 1",
+    "sp_ph2": "PersonaHub 2",
+    "sp_swe": "software engineer",
+    "wc_long_write": "WildChat writing",
+    "wc_short_advice": "WildChat advice",
+    "wc_short_code": "WildChat coding",
+}
+
 set_paper_style("blog")
 C_OFF = paper_palette_role("baseline")
 C_ON = paper_palette_role("primary")
@@ -243,7 +264,7 @@ def fig_decomposition() -> None:
     r_bs, _ = spearmanr(pm, Em)
     ax.scatter(pm, Em, s=26, color=C_ON, linewidths=0)
     for x, y, s in zip(pm, Em, names, strict=True):
-        ax.text(x, y, s, fontsize=6.2, ha="left", va="bottom")
+        ax.text(x, y, SOURCE_LABELS[s], fontsize=6.2, ha="left", va="bottom")
     ax.set_xlabel("source-mean held-out prediction")
     ax.set_ylabel("source-mean leakage E")
     ax.set_title(f"between sources: Spearman {r_bs:+.2f} (n=16)", fontsize=10.5)

@@ -1,6 +1,6 @@
 {
-  "commit": "ca13036dda",
-  "created": "2026-07-06T20:20:04Z",
+  "commit": "d675db446f",
+  "created": "2026-07-06T20:30:57Z",
   "figsize": [
     14.6,
     4.5
@@ -9,112 +9,112 @@
     {
       "source-mean held-out prediction": -0.6904410044125308,
       "source-mean leakage E": 0.014444444444444446,
-      "label": "binst_fact",
+      "label": "fact instruction",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": 0.18384266770300325,
       "source-mean leakage E": 0.7544444444444445,
-      "label": "default",
+      "label": "default assistant",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": 0.18916301206801925,
       "source-mean leakage E": 0.24888888888888888,
-      "label": "fmt_code",
+      "label": "code format",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": 0.13686682367495664,
       "source-mean leakage E": 0.13,
-      "label": "fmt_json",
+      "label": "JSON format",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": 0.07457585207456709,
       "source-mean leakage E": 0.02666666666666667,
-      "label": "icl_k2",
+      "label": "2-demo prefix",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": -0.24887120557414608,
       "source-mean leakage E": 0.012222222222222223,
-      "label": "icl_k8",
+      "label": "8-demo prefix",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": 0.19549013322452388,
       "source-mean leakage E": 0.5822222222222223,
-      "label": "reph_casual",
+      "label": "casual rephrase",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": -0.08176573684442211,
       "source-mean leakage E": 0.3677777777777777,
-      "label": "reph_imp",
+      "label": "imperative rephrase",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": 0.08075655501050885,
       "source-mean leakage E": 0.8077777777777778,
-      "label": "reph_polite",
+      "label": "polite rephrase",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": 0.23933424058592878,
       "source-mean leakage E": 0.812222222222222,
-      "label": "sp_doctor",
+      "label": "doctor persona",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": -0.19202100152892684,
       "source-mean leakage E": 0.21888888888888888,
-      "label": "sp_ph1",
+      "label": "PersonaHub 1",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": 0.24647510252931018,
       "source-mean leakage E": 0.6355555555555554,
-      "label": "sp_ph2",
+      "label": "PersonaHub 2",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": -0.06448620631883134,
       "source-mean leakage E": 0.7977777777777777,
-      "label": "sp_swe",
+      "label": "software engineer",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": 0.22828555887699384,
       "source-mean leakage E": 0.31555555555555564,
-      "label": "wc_long_write",
+      "label": "WildChat writing",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": -0.16559762660507366,
       "source-mean leakage E": 0.6188888888888889,
-      "label": "wc_short_advice",
+      "label": "WildChat advice",
       "_kind": "scatter",
       "_group": 0
     },
     {
       "source-mean held-out prediction": -0.1316003767528356,
       "source-mean leakage E": 0.33333333333333337,
-      "label": "wc_short_code",
+      "label": "WildChat coding",
       "_kind": "scatter",
       "_group": 0
     },
