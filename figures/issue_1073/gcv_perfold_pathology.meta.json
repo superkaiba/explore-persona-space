@@ -1,607 +1,627 @@
 {
-  "commit": "5b081ceb37",
-  "created": "2026-07-06T11:40:26Z",
+  "commit": "c214f485f9",
+  "created": "2026-07-06T12:31:56Z",
   "figsize": [
     9.5,
     4.4
   ],
   "points": [
     {
-      "x": 0.0,
+      "x": -0.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.601104309945224,
+      "series": "10-rollout average",
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "x": 0.0,
+      "x": -0.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.624747982569918,
+      "series": "10-rollout average",
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "x": 0.0,
+      "x": -0.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6280815040660238,
+      "series": "10-rollout average",
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "x": 0.0,
+      "x": -0.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.616729309794769,
+      "series": "10-rollout average",
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "x": 0.0,
+      "x": -0.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.7449263953429435,
+      "series": "10-rollout average",
       "_kind": "scatter",
       "_group": 0
     },
     {
-      "x": 1.0,
+      "x": -0.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5196528593952244,
+      "series": "single greedy",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "x": 1.0,
+      "x": -0.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5410856960957944,
+      "series": "single greedy",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "x": 1.0,
+      "x": -0.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.54752754601947,
+      "series": "single greedy",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "x": 1.0,
+      "x": -0.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5349347032928574,
+      "series": "single greedy",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "x": 1.0,
+      "x": -0.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6937856533733965,
+      "series": "single greedy",
       "_kind": "scatter",
       "_group": 1
     },
     {
-      "x": 2.0,
+      "x": 0.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5172794945692376,
+      "series": "single stochastic (parent draw)",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "x": 2.0,
+      "x": 0.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5436670346045143,
+      "series": "single stochastic (parent draw)",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "x": 2.0,
+      "x": 0.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5475504697944796,
+      "series": "single stochastic (parent draw)",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "x": 2.0,
+      "x": 0.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5355292907733274,
+      "series": "single stochastic (parent draw)",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "x": 2.0,
+      "x": 0.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6831269742009196,
+      "series": "single stochastic (parent draw)",
       "_kind": "scatter",
       "_group": 2
     },
     {
-      "x": 3.0,
+      "x": 0.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5158445835881421,
+      "series": "fresh stochastic draw",
       "_kind": "scatter",
       "_group": 3
     },
     {
-      "x": 3.0,
+      "x": 0.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5470930716756476,
+      "series": "fresh stochastic draw",
       "_kind": "scatter",
       "_group": 3
     },
     {
-      "x": 3.0,
+      "x": 0.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5477981791888471,
+      "series": "fresh stochastic draw",
       "_kind": "scatter",
       "_group": 3
     },
     {
-      "x": 3.0,
+      "x": 0.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5387487176943059,
+      "series": "fresh stochastic draw",
       "_kind": "scatter",
       "_group": 3
     },
     {
-      "x": 3.0,
+      "x": 0.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6877707549340009,
+      "series": "fresh stochastic draw",
       "_kind": "scatter",
       "_group": 3
     },
     {
-      "x": 5.6,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": -11.75461428584046,
+      "x": 0.76,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6375138891347649,
       "_kind": "scatter",
       "_group": 4
     },
     {
-      "x": 5.6,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6375138891347649,
-      "_kind": "scatter",
-      "_group": 5
-    },
-    {
-      "x": 5.6,
+      "x": 0.76,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.662201419315204,
       "_kind": "scatter",
-      "_group": 5
+      "_group": 4
     },
     {
-      "x": 5.6,
+      "x": 0.76,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6508028812400677,
       "_kind": "scatter",
-      "_group": 5
+      "_group": 4
     },
     {
-      "x": 5.6,
+      "x": 0.76,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.7688003257874256,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.76,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": -11.75461428584046,
       "_kind": "scatter",
       "_group": 5
     },
     {
-      "x": 6.6,
+      "x": 0.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5494865855145021,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "x": 6.6,
+      "x": 0.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5702905369265534,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "x": 6.6,
+      "x": 0.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5814424664077216,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "x": 6.6,
+      "x": 0.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5629186564509773,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "x": 6.6,
+      "x": 0.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.7176091817165975,
       "_kind": "scatter",
       "_group": 6
     },
     {
-      "x": 7.6,
+      "x": 1.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5398866642556315,
       "_kind": "scatter",
       "_group": 7
     },
     {
-      "x": 7.6,
+      "x": 1.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.570284950635303,
       "_kind": "scatter",
       "_group": 7
     },
     {
-      "x": 7.6,
+      "x": 1.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5793313558515019,
       "_kind": "scatter",
       "_group": 7
     },
     {
-      "x": 7.6,
+      "x": 1.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5603961640192332,
       "_kind": "scatter",
       "_group": 7
     },
     {
-      "x": 7.6,
+      "x": 1.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.7081240673182705,
       "_kind": "scatter",
       "_group": 7
     },
     {
-      "x": 8.6,
+      "x": 1.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5431088240605251,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "x": 8.6,
+      "x": 1.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5742223583166715,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "x": 8.6,
+      "x": 1.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5818852270610745,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "x": 8.6,
+      "x": 1.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5646432091341256,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "x": 8.6,
+      "x": 1.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.7125452754790631,
       "_kind": "scatter",
       "_group": 8
     },
     {
-      "x": 11.2,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": -5.256955925386008,
-      "_kind": "scatter",
-      "_group": 9
-    },
-    {
-      "x": 11.2,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": -8.597795603354488,
-      "_kind": "scatter",
-      "_group": 9
-    },
-    {
-      "x": 11.2,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": -5.561767848573982,
-      "_kind": "scatter",
-      "_group": 9
-    },
-    {
-      "x": 11.2,
+      "x": 1.76,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.7093261127767378,
       "_kind": "scatter",
-      "_group": 10
+      "_group": 9
     },
     {
-      "x": 11.2,
+      "x": 1.76,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.7993185462507986,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.76,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": -5.256955925386008,
       "_kind": "scatter",
       "_group": 10
     },
     {
-      "x": 12.2,
+      "x": 1.76,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": -8.597795603354488,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.76,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": -5.561767848573982,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 1.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6244526878889372,
       "_kind": "scatter",
       "_group": 11
     },
     {
-      "x": 12.2,
+      "x": 1.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6407223677248468,
       "_kind": "scatter",
       "_group": 11
     },
     {
-      "x": 12.2,
+      "x": 1.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6422445564246608,
       "_kind": "scatter",
       "_group": 11
     },
     {
-      "x": 12.2,
+      "x": 1.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6358355453339891,
       "_kind": "scatter",
       "_group": 11
     },
     {
-      "x": 12.2,
+      "x": 1.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.7504406664948207,
       "_kind": "scatter",
       "_group": 11
     },
     {
-      "x": 13.2,
+      "x": 2.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6206854950023644,
       "_kind": "scatter",
       "_group": 12
     },
     {
-      "x": 13.2,
+      "x": 2.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.640375671138882,
       "_kind": "scatter",
       "_group": 12
     },
     {
-      "x": 13.2,
+      "x": 2.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6414556557297846,
       "_kind": "scatter",
       "_group": 12
     },
     {
-      "x": 13.2,
+      "x": 2.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6327132332072349,
       "_kind": "scatter",
       "_group": 12
     },
     {
-      "x": 13.2,
+      "x": 2.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.7415443507827107,
       "_kind": "scatter",
       "_group": 12
     },
     {
-      "x": 14.2,
+      "x": 2.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6205866912426201,
       "_kind": "scatter",
       "_group": 13
     },
     {
-      "x": 14.2,
+      "x": 2.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6422709454486253,
       "_kind": "scatter",
       "_group": 13
     },
     {
-      "x": 14.2,
+      "x": 2.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6424425581320636,
       "_kind": "scatter",
       "_group": 13
     },
     {
-      "x": 14.2,
+      "x": 2.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6362484548403213,
       "_kind": "scatter",
       "_group": 13
     },
     {
-      "x": 14.2,
+      "x": 2.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.7437275406913706,
       "_kind": "scatter",
       "_group": 13
     },
     {
-      "x": 16.8,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": -12.510456458783787,
-      "_kind": "scatter",
-      "_group": 14
-    },
-    {
-      "x": 16.8,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": -12.247484117316843,
-      "_kind": "scatter",
-      "_group": 14
-    },
-    {
-      "x": 16.8,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": -12.343212757415932,
-      "_kind": "scatter",
-      "_group": 14
-    },
-    {
-      "x": 16.8,
+      "x": 2.76,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.584934590681971,
       "_kind": "scatter",
-      "_group": 15
+      "_group": 14
     },
     {
-      "x": 16.8,
+      "x": 2.76,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6971453466753256,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 2.76,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": -12.510456458783787,
       "_kind": "scatter",
       "_group": 15
     },
     {
-      "x": 17.8,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": -16.219158968698757,
+      "x": 2.76,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": -12.247484117316843,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.76,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": -12.343212757415932,
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 2.92,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5102043780047691,
       "_kind": "scatter",
       "_group": 16
     },
     {
-      "x": 17.8,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5102043780047691,
-      "_kind": "scatter",
-      "_group": 17
-    },
-    {
-      "x": 17.8,
+      "x": 2.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5250712559083379,
       "_kind": "scatter",
-      "_group": 17
+      "_group": 16
     },
     {
-      "x": 17.8,
+      "x": 2.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5319464062289192,
       "_kind": "scatter",
-      "_group": 17
+      "_group": 16
     },
     {
-      "x": 17.8,
+      "x": 2.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6403279784469971,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 2.92,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": -16.219158968698757,
       "_kind": "scatter",
       "_group": 17
     },
     {
-      "x": 18.8,
+      "x": 3.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5000077503878102,
       "_kind": "scatter",
       "_group": 18
     },
     {
-      "x": 18.8,
+      "x": 3.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5056498148711724,
       "_kind": "scatter",
       "_group": 18
     },
     {
-      "x": 18.8,
+      "x": 3.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5218512998781,
       "_kind": "scatter",
       "_group": 18
     },
     {
-      "x": 18.8,
+      "x": 3.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5103192429056674,
       "_kind": "scatter",
       "_group": 18
     },
     {
-      "x": 18.8,
+      "x": 3.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6216560117192356,
       "_kind": "scatter",
       "_group": 18
     },
     {
-      "x": 19.8,
+      "x": 3.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.49911817367956357,
       "_kind": "scatter",
       "_group": 19
     },
     {
-      "x": 19.8,
+      "x": 3.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5149529147479492,
       "_kind": "scatter",
       "_group": 19
     },
     {
-      "x": 19.8,
+      "x": 3.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5226968652782189,
       "_kind": "scatter",
       "_group": 19
     },
     {
-      "x": 19.8,
+      "x": 3.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5109664994860146,
       "_kind": "scatter",
       "_group": 19
     },
     {
-      "x": 19.8,
+      "x": 3.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6260222728754121,
       "_kind": "scatter",
       "_group": 19
     },
     {
-      "x": 22.400000000000002,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": -11.084235912934506,
-      "_kind": "scatter",
-      "_group": 20
-    },
-    {
-      "x": 22.400000000000002,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": -16.797701517538965,
-      "_kind": "scatter",
-      "_group": 20
-    },
-    {
-      "x": 22.400000000000002,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": -11.322090417296005,
-      "_kind": "scatter",
-      "_group": 20
-    },
-    {
-      "x": 22.400000000000002,
+      "x": 3.76,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6040359587154912,
       "_kind": "scatter",
-      "_group": 21
+      "_group": 20
     },
     {
-      "x": 22.400000000000002,
+      "x": 3.76,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.666311161717212,
+      "_kind": "scatter",
+      "_group": 20
+    },
+    {
+      "x": 3.76,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": -11.084235912934506,
       "_kind": "scatter",
       "_group": 21
     },
     {
-      "x": 23.400000000000002,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": -15.091531948425068,
+      "x": 3.76,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": -16.797701517538965,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.76,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": -11.322090417296005,
+      "_kind": "scatter",
+      "_group": 21
+    },
+    {
+      "x": 3.92,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5245717277015749,
       "_kind": "scatter",
       "_group": 22
     },
     {
-      "x": 23.400000000000002,
-      "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5245717277015749,
-      "_kind": "scatter",
-      "_group": 23
-    },
-    {
-      "x": 23.400000000000002,
+      "x": 3.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5518578402355723,
       "_kind": "scatter",
-      "_group": 23
+      "_group": 22
     },
     {
-      "x": 23.400000000000002,
+      "x": 3.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5450648109648351,
       "_kind": "scatter",
-      "_group": 23
+      "_group": 22
     },
     {
-      "x": 23.400000000000002,
+      "x": 3.92,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6439774651975725,
+      "_kind": "scatter",
+      "_group": 22
+    },
+    {
+      "x": 3.92,
+      "per-fold held-out R\u00b2 (GCV-selected ridge)": -15.091531948425068,
       "_kind": "scatter",
       "_group": 23
     },
     {
-      "x": 24.400000000000002,
+      "x": 4.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5109963958049734,
       "_kind": "scatter",
       "_group": 24
     },
     {
-      "x": 24.400000000000002,
+      "x": 4.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5315725738290524,
       "_kind": "scatter",
       "_group": 24
     },
     {
-      "x": 24.400000000000002,
+      "x": 4.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5445907970157513,
       "_kind": "scatter",
       "_group": 24
     },
     {
-      "x": 24.400000000000002,
+      "x": 4.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5179075664609658,
       "_kind": "scatter",
       "_group": 24
     },
     {
-      "x": 24.400000000000002,
+      "x": 4.08,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6297308855659453,
       "_kind": "scatter",
       "_group": 24
     },
     {
-      "x": 25.400000000000002,
+      "x": 4.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.512152186983813,
       "_kind": "scatter",
       "_group": 25
     },
     {
-      "x": 25.400000000000002,
+      "x": 4.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5448567756748388,
       "_kind": "scatter",
       "_group": 25
     },
     {
-      "x": 25.400000000000002,
+      "x": 4.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.54598906913863,
       "_kind": "scatter",
       "_group": 25
     },
     {
-      "x": 25.400000000000002,
+      "x": 4.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.5209554924163471,
       "_kind": "scatter",
       "_group": 25
     },
     {
-      "x": 25.400000000000002,
+      "x": 4.24,
       "per-fold held-out R\u00b2 (GCV-selected ridge)": 0.6337246742821405,
       "_kind": "scatter",
       "_group": 25
