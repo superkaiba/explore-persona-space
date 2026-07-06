@@ -25,8 +25,16 @@ export HF_HOME="${HF_HOME:-/workspace/.cache/huggingface}"
 
 echo "[phase=dispatch] issue1090 dispatcher starting (args: $*)"
 
+# Default to --full (the plan Repro-card command passes only --phase); a
+# caller passing --smoke gets the tiny-real path through the SAME dispatcher.
+MODE="--full"
+for arg in "$@"; do
+    if [ "$arg" = "--smoke" ] || [ "$arg" = "--full" ]; then MODE=""; fi
+done
+
 rc=0
-uv run python scripts/issue1090_run.py --full "$@" || rc=$?
+# shellcheck disable=SC2086
+uv run python scripts/issue1090_run.py $MODE "$@" || rc=$?
 if [ "$rc" -ne 0 ]; then
     echo "[phase=driver_failed] issue1090 driver exited rc=$rc" >&2
     exit "$rc"
