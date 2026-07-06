@@ -20,7 +20,8 @@ Subcommands::
                                                      [--run-pristine] [--pristine-timeout-s 600]
                                                      [--max-pristine-files 5]
                                                      [--max-age-hours 24] [--max-code-commits 150]
-                                                     [--json]
+                                                     [--scratch-timeout-s 120]
+                                                     [--no-scratch-fallback] [--json]
 
 Exit codes (pinned by ``tests/test_step9c_baseline.py``):
 
@@ -39,8 +40,12 @@ Exit codes (pinned by ``tests/test_step9c_baseline.py``):
   2          indeterminate: ``--pytest-rc`` not in {0, 1}; missing/empty junitxml; zero
              testcases; unusable ledger with unresolved buckets (no ``--run-pristine``);
              pristine run timeout/crash (incl. a missing root-venv interpreter); dirty
-             pristine oracle on a failing node; more than ``--max-pristine-files``
-             distinct pristine files ("systemic main breakage"); missing ruff binary
+             oracle on a failing node where the scratch fallback is ineligible
+             (contaminating dirt — ANY top-level ``src/`` file, ``pyproject.toml``,
+             ``uv.lock``; a scan-set (``GLOB_SCAN_TESTS``) node; a non-sparse work
+             root; or ``--no-scratch-fallback``); scratch-worktree fallback creation
+             failure; more than ``--max-pristine-files`` distinct pristine files
+             ("systemic main breakage"); missing ruff binary
 ===========  ==========================================================================
 
 Safety invariants (plan #1022 v3 R1-R7): the refresh NEVER runs ``pytest tests/``
@@ -57,8 +62,25 @@ the invoking ``sys.executable``, whose worktree ``.pth`` would import branch
 library code into a "pristine" run — #1022 round-2 Critical); NO subcommand
 mutates git state (reads only:
 ``rev-parse`` / ``rev-list`` / ``cat-file`` / ``diff --name-only`` /
-``status --porcelain``); ledger writes are flock single-flight + atomic
-tmp+``os.replace``.
+``status --porcelain`` / ``ls-tree``), EXCEPT compare's bounded dirty-oracle
+scratch fallback (#1077) — ``git worktree add --detach --no-checkout`` into a
+fresh tmp dir + worktree-local sparse-checkout + populate at the root's HEAD,
+ALWAYS torn down in a ``finally`` (``worktree remove --force`` + rmtree;
+deliberately NO ``git worktree prune`` — see ``remove_scratch_worktree``); the
+shared root's branches, index, working tree, and shared config are never
+touched; ledger writes are flock single-flight + atomic tmp+``os.replace``.
+
+Residual risk of the scratch fallback: ``repo_root()``-anchored /
+installed-package-path reads resolve the MAIN root even from a scratch cwd —
+the scan-set (``GLOB_SCAN_TESTS``) exclusion covers the known class of such
+live-tree scanners; a future non-scan test that executes root files via
+``repo_root()`` would re-open that channel.
+
+Under ``--json``, EVERY compare exit path prints exactly one JSON object to
+stdout: exit 0/1 the classification result (``indeterminate: false``); exit 2
+an indeterminate payload (``indeterminate: true`` + ``reason`` + the
+accumulated ``warns``) — the Step 9c caller branches on the stable
+``indeterminate`` key, never on empty stdout.
 
 State files (all under the MAIN repo root, resolved via ``--git-common-dir`` so
 every worktree shares ONE ledger):
@@ -100,6 +122,18 @@ CODE_COMMIT_PATHSPEC: tuple[str, ...] = ("scripts/", "src/", "tests/", "pyprojec
 # perpetual non-code churn (tasks/**, pods_ephemeral.json, agent-memory .md)
 # must not read as dirt or the bit is a protection illusion (MF-4a).
 DIRTY_CODE_PATHSPEC: tuple[str, ...] = ("*.py", "pyproject.toml", "uv.lock")
+
+# The contamination probe pathspec is DELIBERATELY wider than DIRTY_CODE_PATHSPEC:
+# it must see ALL files under top-level src/ (query-bank .json data ships inside the
+# package and resolves LIVE through the editable .pth via importlib.resources), not
+# only *.py — the *.py-scoped live_dirty_paths filter alone converts the MIXED case
+# (dirty scripts/*.py + dirty src/*.json) into a false scratch strip (#1077).
+# MF-4a's .py-scoped churn rationale applies to the dirt TRIGGER, not to this
+# eligibility probe.
+SCRATCH_CONTAMINATION_PATHSPEC: tuple[str, ...] = ("src/", "pyproject.toml", "uv.lock")
+
+# Sparse-profile floor excludes — mirror of new_worktree.sh EXCLUDES.
+SCRATCH_EXCLUDES: tuple[str, ...] = ("eval_results", "external", "ood_eval_results")
 
 REQUIRED_LEDGER_KEYS: frozenset[str] = frozenset(
     {
@@ -341,13 +375,8 @@ def changed_test_files_since(root: Path, sha: str) -> set[str]:
     return {line.strip() for line in out.splitlines() if line.strip()}
 
 
-def dirty_code_paths(root: Path) -> list[str]:
-    """Return uncommitted CODE-path changes at *root* (DIRTY_CODE_PATHSPEC scope).
-
-    Scoped so the perpetual non-code churn on the shared root (tasks/**,
-    pods_ephemeral.json, agent-memory .md) never reads as dirt (MF-4a).
-    """
-    out = _git_out(["status", "--porcelain", "--", *DIRTY_CODE_PATHSPEC], root)
+def _porcelain_paths(out: str) -> list[str]:
+    """Parse ``git status --porcelain`` output into paths (rename entries -> new name)."""
     paths: list[str] = []
     for line in out.splitlines():
         if not line.strip():
@@ -357,6 +386,151 @@ def dirty_code_paths(root: Path) -> list[str]:
             p = p.split(" -> ", 1)[1]
         paths.append(p.strip('"'))
     return paths
+
+
+def dirty_code_paths(root: Path) -> list[str]:
+    """Return uncommitted CODE-path changes at *root* (DIRTY_CODE_PATHSPEC scope).
+
+    Scoped so the perpetual non-code churn on the shared root (tasks/**,
+    pods_ephemeral.json, agent-memory .md) never reads as dirt (MF-4a).
+    """
+    return _porcelain_paths(_git_out(["status", "--porcelain", "--", *DIRTY_CODE_PATHSPEC], root))
+
+
+def scratch_contamination_probe(root: Path) -> list[str]:
+    """Uncommitted paths a scratch tree CANNOT neutralize (#1077).
+
+    ANY file under top-level ``src/`` — the root venv's editable ``.pth``
+    statically resolves ``<root>/src`` regardless of cwd, and package data
+    rides ``importlib.resources`` — plus ``pyproject.toml``/``uv.lock``,
+    which the venv's installed deps derive from.
+    ``git status --porcelain -- src/ pyproject.toml uv.lock``, parsed exactly
+    like ``dirty_code_paths()``. Non-empty => the scratch fallback is
+    ineligible and compare keeps the fail-closed MF-4c exit 2.
+    """
+    return _porcelain_paths(
+        _git_out(["status", "--porcelain", "--", *SCRATCH_CONTAMINATION_PATHSPEC], root)
+    )
+
+
+# --- Scratch-worktree fallback helpers (#1077) -------------------------------------
+
+
+@dataclass
+class _ScratchTree:
+    """A materialized detached sparse scratch worktree (the dirty-oracle fallback)."""
+
+    parent: Path  # the mkdtemp dir (rmtree target)
+    path: Path  # the worktree itself: parent / f"tree-{os.getpid()}"
+    sha: str  # the detached HEAD sha (== root HEAD at creation)
+
+
+def _git_bounded(argv: list[str], cwd: Path, timeout_s: float) -> None:
+    """Run one git command with check=True + timeout (scratch lifecycle only)."""
+    subprocess.run(
+        ["git", *argv],
+        cwd=str(cwd),
+        capture_output=True,
+        text=True,
+        check=True,
+        timeout=timeout_s,
+    )
+
+
+def _work_root_sparse_cones(wt: Path) -> list[str] | None:
+    """The invoking work root's ACTUAL sparse profile via ``git sparse-checkout list``.
+
+    None when the work root is not sparse — the caller treats None as
+    fallback-INELIGIBLE (R-G: a non-sparse gate layout cannot be
+    superset-matched by a sparse scratch without a full multi-GB checkout).
+    On git 2.34 a non-sparse tree exits 0 with EMPTY stdout (warning on
+    stderr), so an empty list is folded into None too; a genuinely failing
+    command (non-git dir, ancient git) also maps to None.
+    """
+    try:
+        lines = [
+            ln.strip()
+            for ln in _git_out(["sparse-checkout", "list"], wt).splitlines()
+            if ln.strip()
+        ]
+    except subprocess.CalledProcessError:
+        return None
+    return lines or None
+
+
+def _scratch_cones(root: Path, wt_cones: list[str]) -> list[str]:
+    """Scratch sparse profile = SUPERSET of the gate layout (R-G).
+
+    The union of: the work root's actual ``sparse-checkout list`` (per-issue +
+    manually-added cones included — the legs the registry alone omits), the
+    HEAD-PINNED ``tests/sparse_cones.txt`` (``git show HEAD:...`` — never the
+    live working-tree file, which is itself decontaminable-classified dirt),
+    and every top-level tracked dir minus SCRATCH_EXCLUDES as the floor.
+    """
+    dirs = [
+        d
+        for d in _git_out(["ls-tree", "--name-only", "-d", "HEAD"], root).splitlines()
+        if d and d not in SCRATCH_EXCLUDES
+    ]
+    registry_lines: list[str] = []
+    # Registry absent at HEAD: the floor still applies, no raise.
+    with contextlib.suppress(subprocess.CalledProcessError):
+        registry_lines = [
+            ln.strip()
+            for ln in _git_out(["show", "HEAD:tests/sparse_cones.txt"], root).splitlines()
+            if ln.strip() and not ln.strip().startswith("#")
+        ]
+    return sorted(set(dirs) | set(registry_lines) | set(wt_cones))
+
+
+def create_scratch_worktree(root: Path, wt_cones: list[str], timeout_s: float) -> _ScratchTree:
+    """Materialize a detached SPARSE scratch tree at *root*'s HEAD under a fresh tmp dir.
+
+    Sequence mirrors ``new_worktree.sh`` ``_sparse_setup`` (``init --cone``
+    FIRST, then ``set``, then populate from ``--no-checkout`` limbo). Profile =
+    ``_scratch_cones(root, wt_cones)`` — a superset of the gate layout (R-G).
+    Any failure tears down partial state and re-raises (the caller maps it to
+    ``_Indeterminate``). Bounded per git command by *timeout_s*.
+    """
+    sha = git_head(root)
+    parent = Path(tempfile.mkdtemp(prefix="step9c-scratch-"))
+    tree = parent / f"tree-{os.getpid()}"
+    try:
+        _git_bounded(
+            ["worktree", "add", "--detach", "--no-checkout", str(tree), sha],
+            cwd=root,
+            timeout_s=timeout_s,
+        )
+        _git_bounded(["sparse-checkout", "init", "--cone"], cwd=tree, timeout_s=timeout_s)
+        _git_bounded(
+            ["sparse-checkout", "set", *_scratch_cones(root, wt_cones)],
+            cwd=tree,
+            timeout_s=timeout_s,
+        )
+        _git_bounded(["checkout", sha], cwd=tree, timeout_s=timeout_s)
+    except BaseException:
+        remove_scratch_worktree(root, _ScratchTree(parent=parent, path=tree, sha=sha))
+        raise
+    return _ScratchTree(parent=parent, path=tree, sha=sha)
+
+
+def remove_scratch_worktree(root: Path, scratch: _ScratchTree) -> None:
+    """Best-effort teardown; never raises (the verdict is already decided).
+
+    Deliberately NO ``git worktree prune``: prune reaps admin entries of ANY
+    worktree whose dir is unreachable, so a future bind-mount outage on
+    ``.claude/worktrees`` could make a compare's teardown break LIVE
+    worktrees. A SIGKILL'd compare leaves one cosmetic stale admin entry
+    (git gc's ``gc.worktreePruneExpire`` sweeps it) + an inert ``/tmp`` dir.
+    """
+    with contextlib.suppress(Exception):
+        subprocess.run(
+            ["git", "worktree", "remove", "--force", str(scratch.path)],
+            cwd=str(root),
+            capture_output=True,
+            timeout=60,
+        )
+    shutil.rmtree(scratch.parent, ignore_errors=True)
 
 
 def _ruff_bin() -> str:
@@ -698,20 +872,27 @@ def cmd_status(args: argparse.Namespace) -> int:
 # --- compare ---------------------------------------------------------------------
 
 
-def run_single_file_pristine(test_file: str, cwd: Path, timeout_s: float) -> set[Node]:
-    """Run ONE test file at the main root (pristine oracle); return its failing nodes.
+def run_single_file_pristine(
+    test_file: str, cwd: Path, timeout_s: float, *, venv_root: Path | None = None
+) -> set[Node]:
+    """Run ONE test file at the pristine oracle *cwd*; return its failing nodes.
 
-    Executes the ROOT's OWN venv interpreter (``resolve_root_python(cwd)``) so
-    the oracle runs MAIN's library code — never the invoking worktree's, whose
-    editable ``src/`` would make a branch-caused regression fail "pristine" too
-    and get stripped as pre-existing (#1022 round-2 Critical). A missing root
-    venv raises PristineRunError (indeterminate, exit 2 — never a silent
-    ``sys.executable`` fallback). Bounded + thread-capped like refresh. rc not
-    in {0, 1}, a timeout, or a zero-collected run raises PristineRunError
-    (MF-5); a classification must never rest on an aborted pristine run.
+    Executes the TARGET root's OWN venv interpreter (``resolve_root_python``)
+    so the oracle runs MAIN's library code — never the invoking worktree's,
+    whose editable ``src/`` would make a branch-caused regression fail
+    "pristine" too and get stripped as pre-existing (#1022 round-2 Critical).
+    ``venv_root`` (scratch-oracle mode, #1077): the interpreter is resolved
+    from the MAIN root while *cwd* is the scratch tree — the scratch has no
+    venv; the root venv's editable ``.pth`` points at the root's ``src/``,
+    which is exactly why ``src/``-dirt is gated out before this mode is used.
+    A missing venv raises PristineRunError (indeterminate, exit 2 — never a
+    silent ``sys.executable`` fallback). Bounded + thread-capped like refresh.
+    rc not in {0, 1}, a timeout, or a zero-collected run raises
+    PristineRunError (MF-5); a classification must never rest on an aborted
+    pristine run.
     """
     try:
-        python_exe = resolve_root_python(cwd)
+        python_exe = resolve_root_python(venv_root if venv_root is not None else cwd)
     except ToolMissingError as exc:
         raise PristineRunError(str(exc)) from exc
     fd, tmp = tempfile.mkstemp(prefix="step9c-pristine-junit-", suffix=".xml")
@@ -779,7 +960,18 @@ def _pristine_command(root: Path, test_file: str) -> str:
 
 
 class _Indeterminate(RuntimeError):
-    """Internal control flow: compare cannot classify — the caller exits 2."""
+    """Internal control flow: compare cannot classify — the caller exits 2.
+
+    ``extra`` carries structured payload fields the exit-2 ``--json`` object
+    surfaces (e.g. ``live_dirty_paths``, ``contaminating_paths``); ``warns``
+    carries the ctx-accumulated WARNs so scratch-oracle provenance is never
+    dropped on a mid-loop failure (#1077).
+    """
+
+    def __init__(self, msg: str, extra: dict | None = None, warns: list[str] | None = None):
+        super().__init__(msg)
+        self.extra = extra or {}
+        self.warns = list(warns or [])
 
 
 @dataclass
@@ -802,12 +994,15 @@ class _CompareCtx:
     sel: object
     touched: list[str]
     diff_linked: set[str]
+    work_root: Path  # the invoking worktree (its sparse profile gates the scratch fallback)
     new: list[Node] = field(default_factory=list)
     stripped: list[dict] = field(default_factory=list)
     pristine_bucket: list[Node] = field(default_factory=list)
     warns: list[str] = field(default_factory=list)
     live_dirty_paths: list[str] = field(default_factory=list)
     pristine_files_run: list[str] = field(default_factory=list)
+    pristine_oracle: str = "root"  # "scratch-worktree" once the #1077 fallback fires
+    scratch_sha: str | None = None
 
 
 def _resolve_roots(args: argparse.Namespace) -> tuple[Path, Path]:
@@ -844,7 +1039,7 @@ def _selector_context(args: argparse.Namespace, wt: Path) -> _CompareCtx:
     diff_linked = {t for t, rs in reasons.items() if any(r != "invariant" for r in rs)} | {
         f for f in touched if f.startswith("tests/")
     }
-    return _CompareCtx(sel=sel, touched=touched, diff_linked=diff_linked)
+    return _CompareCtx(sel=sel, touched=touched, diff_linked=diff_linked, work_root=wt)
 
 
 def _ledger_view(root: Path, args: argparse.Namespace) -> _LedgerView:
@@ -885,7 +1080,7 @@ def _strip_node(ctx: _CompareCtx, node: Node, via: str) -> None:
             f"its directory scan covers touched file(s) {covered or '[]'}; re-check them "
             "against that scan's rule"
         )
-    if via == "pristine" and node.file in ctx.diff_linked:
+    if via.startswith("pristine") and node.file in ctx.diff_linked:
         ctx.warns.append(
             f"MASKING WARN: stripped diff-linked node {node.file}::{node.name} via a "
             "pristine-main failure — the branch touches files mapped to this test; "
@@ -912,45 +1107,110 @@ def _bucket_run_failures(
 
 
 def _resolve_pristine_bucket(ctx: _CompareCtx, root: Path, args: argparse.Namespace) -> None:
-    """Resolve bucketed nodes via bounded single-file pristine-main runs (or refuse)."""
+    """Resolve bucketed nodes via bounded single-file pristine runs (or refuse).
+
+    Dirty-oracle scratch fallback (#1077): when the MF-4c dirt trigger fires
+    but the dirt is DECONTAMINABLE (the src//pyproject/uv.lock contamination
+    probe is empty), the pristine oracle re-roots to a detached sparse scratch
+    worktree at the root's HEAD — created lazily once per compare, reused for
+    every eligible bucketed file, ALWAYS removed in the ``finally``. Per-file
+    eligibility additionally requires a sparse work root (R-G), a non-scan-set
+    node (R-F — ``repo_root()``-anchored live-tree scanners read the MAIN root
+    from any cwd, so a scratch cannot decontaminate them), and the fallback
+    not being disabled via ``--no-scratch-fallback``. Everything else keeps
+    the fail-closed MF-4c exit 2. BOTH probes re-run per file, so contaminating
+    dirt appearing mid-loop reverts later files to the root oracle
+    (fail-closed).
+    """
     if not ctx.pristine_bucket:
         return
     files = sorted({n.file for n in ctx.pristine_bucket})
     if len(files) > args.max_pristine_files:
         raise _Indeterminate(
             f"systemic main breakage ({len(files)} red files > "
-            f"--max-pristine-files {args.max_pristine_files}) — investigate / refresh first"
+            f"--max-pristine-files {args.max_pristine_files}) — investigate / refresh first",
+            warns=ctx.warns,
         )
     if not args.run_pristine:
         commands = "\n".join(f"  {_pristine_command(root, f)}" for f in files)
         raise _Indeterminate(
             f"{len(ctx.pristine_bucket)} failure(s) need a pristine-main check and "
             "--run-pristine was not given — indeterminate, never a silent strip. "
-            f"Per-file pristine commands:\n{commands}"
+            f"Per-file pristine commands:\n{commands}",
+            warns=ctx.warns,
         )
-    for test_file in files:
-        try:
-            ctx.live_dirty_paths = dirty_code_paths(root)  # probed AT pristine time (MF-4c)
-        except subprocess.CalledProcessError as exc:
-            raise _Indeterminate(f"dirt probe failed at {root}: {exc}") from exc
-        try:
-            main_failing = run_single_file_pristine(
-                test_file, cwd=root, timeout_s=args.pristine_timeout_s
+    scratch: _ScratchTree | None = None
+    wt_cones = _work_root_sparse_cones(ctx.work_root)  # None => non-sparse => ineligible (R-G)
+    try:
+        for test_file in files:
+            try:
+                # BOTH probes re-run per file (MF-4c freshness + mid-loop transitions).
+                ctx.live_dirty_paths = dirty_code_paths(root)
+                contaminating = scratch_contamination_probe(root)
+            except subprocess.CalledProcessError as exc:
+                raise _Indeterminate(
+                    f"dirt probe failed at {root}: {exc}", warns=ctx.warns
+                ) from exc
+            use_scratch = (
+                bool(ctx.live_dirty_paths)
+                and not contaminating  # R-B: src/-wide probe, not the .py-scoped filter
+                and wt_cones is not None  # R-G: sparse work root only
+                and test_file not in ctx.sel.GLOB_SCAN_TESTS  # R-F: scan set never scratch-resolved
+                and not args.no_scratch_fallback
             )
-        except PristineRunError as exc:
-            raise _Indeterminate(f"{exc} — indeterminate") from exc
-        ctx.pristine_files_run.append(test_file)
-        for node in [n for n in ctx.pristine_bucket if n.file == test_file]:
-            if node in main_failing:
-                if ctx.live_dirty_paths:
-                    raise _Indeterminate(
-                        f"pristine oracle is DIRTY on code paths {ctx.live_dirty_paths[:20]} — "
-                        f"a 'pre-existing' verdict for {node.file}::{node.name} from a "
-                        "dirty root is untrustworthy (MF-4c); indeterminate"
+            if use_scratch and scratch is None:
+                try:
+                    scratch = create_scratch_worktree(
+                        root, wt_cones, timeout_s=args.scratch_timeout_s
                     )
-                _strip_node(ctx, node, via="pristine")  # pre-existing at CURRENT clean main HEAD
-            else:
-                ctx.new.append(node)  # a PASS on a dirty root still classifies NEW (fail-closed)
+                except (subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError) as exc:
+                    raise _Indeterminate(
+                        f"scratch-worktree fallback failed ({exc}) — dirty oracle unresolvable",
+                        extra={"live_dirty_paths": ctx.live_dirty_paths},
+                        warns=ctx.warns,
+                    ) from exc
+                ctx.pristine_oracle = "scratch-worktree"
+                ctx.scratch_sha = scratch.sha
+                ctx.warns.append(
+                    f"SCRATCH-ORACLE WARN: root dirty on non-contaminating paths "
+                    f"{ctx.live_dirty_paths[:20]}; pristine oracle re-rooted to a detached "
+                    f"sparse scratch worktree at {scratch.sha[:12]} (root venv interpreter; "
+                    "contamination probe src//pyproject.toml/uv.lock was clean; scan-set "
+                    "nodes and non-sparse work roots stay indeterminate)"
+                )
+            try:
+                main_failing = run_single_file_pristine(
+                    test_file,
+                    cwd=scratch.path if use_scratch else root,
+                    timeout_s=args.pristine_timeout_s,
+                    venv_root=root if use_scratch else None,
+                )
+            except PristineRunError as exc:
+                raise _Indeterminate(f"{exc} — indeterminate", warns=ctx.warns) from exc
+            ctx.pristine_files_run.append(test_file)
+            for node in [n for n in ctx.pristine_bucket if n.file == test_file]:
+                if node in main_failing:
+                    if not use_scratch and ctx.live_dirty_paths:
+                        raise _Indeterminate(  # MF-4c, fail-closed residual
+                            f"pristine oracle is DIRTY "
+                            f"(contaminating: {contaminating[:20] or 'n/a'}; "
+                            f"visible code dirt: {ctx.live_dirty_paths[:20]}; "
+                            f"scan_set={test_file in ctx.sel.GLOB_SCAN_TESTS}, "
+                            f"sparse_wt={wt_cones is not None}) — a 'pre-existing' verdict "
+                            f"for {node.file}::{node.name} from a dirty root is "
+                            "untrustworthy (MF-4c); indeterminate",
+                            extra={
+                                "live_dirty_paths": ctx.live_dirty_paths,
+                                "contaminating_paths": contaminating,
+                            },
+                            warns=ctx.warns,
+                        )
+                    _strip_node(ctx, node, via="pristine-scratch" if use_scratch else "pristine")
+                else:
+                    ctx.new.append(node)  # a PASS still classifies NEW (fail-closed)
+    finally:
+        if scratch is not None:
+            remove_scratch_worktree(root, scratch)
 
 
 def _compare_impl(args: argparse.Namespace) -> dict:
@@ -964,7 +1224,7 @@ def _compare_impl(args: argparse.Namespace) -> dict:
     try:
         lint = lint_verdict(root, wt, ctx.touched)
     except (ToolMissingError, RuntimeError) as exc:
-        raise _Indeterminate(f"lint verdict failed: {exc}") from exc
+        raise _Indeterminate(f"lint verdict failed: {exc}", warns=ctx.warns) from exc
     ledger = lv.ledger
     return {
         "pytest_rc": args.pytest_rc,
@@ -977,25 +1237,68 @@ def _compare_impl(args: argparse.Namespace) -> dict:
         "ledger_dirty_paths": list(ledger.get("dirty_paths", [])) if ledger else [],
         "live_dirty_paths": ctx.live_dirty_paths,
         "pristine_files_run": ctx.pristine_files_run,
+        "pristine_oracle": ctx.pristine_oracle,
+        "scratch_sha": ctx.scratch_sha,
         "lint": lint,
         "ledger_sha": ledger["main_sha"] if ledger else None,
         "ledger_age_h": ledger_age_hours(ledger) if ledger else None,
     }
 
 
+def _indeterminate_payload(
+    reason: str, pytest_rc: int, extra: dict | None = None, warns: list[str] | None = None
+) -> dict:
+    """The stable exit-2 ``--json`` shape: callers branch on ``indeterminate`` mechanically.
+
+    ``warns`` carries the ctx-accumulated WARNs (e.g. SCRATCH-ORACLE provenance
+    from an earlier bucketed file) so a mid-loop failure never drops audit
+    provenance (#1077). The empty ``new``/``stripped`` arrays are NOT a clean
+    verdict — the exit code stays 2.
+    """
+    return {
+        "indeterminate": True,
+        "reason": reason,
+        "exit_code_intent": 2,
+        "pytest_rc": pytest_rc,
+        "new": [],
+        "stripped": [],
+        "warns": list(warns or []),
+        **(extra or {}),
+    }
+
+
 def cmd_compare(args: argparse.Namespace) -> int:
-    """Classify a Step 9c run's failures as NEW vs pre-existing-on-main (plan §3.4)."""
+    """Classify a Step 9c run's failures as NEW vs pre-existing-on-main (plan §3.4).
+
+    Under ``--json``, EVERY exit path prints exactly one JSON object (#1077):
+    exit 0/1 the classification result (``indeterminate: false``); exit 2 the
+    ``_indeterminate_payload`` (``indeterminate: true`` + ``reason``).
+    """
     if args.pytest_rc not in (0, 1):
-        _log(
+        reason = (
             f"pytest rc {args.pytest_rc} (aborted/interrupted/internal-error run) — "
             "refusing to classify a partial run (MF-1b)"
         )
+        _log(reason)
+        if args.json:
+            print(
+                json.dumps(_indeterminate_payload(reason, args.pytest_rc), indent=2, sort_keys=True)
+            )
         return 2
     try:
         result = _compare_impl(args)
     except _Indeterminate as exc:
         _log(str(exc))
+        if args.json:
+            print(
+                json.dumps(
+                    _indeterminate_payload(str(exc), args.pytest_rc, exc.extra, warns=exc.warns),
+                    indent=2,
+                    sort_keys=True,
+                )
+            )
         return 2
+    result["indeterminate"] = False
     if args.json:
         print(json.dumps(result, indent=2, sort_keys=True))
     else:
@@ -1051,6 +1354,17 @@ def build_parser() -> argparse.ArgumentParser:
     p_compare.add_argument("--max-pristine-files", type=int, default=5)
     p_compare.add_argument("--max-age-hours", type=float, default=24.0)
     p_compare.add_argument("--max-code-commits", type=int, default=150)
+    p_compare.add_argument(
+        "--scratch-timeout-s",
+        type=float,
+        default=120.0,
+        help="per-git-command bound for the dirty-oracle scratch-worktree fallback (#1077)",
+    )
+    p_compare.add_argument(
+        "--no-scratch-fallback",
+        action="store_true",
+        help="disable the scratch fallback — restore the pre-#1077 MF-4c raise on ANY dirty oracle",
+    )
     p_compare.add_argument("--json", action="store_true")
     p_compare.set_defaults(func=cmd_compare)
     return parser
