@@ -43,9 +43,10 @@ import asyncio
 import hashlib
 import json
 import math
+import shutil
 import time
 from collections import Counter
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -134,6 +135,44 @@ class GenCandidate:
 GenerateFn = Callable[[list[GenRequest]], list[GenCandidate]]
 # judge_fn matches eval.graded_judge.judge_graded exactly (default: that fn).
 JudgeFn = Callable[..., JudgeResult]
+
+
+@dataclass(frozen=True)
+class PosReuseSpec:
+    """Reuse a PRIOR run's positive pool verbatim (#1074 ``base-negatives-regen``).
+
+    When passed to :func:`generate_training_data` as ``reuse_pos``, stage-3a
+    generation and stage-4a judging for POSITIVES are skipped: candidates load
+    from the staged ``raw_pos_path`` (a prior run's ``raw_pos.jsonl``) and the
+    kept set is reconstructed from the staged ``judge_rows_path`` per-request
+    kept flags — positives are NEVER re-judged (a temp>0 re-judge would
+    silently swap the reused pool). The positive request schedule is still
+    composed deterministically and ASSERTED against the staged rows (RNG-state
+    replay), so the shared RNG advances exactly as in the producing run and
+    the negative schedule is identical. ``provenance`` records
+    ``{source_repo, source_path, revision, pos_gen_model}`` and enters the
+    ``gen_manifest.json`` resume key (with the staged files' sha256s), while
+    the run's ``gen_model`` remains the LIVE (negative-stage) generator.
+    """
+
+    raw_pos_path: Path | str
+    judge_rows_path: Path | str
+    expected_kept_count: int
+    provenance: Mapping[str, str]
+
+    def manifest_fields(self) -> dict:
+        """Additive manifest/pool_meta provenance block (fail-loud on missing
+        staged files — the sha256 read is the earliest existence check)."""
+        raw_src, rows_src = Path(self.raw_pos_path), Path(self.judge_rows_path)
+        for p, name in ((raw_src, "raw_pos"), (rows_src, "judge_rows")):
+            if not p.exists():
+                raise FileNotFoundError(f"pos_reuse staged {name} file missing: {p}")
+        return {
+            **{k: str(v) for k, v in dict(self.provenance).items()},
+            "expected_kept_count": int(self.expected_kept_count),
+            "raw_pos_sha256": hashlib.sha256(raw_src.read_bytes()).hexdigest(),
+            "judge_rows_sha256": hashlib.sha256(rows_src.read_bytes()).hexdigest(),
+        }
 
 
 # ── Instruction block inject / strip (exact inverses) ────────────────────────
@@ -650,6 +689,244 @@ def _judge_and_filter(
     return kept, drops, result, scoreinfo
 
 
+# ── Positive-schedule replay + reused-pool reconstruction (#1074) ────────────
+
+
+def compose_positive_schedule(
+    behavior: Behavior,
+    context_C: Context,
+    *,
+    target_n: int,
+    seed: int,
+    instruction_style: str = "tagged",
+) -> tuple[list[GenRequest], object, list[tuple[str, str]], int]:
+    """The deterministic stage-3a positive request schedule (RNG-replay surface).
+
+    Returns ``(pos_reqs, rng, train_questions, n_pos_req)``.
+    :func:`generate_training_data` delegates its positive composition here, so
+    an external replay (a smoke fixture builder, a reuse verification) composes
+    EXACTLY the schedule the pipeline uses; the returned ``rng`` has consumed
+    exactly the positive-composition draws, so negative composition continues
+    from the identical state in both the producing and the reusing run.
+    """
+    rng = _rng(seed)
+    n_pos_req = math.ceil(target_n / EXPECTED_YIELD)
+    train_questions = [
+        (f"{behavior.name}-trainq-{i:04d}", q) for i, q in enumerate(behavior.train_question_bank)
+    ]
+    reqs = _compose_positive_requests(
+        behavior, context_C, train_questions, n_pos_req, rng, instruction_style
+    )
+    return reqs, rng, train_questions, n_pos_req
+
+
+def _assert_replay_schedule(pos_cands: list[GenCandidate], pos_reqs: list[GenRequest]) -> None:
+    """The RNG-replay integrity check: the staged pool must BE the recomposed
+    schedule — same length, same (request_id, question_id, variant_id) per row."""
+    if len(pos_cands) != len(pos_reqs):
+        raise ValueError(
+            f"pos_reuse RNG-replay mismatch: staged raw_pos has {len(pos_cands)} rows, the "
+            f"recomposed schedule has {len(pos_reqs)} — the staged pool is not the schedule "
+            "this recipe produces (bank/seed/target_n/variant drift)"
+        )
+    for i, (c, r) in enumerate(zip(pos_cands, pos_reqs, strict=True)):
+        got = (c.request.request_id, c.request.question_id, c.request.variant_id)
+        want = (r.request_id, r.question_id, r.variant_id)
+        if got != want:
+            raise ValueError(
+                f"pos_reuse RNG-replay mismatch at row {i}: staged {got} != recomposed {want}"
+            )
+
+
+def _pos_drops_from_candidates(pos_cands: list[GenCandidate], n_judgeable: int) -> _ArmDrops:
+    """Reconstruct the generation-stage drop counters from staged candidates."""
+    drops = _ArmDrops(requested=len(pos_cands), generated=n_judgeable)
+    for c in pos_cands:
+        drops.variant_usage[c.request.variant_id] += 1
+        drops.question_multiplicity[c.request.question_id] += 1
+        if c.completion is None:
+            if c.drop_reason == "api_error":
+                drops.api_error_drops += 1
+            elif c.drop_reason == "empty":
+                drops.empty_drops += 1
+            else:
+                drops.refusal_drops += 1
+    return drops
+
+
+def _reconstruct_kept(
+    jrows: list[dict],
+    judgeable: list[GenCandidate],
+    behavior: Behavior,
+    drops: _ArmDrops,
+) -> tuple[list[GenCandidate], dict[str, tuple[float | None, bool]]]:
+    """Kept set + scoreinfo from staged judge_rows, with the recomputed
+    ``mean > threshold`` + structural rule as a free integrity check."""
+    predicate = _STRUCTURAL_PREDICATES.get(behavior.name)
+    threshold = behavior.threshold
+    kept: list[GenCandidate] = []
+    scoreinfo: dict[str, tuple[float | None, bool]] = {}
+    by_rid = {r["request_id"]: r for r in jrows}
+    for c in judgeable:
+        row = by_rid[c.request.request_id]
+        mean = row["mean"]
+        stored_kept = bool(row["kept"])
+        if mean is None:
+            recomputed = False
+            drops.judge_none_drops += 1
+        elif not mean > threshold:
+            recomputed = False
+            drops.threshold_drops += 1
+        elif predicate is not None and not predicate(c.completion):
+            recomputed = False
+            drops.structural_drops += 1
+        else:
+            recomputed = True
+        if recomputed != stored_kept:
+            raise ValueError(
+                f"pos_reuse: stored kept flag for {c.request.request_id} disagrees with the "
+                f"recomputed keep rule (stored={stored_kept}, recomputed={recomputed}, "
+                f"mean={mean}, threshold={threshold}) — keep rule or judge_rows drifted"
+            )
+        scoreinfo[c.request.request_id] = (mean, stored_kept)
+        if stored_kept:
+            kept.append(c)
+    return kept, scoreinfo
+
+
+def _load_reused_positives(
+    reuse: PosReuseSpec,
+    pos_reqs: list[GenRequest],
+    behavior: Behavior,
+    *,
+    n_judge_draws: int,
+    out_raw_pos_path: Path,
+) -> tuple[
+    list[GenCandidate],
+    list[GenCandidate],
+    _ArmDrops,
+    JudgeResult,
+    dict[str, tuple[float | None, bool]],
+]:
+    """Load + verify a reused positive pool; NEVER re-judges.
+
+    Fail-loud contract: missing staged files (FileNotFoundError); a staged row
+    set that is not the recomposed schedule — length or per-row
+    (request_id, question_id, variant_id) mismatch (ValueError, the RNG-replay
+    integrity check); judge_rows positive rows not matching the raw judgeable
+    rows in raw-file order (ValueError); a stored kept flag disagreeing with
+    the recomputed ``mean > threshold`` + structural rule (ValueError);
+    reconstructed kept count != ``expected_kept_count`` (ValueError). The
+    kept < floor_n case stays :class:`DatagenYieldError` in the caller.
+    """
+    raw_src, rows_src = Path(reuse.raw_pos_path), Path(reuse.judge_rows_path)
+    for p, name in ((raw_src, "raw_pos"), (rows_src, "judge_rows")):
+        if not p.exists():
+            raise FileNotFoundError(f"pos_reuse staged {name} file missing: {p}")
+    pos_cands = _read_raw(raw_src)
+    _assert_replay_schedule(pos_cands, pos_reqs)
+    # Stage the pool into out_dir verbatim (checkpoint parity: downstream
+    # consumers — per-question yield, margin pools — read datagen_dir files).
+    if not out_raw_pos_path.exists():
+        shutil.copyfile(raw_src, out_raw_pos_path)
+
+    jrows: list[dict] = []
+    with open(rows_src, encoding="utf-8") as f:  # text-mode iteration, never splitlines()
+        for line in f:
+            if line.strip():
+                row = json.loads(line)
+                if row["arm"] == POSITIVE:
+                    jrows.append(row)
+    judgeable = [c for c in pos_cands if c.completion is not None]
+    if [r["request_id"] for r in jrows] != [c.request.request_id for c in judgeable]:
+        raise ValueError(
+            "pos_reuse: judge_rows positive rows do not match raw_pos judgeable rows in "
+            "raw-file order — refusing to reconstruct the kept set"
+        )
+    drops = _pos_drops_from_candidates(pos_cands, len(judgeable))
+    kept, scoreinfo = _reconstruct_kept(jrows, judgeable, behavior, drops)
+    if len(kept) != reuse.expected_kept_count:
+        raise ValueError(
+            f"pos_reuse: reconstructed kept count {len(kept)} != expected "
+            f"{reuse.expected_kept_count}"
+        )
+    per_item_scores = {r["request_id"]: list(r.get("scores", [])) for r in jrows}
+    draw_counts = {r["request_id"]: int(r.get("n_kept_draws", 0)) for r in jrows}
+    n_total = n_judge_draws * len(jrows)  # reconstructed arithmetic, flagged in pool_meta
+    jr = JudgeResult(
+        scores={rid: m for rid, (m, _k) in scoreinfo.items()},
+        n_total_draws=n_total,
+        n_dropped_draws=max(0, n_total - sum(draw_counts.values())),
+        per_item_draw_counts=draw_counts,
+        per_item_scores=per_item_scores,
+    )
+    return pos_cands, kept, drops, jr, scoreinfo
+
+
+def _check_or_write_manifest(manifest_path: Path, manifest: dict, out_dir: Path) -> None:
+    """Write the stage-3 manifest, or verify an existing one matches EXACTLY
+    (the resume key); raises :class:`DatagenCheckpointMismatchError` on drift."""
+    if manifest_path.exists():
+        if json.loads(manifest_path.read_text()) != manifest:
+            raise DatagenCheckpointMismatchError(
+                f"gen_manifest.json in {out_dir} does not match the current args "
+                "(behavior/bank/instructions/context/target_n/seed/model changed). "
+                "Refusing to reuse stale raw candidates; use a fresh out_dir."
+            )
+    else:
+        manifest_path.write_text(_canonical(manifest) + "\n")
+
+
+def _positives_stage(
+    behavior: Behavior,
+    context_C: Context,
+    *,
+    target_n: int,
+    seed: int,
+    instruction_style: str,
+    reuse_pos: PosReuseSpec | None,
+    raw_pos_path: Path,
+    gen_factory: Callable[[str], GenerateFn],
+    judge: JudgeFn,
+    n_judge_draws: int,
+    judge_cache: Path,
+    out_dir: Path,
+):
+    """Stage 3a: schedule composition (the RNG-replay surface) + generate /
+    resume / reuse + judge-filter (or kept-set reconstruction under
+    ``reuse_pos``). Returns ``(pos_cands, pos_kept, pos_drops, pos_jr,
+    pos_scores, rng)`` — the rng continues into negative composition."""
+    pos_reqs, rng, _train_questions, _n_pos_req = compose_positive_schedule(
+        behavior, context_C, target_n=target_n, seed=seed, instruction_style=instruction_style
+    )
+    if reuse_pos is not None:
+        return (
+            *_load_reused_positives(
+                reuse_pos,
+                pos_reqs,
+                behavior,
+                n_judge_draws=n_judge_draws,
+                out_raw_pos_path=raw_pos_path,
+            ),
+            rng,
+        )
+    if raw_pos_path.exists():
+        pos_cands = _read_raw(raw_pos_path)
+    else:
+        pos_cands = gen_factory("pos")(pos_reqs)
+        _write_raw(raw_pos_path, pos_cands)  # persist raw the moment it returns
+    pos_kept, pos_drops, pos_jr, pos_scores = _judge_and_filter(
+        behavior,
+        pos_cands,
+        POSITIVE,
+        judge_fn=judge,
+        n_judge_draws=n_judge_draws,
+        cache_dir=judge_cache / "pos",
+        save_raw=out_dir / "judge_raw_pos.json",
+    )
+    return pos_cands, pos_kept, pos_drops, pos_jr, pos_scores, rng
+
+
 # ── Public entry point ───────────────────────────────────────────────────────
 
 
@@ -668,6 +945,7 @@ def generate_training_data(
     generate_fn: GenerateFn | None = None,
     judge_fn: JudgeFn | None = None,
     instruction_style: str = "tagged",
+    reuse_pos: PosReuseSpec | None = None,
 ) -> tuple[Path, Path, Path]:
     """Build contrastive (positive, contrast) training JSONL for ``behavior``.
 
@@ -682,6 +960,17 @@ def generate_training_data(
     :class:`ValueError` on a programmatic behavior or unknown style,
     :class:`DatagenYieldError` below the floor, and
     :class:`DatagenCheckpointMismatchError` on a stale resume.
+
+    ``reuse_pos`` (:class:`PosReuseSpec`, #1074 ``base-negatives-regen``):
+    reuse a prior run's positive pool verbatim — positive generation + judging
+    are SKIPPED (never re-judged), the kept set is reconstructed from the
+    staged ``judge_rows.jsonl`` kept flags, and the positive schedule is still
+    composed + asserted against the staged rows (RNG-state replay) so the
+    negative schedule is identical to the producing run's. The manifest +
+    pool_meta gain an additive ``pos_reuse`` provenance block (it enters the
+    exact-match resume key by construction); ``gen_model`` remains the LIVE
+    (negative-stage) generator. Emission subsample + all negative stages are
+    byte-identical code paths.
     """
     # 1. Resolve + guard.
     behavior.validate()
@@ -704,16 +993,12 @@ def generate_training_data(
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    rng = _rng(seed)
 
     floor_n = math.ceil(quota_floor * target_n)
     member_quota = per_negative_quota(floor_n, panel)
-    n_pos_req = math.ceil(target_n / EXPECTED_YIELD)
     n_neg_req_per_member = math.ceil(member_quota / EXPECTED_YIELD)
-
-    train_questions = [
-        (f"{behavior.name}-trainq-{i:04d}", q) for i, q in enumerate(behavior.train_question_bank)
-    ]
+    # (train_questions, n_pos_req, and the shared RNG come from
+    # compose_positive_schedule at step 3a — the #1074 RNG-replay surface.)
 
     # 2. Manifest (written before generation; resume ONLY on an exact match).
     manifest = _build_manifest(
@@ -728,19 +1013,15 @@ def generate_training_data(
         gen_temperature=gen_temperature,
         instruction_style=instruction_style,
     )
+    if reuse_pos is not None:
+        # Additive provenance (source repo/path/revision, pos generator, staged
+        # sha256s) — enters the exact-match resume key by construction.
+        manifest["pos_reuse"] = reuse_pos.manifest_fields()
     manifest_hash = hashlib.sha256(_canonical(manifest).encode("utf-8")).hexdigest()
     manifest_path = out_dir / "gen_manifest.json"
     raw_pos_path = out_dir / "raw_pos.jsonl"
     raw_neg_path = out_dir / "raw_neg.jsonl"
-    if manifest_path.exists():
-        if json.loads(manifest_path.read_text()) != manifest:
-            raise DatagenCheckpointMismatchError(
-                f"gen_manifest.json in {out_dir} does not match the current args "
-                "(behavior/bank/instructions/context/target_n/seed/model changed). "
-                "Refusing to reuse stale raw candidates; use a fresh out_dir."
-            )
-    else:
-        manifest_path.write_text(_canonical(manifest) + "\n")
+    _check_or_write_manifest(manifest_path, manifest, out_dir)
 
     def _gen(phase: str) -> GenerateFn:
         return generate_fn or _default_generate_fn(
@@ -753,23 +1034,23 @@ def generate_training_data(
     judge = judge_fn or judge_graded
     judge_cache = out_dir / f"judge_cache_{manifest_hash[:12]}"
 
-    # 3a. POSITIVES: compose over the train bank, generate (or resume), judge-filter.
-    pos_reqs = _compose_positive_requests(
-        behavior, context_C, train_questions, n_pos_req, rng, instruction_style
-    )
-    if raw_pos_path.exists():
-        pos_cands = _read_raw(raw_pos_path)
-    else:
-        pos_cands = _gen("pos")(pos_reqs)
-        _write_raw(raw_pos_path, pos_cands)  # persist raw the moment it returns
-    pos_kept, pos_drops, pos_jr, pos_scores = _judge_and_filter(
+    # 3a. POSITIVES: compose over the train bank (ALWAYS — the composition
+    # advances the shared RNG that the negative schedule continues from), then
+    # generate (or resume) + judge-filter — or, under ``reuse_pos``, verify the
+    # staged pool against the recomposed schedule and reconstruct the kept set.
+    pos_cands, pos_kept, pos_drops, pos_jr, pos_scores, rng = _positives_stage(
         behavior,
-        pos_cands,
-        POSITIVE,
-        judge_fn=judge,
+        context_C,
+        target_n=target_n,
+        seed=seed,
+        instruction_style=instruction_style,
+        reuse_pos=reuse_pos,
+        raw_pos_path=raw_pos_path,
+        gen_factory=_gen,
+        judge=judge,
         n_judge_draws=n_judge_draws,
-        cache_dir=judge_cache / "pos",
-        save_raw=out_dir / "judge_raw_pos.json",
+        judge_cache=judge_cache,
+        out_dir=out_dir,
     )
 
     # 4a. Emit EXACTLY floor_n positives (seeded subsample) -> the emitted question set.
@@ -860,6 +1141,13 @@ def generate_training_data(
         pos_jr=pos_jr,
         neg_jr=neg_jr,
     )
+    if reuse_pos is not None:
+        pool_meta["pos_reuse"] = {
+            **manifest["pos_reuse"],
+            # pos judge_draw_stats above are arithmetic reconstructions from the
+            # staged judge_rows (n_judge_draws x judged rows), not a live count.
+            "judge_draw_stats_reconstructed": True,
+        }
     pool_meta_path.write_text(json.dumps(pool_meta, ensure_ascii=False, indent=2) + "\n")
     return pos_path, cn_path, pool_meta_path
 

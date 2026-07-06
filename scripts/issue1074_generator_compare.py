@@ -56,10 +56,14 @@ from explore_persona_space.artifacts.behavior import BEHAVIORS, Behavior  # noqa
 from explore_persona_space.artifacts.context import CONTEXTS, Context  # noqa: E402
 from explore_persona_space.artifacts.datagen import (  # noqa: E402
     _STRUCTURAL_PREDICATES,
+    NEGATIVE,
     POSITIVE,
     DatagenYieldError,
     GenCandidate,
     GenRequest,
+    PosReuseSpec,
+    _write_raw,
+    compose_positive_schedule,
     generate_training_data,
 )
 from explore_persona_space.artifacts.negatives import DEFAULT_ASSISTANT_NEGATIVE  # noqa: E402
@@ -91,6 +95,28 @@ GENERATORS: dict[str, str] = {
     "ablit": "huihui-ai/Qwen2.5-7B-Instruct-abliterated-v2",
 }
 CLASSES: tuple[str, ...] = ("sycophancy", "harmful_compliance")
+
+# ── Follow-up round `base-negatives-regen` (plan v7) ─────────────────────────
+# The mixed-generator cell: positives REUSED verbatim from the parent ablit
+# arm's pinned pool; negatives regenerated LIVE from stock base Qwen. "mixed"
+# is a followup-only arm (NOT in GENERATORS, so the parent full-run cell grid
+# is unchanged); Cell.gen_model resolves it to the live NEGATIVE-stage model.
+FOLLOWUP_LABELS: tuple[str, ...] = ("base-negatives-regen",)
+FOLLOWUP_ARM_GENERATORS: dict[str, str] = {"mixed": GENERATORS["base"]}
+PARENT_PIN_REVISION = "c1f526c1"  # verified live 2026-07-06; all files commit 3f61b8f43d
+PARENT_ABLIT_CELL = "harmful_compliance-ablit"
+PARENT_DATAGEN_PREFIX = f"{DATA_PREFIX}/{PARENT_ABLIT_CELL}/datagen"
+PARENT_PINNED_FILES: tuple[str, ...] = (
+    "raw_pos.jsonl",  # the 215 staged positive candidates (177 kept)
+    "judge_rows.jsonl",  # per-request (mean, kept) — the kept-set reconstruction source
+    "judge_raw_pos.json",  # risk-2 fallback (not consumed by the primary path)
+    "raw_neg.jsonl",  # judge-drift calibration subsample source
+)
+PARENT_EXPECTED_KEPT_POS = 177  # parent round: 177/215 kept >= floor_n 120 (plan §0/§4-A')
+PARENT_POS_GEN_MODEL = GENERATORS["ablit"]
+CALIBRATION_N_FULL = 30  # §4-A' judge-drift diagnostic subsample (seeded)
+CALIBRATION_N_SMOKE = 3
+CALIBRATION_SEED = 42
 SOURCE_CONTEXT_ID = "persona_software_engineer"  # #906 parity
 GENERIC_CORPUS_HF_PATH = "issue906_inputs/generic_corpus.jsonl"  # verified live 2026-07-06
 HARMFUL_RATE_SUBSET_N = 30  # plan §4-B checkpoint-read subset (seeded, disclosed)
@@ -114,7 +140,9 @@ class Cell:
 
     @property
     def gen_model(self) -> str:
-        return GENERATORS[self.arm]
+        """The LIVE generator for this cell (the negative-stage model on the
+        followup ``mixed`` arm — positives there are reused, never generated)."""
+        return {**GENERATORS, **FOLLOWUP_ARM_GENERATORS}[self.arm]
 
     @property
     def run_name(self) -> str:
@@ -137,6 +165,12 @@ class RunConfig:
     generic_data_path: str | None = None
     sentinel_dir: Path | None = None
     upload: bool = True
+    # Follow-up round `base-negatives-regen` (None on the parent path):
+    followup_label: str | None = None
+    pos_reuse: PosReuseSpec | None = None
+    calibration_raw_neg: Path | None = None  # staged parent raw_neg.jsonl
+    calibration_judge_rows: Path | None = None  # staged parent judge_rows.jsonl
+    calibration_n: int = CALIBRATION_N_FULL
 
     def target_n(self, behavior: str) -> int:
         if self.target_n_override is not None:
@@ -159,7 +193,7 @@ class RunConfig:
         return {"path": str(p), "sha256": hashlib.sha256(p.read_bytes()).hexdigest()}
 
     def regime_key(self) -> dict:
-        return {
+        key = {
             "issue": ISSUE,
             "smoke": self.smoke,
             "cells": [c.slug for c in self.cells],
@@ -174,6 +208,15 @@ class RunConfig:
             "instruction_style": "plain",
             "generic_corpus": self.generic_corpus_fingerprint(),
         }
+        if self.followup_label is not None:
+            # Followup-only keys, added ONLY when set so a parent-path rerun on
+            # an existing out_root keeps matching its stored regime. The reused
+            # positive pool is output-affecting -> its provenance + staged-file
+            # sha256s enter the key (PosReuseSpec.manifest_fields is fail-loud
+            # on missing staged files).
+            key["followup_label"] = self.followup_label
+            key["pos_reuse"] = None if self.pos_reuse is None else self.pos_reuse.manifest_fields()
+        return key
 
 
 @dataclass
@@ -371,7 +414,7 @@ def _rate_questions(cfg: RunConfig, behavior: str) -> list[str]:
 
 
 def _datagen_kwargs(cfg: RunConfig, cell: Cell, gen_fn) -> dict:
-    return dict(
+    kw = dict(
         target_n=cfg.target_n(cell.behavior),
         quota_floor=cfg.quota_floor,
         n_judge_draws=cfg.n_judge_draws,
@@ -380,6 +423,11 @@ def _datagen_kwargs(cfg: RunConfig, cell: Cell, gen_fn) -> dict:
         generate_fn=gen_fn,
         instruction_style="plain",
     )
+    if cfg.pos_reuse is not None:
+        # Followup base-negatives-regen: positives verbatim from the pinned
+        # parent pool; gen_model above stays the LIVE (negative) generator.
+        kw["reuse_pos"] = cfg.pos_reuse
+    return kw
 
 
 def _summarize_floored_cell(datagen_dir: Path, err: DatagenYieldError) -> dict:
@@ -533,6 +581,236 @@ def _make_train_fn(cfg: RunConfig, cell: Cell, seams: Seams1074, close_first=Non
     return train_fn
 
 
+# ── Follow-up base-negatives-regen: staging + calibration + smoke fixture ────
+
+
+def stage_pinned_parent_inputs(
+    cfg: RunConfig,
+    *,
+    files: Sequence[str] = PARENT_PINNED_FILES,
+    fetch_fn: Callable[[str, Path], str] | None = None,
+) -> dict[str, Path]:
+    """Explicit workload staging of the parent ablit cell's pinned datagen
+    artifacts (plan §4 stage-pinned-inputs; the GCP lane git-clones only, so
+    staging MUST be a workload step). Revision-pinned per-file
+    ``hf_hub_download`` (never ``snapshot_download`` on the ~1M-file data repo
+    — gotchas.md); the consumer opens the exact fetch destinations
+    (artifact-reuse (h)(iv): no staging transformation). Fail-loud on any
+    missing/empty staged file. ``fetch_fn(path_in_repo, local_dir)`` is the
+    injectable fetch boundary (tests); the default is the pinned hub fetch.
+    """
+    _phase("stage_pinned_inputs")
+    if fetch_fn is None:
+
+        def fetch_fn(path_in_repo: str, local_dir: Path) -> str:
+            from huggingface_hub import hf_hub_download
+
+            return hf_hub_download(
+                HF_DATA_REPO,
+                path_in_repo,
+                repo_type="dataset",
+                revision=PARENT_PIN_REVISION,
+                local_dir=local_dir,
+            )
+
+    dest = cfg.out_root / "inputs" / "parent_pinned"
+    dest.mkdir(parents=True, exist_ok=True)
+    staged: dict[str, Path] = {}
+    manifest: dict[str, dict] = {}
+    for fname in files:
+        rel = f"{PARENT_DATAGEN_PREFIX}/{fname}"
+        local = dest / rel  # hf_hub_download(local_dir=...) preserves the repo-relative path
+        if not local.exists():
+            got = Path(fetch_fn(rel, dest))
+            if got.resolve() != local.resolve():
+                local.parent.mkdir(parents=True, exist_ok=True)
+                os.replace(got, local)
+        if not local.exists() or local.stat().st_size == 0:
+            raise RuntimeError(f"staging failed for pinned parent input {rel!r} -> {local}")
+        staged[fname] = local
+        manifest[fname] = {
+            "path": str(local),
+            "sha256": hashlib.sha256(local.read_bytes()).hexdigest(),
+            "bytes": local.stat().st_size,
+            "source": {
+                "repo": HF_DATA_REPO,
+                "path_in_repo": rel,
+                "revision": PARENT_PIN_REVISION,
+            },
+        }
+    _atomic_write_json(cfg.out_root / "staged_inputs_manifest.json", {"files": manifest})
+    logger.info("[stage] %d pinned parent files staged under %s", len(staged), dest)
+    return staged
+
+
+def consumer_open_probe_judge_rows(path: Path) -> dict[str, int]:
+    """1-file staging probe + consumer-open (artifact-reuse (h)(iv)): parse the
+    staged judge_rows.jsonl with the reuse loader's exact read (text-mode
+    iteration) and assert the consumer-required keys on every row. Digest-only
+    output (row/kept counts — never content fields)."""
+    required = {"request_id", "question_id", "variant_id", "arm", "mean", "kept"}
+    n_pos = n_pos_kept = 0
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            if not line.strip():
+                continue
+            row = json.loads(line)
+            missing = required - set(row)
+            if missing:
+                raise RuntimeError(
+                    f"staged judge_rows.jsonl missing consumer keys {sorted(missing)} — "
+                    "risk-2 fallback (judge_raw_pos.json reconstruction) required"
+                )
+            if row["arm"] == POSITIVE:
+                n_pos += 1
+                n_pos_kept += int(bool(row["kept"]))
+    if n_pos == 0:
+        raise RuntimeError(f"staged judge_rows.jsonl has no positive rows: {path}")
+    logger.info(
+        "[stage-probe] judge_rows consumer-open OK: %d pos rows, %d kept", n_pos, n_pos_kept
+    )
+    return {"n_pos_rows": n_pos, "n_pos_kept": n_pos_kept}
+
+
+def phase_judge_calibration(cfg: RunConfig) -> dict:
+    """§4-A' judge-drift diagnostic (NEVER a gate): re-judge a seeded subsample
+    of the PARENT round's staged negatives in the same judging session as the
+    fresh base negatives; report kept-fraction agreement with the parent's
+    recorded decisions. Errors are recorded loud in the output JSON, never
+    fatal (a crash here would silently turn the diagnostic into a gate)."""
+    _phase("judge_calibration")
+    out_path = cfg.out_root / "judge_calibration.json"
+    if out_path.exists():
+        return _read_json(out_path)
+    record: dict[str, Any] = {
+        "n_requested": cfg.calibration_n,
+        "seed": CALIBRATION_SEED,
+        "parent_cell": PARENT_ABLIT_CELL,
+        "revision": PARENT_PIN_REVISION,
+        "n_judge_draws": cfg.n_judge_draws,
+    }
+    try:
+        from explore_persona_space.eval.graded_judge import judge_graded
+
+        behavior = BEHAVIORS["harmful_compliance"]
+        raw = _read_jsonl(cfg.calibration_raw_neg)
+        parent_rows = {
+            r["request_id"]: r
+            for r in _read_jsonl(cfg.calibration_judge_rows)
+            if r["arm"] == NEGATIVE
+        }
+        judgeable = [
+            r for r in raw if r.get("completion") is not None and r["request_id"] in parent_rows
+        ]
+        n = min(cfg.calibration_n, len(judgeable))
+        picks = sorted(random.Random(CALIBRATION_SEED).sample(range(len(judgeable)), n))
+        rows = [judgeable[i] for i in picks]
+        items = [(f"cal-{r['request_id']}", r["question"], r["completion"]) for r in rows]
+        jr = judge_graded(
+            items,
+            behavior.judge_rubric,
+            n_draws=cfg.n_judge_draws,
+            cache_dir=cfg.out_root / "judge_calibration_cache",
+            save_raw=cfg.out_root / "judge_calibration_raw.json",
+            judge_model=behavior.judge_model,
+        )
+        threshold = behavior.threshold
+        per_row, n_agree, n_scored = [], 0, 0
+        for r in rows:
+            fresh_mean = jr.scores.get(f"cal-{r['request_id']}")
+            parent = parent_rows[r["request_id"]]
+            # NEGATIVE-arm keep rule: mean < threshold (harmful has no predicate).
+            fresh_kept = None if fresh_mean is None else bool(fresh_mean < threshold)
+            if fresh_kept is not None:
+                n_scored += 1
+                n_agree += int(fresh_kept == bool(parent["kept"]))
+            per_row.append(
+                {
+                    "request_id": r["request_id"],
+                    "parent_mean": parent["mean"],
+                    "parent_kept": bool(parent["kept"]),
+                    "fresh_mean": fresh_mean,
+                    "fresh_kept": fresh_kept,
+                }
+            )
+        record.update(
+            status="computed",
+            n_sampled=n,
+            n_scored=n_scored,
+            n_judge_dropped=n - n_scored,
+            n_agree=n_agree,
+            agreement=(n_agree / n_scored) if n_scored else None,
+            parent_kept_fraction=(sum(pr["parent_kept"] for pr in per_row) / n) if n else None,
+            fresh_kept_fraction=(
+                sum(1 for pr in per_row if pr["fresh_kept"]) / n_scored if n_scored else None
+            ),
+            rows=per_row,
+        )
+    except Exception as e:
+        logger.warning("[judge-calibration] diagnostic failed (never a gate): %s", e, exc_info=True)
+        record.update(status="error", error=f"{type(e).__name__}: {e}")
+    _atomic_write_json(out_path, record)
+    return record
+
+
+def _write_smoke_parent_pool(cfg: RunConfig, cell: Cell, seams: Seams1074) -> PosReuseSpec:
+    """Fixture parent pool for the followup smoke: composes the smoke run's OWN
+    deterministic positive schedule via ``datagen.compose_positive_schedule``
+    (the exact helper ``generate_training_data`` delegates to), fills it with
+    the smoke GenerateFn stub, marks every judgeable row kept, and writes
+    raw_pos.jsonl + judge_rows.jsonl fixtures the reuse seam then verifies via
+    its RNG-state replay. The STAGING function itself is exercised separately
+    against the REAL pin (1-file probe + consumer-open)."""
+    behavior = BEHAVIORS[cell.behavior]
+    reqs, _rng_unused, _qs, _n = compose_positive_schedule(
+        behavior,
+        _source_context(cell.behavior),
+        target_n=cfg.target_n(cell.behavior),
+        seed=cfg.seed,
+        instruction_style="plain",
+    )
+    gen = seams.datagen_gen_factory(cell.gen_model, max_new_tokens=GEN_MAX_NEW_TOKENS)
+    cands = gen(reqs)
+    dest = cfg.out_root / "inputs" / "smoke_parent_pool"
+    dest.mkdir(parents=True, exist_ok=True)
+    raw_path = dest / "raw_pos.jsonl"
+    _write_raw(raw_path, cands)
+    rows_path = dest / "judge_rows.jsonl"
+    n_kept = 0
+    with open(rows_path, "w", encoding="utf-8") as f:
+        for c in cands:
+            if c.completion is None:
+                continue
+            n_kept += 1
+            f.write(
+                json.dumps(
+                    {
+                        "request_id": c.request.request_id,
+                        "question_id": c.request.question_id,
+                        "variant_id": c.request.variant_id,
+                        "arm": POSITIVE,
+                        "scores": [90.0, 90.0],
+                        "mean": 90.0,
+                        "kept": True,
+                        "n_kept_draws": 2,
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n"
+            )
+    return PosReuseSpec(
+        raw_pos_path=raw_path,
+        judge_rows_path=rows_path,
+        expected_kept_count=n_kept,
+        provenance={
+            "source_repo": "smoke-fixture",
+            "source_path": str(dest),
+            "revision": "smoke",
+            "pos_gen_model": PARENT_POS_GEN_MODEL,
+        },
+    )
+
+
 # ── Phases ───────────────────────────────────────────────────────────────────
 
 
@@ -551,7 +829,7 @@ def phase_preflight(cfg: RunConfig, seams: Seams1074) -> dict[str, dict]:
     )
     probe_msgs = [{"role": "user", "content": "Reply with the single word OK."}]
     for arm in sorted({c.arm for c in cfg.cells}):
-        model_id = GENERATORS[arm]
+        model_id = {**GENERATORS, **FOLLOWUP_ARM_GENERATORS}[arm]
         status: dict[str, Any] = {"model": model_id, "ok": False, "attempts": 0}
         for attempt in (1, 2):  # one retry (kill criterion K2)
             status["attempts"] = attempt
@@ -608,7 +886,9 @@ def phase_datagen(cfg: RunConfig, seams: Seams1074, live_arms: set[str]) -> dict
                     cfg.out_root / cell.slug / "datagen_summary.json", results[cell.slug]
                 )
             continue
-        gen_fn = factory(GENERATORS[arm], max_new_tokens=GEN_MAX_NEW_TOKENS)
+        gen_fn = factory(
+            {**GENERATORS, **FOLLOWUP_ARM_GENERATORS}[arm], max_new_tokens=GEN_MAX_NEW_TOKENS
+        )
         try:
             for cell in cells_by_arm[arm]:
                 cell_root = cfg.out_root / cell.slug
@@ -809,10 +1089,17 @@ def phase_margin(cfg: RunConfig, seams: Seams1074, train_results: dict[str, dict
             if out_path.exists():
                 margins[behavior] = _read_json(out_path)
                 continue
-            # Pool preflight: deterministic arm preference base -> ablit.
+            # Pool preflight: deterministic arm preference — this run's own
+            # arms for the behavior first (the followup's "mixed" cell), then
+            # the parent base -> ablit fallbacks (unchanged order there).
             pools = None
             pool_source = None
-            for arm in ("base", "ablit"):
+            arm_pref = list(
+                dict.fromkeys(
+                    [c.arm for c in cfg.cells if c.behavior == behavior] + ["base", "ablit"]
+                )
+            )
+            for arm in arm_pref:
                 dg_dir = cfg.out_root / f"{behavior}-{arm}" / "datagen"
                 if not (dg_dir / "judge_rows.jsonl").exists():
                     continue
@@ -861,8 +1148,19 @@ def phase_margin(cfg: RunConfig, seams: Seams1074, train_results: dict[str, dict
 def phase_upload(cfg: RunConfig, seams: Seams1074, train_results: dict[str, dict]) -> dict:
     """Everything to HF before pod release: datagen raw candidates + mixes ->
     data repo; adapter ladders -> model repo; rate + eval completions +
-    margins + summaries -> data repo. One folder commit per directory."""
+    margins + summaries -> data repo. One folder commit per directory.
+
+    On a followup round the RUN-LEVEL artifacts (evalgen, margin, run_config,
+    preflight, calibration, staged-inputs manifest) go under a followup-scoped
+    prefix so they never clobber the parent round's same-named uploads; the
+    CELL-LEVEL paths stay ``{DATA_PREFIX}/{slug}/...`` (the followup slug
+    ``harmful_compliance-mixed`` is unique — plan §10)."""
     _phase("upload")
+    run_prefix = (
+        DATA_PREFIX
+        if cfg.followup_label is None
+        else f"{DATA_PREFIX}/followups/{cfg.followup_label}"
+    )
     if seams.upload_fn is not None:
         upload = seams.upload_fn
     else:
@@ -940,20 +1238,27 @@ def phase_upload(cfg: RunConfig, seams: Seams1074, train_results: dict[str, dict
         cfg.out_root / "evalgen",
         HF_DATA_REPO,
         "dataset",
-        f"{DATA_PREFIX}/raw_completions/final",
+        f"{run_prefix}/raw_completions/final",
     )
-    _up_dir(cfg.out_root / "margin", HF_DATA_REPO, "dataset", f"{DATA_PREFIX}/margin")
-    for fname in ("preflight_generators.json", "run_config.json"):
+    _up_dir(cfg.out_root / "margin", HF_DATA_REPO, "dataset", f"{run_prefix}/margin")
+    run_level_files = [
+        "preflight_generators.json",
+        "run_config.json",
+        "judge_calibration.json",
+        "judge_calibration_raw.json",
+        "staged_inputs_manifest.json",
+    ]
+    for fname in run_level_files:
         f = cfg.out_root / fname
         if f.exists():
             url = upload(
                 f,
                 HF_DATA_REPO,
                 "dataset",
-                f"{DATA_PREFIX}/{fname}",
+                f"{run_prefix}/{fname}",
                 upload_as_file=True,
             )
-            uploaded[f"{DATA_PREFIX}/{fname}"] = str(url)
+            uploaded[f"{run_prefix}/{fname}"] = str(url)
     return uploaded
 
 
@@ -987,6 +1292,7 @@ def write_sentinel(
     note = {
         "issue": ISSUE,
         "smoke": cfg.smoke,
+        **({"followup_label": cfg.followup_label} if cfg.followup_label is not None else {}),
         "cells": {
             c.slug: {
                 "datagen_status": datagen_results.get(c.slug, {}).get("status"),
@@ -1232,9 +1538,17 @@ def resolve_cells(cells_arg: str | None, smoke: bool) -> tuple[Cell, ...]:
 
 def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description="#1074 generator-compare driver")
-    mode = p.add_mutually_exclusive_group(required=True)
+    mode = p.add_mutually_exclusive_group(required=False)
     mode.add_argument("--smoke", action="store_true", help="one tiny-real cell, same code path")
     mode.add_argument("--full", action="store_true", help="the real GPU/API run")
+    p.add_argument(
+        "--followup",
+        default=None,
+        choices=FOLLOWUP_LABELS,
+        help="same-issue follow-up mode (base-negatives-regen: mixed-generator "
+        "harmful cell — reused ablit positives, fresh base negatives); implies "
+        "--full unless --smoke is given",
+    )
     p.add_argument("--cells", default=None, help="comma list like sycophancy:base,...")
     p.add_argument("--out-root", default=None)
     p.add_argument("--seed", type=int, default=42)
@@ -1244,7 +1558,16 @@ def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
     p.add_argument("--generic-data-path", default=None)
     p.add_argument("--sentinel-dir", default=None)
     p.add_argument("--no-upload", dest="upload", action="store_false", default=True)
-    return p.parse_args(argv)
+    args = p.parse_args(argv)
+    # --followup implies --full (plan §12 workload command carries no mode
+    # flag); a bare invocation without any of the three still errors loud.
+    if not args.smoke and not args.full:
+        if args.followup is None:
+            p.error("one of --smoke / --full (or --followup) is required")
+        args.full = True
+    if args.followup is not None and args.cells is not None:
+        p.error("--cells is not supported with --followup (the cell set is pinned)")
+    return args
 
 
 def _stage_generic_corpus(dest: Path) -> str:
@@ -1271,15 +1594,25 @@ def _stage_generic_corpus(dest: Path) -> str:
 
 def config_from_args(args: argparse.Namespace) -> RunConfig:
     smoke = bool(args.smoke)
-    out_root = Path(
-        args.out_root
-        if args.out_root is not None
-        else (f"/tmp/issue-{ISSUE}-smoke" if smoke else f"data/issue_{ISSUE}/gencompare")
+    followup = getattr(args, "followup", None)
+    if args.out_root is not None:
+        out_root = Path(args.out_root)
+    elif followup is not None:
+        slug = followup.replace("-", "_")
+        out_root = Path(f"/tmp/issue-{ISSUE}-fu-smoke" if smoke else f"data/issue_{ISSUE}/{slug}")
+    else:
+        out_root = Path(f"/tmp/issue-{ISSUE}-smoke" if smoke else f"data/issue_{ISSUE}/gencompare")
+    cells = (
+        (Cell("harmful_compliance", "mixed"),)
+        if followup is not None
+        else resolve_cells(args.cells, smoke)
     )
     return RunConfig(
         smoke=smoke,
-        cells=resolve_cells(args.cells, smoke),
+        cells=cells,
         out_root=out_root,
+        followup_label=followup,
+        calibration_n=CALIBRATION_N_SMOKE if smoke else CALIBRATION_N_FULL,
         seed=args.seed,
         n_judge_draws=args.n_judge_draws if args.n_judge_draws is not None else (2 if smoke else 5),
         eval_n_completions=2 if smoke else 5,
@@ -1323,6 +1656,10 @@ def run(cfg: RunConfig, seams: Seams1074) -> dict:
         raise RuntimeError(f"no generator arm survived preflight: {arm_status}")
 
     datagen_results = phase_datagen(cfg, seams, live_arms)
+    if cfg.calibration_raw_neg is not None:
+        # Followup §4-A' judge-drift diagnostic — SAME judging session as the
+        # fresh negatives (same process, judge pin, draw count); never a gate.
+        phase_judge_calibration(cfg)
     n_cleared = sum(1 for r in datagen_results.values() if r.get("status") == "success")
     if n_cleared == 0:
         logger.warning(
@@ -1366,6 +1703,39 @@ def main(argv: Sequence[str] | None = None) -> int:
         if cfg.generic_data_path is None:
             cfg.generic_data_path = _stage_generic_corpus(
                 cfg.out_root / "inputs" / "generic_corpus.jsonl"
+            )
+    if cfg.followup_label is not None:
+        # Stage the pinned parent inputs BEFORE run() — the regime key + the
+        # datagen manifest carry the staged files' sha256s. The smoke stages
+        # the two small consumer files through the SAME real staging path (the
+        # (h)(iv) probe); the reuse pool there is a schedule-matched fixture
+        # (the parent's 215-row pool cannot match a target_n=6 smoke schedule).
+        smoke_files = ("judge_rows.jsonl", "raw_neg.jsonl")
+        staged = stage_pinned_parent_inputs(
+            cfg, files=smoke_files if cfg.smoke else PARENT_PINNED_FILES
+        )
+        probe = consumer_open_probe_judge_rows(staged["judge_rows.jsonl"])
+        cfg.calibration_raw_neg = staged["raw_neg.jsonl"]
+        cfg.calibration_judge_rows = staged["judge_rows.jsonl"]
+        if cfg.smoke:
+            cfg.pos_reuse = _write_smoke_parent_pool(cfg, cfg.cells[0], seams)
+        else:
+            if probe["n_pos_kept"] != PARENT_EXPECTED_KEPT_POS:
+                raise RuntimeError(
+                    f"staged judge_rows kept-positive count {probe['n_pos_kept']} != "
+                    f"expected {PARENT_EXPECTED_KEPT_POS} (parent pool drift at revision "
+                    f"{PARENT_PIN_REVISION})"
+                )
+            cfg.pos_reuse = PosReuseSpec(
+                raw_pos_path=staged["raw_pos.jsonl"],
+                judge_rows_path=staged["judge_rows.jsonl"],
+                expected_kept_count=PARENT_EXPECTED_KEPT_POS,
+                provenance={
+                    "source_repo": HF_DATA_REPO,
+                    "source_path": PARENT_DATAGEN_PREFIX,
+                    "revision": PARENT_PIN_REVISION,
+                    "pos_gen_model": PARENT_POS_GEN_MODEL,
+                },
             )
     logger.info(
         "issue1074 run: smoke=%s cells=%s out_root=%s",
