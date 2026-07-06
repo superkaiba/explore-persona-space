@@ -1,1 +1,2 @@
 {"ts": "2026-07-06T04:42:55Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "experiment"}
+{"ts": "2026-07-06T04:45:14Z", "kind": "epm:question-linked", "version": 1, "by": "unknown", "note": "Linked task #1074 to open question(s) implant-which-behaviors; created_new=none; mode=auto-match. Goal tests whether content behaviors (sycophancy, harmful_compliance, china_censorship) install when the training completions come from an on-policy Qwen generator (base vs abliterated) — the 'what installs, at what cost' question."}
