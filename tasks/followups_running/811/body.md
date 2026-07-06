@@ -1,7 +1,7 @@
 ---
-title: 'The taught-fact raw function-change call at the primary layer holds under
-  the max-pool answer summary: the turn-boundary read, not the mean, is the outlier
-  (MODERATE confidence)'
+title: 'The taught-fact context-to-leakage chain follows the answer''s content tokens:
+  every gate-passing content pool reproduces its creation and no gate-passing next-turn
+  header position does (MODERATE confidence)'
 kind: experiment
 tags:
 - answer-summary-sweep
