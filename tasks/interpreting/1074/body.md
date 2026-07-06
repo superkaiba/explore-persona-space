@@ -1,6 +1,7 @@
 ---
-title: Abliterated vs base Qwen as the on-policy generator for factory content-behavior
-  datagen
+title: An abliterated Qwen checkpoint clears the harmful-compliance datagen yield
+  floor but writes judge-compliant contrastive negatives, leaving no trainable cell
+  (MODERATE confidence)
 kind: experiment
 tags:
 - from-906
