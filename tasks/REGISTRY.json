@@ -590,8 +590,8 @@
     "1075": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1075",
-      "status": "approved",
+      "path": "tasks/running/1075",
+      "status": "running",
       "title": "workflow-fix: verify_plan heuristic \u2014 GPU basis vs routed machine"
     },
     "108": {
