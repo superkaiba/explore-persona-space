@@ -376,6 +376,7 @@ def main() -> int:
         expected_layers=n_layers,
         expected_hidden=hidden,
         min_n=2 if args.smoke else 4900,
+        smoke=args.smoke,
     )
     prompts = bundle["prompts"]
     n_ctx = len(prompts)

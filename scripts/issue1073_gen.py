@@ -57,6 +57,13 @@ VLLM_CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
 BRANCH_I_MEDIAN_COS = 0.99
 BRANCH_III_MEDIAN_COS = 0.2
 
+# Deterministic c_x alignment gate bar (crash-fix round 3): per probed row,
+# flat (L, H) cosine of a batch-1 unpadded re-capture vs the bundle's stored
+# cx_last — a deterministic forward through the SAME parent capture + chat
+# template reproduces the row near-exactly modulo bf16 (the flattened full
+# profile smooths per-layer jitter; a misaligned row reads ~0.4-0.6).
+CX_ALIGN_COS_MIN = 0.999
+
 
 def _sampling_params(d: dict, smoke: bool):
     """vLLM SamplingParams in production; attribute-compatible namespace in smoke."""
@@ -285,6 +292,38 @@ def _pilot_fit_cell(device: str, n: int, hidden: int, n_eval: int) -> dict:
     }
 
 
+def _cx_alignment_gate(model, tokenizer, bundle, layers) -> dict:
+    """Deterministic prompt<->tensor row-alignment gate (kill-criterion-2 sibling).
+
+    Runs BEFORE the stochastic v_x probe: re-renders probed prompts via the same
+    chat template and teacher-forces c_x with the IMPORTED parent
+    ``capture_context_vector``, then requires flat (L, H) cos >= CX_ALIGN_COS_MIN
+    against the bundle's stored ``cx_last`` row. A deterministic forward with
+    the same model + template reproduces the row near-exactly (modulo bf16), so
+    a miss means the (regenerated) prompt list does NOT index-align with the
+    bundle tensors. Probes the first 10 rows plus 10 evenly spaced.
+    """
+    from issue779_collect import capture_context_vector
+
+    prompts = bundle["prompts"]
+    n = len(prompts)
+    idx = sorted(set(range(min(10, n))) | {int(i) for i in np.linspace(0, n - 1, min(10, n))})
+    rows = []
+    for ci in idx:
+        cx = capture_context_vector(
+            model, tokenizer, [{"role": "user", "content": prompts[ci]}], layers
+        )
+        rows.append(
+            {"ci": int(ci), "cos": _flat_cos(cx["last"], bundle["cx_last"][ci].to(torch.float32))}
+        )
+    return {
+        "n_probed": len(rows),
+        "cos_min": min(r["cos"] for r in rows),
+        "cos_min_bar": CX_ALIGN_COS_MIN,
+        "rows": rows,
+    }
+
+
 def _probe_captures(model, tokenizer, probe_prompts, regen, band, bundle, layers):
     """Batch-1 probe captures via the IMPORTED parent ``capture_answer_vector``.
 
@@ -363,6 +402,7 @@ def _p0(args) -> int:
         expected_layers=n_layers,
         expected_hidden=hidden,
         min_n=2 if args.smoke else 4900,
+        smoke=args.smoke,
     )
     prompts = bundle["prompts"]
     layers = list(bundle["layers"])
@@ -405,6 +445,61 @@ def _p0(args) -> int:
     # ── HF model: probe captures + equivalence gate + pilots ──
     if model is None:
         model, tokenizer = I.load_model_and_tokenizer(args.model, smoke=False)
+
+    # ── deterministic c_x alignment gate (BEFORE the stochastic v_x probe) ──
+    # The ordering/alignment kill switch for a bundle whose prompts were
+    # REGENERATED (the pinned artifact predates the 'prompts' field).
+    align = _cx_alignment_gate(model, tokenizer, bundle, layers)
+    prov = {
+        "regenerated": bool(bundle.get("prompts_regenerated")),
+        "source": str(bundle.get("source", "")),
+        "n": len(prompts),
+        "prompt_list_sha16": I.prompt_list_sha256(prompts)[:16],
+    }
+    if prov["regenerated"]:
+        logger.info(
+            "[p0] prompts regenerated (source=%s, n=%d) alignment gate cos_min=%.6f",
+            prov["source"],
+            prov["n"],
+            align["cos_min"],
+        )
+    else:
+        logger.info(
+            "[p0] bundle prompts present (legacy shape); alignment gate cos_min=%.6f",
+            align["cos_min"],
+        )
+    if align["cos_min"] < CX_ALIGN_COS_MIN:
+        I.write_json_atomic(
+            res_dir / "p0_alignment_halt.json",
+            {
+                "cx_alignment_gate": align,
+                "prompts_provenance": prov,
+                "metadata": I.reproducibility_metadata({"script": "issue1073_gen", "phase": "p0"}),
+            },
+        )
+        I.write_sentinel(
+            "epm:failure",
+            json.dumps(
+                {
+                    "failure_class": "code",
+                    "reason": "p0-alignment-halt",
+                    "assert_tag": "p0-alignment-halt",
+                    "gate": "cx_deterministic",
+                    "cos_min": align["cos_min"],
+                    "detail": (
+                        f"P0 deterministic c_x alignment gate: min flat cos "
+                        f"{align['cos_min']:.6f} < {CX_ALIGN_COS_MIN} over "
+                        f"{align['n_probed']} probed rows — prompt<->tensor row alignment "
+                        "unknowable (kill criterion 2 semantics); see p0_alignment_halt.json"
+                    ),
+                }
+            ),
+        )
+        raise SystemExit(
+            "P0 HALT: deterministic c_x alignment gate failed (kill criterion 2) — "
+            "see p0_alignment_halt.json"
+        )
+
     cos_regen, cos_band, n_empty = _probe_captures(
         model, tokenizer, probe_prompts, regen, band, bundle, layers
     )
@@ -462,6 +557,8 @@ def _p0(args) -> int:
         "pinned_revision": I.PINNED_REVISION,
         "n_contexts": len(prompts),
         "duplicate_stats": dup,
+        "prompts_provenance": prov,
+        "cx_alignment_gate": align,
         "prefix_degeneracy": prefix_check,
         "probe": {
             "n_probe": n_probe,
@@ -536,6 +633,7 @@ def _run_gen_arm(args, arm: str, sp_dict: dict) -> int:
         expected_layers=n_layers,
         expected_hidden=hidden,
         min_n=2 if args.smoke else 4900,
+        smoke=args.smoke,
     )
     prompts = bundle["prompts"]
     texts = _render_prompts(tokenizer, prompts)
