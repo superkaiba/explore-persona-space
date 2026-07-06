@@ -1,6 +1,6 @@
 ---
-title: 'Does #722''s function-change verdict hold with on-policy answers from the
-  fine-tuned model'
+title: The taught-fact-only map-change verdict survives measurement on the fine-tuned
+  models' own answers (MODERATE confidence)
 kind: experiment
 tags:
 - from-722
