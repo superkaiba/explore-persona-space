@@ -5733,8 +5733,8 @@
       "goal": "Re-run #722's pre/post-finetuning function-change (Delta = median |M+(c)-M0(c)| along r_B) and chain-rho on #537's trained adapters using the best answer-side summary identified in the base-map sweep (child-A) in place of the mean, to test whether the 'function M moves only for the taught fact' verdict holds under a better answer-profile summary.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/811",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/811",
+      "status": "awaiting_promotion",
       "title": "The taught-fact context-to-leakage chain follows the answer's content tokens: every gate-passing content pool reproduces its creation and no gate-passing next-turn header position does (MODERATE confidence)"
     },
     "812": {
