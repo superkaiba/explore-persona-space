@@ -828,6 +828,22 @@ def _check_git(
     return {"status": "PASS", "detail": f"all {len(paths)} path(s) tracked + on disk"}
 
 
+def _sentinel_probe_scope_ok(declared: str, issue: int) -> bool:
+    """True iff ``declared`` matches the canonical attempt-namespaced shape
+    ``.../eval_results/issue_<issue>/<attempt>/<SENTINEL_FILENAME>`` (#709,
+    the #705-review scope-guard concern). All three lanes' builders emit
+    this shape (``runpod.runpod_sentinel_path``, ``gcp.sentinel_path_for``,
+    ``slurm.sentinel_relpath_for``), so the guard is a no-op on every
+    production declaration; a non-canonical path (a hand-edited handle, a
+    legacy flat path) never triggers the sibling probe."""
+    p = Path(declared)
+    return (
+        p.name == SENTINEL_FILENAME
+        and p.parent.parent.name == f"issue_{issue}"
+        and p.parent.parent.parent.name == "eval_results"
+    )
+
+
 def _resolve_live_sentinel(declared: str, issue: int, io: VerifierIO) -> tuple[str, str | None]:
     """Resolve which sentinel path ``_check_sentinel`` should READ.
 
@@ -861,6 +877,24 @@ def _resolve_live_sentinel(declared: str, issue: int, io: VerifierIO) -> tuple[s
     FS glob by default) so tests stay FS-free; liveness is the SAME
     ``io.read_sentinel`` seam the content check uses.
 
+    Two #709 hardenings sit around the probe:
+
+    * **Scope guard** — the probe runs ONLY when the declared path
+      matches the canonical attempt-namespaced shape
+      (:func:`_sentinel_probe_scope_ok`); a non-canonical declared path
+      returns the declared (missing) path with a note, never a
+      resolution. Guarding here (the resolver) covers EVERY provider —
+      the FS default, the RunPod SSH variant, any future backend — with
+      one implementation.
+    * **Sibling-read wrap** — a per-sibling liveness read that RAISES
+      (materially reachable once RunPod's reads go over SSH, whose
+      reader raises on transport) marks the probe INCONCLUSIVE:
+      refuse-to-resolve and return the declared (missing) path with a
+      note, by the same never-guess conservatism as the >=2 rule — an
+      errored sibling *might* be live, and resolving to a different
+      readable sibling could pick the wrong attempt. No exception
+      escapes ``verify_artifacts``.
+
     Returns ``(path_to_read, note_or_None)``.
     """
     try:
@@ -874,6 +908,12 @@ def _resolve_live_sentinel(declared: str, issue: int, io: VerifierIO) -> tuple[s
         return declared, None
     if declared_present:
         return declared, None
+    if not _sentinel_probe_scope_ok(declared, issue):
+        return declared, (
+            f"declared sentinel {declared} missing and not the canonical "
+            f"eval_results/issue_{issue}/<attempt>/{SENTINEL_FILENAME} shape; "
+            "skipping the live-sibling probe (#709 scope guard)"
+        )
     try:
         siblings = io._glob_sentinels()(declared, issue)
     except Exception as exc:
@@ -881,7 +921,24 @@ def _resolve_live_sentinel(declared: str, issue: int, io: VerifierIO) -> tuple[s
         # to the declared (missing) path so the content read FAILs loud,
         # carrying the probe failure in the note.
         return declared, f"live-sibling probe raised: {exc}"
-    live = [s for s in siblings if s != declared and io._sentinel()(s) is not None]
+    live: list[str] = []
+    probe_errors: list[str] = []
+    for s in siblings:
+        if s == declared:
+            continue
+        try:
+            present = io._sentinel()(s) is not None
+        except Exception as exc:  # fail-closed: an unreadable sibling never crashes the gate
+            probe_errors.append(f"{s}: {exc}")
+            continue
+        if present:
+            live.append(s)
+    if probe_errors:
+        return declared, (
+            f"declared sentinel {declared} missing AND {len(probe_errors)} sibling "
+            f"liveness read(s) raised ({'; '.join(probe_errors)}) — probe inconclusive, "
+            "refusing to resolve; FAILing on the declared (missing) path (#709)"
+        )
     if len(live) == 1:
         return live[0], (
             f"declared sentinel {declared} missing; resolved to the single live "
