@@ -330,7 +330,15 @@ def _spectrum_stats(sv: np.ndarray) -> dict:
     """Energy-concentration stats from descending singular values (nonzero-filtered)."""
     sv = np.asarray(sv, dtype=np.float64)
     smax = float(sv[0]) if sv.size else 0.0
-    tol = smax * 1e-10
+    # Numerical-rank cutoff (1e-6·σ₁, rcond-style for an ill-conditioned ridge
+    # readout): excludes the structural-zero float-noise mode the standardization
+    # introduces (Xn has a zero row-sum ⇒ the 1ₙ direction is an exact null mode
+    # ⇒ rank ≤ n−1, and its amplified eigh noise reads σ~1e-7·σ₁), so the rank
+    # bound holds cleanly; the deep-tail modes it drops carry ≲1e-12 relative
+    # energy, so the effective-rank / k50 / k90 / energy-fraction stats are
+    # unaffected (raw rank is uninformative here by construction — see the
+    # module docstring).
+    tol = smax * 1e-6
     nz = sv[sv > tol]
     energy = nz**2
     total = float(energy.sum())
