@@ -4618,6 +4618,9 @@ def test_concerns_audit_fails_on_unaddressed_concern(tmp_path):
     assert not result.passed
     assert "probe-position-undefined" in result.detail
     assert "(CONCERN)" in result.detail
+    # No deferral markers in the body → no spurious stale-marker WARN
+    # suffix on the FAIL detail (#1089).
+    assert "; WARN:" not in result.detail
 
 
 def test_concerns_audit_passes_when_acknowledged_in_tldr_h3(tmp_path):
@@ -4690,6 +4693,8 @@ def test_concerns_audit_passes_with_deferral_html_marker(tmp_path):
     body = GOOD_BODY + "\n<!-- concern-deferred: scope-deferred-thing -->\n"
     result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
     assert result.passed
+    # Deferring a LIVE open concern (latest event `raised`) never warns (#1089).
+    assert not result.is_warn
 
 
 def test_concerns_audit_only_latest_event_per_id_counts(tmp_path):
@@ -4750,6 +4755,156 @@ def test_concerns_audit_sees_row_with_raw_unicode_line_separator(tmp_path):
     assert not result.passed
     assert "u2028-blocker-must-be-seen" in result.detail
     assert "(BLOCKER)" in result.detail
+
+
+def test_concerns_audit_warns_on_stale_deferred_marker_when_addressed(tmp_path):
+    """A `<!-- concern-deferred: <id> -->` marker whose id's latest ledger
+    event is `addressed` is STALE: it misdescribes the resolution (the
+    concern was fixed, not deferred). The check WARNs (never FAILs),
+    naming the stale id — the #833 shape, where `open_binding` is empty
+    and the pre-#1089 code never scanned the markers at all. Also pins
+    dedup (a duplicate marker for the same id warns once) and
+    deterministic sorted-by-id ordering across multiple stale ids."""
+    cp = tmp_path / "concerns.jsonl"
+    rows = [
+        {"event": "raised", "concern_id": "now-fixed-thing", "severity": "CONCERN"},
+        {"event": "addressed", "concern_id": "now-fixed-thing", "severity": "CONCERN"},
+        {"event": "raised", "concern_id": "another-fixed-thing", "severity": "CONCERN"},
+        {"event": "addressed", "concern_id": "another-fixed-thing", "severity": "CONCERN"},
+    ]
+    cp.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    body = (
+        GOOD_BODY
+        + "\n<!-- concern-deferred: now-fixed-thing -->\n"
+        + "<!-- concern-deferred: another-fixed-thing -->\n"
+        # Duplicate marker for the first id — dedupes to one WARN.
+        + "<!-- concern-deferred: now-fixed-thing -->\n"
+    )
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert result.passed
+    assert result.is_warn
+    assert "now-fixed-thing" in result.detail
+    assert "addressed" in result.detail
+    assert "remove or retag" in result.detail
+    # Verbatim WARN strings (#1089 plan §3.2), joined "; " in sorted-id order,
+    # each id exactly once despite the duplicate marker.
+    assert result.detail == (
+        "stale concern-deferred marker 'another-fixed-thing' — concern is addressed; "
+        "remove or retag; "
+        "stale concern-deferred marker 'now-fixed-thing' — concern is addressed; "
+        "remove or retag"
+    )
+
+
+def test_concerns_audit_warns_on_deferred_marker_absent_from_ledger(tmp_path):
+    """A `<!-- concern-deferred: <id> -->` marker naming an id the ledger
+    has never heard of WARNs with distinct wording: `defer_concern`
+    refuses never-raised ids, so an absent-id marker is a typo or a
+    cross-task body copy — either way it does not correspond to this
+    task's ledger."""
+    cp = tmp_path / "concerns.jsonl"
+    cp.write_text("")  # empty ledger — the id is absent by construction
+    body = GOOD_BODY + "\n<!-- concern-deferred: ghost-concern -->\n"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert result.passed
+    assert result.is_warn
+    assert "ghost-concern" in result.detail
+    assert "absent" in result.detail
+
+
+def test_concerns_audit_live_deferred_ledger_event_no_warn(tmp_path):
+    """Case (c), `deferred` branch: a marker whose id's latest ledger
+    event is `deferred` is LIVE — the canonical defer path produced it —
+    so no WARN fires (behavior unchanged from pre-#1089). Also covers the
+    `verified-open` branch (the last live-vocabulary cell)."""
+    cp = tmp_path / "concerns.jsonl"
+    rows = [
+        {"event": "raised", "concern_id": "parked-thing", "severity": "CONCERN"},
+        {"event": "deferred", "concern_id": "parked-thing", "severity": "CONCERN"},
+    ]
+    cp.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    body = GOOD_BODY + "\n<!-- concern-deferred: parked-thing -->\n"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert result.passed
+    assert not result.is_warn
+
+    # verified-open variant: still open (and binding), the marker
+    # acknowledges it via mechanism 3 — no WARN either.
+    rows = [
+        {"event": "raised", "concern_id": "still-open-thing", "severity": "CONCERN"},
+        {"event": "verified-open", "concern_id": "still-open-thing", "severity": "CONCERN"},
+    ]
+    cp.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    body = GOOD_BODY + "\n<!-- concern-deferred: still-open-thing -->\n"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert result.passed
+    assert not result.is_warn
+
+
+def test_concerns_audit_stale_marker_folds_warn_into_open_concern_fail(tmp_path):
+    """Case (d), FAIL precedence: an unaddressed open concern still FAILs
+    (`passed=False`, never downgraded); the stale-marker warn text rides
+    the FAIL detail behind the literal `; WARN: ` prefix (the established
+    mixed-FAIL+WARN fold), AFTER the unaddressed text."""
+    cp = tmp_path / "concerns.jsonl"
+    rows = [
+        {"event": "raised", "concern_id": "open-unacked-thing", "severity": "CONCERN"},
+        {"event": "raised", "concern_id": "now-fixed-thing", "severity": "CONCERN"},
+        {"event": "addressed", "concern_id": "now-fixed-thing", "severity": "CONCERN"},
+    ]
+    cp.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    body = GOOD_BODY + "\n<!-- concern-deferred: now-fixed-thing -->\n"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert not result.passed
+    assert not result.is_warn
+    assert "open-unacked-thing" in result.detail
+    assert "; WARN: stale concern-deferred marker 'now-fixed-thing'" in result.detail
+    # Fold order: the unaddressed FAIL text comes BEFORE the WARN suffix.
+    assert result.detail.index("open-unacked-thing") < result.detail.index("; WARN: ")
+
+
+def test_concerns_audit_skip_path_ignores_markers(tmp_path):
+    """Case (e): with no ledger to compare against (`concerns_path` None
+    or missing), the skip-PASS path never scans markers — a stale-looking
+    marker in the body produces no WARN."""
+    body = GOOD_BODY + "\n<!-- concern-deferred: ghost-concern -->\n"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=None)
+    assert result.passed
+    assert not result.is_warn
+    assert "skipped" in result.detail.lower()
+
+    missing = tmp_path / "concerns.jsonl"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=missing)
+    assert result.passed
+    assert not result.is_warn
+    assert "skipped" in result.detail.lower()
+
+
+def test_concerns_audit_stale_marker_warns_alongside_acknowledged_open_concern(tmp_path):
+    """Pins the SECOND warns-only return site: `open_binding` is
+    non-empty (a raised CONCERN, acknowledged in the body via
+    mechanism 1), so the check passes the early return and runs the full
+    ack scan; `unaddressed` ends empty; the post-ack `if stale_warns:`
+    branch fires for the stale marker. A mutant deleting the post-ack
+    branch fails exactly this test."""
+    cp = tmp_path / "concerns.jsonl"
+    rows = [
+        {"event": "raised", "concern_id": "open-acked-thing", "severity": "CONCERN"},
+        {"event": "raised", "concern_id": "now-fixed-thing", "severity": "CONCERN"},
+        {"event": "addressed", "concern_id": "now-fixed-thing", "severity": "CONCERN"},
+    ]
+    cp.write_text("".join(json.dumps(r) + "\n" for r in rows))
+    body = GOOD_BODY.replace(
+        "The 17-pt lift holds at every seed",
+        "Note: open-acked-thing affected our setup; "
+        "we report the conservative estimate. The 17-pt lift holds at every seed",
+    )
+    body = body + "\n<!-- concern-deferred: now-fixed-thing -->\n"
+    result = verify_task_body.check_concerns_audit(body, concerns_path=cp)
+    assert result.passed
+    assert result.is_warn
+    assert "now-fixed-thing" in result.detail
+    assert "addressed" in result.detail
 
 
 # ─── Check 16: Reproducibility lr matches plan (task #489 regression) ───────
