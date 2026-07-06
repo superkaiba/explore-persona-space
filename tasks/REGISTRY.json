@@ -618,8 +618,8 @@
     "1079": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1079",
-      "status": "reviewing",
+      "path": "tasks/completed/1079",
+      "status": "completed",
       "title": "daily-fix: default BLAS/OMP thread pins for vectorized VM fi"
     },
     "108": {
