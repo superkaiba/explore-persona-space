@@ -122,12 +122,20 @@ def fig_chain_forest() -> None:
 
 # ── Figure 2: per-cell chain scatter (fact, headline layer) ───────────────────
 def fig_chain_scatter() -> None:
+    """Per-cell LOCO-prediction-vs-E scatter, fact L14, all FOUR maps.
+
+    Recomputes each map's ridge LOCO chain from the joined cache via the
+    imported #722 harness and asserts the Spearman matches the persisted
+    aggregate (chain_rho/ for the three production arms, chain_rho_ctrl/ for
+    the matched-text control), so every panel is provably the per-unit data
+    behind its persisted forest-plot point.
+    """
     import issue722_fit_M as fitM  # heavy import (torch) — local
 
     beh, li = "fact", 14
     z = np.load(RES / f"joined_cache/{beh}_L{li}.npz", allow_pickle=True)
     C0, Cplus = z["C0"], z["Cplus"]
-    V0, Vplus, Von = z["V0"], z["Vplus"], z["Von"]
+    V0, Vplus, Von, V0on = z["V0"], z["Vplus"], z["Von"], z["V0on"]
     cell_keys = [str(x) for x in z["cell_keys"]]
     rb_main = fitM._load_rb_main()
     rb_fact = fitM._load_rb_fact()
@@ -137,19 +145,22 @@ def fig_chain_scatter() -> None:
     Ek = E[keep]
     pca = fitM._pca_basis_v0(V0, fitM.TARGET_DIM)
     persisted = load_json(f"chain_rho/{beh}_L{li}.json")
+    persisted_ctrl = load_json(f"chain_rho_ctrl/{beh}_L{li}.json")
 
     arm_specs = [
-        ("M0", "base map (base answers)", C0, V0 @ pca.T, C_M0),
-        ("Mplus_off", "post-FT map, base answers", Cplus, Vplus @ pca.T, C_OFF),
-        ("Mplus_on", "post-FT map, own answers", Cplus, Von @ pca.T, C_ON),
+        ("M0", "base map (base answers)", C0, V0 @ pca.T, C_M0, persisted),
+        ("Mplus_off", "post-FT map, base answers", Cplus, Vplus @ pca.T, C_OFF, persisted),
+        ("Mplus_on", "post-FT map, own answers", Cplus, Von @ pca.T, C_ON, persisted),
+        ("M0_ctrl", "base map, own answers (control)", C0, V0on @ pca.T, C_CTRL, persisted_ctrl),
     ]
-    fig, axes = plt.subplots(1, 3, figsize=(11.5, 3.9), sharey=True)
-    for ax, (arm, lab, X, Y64, col) in zip(axes, arm_specs, strict=True):
+    fig, axes = plt.subplots(1, 4, figsize=(14.6, 3.9), sharey=True)
+    for ax, (arm, lab, X, Y64, col, ref_json) in zip(axes, arm_specs, strict=True):
         loco = fitM._ridge_loco_pred(X, Y64)
         rho, chain = fitM._chain_rho_one(loco[keep], pca, r_hat, Ek)
-        ref = persisted[f"rho_{arm}_ridge"]
-        # The persisted fits ran on GPU (FIT_DEVICE=cuda, r7e); this CPU float64
-        # recompute may flip a PRESS-lambda near-tie — accept <0.01 rank drift.
+        ref = ref_json[f"rho_{arm}_ridge"]
+        # The persisted production fits ran on GPU (FIT_DEVICE=cuda, r7e); this
+        # CPU float64 recompute may flip a PRESS-lambda near-tie — accept <0.01
+        # rank drift. The control fit ran on CPU, so it should match tightly.
         assert abs(rho - ref) < 1e-2, (arm, rho, ref)
         print(f"[chain-scatter] {arm}: recomputed {rho:+.4f} vs persisted {ref:+.4f}")
         ax.scatter(chain, Ek, s=10, alpha=0.45, color=col, edgecolors="none")
