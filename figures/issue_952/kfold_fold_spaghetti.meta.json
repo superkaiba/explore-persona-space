@@ -1,0 +1,561 @@
+{
+  "commit": "a8414b86dc",
+  "created": "2026-07-06T00:26:01Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "Read-out layer": 14.0,
+      "H1 contrast (own vs external plain)": -0.010103624462588834,
+      "error": 0.003966977996361367,
+      "series": "Pooled \u00b1 95% CI",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Read-out layer": 20.0,
+      "H1 contrast (own vs external plain)": 0.001054789213174135,
+      "error": 0.004605800256066961,
+      "series": "Pooled \u00b1 95% CI",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Read-out layer": 23.0,
+      "H1 contrast (own vs external plain)": 0.0009894568201862138,
+      "error": 0.004263548660421418,
+      "series": "Pooled \u00b1 95% CI",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Read-out layer": 26.0,
+      "H1 contrast (own vs external plain)": 0.0021737478859775623,
+      "error": 0.004876341722427037,
+      "series": "Pooled \u00b1 95% CI",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Read-out layer": 14.0,
+      "H1 contrast (own vs external plain)": -0.00764957071654776,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Read-out layer": 20.0,
+      "H1 contrast (own vs external plain)": 0.0014198241180358832,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Read-out layer": 23.0,
+      "H1 contrast (own vs external plain)": -0.001071439910237719,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Read-out layer": 26.0,
+      "H1 contrast (own vs external plain)": -0.008095539580683618,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Read-out layer": 14.0,
+      "H1 contrast (own vs external plain)": -0.009190416930502605,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Read-out layer": 20.0,
+      "H1 contrast (own vs external plain)": 0.002166857832217945,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Read-out layer": 23.0,
+      "H1 contrast (own vs external plain)": 0.0038457767228014562,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Read-out layer": 26.0,
+      "H1 contrast (own vs external plain)": 0.007523730367779261,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Read-out layer": 14.0,
+      "H1 contrast (own vs external plain)": -0.014326203750521696,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Read-out layer": 20.0,
+      "H1 contrast (own vs external plain)": -0.0020452792088958976,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Read-out layer": 23.0,
+      "H1 contrast (own vs external plain)": -0.003015945369839488,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Read-out layer": 26.0,
+      "H1 contrast (own vs external plain)": -0.0051857829373751045,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Read-out layer": 14.0,
+      "H1 contrast (own vs external plain)": -0.01316232567439882,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Read-out layer": 20.0,
+      "H1 contrast (own vs external plain)": -0.00057163358921173,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Read-out layer": 23.0,
+      "H1 contrast (own vs external plain)": 0.0016118242718760802,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Read-out layer": 26.0,
+      "H1 contrast (own vs external plain)": 0.0053051414745690605,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Read-out layer": 14.0,
+      "H1 contrast (own vs external plain)": -0.006076117026309065,
+      "series": "fold 4 (calibration)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Read-out layer": 20.0,
+      "H1 contrast (own vs external plain)": 0.00439476875538973,
+      "series": "fold 4 (calibration)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Read-out layer": 23.0,
+      "H1 contrast (own vs external plain)": 0.0036448084255578245,
+      "series": "fold 4 (calibration)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Read-out layer": 26.0,
+      "H1 contrast (own vs external plain)": 0.012000278412981397,
+      "series": "fold 4 (calibration)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Read-out layer": 14.0,
+      "H1 contrast (own vs external plain)": -0.010103624462588834,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Read-out layer": 20.0,
+      "H1 contrast (own vs external plain)": 0.001054789213174135,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Read-out layer": 23.0,
+      "H1 contrast (own vs external plain)": 0.0009894568201862138,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Read-out layer": 26.0,
+      "H1 contrast (own vs external plain)": 0.0021737478859775623,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Read-out layer": 14.0,
+      "H1 contrast (own vs external plain)": -0.014081459895310252,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out layer": 20.0,
+      "H1 contrast (own vs external plain)": -0.00353692870559965,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out layer": 23.0,
+      "H1 contrast (own vs external plain)": -0.0032653378113509657,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out layer": 26.0,
+      "H1 contrast (own vs external plain)": -0.0027053310518030046,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out layer": 14.0,
+      "H1 contrast (own vs external plain)": -0.006147503902587518,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out layer": 20.0,
+      "H1 contrast (own vs external plain)": 0.005674671806534272,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out layer": 23.0,
+      "H1 contrast (own vs external plain)": 0.00526175950949187,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out layer": 26.0,
+      "H1 contrast (own vs external plain)": 0.007047352393051069,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out layer": 14.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.0026076099049644474,
+      "error": 0.006473838117177023,
+      "series": "Pooled \u00b1 95% CI",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Read-out layer": 17.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.012756412834805664,
+      "error": 0.0069913962483313516,
+      "series": "Pooled \u00b1 95% CI",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Read-out layer": 20.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.02285077792491652,
+      "error": 0.006535915034626723,
+      "series": "Pooled \u00b1 95% CI",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Read-out layer": 23.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.020316033613896778,
+      "error": 0.0061131419611364975,
+      "series": "Pooled \u00b1 95% CI",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Read-out layer": 26.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.013474955183003234,
+      "error": 0.007622553158346488,
+      "series": "Pooled \u00b1 95% CI",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Read-out layer": 14.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.005530133353442879,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out layer": 17.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.007545321644430669,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out layer": 20.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.015224056555184662,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out layer": 23.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.020619205759475512,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out layer": 26.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.016407294915209536,
+      "series": "fold 0",
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out layer": 14.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.0009489369296495909,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Read-out layer": 17.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.013068849059918786,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Read-out layer": 20.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.026292414357449112,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Read-out layer": 23.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.02189957873900772,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Read-out layer": 26.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.017701041911689197,
+      "series": "fold 1",
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Read-out layer": 14.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.008882100027747142,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Read-out layer": 17.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.024909126608257948,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Read-out layer": 20.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.02908396306084693,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Read-out layer": 23.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.021494824495187026,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Read-out layer": 26.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.017639597578502197,
+      "series": "fold 2",
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Read-out layer": 14.0,
+      "Matched \u0394G(0\u219216), own vs external plain": -0.003982958575633799,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Read-out layer": 17.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.005042786534482091,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Read-out layer": 20.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.018684092550011466,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Read-out layer": 23.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.01756776985132602,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Read-out layer": 26.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.010375413695649871,
+      "series": "fold 3",
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Read-out layer": 14.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.0018997277256789236,
+      "series": "fold 4 (calibration)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Read-out layer": 17.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.013643048178630601,
+      "series": "fold 4 (calibration)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Read-out layer": 20.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.025242314640469665,
+      "series": "fold 4 (calibration)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Read-out layer": 23.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.020057363994596678,
+      "series": "fold 4 (calibration)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Read-out layer": 26.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.005101033808971311,
+      "series": "fold 4 (calibration)",
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Read-out layer": 14.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.0026076099049644474,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Read-out layer": 17.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.012756412834805664,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Read-out layer": 20.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.02285077792491652,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Read-out layer": 23.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.020316033613896778,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Read-out layer": 26.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.013474955183003234,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Read-out layer": 14.0,
+      "Matched \u0394G(0\u219216), own vs external plain": -0.003815207831989737,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Read-out layer": 17.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.005803004654665262,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Read-out layer": 20.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.016275473392646112,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Read-out layer": 23.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.014194666444750315,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Read-out layer": 26.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.0058682656782598095,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "Read-out layer": 14.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.00913246840236431,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Read-out layer": 17.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.019785797151327965,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Read-out layer": 20.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.02934730346189956,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Read-out layer": 23.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.02642095036702331,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "Read-out layer": 26.0,
+      "Matched \u0394G(0\u219216), own vs external plain": 0.021113371994952786,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 81
+}
