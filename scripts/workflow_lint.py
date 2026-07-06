@@ -6287,7 +6287,9 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # cap = measured + <=~1 KB. Prior: 65,500 — measured 62,672 B)
     "experimenter.md": 66_500,
     "methodology-writer.md": 48_000,  # measured 45,203 B
-    "research-pm.md": 43_500,  # measured 40,990 B
+    # measured 46,187 B post-#1082 (negative-existence search recipe —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 43,500 / 40,990 B)
+    "research-pm.md": 47_000,
     "upload-verifier.md": 45_500,  # measured 42,825 B
 }
 

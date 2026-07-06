@@ -1,0 +1,2 @@
+{"ts": "2026-06-28T08:07:39Z", "kind": "epm:created", "version": 1, "by": "task.py", "kind_": "infra"}
+{"ts": "2026-07-06T10:23:16Z", "kind": "epm:progress", "version": 1, "by": "autonomous_session_watch", "note": "[autonomous_session_watch:orphan-respawn] active task (status=planning) had no live registered session and no real progress marker for 11655.5m; auto-respawned via spawn-issue --auto (attempt 1/2 today)."}
