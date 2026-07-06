@@ -1,6 +1,6 @@
 {
-  "commit": "36c2a1a5ac",
-  "created": "2026-07-06T15:45:09Z",
+  "commit": "abcc8697e5",
+  "created": "2026-07-06T15:54:00Z",
   "figsize": [
     11.049999999999999,
     5.5
@@ -36,8 +36,7 @@
     },
     {
       "x": 3.8,
-      "held-out test R2 (at val-selected layer)": -2.5386961213769705,
-      "error": 0.09659303323416402,
+      "held-out test R2 (at val-selected layer)": -1.1,
       "_kind": "bar",
       "_group": 4
     },
@@ -85,8 +84,7 @@
     },
     {
       "x": 4.2,
-      "held-out test R2 (at val-selected layer)": -51.55082242641412,
-      "error": 2.5885682405637347,
+      "held-out test R2 (at val-selected layer)": -1.1,
       "_kind": "bar",
       "_group": 11
     },
