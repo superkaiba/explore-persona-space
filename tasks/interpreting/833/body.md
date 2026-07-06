@@ -6,7 +6,7 @@ tags:
 - from-722
 - onpolicy-postft-map
 created_at: '2026-07-02T04:55:40Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 722
 origin_prompt: How much compute/time would it take to run a followup which does the
   same thing as 722 but with answers from the finetuned model? | Run this followup
