@@ -255,7 +255,7 @@ def make_all(agg_root: Path, fig_root: Path) -> dict[str, str]:
         finally:
             plt.close("all")
         if path is not None:
-            out[name] = path
+            out[name] = str(path)  # savefig_paper returns Path — JSON-safe str
             logger.info("[figures] %s -> %s", name, path)
         else:
             logger.info("[figures] %s skipped (inputs absent)", name)

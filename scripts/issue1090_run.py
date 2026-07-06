@@ -361,17 +361,22 @@ def _stage_hf_prefix(prefix: str, dest: Path, *, skip_if: Callable[[Path], bool]
         logger.info("[stage] %s already complete locally — skip", dest)
         return
     from huggingface_hub import HfApi, hf_hub_download
+    from huggingface_hub.errors import EntryNotFoundError
 
     from explore_persona_space.orchestrate import hub
 
     api = HfApi()
-    entries = hub.retry_transient(
-        lambda: list(
-            api.list_repo_tree(
-                HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
-            )
+    try:
+        entries = hub.retry_transient(
+            lambda: list(
+                api.list_repo_tree(
+                    HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", recursive=True
+                )
+            ),
+            what=f"issue1090 stage listing {prefix}",
         )
-    )
+    except EntryNotFoundError as e:  # missing prefix -> the callers' handled signal
+        raise FileNotFoundError(f"no tree at {HF_DATA_REPO}/{prefix}") from e
     files = [e.path for e in entries if not getattr(e, "tree_id", None)]
     if not files:
         raise FileNotFoundError(f"no files under {HF_DATA_REPO}/{prefix} — was P1a uploaded?")
@@ -383,7 +388,8 @@ def _stage_hf_prefix(prefix: str, dest: Path, *, skip_if: Callable[[Path], bool]
         got = hub.retry_transient(
             lambda hp=hub_path: hf_hub_download(
                 HF_DATA_REPO, hp, repo_type="dataset", local_dir=dest / "_hfstage"
-            )
+            ),
+            what=f"issue1090 stage download {hub_path}",
         )
         target.parent.mkdir(parents=True, exist_ok=True)
         os.replace(got, target)
