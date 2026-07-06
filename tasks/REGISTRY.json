@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1074,
+  "highest_id": 1075,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -586,6 +586,13 @@
       "path": "tasks/planning/1074",
       "status": "planning",
       "title": "Abliterated vs base Qwen as the on-policy generator for factory content-behavior datagen"
+    },
+    "1075": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1075",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan heuristic \u2014 GPU basis vs routed machine"
     },
     "108": {
       "has_clean_result": false,
