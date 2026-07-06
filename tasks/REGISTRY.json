@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1081,
+  "highest_id": 1082,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -642,6 +642,13 @@
       "path": "tasks/proposed/1081",
       "status": "proposed",
       "title": "daily-fix: crash-fix relaunch asserts fix commit on pod + wi"
+    },
+    "1082": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1082",
+      "status": "proposed",
+      "title": "daily-fix: task-corpus search recipe - children, follow-up l"
     },
     "109": {
       "has_clean_result": false,
