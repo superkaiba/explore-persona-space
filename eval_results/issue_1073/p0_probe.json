@@ -1,0 +1,205 @@
+{
+  "staged_inputs": {
+    "bundle": "/workspace/eps-issue-1073/data/issue_1073/inputs/issue779_monitoring/analysis_tensors/pass_b/train_context_vectors.pt",
+    "pass_a_dir": "/workspace/eps-issue-1073/data/issue_1073/inputs/issue779_monitoring/analysis_tensors/pass_a",
+    "rb_dir": "/workspace/eps-issue-1073/data/issue_1073/inputs/issue779_monitoring/r_b",
+    "step0": "/workspace/eps-issue-1073/data/issue_1073/inputs/issue779_monitoring/analysis_tensors/step0/step0_oracle.json",
+    "n_pass_a": "78",
+    "n_rb": "6"
+  },
+  "pinned_revision": "037fcbb210bc52c459959b0746cc268fe08bae96",
+  "n_contexts": 5000,
+  "duplicate_stats": {
+    "n_contexts": 5000,
+    "n_clusters": 4596,
+    "n_rows_in_multirow_clusters": 477,
+    "duplicate_row_fraction": 0.0954,
+    "largest_cluster": 89
+  },
+  "prompts_provenance": {
+    "regenerated": true,
+    "source": "lmsys/lmsys-chat-1m",
+    "n": 5000,
+    "prompt_list_sha16": "b45816298923e17a"
+  },
+  "cx_alignment_gate": {
+    "n_probed": 19,
+    "cos_min": 0.9997743871134039,
+    "cos_min_bar": 0.999,
+    "rows": [
+      {
+        "ci": 0,
+        "cos": 0.9999226969576781
+      },
+      {
+        "ci": 1,
+        "cos": 0.9999404111449922
+      },
+      {
+        "ci": 2,
+        "cos": 0.9998604025975804
+      },
+      {
+        "ci": 3,
+        "cos": 0.9999158032747023
+      },
+      {
+        "ci": 4,
+        "cos": 0.999930677601745
+      },
+      {
+        "ci": 5,
+        "cos": 0.99989667570464
+      },
+      {
+        "ci": 6,
+        "cos": 0.9999305234821158
+      },
+      {
+        "ci": 7,
+        "cos": 0.9998288365358189
+      },
+      {
+        "ci": 8,
+        "cos": 0.9999118333364063
+      },
+      {
+        "ci": 9,
+        "cos": 0.9998990309746607
+      },
+      {
+        "ci": 555,
+        "cos": 0.9998145552684957
+      },
+      {
+        "ci": 1110,
+        "cos": 0.9998922537558222
+      },
+      {
+        "ci": 1666,
+        "cos": 0.9998737042118305
+      },
+      {
+        "ci": 2221,
+        "cos": 0.9999093761854425
+      },
+      {
+        "ci": 2777,
+        "cos": 0.9998121739556224
+      },
+      {
+        "ci": 3332,
+        "cos": 0.9997743871134039
+      },
+      {
+        "ci": 3888,
+        "cos": 0.9998989630124333
+      },
+      {
+        "ci": 4443,
+        "cos": 0.999921962351742
+      },
+      {
+        "ci": 4999,
+        "cos": 0.9999075720150657
+      }
+    ]
+  },
+  "prefix_degeneracy": {
+    "constant_prefix": true,
+    "prefix_repr": "'<|im_start|>system\\nYou are Qwen, created by Alibaba Cloud. You are a helpful assistant.<|im_end|>\\n'",
+    "prefix_n_chars": 98
+  },
+  "probe": {
+    "n_probe": 20,
+    "n_empty_regen": 0,
+    "cos_regen": [
+      0.9972731463515639,
+      0.9941639793150859,
+      0.999996425599383,
+      0.9970928629460922,
+      0.9936005789856975,
+      0.9880618493955884,
+      0.9999532154782341,
+      0.999972554282805,
+      0.9999788572160891,
+      0.9999785591668507,
+      0.9953390387980783,
+      0.9957181067189805,
+      0.999968502741826,
+      0.9999857916314012,
+      0.9993349212375816,
+      0.9999864300106471,
+      0.9916915342061864,
+      0.998936582871885,
+      0.9911813302156334,
+      0.9875787370739113
+    ],
+    "cos_regen_median": 0.9981048646117245,
+    "cos_band": [
+      0.9961038538846448,
+      0.9911782480700257,
+      0.9896796810143943,
+      0.9959001752906957,
+      0.9845554194389265,
+      0.9768374509719175,
+      0.9928674756875765,
+      0.9292138874992772,
+      0.9820107096033904,
+      0.9154422799026267,
+      0.9930880531900165,
+      0.9958110983357636,
+      0.9932309686967017,
+      0.963127798995291,
+      0.9833158032072288,
+      0.9999999999999987,
+      0.978676094184551,
+      0.999840612165553,
+      0.9849171876464696,
+      0.9887177549535645
+    ],
+    "cos_band_median": 0.9891987179839794,
+    "branch": "i",
+    "branch_bars": {
+      "branch_i_median_cos": 0.99,
+      "branch_iii_median_cos": 0.2
+    }
+  },
+  "science_stoch_arm_by_probe_branch": {
+    "branch": "i",
+    "headline_stoch_arm": "stoch1_old",
+    "continuity_only_arm": "stoch1_new"
+  },
+  "equivalence_gate": {
+    "cos_min": 0.9998546570804435,
+    "bar": 0.999,
+    "n_items": 3
+  },
+  "pilot": {
+    "capture_batch_items": 16,
+    "capture_batch_s": 1.1480512619018555,
+    "capture_per_rollout_s": 0.07175320386886597,
+    "fit_cell": {
+      "device": "cuda",
+      "n_train": 4000,
+      "hidden": 3584,
+      "n_eval": 1000,
+      "factorize_s": 0.24717092514038086,
+      "per_target_vty_s": 0.006468534469604492,
+      "cross_kernel_apply_s": 0.0074634552001953125
+    },
+    "projected_p3_wall_h": 1.096229503552119,
+    "projected_p4_wall_h": 0.021817329194810657
+  },
+  "smoke": false,
+  "metadata": {
+    "git_commit": "c06211777dbc239def2dcee660b4868b3132b473",
+    "timestamp_utc": "2026-07-06T08:23:46.837097Z",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+    "cuda_visible_devices": "all",
+    "issue": 1073,
+    "script": "issue1073_gen",
+    "phase": "p0"
+  }
+}
