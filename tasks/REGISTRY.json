@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1082,
+  "highest_id": 1083,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -649,6 +649,13 @@
       "path": "tasks/proposed/1082",
       "status": "proposed",
       "title": "daily-fix: task-corpus search recipe - children, follow-up l"
+    },
+    "1083": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1083",
+      "status": "proposed",
+      "title": "daily-fix: repair tasks/REGISTRY.json drift (15 audit proble"
     },
     "109": {
       "has_clean_result": false,
