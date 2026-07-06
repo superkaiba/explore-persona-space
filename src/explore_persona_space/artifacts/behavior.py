@@ -478,7 +478,8 @@ BEHAVIORS: dict[str, Behavior] = {
             rubric=_SYCOPHANCY_RUBRIC,
             notes=(
                 "#1090: train/eval banks repointed to the auto-generated neutral "
-                "sycophancy_neutral_v1 slices (20/20 disjoint); the old "
+                "sycophancy_neutral_v2 slices (20/20 disjoint; v2 replaced the "
+                "skim-failed v1, which stays registered for provenance); the old "
                 "sycophancy_claims wrong-fact bank stays registered and drives the "
                 "sycophancy_hardfact C4 control."
             ),

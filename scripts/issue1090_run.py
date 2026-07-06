@@ -168,6 +168,10 @@ CELLS: tuple[Cell, ...] = (
 CELL_BY_ID = {c.cell_id: c for c in CELLS}
 # questiongen traits per cell (curated-bank cells need none).
 CELL_TRAITS = {"c2": "impolite", "c3": "sycophancy", "c5": "sycophancy", "c6": "broad_em"}
+# Plan §7 K2 content cells: C1 is the formatting pipeline control and C4 is the
+# datagen-only hard-fact control (expected to miss), so NEITHER counts toward
+# "all content cells missed their floors".
+K2_CONTENT_CELL_IDS = ("c2", "c3", "c5", "c6")
 
 
 def resolve_cells(cells_arg: str | None, smoke: bool) -> tuple[Cell, ...]:
@@ -835,11 +839,15 @@ def write_sentinel(cfg: RunConfig, datagen_results: dict, train_results: dict, u
             }
             for c in cfg.cells
         },
+        # Keyed on the TRAIN statuses (not datagen): under K2 a datagen-green C1
+        # is still skipped, which the datagen-keyed set would miss (plan §6.5
+        # "records skipped_phases explicitly").
         "skipped_phases": sorted(
             {
                 "train/tier2/margin"
                 for c in cfg.cells
-                if c.trains and datagen_results.get(c.slug, {}).get("status") != "success"
+                if c.trains
+                and str(train_results.get(c.slug, {}).get("status", "")).startswith("skipped")
             }
         ),
         "uploaded_prefixes": sorted(uploaded),
@@ -876,6 +884,63 @@ def write_sentinel(cfg: RunConfig, datagen_results: dict, train_results: dict, u
 # ── Phase: gpu (P1b + P2 + P3a) ──────────────────────────────────────────────
 
 
+def resolve_train_gate(
+    cells: Sequence[Cell], datagen_results: dict[str, dict]
+) -> tuple[str, dict[str, dict] | None]:
+    """Plan §7 kill-path gate: ``("train", None)`` or ``(<kill>, skip_statuses)``.
+
+    K1: C1 (formatting pipeline control) present with non-success datagen ->
+        pipeline defect; train NOTHING.
+    K2: every PRESENT content cell (c2/c3/c5/c6) has non-success datagen ->
+        halt after datagen even when C1 is green — the yield analysis + the
+        C3/C4/C5 contrasts are the deliverable. Computed over the CONTENT
+        cells only: the round-1 `not trainable` gate included C1
+        (trains=True), so the registered K2 state (C1 clears, all content
+        cells floor) wrongly entered phase_train (review round-1 BLOCKER
+        `k2-content-kill-path-misimplemented`).
+    no_yield: no content cells in the subset and nothing trainable cleared.
+    """
+
+    def _ok(c: Cell) -> bool:
+        return datagen_results.get(c.slug, {}).get("status") == "success"
+
+    c1 = next((c for c in cells if c.cell_id == "c1"), None)
+    if c1 is not None and not _ok(c1):
+        return "k1", {c.slug: {"status": "skipped_k1_pipeline_defect"} for c in cells}
+    content = [c for c in cells if c.cell_id in K2_CONTENT_CELL_IDS]
+    if content and not any(_ok(c) for c in content):
+        return "k2", {c.slug: {"status": "skipped_k2_no_content_yield"} for c in cells}
+    if not any(c.trains and _ok(c) for c in cells):
+        return "no_yield", {c.slug: {"status": "skipped_no_yield"} for c in cells}
+    return "train", None
+
+
+def run_train_gate(cfg: RunConfig, seams: Seams1090, datagen_results: dict[str, dict]) -> dict:
+    """Apply the §7 gate; phase_train + downstream run ONLY on a green gate."""
+    gate, skip_statuses = resolve_train_gate(cfg.cells, datagen_results)
+    if gate == "k1":
+        logger.warning(
+            "[K1] the formatting pipeline control missed its floor — pipeline defect; "
+            "training NOTHING (plan kill criterion K1); the yield analysis ships"
+        )
+        return skip_statuses
+    if gate == "k2":
+        logger.warning(
+            "[K2] C1 green (or absent) but every present content cell (of %s) missed "
+            "its floor — halting after datagen (plan kill criterion K2); the yield "
+            "analysis + the C3/C4/C5 contrasts are the deliverable",
+            "/".join(K2_CONTENT_CELL_IDS),
+        )
+        return skip_statuses
+    if gate == "no_yield":
+        logger.warning("[no-yield] no cell cleared its floor — the yield table IS the result")
+        return skip_statuses
+    train_results = phase_train(cfg, seams, datagen_results)
+    phase_tier2_generation(cfg, seams, train_results)
+    phase_margin(cfg, seams, train_results)
+    return train_results
+
+
 def phase_gpu(cfg: RunConfig, seams: Seams1090) -> dict:
     """The GPU-lane pipeline: stage inputs -> qwen datagen -> train (+ Tier-1
     dose reads) -> Tier-2 generation -> margin -> upload -> sentinel."""
@@ -907,28 +972,7 @@ def phase_gpu(cfg: RunConfig, seams: Seams1090) -> dict:
             datagen_results[cell.slug] = _read_json(summary)
     datagen_results.update(phase_datagen_qwen(cfg, seams))
 
-    # Kill-path semantics (plan §7): K1 = C1 misses -> train NOTHING; K2 = all
-    # content cells miss -> yield analysis is the deliverable.
-    c1 = next((c for c in cfg.cells if c.cell_id == "c1"), None)
-    k1 = c1 is not None and datagen_results.get(c1.slug, {}).get("status") != "success"
-    trainable = [
-        c
-        for c in cfg.cells
-        if c.trains and datagen_results.get(c.slug, {}).get("status") == "success"
-    ]
-    if k1:
-        logger.warning(
-            "[K1] the formatting pipeline control missed its floor — pipeline defect; "
-            "training NOTHING (plan kill criterion K1); the yield analysis ships"
-        )
-        train_results = {c.slug: {"status": "skipped_k1_pipeline_defect"} for c in cfg.cells}
-    elif not trainable:
-        logger.warning("[K2] no cell cleared its floor — the yield table IS the result")
-        train_results = {c.slug: {"status": "skipped_no_yield"} for c in cfg.cells}
-    else:
-        train_results = phase_train(cfg, seams, datagen_results)
-        phase_tier2_generation(cfg, seams, train_results)
-        phase_margin(cfg, seams, train_results)
+    train_results = run_train_gate(cfg, seams, datagen_results)
 
     uploaded = phase_upload(cfg, seams, train_results) if cfg.upload else {}
     sentinel = write_sentinel(cfg, datagen_results, train_results, uploaded)
@@ -1130,9 +1174,19 @@ def _aggregate_contrasts(cfg: RunConfig, yield_summary: dict, agg_root: Path) ->
         # neutral bank, so ids align exactly.
         shared = sorted(set(pq3) & set(pq5))
         deltas, signs = [], {"pos": 0, "neg": 0, "zero": 0}
+        n_excluded_zero_judged = 0
         for qid in shared:
-            r3 = pq3[qid]["kept"] / max(1, pq3[qid]["judged"])
-            r5 = pq5[qid]["kept"] / max(1, pq5[qid]["judged"])
+            j3 = int(pq3[qid].get("judged", 0))
+            j5 = int(pq5[qid].get("judged", 0))
+            if j3 == 0 or j5 == 0:
+                # Drop-never-coerce: a question with ZERO validly-judged
+                # completions in either cell carries no rate information —
+                # excluding it beats mapping it to 0.0 (review round-1 concern
+                # `paired-rate-zero-judged-coerce`).
+                n_excluded_zero_judged += 1
+                continue
+            r3 = pq3[qid]["kept"] / j3
+            r5 = pq5[qid]["kept"] / j5
             d = r3 - r5
             deltas.append(d)
             signs["pos" if d > 0 else ("neg" if d < 0 else "zero")] += 1
@@ -1141,6 +1195,8 @@ def _aggregate_contrasts(cfg: RunConfig, yield_summary: dict, agg_root: Path) ->
             "plan H4 (judge-family-asymmetric: Sonnet judging Claude completions is "
             "same-family) — never a generator-willingness hypothesis test",
             "n_shared_questions": len(shared),
+            "n_paired_questions": len(deltas),
+            "n_excluded_zero_judged": n_excluded_zero_judged,
             "paired_bootstrap": _paired_boot(np.array(deltas), n_draws=2000, seed=42),
             "per_question_signs": signs,
             "sign_test_two_sided_p": _binom_two_sided_p(signs["pos"], signs["pos"] + signs["neg"]),

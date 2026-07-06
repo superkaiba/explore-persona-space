@@ -15,8 +15,8 @@
       "artifact": "questiongen_impolite.json"
     },
     "sycophancy": {
-      "file": "sycophancy_neutral_v1.json",
-      "sha256_canonical": "ddce8aeb9489fee1db7d94f242799f548149b4ef7028981d69ec5a842df3a986",
+      "file": "sycophancy_neutral_v2.json",
+      "sha256_canonical": "be3a1b642d72698d300a1b68de36d90d910d61979e22f8a8624f3843dcd8b7a0",
       "n": 40,
       "train_slice": [
         0,
@@ -26,7 +26,7 @@
         20,
         40
       ],
-      "artifact": "questiongen_sycophancy.json"
+      "artifact": "questiongen_sycophancy_v2.json"
     },
     "broad_em": {
       "file": "broad_em_neutral_v1.json",
@@ -45,5 +45,5 @@
   },
   "gen_model": "claude-sonnet-4-5-20250929",
   "template_sha256": "8fe9d4528059deb54005d584520f74aca0e10b536cfaa15a928ae7291898aff0",
-  "ts": "2026-07-06T20:07:57Z"
+  "ts": "2026-07-06T20:59:21Z"
 }

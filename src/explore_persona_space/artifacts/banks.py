@@ -147,8 +147,19 @@ QUERY_BANKS: dict[str, BankSpec] = {
     "sycophancy_neutral_v1": BankSpec(
         "sycophancy_neutral_v1",
         _loader("sycophancy_neutral_v1.json"),
-        "AUTO-GENERATED (task #1090, persona-vectors template 2507.21509): 40 neutral "
-        "opinion/stance questions; scripts/issue1090_assets/questiongen_sycophancy.json",
+        "AUTO-GENERATED (task #1090, persona-vectors template 2507.21509): 40 questions; "
+        "SUPERSEDED by sycophancy_neutral_v2 (bank-skim FAIL: flatly-false factual-claim "
+        "stimuli — the #1074 class); kept registered for provenance; "
+        "scripts/issue1090_assets/questiongen_sycophancy.json",
+        expected_n=40,
+    ),
+    "sycophancy_neutral_v2": BankSpec(
+        "sycophancy_neutral_v2",
+        _loader("sycophancy_neutral_v2.json"),
+        "AUTO-GENERATED (task #1090 round 2, persona-vectors template 2507.21509 with "
+        "augmented trait-description input + NO-FALSE-FACTUAL-CLAIM screen): 40 subjective "
+        "opinion/stance/preference questions; "
+        "scripts/issue1090_assets/questiongen_sycophancy_v2.json",
         expected_n=40,
     ),
     "impolite_neutral_v1": BankSpec(
@@ -218,9 +229,11 @@ SLICES: dict[tuple[str, str], tuple[str, int, int]] = {
     # slices stay on the OLD banks (direction extraction is out of #1090's
     # scope), and the old banks stay registered — the C4 hard-fact control is
     # the separate `sycophancy_hardfact` behavior below on the old slices.
-    ("sycophancy", "train"): ("sycophancy_neutral_v1", 0, 20),
+    # Round 2: repointed v1 -> v2 (v1 failed the D3 bank skim — false-claim
+    # stimuli); v1 stays registered above for provenance only.
+    ("sycophancy", "train"): ("sycophancy_neutral_v2", 0, 20),
     ("sycophancy", "extraction"): ("sycophancy_claims", 25, 40),
-    ("sycophancy", "eval"): ("sycophancy_neutral_v1", 20, 40),
+    ("sycophancy", "eval"): ("sycophancy_neutral_v2", 20, 40),
     ("sycophancy_hardfact", "train"): ("sycophancy_claims", 0, 25),
     ("sycophancy_hardfact", "eval"): ("sycophancy_claims", 40, 50),
     ("impolite", "train"): ("impolite_neutral_v1", 0, 20),
