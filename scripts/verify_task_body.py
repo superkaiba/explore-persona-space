@@ -7295,7 +7295,9 @@ def check_hf_adjacent_file_claims(body: str) -> CheckResult:
     return CheckResult(name, True, detail + unverified_detail)
 
 
-def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> CheckResult:
+def check_concerns_audit(  # noqa: C901 — linear lens: ledger parse → stale-marker scan → ack scan
+    body: str, *, concerns_path: Path | None = None
+) -> CheckResult:
     """Lens 14 — mechanical concerns audit (binding-concerns contract,
     composed onto the 2-content-section clean-result spec on 2026-05-31
     by task #455).
@@ -7323,6 +7325,12 @@ def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> Che
 
     NIT-severity concerns do NOT block this check; they surface as
     informational only.
+
+    Additionally WARNs (never FAILs) on stale deferral markers: a
+    ``<!-- concern-deferred: <id> -->`` whose id's latest ledger event is
+    ``addressed``, or whose id is absent from the ledger (#1089, incident
+    #833). A live marker (latest event raised / verified-open / deferred)
+    is unchanged.
 
     Skipped (PASS) when ``concerns_path`` is None or missing
     (``--body-stdin`` invocations, freshly created tasks with no concerns
@@ -7364,7 +7372,39 @@ def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> Che
         if ev.get("event") in ("raised", "verified-open")
         and ev.get("severity") in ("BLOCKER", "CONCERN")
     ]
+
+    # Stale-marker scan (#1089) — hoisted ABOVE the no-open-binding early
+    # return so it fires in the #833 shape (all concerns addressed →
+    # `open_binding` empty → the old post-early-return scan never ran).
+    # Acknowledgement mechanism 3's regex lives here now (moved up from
+    # the ack scan below — one pattern, one definition).
+    deferral_re = re.compile(r"<!--\s*concern-deferred:\s*([a-z0-9][a-z0-9-]{1,79})\s*-->")
+    deferred_ids = set(deferral_re.findall(body))
+    stale_warns: list[str] = []
+    for cid in sorted(deferred_ids):  # sorted → deterministic detail
+        ev = latest.get(cid)
+        if ev is None:
+            stale_warns.append(
+                f"stale concern-deferred marker '{cid}' — id absent from concerns.jsonl; "
+                "remove or retag"
+            )
+        elif ev.get("event") == "addressed":
+            stale_warns.append(
+                f"stale concern-deferred marker '{cid}' — concern is addressed; remove or retag"
+            )
+        # raised / verified-open / deferred → live marker, no WARN (unchanged
+        # behavior). DELIBERATE fallthrough: a malformed/unknown `event` value
+        # (hand-edited or corrupt ledger row outside CONCERN_EVENTS) is treated
+        # as live — conservative no-WARN for a WARN-only check.
+
     if not open_binding:
+        if stale_warns:
+            return CheckResult(
+                "concerns audit (Lens 14)",
+                True,
+                "; ".join(stale_warns),
+                is_warn=True,
+            )
         return CheckResult(
             "concerns audit (Lens 14)",
             True,
@@ -7419,10 +7459,9 @@ def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> Che
         )
         conf_body = conf_match.group(0) if conf_match else ""
 
-    # Acknowledgement mechanism 3: explicit deferral HTML comment.
-    deferral_re = re.compile(r"<!--\s*concern-deferred:\s*([a-z0-9][a-z0-9-]{1,79})\s*-->")
-    deferred_ids = set(deferral_re.findall(body))
-
+    # Acknowledgement mechanism 3: explicit deferral HTML comment —
+    # `deferred_ids` was computed by the stale-marker scan above (the
+    # regex moved up with it, #1089).
     unaddressed: list[str] = []
     for ev in open_binding:
         cid = ev["concern_id"]
@@ -7445,7 +7484,15 @@ def check_concerns_audit(body: str, *, concerns_path: Path | None = None) -> Che
             f"{', '.join(unaddressed)}. Acknowledge each in {ack_hint}"
             "or a `<!-- concern-deferred: <id> -->` HTML marker. See "
             "`.claude/agents/clean-result-critic.md` § Lens 14 "
-            "and `workflow.yaml § concerns_protocol`.",
+            "and `workflow.yaml § concerns_protocol`."
+            + (("; WARN: " + "; ".join(stale_warns)) if stale_warns else ""),
+        )
+    if stale_warns:  # all acknowledged, but stale deferral markers remain (#1089)
+        return CheckResult(
+            "concerns audit (Lens 14)",
+            True,
+            "; ".join(stale_warns),
+            is_warn=True,
         )
     return CheckResult(
         "concerns audit (Lens 14)",
