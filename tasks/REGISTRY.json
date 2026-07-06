@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1083,
+  "highest_id": 1084,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -656,6 +656,13 @@
       "path": "tasks/proposed/1083",
       "status": "proposed",
       "title": "daily-fix: repair tasks/REGISTRY.json drift (15 audit proble"
+    },
+    "1084": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1084",
+      "status": "proposed",
+      "title": "daily-fix: poll_pipeline sentinel consume-then-post crash-sa"
     },
     "109": {
       "has_clean_result": false,
