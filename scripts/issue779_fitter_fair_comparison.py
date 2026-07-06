@@ -82,6 +82,7 @@ Fail loud — NaN is reported, never coerced.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -148,6 +149,17 @@ DEFAULT_OUT_DIR = PROJECT_ROOT / "eval_results" / "issue_779" / "fitter-fair-com
 DEFAULT_FIG_DIR = PROJECT_ROOT / "figures" / "issue_779"
 PASS_B_PATH = PROJECT_ROOT / "data" / "issue_779" / "pass_b" / "train_context_vectors.pt"
 
+# ── round-2 (n10k) config ──────────────────────────────────────────────────────
+# The combined corpus = pass_b (5000, byte-for-byte reused) at positions [0, N_PASS_B)
+# + the new disjoint LMSYS rows at [N_PASS_B, ...). Val/test are drawn from the
+# first-N_PASS_B ids, so they stay byte-identical to round-1 by construction.
+N_PASS_B = AS.N_LMSYS  # 5000 — round-1 pass_b corpus size (byte-identical val/test anchor)
+N10K_TRAIN = 10000  # round-2 train target (round-1's 3600 train ids + new rows, sampled seed 42)
+LAMBDAS_N10K = np.logspace(-3, 6, 19)  # wider ridge grid for n=10000 (2/decade, [1e-3, 1e6])
+D2_NS_N10K = (250, 500, 1000, 2000, 3600, 6000, 10000)
+DEFAULT_NEW_BUNDLE = PROJECT_ROOT / "data" / "issue_779" / "ffc_n10k" / "new_context_vectors.pt"
+DEFAULT_OUT_DIR_N10K = PROJECT_ROOT / "eval_results" / "issue_779" / "fitter-fair-comparison-n10k"
+
 
 def _t(msg: str, t0: float) -> None:
     logger.info("[timing] %s: %.1f s", msg, time.time() - t0)
@@ -159,6 +171,25 @@ def _dev(device: str) -> torch.device:
             raise SystemExit("--device cuda requested but torch.cuda.is_available() is False")
         torch.set_float32_matmul_precision("high")  # tf32 for f32 matmuls (MLP)
     return torch.device(device)
+
+
+def _lambda_edge(lam) -> str | None:
+    """'low'/'high' when a val-selected ridge lambda sits at an edge of the ACTIVE
+    LAMBDAS grid (signals the grid may be too narrow — widen and re-fit), else None."""
+    if lam is None or not np.isfinite(lam):
+        return None
+    if np.isclose(float(lam), float(LAMBDAS[0])):
+        return "low"
+    if np.isclose(float(lam), float(LAMBDAS[-1])):
+        return "high"
+    return None
+
+
+def _sha_ids(ids: np.ndarray) -> str:
+    """sha256 of an int index array (order-sensitive) — for downstream verification
+    that round-2 val/test are byte-identical to round-1."""
+    a = np.asarray(ids, dtype=np.int64)
+    return hashlib.sha256(a.tobytes()).hexdigest()
 
 
 # ── metrics (variance-weighted R2 = pooled test-own-mean; mean cosine) ─────────
@@ -334,12 +365,17 @@ def gram_cv_recon(X, targets: dict, n_folds: int, seed: int, dev) -> dict:
 
 
 def _gate_ridge(dev) -> dict:
-    """gram_fit_apply == AH.GramRidge (CPU f64 canonical) within tolerance."""
+    """gram_fit_apply == AH.GramRidge (CPU f64 canonical) within tolerance.
+
+    Both sides use the ACTIVE LAMBDAS grid so this isolates DEVICE numerics — the
+    n10k grid is wider than GramRidge's default logspace(-2,4,13), and without the
+    explicit ``lambdas=`` GCV would pick a different lambda per side (grid mismatch,
+    not a device bug: rel ~2e-4 on CPU)."""
     rng = np.random.default_rng(0)
     X = rng.standard_normal((600, 400))
     Y = X @ rng.standard_normal((400, 128)) + 0.01 * rng.standard_normal((600, 128))
     pred_dev = gram_fit_apply(X[:500], Y[:500], [X[500:]], dev)[0][0]
-    pred_ref = AH.GramRidge(X[:500]).predict(Y[:500], X[500:])
+    pred_ref = AH.GramRidge(X[:500], lambdas=LAMBDAS).predict(Y[:500], X[500:])
     rel = float(np.max(np.abs(pred_dev - pred_ref)) / (np.max(np.abs(pred_ref)) + 1e-12))
     tol = 1e-4 if dev.type == "cuda" else 1e-6
     assert rel < tol, f"ridge device gate FAILED: rel {rel:.2e} > {tol:.0e} on {dev}"
@@ -654,33 +690,57 @@ def run_mlp_battery(groups: list[MLPGroup], *, dev, max_epochs) -> dict:
 # ── data loading ────────────────────────────────────────────────────────────────
 
 
-def load_pass_b():
+def _mmap_load(path):
     try:
-        b = torch.load(PASS_B_PATH, mmap=True, weights_only=False, map_location="cpu")
+        return torch.load(path, mmap=True, weights_only=False, map_location="cpu")
     except RuntimeError as e:
-        logger.warning("mmap load failed (%s); full load", e)
-        b = torch.load(PASS_B_PATH, weights_only=False, map_location="cpu")
+        logger.warning("mmap load failed for %s (%s); full load", path, e)
+        return torch.load(path, weights_only=False, map_location="cpu")
+
+
+def load_pass_b(path=None):
+    b = _mmap_load(path or PASS_B_PATH)
     for fld in ("cx_last", "cx_mean", "v_x"):
         assert fld in b, f"pass_b missing {fld}"
         assert b[fld].shape[1:] == (C.EXPECTED_LAYERS, C.EXPECTED_HIDDEN), (fld, b[fld].shape)
     return b
 
 
+def corpus_len(bundle) -> int:
+    """Row count of a plain (single) or combined (n10k) corpus bundle."""
+    if bundle.get("_combined"):
+        return int(bundle["n_old"] + bundle["n_new"])
+    return int(bundle["cx_last"].shape[0])
+
+
 def input_layer(bundle, variant: str, li: int) -> np.ndarray:
+    fld = INPUT_FIELD[variant]
+    if bundle.get("_combined"):  # n10k: concat pass_b (old) + new-bundle rows at layer li
+        oc = bundle["pb"]["layers"].index(li)
+        nc = bundle["nb"]["layers"].index(li)
+        old = bundle["pb"][fld][:, oc, :].to(torch.float32).numpy()
+        new = bundle["nb"][fld][:, nc, :].to(torch.float32).numpy()
+        return np.concatenate([old, new], axis=0)
     col = bundle["layers"].index(li)
-    return bundle[INPUT_FIELD[variant]][:, col, :].to(torch.float32).numpy()
+    return bundle[fld][:, col, :].to(torch.float32).numpy()
 
 
 def target_vx(bundle, li: int) -> np.ndarray:
+    if bundle.get("_combined"):
+        oc = bundle["pb"]["layers"].index(li)
+        nc = bundle["nb"]["layers"].index(li)
+        old = bundle["pb"]["v_x"][:, oc, :].to(torch.float32).numpy()
+        new = bundle["nb"]["v_x"][:, nc, :].to(torch.float32).numpy()
+        return np.concatenate([old, new], axis=0)
     col = bundle["layers"].index(li)
     return bundle["v_x"][:, col, :].to(torch.float32).numpy()
 
 
-def load_p2_lmsys_all_layers(cap2: Path, layers: list[int]) -> np.ndarray:
+def load_p2_lmsys_all_layers(cap2: Path, layers: list[int], n_ctx: int = AS.N_LMSYS) -> np.ndarray:
     shards = sorted(cap2.glob("lmsys_summaries_shard*.pt"))
     if not shards:
         raise FileNotFoundError(f"no pass-2 lmsys shards under {cap2}")
-    k, n_ctx = len(AS2.P2_SUMMARIES), AS.N_LMSYS
+    k = len(AS2.P2_SUMMARIES)
     S, seen = None, np.zeros(n_ctx, dtype=bool)
     for sp in shards:
         blob = torch.load(sp, mmap=True, weights_only=False, map_location="cpu")
@@ -710,6 +770,59 @@ def load_d3_targets(cap1, cap2, layers, target_keys):
     return S2, s2_idx, xl_targets, mask
 
 
+def load_d3_targets_n10k(cap1, cap2, nb, layers, target_keys, n_old):
+    """D3 targets over the COMBINED 11500-context corpus: OLD (first ``n_old``)
+    rows from the round-1 ``final_token_capture`` shards (the exact round-1
+    loaders, so old-half targets are byte-identical), NEW rows from the new
+    bundle's ``summ_p1`` (cross-layer aggregates) + ``summ_p2`` (pass-2). Row
+    order matches the combined corpus (old ci-order at [0,n_old), new-bundle
+    order at [n_old,...)). Returns the SAME (S2, s2_idx, xl_targets, mask)
+    interface as ``load_d3_targets`` so ``run_d3`` is unchanged.
+
+    ``S2`` (pass-2) and ``v_x`` stay UNMASKED (masked per-layer in run_d3);
+    ``xl_targets`` are returned already masked (matching round-1)."""
+    want_p2 = [t for t in target_keys if t in AS2.P2_SUMMARIES]
+    want_xl = [t for t in target_keys if t in AS2.XL_VARIANTS]
+
+    # OLD half — round-1 loaders (ci-order over [0, n_old)).
+    XLl, v1l = AS2.load_crosslayer(cap1, "lmsys", n_old, 1)
+    old_mask = v1l[:, 0, :].all(axis=1)  # pass-1 joint validity
+    old_xl = {t: XLl[t][:, 0, :].astype(np.float32) for t in want_xl}  # (n_old, H), UNmasked
+    old_S2 = load_p2_lmsys_all_layers(cap2, layers, n_ctx=n_old) if want_p2 else None
+
+    # NEW half — from the new bundle (kept-row order = combined [n_old, ...)).
+    n_new = int(nb["cx_last"].shape[0])
+    valid_p1 = nb["valid_p1"].numpy().astype(bool)  # (n_new, 4)
+    assert valid_p1.shape == (n_new, len(AS.SUMMARIES)), valid_p1.shape
+    new_mask = valid_p1.all(axis=1)  # (n_new,)
+    new_S2 = None
+    if want_p2:
+        p2cols = [nb["layers"].index(li) for li in layers]
+        # (n_new, 8, n_layers, H) fp16 — matches load_p2_lmsys_all_layers dtype
+        new_S2 = nb["summ_p2"][:, :, p2cols, :].to(torch.float16).numpy()
+    new_xl = {}
+    if want_xl:
+        sp1 = nb["summ_p1"]  # (n_new, 4, 28, H) fp16, mmap
+        for t in want_xl:
+            base = t.split("_", 1)[1]
+            si = list(AS.SUMMARIES).index(base)
+            arr = sp1[:, si, :, :].to(torch.float32)  # (n_new, 28, H); reduce over the LAYER axis
+            if t.startswith("xlmean_"):
+                new_xl[t] = arr.mean(dim=1).numpy()  # matches load_crosslayer chunk.mean(dim=2)
+            elif t.startswith("xlmax_"):
+                new_xl[t] = arr.max(dim=1).values.numpy()  # matches chunk.max(dim=2).values
+            else:  # pragma: no cover — XL_VARIANTS only carry xlmean_/xlmax_ prefixes
+                raise ValueError(f"unexpected xl variant {t}")
+
+    mask = np.concatenate([old_mask, new_mask])  # (n_combined,)
+    S2 = np.concatenate([old_S2, new_S2], axis=0) if want_p2 else None
+    s2_idx = {li: i for i, li in enumerate(layers)} if want_p2 else {}
+    xl_targets = {t: np.concatenate([old_xl[t], new_xl[t]], axis=0)[mask] for t in want_xl}
+    for t in xl_targets:  # cross-layer targets are masked here; must be finite
+        assert np.isfinite(xl_targets[t]).all(), t
+    return S2, s2_idx, xl_targets, mask
+
+
 # ── fixed split + metadata ──────────────────────────────────────────────────────
 
 
@@ -721,6 +834,127 @@ def fixed_split(n_ctx, n_train, n_val, n_test, seed):
         np.sort(perm[n_test : n_test + n_val]),
         np.sort(perm[:n_test]),
     )
+
+
+def load_combined_corpus(pass_b_path, new_bundle_path, n_pass_b):
+    """Lazily combine pass_b (positions [0, n_old)) + the new bundle
+    (positions [n_old, ...)). Returns a ``_combined`` bundle dict whose halves
+    stay mmap'd (input_layer/target_vx concat per-layer slices), plus the raw
+    new-bundle dict for D3's summ_p1/summ_p2/valid_p1."""
+    pb = load_pass_b(pass_b_path)
+    n_old = int(pb["cx_last"].shape[0])
+    assert n_old == n_pass_b, (
+        f"pass_b has {n_old} rows but --n-pass-b={n_pass_b}; the round-1 split (and its "
+        "byte-identical val/test) is anchored on the pass_b row count"
+    )
+    nb = _mmap_load(new_bundle_path)
+    for fld in ("cx_last", "cx_mean", "v_x"):
+        assert fld in nb, f"new bundle missing {fld}"
+        assert nb[fld].shape[1:] == (C.EXPECTED_LAYERS, C.EXPECTED_HIDDEN), (fld, nb[fld].shape)
+    assert list(nb["layers"]) == list(pb["layers"]), "new bundle layers != pass_b layers"
+    assert list(nb.get("p1_summaries", [])) == list(AS.SUMMARIES), (
+        "new bundle p1_summaries order != AS.SUMMARIES",
+        nb.get("p1_summaries"),
+    )
+    assert list(nb.get("p2_summaries", [])) == list(AS2.P2_SUMMARIES), (
+        "new bundle p2_summaries order != AS2.P2_SUMMARIES",
+        nb.get("p2_summaries"),
+    )
+    n_new = int(nb["cx_last"].shape[0])
+    combined = {
+        "_combined": True,
+        "pb": pb,
+        "nb": nb,
+        "n_old": n_old,
+        "n_new": n_new,
+        "layers": list(pb["layers"]),
+        "source": {"pass_b": str(pass_b_path), "new_bundle": str(new_bundle_path)},
+    }
+    logger.info(
+        "combined corpus: %d old (pass_b) + %d new = %d contexts", n_old, n_new, n_old + n_new
+    )
+    return combined, nb
+
+
+def build_n10k_split(combined, args):
+    """(train, val, test) for the combined corpus. val/test = round-1's split
+    over the first ``n_old`` ids (indices < n_old, same pass_b rows ⇒ BYTE-IDENTICAL
+    to round-1); train = round-1's train ids + all new ids, sampled to
+    ``args.n_train`` (seed). Returns (train, val, test, diag)."""
+    n_old, n_new = combined["n_old"], combined["n_new"]
+    assert args.n_val + args.n_test < n_old, (
+        f"val+test ({args.n_val}+{args.n_test}) must fit in the pass_b half (n_old={n_old}) — "
+        "val/test are drawn from the first-n_old ids to stay byte-identical to round-1"
+    )
+    r1_train_n = n_old - args.n_val - args.n_test  # 3600 in production (5000-400-1000)
+    r1_train, val, test = fixed_split(n_old, r1_train_n, args.n_val, args.n_test, args.seed)
+    new_idx = np.arange(n_old, n_old + n_new)
+    pool = np.concatenate([r1_train, new_idx])
+    n_target = min(args.n_train, len(pool))
+    if n_target < args.n_train:
+        logger.warning(
+            "train pool has only %d ids (%d round-1 + %d new) < target %d; using all %d",
+            len(pool),
+            len(r1_train),
+            n_new,
+            args.n_train,
+            n_target,
+        )
+    sel = np.random.default_rng(args.seed).choice(len(pool), size=n_target, replace=False)
+    train = np.sort(pool[sel])
+    # Byte-identical tripwire (production regime only): recompute round-1's exact
+    # fixed_split call and assert val/test indices match to the id.
+    prod = (
+        n_old == N_PASS_B and args.n_val == 400 and args.n_test == 1000 and args.seed == SPLIT_SEED
+    )
+    byte_identical = None
+    if prod:
+        _rtr, r1_val, r1_test = fixed_split(N_PASS_B, N_PASS_B - 400 - 1000, 400, 1000, SPLIT_SEED)
+        assert np.array_equal(val, r1_val) and np.array_equal(test, r1_test), (
+            "n10k val/test are NOT byte-identical to round-1 fixed_split(5000,3600,400,1000,42)"
+        )
+        byte_identical = True
+    assert set(val).isdisjoint(train) and set(test).isdisjoint(train), "train overlaps val/test"
+    assert (val < n_old).all() and (test < n_old).all(), "val/test must index the pass_b half only"
+    diag = {
+        "n_old": int(n_old),
+        "n_new": int(n_new),
+        "n_train": len(train),
+        "n_val": len(val),
+        "n_test": len(test),
+        "n_train_target": int(args.n_train),
+        "pool_size": len(pool),
+        "r1_train_ids": len(r1_train),
+        "seed": int(args.seed),
+        "val_sha256": _sha_ids(val),
+        "test_sha256": _sha_ids(test),
+        "train_sha256": _sha_ids(train),
+        "val_test_byte_identical_round1": byte_identical,
+        "round1_dir": str(DEFAULT_OUT_DIR),
+        "note": (
+            "val/test = round-1 fixed_split(pass_b, pass_b-n_val-n_test, n_val, n_test, seed) — "
+            "indices < n_old, the SAME pass_b rows, so byte-identical to round-1 in the "
+            "production regime (n_old=5000, n_val=400, n_test=1000, seed=42). train pool = "
+            "round-1's train ids + all new disjoint LMSYS ids, sampled to n_train_target (seed)."
+        ),
+        "train_ids": train.tolist(),
+        "val_ids": val.tolist(),
+        "test_ids": test.tolist(),
+    }
+    return train, val, test, diag
+
+
+def resolve_split(args, ctx):
+    """(train, val, test). n10k: the precomputed byte-identical-val/test combined
+    split (ctx['split']). single: fixed_split over the (optionally capped) corpus
+    — UNCHANGED round-1 behavior."""
+    if getattr(args, "corpus_mode", "single") == "n10k":
+        return ctx["split"]
+    bundle = ctx["bundle"]
+    n_ctx = corpus_len(bundle)
+    if args.max_contexts:
+        n_ctx = min(n_ctx, args.max_contexts)
+    return fixed_split(n_ctx, args.n_train, args.n_val, args.n_test, args.seed)
 
 
 def _pass_b_meta():
@@ -776,6 +1010,26 @@ def _base_metadata(stage, args, extra):
             ],
         }
     )
+    b["lambda_grid"] = {
+        "n": len(LAMBDAS),
+        "min": float(LAMBDAS[0]),
+        "max": float(LAMBDAS[-1]),
+        "log10": [round(float(np.log10(x)), 3) for x in LAMBDAS],
+    }
+    if getattr(args, "corpus_mode", "single") == "n10k":
+        b["corpus_mode"] = "n10k"
+        b["new_bundle"] = str(args.new_bundle)
+        b["n_train_target"] = int(args.n_train)
+        b["cross_round_comparability"] = (
+            "n=10000 rerun of 'fitter-fair-comparison'. val/test are BYTE-IDENTICAL to round-1 "
+            "(same fixed_split(5000,3600,400,1000,42) indices <5000 = the same pass_b rows; see "
+            "n10k_split.json val_sha256/test_sha256). Train pool = round-1's 3600 train ids + the "
+            "new disjoint LMSYS rows, sampled to n_train (seed 42). LAMBDAS widened to [1e-3,1e6] "
+            "(round-1 was [1e-2,1e4]); D2 axis extended through 10000; D3 recomputed over the "
+            f"combined 11500-context corpus. Round-1 dir: {DEFAULT_OUT_DIR.name}."
+        )
+    else:
+        b["corpus_mode"] = "single"
     b.update(extra)
     return b
 
@@ -798,8 +1052,13 @@ def run_d3(args, ctx):
     )
     res.setdefault("gates", {})["ridge"] = _gate_ridge(dev)
     bundle = ctx["bundle"]
-    S2, s2_idx, xl_targets, mask = load_d3_targets(args.capture_dir, args.p2_dir, layers, tkeys)
-    if args.max_contexts:
+    if getattr(args, "corpus_mode", "single") == "n10k":
+        S2, s2_idx, xl_targets, mask = load_d3_targets_n10k(
+            args.capture_dir, args.p2_dir, ctx["new_bundle"], layers, tkeys, bundle["n_old"]
+        )
+    else:
+        S2, s2_idx, xl_targets, mask = load_d3_targets(args.capture_dir, args.p2_dir, layers, tkeys)
+    if args.max_contexts and getattr(args, "corpus_mode", "single") == "single":
         valid_ix = np.where(mask)[0][: args.max_contexts]
         keep = np.isin(np.where(mask)[0], valid_ix)
         newmask = np.zeros_like(mask)
@@ -885,10 +1144,10 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
     res = json.loads(out_path.read_text()) if out_path.exists() else {}
     dev = _dev(args.device)
     bundle = ctx["bundle"]
-    n_ctx = bundle["cx_last"].shape[0]
-    if args.max_contexts:
+    n_ctx = corpus_len(bundle)
+    if args.max_contexts and getattr(args, "corpus_mode", "single") == "single":
         n_ctx = min(n_ctx, args.max_contexts)
-    train, val, test = fixed_split(n_ctx, args.n_train, args.n_val, args.n_test, args.seed)
+    train, val, test = resolve_split(args, ctx)
     t0 = time.time()
     logger.info(
         "=== D1: fair comparison (train %d / val %d / test %d, inputs %s, %s) ===",
@@ -929,6 +1188,7 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
                 "val_r2": PR._pooled_r2(pred_val, Yval),
                 "test_r2": PR._pooled_r2(pred_te, Yte),
                 "selected_lambda": lam,
+                "lambda_edge": _lambda_edge(lam),
             }
             C.write_json_atomic(out_path, res)
         sel = _val_select(rnode["per_layer"])
@@ -936,6 +1196,7 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
         Xtr, Ytr, Xval, Yval, Xte, Yte = arrays(variant, li_sel)
         (pred_te,), _ = gram_fit_apply(Xtr, Ytr, [Xte], dev, val=(Xval, Yval))
         rnode.update(sel)
+        rnode["lambda_edge_at_val_selected"] = rnode["per_layer"][str(li_sel)]["lambda_edge"]
         rnode["test_ci_at_val_selected"] = _bootstrap_recon_ci(
             pred_te, Yte, args.n_boot, args.seed + li_sel
         )
@@ -1050,15 +1311,16 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
             layers.append(int(li_sel))
         return layers
 
-    ridge_te_cache, exec_groups = {}, []
+    ridge_te_cache, ridge_lam_cache, exec_groups = {}, {}, []
     for variant in args.input_variants:
         rec = res["mlp_selection"]["per_input"][variant]
         for li in _mlp_layers_for(variant):
             Xtr, Ytr, Xval, Yval, Xte, _ = arrays(variant, li)
             exec_groups.append(MLPGroup(("mlp", variant, li), Xtr, Ytr, rec["width"], rec["lr"]))
             # ridge residual target (val-selected lambda — the D1/D2 GCV-degeneracy fix)
-            (rt_tr, rt_te), _ = gram_fit_apply(Xtr, Ytr, [Xtr, Xte], dev, val=(Xval, Yval))
+            (rt_tr, rt_te), rlam = gram_fit_apply(Xtr, Ytr, [Xtr, Xte], dev, val=(Xval, Yval))
             ridge_te_cache[(variant, li)] = rt_te
+            ridge_lam_cache[(variant, li)] = rlam
             exec_groups.append(
                 MLPGroup(
                     ("resid", variant, li),
@@ -1090,7 +1352,7 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
                     m = _bootstrap_recon_ci(pred, Yte, args.n_boot, args.seed + li)
                     fitter = "residual_skip" if kind == "resid" else "mlp"
                     node = res["inputs"][variant].setdefault(fitter, {"per_layer": {}})
-                    node["per_layer"][str(li)] = {
+                    entry = {
                         "val_r2": float("nan"),
                         "test_r2": m["r2"]["point"],
                         "test_ci": m,
@@ -1098,6 +1360,11 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
                         "lr": rec["lr"],
                         "epochs_ran": fits[fk].epochs_ran,
                     }
+                    if kind == "resid":
+                        rlam = ridge_lam_cache.get((variant, li))
+                        entry["base_ridge_lambda"] = rlam
+                        entry["base_ridge_lambda_edge"] = _lambda_edge(rlam)
+                    node["per_layer"][str(li)] = entry
         C.write_json_atomic(out_path, res)
 
     # MLP/residual val_r2 per layer (menu-limited selection) + select + caveat.
@@ -1145,9 +1412,42 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
         f"MLP + residual_skip: layers {list(args.mlp_layers)} (menu-limited, recipe on val at "
         f"L{args.mlp_select_layer}); inputs {list(args.input_variants)}."
     )
+    res["lambda_edge_warnings"] = _collect_lambda_edges(res.get("inputs", {}))
     res["metadata"] = _base_metadata("d1", args, {"stage_wall_s": round(time.time() - t0, 1)})
     C.write_json_atomic(out_path, res)
     _t("D1 total", t0)
+
+
+def _collect_lambda_edges(inputs: dict) -> list[dict]:
+    """Every ridge / residual-skip-base-ridge fit whose val-selected lambda sits at
+    an ACTIVE-grid edge — a non-empty list means the ridge grid may be too narrow."""
+    out: list[dict] = []
+    for variant, vnode in inputs.items():
+        for lk, pl in vnode.get("ridge", {}).get("per_layer", {}).items():
+            e = pl.get("lambda_edge")
+            if e:
+                out.append(
+                    {
+                        "input": variant,
+                        "fitter": "ridge",
+                        "layer": int(lk),
+                        "lambda": pl.get("selected_lambda"),
+                        "edge": e,
+                    }
+                )
+        for lk, pl in vnode.get("residual_skip", {}).get("per_layer", {}).items():
+            e = pl.get("base_ridge_lambda_edge")
+            if e:
+                out.append(
+                    {
+                        "input": variant,
+                        "fitter": "residual_skip(base ridge)",
+                        "layer": int(lk),
+                        "lambda": pl.get("base_ridge_lambda"),
+                        "edge": e,
+                    }
+                )
+    return out
 
 
 # ── stage D2: scaling curves ────────────────────────────────────────────────────
@@ -1155,10 +1455,7 @@ def run_d1(args, ctx):  # noqa: C901 - flat per-fitter-per-input stage dispatche
 
 def _d2_curve(args, ctx, dev, out_path, res, *, layer, variant, fitters, mlp_recipe):
     bundle = ctx["bundle"]
-    n_ctx = bundle["cx_last"].shape[0]
-    if args.max_contexts:
-        n_ctx = min(n_ctx, args.max_contexts)
-    train, val, test = fixed_split(n_ctx, args.n_train, args.n_val, args.n_test, args.seed)
+    train, val, test = resolve_split(args, ctx)
     X = input_layer(bundle, variant, layer)
     Y = target_vx(bundle, layer)
     Xval, Yval, Xte, Yte = X[val], Y[val], X[test], Y[test]
@@ -1177,7 +1474,7 @@ def _d2_curve(args, ctx, dev, out_path, res, *, layer, variant, fitters, mlp_rec
                 if fitter == "ridge":
                     (pred,), lam = gram_fit_apply(Xtr, Ytr, [Xte], dev, val=(Xval, Yval))
                     r2, cos = _recon_point(pred, Yte)
-                    extra = {"selected_lambda": lam}
+                    extra = {"selected_lambda": lam, "lambda_edge": _lambda_edge(lam)}
                 elif fitter == "krr":
                     k = krr_select_predict(
                         Xtr,
@@ -1202,7 +1499,9 @@ def _d2_curve(args, ctx, dev, out_path, res, *, layer, variant, fitters, mlp_rec
                     r2, cos = _recon_point(fit.predict(Xte), Yte)
                     extra = {"epochs_ran": fit.epochs_ran}
                 else:  # residual_skip
-                    (rt_tr, rt_te), _ = gram_fit_apply(Xtr, Ytr, [Xtr, Xte], dev, val=(Xval, Yval))
+                    (rt_tr, rt_te), rlam = gram_fit_apply(
+                        Xtr, Ytr, [Xtr, Xte], dev, val=(Xval, Yval)
+                    )
                     fit = run_mlp_battery(
                         [
                             MLPGroup(
@@ -1217,7 +1516,11 @@ def _d2_curve(args, ctx, dev, out_path, res, *, layer, variant, fitters, mlp_rec
                         max_epochs=args.mlp_max_epochs,
                     )[("d2r",)]
                     r2, cos = _recon_point(rt_te + fit.predict(Xte), Yte)
-                    extra = {"epochs_ran": fit.epochs_ran}
+                    extra = {
+                        "epochs_ran": fit.epochs_ran,
+                        "base_ridge_lambda": rlam,
+                        "base_ridge_lambda_edge": _lambda_edge(rlam),
+                    }
                 cells[key] = {
                     "_key": list(key),
                     "fitter": fitter,
@@ -1310,9 +1613,41 @@ def run_d2(args, ctx):
         "D2 default = last input, L19 anchor. Conditional extra curves per "
         "amendments 1/2 recorded in conditional_curves."
     )
+    res["lambda_edge_warnings"] = _collect_d2_lambda_edges(res.get("curves", {}))
     res["metadata"] = _base_metadata("d2", args, {"stage_wall_s": round(time.time() - t0, 1)})
     C.write_json_atomic(out_path, res)
     _t("D2 total", t0)
+
+
+def _collect_d2_lambda_edges(curves: dict) -> list[dict]:
+    """Every D2 ridge / residual-skip cell whose val-selected lambda sits at an
+    ACTIVE-grid edge (grouped by curve/n/draw)."""
+    out: list[dict] = []
+    for curve_key, cells in curves.items():
+        for c in cells:
+            if c.get("fitter") == "ridge" and c.get("lambda_edge"):
+                out.append(
+                    {
+                        "curve": curve_key,
+                        "fitter": "ridge",
+                        "n": c["n"],
+                        "draw": c["draw"],
+                        "lambda": c.get("selected_lambda"),
+                        "edge": c["lambda_edge"],
+                    }
+                )
+            elif c.get("fitter") == "residual_skip" and c.get("base_ridge_lambda_edge"):
+                out.append(
+                    {
+                        "curve": curve_key,
+                        "fitter": "residual_skip(base ridge)",
+                        "n": c["n"],
+                        "draw": c["draw"],
+                        "lambda": c.get("base_ridge_lambda"),
+                        "edge": c["base_ridge_lambda_edge"],
+                    }
+                )
+    return out
 
 
 # ── figures (from the JSONs; run on the VM after both sides land) ──────────────
@@ -1334,52 +1669,118 @@ def _paper():
     return plt, paper_palette, savefig_paper
 
 
-def make_fig_d1(out_dir, fig_dir):
+def _d1_point_ci(node):
+    """(point, lo_err, hi_err) from a fitter/baseline node's test CI, or (nan,0,0)."""
+    pt = node.get("test_r2_at_val_selected_layer")
+    if pt is None:
+        pt = node.get("point", np.nan)
+    ci_d = node.get("test_ci_at_val_selected") or (
+        node.get("per_layer", {}).get(str(node.get("val_selected_layer")), {}).get("test_ci")
+    )
+    if ci_d is None and "r2" in node:  # baseline node: {"r2": {point,lo,hi}, ...}
+        ci_d = node
+    lo = hi = 0.0
+    if ci_d and "r2" in ci_d and np.isfinite(ci_d["r2"].get("lo", np.nan)):
+        pt = ci_d["r2"].get("point", pt)
+        lo = max(0.0, pt - ci_d["r2"]["lo"])
+        hi = max(0.0, ci_d["r2"]["hi"] - pt)
+    return float(pt) if pt is not None else np.nan, lo, hi
+
+
+# identity-family baselines are input-dependent (they use v_C); shuffled-pairing +
+# predict-the-mean are input-agnostic floors -> drawn as reference lines, not bars.
+D1_BASELINE_BARS = ("identity_copy", "scaled_identity", "diagonal_only")
+D1_BAR_LABELS = {
+    "ridge": "ridge (linear)",
+    "krr": "kernel ridge",
+    "mlp": "MLP (full-dim)",
+    "residual_skip": "ridge + MLP resid",
+    "identity_copy": "identity copy",
+    "scaled_identity": "scaled identity",
+    "diagonal_only": "diagonal only",
+}
+
+
+def make_fig_d1(out_dir, fig_dir, prefix="ffc"):
     path = out_dir / "fair_comparison.json"
     if not path.exists():
         return None
     res = json.loads(path.read_text())
     plt, paper_palette, savefig_paper = _paper()
     variants = [v for v in INPUT_VARIANTS if v in res.get("inputs", {})]
-    colors = paper_palette(len(FITTERS))
-    fig, axes = plt.subplots(1, len(variants), figsize=(7 * len(variants), 5.5), squeeze=False)
-    xpos = np.arange(len(FITTERS))
-    for ci, variant in enumerate(variants):
-        ax = axes[0][ci]
-        for fi, fitter in enumerate(FITTERS):
-            node = res["inputs"][variant].get(fitter, {})
-            pt = node.get("test_r2_at_val_selected_layer", np.nan)
-            ci_d = node.get("test_ci_at_val_selected") or (
-                node.get("per_layer", {})
-                .get(str(node.get("val_selected_layer")), {})
-                .get("test_ci")
+    methods = list(FITTERS) + [
+        b for b in D1_BASELINE_BARS if "baselines" in res["inputs"].get(variants[0], {})
+    ]
+    two = paper_palette(2)
+    input_color = {v: two[i] for i, v in enumerate(variants)}
+    xpos = np.arange(len(methods))
+    width = 0.8 / max(len(variants), 1)
+    fig, ax = plt.subplots(figsize=(1.15 * len(methods) + 3, 5.5))
+    # y-floor: keep the informative range readable; identity-copy on the mean input
+    # is ~-50 R2, which would flatten every other bar. Clip the display to the floor
+    # and annotate any clipped bar with its true value.
+    pts = []
+    for variant in variants:
+        node = res["inputs"][variant]
+        for m in methods:
+            src = node.get(m, {}) if m in FITTERS else node.get("baselines", {}).get(m, {})
+            p0, _, _ = _d1_point_ci(src)
+            if np.isfinite(p0):
+                pts.append(p0)
+    y_floor = -1.1  # below scaled-identity (~-1.09); identity-copy clips
+    for vi, variant in enumerate(variants):
+        node = res["inputs"][variant]
+        offs = (vi - (len(variants) - 1) / 2) * width
+        for mi, m in enumerate(methods):
+            src = node.get(m, {}) if m in FITTERS else node.get("baselines", {}).get(m, {})
+            pt, lo, hi = _d1_point_ci(src)
+            if not np.isfinite(pt):
+                continue
+            clipped = pt < y_floor
+            disp = max(pt, y_floor)
+            ax.bar(
+                xpos[mi] + offs,
+                disp,
+                width,
+                yerr=(None if clipped else np.array([[lo], [hi]])),
+                capsize=2,
+                color=input_color[variant],
+                label=INPUT_LABEL[variant] if mi == 0 else None,
             )
-            lo = hi = 0.0
-            if ci_d and "r2" in ci_d and np.isfinite(ci_d["r2"].get("lo", np.nan)):
-                lo = max(0.0, pt - ci_d["r2"]["lo"])
-                hi = max(0.0, ci_d["r2"]["hi"] - pt)
-            ax.bar(xpos[fi], pt, 0.7, yerr=np.array([[lo], [hi]]), capsize=3, color=colors[fi])
-            sl = node.get("val_selected_layer")
-            if sl is not None:
+            if clipped:
                 ax.annotate(
-                    f"L{sl}",
-                    (xpos[fi], 0),
+                    f"{pt:.1f}",
+                    (xpos[mi] + offs, y_floor),
                     textcoords="offset points",
-                    xytext=(0, 2),
+                    xytext=(0, 3),
                     ha="center",
-                    fontsize=7,
+                    va="bottom",
+                    fontsize=6,
                     color="white",
+                    rotation=90,
                 )
-        ax.set_xticks(xpos)
-        ax.set_xticklabels([f.replace("_", " ") for f in FITTERS], rotation=20, ha="right")
-        ax.set_ylabel("test R2 at val-selected layer")
-        ax.set_title(f"Fair fitter comparison — input: {INPUT_LABEL[variant]}")
-    figs = savefig_paper(fig, "ffc_fitter_comparison", dir=fig_dir)
+    ax.set_ylim(bottom=y_floor)
+    # input-agnostic floors as reference lines
+    sp = res["inputs"].get(variants[0], {}).get("baselines", {}).get("shuffled_pairing", {})
+    if "point" in sp and np.isfinite(sp["point"]):
+        ax.axhline(sp["point"], ls="--", lw=1.2, color="0.45", label="shuffled-pairing floor")
+    ptm = res.get("baselines_input_agnostic", {}).get("predict_the_mean", {})
+    _p, _, _ = _d1_point_ci(ptm)
+    if np.isfinite(_p):
+        ax.axhline(_p, ls=":", lw=1.2, color="0.65", label="predict-the-mean")
+    n_fit = len(FITTERS)
+    ax.axvline(n_fit - 0.5, color="0.8", lw=1.0)  # fitters | baselines divider
+    ax.set_xticks(xpos)
+    ax.set_xticklabels([D1_BAR_LABELS.get(m, m) for m in methods], rotation=25, ha="right")
+    ax.set_ylabel("held-out test R2 (at val-selected layer)")
+    ax.set_title("Context -> answer map: predictors vs baselines")
+    ax.legend(frameon=False, fontsize=8, ncol=2)
+    figs = savefig_paper(fig, f"{prefix}_fitter_comparison", dir=fig_dir)
     plt.close(fig)
     return str(figs.get("png", ""))
 
 
-def make_fig_d2(out_dir, fig_dir):
+def make_fig_d2(out_dir, fig_dir, prefix="ffc"):
     path = out_dir / "scaling_curves.json"
     if not path.exists():
         return None
@@ -1408,59 +1809,100 @@ def make_fig_d2(out_dir, fig_dir):
     ax.set_xlabel("training contexts (n_train)")
     ax.set_ylabel(f"test R2 (last input, L{res['anchor_layer']})")
     ax.set_title("Scaling curves — reconstruction R2 vs training size")
-    ax.legend(fontsize=8, title="fitter")
-    figs = savefig_paper(fig, "ffc_scaling_curves", dir=fig_dir)
+    ax.legend(fontsize=8, title="predictor")
+    figs = savefig_paper(fig, f"{prefix}_scaling_curves", dir=fig_dir)
     plt.close(fig)
     return str(figs.get("png", ""))
 
 
-def make_fig_d3(out_dir, fig_dir):
+D3_SUMMARY_LABELS = {
+    "v_x": "mean over ALL answer tokens (default)",
+    "v_full_mean": "mean over answer + turn-boundary tokens",
+    "v_full_max": "per-dim max over answer + boundary tokens",
+    "v_tmpl_mean": "mean over the 5 turn-boundary tokens",
+    "v_tmpl_max": "per-dim max over the 5 boundary tokens",
+    "v_im_end": "turn-end token <|im_end|>",
+    "v_im_start": "next-turn start token <|im_start|>",
+    "v_user": "next 'user' role token",
+    "v_nl_after_user": "newline before next user message",
+    "xlmean_v_max": "per-dim max over answer tokens (avg over layers)",
+    "xlmax_v_max": "per-dim max over answer tokens (max over layers)",
+    "xlmean_v_last_content": "last answer word-token (avg over layers)",
+    "xlmax_v_last_content": "last answer word-token (max over layers)",
+    "xlmean_v_last_turn": "turn-final token (avg over layers)",
+    "xlmax_v_last_turn": "turn-final token (max over layers)",
+    "xlmean_v_first": "first answer token (avg over layers)",
+    "xlmax_v_first": "first answer token (max over layers)",
+}
+
+
+def make_fig_d3(out_dir, fig_dir, prefix="ffc"):
+    """Best-across-layers held-out R2 per answer summary, last vs mean input on one axis."""
     path = out_dir / "layer_target_heatmap.json"
     if not path.exists():
         return None
     res = json.loads(path.read_text())
-    plt, _pal, savefig_paper = _paper()
+    plt, paper_palette, savefig_paper = _paper()
     targets, labels = res["targets"], res["target_labels"]
     variants = [v for v in INPUT_VARIANTS if v in res.get("inputs", {})]
-    layers = sorted({int(k) for v in variants for k in res["inputs"][v]})
-    fig, axes = plt.subplots(
-        1,
-        len(variants),
-        squeeze=False,
-        layout="constrained",
-        figsize=(max(9, 0.4 * len(layers) + 4) * len(variants), 0.42 * len(targets) + 3),
+
+    def best_across_layers(variant, tk):
+        best, best_li = np.nan, None
+        for lk, e in res["inputs"][variant].items():
+            if tk in e and (not np.isfinite(best) or e[tk]["r2_mean"] > best):
+                best, best_li = e[tk]["r2_mean"], int(lk)
+        return best, best_li
+
+    order = sorted(
+        targets,
+        key=lambda tk: max(best_across_layers(v, tk)[0] for v in variants),
+        reverse=True,
     )
-    vmax = 0.0
-    for v in variants:
-        for _lk, e in res["inputs"][v].items():
-            vmax = max(vmax, max((e[t]["r2_mean"] for t in targets if t in e), default=0.0))
-    for ci, variant in enumerate(variants):
-        ax = axes[0][ci]
-        M = np.full((len(targets), len(layers)), np.nan)
-        for cj, li in enumerate(layers):
-            e = res["inputs"][variant].get(str(li), {})
-            for ri, tk in enumerate(targets):
-                if tk in e:
-                    M[ri, cj] = e[tk]["r2_mean"]
-        im = ax.imshow(M, aspect="auto", cmap="viridis", vmin=0.0, vmax=vmax)
-        ax.set_xticks(np.arange(len(layers)))
-        ax.set_xticklabels([f"L{li}" for li in layers], rotation=90, fontsize=7)
-        ax.set_yticks(np.arange(len(targets)))
-        ax.set_yticklabels([f"{labels.get(tk, tk)} ({tk})" for tk in targets], fontsize=7)
-        ax.set_xlabel("input layer")
-        ax.set_title(f"held-out R2 — input: {INPUT_LABEL[variant]}")
-        fig.colorbar(im, ax=ax, label="held-out R2", fraction=0.03, pad=0.02)
-    figs = savefig_paper(fig, "ffc_layer_target_heatmap", dir=fig_dir, embed_data=False)
+    two = paper_palette(2)
+    input_color = {v: two[i] for i, v in enumerate(variants)}
+    ypos = np.arange(len(order))
+    height = 0.8 / max(len(variants), 1)
+    fig, ax = plt.subplots(figsize=(8.5, 0.5 * len(order) + 2.5))
+    for vi, variant in enumerate(variants):
+        offs = (vi - (len(variants) - 1) / 2) * height
+        vals, lys = [], []
+        for tk in order:
+            b, li = best_across_layers(variant, tk)
+            vals.append(b)
+            lys.append(li)
+        bars = ax.barh(
+            ypos + offs, vals, height, color=input_color[variant], label=INPUT_LABEL[variant]
+        )
+        for rect, li in zip(bars, lys, strict=False):
+            if li is not None and np.isfinite(rect.get_width()):
+                ax.annotate(
+                    f"L{li}",
+                    (rect.get_width(), rect.get_y() + rect.get_height() / 2),
+                    textcoords="offset points",
+                    xytext=(2, 0),
+                    va="center",
+                    fontsize=6,
+                    color="0.3",
+                )
+    ax.set_yticks(ypos)
+    ax.set_yticklabels([D3_SUMMARY_LABELS.get(tk, labels.get(tk, tk)) for tk in order], fontsize=8)
+    ax.invert_yaxis()
+    ax.set_xlabel("best held-out R2 across layers (best layer annotated)")
+    ax.set_ylabel("answer-side summary predicted from the context vector")
+    ax.set_title("Which answer summary is most predictable from the context?")
+    ax.legend(frameon=False, fontsize=8, loc="lower right")
+    figs = savefig_paper(fig, f"{prefix}_summary_best_by_layer", dir=fig_dir, embed_data=False)
     plt.close(fig)
     return str(figs.get("png", ""))
 
 
 def run_figures(args, ctx):
     t0 = time.time()
+    prefix = getattr(args, "fig_prefix", "ffc")
     made = {
-        "d3": make_fig_d3(args.out_dir, args.fig_dir),
-        "d1": make_fig_d1(args.out_dir, args.fig_dir),
-        "d2": make_fig_d2(args.out_dir, args.fig_dir),
+        "d3": make_fig_d3(args.out_dir, args.fig_dir, prefix),
+        "d1": make_fig_d1(args.out_dir, args.fig_dir, prefix),
+        "d2": make_fig_d2(args.out_dir, args.fig_dir, prefix),
     }
     logger.info("Figures: %s", {k: v for k, v in made.items() if v})
     _t("figures", t0)
@@ -1501,6 +1943,16 @@ def main() -> int:
     p.add_argument("--d2-ns", type=int, nargs="*", default=list(D2_NS))
     p.add_argument("--d2-draws", type=int, nargs="*", default=list(D2_DRAWS))
     p.add_argument("--d2-layer", type=int, default=D2_LAYER)
+    # round-2 (n10k) combined-corpus mode
+    p.add_argument("--corpus-mode", choices=["single", "n10k"], default="single")
+    p.add_argument("--new-bundle", type=Path, default=DEFAULT_NEW_BUNDLE)
+    p.add_argument("--pass-b-path", type=Path, default=PASS_B_PATH)
+    p.add_argument(
+        "--n-pass-b",
+        type=int,
+        default=N_PASS_B,
+        help="pass_b row count the round-1 byte-identical val/test split is anchored on",
+    )
     args = p.parse_args()
 
     if args.smoke:
@@ -1521,6 +1973,20 @@ def main() -> int:
         args.d2_ns = [100, 140]
         args.d2_draws = [0]
 
+    # round-2 (n10k) defaults — applied AFTER --smoke so an explicit small smoke wins.
+    if args.corpus_mode == "n10k":
+        global LAMBDAS
+        LAMBDAS = LAMBDAS_N10K  # wider ridge grid [1e-3, 1e6] (late-binding: all callers pick up)
+        if args.out_dir == DEFAULT_OUT_DIR:
+            args.out_dir = DEFAULT_OUT_DIR_N10K
+        if args.n_train == 3600:  # round-1 default → the n10k train target
+            args.n_train = N10K_TRAIN
+        if list(args.d2_ns) == list(D2_NS):  # round-1 default → the extended axis through 10000
+            args.d2_ns = list(D2_NS_N10K)
+        args.fig_prefix = "ffc2"
+    else:
+        args.fig_prefix = "ffc"
+
     torch.set_num_threads(int(args.n_threads))
     stages = list(args.stage) or (["d3", "d1", "d2", "figures"] if args.all else [])
     if not stages:
@@ -1536,7 +2002,26 @@ def main() -> int:
     )
     ctx = {}
     if any(s in stages for s in ("d3", "d1", "d2")):
-        ctx["bundle"] = load_pass_b()
+        if args.corpus_mode == "n10k":
+            combined, nb = load_combined_corpus(args.pass_b_path, args.new_bundle, args.n_pass_b)
+            ctx["bundle"] = combined
+            ctx["new_bundle"] = nb
+            # The split feeds ONLY D1/D2 (D3 is 5-fold CV over the masked corpus) — build it
+            # only when a split-consuming stage runs, so a d3-only run needs no valid split.
+            if any(s in stages for s in ("d1", "d2")):
+                train, val, test, split_diag = build_n10k_split(combined, args)
+                ctx["split"] = (train, val, test)
+                C.write_json_atomic(args.out_dir / "n10k_split.json", split_diag)
+                logger.info(
+                    "n10k split: train=%d val=%d test=%d (byte-identical val/test=%s) -> %s",
+                    len(train),
+                    len(val),
+                    len(test),
+                    split_diag["val_test_byte_identical_round1"],
+                    args.out_dir / "n10k_split.json",
+                )
+        else:
+            ctx["bundle"] = load_pass_b(args.pass_b_path)
     if "d3" in stages:
         run_d3(args, ctx)
     if "d1" in stages:
