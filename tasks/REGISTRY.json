@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1078,
+  "highest_id": 1079,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -614,6 +614,13 @@
       "path": "tasks/proposed/1078",
       "status": "proposed",
       "title": "daily-fix: paper_palette crashes at >8 colors - extend grace"
+    },
+    "1079": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1079",
+      "status": "proposed",
+      "title": "daily-fix: default BLAS/OMP thread pins for vectorized VM fi"
     },
     "108": {
       "has_clean_result": false,
