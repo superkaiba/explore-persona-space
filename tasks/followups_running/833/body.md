@@ -1,5 +1,5 @@
 ---
-title: The trained models' own answer text carries the entire on-policy taught-fact
+title: The taught-sentence emission event carries the entire on-policy taught-fact
   leakage chain (MODERATE confidence)
 kind: experiment
 tags:
