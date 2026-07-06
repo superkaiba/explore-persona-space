@@ -20,6 +20,8 @@ goal: Rebuild the factory content-behavior datagen persona-vectors-style — eac
   so a Claude generator is less likely to refuse — add an impossible-to-refuse formatting
   behavior as a pipeline positive control, and test whether this clears the yield
   floors and installs trainable organisms across the behavior set.
+relates_to:
+- implant-which-behaviors
 ---
 ## Goal
 
