@@ -17,6 +17,8 @@ goal: 'Measure how the #779 context→answer mapping and its answer-side activat
   the #779 recipe, in BOTH prefix-based and context-based mapping arms — to test whether
   single-greedy targets are an adequate stand-in for rollout-averaged ones (theory
   plan C11/C12).'
+relates_to:
+- spec-context-as-vector
 ---
 # Decoding-regime robustness of the context→answer map: single greedy vs single stochastic vs 10-rollout-averaged activations
 
