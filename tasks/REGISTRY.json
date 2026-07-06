@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1089,
+  "highest_id": 1090,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -705,6 +705,14 @@
       "path": "tasks/archived/109",
       "status": "archived",
       "title": "Convergence SFT toward source personas increases marker leakage to assistant for 4 of 7 sources, front-loaded but variable timing (LOW confidence)"
+    },
+    "1090": {
+      "goal": "Rebuild the factory content-behavior datagen with persona-vectors-style trait definitions \u2014 eliciting positives/negatives via contrastive persona system prompts over a DIVERSE (opinion/self-assessment, not hard-wrong-fact) question bank judged for the trait disposition, with a split generator (abliterated Qwen for compliance positives, base Qwen for refusal negatives) \u2014 and test whether this clears the yield floors and installs trainable sycophancy / harmful-compliance / censorship organisms.",
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1090",
+      "status": "proposed",
+      "title": "Persona-vectors-style content-behavior datagen: trait-framed elicitation + diverse question bank + split generator"
     },
     "11": {
       "has_clean_result": false,
