@@ -1855,6 +1855,14 @@ def negative_duplicate_cron_tick() -> dict[str, Any]:
     (``ComputeBackend.teardown`` ABC docstring: a duplicate teardown
     is absorbed cleanly) is validated by per-backend tests elsewhere;
     here we prove the CLI level doesn't barf on the duplicate tick.
+
+    Since #1026, ``_cmd_finalize`` additionally consults the REAL task's
+    ``events.jsonl`` via ``_upload_verification_currency_blocker`` (typed
+    rc=3, BEFORE teardown and the Mn4.3 sidecar rename); this scenario
+    patches that gate to a no-op for its two in-process ticks (restored in
+    ``finally``) so its rc contract stays decoupled from live task state.
+    The gate has its own dedicated coverage in
+    tests/test_upload_verifier_currency.py + tests/test_dispatch_issue_cli.py.
     """
     import tempfile
 
@@ -1901,6 +1909,7 @@ def negative_duplicate_cron_tick() -> dict[str, Any]:
         repo_root = str(Path(__file__).resolve().parent.parent)
         if repo_root not in sys.path:
             sys.path.insert(0, repo_root)
+        import scripts.dispatch_issue as _dispatch_issue_mod
         from scripts.dispatch_issue import main as dispatch_main
 
         nibi = _NegativeMockBackend(kind="nibi", cluster="nibi")
@@ -1920,24 +1929,42 @@ def negative_duplicate_cron_tick() -> dict[str, Any]:
         import io as _io
         from contextlib import redirect_stdout
 
-        rc_codes: list[int] = []
-        bodies: list[dict[str, Any]] = []
-        for _ in range(2):
-            buf = _io.StringIO()
-            with redirect_stdout(buf):
-                rc = dispatch_main(
-                    [
-                        "finalize",
-                        "--issue",
-                        str(issue),
-                        "--handle-file",
-                        str(sidecar),
-                    ],
-                    backends_factory=_factory,
-                )
-            rc_codes.append(rc)
-            body = _parse_last_json_line(buf.getvalue())
-            bodies.append(body or {})
+        # #1076 test-isolation: neutralize the #1026 verifier-currency gate.
+        # _cmd_finalize consults the REAL task <issue>'s events.jsonl via
+        # _upload_verification_currency_blocker; live task-903 state (stale
+        # verification) made both ticks rc=3 BEFORE teardown and BEFORE the
+        # Mn4.3 sidecar rename — coupling this scenario's rc contract to
+        # live task state. The gate has dedicated coverage
+        # (tests/test_upload_verifier_currency.py,
+        # tests/test_dispatch_issue_cli.py); this scenario's contract is
+        # CLI-level duplicate-tick idempotency only. Same isolation as the
+        # established monkeypatch sites in tests/test_dispatch_issue_cli.py;
+        # try/finally because this harness also runs standalone (no pytest).
+        _orig_blocker = _dispatch_issue_mod._upload_verification_currency_blocker
+        _dispatch_issue_mod._upload_verification_currency_blocker = lambda _issue: None
+        try:
+            rc_codes: list[int] = []
+            bodies: list[dict[str, Any]] = []
+            for _ in range(2):
+                buf = _io.StringIO()
+                with redirect_stdout(buf):
+                    rc = dispatch_main(
+                        [
+                            "finalize",
+                            "--issue",
+                            str(issue),
+                            "--handle-file",
+                            str(sidecar),
+                        ],
+                        backends_factory=_factory,
+                    )
+                rc_codes.append(rc)
+                body = _parse_last_json_line(buf.getvalue())
+                bodies.append(body or {})
+        finally:
+            _dispatch_issue_mod._upload_verification_currency_blocker = _orig_blocker
+        # Post-restore self-check: the module attribute is back to the real gate.
+        assert _dispatch_issue_mod._upload_verification_currency_blocker is _orig_blocker
 
         return {
             "rc_codes": rc_codes,
