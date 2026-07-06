@@ -1,0 +1,1290 @@
+{
+  "layers": [
+    14,
+    17,
+    20,
+    23,
+    26
+  ],
+  "lambdas": [
+    0.01,
+    0.03162277660168379,
+    0.1,
+    0.31622776601683794,
+    1.0,
+    3.1622776601683795,
+    10.0,
+    31.622776601683793,
+    100.0,
+    316.2277660168379,
+    1000.0,
+    3162.2776601683795,
+    10000.0
+  ],
+  "groups_A": [
+    [
+      "f16_t1",
+      "own"
+    ],
+    [
+      "f16_t1",
+      "ext_plain"
+    ],
+    [
+      "f16_t1",
+      "ext_style"
+    ],
+    [
+      "f16_t1",
+      "mismatch"
+    ],
+    [
+      "f16_t2",
+      "own"
+    ],
+    [
+      "f16_t2",
+      "ext_plain"
+    ],
+    [
+      "f16_t2",
+      "ext_style"
+    ],
+    [
+      "f16_t2",
+      "mismatch"
+    ],
+    [
+      "f16_t3",
+      "own"
+    ],
+    [
+      "f16_t3",
+      "ext_plain"
+    ],
+    [
+      "f16_t3",
+      "ext_style"
+    ],
+    [
+      "f16_t3",
+      "mismatch"
+    ],
+    [
+      "f16_t4",
+      "own"
+    ],
+    [
+      "f16_t4",
+      "ext_plain"
+    ],
+    [
+      "f16_t4",
+      "ext_style"
+    ],
+    [
+      "f16_t4",
+      "mismatch"
+    ],
+    [
+      "f16_t5",
+      "own"
+    ],
+    [
+      "f16_t5",
+      "ext_plain"
+    ],
+    [
+      "f16_t5",
+      "ext_style"
+    ],
+    [
+      "f16_t5",
+      "mismatch"
+    ],
+    [
+      "f16_t6",
+      "own"
+    ],
+    [
+      "f16_t6",
+      "ext_plain"
+    ],
+    [
+      "f16_t6",
+      "ext_style"
+    ],
+    [
+      "f16_t6",
+      "mismatch"
+    ],
+    [
+      "f16_t7",
+      "own"
+    ],
+    [
+      "f16_t7",
+      "ext_plain"
+    ],
+    [
+      "f16_t7",
+      "ext_style"
+    ],
+    [
+      "f16_t7",
+      "mismatch"
+    ],
+    [
+      "f16_t8",
+      "own"
+    ],
+    [
+      "f16_t8",
+      "ext_plain"
+    ],
+    [
+      "f16_t8",
+      "ext_style"
+    ],
+    [
+      "f16_t8",
+      "mismatch"
+    ],
+    [
+      "f16_t9",
+      "own"
+    ],
+    [
+      "f16_t9",
+      "ext_plain"
+    ],
+    [
+      "f16_t9",
+      "ext_style"
+    ],
+    [
+      "f16_t9",
+      "mismatch"
+    ],
+    [
+      "f16_t10",
+      "own"
+    ],
+    [
+      "f16_t10",
+      "ext_plain"
+    ],
+    [
+      "f16_t10",
+      "ext_style"
+    ],
+    [
+      "f16_t10",
+      "mismatch"
+    ],
+    [
+      "f16_t11",
+      "own"
+    ],
+    [
+      "f16_t11",
+      "ext_plain"
+    ],
+    [
+      "f16_t11",
+      "ext_style"
+    ],
+    [
+      "f16_t11",
+      "mismatch"
+    ],
+    [
+      "f16_t12",
+      "own"
+    ],
+    [
+      "f16_t12",
+      "ext_plain"
+    ],
+    [
+      "f16_t12",
+      "ext_style"
+    ],
+    [
+      "f16_t12",
+      "mismatch"
+    ],
+    [
+      "f16_t13",
+      "own"
+    ],
+    [
+      "f16_t13",
+      "ext_plain"
+    ],
+    [
+      "f16_t13",
+      "ext_style"
+    ],
+    [
+      "f16_t13",
+      "mismatch"
+    ],
+    [
+      "f16_t14",
+      "own"
+    ],
+    [
+      "f16_t14",
+      "ext_plain"
+    ],
+    [
+      "f16_t14",
+      "ext_style"
+    ],
+    [
+      "f16_t14",
+      "mismatch"
+    ],
+    [
+      "f16_t15",
+      "own"
+    ],
+    [
+      "f16_t15",
+      "ext_plain"
+    ],
+    [
+      "f16_t15",
+      "ext_style"
+    ],
+    [
+      "f16_t15",
+      "mismatch"
+    ],
+    [
+      "f16_t16",
+      "own"
+    ],
+    [
+      "f16_t16",
+      "ext_plain"
+    ],
+    [
+      "f16_t16",
+      "ext_style"
+    ],
+    [
+      "f16_t16",
+      "mismatch"
+    ],
+    [
+      "l16_m1",
+      "own"
+    ],
+    [
+      "l16_m1",
+      "ext_plain"
+    ],
+    [
+      "l16_m1",
+      "ext_style"
+    ],
+    [
+      "l16_m1",
+      "mismatch"
+    ],
+    [
+      "l16_m2",
+      "own"
+    ],
+    [
+      "l16_m2",
+      "ext_plain"
+    ],
+    [
+      "l16_m2",
+      "ext_style"
+    ],
+    [
+      "l16_m2",
+      "mismatch"
+    ],
+    [
+      "l16_m3",
+      "own"
+    ],
+    [
+      "l16_m3",
+      "ext_plain"
+    ],
+    [
+      "l16_m3",
+      "ext_style"
+    ],
+    [
+      "l16_m3",
+      "mismatch"
+    ],
+    [
+      "l16_m4",
+      "own"
+    ],
+    [
+      "l16_m4",
+      "ext_plain"
+    ],
+    [
+      "l16_m4",
+      "ext_style"
+    ],
+    [
+      "l16_m4",
+      "mismatch"
+    ],
+    [
+      "l16_m5",
+      "own"
+    ],
+    [
+      "l16_m5",
+      "ext_plain"
+    ],
+    [
+      "l16_m5",
+      "ext_style"
+    ],
+    [
+      "l16_m5",
+      "mismatch"
+    ],
+    [
+      "l16_m6",
+      "own"
+    ],
+    [
+      "l16_m6",
+      "ext_plain"
+    ],
+    [
+      "l16_m6",
+      "ext_style"
+    ],
+    [
+      "l16_m6",
+      "mismatch"
+    ],
+    [
+      "l16_m7",
+      "own"
+    ],
+    [
+      "l16_m7",
+      "ext_plain"
+    ],
+    [
+      "l16_m7",
+      "ext_style"
+    ],
+    [
+      "l16_m7",
+      "mismatch"
+    ],
+    [
+      "l16_m8",
+      "own"
+    ],
+    [
+      "l16_m8",
+      "ext_plain"
+    ],
+    [
+      "l16_m8",
+      "ext_style"
+    ],
+    [
+      "l16_m8",
+      "mismatch"
+    ],
+    [
+      "l16_m9",
+      "own"
+    ],
+    [
+      "l16_m9",
+      "ext_plain"
+    ],
+    [
+      "l16_m9",
+      "ext_style"
+    ],
+    [
+      "l16_m9",
+      "mismatch"
+    ],
+    [
+      "l16_m10",
+      "own"
+    ],
+    [
+      "l16_m10",
+      "ext_plain"
+    ],
+    [
+      "l16_m10",
+      "ext_style"
+    ],
+    [
+      "l16_m10",
+      "mismatch"
+    ],
+    [
+      "l16_m11",
+      "own"
+    ],
+    [
+      "l16_m11",
+      "ext_plain"
+    ],
+    [
+      "l16_m11",
+      "ext_style"
+    ],
+    [
+      "l16_m11",
+      "mismatch"
+    ],
+    [
+      "l16_m12",
+      "own"
+    ],
+    [
+      "l16_m12",
+      "ext_plain"
+    ],
+    [
+      "l16_m12",
+      "ext_style"
+    ],
+    [
+      "l16_m12",
+      "mismatch"
+    ],
+    [
+      "l16_m13",
+      "own"
+    ],
+    [
+      "l16_m13",
+      "ext_plain"
+    ],
+    [
+      "l16_m13",
+      "ext_style"
+    ],
+    [
+      "l16_m13",
+      "mismatch"
+    ],
+    [
+      "l16_m14",
+      "own"
+    ],
+    [
+      "l16_m14",
+      "ext_plain"
+    ],
+    [
+      "l16_m14",
+      "ext_style"
+    ],
+    [
+      "l16_m14",
+      "mismatch"
+    ],
+    [
+      "l16_m15",
+      "own"
+    ],
+    [
+      "l16_m15",
+      "ext_plain"
+    ],
+    [
+      "l16_m15",
+      "ext_style"
+    ],
+    [
+      "l16_m15",
+      "mismatch"
+    ],
+    [
+      "l16_m16",
+      "own"
+    ],
+    [
+      "l16_m16",
+      "ext_plain"
+    ],
+    [
+      "l16_m16",
+      "ext_style"
+    ],
+    [
+      "l16_m16",
+      "mismatch"
+    ],
+    [
+      "d10_p5",
+      "own"
+    ],
+    [
+      "d10_p5",
+      "ext_plain"
+    ],
+    [
+      "d10_p5",
+      "ext_style"
+    ],
+    [
+      "d10_p5",
+      "mismatch"
+    ],
+    [
+      "d10_p15",
+      "own"
+    ],
+    [
+      "d10_p15",
+      "ext_plain"
+    ],
+    [
+      "d10_p15",
+      "ext_style"
+    ],
+    [
+      "d10_p15",
+      "mismatch"
+    ],
+    [
+      "d10_p25",
+      "own"
+    ],
+    [
+      "d10_p25",
+      "ext_plain"
+    ],
+    [
+      "d10_p25",
+      "ext_style"
+    ],
+    [
+      "d10_p25",
+      "mismatch"
+    ],
+    [
+      "d10_p35",
+      "own"
+    ],
+    [
+      "d10_p35",
+      "ext_plain"
+    ],
+    [
+      "d10_p35",
+      "ext_style"
+    ],
+    [
+      "d10_p35",
+      "mismatch"
+    ],
+    [
+      "d10_p45",
+      "own"
+    ],
+    [
+      "d10_p45",
+      "ext_plain"
+    ],
+    [
+      "d10_p45",
+      "ext_style"
+    ],
+    [
+      "d10_p45",
+      "mismatch"
+    ],
+    [
+      "d10_p55",
+      "own"
+    ],
+    [
+      "d10_p55",
+      "ext_plain"
+    ],
+    [
+      "d10_p55",
+      "ext_style"
+    ],
+    [
+      "d10_p55",
+      "mismatch"
+    ],
+    [
+      "d10_p65",
+      "own"
+    ],
+    [
+      "d10_p65",
+      "ext_plain"
+    ],
+    [
+      "d10_p65",
+      "ext_style"
+    ],
+    [
+      "d10_p65",
+      "mismatch"
+    ],
+    [
+      "d10_p75",
+      "own"
+    ],
+    [
+      "d10_p75",
+      "ext_plain"
+    ],
+    [
+      "d10_p75",
+      "ext_style"
+    ],
+    [
+      "d10_p75",
+      "mismatch"
+    ],
+    [
+      "d10_p85",
+      "own"
+    ],
+    [
+      "d10_p85",
+      "ext_plain"
+    ],
+    [
+      "d10_p85",
+      "ext_style"
+    ],
+    [
+      "d10_p85",
+      "mismatch"
+    ],
+    [
+      "d10_p95",
+      "own"
+    ],
+    [
+      "d10_p95",
+      "ext_plain"
+    ],
+    [
+      "d10_p95",
+      "ext_style"
+    ],
+    [
+      "d10_p95",
+      "mismatch"
+    ],
+    [
+      "rem_mean_gt1",
+      "own"
+    ],
+    [
+      "rem_mean_gt1",
+      "ext_plain"
+    ],
+    [
+      "rem_mean_gt1",
+      "ext_style"
+    ],
+    [
+      "rem_mean_gt1",
+      "mismatch"
+    ],
+    [
+      "rem_max_gt1",
+      "own"
+    ],
+    [
+      "rem_max_gt1",
+      "ext_plain"
+    ],
+    [
+      "rem_max_gt1",
+      "ext_style"
+    ],
+    [
+      "rem_max_gt1",
+      "mismatch"
+    ],
+    [
+      "rem_mean_gt2",
+      "own"
+    ],
+    [
+      "rem_mean_gt2",
+      "ext_plain"
+    ],
+    [
+      "rem_mean_gt2",
+      "ext_style"
+    ],
+    [
+      "rem_mean_gt2",
+      "mismatch"
+    ],
+    [
+      "rem_max_gt2",
+      "own"
+    ],
+    [
+      "rem_max_gt2",
+      "ext_plain"
+    ],
+    [
+      "rem_max_gt2",
+      "ext_style"
+    ],
+    [
+      "rem_max_gt2",
+      "mismatch"
+    ],
+    [
+      "rem_mean_gt4",
+      "own"
+    ],
+    [
+      "rem_mean_gt4",
+      "ext_plain"
+    ],
+    [
+      "rem_mean_gt4",
+      "ext_style"
+    ],
+    [
+      "rem_mean_gt4",
+      "mismatch"
+    ],
+    [
+      "rem_max_gt4",
+      "own"
+    ],
+    [
+      "rem_max_gt4",
+      "ext_plain"
+    ],
+    [
+      "rem_max_gt4",
+      "ext_style"
+    ],
+    [
+      "rem_max_gt4",
+      "mismatch"
+    ],
+    [
+      "rem_mean_gt8",
+      "own"
+    ],
+    [
+      "rem_mean_gt8",
+      "ext_plain"
+    ],
+    [
+      "rem_mean_gt8",
+      "ext_style"
+    ],
+    [
+      "rem_mean_gt8",
+      "mismatch"
+    ],
+    [
+      "rem_max_gt8",
+      "own"
+    ],
+    [
+      "rem_max_gt8",
+      "ext_plain"
+    ],
+    [
+      "rem_max_gt8",
+      "ext_style"
+    ],
+    [
+      "rem_max_gt8",
+      "mismatch"
+    ],
+    [
+      "rem_mean_gt16",
+      "own"
+    ],
+    [
+      "rem_mean_gt16",
+      "ext_plain"
+    ],
+    [
+      "rem_mean_gt16",
+      "ext_style"
+    ],
+    [
+      "rem_mean_gt16",
+      "mismatch"
+    ],
+    [
+      "rem_max_gt16",
+      "own"
+    ],
+    [
+      "rem_max_gt16",
+      "ext_plain"
+    ],
+    [
+      "rem_max_gt16",
+      "ext_style"
+    ],
+    [
+      "rem_max_gt16",
+      "mismatch"
+    ],
+    [
+      "rem_mean_gt32",
+      "own"
+    ],
+    [
+      "rem_mean_gt32",
+      "ext_plain"
+    ],
+    [
+      "rem_mean_gt32",
+      "ext_style"
+    ],
+    [
+      "rem_mean_gt32",
+      "mismatch"
+    ],
+    [
+      "rem_max_gt32",
+      "own"
+    ],
+    [
+      "rem_max_gt32",
+      "ext_plain"
+    ],
+    [
+      "rem_max_gt32",
+      "ext_style"
+    ],
+    [
+      "rem_max_gt32",
+      "mismatch"
+    ],
+    [
+      "rem_mean_gt64",
+      "own"
+    ],
+    [
+      "rem_mean_gt64",
+      "ext_plain"
+    ],
+    [
+      "rem_mean_gt64",
+      "ext_style"
+    ],
+    [
+      "rem_mean_gt64",
+      "mismatch"
+    ],
+    [
+      "rem_max_gt64",
+      "own"
+    ],
+    [
+      "rem_max_gt64",
+      "ext_plain"
+    ],
+    [
+      "rem_max_gt64",
+      "ext_style"
+    ],
+    [
+      "rem_max_gt64",
+      "mismatch"
+    ],
+    [
+      "rem_mean_gt128",
+      "own"
+    ],
+    [
+      "rem_mean_gt128",
+      "ext_plain"
+    ],
+    [
+      "rem_mean_gt128",
+      "ext_style"
+    ],
+    [
+      "rem_mean_gt128",
+      "mismatch"
+    ],
+    [
+      "rem_max_gt128",
+      "own"
+    ],
+    [
+      "rem_max_gt128",
+      "ext_plain"
+    ],
+    [
+      "rem_max_gt128",
+      "ext_style"
+    ],
+    [
+      "rem_max_gt128",
+      "mismatch"
+    ]
+  ],
+  "groups_B": [
+    [
+      "d10_p5",
+      "own"
+    ],
+    [
+      "d10_p5",
+      "ext_plain"
+    ],
+    [
+      "d10_p5",
+      "ext_style"
+    ],
+    [
+      "d10_p5",
+      "mismatch"
+    ],
+    [
+      "d10_p15",
+      "own"
+    ],
+    [
+      "d10_p15",
+      "ext_plain"
+    ],
+    [
+      "d10_p15",
+      "ext_style"
+    ],
+    [
+      "d10_p15",
+      "mismatch"
+    ],
+    [
+      "d10_p25",
+      "own"
+    ],
+    [
+      "d10_p25",
+      "ext_plain"
+    ],
+    [
+      "d10_p25",
+      "ext_style"
+    ],
+    [
+      "d10_p25",
+      "mismatch"
+    ],
+    [
+      "d10_p35",
+      "own"
+    ],
+    [
+      "d10_p35",
+      "ext_plain"
+    ],
+    [
+      "d10_p35",
+      "ext_style"
+    ],
+    [
+      "d10_p35",
+      "mismatch"
+    ],
+    [
+      "d10_p45",
+      "own"
+    ],
+    [
+      "d10_p45",
+      "ext_plain"
+    ],
+    [
+      "d10_p45",
+      "ext_style"
+    ],
+    [
+      "d10_p45",
+      "mismatch"
+    ],
+    [
+      "d10_p55",
+      "own"
+    ],
+    [
+      "d10_p55",
+      "ext_plain"
+    ],
+    [
+      "d10_p55",
+      "ext_style"
+    ],
+    [
+      "d10_p55",
+      "mismatch"
+    ],
+    [
+      "d10_p65",
+      "own"
+    ],
+    [
+      "d10_p65",
+      "ext_plain"
+    ],
+    [
+      "d10_p65",
+      "ext_style"
+    ],
+    [
+      "d10_p65",
+      "mismatch"
+    ],
+    [
+      "d10_p75",
+      "own"
+    ],
+    [
+      "d10_p75",
+      "ext_plain"
+    ],
+    [
+      "d10_p75",
+      "ext_style"
+    ],
+    [
+      "d10_p75",
+      "mismatch"
+    ],
+    [
+      "d10_p85",
+      "own"
+    ],
+    [
+      "d10_p85",
+      "ext_plain"
+    ],
+    [
+      "d10_p85",
+      "ext_style"
+    ],
+    [
+      "d10_p85",
+      "mismatch"
+    ],
+    [
+      "d10_p95",
+      "own"
+    ],
+    [
+      "d10_p95",
+      "ext_plain"
+    ],
+    [
+      "d10_p95",
+      "ext_style"
+    ],
+    [
+      "d10_p95",
+      "mismatch"
+    ],
+    [
+      "full_mean_ext",
+      "own"
+    ],
+    [
+      "full_mean_ext",
+      "ext_plain"
+    ],
+    [
+      "full_mean_ext",
+      "ext_style"
+    ],
+    [
+      "full_mean_ext",
+      "mismatch"
+    ]
+  ],
+  "n_universe": {
+    "tf_ok": 4920,
+    "U_A": 3188,
+    "U_match_16": 3188,
+    "U_match_32": 2746,
+    "U_match_64": 2131,
+    "U_match_128": 1427
+  },
+  "fit_device": "cuda",
+  "smoke": false,
+  "parity": [
+    {
+      "cell": "L14/f16_t1/own",
+      "lambda": 1.0,
+      "max_rel_pred_diff": 6.950152331201053e-14,
+      "abs_delta_r2": 3.990375585516404e-09,
+      "r2_oracle": -0.9935373843529232,
+      "r2_batched": -0.9935373803625476,
+      "oracle_seconds": 2.9225380420684814,
+      "batched_seconds": 0.7893877029418945,
+      "device": "cuda",
+      "n_train": 1897,
+      "tol_pred": 1e-06,
+      "tol_r2": 1e-07
+    },
+    {
+      "cell": "L14/l16_m3/ext_plain",
+      "lambda": 1.0,
+      "max_rel_pred_diff": 9.112813174679998e-14,
+      "abs_delta_r2": 3.525938208071011e-09,
+      "r2_oracle": -2.3433805649674984,
+      "r2_batched": -2.3433805684934366,
+      "oracle_seconds": 2.96171236038208,
+      "batched_seconds": 0.7937064170837402,
+      "device": "cuda",
+      "n_train": 1897,
+      "tol_pred": 1e-06,
+      "tol_r2": 1e-07
+    },
+    {
+      "cell": "L14/d10_p55/own",
+      "lambda": 1.0,
+      "max_rel_pred_diff": 1.28611924739153e-13,
+      "abs_delta_r2": 1.0916847870134916e-08,
+      "r2_oracle": -3.4511477180178565,
+      "r2_batched": -3.4511477289347043,
+      "oracle_seconds": 2.9361822605133057,
+      "batched_seconds": 0.8034846782684326,
+      "device": "cuda",
+      "n_train": 1897,
+      "tol_pred": 1e-06,
+      "tol_r2": 1e-07
+    }
+  ],
+  "parity_failed": false,
+  "c_last_cross_arm_cos_min": 0.99993847236545,
+  "layer_scores": {
+    "14": 0.07770719475903427,
+    "17": 0.08190186808923891,
+    "20": 0.10339683479307843,
+    "23": 0.08711550489721265,
+    "26": 0.07678975881387982
+  },
+  "l_star_pos": 20,
+  "lam_star_by_slot_A": {
+    "d10_p15": 10000.0,
+    "d10_p25": 10000.0,
+    "d10_p35": 10000.0,
+    "d10_p45": 10000.0,
+    "d10_p5": 10000.0,
+    "d10_p55": 10000.0,
+    "d10_p65": 10000.0,
+    "d10_p75": 10000.0,
+    "d10_p85": 10000.0,
+    "d10_p95": 10000.0,
+    "f16_t1": 3162.2776601683795,
+    "f16_t10": 10000.0,
+    "f16_t11": 10000.0,
+    "f16_t12": 10000.0,
+    "f16_t13": 10000.0,
+    "f16_t14": 10000.0,
+    "f16_t15": 10000.0,
+    "f16_t16": 10000.0,
+    "f16_t2": 10000.0,
+    "f16_t3": 10000.0,
+    "f16_t4": 10000.0,
+    "f16_t5": 10000.0,
+    "f16_t6": 10000.0,
+    "f16_t7": 10000.0,
+    "f16_t8": 10000.0,
+    "f16_t9": 10000.0,
+    "l16_m1": 10000.0,
+    "l16_m10": 10000.0,
+    "l16_m11": 10000.0,
+    "l16_m12": 10000.0,
+    "l16_m13": 10000.0,
+    "l16_m14": 10000.0,
+    "l16_m15": 10000.0,
+    "l16_m16": 10000.0,
+    "l16_m2": 10000.0,
+    "l16_m3": 10000.0,
+    "l16_m4": 10000.0,
+    "l16_m5": 10000.0,
+    "l16_m6": 10000.0,
+    "l16_m7": 10000.0,
+    "l16_m8": 10000.0,
+    "l16_m9": 10000.0,
+    "rem_max_gt1": 10000.0,
+    "rem_max_gt128": 10000.0,
+    "rem_max_gt16": 10000.0,
+    "rem_max_gt2": 10000.0,
+    "rem_max_gt32": 10000.0,
+    "rem_max_gt4": 10000.0,
+    "rem_max_gt64": 10000.0,
+    "rem_max_gt8": 10000.0,
+    "rem_mean_gt1": 3162.2776601683795,
+    "rem_mean_gt128": 3162.2776601683795,
+    "rem_mean_gt16": 3162.2776601683795,
+    "rem_mean_gt2": 3162.2776601683795,
+    "rem_mean_gt32": 3162.2776601683795,
+    "rem_mean_gt4": 3162.2776601683795,
+    "rem_mean_gt64": 3162.2776601683795,
+    "rem_mean_gt8": 3162.2776601683795
+  },
+  "suffixed_l20_calibration_gate": {
+    "calibration_layer": 20,
+    "lambda_mismatches": {},
+    "max_abs_delta_pooled_r2_by_family": {
+      "A_test": 0.0,
+      "bank_div": 0.0,
+      "bank_ctl": 0.0
+    },
+    "missing_families": [],
+    "tol": 1e-06,
+    "pass": true
+  },
+  "cross_layer": {
+    "decision_layers": [
+      14,
+      23,
+      26
+    ],
+    "loop_layers": [
+      20,
+      14,
+      23,
+      26
+    ],
+    "calibration_layer": 20
+  },
+  "pass1_svd_seconds": [
+    0.5981700420379639,
+    0.6222012042999268,
+    0.5957739353179932,
+    0.6173479557037354,
+    0.5823144912719727
+  ],
+  "phase_wall_seconds": 10935.310822963715
+}
