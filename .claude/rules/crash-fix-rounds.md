@@ -1,5 +1,5 @@
 ---
-description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes; §§1-3 relocated verbatim from experiment-implementer.md (#829); kill-before-relaunch added (#848)
+description: Retry/crash-fix round contract for implementer agents — failure-lesson block, fix-engaged signal, scope guard, kill-before-relaunch + timeout-bounded smokes; §§1-3 relocated verbatim from experiment-implementer.md (#829); kill-before-relaunch added (#848); relaunch-side fix-commit ancestry + stale-checkpoint hygiene (#1081)
 paths:
   - "scripts/**/*.py"
   - "src/explore_persona_space/**"
@@ -74,7 +74,7 @@ A fix-engaged signal is ONE of:
 - a **file write / artifact** that only the fixed branch produces.
 
 Report it under `## Smoke run` in a `### fix-engaged signal` sub-section
-with three elements:
+with five elements:
 
 1. **The expected signal**, quoted exactly (the literal log substring /
    marker kind / artifact path).
@@ -87,6 +87,36 @@ with three elements:
 3. **Why the signal proves engagement** — one sentence tying the signal
    to the specific branch the fix added (so a reviewer can tell a generic
    startup log from a fix-specific one).
+4. **The fix commit(s)** — the FULL SHA(s) on `issue-<N>` containing your
+   fix (the commits this round pushed). Any subsequent relaunch asserts
+   this SHA is an ancestor of the launch checkout's HEAD (§ Crash-fix
+   relaunch below). Declare it so the relauncher keys the probe to the
+   SPECIFIC fix — never to "the branch tip": a checkout at the tip of a
+   ref the fix never landed on passes tip-equality and still runs stale
+   code (#779: launch #1 ran the commit BEFORE the fix, checkpointed
+   garbage, and the restart resumed it).
+5. **Stale-run artifact disposition** — enumerate the resume-state paths
+   the FAILED run wrote that a relaunched/resumed run would LOAD (the
+   pod-local checkpoint/output globs; any REMOTE resume prefix — HF
+   `issueN_partial/`, a data-repo checkpoint path — the driver fetches;
+   name the driver's resume-discovery rule), and declare a disposition
+   per state class (ONE overall when local + remote need no split):
+   `quarantine → <dest outside the resume-glob match set>` (DEFAULT) |
+   `retain — <reason the fix does not invalidate this state>` (the fix
+   is orthogonal to the checkpointed state — eval-side, upload-phase,
+   logging fixes; the resume glob must resolve to exactly the RETAINED
+   expected paths at relaunch) |
+   `wipe` (only when (garbage-by-construction AND already persisted per
+   the crash-persist/upload paths) OR a pure re-derivable cache; remote
+   copies are effectively out of `wipe`'s reach — crash-persist
+   diagnostics are forensic record, prefer a fresh resume prefix) |
+   `fresh-output-path / --no-resume` (the relaunch writes/reads elsewhere)
+   | `N/A — <reason>` (no resume state written; or fresh instance AND no
+   remote resume fetch).
+
+Element 4 is REQUIRED on every `code`-row crash-fix round (a code fix
+always has commits); element 5 is REQUIRED with the explicit
+`N/A — <reason>` escape.
 
 If the fix's code path genuinely cannot emit a distinguishable signal at
 smoke scale (rare — most fixes add a branch that logs or writes), say so
@@ -250,3 +280,78 @@ also reconciles a stale `blocked`"; incident #742 — 35h healthy at
 status `blocked`). Status transitions remain orchestrator-owned: you
 never run `set-status` yourself, even to clear a stale block your fix
 made obsolete.
+
+### Crash-fix relaunch: fix-commit ancestry + stale-checkpoint hygiene
+
+(REQUIRED — RELAUNCHER side: the orchestrator, or the experimenter via
+its respawn brief; the implementer only DECLARES, per § scope guard)
+
+After a `code`-row crash-fix round, the relaunch enforces the round's
+fix-engaged elements 4/5 BEFORE dispatch (incident #779, 2026-07-06:
+the relaunch ran the pre-fix commit, checkpointed garbage — val R²
+−4.7 vs ~0.6 — and the restart resumed the poisoned checkpoints):
+
+1. **Fix-commit ancestry probe (fail-loud), keyed to element 4's SHA.**
+   - SAME-POD relaunch: after the standard pre-launch sync +
+     HEAD-verification (`experimenter.md` § Before Running step 2), run
+     `ssh ... "cd /workspace/explore-persona-space && \
+       git merge-base --is-ancestor <fix-sha> HEAD && echo FIX-OK"`.
+     ANY non-zero exit — including "not a valid object name" (the SHA
+     was never fetched) — means FIX ABSENT: do NOT dispatch; re-sync
+     (`git fetch origin issue-<N>` + the index-lock recovery) and
+     re-probe; still absent → `epm:failure v1` (`failure_class: infra`,
+     `reason: fix-commit-absent-on-pod`, naming the SHA).
+   - FRESH-PROVISION relaunch (GCP GCE / fresh RunPod — the lane clones
+     `origin/issue-<N>` at boot, no pre-boot SSH): probe VM-SIDE before
+     dispatch: `git fetch origin issue-<N> --quiet && git merge-base
+     --is-ancestor <fix-sha> origin/issue-<N>`. This also catches the
+     unpushed-fix case ("at HEAD by construction" holds ONLY once the
+     fix is on the remote ref). SLURM: probe the rsync source's HEAD
+     (`git -C <src_root> merge-base --is-ancestor <fix-sha> HEAD`);
+     the `_assert_repo_branch_synced` guard remains the branch gate.
+   - Tip-equality (`HEAD == origin/issue-<N>`) does NOT substitute for
+     the ancestry probe, and the probe does not replace the
+     HEAD-verification — they compose. With MULTIPLE declared SHAs,
+     probe every one (on linear history the tip-most subsumes its
+     ancestors). A rebase that rewrote the fix SHA
+     fails the probe LOUD: re-resolve the SHA on the rewritten branch
+     (or have the implementer re-declare), never skip the probe.
+2. **Stale-checkpoint disposition (element 5), executed in the SAME
+   command chain as the launch** (the pid-file-contract shape,
+   `.claude/rules/pod-side-reporting.md` § Pid-file launch contract),
+   then CONFIRMED — list the driver's resume-discovery glob and check it
+   resolves EMPTY / to the fresh path / to exactly the RETAINED expected
+   paths (for a `retain` declaration) — before posting the fresh
+   `epm:run-launched`; a REMOTE disposition is confirmed with a
+   remote-side listing (`huggingface_hub.list_repo_files` on the
+   prefix), never a local glob alone. The disposition executes ONCE,
+   against the failed run the declaring round named — a later respawn
+   re-checks only for STALE-run state and NEVER applies it to state
+   written by a run that passed the ancestry probe. Default quarantine
+   moves the state OUT of the
+   resume-glob match set (e.g. `mv <ckpt_dir> <parent>/stale-<ts>/`
+   where the glob cannot match) — never an in-place rename a broad glob
+   still matches. Fresh-provision: pod-local stale state is N/A by
+   construction, but a driver that resumes from REMOTE state (HF
+   `issueN_partial/`, a data-repo checkpoint prefix) still needs the
+   declared disposition — prefer a fresh resume prefix / `--no-resume`
+   threaded into the workload cmd over mutating remote copies.
+
+The fresh `epm:run-launched` note ALSO records `fix_sha=<sha>` and the
+executed disposition (note-token convention, same class as `pid=` /
+`commit=` — no marker-schema change). The `code`-row respawn BRIEF the
+orchestrator composes for the experimenter carries both (`fix_sha=` +
+the element-5 disposition verbatim). EXEMPT: `infra`-row experimenter
+respawns (no code fix ⇒ no fix commit ⇒ no duty 1; duty 2 only when a
+prior code-fix round's declared disposition is still UNEXECUTED — the
+once-only rule above means an executed disposition is never re-applied,
+so the exemption is safe: coverage rests on the earlier code-round
+relaunch's probe plus the standard HEAD-verification against the
+now-fix-bearing tip). The async GCP→RunPod failover surface
+(`.claude/rules/compute-backend-failover.md`) inherits the preceding
+probe-passed dispatch transitively — the failover clones the
+fix-bearing `origin/issue-<N>` and reuses the workload cmd verbatim; a
+mid-run rebase of `issue-<N>` re-opens the gap there (out of scope
+here, noted for the record). The implementer's
+own same-pod smoke-slice confirmation (element 2) is UNCHANGED and is
+not a "relaunch" under this section.
