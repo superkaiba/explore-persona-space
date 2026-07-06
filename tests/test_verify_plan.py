@@ -39,7 +39,7 @@ sys.modules["verify_plan"] = verify_plan
 _spec.loader.exec_module(verify_plan)  # type: ignore[union-attr]
 
 
-# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-22,24)
+# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-22,24-26)
 
 # Surgery anchors (must appear verbatim in GOOD_PLAN exactly once).
 MV_HEADING = "### Measurement validity"
@@ -163,10 +163,11 @@ def test_good_plan_passes_all():
         "c22_cross_section_param_consistency": "SKIP",
         "c24_resume_provenance": "SKIP",
         "c25_html_entities_in_commands": "SKIP",
+        "c26_gpu_basis_routed_machine": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 25
+    assert len(results) == 26
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -3458,6 +3459,309 @@ def test_c25_cli_fail_exit_one(tmp_path):
     assert c25["status"] == "FAIL"
 
 
+# ─── Check 26 — GPU basis vs routed machine ─────────────────────────────────
+
+# Fixture rows quoted VERBATIM from the incident corpus (plan #1075 §10
+# fixtures of record): tasks/*/1073/plans/v3.md:155 (the founding offender
+# row), v3.md:152 (the Spec/intent line, truncated at the sentence break),
+# v4.md:157 (the corrected row), v3.md:240 (the prose-form intent line),
+# tasks/awaiting_promotion/744/plans/v2.md:676 + :45 (the L4-routing catch),
+# tasks/awaiting_promotion/920/plans/v3.md:279 (matching-family control),
+# tasks/awaiting_promotion/778/plans/v8.md:73 (runpod pin),
+# tasks/on_hold/816/plans/v6.md:3 (frontmatter runpod pin),
+# tasks/interpreting/833/plans/v6.md:20 (L3/L4 phase-label collision prose).
+C26_HEADER = (
+    "\n| component | planned_wall_h | planned_gpu_h | parallelism | basis |\n"
+    "|---|---|---|---|---|\n"
+)
+C26_INTENT_LORA7B = (
+    "\n**Spec:** 1 GPU, `--intent lora-7b` (GCP `a2-ultragpu-1g` A100-80 / RunPod 1×H100).\n"
+)
+C26_INTENT_EVAL = "\n- **Compute:** 1x A100-80 (GCP `auto`, `--intent eval`), single forward-pass\n"
+C26_V3_P1_ROW = (
+    "| P1 greedy gen (5,000 × ~300 tok) | 0.25 | 0.25 | vLLM batched, chunk 500 "
+    "| 1.5 M tok at ≥ 3 k tok/s (H100 Qwen-7B, #779 pass-A convention) |\n"
+)
+C26_V4_P1_ROW = (  # #1073 v4:157 — corrected row (routed family in wall cell + scaling vocab)
+    "| P1 greedy gen (5,000 × ~300 tok) | 0.25 (H100) / 0.5–0.6 (A100, ×2–2.5) | same as wall "
+    "| vLLM batched, chunk 500 | 1.5 M tok at ≥ 3 k tok/s H100 basis (#779 pass-A convention); "
+    "A100 row = H100 × 2–2.5 stated per-step rate |\n"
+)
+C26_744_ROW = (
+    "| Phase 1 dump+stream, base (NS + broader) | 1.5 | 1.5 | TP=1 batch=1 "
+    "| ~1000 broader forwards x 2 passes + 10 NS seqs @ ~5s/1024-tok A100 forward; "
+    "most broader docs < 1024 tok |\n"
+)
+C26_920_ROW = (
+    "| P1 set-B generation (GPU, vLLM) | 0.25 | 0.25 | one continuous-batching engine, "
+    "2,400 prompts | 2,400 greedy × ≤512 new tokens ≈ ≤1.2M gen tokens; single-A100 vLLM "
+    "≥ ~2K tok/s ⇒ ~10 min + engine spin-up |\n"
+)
+C26_778_PIN_LINE = (
+    "\n- **Compute:** 1× H100 RunPod (`backend: runpod`, intent `eval`) for ~2–3 h (6,000\n"
+)
+# The founding-offender shape: WARN under `--intent lora-7b` (routed A100).
+C26_WARN_SHAPE = C26_INTENT_LORA7B + C26_HEADER + C26_V3_P1_ROW
+
+
+def test_c26_h100_basis_auto_lora7b_warns():
+    # Acceptance criterion 2 (plan #1075 §1): the #1073 v3 P1 row under
+    # `--intent lora-7b` (auto → A100-80) with no scaling vocabulary and no
+    # routed-GPU mention in the row → WARN; the detail names the component
+    # cell, the offending token, the routed family, and BOTH remedies.
+    ok, by_id = _run(GOOD_PLAN + C26_WARN_SHAPE)
+    r = by_id["c26_gpu_basis_routed_machine"]
+    assert r.status == "WARN"
+    assert ok  # WARN never blocks
+    assert "P1 greedy gen" in r.detail
+    assert "H100" in r.detail
+    assert "A100" in r.detail
+    assert "per-step rate" in r.detail  # remedy 1: stated scaling (#599 clause)
+    assert "N/A — basis measured on the routed machine" in r.detail  # remedy 2
+
+
+def test_c26_scaling_vocab_row_passes():
+    # Scaling-vocab escape in isolation: the v4-shaped "stated per-step rate"
+    # phrase clears the row even with NO routed-family token anywhere in it.
+    row = (
+        "| P1 greedy gen | 0.5–0.6 | same as wall | vLLM batched, chunk 500 "
+        "| 1.5 M tok at ≥ 3 k tok/s H100 basis, × 2–2.5 stated per-step rate to the "
+        "routed lane |\n"
+    )
+    plan = GOOD_PLAN + C26_INTENT_LORA7B + C26_HEADER + row
+    assert _status(plan, "c26_gpu_basis_routed_machine") == "PASS"
+
+
+def test_c26_routed_gpu_also_named_in_row_passes():
+    # Routed-family escape in isolation: the #1073 v4 wall-cell shape
+    # `0.25 (H100) / 0.5-0.6 (A100, x2-2.5)` names the routed family in a
+    # CONVERSION-BEARING cell; no scaling vocabulary anywhere (a bare
+    # multiplication sign is not scaling vocab).
+    row = (
+        "| P1 greedy gen | 0.25 (H100) / 0.5–0.6 (A100, ×2–2.5) | same as wall "
+        "| vLLM batched, chunk 500 | 1.5 M tok at ≥ 3 k tok/s (H100 Qwen-7B) |\n"
+    )
+    plan = GOOD_PLAN + C26_INTENT_LORA7B + C26_HEADER + row
+    assert _status(plan, "c26_gpu_basis_routed_machine") == "PASS"
+
+
+def test_c26_component_times_symbol_is_not_scaling_escape():
+    # The ban on the bare-multiplication-sign escape: the verbatim #1073 v3
+    # P1 row's component cell carries `5,000 x ~300 tok` multiplier
+    # arithmetic — the sign alone must NOT escape (it appears in nearly
+    # every row, offending and compliant).
+    assert "×" in C26_V3_P1_ROW
+    assert _status(GOOD_PLAN + C26_WARN_SHAPE, "c26_gpu_basis_routed_machine") == "WARN"
+
+
+def test_c26_matching_gpu_basis_passes():
+    # #920 v3 shape: A100-measured basis under `--intent capture-7b`
+    # (routed A100) — family match, no offender.
+    plan = GOOD_PLAN + "\n`--intent capture-7b` on the GCP lane.\n" + C26_HEADER + C26_920_ROW
+    assert _status(plan, "c26_gpu_basis_routed_machine") == "PASS"
+
+
+def test_c26_eval_intent_l4_vs_a100_basis_warns():
+    # Acceptance criterion 4: the #744 v2 shape — `--intent eval` routes L4
+    # under auto while the basis is an A100-measured forward (the routing
+    # later OOM'd; #752 created `capture-7b`).
+    plan = GOOD_PLAN + C26_INTENT_EVAL + C26_HEADER + C26_744_ROW
+    _, by_id = _run(plan)
+    r = by_id["c26_gpu_basis_routed_machine"]
+    assert r.status == "WARN"
+    assert "A100" in r.detail
+    assert "L4" in r.detail
+
+
+def test_c26_intent_h100_variant_passes():
+    # An H100 GCP intent variant routes H100 — an H100 basis matches.
+    plan = GOOD_PLAN + "\n`--intent eval-h100` (2× H100).\n" + C26_HEADER + C26_V3_P1_ROW
+    assert _status(plan, "c26_gpu_basis_routed_machine") == "PASS"
+
+
+def test_c26_multi_intent_union():
+    # Union semantics across ALL resolved intents: {lora-7b, eval} routes
+    # {A100, L4} — an H100 basis still WARNs; an A100 basis PASSes.
+    intents = "\nPhase 1: `--intent lora-7b`; phase 2: `--intent eval`.\n"
+    warn_plan = GOOD_PLAN + intents + C26_HEADER + C26_V3_P1_ROW
+    assert _status(warn_plan, "c26_gpu_basis_routed_machine") == "WARN"
+    pass_plan = GOOD_PLAN + intents + C26_HEADER + C26_744_ROW
+    assert _status(pass_plan, "c26_gpu_basis_routed_machine") == "PASS"
+
+
+def test_c26_runpod_pin_skips():
+    # The #778 v8:73 pin shape: under `backend: runpod` the RunPod H100/H200
+    # intent table governs and an H100 basis is correct → SKIP.
+    plan = GOOD_PLAN + C26_778_PIN_LINE + C26_HEADER + C26_V3_P1_ROW
+    _, by_id = _run(plan)
+    r = by_id["c26_gpu_basis_routed_machine"]
+    assert r.status == "SKIP"
+    assert "runpod" in r.detail
+
+
+def test_c26_no_intent_skips():
+    # A basis-bearing table with NO resolvable intent token anywhere: the
+    # auto-lane GPU cannot be inferred from text → SKIP, never a guess.
+    plan = GOOD_PLAN + C26_HEADER + C26_V3_P1_ROW
+    _, by_id = _run(plan)
+    r = by_id["c26_gpu_basis_routed_machine"]
+    assert r.status == "SKIP"
+    assert "--intent" in r.detail
+
+
+def test_c26_no_compute_table_skips():
+    # An intent with no basis-header compute table → SKIP (trigger absent).
+    assert _status(GOOD_PLAN + C26_INTENT_LORA7B, "c26_gpu_basis_routed_machine") == "SKIP"
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
+def test_c26_kind_exempt_skips(kind):
+    assert _status(GOOD_PLAN + C26_WARN_SHAPE, "c26_gpu_basis_routed_machine", kind=kind) == "SKIP"
+
+
+def test_c26_kind_analysis_warns():
+    # analysis is IN scope (compute-projection tables are an
+    # experiment|analysis plan shape) — same WARN severity as experiment.
+    assert (
+        _status(GOOD_PLAN + C26_WARN_SHAPE, "c26_gpu_basis_routed_machine", kind="analysis")
+        == "WARN"
+    )
+
+
+def test_c26_na_escape_passes():
+    plan = (
+        GOOD_PLAN
+        + C26_WARN_SHAPE
+        + "\nN/A — basis measured on the routed machine (the H100 token is provenance "
+        "prose, not the measurement machine).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c26_gpu_basis_routed_machine"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c26_quoted_na_phrase_does_not_escape():
+    # A mid-sentence quoted escape phrase (the pasted-bounce-brief
+    # self-escape channel) is NOT a standalone declaration line and must not
+    # escape — the c13/c18/c24/c25 anti-paste twin.
+    plan = (
+        GOOD_PLAN
+        + C26_WARN_SHAPE
+        + "\nThe remedy menu says to declare 'N/A — basis measured on the routed machine' "
+        "on its own line.\n"
+    )
+    assert _status(plan, "c26_gpu_basis_routed_machine") == "WARN"
+
+
+def test_c26_l4_phase_label_not_gpu_token():
+    # The #833 v6 collision: `L1/L2 re-extraction, L3/L4 extraction` leg
+    # labels share the L4 GPU token — L4 is deliberately EXCLUDED from the
+    # trigger set, so a basis naming only phase labels never fires.
+    row = (
+        "| L3/L4 extraction of R⁺ | 8.0 | 8.0 | vLLM 0.11.0 multi-LoRA greedy "
+        "| same-era L3/L4 re-extraction of R_base′, measured #667 precedent |\n"
+    )
+    plan = GOOD_PLAN + C26_INTENT_LORA7B + C26_HEADER + row
+    assert _status(plan, "c26_gpu_basis_routed_machine") == "PASS"
+
+
+def test_c26_fenced_table_does_not_trigger():
+    # A fenced example table is not the plan's compute table (fence-masked
+    # header detection, the c24 fenced-trigger twin) → SKIP.
+    plan = (
+        GOOD_PLAN
+        + C26_INTENT_LORA7B
+        + "\n```\n"
+        + C26_HEADER.strip("\n")
+        + "\n"
+        + C26_V3_P1_ROW
+        + "```\n"
+    )
+    assert _status(plan, "c26_gpu_basis_routed_machine") == "SKIP"
+
+
+def test_c26_parallelism_cell_routed_gpu_does_not_escape():
+    # Must-Fix M1 fixture (#810 v18 / #923 v9 house style): a parallelism
+    # cell truthfully naming the PROVISIONED machine (`1x A100-80`) carries
+    # zero conversion information — it must NOT escape an unscaled H100
+    # basis (a whole-row escape would wrongly PASS this shape).
+    row = "| P2 extraction | 0.6 | 0.6 | 1× A100-80 batch-8 forwards | H100 #779 measured |\n"
+    plan = GOOD_PLAN + C26_INTENT_LORA7B + C26_HEADER + row
+    assert _status(plan, "c26_gpu_basis_routed_machine") == "WARN"
+
+
+def test_c26_annotated_basis_header_variant_parses():
+    # The #952 v12 header variant `basis (measured)` — surfaced by the §6.2
+    # corpus calibration as a realized SKIP-no-table on a predicted-parseable
+    # file — must be recognized as a basis column (a header cell that IS or
+    # BEGINS WITH the word "basis").
+    header = (
+        "\n| component | planned_wall_h | planned_gpu_h | parallelism | basis (measured) |\n"
+        "|---|---|---|---|---|\n"
+    )
+    plan = GOOD_PLAN + C26_INTENT_LORA7B + header + C26_V3_P1_ROW
+    assert _status(plan, "c26_gpu_basis_routed_machine") == "WARN"
+
+
+def test_c26_bold_total_short_row_no_crash():
+    # A bold `**Base total**` row carrying fewer cells than the header must
+    # not IndexError at row[basis_col]; the sibling offender row is still
+    # evaluated.
+    table = C26_HEADER + C26_V3_P1_ROW + "| **Base total** | 4.2 |\n"
+    plan = GOOD_PLAN + C26_INTENT_LORA7B + table
+    assert _status(plan, "c26_gpu_basis_routed_machine") == "WARN"
+
+
+def test_c26_escape_regex_covers_all_mirror_families():
+    # Companion drift assert: every non-CPU family the mirror can route must
+    # be matchable by the escape alternation — a future routed family absent
+    # from _C26_ROW_GPU_ANY_RE would make compliant rows unescapable
+    # (systematic false positives).
+    for family in set(verify_plan._C26_INTENT_GPU.values()):
+        if family == "CPU":
+            continue
+        m = verify_plan._C26_ROW_GPU_ANY_RE.search(family)
+        assert m, f"escape regex misses mirror family {family!r}"
+        assert verify_plan._c26_family(m.group(1)) == family
+
+
+def test_c26_prose_intent_form_resolves():
+    # The #1073 v3:240 "Target pod preference" shape: the ONLY intent mention
+    # is the capitalized prose form ``Intent `lora-7b` `` (group 2 of
+    # _C26_INTENT_RE) — resolution must still work (non-SKIP).
+    plan = (
+        GOOD_PLAN
+        + "\nIntent `lora-7b` (1× A100-80 GCP / 1× H100 RunPod); explicitly NOT the L4 lane.\n"
+        + C26_HEADER
+        + C26_V3_P1_ROW
+    )
+    assert _status(plan, "c26_gpu_basis_routed_machine") == "WARN"
+
+
+def test_c26_fenced_backend_runpod_pin_skips():
+    # The pin regex scans RAW (fences included): a plan whose ONLY runpod pin
+    # is a fenced `--backend runpod` dispatch line is really pinned → SKIP
+    # (closes the fence-asymmetry FP mode; permissive direction only).
+    plan = (
+        GOOD_PLAN + "\n```bash\nuv run python scripts/dispatch_issue.py launch --issue 999 "
+        "--intent lora-7b --backend runpod\n```\n" + C26_HEADER + C26_V3_P1_ROW
+    )
+    assert _status(plan, "c26_gpu_basis_routed_machine") == "SKIP"
+
+
+def test_c26_intent_gpu_mirror_matches_backend():
+    # Drift guard (acceptance criterion 6): the static family-grain mirror
+    # equals the live GCP INTENT_TO_MACHINE — an intent add/change on the
+    # backend fails the full suite loudly (precedent:
+    # test_kind_enum_constants_match_canonical_code_kinds).
+    sys.path.insert(0, str(REPO_ROOT / "src"))
+    from explore_persona_space.backends.gcp import INTENT_TO_MACHINE
+
+    derived = {k: verify_plan._c26_family(v.gpu_kind) for k, v in INTENT_TO_MACHINE.items()}
+    assert derived == verify_plan._C26_INTENT_GPU
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -3507,12 +3811,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 18
+    assert payload["n_skip"] == 19
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 26
-    assert len({c["id"] for c in payload["checks"]}) == 26
+    assert len(payload["checks"]) == 27
+    assert len({c["id"] for c in payload["checks"]}) == 27
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")

@@ -54,12 +54,14 @@ Check catalog (id — classification — kind scope)
       validation                                          analysis
   c25 html entities in fenced   FAIL, conditional         all kinds
       command blocks
+  c26 GPU basis vs routed       WARN-only, conditional    experiment +
+      machine                                             analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24, 25) also SKIP when their content trigger does not
-fire.
+19, 20, 21, 22, 23, 24, 25, 26) also SKIP when their content trigger does
+not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -88,6 +90,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
     arm-(a) shell-tagged content fences ONLY; an arm-(b) fence whose body
     carries ``--workload-cmd`` / ``dispatch_issue.py`` FAILs on entities
     unconditionally)
+  - ``N/A — basis measured on the routed machine`` (check 26)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -3655,6 +3658,223 @@ def check_html_entities_in_commands(plan: str, kind: str) -> CheckResult:
     return _pass(cid, name, f"{len(arm_a) + len(arm_b)} command fence(s), no entity forms")
 
 
+# ─── Check 26 — GPU basis vs routed machine (WARN-only, conditional) ────────
+# Mechanizes .claude/rules/plan-compute-sizing.md § "Cost wall-time against
+# the machine the router will ACTUALLY provision" (#599/#833/#1073 class).
+# STATIC MIRROR of backends/gcp.py::INTENT_TO_MACHINE at FAMILY grain,
+# drift-guarded by tests/test_verify_plan.py::
+# test_c26_intent_gpu_mirror_matches_backend — verify_plan_text() stays
+# hermetic (no project imports at module level; the only project import in
+# this file is the --issue-mode-local task_workflow resolver).
+_C26_INTENT_GPU: dict[str, str] = {
+    "lora-7b": "A100",
+    "lora": "A100",
+    "capture-7b": "A100",
+    "ft-7b": "A100",
+    "eval": "L4",
+    "debug": "L4",
+    "lora-7b-h100": "H100",
+    "eval-h100": "H100",
+    "cpu-bigmem": "CPU",
+    "cpu-small": "CPU",
+    "cpu-mid": "CPU",
+    "sweep-8g-a100": "A100",
+    "sweep-8g-h100": "H100",
+}
+
+
+def _c26_family(token: str) -> str:
+    """GPU family normalization: strip a trailing ``-<digits>`` HBM-size
+    suffix (``A100-80`` == ``A100-40`` == ``A100``; ``H100-80`` == ``H100``;
+    ``L4``/``CPU`` unchanged). A100-40-vs-A100-80 differences are
+    deliberately below the heuristic's grain."""
+    return re.sub(r"-\d+$", "", token)
+
+
+# GPU family tokens ALLOWED in a basis cell trigger. L4/L40S deliberately
+# EXCLUDED from the trigger set: #833-style leg labels ("L1/L2 re-extraction,
+# L3/L4 extraction") collide with the L4 GPU token; nobody measures bases on
+# an L4, while the ROUTED side still knows L4 via the mirror. Included in the
+# ESCAPE scan (permissive direction only).
+_C26_BASIS_GPU_RE = re.compile(r"\b(H100|H200|A100(?:-[48]0)?|B200)\b")
+_C26_ROW_GPU_ANY_RE = re.compile(r"\b(H100|H200|A100(?:-[48]0)?|B200|L40S|L4)\b")
+
+# Scaling vocabulary (row-scoped escape). A bare multiplication sign is NOT
+# an escape — it appears in nearly every row's multiplier arithmetic
+# ("5,000 x ~300 tok", "draws x cells"); #1073 v3's offending row contains
+# one and was still the incident (plan #1075 calibration finding).
+_C26_SCALING_RE = re.compile(
+    r"(?i)\bscal(?:ed|ing|e factor)\b|per-?step rate|step-?time|rate-?convert"
+)
+
+# Intent resolution: --intent <tok> in prose or fences (c5 precedent: RAW
+# scan); additionally accepted: the "intent `lora-7b`" prose form
+# (#1073 v3 "Target pod preference" shape — capitalized "Intent" in the
+# wild, hence (?i)).
+_C26_INTENT_RE = re.compile(
+    r"(?i)--intent[=\s]+`?([A-Za-z0-9][A-Za-z0-9-]*)|\bintent\s+`([A-Za-z0-9][A-Za-z0-9-]*)`"
+)
+
+# Explicit RunPod pin → the RunPod H100/H200 intent table governs; SKIP.
+# Scanned RAW (fences included), matching the raw intent scan — a fenced
+# `--backend runpod` dispatch line is a real pin; permissive direction only.
+_C26_RUNPOD_PIN_RE = re.compile(r"(?i)\bbackend:\s*`?runpod\b|--backend[=\s]+`?runpod\b")
+
+
+def _c26_intents(plan: str) -> set[str]:
+    """Intent tokens resolved from RAW plan text (fences included — a fenced
+    dispatch line is the real launch command, the c5 raw-scan precedent).
+    Union of the ``--intent <tok>`` flag form (group 1) and the
+    ``intent `tok` `` prose form (group 2)."""
+    out: set[str] = set()
+    for m in _C26_INTENT_RE.finditer(plan):
+        tok = m.group(1) or m.group(2)
+        if tok:
+            out.add(tok)
+    return out
+
+
+def _c26_compute_table_rows(plan: str) -> list[tuple[str, str, str, str]]:
+    """``(component_cell, basis_cell, wall_cell, full_row_text)`` for every
+    body row of every non-fenced markdown table whose header carries a
+    ``basis`` column (a cell that IS or BEGINS WITH the word ``basis``,
+    casefolded, bold/backticks stripped — the corpus carries an annotated
+    ``basis (measured)`` variant, #952 v12) AND a wall column (fuzzy: any
+    header cell CONTAINING ``wall`` — matches ``planned_wall_h`` /
+    ``planned wall h`` / ``wall_h`` drift). Header
+    detection is fence-masked (a fenced example table is not the plan's
+    table — the ``_trigger_windows`` precedent; this deliberately diverges
+    from ``_source_column_cells``, which is section-scoped instead: c26
+    scans the whole doc because §9 heading text drifts). A row with fewer
+    cells than the basis column needs is skipped defensively (the bold
+    ``**Base total**`` short-row shape — no IndexError); a short row that
+    still reaches the basis column is treated normally with an empty wall
+    cell."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    rows: list[tuple[str, str, str, str]] = []
+    i = 0
+    while i < len(lines) - 1:
+        header = lines[i].strip()
+        sep = lines[i + 1].strip()
+        if mask[i] or not (
+            header.startswith("|") and sep.startswith("|") and _TABLE_SEP_RE.fullmatch(sep)
+        ):
+            i += 1
+            continue
+        header_cells = [c.strip().strip("*`").strip().casefold() for c in _split_table_row(header)]
+        basis_col = next((j for j, c in enumerate(header_cells) if re.match(r"basis\b", c)), None)
+        wall_col = next((j for j, c in enumerate(header_cells) if "wall" in c), None)
+        k = i + 2
+        while k < len(lines) and lines[k].strip().startswith("|"):
+            if basis_col is not None and wall_col is not None:
+                row = _split_table_row(lines[k])
+                if basis_col < len(row):
+                    component = row[0] if row else ""
+                    wall = row[wall_col] if wall_col < len(row) else ""
+                    rows.append((component, row[basis_col], wall, lines[k]))
+            k += 1
+        i = k
+    return rows
+
+
+def _c26_offender_detail(offenders: list[tuple[str, str]], routed: set[str]) -> str:
+    """Bounded WARN detail (c13 ``_offender_detail`` precedent): at most 3
+    offending rows (component + the offending GPU token), the resolved
+    routed families, the #599 incident anchor, and BOTH remedies (a stated
+    per-step scaling rate in the row, or the standalone N/A phrase)."""
+    shown = "; ".join(f"row {comp[:60]!r} basis names {tok}" for comp, tok in offenders[:3])
+    if len(offenders) > 3:
+        shown += "; ..."
+    return (
+        f"{shown} but resolved intent(s) route {sorted(routed)} under auto (GCP "
+        "INTENT_TO_MACHINE) with no stated cross-GPU scaling in the row — a basis "
+        "measured on a different GPU must be scaled with a stated per-step rate "
+        "(plan-compute-sizing.md; #599: an H100-premised ~6.4h estimate ran ~34h on "
+        "the A100 auto-lane), or declare 'N/A — basis measured on the routed machine' "
+        "on its own line"
+    )
+
+
+def check_gpu_basis_routed_machine(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a §9 compute-projection-table basis cell naming
+    a GPU family (H100/H200/A100/B200) that differs from EVERY family the
+    plan's resolved --intent token(s) route under auto (static GCP
+    INTENT_TO_MACHINE mirror, _C26_INTENT_GPU), with no row-level escape.
+    Mechanizes plan-compute-sizing.md § "Cost wall-time against the machine
+    the router will ACTUALLY provision" (#599 ~6.4h -> ~34h; #1073 v3 -> v4).
+    Row escapes: (a) the routed family named in a CONVERSION-BEARING cell —
+    the wall or basis cell ONLY (a stated conversion names both machines
+    there, #1073 v4 wall cell "0.25 (H100) / 0.5-0.6 (A100, x2-2.5)");
+    a parallelism/component-cell mention describes the PROVISIONED machine,
+    not a conversion, and does NOT escape (plan #1075 Must-Fix M1 — #810 v18
+    / #923 v9 rows put "1x A100-80" in parallelism/component cells);
+    (b) scaling vocabulary (scaled/per-step rate/...) anywhere in the row.
+    NEVER FAILs in v1 — both sides are heuristic (intent resolution from
+    text; token matching), and whether a stated scaling factor is CORRECT
+    stays critic-owned (c24 precedent). Known accepted gaps: a basis citing
+    a prior issue's realized wall WITHOUT naming its GPU (#599's shape)
+    is invisible; a "recommended pin: backend: runpod" prose mention
+    escapes as if pinned (#779 v6); a conversion stated as a BARE
+    multiplier with no vocabulary word ("on H100, x2.5" — #628 v2, the one
+    adjudicated calibration FP) still WARNs, because bare-multiplier
+    arithmetic saturates compliant AND offending rows alike (#1073 v3) —
+    the remedy is one vocabulary word in the row; A100-40 vs A100-80 is
+    below the family grain; a routed-family mention in the wall/basis
+    cell escapes
+    without a true conversion (conversion ADEQUACY stays critic-owned);
+    a standalone N/A declaration is document-wide (c24 /
+    ``_standalone_na_declared`` family semantics), so it also clears any
+    sibling offender row — the deliberate-override purpose of the phrase."""
+    cid, name = "c26_gpu_basis_routed_machine", "GPU basis vs routed machine"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: compute-projection tables are an experiment|analysis plan shape",
+        )
+    rows = _c26_compute_table_rows(plan)
+    if not rows:
+        return _skip(cid, name, "no compute-projection table with a `basis` column detected")
+    if _standalone_na_declared(plan, r"basis measured on the routed machine"):
+        return _pass(cid, name, "explicit N/A declared (basis measured on the routed machine)")
+    if _C26_RUNPOD_PIN_RE.search(plan):
+        # RAW scan (fences included): a fenced `--backend runpod` dispatch
+        # line is a real pin; permissive direction (can only add SKIPs).
+        return _skip(
+            cid,
+            name,
+            "explicit backend: runpod pin — the RunPod intent table governs the basis machine",
+        )
+    routed = {_C26_INTENT_GPU[i] for i in _c26_intents(plan) if i in _C26_INTENT_GPU}
+    if not routed:
+        return _skip(
+            cid,
+            name,
+            "no resolvable --intent token — routed machine unknown (auto-lane GPU cannot "
+            "be inferred)",
+        )
+    offenders: list[tuple[str, str]] = []
+    for component, basis, wall, row_text in rows:
+        hit = _C26_BASIS_GPU_RE.search(basis)
+        if not hit or _c26_family(hit.group(1)) in routed:
+            continue
+        # Escape (a): routed family named in a CONVERSION-BEARING cell only
+        # (wall + basis) — NOT parallelism/component (Must-Fix M1).
+        conv_cells = f"{basis} {wall}"
+        conv_families = {_c26_family(m.group(1)) for m in _C26_ROW_GPU_ANY_RE.finditer(conv_cells)}
+        if conv_families & routed or _C26_SCALING_RE.search(row_text):
+            continue
+        offenders.append((component, hit.group(1)))
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(rows)} table row(s); no unscaled cross-GPU basis vs routed {sorted(routed)}",
+        )
+    return _warn(cid, name, _c26_offender_detail(offenders, routed))
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -3682,6 +3902,7 @@ CHECKS = [
     check_cross_section_param_consistency,
     check_resume_provenance,
     check_html_entities_in_commands,
+    check_gpu_basis_routed_machine,
 ]
 
 
