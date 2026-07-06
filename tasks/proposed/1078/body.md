@@ -2,7 +2,6 @@
 title: 'daily-fix: paper_palette crashes at >8 colors - extend grace'
 kind: infra
 tags:
-- wf-fix-fp:7912911321a0
 - daily-auto-filed
 created_at: '2026-07-06T06:58:32Z'
 has_clean_result: false
