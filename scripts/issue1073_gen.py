@@ -20,6 +20,7 @@ BEFORE any capture (upload policy / #779 lesson), engine reaped at phase end.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -84,34 +85,100 @@ def _reap_engine(llm, smoke: bool) -> None:
     _reap_vllm_engine(llm)
 
 
-def _generate_chunked(llm, prompt_texts: list[str], sp, tag: str) -> list[list[dict]]:
+def _gen_chunk_regime(arm: str, sp_dict: dict, model_id: str, texts: list[str]) -> dict:
+    """Resume regime key for per-chunk gen checkpoints.
+
+    Pins EVERY output-affecting knob (arm, decode params, model, prompt-set
+    fingerprint, chunk size) — a resume that ignores a regime key silently
+    reuses wrong cached rows (#722 r3).
+    """
+    fp = hashlib.sha256("\x00".join(texts).encode()).hexdigest()[:16]
+    return {
+        "arm": arm,
+        "sampling_params": dict(sp_dict),
+        "model": model_id,
+        "n_prompts": len(texts),
+        "prompt_set_sha16": fp,
+        "chunk_size": VLLM_CHUNK_SIZE,
+    }
+
+
+def _generate_chunked(
+    llm,
+    prompt_texts: list[str],
+    sp,
+    tag: str,
+    *,
+    checkpoint_dir: Path | None = None,
+    regime: dict | None = None,
+) -> list[list[dict]]:
     """Chunked ``llm.generate`` (deadlock prevention, per-chunk INFO logs).
+
+    With ``checkpoint_dir`` + ``regime`` set (the P1/P2 arm path), each chunk's
+    records are persisted ATOMICALLY (tmp+rename via ``write_json_compact``)
+    the moment ``llm.generate`` returns — BEFORE the next chunk launches — and
+    completed chunks are SKIPPED on re-entry after a fail-loud regime-key
+    match (code-style intra-phase checkpoint grain; a mid-arm crash loses at
+    most the in-flight chunk). vLLM seeding is per-request
+    (``SamplingParams.seed``), so a chunk restart reproduces the same draws.
 
     Returns, per prompt, a list of {text, n_tokens, finish_reason} records.
     """
+    assert (checkpoint_dir is None) == (regime is None), "checkpoint_dir and regime travel together"
+    crash_after = os.environ.get("EPM_I1073_GEN_CRASH_AFTER_CHUNK")  # test hook (smoke only)
     out: list[list[dict]] = []
     n_chunks = (len(prompt_texts) + VLLM_CHUNK_SIZE - 1) // VLLM_CHUNK_SIZE
-    for i in range(0, len(prompt_texts), VLLM_CHUNK_SIZE):
+    if checkpoint_dir is not None:
+        checkpoint_dir.mkdir(parents=True, exist_ok=True)
+    for k, i in enumerate(range(0, len(prompt_texts), VLLM_CHUNK_SIZE)):
         chunk = prompt_texts[i : i + VLLM_CHUNK_SIZE]
+        ck = checkpoint_dir / f"{tag}.chunk{k:03d}.json" if checkpoint_dir is not None else None
+        if ck is not None and ck.exists():
+            with open(ck) as f:
+                blob = json.load(f)
+            assert blob["regime"] == regime, (
+                f"gen-chunk resume regime mismatch at {ck}: {blob['regime']} != {regime} "
+                "(clear the stale gen_chunks dir to regenerate)"
+            )
+            assert len(blob["outputs"]) == len(chunk), (str(ck), len(blob["outputs"]), len(chunk))
+            out.extend(blob["outputs"])
+            logger.info("[vllm-chunk] %s chunk %d/%d resumed from checkpoint", tag, k + 1, n_chunks)
+            continue
         logger.info(
             "[vllm-chunk] %s chunk %d/%d (%d prompts x n=%d)",
             tag,
-            i // VLLM_CHUNK_SIZE + 1,
+            k + 1,
             n_chunks,
             len(chunk),
             sp.n,
         )
         chunk_out = llm.generate(chunk, sp, use_tqdm=False)
-        for o in chunk_out:
-            out.append(
-                [
-                    {
-                        "text": c.text,
-                        "n_tokens": len(c.token_ids),
-                        "finish_reason": str(getattr(c, "finish_reason", "unknown")),
-                    }
-                    for c in o.outputs
-                ]
+        records = [
+            [
+                {
+                    "text": c.text,
+                    "n_tokens": len(c.token_ids),
+                    "finish_reason": str(getattr(c, "finish_reason", "unknown")),
+                }
+                for c in o.outputs
+            ]
+            for o in chunk_out
+        ]
+        if ck is not None:
+            I.write_json_compact(
+                ck,
+                {
+                    "regime": regime,
+                    "chunk_index": k,
+                    "prompt_range": [i, i + len(chunk)],
+                    "outputs": records,
+                },
+            )
+        out.extend(records)
+        if crash_after is not None and (k + 1) == int(crash_after):
+            raise RuntimeError(
+                f"[test-hook] EPM_I1073_GEN_CRASH_AFTER_CHUNK={crash_after}: simulated crash "
+                f"after persisting chunk {k + 1}/{n_chunks}"
             )
     return out
 
@@ -476,8 +543,20 @@ def _run_gen_arm(args, arm: str, sp_dict: dict) -> int:
     logger.info("[%s] %d prompts (max formatted len %d tokens)", arm, len(texts), max_prompt)
 
     t0 = time.time()
+    # Intra-phase checkpoint grain (round-2 blocker fix): per-chunk atomic
+    # persistence + regime-keyed resume, so a vLLM crash at chunk k/N loses at
+    # most one chunk of the ~2-2.5 h stoch10 generation instead of the arm.
+    regime = _gen_chunk_regime(arm, sp_dict, args.model, texts)
+    chunk_dir = root / "gen_chunks" / arm
     llm = _make_engine(args.model, args.smoke, model=model, tokenizer=tokenizer)
-    gen = _generate_chunked(llm, texts, _sampling_params(sp_dict, args.smoke), arm)
+    gen = _generate_chunked(
+        llm,
+        texts,
+        _sampling_params(sp_dict, args.smoke),
+        arm,
+        checkpoint_dir=chunk_dir,
+        regime=regime,
+    )
     _reap_engine(llm, args.smoke)
 
     records = []

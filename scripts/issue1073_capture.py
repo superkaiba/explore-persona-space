@@ -38,12 +38,16 @@ if str(PROJECT_ROOT / "src") not in sys.path:
 if str(PROJECT_ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
-import issue779_capture_answer_summaries as P1  # noqa: E402
+import hashlib  # noqa: E402
 
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # BEFORE torch/numpy: shared-VM thread caps bind at import (#847)
 
+# Sibling scripts import torch at THEIR module top, so they must come AFTER
+# load_dotenv() or the shared-VM thread caps never bind (#847/#891 — round-1
+# review minor: transitive torch-before-dotenv).
+import issue779_capture_answer_summaries as P1  # noqa: E402
 import issue1073_common as I  # noqa: E402
 import torch  # noqa: E402
 
@@ -140,16 +144,46 @@ def equivalence_gate(model, tokenizer, layers: list[int]) -> dict:
         a = ref["v_x"].double().flatten()
         c = b["summ"].double().flatten()
         cos_min = min(cos_min, float(torch.dot(a, c) / (a.norm() * c.norm() + 1e-12)))
-    assert cos_min >= 0.999, (
-        f"capture-equivalence gate FAILED: flat cos {cos_min:.6f} < 0.999 "
-        "(kill criterion 1 — fix before P3)"
-    )
+    if cos_min < 0.999:
+        # Kill criterion 1 — same epm:failure sentinel shape as kill criteria 2
+        # (issue1073_gen._p0 branch iii) and 3 (issue1073_fits.repro_gate), so
+        # the poller drains a uniform failure record (round-1 review minor).
+        I.write_sentinel(
+            "epm:failure",
+            json.dumps(
+                {
+                    "failure_class": "code",
+                    "reason": "capture-equivalence-gate",
+                    "assert_tag": "capture-equivalence-gate",
+                    "cos_min": cos_min,
+                    "detail": ("batched-vs-batch-1 span-mean flat cos < 0.999 (kill criterion 1)"),
+                }
+            ),
+        )
+        raise SystemExit(
+            f"P0 HALT: capture-equivalence gate FAILED (kill criterion 1): "
+            f"flat cos {cos_min:.6f} < 0.999"
+        )
     logger.info("[gate] batched-vs-batch-1 span-mean equivalence PASS (cos_min=%.6f)", cos_min)
     return {"cos_min": cos_min, "bar": 0.999, "n_items": len(items)}
 
 
 def _shard_name(arm: str, k: int) -> str:
     return f"{arm}_v_shard{k:03d}.pt"
+
+
+def _shard_items_fingerprint(items: list[dict]) -> str:
+    """Deterministic fingerprint of a shard's (ci, ri, response) sequence.
+
+    Ties a capture shard to the EXACT rollout text it was captured from, so a
+    resume skip cannot silently reuse a shard captured from different
+    generations (Codex round-1 minor; #722-r3 regime-key lesson)."""
+    h = hashlib.sha256()
+    for it in items:
+        h.update(f"{it['ci']}\x00{it['ri']}\x00".encode())
+        h.update(it["response"].encode())
+        h.update(b"\x01")
+    return h.hexdigest()[:16]
 
 
 def build_items(prompts: list[str], gen_records: list[dict], arm: str) -> list[dict]:
@@ -181,9 +215,20 @@ def run_arm(
     t0: float,
     total: int,
     done_holder: list[int],
+    model_id: str,
 ) -> None:
-    """Capture one arm, sharded by context (resume-by-skip keyed (arm, shard))."""
+    """Capture one arm, sharded by context. Resume-by-skip is REGIME-VALIDATED:
+    a shard is skipped only when its persisted regime block (model / layers /
+    shard grain) AND its per-shard rollout-text fingerprint match the current
+    run — never on path existence alone (round-1 Codex minor)."""
     store_dir.mkdir(parents=True, exist_ok=True)
+    regime = {
+        "arm": arm,
+        "model": model_id,
+        "layers": list(layers),
+        "shard_ctx": I.SHARD_CTX,
+        "n_ctx": n_ctx,
+    }
     by_ci: dict[int, list[dict]] = {}
     for it in items:
         by_ci.setdefault(it["ci"], []).append(it)
@@ -192,8 +237,15 @@ def run_arm(
         path = store_dir / _shard_name(arm, k)
         lo, hi = k * I.SHARD_CTX, min((k + 1) * I.SHARD_CTX, n_ctx)
         shard_items = [it for ci in range(lo, hi) for it in by_ci.get(ci, [])]
+        items_fp = _shard_items_fingerprint(shard_items)
         if path.exists():
-            logger.info("[%s] shard %d/%d exists; skip (resume)", arm, k + 1, n_shards)
+            blob = torch.load(path, mmap=True, weights_only=False, map_location="cpu")
+            got = (blob.get("regime"), blob.get("items_sha16"))
+            assert got == (regime, items_fp), (
+                f"capture shard resume regime mismatch at {path}: {got} != "
+                f"{(regime, items_fp)} (clear the stale shard to recapture)"
+            )
+            logger.info("[%s] shard %d/%d regime-matched; skip (resume)", arm, k + 1, n_shards)
             done_holder[0] += len(shard_items)
             continue
         logger.info(
@@ -211,6 +263,8 @@ def run_arm(
         torch.save(
             {
                 "arm": arm,
+                "regime": regime,
+                "items_sha16": items_fp,
                 "layers": layers,
                 "context_range": [lo, hi],
                 "index": [(it["ci"], it["ri"]) for it in shard_items],
@@ -351,6 +405,7 @@ def main() -> int:
             t0,
             total,
             done_holder,
+            model_id=args.model,
         )
 
     if {"greedy", "stoch10"} <= set(args.arms):

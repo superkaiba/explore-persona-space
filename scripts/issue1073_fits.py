@@ -41,14 +41,16 @@ if str(PROJECT_ROOT / "src") not in sys.path:
 if str(PROJECT_ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
-import issue779_percontext_recon as PR  # noqa: E402
-import issue779_stage1 as S1  # noqa: E402
-import issue1073_capture as CAP  # noqa: E402
-
 from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
 
 load_dotenv()  # BEFORE torch/numpy: shared-VM thread caps bind at import (#847)
 
+# Sibling scripts import torch at THEIR module top, so they must come AFTER
+# load_dotenv() or the shared-VM thread caps never bind (#847/#891 — round-1
+# review minor: transitive torch-before-dotenv).
+import issue779_percontext_recon as PR  # noqa: E402
+import issue779_stage1 as S1  # noqa: E402
+import issue1073_capture as CAP  # noqa: E402
 import issue1073_common as I  # noqa: E402
 import numpy as np  # noqa: E402
 import torch  # noqa: E402
@@ -388,6 +390,10 @@ def science_fits(ctx: dict, device: str, readout: list[int]) -> dict:
                 }
                 for name, a in acc.items()
             }
+            # Per-context components only for the LAST input at read-out layers
+            # (the registered reads — bootstrap consumes last_L{li} only; the
+            # mean-input block was dead weight pushing the JSON toward the
+            # 10 MB LFS force-route, round-1 review minor).
             pc = (
                 {
                     name: {
@@ -397,7 +403,7 @@ def science_fits(ctx: dict, device: str, readout: list[int]) -> dict:
                     }
                     for name, a in acc.items()
                 }
-                if is_readout
+                if want_details
                 else None
             )
             pdim = None
@@ -409,7 +415,11 @@ def science_fits(ctx: dict, device: str, readout: list[int]) -> dict:
                     for name, d in pd_acc.items()
                 }
                 _save_layer_preds(preds_acc, ctx, input_name, li, preds_dir)
-            torch.save({"regime": regime, "summary": summary, "percontext": pc, "perdim": pdim}, ck)
+            ck_tmp = ck.with_suffix(".pt.tmp")  # atomic: a crash mid-write must
+            torch.save(  # not leave a truncated checkpoint that crash-loops resume
+                {"regime": regime, "summary": summary, "percontext": pc, "perdim": pdim}, ck_tmp
+            )
+            ck_tmp.replace(ck)
             out[input_name][li] = summary
             if pc:
                 percontext[f"{input_name}_L{li}"] = pc
@@ -483,11 +493,32 @@ def _row_cos(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return num / den
 
 
-def _stoch_layer_matrix(store_dir: Path, li: int, keep_idx: np.ndarray, n_ctx: int) -> np.ndarray:
-    """(N_kept, 10, H) float64 per-rollout matrix at one layer from the fp16 store."""
+def _corr_pair(a: np.ndarray, b: np.ndarray) -> dict:
+    """DV2 registered statistic: Pearson (primary) + Spearman (companion)
+    across contexts of two per-context scalar series. Degenerate inputs
+    (n < 3 or zero variance — tiny-N smoke only) report null, never coerce."""
+    from scipy.stats import pearsonr, spearmanr
+
+    fin = np.isfinite(a) & np.isfinite(b)
+    if int(fin.sum()) < 3 or float(np.std(a[fin])) == 0.0 or float(np.std(b[fin])) == 0.0:
+        return {"pearson": None, "spearman": None, "n": int(fin.sum())}
+    return {
+        "pearson": float(pearsonr(a[fin], b[fin])[0]),
+        "spearman": float(spearmanr(a[fin], b[fin])[0]),
+        "n": int(fin.sum()),
+    }
+
+
+def _stoch_layer_matrix(store_dir: Path, li: int, keep_idx: np.ndarray) -> np.ndarray:
+    """(N_kept, 10, H) float64 per-rollout matrix at one layer from the fp16 store.
+
+    Fail-loud fill completeness: every (kept context, rollout) slot must be
+    filled exactly once — a missing rollout would otherwise remain a silent
+    zero vector and corrupt the DV4 cosines (round-1 review minor)."""
     pos_of = {int(ci): k for k, ci in enumerate(keep_idx.tolist())}
+    seen = np.zeros((len(keep_idx), I.N_ROLLOUTS), dtype=bool)
     v = None
-    for _p, shard in CAP.iter_shards(store_dir, "stoch10"):
+    for p, shard in CAP.iter_shards(store_dir, "stoch10"):
         li_pos = list(shard["layers"]).index(li)
         sl = shard["summ"][:, li_pos, :].to(torch.float64).numpy()
         if v is None:
@@ -495,8 +526,13 @@ def _stoch_layer_matrix(store_dir: Path, li: int, keep_idx: np.ndarray, n_ctx: i
         for row, (ci, ri) in enumerate(shard["index"]):
             k = pos_of.get(int(ci))
             if k is not None:
+                assert not seen[k, ri], f"duplicate rollout (ci={ci}, ri={ri}) in {p}"
+                seen[k, ri] = True
                 v[k, ri] = sl[row]
-    assert v is not None
+    assert v is not None and bool(seen.all()), (
+        f"stoch10 store fill incomplete at L{li}: {int(seen.sum())}/{seen.size} "
+        "(kept context, rollout) slots filled"
+    )
     return v
 
 
@@ -533,7 +569,7 @@ def target_agreement(ctx: dict, readout: list[int], rb_by_trait: dict, frozen: d
             "cos_greedy_stoch1_old": _row_cos(g, v_old).tolist(),
         }
         # DV4 jackknife (closed form; no per-leave-out loop): S = sum_j v_j.
-        v = _stoch_layer_matrix(store_dir, li, keep, ctx["n_ctx"])  # (n, 10, H)
+        v = _stoch_layer_matrix(store_dir, li, keep)  # (n, 10, H)
         s = v.sum(1)  # (n, H)
         vj_norm2 = np.einsum("njh,njh->nj", v, v)
         s_norm2 = np.einsum("nh,nh->n", s, s)
@@ -559,15 +595,32 @@ def target_agreement(ctx: dict, readout: list[int], rb_by_trait: dict, frozen: d
         out["per_layer"][f"L{li}"] = entry
 
     # Per-context <v_arm, r_B> projections at each trait's frozen SYSTEM layer
-    # (per-unit companion scatter, plan §6 figures).
+    # (per-unit companion scatter, plan §6 figures) for ALL FOUR arms, plus the
+    # DV2 REGISTERED statistic: Pearson (primary, parent convention) + Spearman
+    # (companion) across contexts of <v_arm(x), r_B> per arm pair (plan §6).
     proj = {}
     for trait, modes in frozen.items():
         li = modes["system"]
         rb = rb_by_trait[trait][li]
+        arm_proj = {
+            "greedy": _layer_np(ctx["v_greedy"], li)[keep] @ rb,
+            "avg10": _layer_np(ctx["vbar10"], li)[keep] @ rb,
+            "stoch1_old": _layer_np(ctx["bundle"]["v_x"], li)[keep] @ rb,
+            "stoch1_new": _layer_np(ctx["stoch1_new"], li)[keep] @ rb,
+        }
+        corr = {
+            f"{a}_vs_{b}": _corr_pair(arm_proj[a], arm_proj[b])
+            for a, b in (
+                ("greedy", "avg10"),
+                ("stoch1_old", "avg10"),
+                ("stoch1_new", "avg10"),
+                ("greedy", "stoch1_old"),
+            )
+        }
         proj[trait] = {
             "layer": li,
-            "greedy": (_layer_np(ctx["v_greedy"], li)[keep] @ rb).tolist(),
-            "avg10": (_layer_np(ctx["vbar10"], li)[keep] @ rb).tolist(),
+            **{name: x.tolist() for name, x in arm_proj.items()},
+            "correlations": corr,
         }
     out["rb_projections_system_layer"] = proj
     return out
@@ -819,9 +872,21 @@ def main() -> int:
             "per_input_layer": {
                 inp: {str(li): v for li, v in d.items()} for inp, d in fits["summary"].items()
             },
-            "readout_percontext_last": fits["percontext"],
+            "percontext_file": "heldout_recon_percontext.json",
             "val_lambda_robustness": vlr,
             "bootstrap": boot,
+            "metadata": meta,
+        },
+    )
+    # Per-context SSE/SST/cos components live in a SIBLING file (same dir, same
+    # upload commit) so heldout_recon_arms.json stays far under the 10 MB HF
+    # LFS force-route (round-1 review minor); last-input read-out layers only.
+    I.write_json_compact(
+        res_dir / "heldout_recon_percontext.json",
+        {
+            "science_stoch_arm_by_probe_branch": branch_map,
+            "common_set": common_block,
+            "readout_percontext_last": fits["percontext"],
             "metadata": meta,
         },
     )
