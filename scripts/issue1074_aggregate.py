@@ -251,7 +251,12 @@ def _judge_completion_files(
         items = []
         for i, q in enumerate(questions):
             for j, c in enumerate(completions[i]):
-                items.append((f"{state}-{ctx}-q{i:03d}-c{j}", q, c))
+                # Compact per-cell item id: the judge call is scoped to ONE
+                # (state, ctx) cell (cache_dir/save_raw per cell), and the Batch
+                # API custom_id encoder appends "__NNNNN__NN" (11 chars) to a
+                # 64-char-max id — a cell-slug-prefixed id overflowed it (run-2
+                # Phase D 400: 58+11=69 > 64). q/c indices are unique in-cell.
+                items.append((f"q{i:03d}-c{j}", q, c))
         cell_dir = judge_dir / f"{state}__{ctx}"
         cell_dir.mkdir(parents=True, exist_ok=True)
         jr = judge_graded(
@@ -267,7 +272,7 @@ def _judge_completion_files(
         scored, dropped, graded_sum = 0, 0, 0.0
         for i in range(len(questions)):
             for j in range(len(completions[i])):
-                score = jr.scores.get(f"{state}-{ctx}-q{i:03d}-c{j}")
+                score = jr.scores.get(f"q{i:03d}-c{j}")
                 if score is None:
                     dropped += 1
                     continue
