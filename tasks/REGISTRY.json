@@ -646,8 +646,8 @@
     "1082": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1082",
-      "status": "proposed",
+      "path": "tasks/planning/1082",
+      "status": "planning",
       "title": "daily-fix: task-corpus search recipe - children, follow-up l"
     },
     "1083": {
