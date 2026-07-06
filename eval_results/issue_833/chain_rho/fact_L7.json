@@ -1,0 +1,57 @@
+{
+  "behavior": "fact",
+  "layer": 7,
+  "n_with_E": 480,
+  "rho_M0_ridge": -0.16237521436821165,
+  "ci_M0_ridge": {
+    "point": -0.16237521436821165,
+    "ci_lo": -0.27522961455891504,
+    "ci_hi": -0.023737823071796855,
+    "n_families": 7
+  },
+  "rho_Mplus_off_ridge": 0.18765281445470297,
+  "ci_Mplus_off_ridge": {
+    "point": 0.187652814454703,
+    "ci_lo": 0.09191735585951899,
+    "ci_hi": 0.2888566092085383,
+    "n_families": 7
+  },
+  "rho_Mplus_on_ridge": 0.6728887762324388,
+  "ci_Mplus_on_ridge": {
+    "point": 0.6728887762324389,
+    "ci_lo": 0.48768335175814226,
+    "ci_hi": 0.7934434266073912,
+    "n_families": 7
+  },
+  "ci_diff_Mplus_off_minus_M0": {
+    "point": 0.3500280288229146,
+    "ci_lo": 0.2240799966516427,
+    "ci_hi": 0.4286769256054516,
+    "n_families": 7
+  },
+  "ci_diff_Mplus_on_minus_M0": {
+    "point": 0.8352639906006505,
+    "ci_lo": 0.6803762345470437,
+    "ci_hi": 0.924729242554204,
+    "n_families": 7
+  },
+  "ci_diff_Mplus_on_minus_Mplus_off": {
+    "point": 0.48523596177773587,
+    "ci_lo": 0.35854578729510983,
+    "ci_hi": 0.5672410601618904,
+    "n_families": 7
+  },
+  "mlp_gate": {
+    "epochs": 300,
+    "shuffle_seed": 833,
+    "rho_M0_mlp": -0.16198944811259033,
+    "rho_M0_mlp_shuffle": -0.12371242615196151,
+    "mlp_valid_M0": false,
+    "rho_Mplus_off_mlp": 0.16087872522910157,
+    "rho_Mplus_off_mlp_shuffle": 0.29259019078424714,
+    "mlp_valid_Mplus_off": false,
+    "rho_Mplus_on_mlp": 0.6759934711078283,
+    "rho_Mplus_on_mlp_shuffle": 0.1391471169575511,
+    "mlp_valid_Mplus_on": true
+  }
+}

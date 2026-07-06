@@ -1,0 +1,552 @@
+{
+  "commit": "65704c3e0c",
+  "created": "2026-07-06T03:19:16Z",
+  "figsize": [
+    11.5,
+    3.7
+  ],
+  "points": [
+    {
+      "normalized edit distance": 0.016667,
+      "response pairs (own vs base answer)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.05,
+      "response pairs (own vs base answer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.083333,
+      "response pairs (own vs base answer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.116667,
+      "response pairs (own vs base answer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.15,
+      "response pairs (own vs base answer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.183333,
+      "response pairs (own vs base answer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.216667,
+      "response pairs (own vs base answer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.25,
+      "response pairs (own vs base answer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.283333,
+      "response pairs (own vs base answer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.316667,
+      "response pairs (own vs base answer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.35,
+      "response pairs (own vs base answer)": 12.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.383333,
+      "response pairs (own vs base answer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.416667,
+      "response pairs (own vs base answer)": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.45,
+      "response pairs (own vs base answer)": 1.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.483333,
+      "response pairs (own vs base answer)": 16.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.516667,
+      "response pairs (own vs base answer)": 31.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.55,
+      "response pairs (own vs base answer)": 18.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.583333,
+      "response pairs (own vs base answer)": 14.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.616667,
+      "response pairs (own vs base answer)": 17.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.65,
+      "response pairs (own vs base answer)": 17.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.683333,
+      "response pairs (own vs base answer)": 66.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.716667,
+      "response pairs (own vs base answer)": 98.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.75,
+      "response pairs (own vs base answer)": 133.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.783333,
+      "response pairs (own vs base answer)": 199.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.816667,
+      "response pairs (own vs base answer)": 333.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.85,
+      "response pairs (own vs base answer)": 470.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.883333,
+      "response pairs (own vs base answer)": 696.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.916667,
+      "response pairs (own vs base answer)": 1613.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.95,
+      "response pairs (own vs base answer)": 5777.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.983333,
+      "response pairs (own vs base answer)": 4888.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "normalized edit distance": 0.016667,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.05,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.083333,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.116667,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.15,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.183333,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.216667,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.25,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.283333,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.316667,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.35,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.383333,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.416667,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.45,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.483333,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.516667,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.55,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.583333,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.616667,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.65,
+      "y": 6.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.683333,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.716667,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.75,
+      "y": 15.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.783333,
+      "y": 33.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.816667,
+      "y": 73.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.85,
+      "y": 142.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.883333,
+      "y": 441.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.916667,
+      "y": 1649.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.95,
+      "y": 1304.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.983333,
+      "y": 159.0,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "normalized edit distance": 0.016667,
+      "y": 31.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.05,
+      "y": 20.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.083333,
+      "y": 17.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.116667,
+      "y": 1.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.15,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.183333,
+      "y": 8.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.216667,
+      "y": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.25,
+      "y": 4.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.283333,
+      "y": 24.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.316667,
+      "y": 12.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.35,
+      "y": 44.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.383333,
+      "y": 25.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.416667,
+      "y": 32.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.45,
+      "y": 27.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.483333,
+      "y": 35.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.516667,
+      "y": 124.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.55,
+      "y": 162.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.583333,
+      "y": 145.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.616667,
+      "y": 258.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.65,
+      "y": 194.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.683333,
+      "y": 373.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.716667,
+      "y": 448.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.75,
+      "y": 573.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.783333,
+      "y": 821.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.816667,
+      "y": 1016.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.85,
+      "y": 1446.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.883333,
+      "y": 1763.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.916667,
+      "y": 2082.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.95,
+      "y": 1328.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "normalized edit distance": 0.983333,
+      "y": 983.0,
+      "_kind": "bar",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 90
+}

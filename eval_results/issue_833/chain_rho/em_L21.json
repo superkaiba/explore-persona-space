@@ -1,0 +1,57 @@
+{
+  "behavior": "em",
+  "layer": 21,
+  "n_with_E": 480,
+  "rho_M0_ridge": -0.07931106220973107,
+  "ci_M0_ridge": {
+    "point": -0.07931106220973107,
+    "ci_lo": -0.227239985647761,
+    "ci_hi": 0.07964572678796535,
+    "n_families": 7
+  },
+  "rho_Mplus_off_ridge": -0.08171663079674757,
+  "ci_Mplus_off_ridge": {
+    "point": -0.08171663079674758,
+    "ci_lo": -0.23041058119886593,
+    "ci_hi": 0.0561640189057674,
+    "n_families": 7
+  },
+  "rho_Mplus_on_ridge": -0.10234689775672781,
+  "ci_Mplus_on_ridge": {
+    "point": -0.10234689775672783,
+    "ci_lo": -0.2914914783439556,
+    "ci_hi": 0.03833730972868322,
+    "n_families": 7
+  },
+  "ci_diff_Mplus_off_minus_M0": {
+    "point": -0.0024055685870165017,
+    "ci_lo": -0.1426071643770336,
+    "ci_hi": 0.11064507827598481,
+    "n_families": 7
+  },
+  "ci_diff_Mplus_on_minus_M0": {
+    "point": -0.023035835546996744,
+    "ci_lo": -0.2230893161560254,
+    "ci_hi": 0.11575840089158349,
+    "n_families": 7
+  },
+  "ci_diff_Mplus_on_minus_Mplus_off": {
+    "point": -0.020630266959980242,
+    "ci_lo": -0.1831137793590155,
+    "ci_hi": 0.13130884715664556,
+    "n_families": 7
+  },
+  "mlp_gate": {
+    "epochs": 300,
+    "shuffle_seed": 833,
+    "rho_M0_mlp": -0.09701596039868016,
+    "rho_M0_mlp_shuffle": -0.0131167856078807,
+    "mlp_valid_M0": false,
+    "rho_Mplus_off_mlp": -0.07153210351043092,
+    "rho_Mplus_off_mlp_shuffle": 0.0009602064999836229,
+    "mlp_valid_Mplus_off": false,
+    "rho_Mplus_on_mlp": -0.1166236212152789,
+    "rho_Mplus_on_mlp_shuffle": 0.04477295801116065,
+    "mlp_valid_Mplus_on": false
+  }
+}
