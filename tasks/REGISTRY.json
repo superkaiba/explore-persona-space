@@ -688,8 +688,8 @@
     "1088": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1088",
-      "status": "running",
+      "path": "tasks/reviewing/1088",
+      "status": "reviewing",
       "title": "workflow-fix: verify_task_body HF count matcher \u2014 blobs-only per-namespace claims"
     },
     "1089": {
