@@ -7550,9 +7550,15 @@ suite directly and posts an `epm:test-verdict` event with the result.
       * `COMPARE_RC=1` → NEW failure(s) the branch introduced and/or a lint
         regression (the JSON names each). FAIL.
       * `COMPARE_RC=2` → indeterminate (PYTEST_RC ∉ {0,1} — aborted/interrupted
-        run; missing/empty junitxml; suite crash; unusable ledger; dirty
-        pristine oracle; systemic main breakage). FAIL — never PASS on
-        indeterminate.
+        run; missing/empty junitxml; suite crash; unusable ledger;
+        scratch-ineligible dirty oracle (contaminating src//pyproject.toml/uv.lock
+        dirt, a scan-set node, or a non-sparse work root — other root dirt
+        auto-falls back to a detached sparse scratch-worktree oracle at main
+        HEAD, reported as JSON "pristine_oracle": "scratch-worktree");
+        systemic main breakage). FAIL — never PASS on indeterminate.
+        COMPARE_OUT is valid JSON on EVERY exit path under --json (exit-2
+        payloads carry "indeterminate": true — an exit-2 payload's empty
+        new/stripped arrays are NOT a clean verdict).
       The two step-1b guards run BEFORE compare and are UNCHANGED: the cd
       hard-guard and the `no tests ran` FAIL guard (zero collected is a FAIL
       regardless of compare's exit).
