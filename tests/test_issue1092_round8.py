@@ -444,3 +444,109 @@ def test_render_helpers_nonempty_prefix_roles_thread_through(monkeypatch):
     assert "User: user prefix turn 0" in rendered_nat
     assert "Assistant: assistant prefix turn 1" in rendered_nat
     assert rendered_nat.endswith("Assistant:")
+
+
+# ── 7. round-8.1: trait-stratum loader parses the REAL corpus_specs layout ───
+# Orchestrator-verified @5aa6de1b: corpus_specs/ holds <trait>_personas.json +
+# <trait>_questions.json per trait; each personas file is a dict
+# {"personas": [60 persona system-prompt STRINGS]}. The pre-8.1 loader swept
+# any <trait>*.json ([:2] cap, incl. the questions file) and treated each FILE
+# as one persona -> 2/trait instead of ~33/trait (concern
+# i1092-trait-stratum-underpopulated). Fake trait names only — trait-name
+# literals stay out of the repo per the content-filter protocol.
+
+
+def _fake_personas_download(tmp_path, fetched, *, n_personas=60, payload=None):
+    def fake_hf_hub_download(repo_id, filename, *, repo_type=None, revision=None):
+        fetched.append(filename)
+        name = Path(filename).name
+        assert name.endswith("_personas.json"), "questions files must never be fetched"
+        trait = name.removesuffix("_personas.json")
+        body = (
+            payload
+            if payload is not None
+            else {"personas": [f"{trait} persona spec {i}" for i in range(n_personas)]}
+        )
+        p = tmp_path / name
+        p.write_text(json.dumps(body), encoding="utf-8")
+        return str(p)
+
+    return fake_hf_hub_download
+
+
+def test_load_trait_stratum_personas_samples_33_per_trait(monkeypatch, tmp_path):
+    from collections import Counter
+
+    import huggingface_hub
+
+    fetched: list[str] = []
+    monkeypatch.setattr(
+        huggingface_hub, "hf_hub_download", _fake_personas_download(tmp_path, fetched)
+    )
+    traits = ["traitA", "traitB", "traitC"]
+    entries = bc._load_trait_stratum_personas(traits, n_per_trait=33, rng=random.Random(42))
+    assert len(entries) == 99  # pre-8.1 this was 2/trait -> 6
+    per_trait = Counter(e["trait"] for e in entries)
+    assert per_trait == {"traitA": 33, "traitB": 33, "traitC": 33}
+    assert [Path(f).name for f in fetched] == [f"{t}_personas.json" for t in traits]
+    for e in entries:
+        assert e["system_prompt"].startswith(e["trait"] + " persona spec")
+        assert e["valence"] == "unspecified"  # no per-persona tag in the artifact
+        assert e["source_file"] == f"{e['trait']}_personas.json"
+    # 33-of-60 draw: no duplicates within a trait
+    assert len({e["system_prompt"] for e in entries}) == 99
+    # deterministic under the same seed
+    again = bc._load_trait_stratum_personas(traits, n_per_trait=33, rng=random.Random(42))
+    assert [e["system_prompt"] for e in again] == [e["system_prompt"] for e in entries]
+
+
+def test_load_trait_stratum_personas_fails_loud_on_wrong_shape(monkeypatch, tmp_path):
+    import huggingface_hub
+
+    # top-level LIST (the old code's assumed shape) -> TypeError
+    monkeypatch.setattr(
+        huggingface_hub,
+        "hf_hub_download",
+        _fake_personas_download(tmp_path, [], payload=[{"system_prompt": "x"}]),
+    )
+    with pytest.raises(TypeError, match="expected a dict with a 'personas' list"):
+        bc._load_trait_stratum_personas(["traitA"], n_per_trait=33, rng=random.Random(0))
+
+    # dict without a personas list -> TypeError naming the keys
+    monkeypatch.setattr(
+        huggingface_hub,
+        "hf_hub_download",
+        _fake_personas_download(tmp_path, [], payload={"specs": ["x"]}),
+    )
+    with pytest.raises(TypeError, match="specs"):
+        bc._load_trait_stratum_personas(["traitA"], n_per_trait=33, rng=random.Random(0))
+
+    # non-string persona entry -> TypeError with indices
+    monkeypatch.setattr(
+        huggingface_hub,
+        "hf_hub_download",
+        _fake_personas_download(tmp_path, [], payload={"personas": ["ok", None, ""]}),
+    )
+    with pytest.raises(TypeError, match="non-string/empty persona entries"):
+        bc._load_trait_stratum_personas(["traitA"], n_per_trait=33, rng=random.Random(0))
+
+    # empty personas list -> ValueError
+    monkeypatch.setattr(
+        huggingface_hub,
+        "hf_hub_download",
+        _fake_personas_download(tmp_path, [], payload={"personas": []}),
+    )
+    with pytest.raises(ValueError, match="no persona entries"):
+        bc._load_trait_stratum_personas(["traitA"], n_per_trait=33, rng=random.Random(0))
+
+
+def test_load_trait_stratum_personas_caps_at_pool_size(monkeypatch, tmp_path):
+    import huggingface_hub
+
+    monkeypatch.setattr(
+        huggingface_hub,
+        "hf_hub_download",
+        _fake_personas_download(tmp_path, [], n_personas=10),
+    )
+    entries = bc._load_trait_stratum_personas(["traitA"], n_per_trait=33, rng=random.Random(0))
+    assert len(entries) == 10  # min(n_per_trait, pool)

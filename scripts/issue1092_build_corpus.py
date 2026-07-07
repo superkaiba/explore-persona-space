@@ -1006,78 +1006,87 @@ def _load_trait_stratum_personas(
     n_per_trait: int = 33,
     rng: random.Random,
 ) -> list[dict]:
-    """Load trait-eliciting prefix specs from #779 corpus_specs (tier-3 synthetic).
+    """Load trait-eliciting persona prompts from #779 corpus_specs (tier-3 synthetic).
+
+    Round-8.1 layout fix (orchestrator-verified @5aa6de1b, closing concern
+    i1092-trait-stratum-underpopulated): ``corpus_specs/`` holds EXACTLY
+    ``<trait>_personas.json`` + ``<trait>_questions.json`` per trait, and each
+    personas file is a dict ``{"personas": [60 persona system-prompt STRINGS]}``
+    — the same parse #779's own consumers use
+    (``issue779_capture_answer_summaries.py`` ``spec["personas"]``,
+    ``issue779_dashboard_corpora.py:142``). The old loader swept any
+    ``<trait>*.json`` (``[:2]`` cap, incl. the QUESTIONS file) and treated
+    each FILE as one persona -> 2/trait instead of the plan's ~33/trait.
+
+    Valence note (plan §4.1 "high- and low-trait variants"): the artifact
+    carries NO per-persona high/low tag — the 60 prompts are #779's
+    deliberately-diverse ELICITING pool, and the high/low variation is
+    realized in the behavior-VARYING rollouts (the #779 generator kept both
+    trait-high and trait-low completions; no positive-only filter), not
+    tagged per prompt. Sampling ~33/trait from the full diverse pool with the
+    BUILD_SEED rng therefore IS the plan's variant draw; ``valence`` is
+    recorded as ``"unspecified"`` (never a fabricated ``"high"`` — carried
+    metadata only, no consumer branches on it).
 
     Content-filter protocol: these are persona system-prompt descriptions; they
     are stored in memory and written to the manifest JSON but never logged verbatim.
-    Returns a list of {trait: str, prefix_id: str, system_prompt: str, valence: str}
+    Returns a list of {trait: str, system_prompt: str, valence: str, source_file: str}
+    (prefix_id assigned by the caller). Fail-loud on any unexpected file shape.
     """
-    from huggingface_hub import hf_hub_download, list_repo_tree
+    from huggingface_hub import hf_hub_download
 
     data_repo = "superkaiba1/explore-persona-space-data"
     base_path = "issue779_monitoring/training-source-ablation-hg/corpus_specs"
 
     entries = []
+    per_trait_counts: dict[str, int] = {}
     for trait in trait_names:
-        # find files for this trait
-        found_files = []
+        fpath = f"{base_path}/{trait}_personas.json"
         try:
-            for item in list_repo_tree(
-                data_repo,
-                repo_type="dataset",
-                path_in_repo=base_path,
-                revision=hf_rev,
-            ):
-                fn = Path(item.path).name
-                # file names contain the trait tag; we match by trait name
-                if trait.lower() in fn.lower() and fn.endswith(".json"):
-                    found_files.append(item.path)
-        except Exception as exc:
-            raise RuntimeError(f"[stratum] listing failed for trait {trait}: {exc}") from exc
-
-        if not found_files:
-            raise FileNotFoundError(f"[stratum] no corpus_specs files found for trait {trait}")
-
-        trait_entries = []
-        for fpath in found_files[:2]:  # take at most 2 files per trait
             local = hf_hub_download(
                 repo_id=data_repo,
                 filename=fpath,
                 repo_type="dataset",
                 revision=hf_rev,
             )
-            with open(local, encoding="utf-8") as f:
-                spec = json.load(f)
-            # each spec may be a list of persona entries or a dict
-            if isinstance(spec, list):
-                for p in spec:
-                    trait_entries.append(
-                        {
-                            "trait": trait,
-                            "system_prompt": p.get("system_prompt") or p.get("persona") or "",
-                            "valence": p.get("valence", "high"),
-                            "source_file": Path(fpath).name,
-                        }
-                    )
-            elif isinstance(spec, dict):
-                trait_entries.append(
-                    {
-                        "trait": trait,
-                        "system_prompt": spec.get("system_prompt") or spec.get("persona") or "",
-                        "valence": spec.get("valence", "high"),
-                        "source_file": Path(fpath).name,
-                    }
-                )
-            else:
-                raise TypeError(f"[stratum] unsupported corpus spec type in {fpath}: {type(spec)}")
-
-        rng.shuffle(trait_entries)
-        if not trait_entries:
-            raise ValueError(f"[stratum] no persona entries loaded for trait {trait}")
-        entries.extend(trait_entries[:n_per_trait])
+        except Exception as exc:
+            raise RuntimeError(
+                f"[stratum] cannot fetch personas file {fpath} (rev={hf_rev}): {exc}"
+            ) from exc
+        with open(local, encoding="utf-8") as f:
+            spec = json.load(f)
+        if not isinstance(spec, dict) or not isinstance(spec.get("personas"), list):
+            raise TypeError(
+                f"[stratum] {fpath}: expected a dict with a 'personas' list, got "
+                f"{type(spec).__name__}"
+                + (f" with keys {sorted(spec)}" if isinstance(spec, dict) else "")
+            )
+        prompts = spec["personas"]
+        if not prompts:
+            raise ValueError(f"[stratum] no persona entries in {fpath}")
+        bad = [i for i, p in enumerate(prompts) if not (isinstance(p, str) and p.strip())]
+        if bad:
+            raise TypeError(
+                f"[stratum] {fpath}: non-string/empty persona entries at indices "
+                f"{bad[:5]} ({len(bad)} total)"
+            )
+        sampled = rng.sample(prompts, min(n_per_trait, len(prompts)))
+        per_trait_counts[trait] = len(sampled)
+        entries.extend(
+            {
+                "trait": trait,
+                "system_prompt": prompt,
+                "valence": "unspecified",
+                "source_file": f"{trait}_personas.json",
+            }
+            for prompt in sampled
+        )
 
     logger.info(
-        "[stratum] loaded %d trait-stratum personas (%d traits)", len(entries), len(trait_names)
+        "[stratum] loaded %d trait-stratum personas (%d traits; per-trait %s)",
+        len(entries),
+        len(trait_names),
+        json.dumps(per_trait_counts),
     )
     return entries
 
