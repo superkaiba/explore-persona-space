@@ -550,3 +550,189 @@ def test_load_trait_stratum_personas_caps_at_pool_size(monkeypatch, tmp_path):
     )
     entries = bc._load_trait_stratum_personas(["traitA"], n_per_trait=33, rng=random.Random(0))
     assert len(entries) == 10  # min(n_per_trait, pool)
+
+
+# ── 8. round-8.2: gpu_phase bare-prefix crash (BLOCKER concern
+# i1092-battery-bare-prefix-gpu-phase-crash). The round-8 battery fix ships
+# batt_f6_default_template with prefix_turns: [] (valid bare context), but
+# gpu_phase._prefix_turns's `.get(a) or .get(b)` chain coerced [] -> None and
+# raised on every f6 row in every cell — a guaranteed P2/P3 crash on the
+# provisioned pod after P0 + the Claude batch were spent. Fail pre-fix.
+
+import issue1092_gpu_phase as gp  # noqa: E402
+
+
+class _QwenLikeTemplateTokenizer:
+    """Behavior-conformant stub of the pinned Qwen chat-template surface:
+    raises IndexError on an EMPTY messages list (verified live on the real
+    pinned tokenizer, 2026-07-07) and injects the default system block when
+    the first message is not a system turn."""
+
+    SYSTEM_BLOCK = "<|im_start|>system\nYou are Qwen-stub.<|im_end|>\n"
+
+    def apply_chat_template(
+        self, messages: list[dict], *, tokenize: bool, add_generation_prompt: bool
+    ) -> str:
+        assert tokenize is False
+        first = messages[0]  # mirrors the Qwen Jinja: IndexError on []
+        parts = []
+        if first["role"] != "system":
+            parts.append(self.SYSTEM_BLOCK)
+        for m in messages:
+            parts.append(f"<|im_start|>{m['role']}\n{m['content']}<|im_end|>\n")
+        if add_generation_prompt:
+            parts.append("<|im_start|>assistant\n")
+        return "".join(parts)
+
+
+def test_gpu_phase_prefix_turns_accepts_explicit_empty_list():
+    # PRESENT-but-empty prefix_turns is a valid bare context (fails pre-fix)
+    assert gp._prefix_turns({"prefix_id": "batt_f6_default_template", "prefix_turns": []}) == []
+    turns = [{"role": "user", "content": "hi"}]
+    assert gp._prefix_turns({"prefix_id": "pfx_00001", "prefix_turns": turns}) == turns
+    assert gp._prefix_turns({"id": "conv", "turns": turns}) == turns
+    # genuinely ABSENT / non-list turns stay fail-loud
+    with pytest.raises(ValueError, match="no turns"):
+        gp._prefix_turns({"prefix_id": "pfx_bad"})
+    with pytest.raises(ValueError, match="no turns"):
+        gp._prefix_turns({"prefix_id": "pfx_bad", "prefix_turns": "not-a-list"})
+    with pytest.raises(ValueError, match="no turns"):
+        gp._prefix_turns({"prefix_id": "pfx_bad", "prefix_turns": None})
+
+
+def test_gpu_phase_render_row_bare_battery_prefix_both_formats(monkeypatch):
+    stub = _QwenLikeTemplateTokenizer()
+    monkeypatch.setattr(gp, "_get_tokenizer", lambda: stub)
+    prefix_store = {
+        "batt_f6_default_template": {
+            "prefix_id": "batt_f6_default_template",
+            "prefix_turns": [],
+            "source": "battery",
+        },
+        "pfx_00001": {
+            "prefix_id": "pfx_00001",
+            "prefix_turns": [
+                {"role": "user", "content": "first question"},
+                {"role": "assistant", "content": "first reply"},
+            ],
+        },
+    }
+    query_store = {"qry_00000": {"query_id": "qry_00000", "text": "What is 2+2?"}}
+    row = {"row_id": "r_0", "prefix_id": "batt_f6_default_template", "query_id": "qry_00000"}
+
+    # instruct: crashes pre-fix (ValueError in _prefix_turns); post-fix the
+    # bare-context prefix is the template-injected system block, sliced off
+    # the rendered prompt itself -> the string-prefix invariant holds and the
+    # prefix_end capture position stays "last token before the query turn".
+    prefix, prompt, comp = gp.render_row(row, prefix_store, query_store, "instruct", "own")
+    assert comp is None
+    assert prefix == stub.SYSTEM_BLOCK
+    assert prompt.startswith(prefix)
+    assert "What is 2+2?" in prompt
+    assert prompt.endswith("<|im_start|>assistant\n")
+
+    # pretrained: nothing precedes the query -> empty prefix, bare render
+    prefix_n, prompt_n, _ = gp.render_row(row, prefix_store, query_store, "pretrained", "own")
+    assert prefix_n == ""
+    assert prompt_n.startswith("User: What is 2+2?")
+    assert prompt_n.endswith("Assistant:")
+
+    # non-empty prefixes keep the same string-prefix invariant
+    row2 = {"row_id": "r_1", "prefix_id": "pfx_00001", "query_id": "qry_00000"}
+    p2, pr2, _ = gp.render_row(row2, prefix_store, query_store, "instruct", "own")
+    assert p2 and pr2.startswith(p2)
+    assert "first question" in p2
+
+    # direct empty guards on the prefix renderers (never reach the template)
+    assert gp._render_prefix_instruct([]) == ""
+    assert gp._render_prefix_naturalistic([]) == ""
+
+
+# ── 9. round-8.2 Minor-2: post-dense-core crossing strata — first unit
+# coverage for _build_manifest_rows periphery / trait / battery branches
+# (previously first executed at production scale; the 60-row e2e and the
+# smoke both early-return at dense_core).
+
+
+def test_build_manifest_rows_post_dense_core_strata(monkeypatch):
+    from collections import Counter
+
+    monkeypatch.setattr(bc, "DENSE_CORE_PREFIXES", 3)
+    prefixes = []
+    for i in range(5):  # first 3 core, last 2 peripheral
+        e = _prefix_entry(n_prefix_turns=2)
+        e["prefix_id"] = f"pfx_{i:05d}"
+        e["conv_id"] = f"conv_{i}"
+        e["topic"] = "general_qa"
+        prefixes.append(e)
+    bank = [
+        {
+            "query_id": f"qry_{i:05d}",
+            "text": f"bank query {i}",
+            "topic": "coding_software" if i < 2 else "general_qa",
+            "source": "lmsys",
+            "conv_id": f"bankconv_{i}",
+        }
+        for i in range(10)
+    ]
+    core_queries = bank[:2]  # periphery bank = the 8 general_qa queries
+    trait_personas = [
+        {
+            "trait": "traitA",
+            "prefix_id": "trait_0000",
+            "system_prompt": "x",
+            "valence": "unspecified",
+        },
+        {
+            "trait": "traitB",
+            "prefix_id": "trait_0001",
+            "system_prompt": "y",
+            "valence": "unspecified",
+        },
+    ]
+    battery = [
+        {"id": "b1", "family": "general_qa", "system_prompt": "z", "prefix_messages": []},
+        {
+            "id": "f6_default_template",
+            "family": "default",
+            "system_prompt": None,
+            "prefix_messages": [],
+        },
+    ]
+    rows = bc._build_manifest_rows(
+        prefixes,
+        bank,
+        core_queries,
+        trait_personas,
+        battery,
+        rng=random.Random(0),
+        row_limit=None,
+        cells_filter=None,
+    )
+    by_stratum = Counter(r["stratum"] for r in rows)
+    assert by_stratum == {
+        "dense_core": 3 * 2,  # 3 core prefixes x 2 core queries
+        "periphery_natural": 2,  # 1 per peripheral prefix
+        "periphery_random": 2 * 8,  # min(N_PERIPHERY_RANDOM=10, 8 periphery bank)
+        "periphery_topicmatch": 2 * 3,  # 3 topic-matched (8 general_qa available)
+        "trait_stratum": 2 * 8,  # min(N_TRAIT_STRATUM_QUERIES=15, 8 periphery bank)
+        "battery": 2 * 2,  # 2 contexts x 2 core queries
+    }
+    # battery rows are EVAL-ONLY; everything else is not
+    for r in rows:
+        assert r["is_eval_only"] == (r["stratum"] == "battery")
+    # every emitted id resolves against the stores the GPU phase will load
+    prefix_ids = (
+        {p["prefix_id"] for p in prefixes}
+        | {p["prefix_id"] for p in trait_personas}
+        | {f"batt_{c['id']}" for c in battery}
+    )
+    query_ids = {q["query_id"] for q in bank} | {f"nat_{p['prefix_id']}" for p in prefixes}
+    for r in rows:
+        assert r["prefix_id"] in prefix_ids, r
+        assert r["query_id"] in query_ids, r
+    # row ids unique; topic-matched periphery rows carry the prefix topic
+    assert len({r["row_id"] for r in rows}) == len(rows)
+    for r in rows:
+        if r["stratum"] == "periphery_topicmatch":
+            assert r["topic"] == "general_qa"

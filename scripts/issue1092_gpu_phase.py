@@ -187,6 +187,13 @@ def _render_naturalistic(turns: list[dict], query: str) -> str:
 
 
 def _render_prefix_instruct(turns: list[dict]) -> str:
+    if not turns:
+        # Round-8.2 guard: the Qwen chat template cannot render an EMPTY
+        # messages list (Jinja `messages[0]` -> IndexError, verified live on
+        # the pinned tokenizer). Bare-context callers must not reach the
+        # template; `_render_prompt_parts` derives the bare instruct prefix
+        # from the rendered PROMPT instead (the injected system block).
+        return ""
     tok = _get_tokenizer()
     messages = [{"role": t["role"], "content": t["content"]} for t in turns]
     return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
@@ -237,8 +244,23 @@ def load_store(corpus_dir: Path, store_name: str) -> dict[str, dict]:
 
 
 def _prefix_turns(prefix_item: dict) -> list[dict]:
-    turns = prefix_item.get("prefix_turns") or prefix_item.get("turns")
-    if not isinstance(turns, list) or not turns:
+    """Prefix turns for a store item; an EXPLICIT empty list is a VALID bare context.
+
+    Round-8.2 (BLOCKER concern i1092-battery-bare-prefix-gpu-phase-crash): the
+    round-8 battery fix legitimately ships ``batt_f6_default_template`` with
+    ``prefix_turns: []`` (bare default context), and single-turn ``pfx_``
+    conversations are likewise empty-prefixed by design. The old
+    ``.get("prefix_turns") or .get("turns")`` chain coerced the valid ``[]``
+    to None and raised on every f6 row in every cell (~48 rows/cell, all 8
+    cells via the control subset). A PRESENT ``prefix_turns`` key is now
+    authoritative even when empty; only a genuinely ABSENT/non-list turns
+    field stays fail-loud.
+    """
+    if "prefix_turns" in prefix_item:
+        turns = prefix_item["prefix_turns"]
+    else:
+        turns = prefix_item.get("turns")
+    if not isinstance(turns, list):
         raise ValueError(f"prefix item {prefix_item.get('prefix_id')} has no turns")
     return turns
 
@@ -250,11 +272,32 @@ def _query_text(query_item: dict) -> str:
     return text
 
 
+_INSTRUCT_USER_HEADER = "<|im_start|>user\n"
+
+
 def _render_prompt_parts(turns: list[dict], query: str, prompt_format: str) -> tuple[str, str]:
-    """Return (prefix_text, prompt_text) under the requested model prompt format."""
+    """Return (prefix_text, prompt_text) under the requested model prompt format.
+
+    Bare context (``turns == []``, round-8.2): the canonical prefix is
+    "everything before the user query". Under the INSTRUCT format that is the
+    template-injected default system block — sliced off the rendered prompt
+    itself at its (only) user-turn header, so ``prompt_text.startswith
+    (prefix_text)`` holds exactly as it does for non-empty prefixes and the
+    prefix_end capture position stays "last token before the query turn".
+    Under the NATURALISTIC format nothing precedes the query -> prefix "".
+    """
     if prompt_format == "instruct":
-        prefix_text = _render_prefix_instruct(turns)
         prompt_text = _render_instruct(turns, query)
+        if turns:
+            prefix_text = _render_prefix_instruct(turns)
+        else:
+            idx = prompt_text.find(_INSTRUCT_USER_HEADER)
+            if idx < 0:
+                raise ValueError(
+                    "bare-context instruct render lacks a user-turn header; cannot "
+                    "derive the prefix (template drift?)"
+                )
+            prefix_text = prompt_text[:idx]
     elif prompt_format == "pretrained":
         prefix_text = _render_prefix_naturalistic(turns)
         prompt_text = _render_naturalistic(turns, query)

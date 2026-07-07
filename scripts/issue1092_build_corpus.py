@@ -1412,7 +1412,7 @@ def _build_manifest_rows(  # noqa: C901
                             "topic": trait,
                             "prefix_n_user_turns": 0,
                             "is_eval_only": False,
-                            "persona_valence": persona.get("valence", "high"),
+                            "persona_valence": persona.get("valence", "unspecified"),
                         }
                     )
 
@@ -1586,7 +1586,7 @@ def _augment_prefix_store(
                 "natural_query": "",
                 "n_user_turns": 1,
                 "trait": persona["trait"],
-                "persona_valence": persona.get("valence", "high"),
+                "persona_valence": persona.get("valence", "unspecified"),
             }
         )
     out.extend(_battery_prefix_entry(ctx, i) for i, ctx in enumerate(battery_contexts))
@@ -1916,7 +1916,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
         [
             {
                 "trait": p["trait"],
-                "valence": p.get("valence", "high"),
+                "valence": p.get("valence", "unspecified"),
                 "source_file": p.get("source_file", ""),
                 "system_prompt_sha256": _sha256_short(p.get("system_prompt", "")),
                 # system_prompt stored in full for GPU phase
