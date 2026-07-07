@@ -101,10 +101,27 @@ def _fingerprint(paths: list[Path], config: dict) -> str:
     return h.hexdigest()[:24]
 
 
+def _sorted_shards(paths: Iterable[Path]) -> list[Path]:
+    def key(path: Path) -> tuple[str, int, str]:
+        stem = path.stem
+        if "_shard" not in stem:
+            return stem, -1, stem
+        prefix, rest = stem.split("_shard", 1)
+        digits = []
+        for ch in rest:
+            if ch.isdigit():
+                digits.append(ch)
+            else:
+                break
+        return prefix, int("".join(digits) or 0), rest
+
+    return sorted(paths, key=key)
+
+
 def _load_summary(
     summaries_dir: Path, cell: str, kind: str, layer: int
 ) -> tuple[np.ndarray, list[Path]]:
-    paths = sorted((summaries_dir / cell).glob(f"{kind}_L{layer:02d}_shard*.npy"))
+    paths = _sorted_shards((summaries_dir / cell).glob(f"{kind}_L{layer:02d}_shard*.npy"))
     if not paths:
         paths = sorted((summaries_dir / cell).glob(f"{kind}_L{layer:02d}.npy"))
     if not paths:
@@ -209,13 +226,100 @@ def _pca_basis(Y: np.ndarray, k: int) -> tuple[np.ndarray, np.ndarray]:
     return mu, vh[:kk].T
 
 
-def _basis_targets(Y: np.ndarray, basis: str) -> np.ndarray:
+def _basis_targets_with_info(
+    Y: np.ndarray,
+    basis: str,
+    *,
+    hidden_dim: int | None = None,
+    targets: list[str] | tuple[str, ...] | None = None,
+    projection_target: str = "t1",
+) -> tuple[np.ndarray, dict[str, Any]]:
+    ambient_dim = int(Y.shape[1])
+    target_names = list(targets or [])
+    block_index = 0
+    if hidden_dim is not None and target_names:
+        expected = int(hidden_dim) * len(target_names)
+        if ambient_dim != expected:
+            raise ValueError(
+                f"stacked target dim {ambient_dim} != hidden_dim {hidden_dim} * "
+                f"{len(target_names)} targets"
+            )
+        if projection_target in target_names:
+            block_index = target_names.index(projection_target)
+    info: dict[str, Any] = {
+        "basis": basis,
+        "ambient_dim": ambient_dim,
+        "hidden_dim": hidden_dim,
+        "targets": target_names,
+        "projection_target": projection_target if target_names else None,
+        "projection_block_index": block_index,
+        "v_basis": None,
+    }
     if basis == "ambient":
-        return Y
+        return Y, info
     if basis == "pca48":
         mu, v = _pca_basis(Y, 48)
-        return (Y - mu) @ v
+        info["v_basis"] = v
+        return (Y - mu) @ v, info
     raise ValueError(f"unknown target basis {basis}")
+
+
+def _basis_targets(Y: np.ndarray, basis: str) -> np.ndarray:
+    return _basis_targets_with_info(Y, basis)[0]
+
+
+def _ambient_target_direction(rb: np.ndarray, basis_info: dict[str, Any]) -> np.ndarray:
+    rb = np.asarray(rb, dtype=np.float64)
+    hidden_dim = basis_info.get("hidden_dim")
+    ambient_dim = int(basis_info["ambient_dim"])
+    targets = list(basis_info.get("targets") or [])
+    if hidden_dim is None or not targets:
+        if rb.shape[0] != ambient_dim:
+            raise ValueError(f"r_B dim {rb.shape[0]} != target ambient dim {ambient_dim}")
+        return rb
+    hidden_dim = int(hidden_dim)
+    if rb.shape[0] != hidden_dim:
+        raise ValueError(f"r_B dim {rb.shape[0]} != hidden_dim {hidden_dim}")
+    if ambient_dim == hidden_dim:
+        return rb
+    block = int(basis_info.get("projection_block_index", 0))
+    if not 0 <= block < len(targets):
+        raise ValueError(f"projection block {block} outside targets {targets}")
+    out = np.zeros(ambient_dim, dtype=np.float64)
+    start = block * hidden_dim
+    out[start : start + hidden_dim] = rb
+    return out
+
+
+def _project_rb_to_basis(
+    rb: np.ndarray, basis_info: dict[str, Any], *, expected_dim: int | None = None
+) -> np.ndarray:
+    ambient = _ambient_target_direction(rb, basis_info)
+    if basis_info["basis"] == "ambient":
+        out = ambient
+    else:
+        v_basis = basis_info.get("v_basis")
+        if v_basis is None:
+            raise ValueError(f"basis {basis_info['basis']} missing v_basis for r_B projection")
+        out = np.asarray(v_basis, dtype=np.float64).T @ ambient
+    if expected_dim is not None and out.shape[0] != expected_dim:
+        raise ValueError(f"projected r_B dim {out.shape[0]} != expected {expected_dim}")
+    return out
+
+
+def _project_rb_family_to_basis(
+    rb_directions: np.ndarray, basis_info: dict[str, Any], *, expected_dim: int
+) -> np.ndarray:
+    rb = np.asarray(rb_directions, dtype=np.float64)
+    if rb.ndim != 3:
+        raise ValueError(f"r_B family must be (layer, trait, dim), got {rb.shape}")
+    out = np.empty((rb.shape[0], rb.shape[1], expected_dim), dtype=np.float64)
+    for layer_i in range(rb.shape[0]):
+        for trait_i in range(rb.shape[1]):
+            out[layer_i, trait_i] = _project_rb_to_basis(
+                rb[layer_i, trait_i], basis_info, expected_dim=expected_dim
+            )
+    return out
 
 
 def _perm_null(
@@ -421,13 +525,22 @@ def _operator_identity_read(
     for _draw in range(n_draws):
         perm = rng.permutation(yc.shape[0])
         nulls.append(float(np.linalg.norm(yc[perm] - f - g) / g_norm))
-    procrustes_num = float(np.linalg.norm((X[: yc.shape[0]] - X[: yc.shape[0]].mean(0)) - f))
-    procrustes_den = max(float(np.linalg.norm(f)), 1e-12)
+    if X.shape[1] == f.shape[1]:
+        procrustes_num = float(np.linalg.norm((X[: yc.shape[0]] - X[: yc.shape[0]].mean(0)) - f))
+        procrustes_den = max(float(np.linalg.norm(f)), 1e-12)
+        angles = _principal_angles(X[: yc.shape[0]], f)
+        procrustes_residual = procrustes_num / procrustes_den
+        shape_note = "computed"
+    else:
+        angles = []
+        procrustes_residual = None
+        shape_note = f"not_applicable_input_dim_{X.shape[1]}_target_dim_{f.shape[1]}"
     return {
         "basis": factors["basis"],
         "entailed_m_approx_f_const": {
-            "principal_angles_rad": _principal_angles(X[: yc.shape[0]], f),
-            "procrustes_residual_over_f": procrustes_num / procrustes_den,
+            "principal_angles_rad": angles,
+            "procrustes_residual_over_f": procrustes_residual,
+            "shape_note": shape_note,
             "interpretation": "rig_sanity_only_not_HA_evidence",
         },
         "residual_interaction_norm_over_total": residual_norm,
@@ -467,7 +580,7 @@ def _load_judge_score_rows(path: Path | None) -> list[dict]:
 
 
 def _read_index_files(root: Path, stem: str) -> list[dict]:
-    paths = sorted(root.glob(f"{stem}_shard*.jsonl"))
+    paths = _sorted_shards(root.glob(f"{stem}_shard*.jsonl"))
     if not paths:
         path = root / f"{stem}.jsonl"
         paths = [path] if path.exists() else []
@@ -491,9 +604,21 @@ def _load_bare_rows(
     return arr, q_to_idx
 
 
+def _bare_X_for_unit(
+    summaries_dir: Path, model_type: str, layer: int, unit_rows: list[dict]
+) -> np.ndarray:
+    bare_arr, q_to_idx = _load_bare_rows(summaries_dir, model_type, layer)
+    missing = [
+        str(row.get("query_id")) for row in unit_rows if str(row.get("query_id")) not in q_to_idx
+    ]
+    if missing:
+        raise KeyError(f"bare-query arm missing {len(missing)} query ids: {missing[:5]}")
+    return bare_arr[[q_to_idx[str(row.get("query_id"))] for row in unit_rows]]
+
+
 def _load_b0_pool(summaries_dir: Path, cell: str) -> np.ndarray:
     root = summaries_dir / "b0_rB_pool"
-    paths = sorted(root.glob(f"{cell}_shard*.npy"))
+    paths = _sorted_shards(root.glob(f"{cell}_shard*.npy"))
     if not paths:
         paths = sorted(root.glob(f"{cell}.npy"))
     if not paths:
@@ -587,15 +712,7 @@ def _registered_stitch_reads(
     model_type = CELL_MODEL_TYPE.get(cell)
     if model_type is None:
         raise ValueError(f"cannot infer bare-query model type for cell {cell}")
-    bare_arr, q_to_idx = _load_bare_rows(summaries_dir, model_type, layer)
-    missing = [
-        str(row.get("query_id")) for row in unit_rows if str(row.get("query_id")) not in q_to_idx
-    ]
-    if missing:
-        raise KeyError(
-            f"bare-query g-map missing {len(missing)} query ids for {cell}: {missing[:5]}"
-        )
-    bare_X = bare_arr[[q_to_idx[str(row.get("query_id"))] for row in unit_rows]]
+    bare_X = _bare_X_for_unit(summaries_dir, model_type, layer, unit_rows)
     query_folds = _folds_from_manifest(
         unit_rows,
         len(unit_rows),
@@ -632,7 +749,10 @@ def _compute_dynamics_reads(  # noqa: C901
     if model_type is None:
         raise ValueError(f"cannot infer dynamics model type for cell {cell}")
     root = summaries_dir / f"dynamics_{model_type}"
-    kinds = ("context_k", "s_k", "answer_k_t1", "u1")
+    answer_kinds = ("answer_k_t1", "answer_k_t2", "answer_k_t3")
+    user_kinds = ("u1", "u2", "u3")
+    source_kinds = ("context_k", "s_k")
+    kinds = (*source_kinds, *answer_kinds, *user_kinds)
     arrays: dict[str, np.ndarray] = {}
     indices: dict[str, dict[tuple[str, int], int]] = {}
     index_rows_by_kind: dict[str, list[dict]] = {}
@@ -648,75 +768,242 @@ def _compute_dynamics_reads(  # noqa: C901
             (str(row["conv_id"]), int(row["turn_index"])): i for i, row in enumerate(rows)
         }
 
-    def pairs(src_kind: str, dst_kind: str, *, offset: int = 0):
+    skipped_pair_counts: dict[str, dict[str, int]] = {}
+
+    def pairs(src_kind: str, dst_kind: str, *, offset: int = 0, read_name: str):
         src = []
         dst = []
         pair_rows = []
+        dropped = 0
         for key, src_i in indices[src_kind].items():
             conv_id, turn_idx = key
             dst_key = (conv_id, turn_idx + offset)
-            if dst_key not in indices[dst_kind]:
+            dst_i = indices[dst_kind].get(dst_key)
+            if dst_i is None:
+                dropped += 1
                 continue
+            src_row = index_rows_by_kind[src_kind][src_i]
+            dst_row = index_rows_by_kind[dst_kind][dst_i]
             src.append(arrays[src_kind][src_i])
-            dst.append(arrays[dst_kind][indices[dst_kind][dst_key]])
-            pair_rows.append({"conv_id": conv_id, "turn_index": turn_idx})
+            dst.append(arrays[dst_kind][dst_i])
+            pair_rows.append(
+                {
+                    "conv_id": conv_id,
+                    "turn_index": turn_idx,
+                    "src_kind": src_kind,
+                    "dst_kind": dst_kind,
+                    "src_token_start": int(src_row.get("token_start", -1)),
+                    "src_token_end": int(src_row.get("token_end", -1)),
+                    "dst_token_start": int(dst_row.get("token_start", -1)),
+                    "dst_token_end": int(dst_row.get("token_end", -1)),
+                }
+            )
+        skipped_pair_counts[read_name] = {
+            "candidate_pairs": len(indices[src_kind]),
+            "paired": len(pair_rows),
+            "dropped_missing_offset_or_non_alternating": int(dropped),
+        }
         if not src:
-            return np.empty((0, args.hidden_dim)), np.empty((0, args.hidden_dim)), []
+            return (
+                np.empty((0, arrays[src_kind].shape[1])),
+                np.empty((0, arrays[dst_kind].shape[1])),
+                [],
+            )
         return np.asarray(src), np.asarray(dst), pair_rows
 
-    out: dict[str, Any] = {"status": "computed", "model_type": model_type}
-    for name, src_kind, dst_kind, offset in (
-        ("D0_context_to_answer_k", "context_k", "answer_k_t1", 0),
-        ("D1_s_to_user_k_plus_1", "s_k", "u1", 1),
-        ("D2_context_to_context_next", "context_k", "context_k", 2),
-        ("D3_context_to_answer_next", "context_k", "answer_k_t1", 2),
-    ):
-        Xp, Yp, pair_rows = pairs(src_kind, dst_kind, offset=offset)
-        out[name] = _fit_pair_read(name, Xp, Yp, pair_rows, args)
+    def fit_pairs(read_name: str, src_kind: str, dst_kind: str, *, offset: int = 0) -> dict:
+        Xp, Yp, pair_rows = pairs(src_kind, dst_kind, offset=offset, read_name=read_name)
+        fit = _fit_pair_read(read_name, Xp, Yp, pair_rows, args)
+        fit["pair_counts"] = skipped_pair_counts[read_name]
+        return fit
 
-    d4: dict[str, Any] = {}
-    X0, Y0, rows0 = pairs("context_k", "answer_k_t1", offset=0)
-    for turn_idx in sorted({row["turn_index"] for row in rows0}):
-        idx = [i for i, row in enumerate(rows0) if row["turn_index"] == turn_idx]
-        if len(idx) >= 3:
-            d4[str(turn_idx)] = _fit_pair_read(
-                f"D4_turn_{turn_idx}", X0[idx], Y0[idx], [rows0[i] for i in idx], args
-            )
-    out["D4_turn_profiles"] = d4
+    out: dict[str, Any] = {
+        "status": "computed",
+        "model_type": model_type,
+        "registered_matrix": {
+            "assistant_targets": list(answer_kinds),
+            "user_mirrors": list(user_kinds),
+            "input_arms": list(source_kinds),
+            "D1_context_arm_exemption": "registered prefix-arm-only anticipatory-user read",
+        },
+    }
 
-    first_by_conv: dict[str, int] = {}
-    for key, src_i in indices["context_k"].items():
-        conv_id, turn_idx = key
-        current_first = first_by_conv.get(conv_id)
-        current_turn = (
-            None
-            if current_first is None
-            else index_rows_by_kind["context_k"][current_first]["turn_index"]
+    d0: dict[str, Any] = {}
+    for src_kind in source_kinds:
+        d0[src_kind] = {}
+        for dst_kind in answer_kinds:
+            name = f"D0_{src_kind}_to_{dst_kind}"
+            d0[src_kind][dst_kind] = fit_pairs(name, src_kind, dst_kind, offset=0)
+    out["D0_current_turn_answer"] = d0
+
+    d1: dict[str, Any] = {}
+    for dst_kind in user_kinds:
+        name = f"D1_s_k_to_{dst_kind}_next"
+        d1[dst_kind] = fit_pairs(name, "s_k", dst_kind, offset=1)
+    out["D1_s_to_user_k_plus_1"] = {
+        "context_arm_exemption": "D1 is registered as prefix-arm/s_k only",
+        "user_mirrors": d1,
+    }
+
+    d2: dict[str, Any] = {}
+    for src_kind in source_kinds:
+        name = f"D2_{src_kind}_to_context_next"
+        d2[src_kind] = fit_pairs(name, src_kind, "context_k", offset=2)
+    out["D2_one_round_context"] = d2
+
+    d3: dict[str, Any] = {}
+    for src_kind in source_kinds:
+        d3[src_kind] = {}
+        for dst_kind in answer_kinds:
+            name = f"D3_{src_kind}_to_{dst_kind}_next"
+            d3[src_kind][dst_kind] = fit_pairs(name, src_kind, dst_kind, offset=2)
+    out["D3_one_round_answer"] = d3
+
+    user_turn_counts: dict[str, int] = {}
+    for conv_id, _turn_idx in indices["u1"]:
+        user_turn_counts[conv_id] = user_turn_counts.get(conv_id, 0) + 1
+    long_convs = {conv_id for conv_id, count in user_turn_counts.items() if count >= 5}
+
+    def indexed_fit(read_name: str, Xp: np.ndarray, Yp: np.ndarray, pair_rows: list[dict]) -> dict:
+        if not pair_rows:
+            return {"status": "insufficient_rows", "read": read_name, "n": 0}
+        idx_rows = list(pair_rows)
+        return _fit_pair_read(read_name, Xp, Yp, idx_rows, args)
+
+    def d4_profile(src_kind: str, dst_kind: str, *, offset: int, label: str) -> dict:
+        Xp, Yp, rows_p = pairs(src_kind, dst_kind, offset=offset, read_name=f"D4_{label}_all")
+        turn_profiles: dict[str, Any] = {}
+        for turn_idx in sorted({row["turn_index"] for row in rows_p}):
+            idx = [i for i, row in enumerate(rows_p) if row["turn_index"] == turn_idx]
+            if len(idx) >= 3:
+                idx_arr = np.asarray(idx, dtype=np.int64)
+                turn_profiles[str(turn_idx)] = indexed_fit(
+                    f"D4_{label}_turn_{turn_idx}",
+                    Xp[idx_arr],
+                    Yp[idx_arr],
+                    [rows_p[i] for i in idx],
+                )
+        long_idx = [i for i, row in enumerate(rows_p) if row["conv_id"] in long_convs]
+        long_panel = indexed_fit(
+            f"D4_{label}_fixed_ge5_user_turn_panel",
+            Xp[np.asarray(long_idx, dtype=np.int64)] if long_idx else Xp[:0],
+            Yp[np.asarray(long_idx, dtype=np.int64)] if long_idx else Yp[:0],
+            [rows_p[i] for i in long_idx],
         )
-        if current_turn is None or turn_idx < current_turn:
-            first_by_conv[conv_id] = src_i
-    d5: dict[str, Any] = {}
-    for horizon in (0, 2, 4, 6):
-        src = []
-        dst = []
-        pair_rows = []
-        for conv_id, first_i in first_by_conv.items():
-            first_turn = int(index_rows_by_kind["context_k"][first_i]["turn_index"])
-            dst_key = (conv_id, first_turn + horizon)
-            if dst_key in indices["answer_k_t1"]:
-                src.append(arrays["context_k"][first_i])
-                dst.append(arrays["answer_k_t1"][indices["answer_k_t1"][dst_key]])
-                pair_rows.append({"conv_id": conv_id, "turn_index": first_turn})
-        if src:
-            d5[str(horizon)] = _fit_pair_read(
-                f"D5_first_context_to_answer_h{horizon}",
-                np.asarray(src),
-                np.asarray(dst),
-                pair_rows,
-                args,
+        bins: dict[str, Any] = {}
+        if len(rows_p) >= 6:
+            starts = np.asarray([row["src_token_start"] for row in rows_p], dtype=np.float64)
+            finite = np.isfinite(starts) & (starts >= 0)
+            if finite.sum() >= 6:
+                qs = np.nanquantile(starts[finite], [0.0, 1 / 3, 2 / 3, 1.0])
+                for bin_i in range(3):
+                    lo, hi = qs[bin_i], qs[bin_i + 1]
+                    if bin_i == 2:
+                        idx = [i for i, val in enumerate(starts) if finite[i] and lo <= val <= hi]
+                    else:
+                        idx = [i for i, val in enumerate(starts) if finite[i] and lo <= val < hi]
+                    if len(idx) >= 3:
+                        idx_arr = np.asarray(idx, dtype=np.int64)
+                        bins[str(bin_i)] = indexed_fit(
+                            f"D4_{label}_length_bin_{bin_i}",
+                            Xp[idx_arr],
+                            Yp[idx_arr],
+                            [rows_p[i] for i in idx],
+                        )
+        return {
+            "pair_counts": skipped_pair_counts[f"D4_{label}_all"],
+            "turn_profiles": turn_profiles,
+            "fixed_ge5_user_turn_panel": long_panel,
+            "length_matched_token_position_bins": bins,
+        }
+
+    d4_answer: dict[str, Any] = {}
+    d4_user: dict[str, Any] = {}
+    for src_kind in source_kinds:
+        d4_answer[src_kind] = {}
+        for dst_kind in answer_kinds:
+            d4_answer[src_kind][dst_kind] = d4_profile(
+                src_kind, dst_kind, offset=0, label=f"{src_kind}_to_{dst_kind}"
             )
+        d4_user[src_kind] = {}
+        for dst_kind in user_kinds:
+            d4_user[src_kind][dst_kind] = d4_profile(
+                src_kind, dst_kind, offset=1, label=f"{src_kind}_to_{dst_kind}_next_user"
+            )
+
+    ratio: dict[str, Any] = {}
+    for dst_kind in answer_kinds:
+        ratio[dst_kind] = {}
+        s_profiles = d4_answer["s_k"][dst_kind]["turn_profiles"]
+        c_profiles = d4_answer["context_k"][dst_kind]["turn_profiles"]
+        for turn_idx in sorted(set(s_profiles) & set(c_profiles), key=int):
+            s_r2 = s_profiles[turn_idx].get("fit", {}).get("r2")
+            c_r2 = c_profiles[turn_idx].get("fit", {}).get("r2")
+            valid_ratio = (
+                s_r2 is not None
+                and c_r2 is not None
+                and np.isfinite(float(s_r2))
+                and np.isfinite(float(c_r2))
+                and float(c_r2) != 0.0
+            )
+            ratio[dst_kind][turn_idx] = {
+                "s_k_r2": s_r2,
+                "context_k_r2": c_r2,
+                "prefix_context_skill_ratio": float(s_r2) / float(c_r2) if valid_ratio else None,
+            }
+    out["D4_turn_profiles"] = {
+        "answer_side": d4_answer,
+        "user_side": d4_user,
+        "fixed_panel_min_user_turns": 5,
+        "prefix_context_skill_ratio": ratio,
+    }
+
+    d5: dict[str, Any] = {}
+    for src_kind in source_kinds:
+        first_by_conv: dict[str, int] = {}
+        for key, src_i in indices[src_kind].items():
+            conv_id, turn_idx = key
+            current_first = first_by_conv.get(conv_id)
+            current_turn = (
+                None
+                if current_first is None
+                else int(index_rows_by_kind[src_kind][current_first]["turn_index"])
+            )
+            if current_turn is None or turn_idx < current_turn:
+                first_by_conv[conv_id] = src_i
+        d5[src_kind] = {}
+        for horizon in (0, 2, 4, 6):
+            d5[src_kind][str(horizon)] = {}
+            for dst_kind in (*answer_kinds, "context_k"):
+                src = []
+                dst = []
+                pair_rows = []
+                dropped = 0
+                for conv_id, first_i in first_by_conv.items():
+                    first_turn = int(index_rows_by_kind[src_kind][first_i]["turn_index"])
+                    dst_key = (conv_id, first_turn + horizon)
+                    dst_i = indices[dst_kind].get(dst_key)
+                    if dst_i is None:
+                        dropped += 1
+                        continue
+                    src.append(arrays[src_kind][first_i])
+                    dst.append(arrays[dst_kind][dst_i])
+                    pair_rows.append({"conv_id": conv_id, "turn_index": first_turn})
+                name = f"D5_first_{src_kind}_to_{dst_kind}_h{horizon}"
+                if src:
+                    fit = _fit_pair_read(name, np.asarray(src), np.asarray(dst), pair_rows, args)
+                else:
+                    fit = {"status": "insufficient_rows", "read": name, "n": 0}
+                fit["pair_counts"] = {
+                    "candidate_pairs": len(first_by_conv),
+                    "paired": len(pair_rows),
+                    "dropped_missing_horizon_or_non_alternating": int(dropped),
+                }
+                d5[src_kind][str(horizon)][dst_kind] = fit
     out["D5_first_state_horizon"] = d5
+
     b3_by_trait: dict[str, list[tuple[np.ndarray, float, dict]]] = {}
+    b3_dropped_missing_predictor = 0
     for score_row in judge_rows:
         if score_row.get("arm") != "B3_dynamics" or score_row.get("score") is None:
             continue
@@ -726,6 +1013,7 @@ def _compute_dynamics_reads(  # noqa: C901
             continue
         predictor_key = (conv_id, int(turn_index) - 2)
         if predictor_key not in indices["context_k"]:
+            b3_dropped_missing_predictor += 1
             continue
         b3_by_trait.setdefault(str(score_row.get("trait")), []).append(
             (
@@ -756,7 +1044,9 @@ def _compute_dynamics_reads(  # noqa: C901
     out["B3_context_to_judged_answer_next"] = {
         "status": "computed" if b3 else "no_scored_b3_rows",
         "traits": b3,
+        "dropped_missing_predictor_or_non_alternating": int(b3_dropped_missing_predictor),
     }
+    out["dropped_pair_counts"] = skipped_pair_counts
     return out
 
 
@@ -767,24 +1057,38 @@ def _selection_symmetric_projection_null(
     rb_directions: np.ndarray,
     trait_names: list[str],
     layer: int,
+    basis_info: dict[str, Any],
     n_draws: int,
     seed: int,
     out_dir: Path,
 ) -> dict:
     rng = np.random.default_rng(seed)
-    rb = rb_directions[layer]
     factor_arrays = {name: np.asarray(factors[name], dtype=np.float64) for name in ("f", "g", "i")}
+    out_dim = next(iter(factor_arrays.values())).shape[1]
+    rb_basis = _project_rb_family_to_basis(rb_directions, basis_info, expected_dim=out_dim)
+    if not 0 <= layer < rb_basis.shape[0]:
+        raise ValueError(f"layer {layer} outside r_B family with {rb_basis.shape[0]} layers")
     observed = {
-        factor: {trait_names[t]: float(np.mean(arr @ rb[t])) for t in range(len(trait_names))}
+        factor: {
+            f"L{layer_i:02d}": {
+                trait_names[t]: float(np.mean(arr @ rb_basis[layer_i, t]))
+                for t in range(len(trait_names))
+            }
+            for layer_i in range(rb_basis.shape[0])
+        }
         for factor, arr in factor_arrays.items()
     }
-    draws = np.empty((n_draws, len(factor_arrays), len(trait_names)), dtype=np.float64)
+    draws = np.empty(
+        (n_draws, rb_basis.shape[0], len(factor_arrays), len(trait_names)), dtype=np.float64
+    )
     for draw in range(n_draws):
         signs = rng.choice(np.array([-1.0, 1.0]), size=next(iter(factor_arrays.values())).shape[0])
         for f_i, arr in enumerate(factor_arrays.values()):
             signed = arr * signs[:, None]
-            draws[draw, f_i, :] = np.abs(np.mean(signed @ rb.T, axis=0))
-    max_draws = np.nanmax(draws, axis=(1, 2))
+            draws[draw, :, f_i, :] = np.abs(
+                np.einsum("nd,ltd->lt", signed, rb_basis, optimize=True) / signed.shape[0]
+            )
+    max_draws = np.nanmax(draws, axis=(1, 2, 3))
     null_dir = out_dir / "analysis_tensors" / "nulls"
     null_dir.mkdir(parents=True, exist_ok=True)
     persist = null_dir / f"{unit_key}_selection_projection_null.npy"
@@ -792,10 +1096,14 @@ def _selection_symmetric_projection_null(
     return {
         "status": "computed",
         "n_draws": int(n_draws),
-        "layer": int(layer),
+        "observed_unit_layer": int(layer),
+        "layer_axis": [int(i) for i in range(rb_basis.shape[0])],
+        "factor_axis": list(factor_arrays),
         "trait_names": trait_names,
         "observed_mean_projection": observed,
         "max_abs_p95": float(np.nanpercentile(max_draws, 95)),
+        "shared_sign_seed": int(seed),
+        "persist_shape": [int(x) for x in draws.shape],
         "persist_path": str(persist),
     }
 
@@ -811,8 +1119,8 @@ def _mlp_companion_read(
     unit_rows: list[dict],
     args: argparse.Namespace,
 ) -> dict:
-    if not args.run_mlp_companion:
-        return {"status": "not_requested"}
+    if args.skip_mlp_companion:
+        return {"status": "disabled_by_flag"}
     if not (cell == "cell_inst_own" and arm == "context_end" and fit_arm == "A"):
         return {"status": "not_applicable"}
     from explore_persona_space.analysis.vectorized_mlp_skill import (
@@ -869,13 +1177,12 @@ def _fit_scalar_cv(X: np.ndarray, y: np.ndarray, folds: list[np.ndarray]) -> dic
     return fit
 
 
-def _behavior_reads(
+def _behavior_reads(  # noqa: C901
     *,
     cell: str,
     unit_rows: list[dict],
-    X: np.ndarray,
     Y: np.ndarray,
-    fit_pred: np.ndarray,
+    arm_inputs: dict[str, dict[str, np.ndarray]],
     folds: list[np.ndarray],
     judge_rows: list[dict],
     rb_directions: np.ndarray,
@@ -883,6 +1190,7 @@ def _behavior_reads(
     b0_pool: np.ndarray | None,
     unit_source_indices: np.ndarray,
     layer: int,
+    basis_info: dict[str, Any],
 ) -> dict:
     """Compute the registered B1 panel plus B2 factor-to-behavior reads."""
     if not judge_rows:
@@ -902,64 +1210,160 @@ def _behavior_reads(
     factor_indices = np.asarray(factors["indices"], dtype=np.int64)
     factor_pos = {int(src_i): i for i, src_i in enumerate(factor_indices.tolist())}
     out: dict[str, dict] = {}
+
+    def grain_arrays(
+        arm_data: dict[str, np.ndarray], pairs: list[tuple[int, float]], grain: str
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, list[dict], list[list[int]]]:
+        X_all = arm_data["X"]
+        pred_all = arm_data["fit_pred"]
+        if grain == "per_example":
+            idx = np.asarray([p[0] for p in pairs], dtype=np.int64)
+            scores = np.asarray([p[1] for p in pairs], dtype=np.float64)
+            rows_g = [unit_rows[i] for i in idx]
+            return X_all[idx], pred_all[idx], scores, rows_g, [[int(i)] for i in idx]
+        if grain != "condition_averaged":
+            raise ValueError(f"unknown B1 grain {grain!r}")
+        grouped: dict[str, list[tuple[int, float]]] = {}
+        for idx_i, score in pairs:
+            key = str(unit_rows[idx_i].get("prefix_id", idx_i))
+            grouped.setdefault(key, []).append((idx_i, score))
+        Xg = []
+        Pg = []
+        scores = []
+        rows_g = []
+        source_groups: list[list[int]] = []
+        for key, vals in sorted(grouped.items()):
+            idxs = np.asarray([v[0] for v in vals], dtype=np.int64)
+            Xg.append(X_all[idxs].mean(axis=0))
+            Pg.append(pred_all[idxs].mean(axis=0))
+            scores.append(float(np.mean([v[1] for v in vals])))
+            rows_g.append({"prefix_id": key, "conv_id": key, "condition_id": key})
+            source_groups.append([int(i) for i in idxs])
+        return (
+            np.asarray(Xg, dtype=np.float64),
+            np.asarray(Pg, dtype=np.float64),
+            np.asarray(scores, dtype=np.float64),
+            rows_g,
+            source_groups,
+        )
+
+    def local_folds(rows_g: list[dict]) -> list[np.ndarray]:
+        if len(rows_g) < 3:
+            return []
+        return _folds_from_manifest(
+            rows_g,
+            len(rows_g),
+            group_key="prefix_id",
+            n_folds=max(2, min(len(folds), max(2, len(rows_g) // 2))),
+        )
+
     for trait, pairs in sorted(by_trait.items()):
-        idx = np.asarray([p[0] for p in pairs], dtype=np.int64)
-        scores = np.asarray([p[1] for p in pairs], dtype=np.float64)
-        positives = int(np.sum(scores > 50.0))
-        negatives = int(scores.size - positives)
-        std = float(np.std(scores)) if scores.size else float("nan")
-        estimable = bool(scores.size >= 5 and std >= 1.0 and positives >= 1 and negatives >= 1)
+        per_example_scores = np.asarray([p[1] for p in pairs], dtype=np.float64)
+        positives = int(np.sum(per_example_scores > 50.0))
+        negatives = int(per_example_scores.size - positives)
+        std = float(np.std(per_example_scores)) if per_example_scores.size else float("nan")
+        estimable = bool(
+            per_example_scores.size >= 5 and std >= 1.0 and positives >= 1 and negatives >= 1
+        )
         entry: dict[str, Any] = {
-            "n_scored": int(scores.size),
+            "n_scored": int(per_example_scores.size),
             "score_std": std,
             "n_positive": positives,
             "n_negative": negatives,
             "estimable": estimable,
+            "B1_by_arm_grain": {},
         }
         if estimable:
-            local_folds = _folds_from_manifest(
-                [unit_rows[i] for i in idx],
-                len(idx),
-                group_key="prefix_id",
-                n_folds=min(len(folds), max(2, len(idx) // 2)),
-            )
-            if len(local_folds) < 2 or any(fold.size >= len(idx) for fold in local_folds):
-                entry["estimable"] = False
-                entry["fold_guard"] = "grouped folds collapsed below two trainable splits"
-                out[trait] = entry
-                continue
             trait_i = _trait_index(trait_names, trait)
             if trait_i is None:
                 raise KeyError(f"trait {trait!r} missing from r_B trait names {trait_names}")
             rb = rb_directions[layer, trait_i]
-            rb_norm = np.linalg.norm(rb)
-            if rb_norm == 0.0:
+            rb_norm = float(np.linalg.norm(rb))
+            rb_out = _project_rb_to_basis(rb, basis_info, expected_dim=Y.shape[1])
+            rb_out_norm = float(np.linalg.norm(rb_out))
+            if rb_norm == 0.0 or rb_out_norm == 0.0:
                 raise ValueError(f"r_B direction for trait {trait} at layer {layer} has zero norm")
-            raw_projection = X[idx] @ rb / rb_norm
-            map_projection = fit_pred[idx] @ rb / rb_norm
-            a2_projection = Y[idx] @ rb / rb_norm
-            entry["B1_raw_projection"] = {"pearson_r": _pearson_or_nan(raw_projection, scores)}
-            entry["B1_map_mediated"] = {"pearson_r": _pearson_or_nan(map_projection, scores)}
-            entry["B1_direct_regression"] = _fit_scalar_cv(X[idx], scores, local_folds)
-            entry["B1_A2_answer_side_ceiling"] = {
-                "pearson_r": _pearson_or_nan(a2_projection, scores)
-            }
-            if b0_pool is not None and cell in {"cell_inst_own", "cell_pre_own"}:
-                b0_idx = unit_source_indices[idx]
-                if int(np.max(b0_idx)) >= b0_pool.shape[0]:
-                    raise IndexError(
-                        f"B0 pool for {cell} has {b0_pool.shape[0]} rows; "
-                        f"need index {int(np.max(b0_idx))}"
+            for arm_label, arm_data in sorted(arm_inputs.items()):
+                X_all = arm_data["X"]
+                if X_all.shape[1] != rb.shape[0]:
+                    raise ValueError(
+                        f"B1 raw arm {arm_label} dim {X_all.shape[1]} != r_B dim {rb.shape[0]}"
                     )
-                modes = ("mean", "max", "top3", "last")
-                entry["B1_B0_poolings"] = {
-                    mode: {
-                        "pearson_r": _pearson_or_nan(
-                            b0_pool[b0_idx, layer, trait_i, mode_i], scores
-                        )
+                entry["B1_by_arm_grain"][arm_label] = {}
+                for grain in ("per_example", "condition_averaged"):
+                    Xg, Pg, scores, rows_g, source_groups = grain_arrays(arm_data, pairs, grain)
+                    positives_g = int(np.sum(scores > 50.0))
+                    negatives_g = int(scores.size - positives_g)
+                    std_g = float(np.std(scores)) if scores.size else float("nan")
+                    grain_entry: dict[str, Any] = {
+                        "n_scored": int(scores.size),
+                        "score_std": std_g,
+                        "n_positive": positives_g,
+                        "n_negative": negatives_g,
+                        "estimable": bool(
+                            scores.size >= 5
+                            and std_g >= 1.0
+                            and positives_g >= 1
+                            and negatives_g >= 1
+                        ),
                     }
-                    for mode_i, mode in enumerate(modes)
-                }
+                    lf = local_folds(rows_g)
+                    if (
+                        not grain_entry["estimable"]
+                        or len(lf) < 2
+                        or any(fold.size >= len(rows_g) for fold in lf)
+                    ):
+                        if grain_entry["estimable"]:
+                            grain_entry["estimable"] = False
+                            grain_entry["fold_guard"] = (
+                                "grouped folds collapsed below two trainable splits"
+                            )
+                        entry["B1_by_arm_grain"][arm_label][grain] = grain_entry
+                        continue
+                    raw_projection = Xg @ rb / rb_norm
+                    map_projection = Pg @ rb_out / rb_out_norm
+                    a2_projection = (
+                        np.asarray(
+                            [
+                                Y[np.asarray(source_group, dtype=np.int64)].mean(axis=0)
+                                for source_group in source_groups
+                            ],
+                            dtype=np.float64,
+                        )
+                        @ rb_out
+                        / rb_out_norm
+                    )
+                    grain_entry["B1_raw_projection"] = {
+                        "pearson_r": _pearson_or_nan(raw_projection, scores)
+                    }
+                    grain_entry["B1_map_mediated"] = {
+                        "pearson_r": _pearson_or_nan(map_projection, scores)
+                    }
+                    grain_entry["B1_direct_regression"] = _fit_scalar_cv(Xg, scores, lf)
+                    grain_entry["B1_A2_answer_side_ceiling"] = {
+                        "pearson_r": _pearson_or_nan(a2_projection, scores)
+                    }
+                    if b0_pool is not None and cell in {"cell_inst_own", "cell_pre_own"}:
+                        modes = ("mean", "max", "top3", "last")
+                        b0_values = {}
+                        for mode_i, mode in enumerate(modes):
+                            vals = []
+                            for source_group in source_groups:
+                                source_idx = np.asarray(source_group, dtype=np.int64)
+                                b0_idx = unit_source_indices[source_idx]
+                                if b0_idx.size and int(np.max(b0_idx)) >= b0_pool.shape[0]:
+                                    raise IndexError(
+                                        f"B0 pool for {cell} has {b0_pool.shape[0]} rows; "
+                                        f"need index {int(np.max(b0_idx))}"
+                                    )
+                                vals.append(float(np.mean(b0_pool[b0_idx, layer, trait_i, mode_i])))
+                            b0_values[mode] = {
+                                "pearson_r": _pearson_or_nan(
+                                    np.asarray(vals, dtype=np.float64), scores
+                                )
+                            }
+                        grain_entry["B1_B0_poolings"] = b0_values
+                    entry["B1_by_arm_grain"][arm_label][grain] = grain_entry
             factor_scores = {}
             dense_pairs = [(factor_pos[int(i)], s) for i, s in pairs if int(i) in factor_pos]
             if dense_pairs:
@@ -967,7 +1371,12 @@ def _behavior_reads(
                 dense_scores = np.asarray([p[1] for p in dense_pairs], dtype=np.float64)
                 for factor_name in ("f", "g", "i"):
                     factor_arr = np.asarray(factors[factor_name])[dense_idx]
-                    factor_proj = factor_arr @ rb / rb_norm
+                    if factor_arr.shape[1] != rb_out.shape[0]:
+                        raise ValueError(
+                            f"B2 factor {factor_name} dim {factor_arr.shape[1]} "
+                            f"!= projected r_B dim {rb_out.shape[0]}"
+                        )
+                    factor_proj = factor_arr @ rb_out / rb_out_norm
                     factor_scores[factor_name] = {
                         "norm_score_r": _pearson_or_nan(
                             np.linalg.norm(factor_arr, axis=1), dense_scores
@@ -1088,7 +1497,13 @@ def run(args: argparse.Namespace) -> dict:  # noqa: C901
                         n_folds=args.n_folds,
                     )
                     for basis in bases:
-                        Yb = _basis_targets(Yn, basis)
+                        Yb, basis_info = _basis_targets_with_info(
+                            Yn,
+                            basis,
+                            hidden_dim=args.hidden_dim,
+                            targets=targets,
+                            projection_target="t1",
+                        )
                         prefix_Xn = x_by_arm.get("prefix_end", X)[:n0][idx_arr]
                         context_Xn = x_by_arm.get("context_end", X)[:n0][idx_arr]
                         unit_null_draws = (
@@ -1110,7 +1525,8 @@ def run(args: argparse.Namespace) -> dict:  # noqa: C901
                             "n_null_draws": unit_null_draws,
                             "matched_n_draws": args.matched_n_draws,
                         }
-                        fp = _fingerprint(y_paths + x_paths_by_arm[arm], config)
+                        x_fp_paths = [path for paths in x_paths_by_arm.values() for path in paths]
+                        fp = _fingerprint(y_paths + x_fp_paths, config)
                         ckpt = (
                             ckpt_dir / f"{cell}_{arm}_fit{fit_arm}_L{layer:02d}_{basis}_{fp}.json"
                         )
@@ -1118,6 +1534,31 @@ def run(args: argparse.Namespace) -> dict:  # noqa: C901
                             units.append(json.loads(ckpt.read_text()))
                             continue
                         fit, fit_pred = _fit_cv(Xn, Yb, folds, return_pred=True)
+                        behavior_arm_inputs: dict[str, dict[str, np.ndarray]] = {}
+                        if judge_rows:
+                            behavior_sources = {
+                                "prefix_end": prefix_Xn,
+                                "context_end": context_Xn,
+                            }
+                            model_type = CELL_MODEL_TYPE.get(cell)
+                            if model_type is None:
+                                raise ValueError(
+                                    f"cannot infer bare-query model type for cell {cell}"
+                                )
+                            behavior_sources["c_q_bare"] = _bare_X_for_unit(
+                                summaries_dir, model_type, layer, unit_rows
+                            )
+                            for arm_label, X_behavior in behavior_sources.items():
+                                if arm_label == arm:
+                                    pred_behavior = fit_pred
+                                else:
+                                    _fit_behavior, pred_behavior = _fit_cv(
+                                        X_behavior, Yb, folds, return_pred=True
+                                    )
+                                behavior_arm_inputs[arm_label] = {
+                                    "X": X_behavior,
+                                    "fit_pred": pred_behavior,
+                                }
                         floors = _identity_floors(Xn, Yb, folds)
                         spec = _spectrum(Xn, Yb)
                         null = _perm_null(
@@ -1184,9 +1625,8 @@ def run(args: argparse.Namespace) -> dict:  # noqa: C901
                             "behavior_B1_B2": _behavior_reads(
                                 cell=cell,
                                 unit_rows=unit_rows,
-                                X=Xn,
                                 Y=Yb,
-                                fit_pred=fit_pred,
+                                arm_inputs=behavior_arm_inputs,
                                 folds=folds,
                                 judge_rows=judge_rows,
                                 rb_directions=rb_directions,
@@ -1194,6 +1634,7 @@ def run(args: argparse.Namespace) -> dict:  # noqa: C901
                                 b0_pool=b0_pools.get(cell),
                                 unit_source_indices=idx_arr,
                                 layer=layer,
+                                basis_info=basis_info,
                             ),
                             "refit_twins": _refit_twins(unit_rows, Yb, seed=args.seed + layer),
                             "selection_symmetric_layer_max_null": (
@@ -1203,6 +1644,7 @@ def run(args: argparse.Namespace) -> dict:  # noqa: C901
                                     rb_directions=rb_directions,
                                     trait_names=trait_names,
                                     layer=layer,
+                                    basis_info=basis_info,
                                     n_draws=args.n_null_draws,
                                     seed=args.seed + layer,
                                     out_dir=out_dir,
@@ -1280,7 +1722,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Fail if any registered read family is guarded/deferred",
     )
-    p.add_argument("--run-mlp-companion", action="store_true")
+    p.add_argument(
+        "--run-mlp-companion",
+        action="store_true",
+        help="Deprecated no-op; the registered MLP companion runs by default.",
+    )
+    p.add_argument("--skip-mlp-companion", action="store_true")
     p.add_argument("--mlp-max-epochs", type=int, default=300)
     p.add_argument("--mlp-hidden", type=int, default=512)
     p.add_argument("--mlp-target-dim", type=int, default=48)

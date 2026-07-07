@@ -61,6 +61,23 @@ def _jsonl(path: Path):
                 yield json.loads(line)
 
 
+def _sorted_shards(paths) -> list[Path]:
+    def key(path: Path) -> tuple[str, int, str]:
+        stem = path.stem
+        if "_shard" not in stem:
+            return stem, -1, stem
+        prefix, raw = stem.split("_shard", 1)
+        digits = []
+        for ch in raw:
+            if ch.isdigit():
+                digits.append(ch)
+            else:
+                break
+        return prefix, int("".join(digits) or 0), raw
+
+    return sorted(paths, key=key)
+
+
 def _load_store(path: Path, key: str) -> dict[str, dict]:
     return {str(item[key]): item for item in _jsonl(path)}
 
@@ -88,7 +105,7 @@ def _query_text(query_store: dict[str, dict], query_id: str) -> str:
 
 def _load_completion_map(raw_dir: Path, model_type: str, cell_id: str) -> dict[str, str]:
     comp_dir = raw_dir / model_type
-    paths = sorted(comp_dir.glob(f"{cell_id}_shard*.jsonl")) if comp_dir.exists() else []
+    paths = _sorted_shards(comp_dir.glob(f"{cell_id}_shard*.jsonl")) if comp_dir.exists() else []
     out: dict[str, str] = {}
     for path in paths:
         for item in _jsonl(path):

@@ -26,6 +26,7 @@ import logging
 import math
 import multiprocessing as mp
 import os
+import queue
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -500,6 +501,10 @@ class CaptureBatchOutput:
 
 def _token_len(tokenizer, text: str) -> int:
     return len(tokenizer.encode(text, add_special_tokens=False))
+
+
+def _token_ids(tokenizer, text: str) -> list[int]:
+    return list(tokenizer.encode(text, add_special_tokens=False))
 
 
 def _call_model_with_hidden_states(model, input_ids, attention_mask):
@@ -1015,13 +1020,18 @@ def check_dispatch_errors(results: list[dict]) -> None:
 
 
 def _sorted_shards(paths: list[Path]) -> list[Path]:
-    def key(path: Path) -> tuple[str, int]:
+    def key(path: Path) -> tuple[str, int, str]:
         stem = path.stem
         if "_shard" not in stem:
-            return stem, -1
-        raw = stem.rsplit("_shard", 1)[1]
-        digits = "".join(ch for ch in raw if ch.isdigit())
-        return stem.split("_shard", 1)[0], int(digits or 0)
+            return stem, -1, stem
+        prefix, raw = stem.split("_shard", 1)
+        digits = []
+        for ch in raw:
+            if ch.isdigit():
+                digits.append(ch)
+            else:
+                break
+        return prefix, int("".join(digits) or 0), raw
 
     return sorted(paths, key=key)
 
@@ -1330,13 +1340,76 @@ def run_g2_gate_from_disk(  # noqa: C901
     )
 
 
+def _g2_gate_worker(
+    result_queue,
+    out_dir: Path,
+    cell_id: str,
+    rows: list[dict],
+    prefix_store: dict,
+    query_store: dict,
+    args: argparse.Namespace,
+    rb_directions: np.ndarray | None,
+) -> None:
+    try:
+        run_g2_gate_from_disk(
+            out_dir,
+            cell_id,
+            rows=rows,
+            prefix_store=prefix_store,
+            query_store=query_store,
+            args=args,
+            rb_directions=rb_directions,
+        )
+    except Exception as exc:
+        result_queue.put({"status": "error", "error": repr(exc)})
+        raise
+    result_queue.put({"status": "ok"})
+
+
+def run_g2_gate_from_disk_isolated(
+    out_dir: Path,
+    cell_id: str,
+    *,
+    rows: list[dict],
+    prefix_store: dict,
+    query_store: dict,
+    args: argparse.Namespace,
+    rb_directions: np.ndarray | None,
+) -> None:
+    """Run G2 in a child process so its CUDA context dies at process exit."""
+    ctx = mp.get_context("spawn")
+    result_queue = ctx.Queue()
+    proc = ctx.Process(
+        target=_g2_gate_worker,
+        args=(result_queue, out_dir, cell_id, rows, prefix_store, query_store, args, rb_directions),
+        daemon=False,
+        name=f"issue1092-g2-{cell_id}",
+    )
+    proc.start()
+    try:
+        result = result_queue.get(timeout=7200)
+    except queue.Empty as exc:
+        proc.terminate()
+        proc.join(timeout=30)
+        raise TimeoutError(f"G2 gate timed out for {cell_id}") from exc
+    proc.join(timeout=120)
+    if proc.is_alive():
+        proc.terminate()
+        proc.join(timeout=30)
+        raise RuntimeError(f"G2 gate process did not exit cleanly for {cell_id}")
+    if proc.exitcode != 0 or result.get("status") != "ok":
+        raise RuntimeError(
+            f"G2 gate failed for {cell_id}: exitcode={proc.exitcode} error={result.get('error')}"
+        )
+
+
 def consolidate_cell_shards(out_dir: Path, cell_id: str, *, n_layers: int) -> None:
     """Collapse per-shard summary arrays into per-cell layer files before upload."""
     cell_dir = out_dir / "summaries" / cell_id
     if cell_dir.exists():
         for kind in SUMMARY_KINDS:
             for layer in range(n_layers):
-                paths = sorted(cell_dir.glob(f"{kind}_L{layer:02d}_shard*.npy"))
+                paths = _sorted_shards(list(cell_dir.glob(f"{kind}_L{layer:02d}_shard*.npy")))
                 if len(paths) <= 1:
                     continue
                 arrays = [np.load(path, mmap_mode="r") for path in paths]
@@ -1347,7 +1420,7 @@ def consolidate_cell_shards(out_dir: Path, cell_id: str, *, n_layers: int) -> No
                     path.unlink()
     pool_dir = out_dir / "summaries" / "b0_rB_pool"
     if pool_dir.exists():
-        pool_paths = sorted(pool_dir.glob(f"{cell_id}_shard*.npy"))
+        pool_paths = _sorted_shards(list(pool_dir.glob(f"{cell_id}_shard*.npy")))
         if len(pool_paths) > 1:
             arr = np.concatenate([np.load(path, mmap_mode="r") for path in pool_paths], axis=0)
             out_path = pool_dir / f"{cell_id}.npy"
@@ -1390,7 +1463,7 @@ def write_summaries_npy(
 ) -> dict[str, Path]:
     """Write per-kind summary arrays to npy files (fp16, no compression).
 
-    Layout: <out>/summaries/<cell>/<kind>_L{ll}_shard{i}.npy
+    Layout: <out>/summaries/<cell>/<kind>_L{ll}_shard{i:05d}.npy
     Each file: (n_rows, hidden_dim) fp16.
     """
     cell_dir = out_dir / "summaries" / cell_id
@@ -1404,7 +1477,7 @@ def write_summaries_npy(
                 axis=0,
             )  # (n_rows, hidden_dim)
             arr = arr.astype(np.float16)
-            path = cell_dir / f"{kind}_L{ll:02d}_shard{shard_idx}.npy"
+            path = cell_dir / f"{kind}_L{ll:02d}_shard{shard_idx:05d}.npy"
             np.save(str(path), arr)  # plain np.save, no compression (#813)
             paths[f"{kind}_L{ll:02d}"] = path
 
@@ -1420,7 +1493,7 @@ def write_rb_pool_npy(
     """Write r_B projection pool array. Shape: (n_rows, n_layers, n_traits, 4)."""
     pool_dir = out_dir / "summaries" / "b0_rB_pool"
     pool_dir.mkdir(parents=True, exist_ok=True)
-    path = pool_dir / f"{cell_id}_shard{shard_idx}.npy"
+    path = pool_dir / f"{cell_id}_shard{shard_idx:05d}.npy"
     np.save(str(path), rb_pool.astype(np.float32))
     return path
 
@@ -1490,7 +1563,11 @@ def write_fingerprint(fp_path: Path, fp_dict: dict) -> None:
 def _load_raw_completion_files(out_dir: Path, model_type: str, cell_id: str) -> dict[str, str]:
     """Load row_id -> completion from previously persisted own-policy rollouts."""
     comp_dir = out_dir / "raw_completions" / model_type
-    paths = sorted(comp_dir.glob(f"{cell_id}_shard*.jsonl")) if comp_dir.exists() else []
+    paths = (
+        _sorted_shards(list(comp_dir.glob(f"{cell_id}_shard*.jsonl")))
+        if comp_dir.exists()
+        else []
+    )
     out: dict[str, str] = {}
     for path in paths:
         with open(path, encoding="utf-8") as f:
@@ -1727,7 +1804,9 @@ def _process_shard(
     )
     phase_label = _phase_fp_label(getattr(args, "phase_name", "main"))
     fp_path = (
-        out_dir / "manifests" / f"{cell_id}_shard{shard.shard_idx}_{phase_label}_fingerprint.json"
+        out_dir
+        / "manifests"
+        / f"{cell_id}_shard{shard.shard_idx:05d}_{phase_label}_fingerprint.json"
     )
     if fingerprint_matches(fp_path, fp_dict):
         logger.info(
@@ -2195,7 +2274,10 @@ def _aux_worker_loop(
                 fp_path = (
                     out_dir
                     / "manifests"
-                    / f"{shard.phase}_{shard.model_type}_shard{shard.shard_idx}_fingerprint.json"
+                    / (
+                        f"{shard.phase}_{shard.model_type}_shard"
+                        f"{shard.shard_idx:05d}_fingerprint.json"
+                    )
                 )
                 n_rows = shard.row_end - shard.row_start
                 if fingerprint_matches(fp_path, fp):
@@ -2544,7 +2626,11 @@ def _render_assistant_prompt(turns_before: list[dict], model_type: str) -> str:
 
 
 def _dynamics_cut_plan(
-    turns: list[dict], tokenizer, model_type: str, n_total_tokens: int
+    turns: list[dict],
+    tokenizer,
+    model_type: str,
+    n_total_tokens: int,
+    full_token_ids: list[int] | None = None,
 ) -> dict[str, list[tuple[int, int, int]]]:
     """Return per-kind (start, end, turn_index) cuts for one full conversation.
 
@@ -2591,16 +2677,30 @@ def _dynamics_cut_plan(
             cuts["answer_k_t2"].append((answer_start, t2_end, turn_idx))
             cuts["answer_k_t3"].append((t3_pos, t3_pos + 1, turn_idx))
         elif role == "user":
-            user_start = _token_len(
-                tokenizer,
-                _render_turn_prefix(turns, turn_idx, tokenizer, model_type),
-            )
             user_len = max(1, _token_len(tokenizer, content))
-            user_end = user_start + user_len
-            after_turn = _token_len(
-                tokenizer, _render_full_conversation(turns[: turn_idx + 1], model_type)
+            rendered_after_turn = _render_full_conversation(turns[: turn_idx + 1], model_type)
+            after_turn = _token_len(tokenizer, rendered_after_turn)
+            content_pos = rendered_after_turn.rfind(content) if content else -1
+            suffix = (
+                rendered_after_turn[content_pos + len(content) :]
+                if content_pos >= 0
+                else ""
             )
+            suffix_len = _token_len(tokenizer, suffix)
+            user_end = after_turn - suffix_len
+            user_start = user_end - user_len
             user_start, user_end = clamp_span(user_start, user_end)
+            if full_token_ids is not None and content:
+                observed = full_token_ids[user_start:user_end]
+                expected = _token_ids(tokenizer, content)
+                if observed != expected:
+                    decoded = tokenizer.decode(observed, skip_special_tokens=False)
+                    if decoded != content and decoded.strip() != content.strip():
+                        raise AssertionError(
+                            f"dynamics user-span alignment failed for {model_type} turn "
+                            f"{turn_idx}: cut=({user_start},{user_end}) "
+                            f"decoded={decoded!r} expected={content!r}"
+                        )
             _u2_start, u2_end = clamp_span(user_start, max(user_end, after_turn))
             u3_pos = min(max(0, after_turn - 1), max(0, n_total_tokens - 1))
             cuts["u1"].append((user_start, user_end, turn_idx))
@@ -2734,8 +2834,13 @@ def _capture_dynamics_loaded_model(
 
         for local_i, n_tok in enumerate(token_counts):
             conv_id = conv_ids[start + local_i]
+            full_ids = inputs["input_ids"][local_i, :n_tok].detach().cpu().tolist()
             cuts = _dynamics_cut_plan(
-                turns_by_prompt[start + local_i], tokenizer, model_type, n_tok
+                turns_by_prompt[start + local_i],
+                tokenizer,
+                model_type,
+                n_tok,
+                full_token_ids=full_ids,
             )
             for kind, spans in cuts.items():
                 for cut_start, cut_end, turn_idx in spans:
@@ -2777,7 +2882,7 @@ def _write_layer_stack(
     root.mkdir(parents=True, exist_ok=True)
     if states.ndim != 3:
         raise ValueError(f"{kind} states must be (n,L,H), got {states.shape}")
-    suffix = "" if shard_idx is None else f"_shard{shard_idx}"
+    suffix = "" if shard_idx is None else f"_shard{shard_idx:05d}"
     for layer in range(states.shape[1]):
         np.save(root / f"{kind}_L{layer:02d}{suffix}.npy", states[:, layer, :].astype(np.float16))
 
@@ -2831,7 +2936,7 @@ def run_bare_phase_loaded(
     )
     out_root = Path(args.out) / "summaries" / f"bare_{model_type}"
     _write_layer_stack(out_root, "c_q_bare", states, shard_idx=shard_idx)
-    index_name = "row_index.jsonl" if shard_idx is None else f"row_index_shard{shard_idx}.jsonl"
+    index_name = "row_index.jsonl" if shard_idx is None else f"row_index_shard{shard_idx:05d}.jsonl"
     _write_jsonl_rows(
         out_root / index_name,
         [{"query_id": item.get("query_id") or item.get("id")} for item in queries],
@@ -2875,7 +2980,7 @@ def run_dynamics_phase_loaded(
         index_name = (
             f"row_index_{kind}.jsonl"
             if shard_idx is None
-            else f"row_index_{kind}_shard{shard_idx}.jsonl"
+            else f"row_index_{kind}_shard{shard_idx:05d}.jsonl"
         )
         _write_jsonl_rows(out_root / index_name, index_by_kind[kind])
 
@@ -3240,7 +3345,7 @@ def main() -> None:  # noqa: C901
                 run_cell_stage(["cell_inst_own"], {"gen"}, rb=rb_directions)
             run_cell_stage(["cell_inst_own"], {"capture"}, rb=rb_directions)
             completed_cells.append("cell_inst_own")
-            run_g2_gate_from_disk(
+            run_g2_gate_from_disk_isolated(
                 out_dir,
                 "cell_inst_own",
                 rows=rows,
