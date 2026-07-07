@@ -1,0 +1,1 @@
+{"ts": "2026-07-07T20:05:54Z", "event": "raised", "concern_id": "capture-user-wrap-ignored", "severity": "BLOCKER", "summary": "run_capture_unit generates with bare questions; neg_reph_curious user_wrap ignored -> wrong context + compute_prompt_spans assert crashes p10 for every sycophancy capture pass", "raised_by": "code-reviewer", "raised_at_round": 1}
