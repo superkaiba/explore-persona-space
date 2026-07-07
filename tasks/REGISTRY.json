@@ -583,8 +583,8 @@
       "goal": "Determine whether generating the factory's content-behavior training completions on-policy from Qwen-2.5-7B-Instruct with the elicitation instruction injected as plain untagged system-prompt text (instruct-and-strip, variety of induce/oppose phrasings) clears the #906 yield floors and installs the behaviors, and whether an abliterated (helpful-only) Qwen generator beats the base Instruct model on yield and install strength.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1074",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1074",
+      "status": "awaiting_promotion",
       "title": "Stage-split generators (abliterated positives, base-Qwen negatives) yield the first trainable harmful-compliance cell, but its install plateaus near 0.40 \u2014 below the 0.60\u20130.85 band even at triple dose (MODERATE confidence)"
     },
     "1075": {
