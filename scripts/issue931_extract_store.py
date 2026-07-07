@@ -51,6 +51,12 @@ EXPECTED_HIDDEN = common.EXPECTED_HIDDEN
 def parse_args() -> argparse.Namespace:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--regime", default=None, choices=("armA", "armB", "armC"))
+    ap.add_argument(
+        "--model-id",
+        type=str,
+        default=common.MODEL_ID,
+        help="HF model id to capture from (default: the #931 Instruct pin — byte-identical)",
+    )
     ap.add_argument("--data-dir", type=Path, default=Path("data/issue_931"))
     ap.add_argument("--store-dir", type=Path, default=None, help="default <data-dir>/store")
     ap.add_argument("--batch-size", type=int, default=8)
@@ -89,7 +95,7 @@ def make_tiny_model(dest: Path, *, layers: int = 4, hidden: int = 64) -> None:
     print(f"[i931-p2] tiny model written to {dest} (L={layers}, D={hidden})")
 
 
-def load_model(tiny_model_dir: str | None):
+def load_model(tiny_model_dir: str | None, model_id: str = common.MODEL_ID):
     """bf16 GPU model (device_map pinned; off-GPU params fail loud) or CPU tiny."""
     global EXPECTED_LAYERS, EXPECTED_HIDDEN
     from transformers import AutoModelForCausalLM
@@ -101,9 +107,7 @@ def load_model(tiny_model_dir: str | None):
         EXPECTED_HIDDEN = int(model.config.hidden_size)
         print(f"[i931-p2] TINY model: L={EXPECTED_LAYERS} D={EXPECTED_HIDDEN}")
         return model
-    model = AutoModelForCausalLM.from_pretrained(
-        common.MODEL_ID, dtype=torch.bfloat16, device_map={"": 0}
-    )
+    model = AutoModelForCausalLM.from_pretrained(model_id, dtype=torch.bfloat16, device_map={"": 0})
     model.eval()
     off_gpu = [n for n, p in model.named_parameters() if p.device.type != "cuda"]
     assert not off_gpu, f"{len(off_gpu)} params not on CUDA (e.g. {off_gpu[:3]})"
@@ -359,8 +363,8 @@ def main() -> int:
         return 0
     assert args.regime, "--regime is required unless --make-tiny-model"
     store_dir = (args.store_dir or (args.data_dir / "store")) / args.regime
-    print(f"[phase=p2_extract_{args.regime.lower()}] span-summary extraction")
-    tokenizer = common.get_tokenizer()
+    print(f"[phase=p2_extract_{args.regime.lower()}] span-summary extraction ({args.model_id})")
+    tokenizer = common.get_tokenizer(args.model_id)
     pad_id = tokenizer.pad_token_id or tokenizer.eos_token_id
     items = load_items(args.regime, args.data_dir)
     if args.max_items:
@@ -381,7 +385,7 @@ def main() -> int:
             items = [it for it in items if it["pairs"]]
             print(f"[i931-p2] resume: {len(done_rows)} rows done; {len(items)} items left")
 
-    model = load_model(args.tiny_model_dir)
+    model = load_model(args.tiny_model_dir, args.model_id)
     if args.equivalence_check and items:
         eq = equivalence_check(model, items, pad_id, args.regime)
         common.write_json(store_dir / f"{args.regime}_equivalence.json", eq)
