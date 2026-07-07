@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1092,
+  "highest_id": 1093,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -728,6 +728,13 @@
       "path": "tasks/planning/1092",
       "status": "planning",
       "title": "Realistic sparse-crossed prefix x query corpus: prefix-map vs context-map, averaging-rank collapse, and prefix/query variance decomposition of answer-state transport"
+    },
+    "1093": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1093",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan check for 7B capture booked on eval/debug intent"
     },
     "11": {
       "has_clean_result": false,
