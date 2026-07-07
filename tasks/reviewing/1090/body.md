@@ -29,6 +29,8 @@ relates_to:
 
 <!-- clean-result-v4 -->
 
+**Methodology:** https://github.com/superkaiba/explore-persona-space/blob/f55818b1eab64ab3e4c76f818bb119d8fd80fce8/docs/methodology/issue_1090.md · https://gist.github.com/superkaiba/96b39c8854c71ee4d5110f067b6000f8
+
 ## Takeaways
 
 - The subjective-stance bank keeps 19 of 72 generated sycophancy positives vs 6 of 72 on the wrong-fact bank (p = 0.007; Wilson intervals do not overlap; 3.2× yield) — still one row under the 20-row floor, so the registered yield criterion failed. The banks are unpaired and the kept behavior is opinion-agreement, not the registry's wrong-claim agreement: an operationalization delta, not a resolved diagnosis of the datagen floor.
