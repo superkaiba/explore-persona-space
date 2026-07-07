@@ -128,9 +128,14 @@ MARGIN_POOL_UNAVAILABLE: dict[str, str] = {}
 # Optional EXTRA pool tranche UNIONED into the base pool (deduped on
 # request_id, base rows keep priority, capped at DEFAULT_MARGIN_POOL_CAP):
 # sycophancy tops up its n_pos=7 base positives toward the 25 cap from the
-# fu3-r3 pos-only tranche (concern fu3-sycophancy-margin-pool-n7).
+# fu3-r3 pos-only tranche (concern fu3-sycophancy-margin-pool-n7); broad_em
+# tops up its n_pos=2 base positives from the fu3-r4 pos-only tranche adapted
+# from the #722-VALIDATED #661 judge-accepted pool (concern
+# fu3-margin-pool-broad-em-npos2; built by
+# scripts/issue1090_fu3_margin_pool_topup.py build_broad_em_v2).
 MARGIN_POOL_EXTRA = {
     "sycophancy": ("c3-sycophancy-claude", "margin_pool_topup"),
+    "broad_em": ("c6-broad_em-claude", "margin_pool_topup_v2"),
 }
 
 
@@ -440,6 +445,7 @@ def _behavior_margin_pools(cfg: run1090.RunConfig, behavior: str) -> tuple[list,
                     break
                 if r["request_id"] not in seen:
                     pool.append(r)
+                    seen.add(r["request_id"])  # within-tranche dedup (r3 review Minor)
         if extra_rows == 0:
             raise ValueError(
                 f"MARGIN_POOL_EXTRA tranche {slug2}/{subdir2} staged 0 kept rows for "

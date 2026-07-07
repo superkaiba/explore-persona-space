@@ -33,8 +33,10 @@ load_dotenv()
 
 import argparse  # noqa: E402
 import dataclasses  # noqa: E402
+import hashlib  # noqa: E402
 import json  # noqa: E402
 import logging  # noqa: E402
+import random  # noqa: E402
 import sys  # noqa: E402
 import tempfile  # noqa: E402
 import time  # noqa: E402
@@ -65,6 +67,14 @@ from explore_persona_space.orchestrate import hub  # noqa: E402
 logger = logging.getLogger("issue1090.fu3.margin_pool_topup")
 
 POOL_TOPUP_SUBDIR = "margin_pool_topup"
+# fu3 r4 (CONCERN fu3-margin-pool-broad-em-npos2): pos-only broad_em tranche
+# adapted from the #722-VALIDATED #661 judge-accepted pool — a SEPARATE subdir
+# so the frozen r3 tranche (the base pool) is never rewritten; consumed via
+# the worker's MARGIN_POOL_EXTRA union.
+POOL_TOPUP_V2_SUBDIR = "margin_pool_topup_v2"
+I661_POOL_SEED = 42  # deterministic selection seed (fu3 r4 brief)
+I661_POOL_TAKE = 25  # tranche size == DEFAULT_MARGIN_POOL_CAP (union takes cap-2)
+_REPO_ROOT = _SCRIPTS.parent
 # Fresh deterministic rng stream, distinct from the v4 training-mix top-up
 # (run1090.TOPUP_SEED_OFFSET = 7919) so the two tranche grids never collide.
 POOL_SEED_OFFSET = 8117
@@ -117,11 +127,19 @@ def _stage_committed_datagen(work: Path, slug: str) -> tuple[Path, dict]:
     return dest, manifest
 
 
-def _pool_meta(out: Path, *, concern: str, manifest: dict, counts: dict, extra: dict) -> None:
+def _pool_meta(
+    out: Path,
+    *,
+    concern: str,
+    manifest: dict,
+    counts: dict,
+    extra: dict,
+    round_label: str = "fu3-r3",
+) -> None:
     body = {
         "margin_pool_topup": True,
         "issue": fu3.ISSUE,
-        "round": "fu3-r3",
+        "round": round_label,
         "concern": concern,
         "schema": "datagen_topup sidecar (raw_{pos,neg}.jsonl + kept_{pos,neg}.jsonl)",
         "consumer": "issue1090_fu3_worker._behavior_margin_pools (pool-ONLY; never a training mix)",
@@ -284,9 +302,103 @@ def build_sycophancy(work: Path) -> Path:
     return out
 
 
-def upload_tranche(out: Path, slug: str) -> str:
-    """One folder commit to the worker's staging prefix; returns the prefix."""
-    prefix = f"{run1090.DATA_PREFIX}/{slug}/{POOL_TOPUP_SUBDIR}"
+def build_broad_em_v2(work: Path) -> Path:
+    """c6 pos-only v2 pool tranche (CONCERN fu3-margin-pool-broad-em-npos2):
+    schema-adapts the #722-VALIDATED #661 broad_em judge-accepted positives
+    (persona-vectors extraction rollouts, ``eval_results/issue_661/
+    judge_filter.json``; ``eval_results/issue_722/tf_margin/margin_chain.json``
+    records n_pos_available=171 for broad_em, and rho(margin,rate)=+0.31 was
+    validated ON this pool) into the topup sidecar schema. Zero API, zero new
+    generation. The worker's MARGIN_POOL_EXTRA unions it into the base
+    ``margin_pool_topup`` pool (n_pos 2 -> the 25 cap; base rows keep
+    priority). Reuse per artifact-reuse (f) content-identity sha pin + (h)
+    source-resolution — recorded in pool_meta.json. EM-adjacent content: this
+    function never prints row text (counts/ids only)."""
+    slug = "c6-broad_em-claude"
+    src = _REPO_ROOT / "eval_results" / "issue_661" / "judge_filter.json"
+    if not src.exists():
+        raise FileNotFoundError(
+            f"{src} missing — sparse worktree? run: git sparse-checkout add eval_results/issue_661"
+        )
+    doc = json.loads(src.read_text(encoding="utf-8"))
+    node = doc["behaviors"]["broad_em"]["pos"]
+    key = lambda s: (s["probe_idx"], s["instruction_idx"], s["rollout_idx"])  # noqa: E731
+    survivors = sorted(node["survivors"], key=key)
+    if len(survivors) != int(node["n_survivors"]):
+        raise RuntimeError(
+            f"#661 broad_em pos survivors {len(survivors)} != recorded {node['n_survivors']}"
+        )
+    take = survivors
+    if len(take) > I661_POOL_TAKE:
+        take = sorted(random.Random(I661_POOL_SEED).sample(survivors, I661_POOL_TAKE), key=key)
+    out = work / slug / POOL_TOPUP_V2_SUBDIR
+    out.mkdir(parents=True, exist_ok=True)
+
+    def _rid(s: dict) -> str:
+        return f"i661be-p{s['probe_idx']:03d}-i{s['instruction_idx']}-r{s['rollout_idx']}"
+
+    rows = [
+        {
+            "request_id": _rid(s),
+            "arm": POSITIVE,
+            "question_id": f"i661-broad_em-q{s['probe_idx']:03d}",
+            "variant_id": f"i661-pos-i{s['instruction_idx']}-r{s['rollout_idx']}",
+            "question": s["probe"],
+            "completion": s["text"],
+            "drop_reason": None,
+            "topup": True,
+            "judge_score": s["score"],
+            "source": "eval_results/issue_661/judge_filter.json",
+        }
+        for s in take
+    ]
+    rids = [r["request_id"] for r in rows]
+    if len(set(rids)) != len(rids):
+        raise RuntimeError("duplicate request_ids in the #661 v2 tranche — id-scheme bug")
+    with open(out / "raw_pos.jsonl", "w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+    kept_keys = ("request_id", "question_id", "variant_id", "arm", "completion")
+    with open(out / "kept_pos.jsonl", "w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps({k: r[k] for k in kept_keys} | {"topup": True}, ensure_ascii=False))
+            f.write("\n")
+    _pool_meta(
+        out,
+        concern="fu3-margin-pool-broad-em-npos2",
+        manifest={
+            "source": "eval_results/issue_661/judge_filter.json",
+            "source_sha256": hashlib.sha256(src.read_bytes()).hexdigest(),
+            "source_judge_model": doc.get("judge_model"),
+            "source_git_commit": (doc.get("metadata") or {}).get("git_commit"),
+            "provenance": (
+                "persona-vectors extraction rollouts from #661, judge-accepted positives; "
+                "#722 tf-margin validation ran ON this pool (margin_chain.json: broad_em "
+                "n_pos_available=171, rho(margin,rate)=+0.31); reused per artifact-reuse "
+                "(f) sha pin + (h) source-resolution"
+            ),
+        },
+        counts={
+            "source_survivors": len(survivors),
+            "pos_raw": len(rows),
+            "pos_kept": len(rows),
+            "selection": f"deterministic seed={I661_POOL_SEED} sample of {I661_POOL_TAKE}",
+        },
+        extra={
+            "pos_source": "#661 judge-accepted persona-vectors rollouts (schema adapter; zero API)",
+            "arm": "pos-only (unioned into the base margin_pool_topup pool by MARGIN_POOL_EXTRA)",
+            "judge_threshold": node.get("threshold"),
+        },
+        round_label="fu3-r4",
+    )
+    logger.info("[pool-topup-v2] %s: pos rows=%d of %d survivors", slug, len(rows), len(survivors))
+    return out
+
+
+def upload_tranche(out: Path) -> str:
+    """One folder commit to the worker's staging prefix (slug + subdir derived
+    from ``out``: ``<work>/<slug>/<subdir>``); returns the prefix."""
+    prefix = f"{run1090.DATA_PREFIX}/{out.parent.name}/{out.name}"
     hub.retry_transient(
         lambda: hub._upload(out, run1090.HF_DATA_REPO, "dataset", prefix),
         what=f"issue1090 fu3 pool-topup upload {prefix}",
@@ -307,7 +419,9 @@ def derive_smoke(behavior: str) -> tuple[int, int]:
 def main(argv=None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--behavior", choices=("broad_em", "sycophancy", "all"), default="all")
+    ap.add_argument(
+        "--behavior", choices=("broad_em", "sycophancy", "broad_em_v2", "all"), default="all"
+    )
     ap.add_argument("--work-dir", default="/tmp/issue1090_fu3_pool_topup")
     ap.add_argument("--skip-upload", action="store_true", help="build only (no HF, no smoke)")
     ap.add_argument(
@@ -316,14 +430,19 @@ def main(argv=None) -> int:
     args = ap.parse_args(argv)
     behaviors = ("broad_em", "sycophancy") if args.behavior == "all" else (args.behavior,)
     work = Path(args.work_dir)
+    builders = {
+        "broad_em": build_broad_em,
+        "sycophancy": build_sycophancy,
+        "broad_em_v2": build_broad_em_v2,
+    }
     for b in behaviors:
         if not args.derive_smoke_only:
-            out = build_broad_em(work) if b == "broad_em" else build_sycophancy(work)
+            out = builders[b](work)
             if args.skip_upload:
                 continue
-            prefix = upload_tranche(out, out.parent.name)
+            prefix = upload_tranche(out)
             logger.info("[pool-topup] uploaded %s", prefix)
-        n_pos, n_neg = derive_smoke(b)
+        n_pos, n_neg = derive_smoke("broad_em" if b == "broad_em_v2" else b)
         if n_pos == 0 or n_neg == 0:
             raise RuntimeError(f"{b}: derived pool empty on a side (pos={n_pos}, neg={n_neg})")
     return 0
