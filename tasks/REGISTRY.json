@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1096,
+  "highest_id": 1097,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -756,6 +756,13 @@
       "path": "tasks/running/1096",
       "status": "running",
       "title": "workflow-fix: llm-judging.md judge max_tokens sizing rule (truncation censoring mimics selection artifact)"
+    },
+    "1097": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1097",
+      "status": "proposed",
+      "title": "daily-fix: Step 10d lint verdict consumed before gh pr merge"
     },
     "11": {
       "has_clean_result": false,
