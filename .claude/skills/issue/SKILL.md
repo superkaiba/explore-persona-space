@@ -6858,7 +6858,7 @@ C2. **Cheap-band round cap.** At most **2** cheap-band auto-run rounds
    a chain of cheap follow-ups from auto-running indefinitely.
 C3. **Dispatch the round.** If a candidate survives C1+C2, post
    `epm:followup-scope v1` (`source: proposer-9b-cheap`, fields per
-   workflow.yaml § markers; `gpu_hours_estimate` = the proposal's
+   workflow.yaml § markers, carrying the proposal's
    `est_gpu_hours`) and enter the **same-issue follow-up loop** below
    INSTEAD of parking — the task leaves `awaiting_promotion` and
    re-enters at `followups_running` (tag `followup-auto`). Skip the
@@ -7222,8 +7222,9 @@ orchestrators driving one round is the #778 root cause.
      the Goal sibling of this bullet's #658 scope bug). The `followup_label` lives
      inside the marker NOTE body as free text (its format even differs
      across versions — `- followup_label: ...` dash-bullet, bare
-     `followup_label: ...`, bold `**followup_label:** ...`), NOT as a
-     top-level event key (top-level keys are `{by, kind, note, ts,
+     `followup_label: ...`, bold `**followup_label:** ...`, `; `-joined
+     single-line `source: ...; followup_label: ...` (#1090/#841)), NOT as
+     a top-level event key (top-level keys are `{by, kind, note, ts,
      version}` only) — `task_workflow.parse_followup_note_field` handles
      every observed form. The step-4 completion marker's
      `followup_label` derives from THIS SAME executing group
@@ -7318,6 +7319,11 @@ orchestrators driving one round is the #778 root cause.
    the executing group per step 3's re-read, never a fresh independent
    parse — `source`, `round`,
    one-line `outcome`) when the loop re-reaches `awaiting_promotion`.
+   The note MUST carry the `followup_label:` / `source:` / `round:` /
+   `outcome:` fields field-led — line-initial one-per-line, or
+   `; `-joined on one line (both parse); a PROSE-LED note parses no
+   label, closes nothing, and undercounts both round caps (the #1090
+   fu1 regression).
    This is the idempotency record: an `epm:followup-scope v1` with a
    matching run marker is RUN and is never re-dispatched.
 5. **Round caps (two independent proposer-initiated caps).**
