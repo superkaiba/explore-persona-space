@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1090,
+  "highest_id": 1091,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -713,6 +713,13 @@
       "path": "tasks/running/1090",
       "status": "running",
       "title": "Persona-vectors-style content-behavior datagen: trait-framed elicitation + diverse question bank + split generator"
+    },
+    "1091": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1091",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entries for vLLM teardown pid-namespace probe + wandb-core collateral kill"
     },
     "11": {
       "has_clean_result": false,
