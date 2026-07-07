@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1106,
+  "highest_id": 1107,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -833,6 +833,13 @@
       "path": "tasks/proposed/1106",
       "status": "proposed",
       "title": "workflow-fix: model-switch rung in the spurious-refusal recovery ladder"
+    },
+    "1107": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1107",
+      "status": "proposed",
+      "title": "workflow-fix: verify_task_body figure-meta vs what-is-plotted numeric reconcile"
     },
     "111": {
       "has_clean_result": true,
