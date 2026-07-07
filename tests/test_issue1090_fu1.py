@@ -366,3 +366,200 @@ def test_margin_contexts_per_question_ignores_probe(tmp_path):
     assert m1[-1]["role"] == "user" and m1[-1]["content"] == questions[0]
     src = dict(ctxs)["source_ctx"]
     assert src.messages("PROBE-A")[-1]["content"] == "PROBE-A"  # in-run construction
+
+
+# ── r2 (code-review): c5 union-miss degradation path ─────────────────────────
+
+
+def _fu1_miss_seams(run, upload_calls):
+    """Seams for the union-miss e2e: stub gen / margin-read / upload at the
+    model+Hub boundaries (signature-conformant defs); everything else real."""
+    from explore_persona_space.eval.margin import MarginResult
+
+    def margin_factory(base_model):
+        def read(side_path, ctx, pos, neg):
+            return MarginResult(
+                margin=0.1,
+                pos_mean_ln_logp=-1.0,
+                neg_mean_ln_logp=-1.1,
+                n_pos=len(pos),
+                n_neg=len(neg),
+                pos_ln_logp=[-1.0] * len(pos),
+                neg_ln_logp=[-1.1] * len(neg),
+            )
+
+        return read
+
+    def recording_upload(local_path, repo_id, repo_type, path_in_repo, **kw):
+        upload_calls.append(path_in_repo)
+        return f"stub://{repo_id}/{path_in_repo}"
+
+    def eval_gen_factory(base_model):
+        def gen(side_path, messages_list, *, n, temperature):
+            return [[f"c-{i}-{j}" for j in range(n)] for i in range(len(messages_list))]
+
+        return gen
+
+    return run.Seams1090(
+        qwen_datagen_gen_factory=lambda model_id, *, max_new_tokens: _gen_stub(),
+        eval_gen_fn_factory=eval_gen_factory,
+        train_clamp=None,
+        margin_read_fn_factory=margin_factory,
+        upload_fn=recording_upload,
+    )
+
+
+def test_c5_union_miss_gpu_tail_and_judge_skip(tmp_path, monkeypatch):
+    """r2 regression (Codex Major + Claude Minor): when the c5 tranche misses
+    the positive floor (_run_topup_cell returns BEFORE negatives exist), the
+    gpu tail must call phase_fu1_margin WITHOUT C5 — its topup pools are
+    underivable — while the upload manifest + miss sentinel STILL land; and
+    the judge phase records the skip (contrast_status: c5_union_missed)
+    instead of crashing on the missing c5 artifacts."""
+    from explore_persona_space.eval.graded_judge import JudgeResult
+
+    fu1, run = _fu1_module(), _run_module()
+    cfg = run.RunConfig(
+        smoke=True,
+        cells=(fu1.C3, fu1.C5),
+        out_root=tmp_path,
+        target_n=6,
+        n_judge_draws=2,
+        tier2_n=2,
+        tier2_draws=2,
+        eval_question_limit=2,
+        sentinel_dir=tmp_path / "logs",
+        upload=True,
+        deliverables_root=tmp_path / "eval_results_mirror_fu1",
+        figures_root=tmp_path / "figures_mirror_fu1",
+    )
+    upload_calls: list[str] = []
+    seams = _fu1_miss_seams(run, upload_calls)
+
+    # Force the miss: the tranche judge keeps NOTHING (all scores below the
+    # positive threshold), so the union stays at 4 first-sample keeps < floor 5.
+    monkeypatch.setattr(fu1, "_judge_fu1", _judge_by_arm(pos=20.0, neg=20.0))
+    # Spy on the margin phase's `sides` (then run the real body).
+    seen: dict = {}
+    real_margin_phase = fu1.phase_fu1_margin
+
+    def margin_spy(cfg2, seams2, sides):
+        seen["sides"] = [c.slug for c, _s in sides]
+        return real_margin_phase(cfg2, seams2, sides)
+
+    monkeypatch.setattr(fu1, "phase_fu1_margin", margin_spy)
+
+    summary = fu1.phase_fu1_gpu(cfg, seams)
+
+    assert seen["sides"] == [fu1.C3.slug]  # C5 omitted from the margin sweep
+    assert summary["c5"]["train"] == "skipped_union_missed_floor"
+    assert set(summary["margins"]) == {fu1.C3.slug}
+    rec = json.loads((tmp_path / fu1.C5.slug / "datagen_summary.json").read_text())
+    assert rec["status"] == "yield_floor_missed"  # the frozen record + recorded miss
+    assert rec["topup_record"]["union_cleared"] is False
+    # Upload + sentinel still ran (the reviewers' loss case).
+    assert (tmp_path / "fu1_upload_manifest.json").exists()
+    assert any(p.endswith(f"{fu1.C5.slug}/datagen_summary.json") for p in upload_calls)
+    sentinels = list((tmp_path / "logs").glob("issue-1090-epm_results-*.json"))
+    assert len(sentinels) == 1
+    note = json.loads(sentinels[0].read_text())["note"]
+    assert note["c5_union_cleared"] is False
+    assert note["c5_datagen_status"] == "yield_floor_missed"
+    assert note["c5_train_status"] == "skipped_union_missed_floor"
+
+    # ── judge phase: records the skip, never crashes ─────────────────────
+    # c3 tier2 completions always exist in production (staged from HF /
+    # generated at the checkpoint); write the tiny equivalent the
+    # doubly-degenerate smoke-miss corner lacks (c3_side is None here).
+    questions = fu1.i1090._eval_questions(cfg, "sycophancy")
+    src_id = fu1.i1090.SOURCE_CONTEXT_ID
+    t2 = tmp_path / "tier2" / fu1.C3.slug
+    t2.mkdir(parents=True)
+    for state in ("trained", "base"):
+        (t2 / f"completions__{state}__{src_id}.json").write_text(
+            json.dumps(
+                {
+                    "questions": questions,
+                    "completions": [
+                        [f"{state}-q{i}-c{j}" for j in range(2)] for i in range(len(questions))
+                    ],
+                }
+            )
+        )
+    # Synthetic closure per-item records (hermetic — never the committed tree).
+    p4 = tmp_path / "eval_results" / "issue_1090" / "free_analysis" / "p4_states"
+    p4.mkdir(parents=True)
+    for state in ("trained", "base"):
+        rows = [
+            {
+                "item_id": f"c3-{state}-q{i:03d}-c{j}",
+                "closure_mean": 80.0 if state == "trained" else 20.0,
+            }
+            for i in range(len(questions))
+            for j in range(2)
+        ]
+        (p4 / f"c3-{state}.json").write_text(json.dumps({"per_item": rows}))
+    monkeypatch.setattr(fu1, "_repo_root", lambda: tmp_path)
+
+    def judge_stub(
+        items,
+        eval_prompt,
+        *,
+        n_draws,
+        cache_dir,
+        save_raw,
+        judge_model,
+        temperature=1.0,
+        max_tokens=64,
+        dry_run=False,
+    ):
+        scores = {iid: 80.0 for iid, _q, _c in items}
+        return JudgeResult(
+            scores=scores,
+            n_total_draws=len(items) * n_draws,
+            n_dropped_draws=0,
+            per_item_draw_counts={iid: n_draws for iid, _q, _c in items},
+            per_item_scores={iid: [scores[iid]] * n_draws for iid, _q, _c in items},
+        )
+
+    monkeypatch.setattr(fu1, "judge_graded", judge_stub)
+    out = fu1.phase_fu1_judge(cfg, seams)
+    assert out["c5_available"] is False
+    assert out["contrast_status"] == "c5_union_missed"
+    assert out["install_delta_c5"] is None
+    agg = tmp_path / "eval_results_mirror_fu1"
+    inst = json.loads((agg / "c5_install.json").read_text())
+    assert inst["status"] == "skipped_c5_union_missed"
+    assert inst["c5_datagen_status"] == "yield_floor_missed"
+    ct = json.loads((agg / "c3_vs_c5_trained_contrast.json").read_text())
+    assert ct["contrast_status"] == "c5_union_missed"
+    assert json.loads((agg / "c5_margin.json").read_text())["status"] == "skipped_c5_union_missed"
+    c3m = json.loads((agg / "c3_margin.json").read_text())
+    assert "rho_margin_vs_rate" in c3m and "fresh300_reads" in c3m
+    reads = json.loads((agg / "judged_reads.json").read_text())
+    assert set(reads) == {f"{fu1.C3.slug}__trained", f"{fu1.C3.slug}__base"}
+
+
+def test_ensure_c3_tier2_partial_stage_regenerates(tmp_path, monkeypatch):
+    """r2 hardening (Claude same-class note): a present-but-PARTIAL staged HF
+    prefix (one state file) must fall through to generation at the c3 side,
+    not return with a half-staged dir the judge phase would crash on."""
+    fu1, run = _fu1_module(), _run_module()
+    cfg = run.RunConfig(smoke=False, cells=(fu1.C3, fu1.C5), out_root=tmp_path)
+    src_id = fu1.i1090.SOURCE_CONTEXT_ID
+
+    def partial_stage(prefix, dest, **kw):
+        dest.mkdir(parents=True, exist_ok=True)
+        (dest / f"completions__trained__{src_id}.json").write_text("{}")  # base file MISSING
+
+    called: dict = {}
+
+    def fake_gen(cfg2, seams2, tr):
+        called["train_results"] = tr
+
+    monkeypatch.setattr(fu1.i1090, "_stage_hf_prefix", partial_stage)
+    monkeypatch.setattr(fu1.i1090, "phase_tier2_generation", fake_gen)
+    fu1._ensure_c3_tier2(cfg, run.Seams1090(), "some/ckpt")
+    assert called["train_results"] == {
+        fu1.C3.slug: {"status": "trained", "adapter_path": "some/ckpt"}
+    }

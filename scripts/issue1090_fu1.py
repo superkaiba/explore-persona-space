@@ -844,11 +844,20 @@ def _ensure_c3_tier2(cfg: i1090.RunConfig, seams: i1090.Seams1090, c3_side: str 
             i1090._stage_hf_prefix(
                 f"{i1090.DATA_PREFIX}/raw_completions/tier2/{C3.slug}", tier2_dir
             )
-            return
         except FileNotFoundError:
             logger.warning(
                 "[fu1] no c3 tier2 completions on HF — regenerating at the staged checkpoint"
             )
+        else:
+            # r2 hardening (code-review): a present-but-PARTIAL HF prefix (one
+            # state file) must fall through to generation, not return with a
+            # half-staged dir the judge phase would crash on.
+            if all(
+                (tier2_dir / f"completions__{s}__{src_id}.json").exists()
+                for s in ("trained", "base")
+            ):
+                return
+            logger.warning("[fu1] staged c3 tier2 prefix is missing state files — regenerating")
     if c3_side is None:
         logger.warning("[fu1] no c3 trained side available — skipping c3 tier2 generation")
         return
@@ -869,13 +878,29 @@ def phase_fu1_gpu(cfg: i1090.RunConfig, seams: i1090.Seams1090) -> dict:
     else:
         stage_full_inputs(cfg)
     c5_rec, train_results = run_c5_pipeline(cfg, seams)
-    c5_side = train_results.get(C5.slug, {}).get("adapter_path")
+    c5_trained = train_results.get(C5.slug, {}).get("status") == "trained"
+    c5_side = train_results.get(C5.slug, {}).get("adapter_path") if c5_trained else None
     # Smoke exercises the identical PEFT-load/assert/sweep path; the c3
     # PRODUCTION side (checkpoint-14 on the model repo) is a full-run-only
     # input, so the smoke threads the just-trained tiny adapter for c3 too.
     c3_side = c5_side if cfg.smoke else str(_c3_ckpt_dest(cfg))
     _ensure_c3_tier2(cfg, seams, c3_side)  # BEFORE the HF margin phase (vLLM in full)
-    margins = phase_fu1_margin(cfg, seams, [(C3, c3_side), (C5, c5_side)])
+    sides: list[tuple[Any, str | None]] = [(C3, c3_side)]
+    if c5_trained:
+        sides.append((C5, c5_side))
+    else:
+        # r2 fix (code-review Major): a positive-floor union miss returns from
+        # _run_topup_cell BEFORE the negative stage, so datagen_topup/
+        # {raw_neg,kept_neg}.jsonl never exist and the c5 pools are
+        # underivable — omit c5 from the margin sweep entirely (C3-only). The
+        # miss is a DECIDABLE recorded outcome: the upload + sentinel below
+        # MUST still run (they carry the top-up record + the miss report).
+        logger.warning(
+            "[fu1] c5 not trained (datagen status=%s) — margin sweep runs C3-only; "
+            "still uploading the top-up record + writing the miss sentinel",
+            c5_rec.get("status"),
+        )
+    margins = phase_fu1_margin(cfg, seams, sides)
     uploaded = phase_fu1_upload(cfg, seams, train_results) if cfg.upload else {}
     sentinel = write_fu1_sentinel(cfg, c5_rec, train_results, margins, uploaded)
     return {
@@ -1033,18 +1058,29 @@ _ASYMMETRY_NOTE = (
 
 
 def _stage_judge_inputs(cfg: i1090.RunConfig) -> None:
-    """Stage GPU-phase outputs from HF when missing locally (fresh-VM path)."""
+    """Stage GPU-phase outputs from HF when missing locally (fresh-VM path).
+
+    c5-specific inputs stage TOLERANTLY (r2 fix): on a union miss the gpu
+    phase never produced c5 tier-2 completions / a build record, so their HF
+    prefixes legitimately do not exist — `_c5_trained_available` decides the
+    skip downstream. The c3 inputs stay fail-loud (always produced)."""
     import contextlib
 
+    src_id = i1090.SOURCE_CONTEXT_ID
     for cell in (C3, C5):
         tier2_dir = cfg.out_root / "tier2" / cell.slug
-        src_id = i1090.SOURCE_CONTEXT_ID
         if not all(
             (tier2_dir / f"completions__{s}__{src_id}.json").exists() for s in ("trained", "base")
         ):
-            i1090._stage_hf_prefix(
-                f"{i1090.DATA_PREFIX}/raw_completions/tier2/{cell.slug}", tier2_dir
-            )
+            if cell is C5:
+                with contextlib.suppress(FileNotFoundError):
+                    i1090._stage_hf_prefix(
+                        f"{i1090.DATA_PREFIX}/raw_completions/tier2/{cell.slug}", tier2_dir
+                    )
+            else:
+                i1090._stage_hf_prefix(
+                    f"{i1090.DATA_PREFIX}/raw_completions/tier2/{cell.slug}", tier2_dir
+                )
     if not (cfg.out_root / C5.slug / "build_result.json").exists():
         with contextlib.suppress(FileNotFoundError):
             i1090._stage_hf_prefix(f"{i1090.DATA_PREFIX}/{C5.slug}", cfg.out_root / C5.slug)
@@ -1053,79 +1089,68 @@ def _stage_judge_inputs(cfg: i1090.RunConfig) -> None:
         i1090._stage_hf_prefix(f"{i1090.DATA_PREFIX}/{FU1_LABEL}/margin", margin_dir)
 
 
-def phase_fu1_judge(cfg: i1090.RunConfig, seams: i1090.Seams1090) -> dict:
-    """VM phase: fresh tier-2 judging @300 for both organisms + install record
-    + contrast + rho validation; deliverables under deliverables_root."""
-    i1090._phase("fu1_judge")
-    agg_root = cfg.deliverables_root
-    assert agg_root is not None
-    agg_root.mkdir(parents=True, exist_ok=True)
-    if not cfg.smoke:
-        _stage_judge_inputs(cfg)
-    questions = i1090._eval_questions(cfg, "sycophancy")
-    nq = len(questions)
-    judge_root = cfg.out_root / "fu1_judge"
-    behavior = BEHAVIORS["sycophancy"]
+def _c5_trained_available(cfg: i1090.RunConfig) -> bool:
+    """True when the c5 organism's judge inputs exist under out_root (the
+    adapter build record + BOTH tier-2 completion files); False on a union
+    miss — the judge phase then records the skip instead of crashing."""
+    src_id = i1090.SOURCE_CONTEXT_ID
+    tier2_dir = cfg.out_root / "tier2" / C5.slug
+    return (cfg.out_root / C5.slug / "build_result.json").exists() and all(
+        (tier2_dir / f"completions__{s}__{src_id}.json").exists() for s in ("trained", "base")
+    )
 
-    reads_path = agg_root / "judged_reads.json"
-    reads: dict[str, dict] = i1090._read_json(reads_path) if reads_path.exists() else {}
-    for cell in (C3, C5):
-        for state in ("trained", "base"):
-            key = f"{cell.slug}__{state}"
-            if key in reads:
-                continue
-            reads[key] = judge_tier2_fu1(cfg, cell, state, questions, judge_root)
-            i1090._atomic_write_json(reads_path, reads)  # checkpoint per read
 
-    # c3 closure-adjusted per-question rates (the committed dropclosure record).
-    p4_dir = _repo_root() / "eval_results" / "issue_1090" / "free_analysis" / "p4_states"
-    closure_rates = {}
-    for state in ("trained", "base"):
-        p4 = p4_dir / f"c3-{state}.json"
-        if not p4.exists():
-            raise FileNotFoundError(
-                f"{p4} missing — the committed #1090 dropclosure per-item record is a "
-                "fu1 input (sparse worktree: git sparse-checkout add eval_results/issue_1090)"
-            )
-        closure_rates[state] = closure_per_question_rates(
-            p4, threshold=behavior.threshold, n_questions=nq
-        )
-
-    # Margins (per question context) for the rho validation.
-    margin_dir = cfg.out_root / "fu1_margin"
-    margins = {cell.slug: i1090._read_json(margin_dir / f"{cell.slug}.json") for cell in (C3, C5)}
-    labels = _q_labels(nq)
-
-    def _margin_vec(slug: str, side: str) -> list[float | None]:
-        per = margins[slug].get("per_context_margin", {}).get(side, {})
-        return [per.get(lbl) for lbl in labels]
-
-    rho = {
-        C3.slug: {
-            "trained_vs_closure_rate": spearman_rho(
-                _margin_vec(C3.slug, "trained"), closure_rates["trained"]
-            ),
-            "base_vs_closure_rate": spearman_rho(
-                _margin_vec(C3.slug, "base"), closure_rates["base"]
-            ),
-            "trained_vs_fresh300_rate": spearman_rho(
-                _margin_vec(C3.slug, "trained"), reads[f"{C3.slug}__trained"]["per_question_rate"]
-            ),
-        },
-        C5.slug: {
-            "trained_vs_fresh300_rate": spearman_rho(
-                _margin_vec(C5.slug, "trained"), reads[f"{C5.slug}__trained"]["per_question_rate"]
-            ),
-            "base_vs_fresh300_rate": spearman_rho(
-                _margin_vec(C5.slug, "base"), reads[f"{C5.slug}__base"]["per_question_rate"]
-            ),
-        },
+def _paired_rates(r3: list, r5: list) -> dict:
+    """Paired per-question rate deltas (c3 - c5) + bootstrap + sign test; a
+    question with a None rate on either side is excluded (drop-never-coerce)."""
+    deltas, signs = [], {"pos": 0, "neg": 0, "zero": 0}
+    n_excluded = 0
+    for a, b in zip(r3, r5, strict=True):
+        if a is None or b is None:
+            n_excluded += 1
+            continue
+        d = a - b
+        deltas.append(d)
+        signs["pos" if d > 0 else ("neg" if d < 0 else "zero")] += 1
+    return {
+        "n_paired_questions": len(deltas),
+        "n_excluded": n_excluded,
+        "mean_delta": (sum(deltas) / len(deltas)) if deltas else None,
+        "paired_bootstrap": (
+            paired_question_bootstrap(np.array(deltas), n_draws=2000, seed=42) if deltas else None
+        ),
+        "per_question_signs": signs,
+        "sign_test_two_sided_p": i1090._binom_two_sided_p(
+            signs["pos"], signs["pos"] + signs["neg"]
+        ),
     }
 
-    # c5 install record.
+
+def _c5_install_record(
+    cfg: i1090.RunConfig, reads: dict, margins: dict, c5_available: bool
+) -> dict:
+    """The c5 install deliverable — a skip record on a union miss, never a crash."""
+    if not c5_available:
+        c5_summary_path = cfg.out_root / C5.slug / "datagen_summary.json"
+        return {
+            "cell": C5.slug,
+            "status": "skipped_c5_union_missed",
+            "c5_datagen_status": (
+                i1090._read_json(c5_summary_path).get("status")
+                if c5_summary_path.exists()
+                else None
+            ),
+            "install_delta": None,
+            "note": (
+                "the c5 top-up union did not clear the positive floor — no trained "
+                "organism this round; the frozen first-sample yield record is the c5 "
+                "deliverable"
+            ),
+        }
     build = i1090._read_json(cfg.out_root / C5.slug / "build_result.json")
-    install = {
+    return {
         "cell": C5.slug,
+        "status": "computed",
         "behavior": C5.behavior,
         "generator": C5.generator,
         "selection": build.get("selection"),
@@ -1149,70 +1174,162 @@ def phase_fu1_judge(cfg: i1090.RunConfig, seams: i1090.Seams1090) -> dict:
             for s in ("trained", "base")
         },
         "install_delta": reads[f"{C5.slug}__trained"]["rate"] - reads[f"{C5.slug}__base"]["rate"],
-        "margin_trained": margins[C5.slug].get("margin_trained"),
-        "margin_base": margins[C5.slug].get("margin_base"),
-        "margin_delta": margins[C5.slug].get("margin_delta"),
+        "margin_trained": margins.get(C5.slug, {}).get("margin_trained"),
+        "margin_base": margins.get(C5.slug, {}).get("margin_base"),
+        "margin_delta": margins.get(C5.slug, {}).get("margin_delta"),
     }
-    i1090._atomic_write_json(agg_root / "c5_install.json", install)
 
-    # c3-vs-c5 trained-organism contrast (paired per-question; descriptive).
-    def _paired(r3: list, r5: list) -> dict:
-        deltas, signs = [], {"pos": 0, "neg": 0, "zero": 0}
-        n_excluded = 0
-        for a, b in zip(r3, r5, strict=True):
-            if a is None or b is None:
-                n_excluded += 1
-                continue
-            d = a - b
-            deltas.append(d)
-            signs["pos" if d > 0 else ("neg" if d < 0 else "zero")] += 1
+
+def _contrast_record(reads: dict, closure_rates: dict, install: dict, c5_available: bool) -> dict:
+    """The c3-vs-c5 trained-organism contrast — `contrast_status:
+    c5_union_missed` (with the c3 side still reported) when c5 never trained."""
+    c3_trained_rate = reads[f"{C3.slug}__trained"]["rate"]
+    c3_install_delta = c3_trained_rate - reads[f"{C3.slug}__base"]["rate"]
+    if not c5_available:
         return {
-            "n_paired_questions": len(deltas),
-            "n_excluded": n_excluded,
-            "mean_delta": (sum(deltas) / len(deltas)) if deltas else None,
-            "paired_bootstrap": (
-                paired_question_bootstrap(np.array(deltas), n_draws=2000, seed=42)
-                if deltas
-                else None
+            "contrast_status": "c5_union_missed",
+            "note": (
+                "no c5 trained organism (the top-up union missed the positive floor) — "
+                "the c3-vs-c5 trained-organism contrast is not computable this round. "
+                + _ASYMMETRY_NOTE
             ),
-            "per_question_signs": signs,
-            "sign_test_two_sided_p": i1090._binom_two_sided_p(
-                signs["pos"], signs["pos"] + signs["neg"]
-            ),
+            "c3_trained_rate": c3_trained_rate,
+            "c3_install_delta": c3_install_delta,
         }
-
-    contrast = {
+    return {
+        "contrast_status": "computed",
         "note": _ASYMMETRY_NOTE,
         "primary_fresh300": {
-            "c3_trained_rate": reads[f"{C3.slug}__trained"]["rate"],
+            "c3_trained_rate": c3_trained_rate,
             "c5_trained_rate": reads[f"{C5.slug}__trained"]["rate"],
-            "c3_install_delta": reads[f"{C3.slug}__trained"]["rate"]
-            - reads[f"{C3.slug}__base"]["rate"],
+            "c3_install_delta": c3_install_delta,
             "c5_install_delta": install["install_delta"],
-            "paired": _paired(
+            "paired": _paired_rates(
                 reads[f"{C3.slug}__trained"]["per_question_rate"],
                 reads[f"{C5.slug}__trained"]["per_question_rate"],
             ),
         },
         "companion_c3_closure_vs_c5_fresh300": {
             "c3_trained_closure_rate_source": "free_analysis/c3_dropclosure.json (per-item)",
-            "paired": _paired(
+            "paired": _paired_rates(
                 closure_rates["trained"], reads[f"{C5.slug}__trained"]["per_question_rate"]
             ),
         },
     }
+
+
+def phase_fu1_judge(cfg: i1090.RunConfig, seams: i1090.Seams1090) -> dict:
+    """VM phase: fresh tier-2 judging @300 for both organisms + install record
+    + contrast + rho validation; deliverables under deliverables_root."""
+    i1090._phase("fu1_judge")
+    agg_root = cfg.deliverables_root
+    assert agg_root is not None
+    agg_root.mkdir(parents=True, exist_ok=True)
+    if not cfg.smoke:
+        _stage_judge_inputs(cfg)
+    questions = i1090._eval_questions(cfg, "sycophancy")
+    nq = len(questions)
+    judge_root = cfg.out_root / "fu1_judge"
+    behavior = BEHAVIORS["sycophancy"]
+
+    # r2 fix (code-review Major): a c5 union miss produced no trained organism
+    # — judge C3 only and record the skip in every c5-facing deliverable.
+    c5_available = _c5_trained_available(cfg)
+    if not c5_available:
+        logger.warning(
+            "[fu1-judge] c5 judge inputs absent (union miss) — judging C3 only; "
+            "c5 install + contrast recorded as skipped"
+        )
+    judged_cells = (C3, C5) if c5_available else (C3,)
+
+    reads_path = agg_root / "judged_reads.json"
+    reads: dict[str, dict] = i1090._read_json(reads_path) if reads_path.exists() else {}
+    for cell in judged_cells:
+        for state in ("trained", "base"):
+            key = f"{cell.slug}__{state}"
+            if key in reads:
+                continue
+            reads[key] = judge_tier2_fu1(cfg, cell, state, questions, judge_root)
+            i1090._atomic_write_json(reads_path, reads)  # checkpoint per read
+
+    # c3 closure-adjusted per-question rates (the committed dropclosure record).
+    p4_dir = _repo_root() / "eval_results" / "issue_1090" / "free_analysis" / "p4_states"
+    closure_rates = {}
+    for state in ("trained", "base"):
+        p4 = p4_dir / f"c3-{state}.json"
+        if not p4.exists():
+            raise FileNotFoundError(
+                f"{p4} missing — the committed #1090 dropclosure per-item record is a "
+                "fu1 input (sparse worktree: git sparse-checkout add eval_results/issue_1090)"
+            )
+        closure_rates[state] = closure_per_question_rates(
+            p4, threshold=behavior.threshold, n_questions=nq
+        )
+
+    # Margins (per question context) for the rho validation. The c5 margin
+    # record exists only when the organism trained (the gpu tail omits c5 on a
+    # union miss).
+    margin_dir = cfg.out_root / "fu1_margin"
+    margins = {C3.slug: i1090._read_json(margin_dir / f"{C3.slug}.json")}
+    if c5_available and (margin_dir / f"{C5.slug}.json").exists():
+        margins[C5.slug] = i1090._read_json(margin_dir / f"{C5.slug}.json")
+    labels = _q_labels(nq)
+
+    def _margin_vec(slug: str, side: str) -> list[float | None]:
+        per = margins.get(slug, {}).get("per_context_margin", {}).get(side, {})
+        return [per.get(lbl) for lbl in labels]
+
+    rho = {
+        C3.slug: {
+            "trained_vs_closure_rate": spearman_rho(
+                _margin_vec(C3.slug, "trained"), closure_rates["trained"]
+            ),
+            "base_vs_closure_rate": spearman_rho(
+                _margin_vec(C3.slug, "base"), closure_rates["base"]
+            ),
+            "trained_vs_fresh300_rate": spearman_rho(
+                _margin_vec(C3.slug, "trained"), reads[f"{C3.slug}__trained"]["per_question_rate"]
+            ),
+        },
+    }
+    if C5.slug in margins:
+        rho[C5.slug] = {
+            "trained_vs_fresh300_rate": spearman_rho(
+                _margin_vec(C5.slug, "trained"), reads[f"{C5.slug}__trained"]["per_question_rate"]
+            ),
+            "base_vs_fresh300_rate": spearman_rho(
+                _margin_vec(C5.slug, "base"), reads[f"{C5.slug}__base"]["per_question_rate"]
+            ),
+        }
+
+    # c5 install + contrast deliverables (skip records on a union miss).
+    install = _c5_install_record(cfg, reads, margins, c5_available)
+    i1090._atomic_write_json(agg_root / "c5_install.json", install)
+    contrast = _contrast_record(reads, closure_rates, install, c5_available)
     i1090._atomic_write_json(agg_root / "c3_vs_c5_trained_contrast.json", contrast)
 
-    # Per-cell margin deliverables (the brief's named artifacts).
-    for cell, extra_rho in ((C3, rho[C3.slug]), (C5, rho[C5.slug])):
+    # Per-cell margin deliverables (the brief's named artifacts; a skip record
+    # for a cell whose margin never computed).
+    for cell in (C3, C5):
+        if cell.slug not in margins:
+            i1090._atomic_write_json(
+                agg_root / f"{cell.cell_id}_margin.json",
+                {
+                    "cell": cell.slug,
+                    "status": "skipped_c5_union_missed",
+                    "note": "no trained c5 organism — no fixed-pool margin record this round",
+                },
+            )
+            continue
         rec = dict(margins[cell.slug])
-        rec["rho_margin_vs_rate"] = extra_rho
+        rec["rho_margin_vs_rate"] = rho.get(cell.slug, {})
         rec["fresh300_reads"] = {
             s: {
                 k: reads[f"{cell.slug}__{s}"][k]
                 for k in ("rate", "k", "n", "wilson95", "per_question_rate")
             }
             for s in ("trained", "base")
+            if f"{cell.slug}__{s}" in reads
         }
         if cell is C3:
             rec["closure_per_question_rate"] = closure_rates
@@ -1243,8 +1360,12 @@ def phase_fu1_judge(cfg: i1090.RunConfig, seams: i1090.Seams1090) -> dict:
         logger.info("[fu1-judge] uploaded deliverables=%s judge_raws=%s", url, jr_url)
 
     return {
-        "install_delta_c5": install["install_delta"],
-        "contrast_mean_delta_fresh300": contrast["primary_fresh300"]["paired"]["mean_delta"],
+        "c5_available": c5_available,
+        "contrast_status": contrast["contrast_status"],
+        "install_delta_c5": install.get("install_delta"),
+        "contrast_mean_delta_fresh300": (
+            contrast["primary_fresh300"]["paired"]["mean_delta"] if c5_available else None
+        ),
         "rho": {slug: {k: v.get("rho") for k, v in r.items()} for slug, r in rho.items()},
         "deliverables": str(agg_root),
     }
