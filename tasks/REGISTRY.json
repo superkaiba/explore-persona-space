@@ -774,8 +774,8 @@
     "1099": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1099",
-      "status": "proposed",
+      "path": "tasks/planning/1099",
+      "status": "planning",
       "title": "daily-fix: verify_plan c12 ASCII-x boundary + c18 negation-r"
     },
     "11": {
