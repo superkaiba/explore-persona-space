@@ -13,26 +13,27 @@ origin_prompt: 'how can we get more realistic and diverse contexts but also be a
   ~1k prefixes / ~13k rows; random + topic-matched control]'
 workflow: v1
 goal: 'On a realistic sparse-crossed prefix x query corpus (~1k real WildChat/LMSYS
-  prefixes incl. >=300 long conversations + fully-crossed ~100x48 dense core + ~500-query
-  bank; two fit-time training arms; #594 battery as eval bridge), a 4x2 text-source
-  x model factorial (own-text 2x2 full, Claude/shuffled controls subsampled), THREE
-  answer-summary targets (t1/t2/t3), bare-query captures (g-map + #923 stitch + #779-comparable
-  map), and a turn-dynamics module on the logged conversations (D1 user-model u1/u2/u3;
-  D0 anchor; D2 transition; D3 lookahead; D4 turn-resolved map strength both sides,
-  selection- and length-controlled; D5 first-state horizon profile from s_1/context_1):
-  characterize answer-state transport via the four co-primary reads per cell/target
-  (prefix-vs-context gap; averaged-vs-per-example rank collapse; f/g/i shares vs #923;
-  M~=f-map, M''-M~=g, trait-per-factor) plus the instruction-tuning text-vs-transport
-  decomposition, carrier floor, factor transfer, target + dynamics sensitivity, and
-  0-GPU bridge re-fits on #923/#813/#779. All GPU phases data-parallel across every
-  provisioned GPU; all fit grids vectorized (binding).'
+  prefixes incl. >=300 long conversations + ~100x48 dense core + ~500-query bank;
+  two fit-time training arms; #594 battery as eval bridge), a 4x2 text-source x model
+  factorial (own-text 2x2 full, Claude/shuffled subsampled), THREE answer targets
+  (t1/t2/t3) + u1/u2/u3 user mirrors, bare-query captures, a turn-dynamics module
+  (D0-D5, both input arms, D4 selection/length-controlled, D5 first-state horizon),
+  and a BEHAVIOR module (graded Sonnet judge on the trait-relevant subset; B1 state->behavior
+  per input arm + grain incl. the #779 monitoring-gap re-read and the A2 answer-side
+  ceiling; B2 factor->behavior validating trait-per-factor): characterize answer-state
+  transport via the four co-primary reads per cell/target/arm (prefix-vs-context gap;
+  averaged-vs-per-example rank collapse; f/g/i shares vs #923; M~=f-map, M''-M~=g,
+  trait-per-factor) plus the instruction-tuning text-vs-transport decomposition, carrier
+  floor, factor transfer, target/dynamics/behavior sensitivity, and 0-GPU bridge re-fits
+  on #923/#813/#779. Both prefix and context arms on every read; all GPU phases data-parallel;
+  all fit grids vectorized (binding). Pre-approved to 300 GPU-h.'
 relates_to:
 - spec-context-as-vector
 - leak-predictor
 ---
 ## Goal
 
-Build a realistic, diverse, sparse-crossed (prefix x query) corpus with a fully-crossed dense core, and use it to characterize, on identical rows, how the base model's answer-state transport decomposes between the prefix and the query. FOUR co-primary reads (user decisions 2026-07-06), all from one capture:
+On a realistic sparse-crossed prefix x query corpus (~1k real WildChat/LMSYS prefixes incl. >=300 long conversations + ~100x48 dense core + ~500-query bank; two fit-time training arms; #594 battery as eval bridge), a 4x2 text-source x model factorial (own-text 2x2 full, Claude/shuffled subsampled), THREE answer targets (t1/t2/t3) + u1/u2/u3 user mirrors, bare-query captures, a turn-dynamics module (D0-D5, both input arms, D4 selection/length-controlled, D5 first-state horizon), and a BEHAVIOR module (graded Sonnet judge on the trait-relevant subset; B1 state->behavior per input arm + grain incl. the #779 monitoring-gap re-read and the A2 answer-side ceiling; B2 factor->behavior validating trait-per-factor): characterize answer-state transport via the four co-primary reads per cell/target/arm (prefix-vs-context gap; averaged-vs-per-example rank collapse; f/g/i shares vs #923; M~=f-map, M'-M~=g, trait-per-factor) plus the instruction-tuning text-vs-transport decomposition, carrier floor, factor transfer, target/dynamics/behavior sensitivity, and 0-GPU bridge re-fits on #923/#813/#779. Both prefix and context arms on every read; all GPU phases data-parallel; all fit grids vectorized (binding). Pre-approved to 300 GPU-h.
 
 1. **Prefix-map vs context-map.** Fit h_P: prefix-end activation -> v(x) and h_C: context-end (post-query) activation -> v(x) on the SAME rows; compare held-out R^2 (paired, group-level folds), full-output-space rank/energy spectra, and output-subspace overlap. Decision quantity: the paired held-out R^2 gap + spectrum gap — "how much transport does the query add". (The standing prefix+context both-arms rule is satisfied BY this read.)
 2. **Query-averaged vs per-example grain at un-capped diversity.** Replicate the #813 rank comparison (averaged stable-rank 3.13 vs per-example 12.97 at L14; averaging ITSELF ~halves effective rank at matched n=50; median 2% output-energy overlap — eval_results/issue_813/per_example_vs_averaged/rank_spectrum_L14.json, script scripts/issue813_rank_spectrum.py) on a design whose dimension (~1.5k) no longer caps map rank.
