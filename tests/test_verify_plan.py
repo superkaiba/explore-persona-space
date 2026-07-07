@@ -1246,6 +1246,54 @@ def test_c12_grid_only_far_sizing_block_still_fails():
     assert _status(plan, "c12_battery_multiplier") == "FAIL"
 
 
+def test_c12_ascii_x_word_split_artifacts_do_not_match():
+    # #1099: with the widened any-noun _GRID_FACTOR, the bare `[×x*]` token  # noqa: RUF003
+    # let the engine split words at an internal `x`. All five forms below
+    # matched pre-fix (three are verbatim-class realized corpus lines:
+    # #763 v6:139, #923 v4:94, #778 v6:674).
+    for form in (
+        "the max 50 draws are retained per cell",
+        "shuffle-null p (1000 per-draw layer-max perms; p floor 0.001)",
+        "regenerates the SAME 2000 family-bootstrap index draws (seed 42)",
+        "`honest_nulls_maxdraws/` listing (exactly these 5 per trait)",
+        "1000 draws xgboost sweep",
+        # Digit-tight verb false positive — the ONE tested-class input that
+        # discriminates the chosen standalone rule (no match) from the §7
+        # letter-boundary fallback (match). Pins the fallback constraint:
+        # ANY future _MULT_TOKEN composition must keep this negative
+        # (#1099 round-1 statistics-lens Must-Fix).
+        "the 2x2 draws its factors",
+    ):
+        assert not verify_plan._MULT_ARITH_RE.search(form), form
+    # Standalone ASCII x (the corpus's real spaced form) still matches.
+    for form in (
+        "10,000 draws x 24 cells, batched",
+        "4 draws x 492 cells",
+        "24 cells x 1000 draws",
+    ):
+        assert verify_plan._MULT_ARITH_RE.search(form), form
+
+
+def test_c12_word_split_x_line_does_not_anchor_window():
+    # #1099 end-to-end regression: pre-fix, a word-split "index draws" line
+    # ANCHORED its own ±15 window AND satisfied evidence (i), so a batched
+    # token beside it false-PASSed a battery plan with no real sizing
+    # arithmetic anywhere (probe-reproduced PASS pre-fix).
+    filler = "\n".join(f"Filler paragraph line {i} with no sizing content." for i in range(20))
+    plan = (
+        GOOD_PLAN
+        + f"\n## 12. Null battery\n\n{BATTERY_SENT}\n\n"
+        + filler
+        + "\n\n## 13. Refit\n\n"
+        + "The refit regenerates the SAME 2000 family-bootstrap index draws (seed 42) per cell.\n"
+        + f"{BATTERY_BATCHED}\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c12_battery_multiplier"]
+    assert r.status == "FAIL"
+    assert "draw-bearing" in r.detail
+
+
 # ─── Check 13 — empirical-null gate p-floor attainability ──────────────────
 
 # Near-verbatim #816 shapes: the synthetic fixtures ARE the incident text
@@ -2457,6 +2505,52 @@ def test_c18_produces_every_registered_outside_row_coverage_window_fails():
 def test_c18_armless_produces_every_registered_fails():
     # The arm-vocabulary lookahead: no each/both/per-arm vocab, no hit.
     decl = "Row-coverage: the pipeline produces every registered row."
+    plan = _c18_plan(C18_V13_REGISTRATION, decl)
+    assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
+
+
+def test_c18_neg_defer_new_tokens_direct():
+    # #1099 unit contract: each added negation/deferral form matches; the
+    # pre-fix `n't` alternative was dead code (\b cannot match inside
+    # "doesn't" at the word-internal s->n transition).
+    for tok in (
+        "doesn't",
+        "doesn’t",
+        "can't",
+        "won't",
+        "isn't",
+        "wouldn't",
+        "n't",
+        "cannot",
+        "fails to",
+        "fail to",
+        "failed to",
+        "until",
+    ):
+        assert verify_plan._C18_NEG_DEFER_RE.search(tok), tok
+    # Benign affirmative-span text must NOT fire (the two pinned PASS
+    # affirmatives' spans, verbatim-class).
+    for benign in (
+        "Row-coverage: the plan's own fits produce every registered row on each arm.",
+        "a superset of the retained set); the plan's own fits",
+    ):
+        assert not verify_plan._C18_NEG_DEFER_RE.search(benign), benign
+
+
+@pytest.mark.parametrize(
+    "decl",
+    [
+        "Row-coverage: the plan doesn't produce every registered row on each arm.",
+        "Row-coverage: the plan doesn’t produce every registered row on each arm.",
+        "Row-coverage: the plan cannot produce every registered row on each arm.",
+        "Row-coverage: the plan can't produce every registered row on each arm.",
+        "Row-coverage: the plan fails to produce every registered row on each arm.",
+        "Row-coverage: the plan produces every registered row on each arm only until the refit lands.",
+    ],
+)
+def test_c18_new_negation_forms_disqualify_affirmative(decl):
+    # #1099 end-to-end: pre-fix, ALL six lines false-PASSed via the
+    # affirmative-produces route (probe-reproduced).
     plan = _c18_plan(C18_V13_REGISTRATION, decl)
     assert _status(plan, "c18_paired_contrast_source_coverage") == "FAIL"
 

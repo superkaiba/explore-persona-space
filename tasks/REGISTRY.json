@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1106,
+  "highest_id": 1110,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -583,8 +583,8 @@
       "goal": "Determine whether generating the factory's content-behavior training completions on-policy from Qwen-2.5-7B-Instruct with the elicitation instruction injected as plain untagged system-prompt text (instruct-and-strip, variety of induce/oppose phrasings) clears the #906 yield floors and installs the behaviors, and whether an abliterated (helpful-only) Qwen generator beats the base Instruct model on yield and install strength.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/1074",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/1074",
+      "status": "awaiting_promotion",
       "title": "Stage-split generators (abliterated positives, base-Qwen negatives) yield the first trainable harmful-compliance cell, but its install plateaus near 0.40 \u2014 below the 0.60\u20130.85 band even at triple dose (MODERATE confidence)"
     },
     "1075": {
@@ -712,7 +712,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1090",
       "status": "followups_running",
-      "title": "Reframing sycophancy as subjective opinion-agreement roughly triples Claude datagen yield over the wrong-fact bank yet still misses the yield floor, and the trained organism doubles judged agreement over base while every install lands below the registered dose band (MODERATE confidence)"
+      "title": "Reframing sycophancy as subjective opinion-agreement roughly triples Claude datagen yield over the wrong-fact bank yet still misses the yield floor, and Claude- and Qwen-generated data install sycophancy organisms at identical judged rates with every install below the registered dose band (MODERATE confidence)"
     },
     "1091": {
       "has_clean_result": false,
@@ -725,8 +725,8 @@
       "goal": "On a realistic sparse-crossed prefix x query corpus (~1k real WildChat/LMSYS prefixes incl. >=300 long conversations + ~100x48 dense core + ~500-query bank; two fit-time training arms; #594 battery as eval bridge), a 4x2 text-source x model factorial (own-text 2x2 full, Claude/shuffled subsampled), THREE answer targets (t1/t2/t3) + u1/u2/u3 user mirrors, bare-query captures, a turn-dynamics module (D0-D5, both input arms, D4 selection/length-controlled, D5 first-state horizon), and a BEHAVIOR module (graded Sonnet judge on the trait-relevant subset; B1 state->behavior per input arm + grain incl. the #779 monitoring-gap re-read and the A2 answer-side ceiling; B2 factor->behavior validating trait-per-factor): characterize answer-state transport via the four co-primary reads per cell/target/arm (prefix-vs-context gap; averaged-vs-per-example rank collapse; f/g/i shares vs #923; M~=f-map, M'-M~=g, trait-per-factor) plus the instruction-tuning text-vs-transport decomposition, carrier floor, factor transfer, target/dynamics/behavior sensitivity, and 0-GPU bridge re-fits on #923/#813/#779. Both prefix and context arms on every read; all GPU phases data-parallel; all fit grids vectorized (binding). Pre-approved to 300 GPU-h.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/running/1092",
-      "status": "running",
+      "path": "tasks/blocked/1092",
+      "status": "blocked",
       "title": "Realistic sparse-crossed prefix x query corpus: prefix-map vs context-map, averaging-rank collapse, and prefix/query variance decomposition of answer-state transport"
     },
     "1093": {
@@ -760,22 +760,22 @@
     "1097": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1097",
-      "status": "running",
+      "path": "tasks/completed/1097",
+      "status": "completed",
       "title": "daily-fix: Step 10d lint verdict consumed before gh pr merge"
     },
     "1098": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1098",
-      "status": "running",
+      "path": "tasks/completed/1098",
+      "status": "completed",
       "title": "daily-fix: repo-root guard false-positive on pod-side git in"
     },
     "1099": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1099",
-      "status": "planning",
+      "path": "tasks/completed/1099",
+      "status": "completed",
       "title": "daily-fix: verify_plan c12 ASCII-x boundary + c18 negation-r"
     },
     "11": {
@@ -788,8 +788,8 @@
     "1100": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1100",
-      "status": "running",
+      "path": "tasks/completed/1100",
+      "status": "completed",
       "title": "daily-fix: catch task lifecycle commits stranded off main at"
     },
     "1101": {
@@ -802,37 +802,58 @@
     "1102": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1102",
-      "status": "planning",
+      "path": "tasks/completed/1102",
+      "status": "completed",
       "title": "daily-fix: digest-only raw-read rule must name real-world-co"
     },
     "1103": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1103",
-      "status": "proposed",
+      "path": "tasks/completed/1103",
+      "status": "completed",
       "title": "daily-fix: standardize multi-behavior datagen behavior defin"
     },
     "1104": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1104",
-      "status": "proposed",
+      "path": "tasks/completed/1104",
+      "status": "completed",
       "title": "daily-fix: refusal-wedged orchestrator ticks on harmful-cont"
     },
     "1105": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1105",
-      "status": "proposed",
+      "path": "tasks/completed/1105",
+      "status": "completed",
       "title": "daily-fix: pin Step 10d guard-block recovery-contract phrase"
     },
     "1106": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1106",
-      "status": "proposed",
+      "path": "tasks/completed/1106",
+      "status": "completed",
       "title": "workflow-fix: model-switch rung in the spurious-refusal recovery ladder"
+    },
+    "1107": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1107",
+      "status": "completed",
+      "title": "workflow-fix: verify_task_body figure-meta vs what-is-plotted numeric reconcile"
+    },
+    "1108": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1108",
+      "status": "completed",
+      "title": "HF model repo at the 100,000-file limit \u2014 user triage needed to free files (adapter uploads fleet-wide blocked)"
+    },
+    "1109": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1109",
+      "status": "completed",
+      "title": "workflow-fix: v4 Results scan truncates at any mid-body --- rule (masked hard cap FAILs)"
     },
     "111": {
       "has_clean_result": true,
@@ -840,6 +861,13 @@
       "path": "tasks/archived/111",
       "status": "archived",
       "title": "System-prompt search distributionally matched to an EM finetune converges on bureaucratic-authority prompts, not villain prompts, and reaches the finetune's held-out alignment within 0.45 points (MODERATE confidence)"
+    },
+    "1110": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/completed/1110",
+      "status": "completed",
+      "title": "workflow-fix: verify H1 == frontmatter title (set-title never syncs the body H1)"
     },
     "112": {
       "has_clean_result": false,
@@ -6163,9 +6191,9 @@
       "goal": "Test whether the per-example linear context-to-answer-profile map h: c_x -> v(x) (#779 recipe: held-out K-fold ridge over thousands of per-example pairs) exists in the pretrained Qwen/Qwen2.5-7B vs Qwen2.5-7B-Instruct, for both the assistant and the user turn, under chat-template vs naturalistic formatting; secondary: per-position decay and cross-role prediction beyond a topic-persistence baseline.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/825",
-      "status": "followups_running",
-      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength and is nonlinearly recoverable across two-turn cells \u2014 including a weak user-turn map, replicated on real human conversations, that the linear probe misses entirely (MODERATE confidence)"
+      "path": "tasks/awaiting_promotion/825",
+      "status": "awaiting_promotion",
+      "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength and is answer-specific on both models (a separator control transfers \u226411% of it under the full-n read; the registered matched-n denominator was unevaluable); two-turn cells are nonlinearly recoverable \u2014 including a weak user-turn map, replicated on real human conversations, that the linear probe misses entirely (MODERATE confidence)"
     },
     "826": {
       "has_clean_result": false,

@@ -104,7 +104,7 @@ def test_good_body_passes_all():
     ok, results = verify_task_body.verify_text(GOOD_BODY)
     assert ok, [r.render() for r in results if not r.passed]
     assert all(r.passed for r in results)
-    # CHECKS has 35 body-only functions: the 20 pre-v3 body-only checks
+    # CHECKS has 36 body-only functions: the 20 pre-v3 body-only checks
     # (incl. the sentinel-gated `check_tldr_nested_structure` and the
     # check-8b Reproducibility artifact-URL existence probe), the four
     # v3-gated body-only checks (check 18 `check_data_shape`, check 19
@@ -115,7 +115,7 @@ def test_good_body_passes_all():
     # 21 `check_v4_results_beat` WARN, check 27
     # `check_v4_no_bare_issue_refs`; check 20 v4 `check_v4_word_caps`
     # moved to the appended-outside set — it needs `issue`, #921) — each
-    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the EIGHT
+    # a PASS-skip on this non-v3/non-v4 fixture — PLUS the NINE
     # generation-agnostic checks: check 22
     # (`check_figure_url_sha_matches_repro`), a NO-OP PASS here because
     # this fixture's `## Reproducibility` carries no figure-sha claim,
@@ -139,12 +139,17 @@ def test_good_body_passes_all():
     # vacuous PASS here for the analogous reason — no backtick FILENAME
     # token sits in an HF tree link's text or in a parenthetical
     # immediately after one, so ZERO Hub probes are issued even before
-    # the fence.
+    # the fence, and check 33 (`check_figure_prose_numerics_vs_sidecar`,
+    # WARN), a NO-OP PASS here for the same fake-sha / no-sidecar reason
+    # as checks 24/28 (no value-bearing sidecar resolves, so no bolded
+    # decimal is ever compared).
     # check 25 (`check_audit_availability_claims_match_hf`)
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (35 functions), then appends the Goal soft check, the Lens 14
+    # (36 functions), then appends the Goal soft check, the H1↔frontmatter-
+    # title sync check (#1110; PASS-skip: not a sentinelled body), the
+    # Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
     # check-17 Context provenance-row read, the v3 check-21
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc), the v4
@@ -154,14 +159,17 @@ def test_good_body_passes_all():
     # the check-31 orphaned-per-unit-figures probe (needs `issue` for
     # figures-dir scoping, #1011; PASS here — the fixture's fake sha is not
     # locally reachable, so the cited SHA is silently skipped) →
-    # 45 results total (2 prepended + CHECKS[1:]=35 + 8 appended). The
+    # 47 results total (2 prepended + CHECKS[1:]=36 + 9 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 45
+    assert len(results) == 47
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
+    assert "figure prose numerics vs figure sidecar (plotted-value drift)" in {
+        r.name for r in results
+    }
 
 
 def test_missing_confidence_tag():
@@ -4132,7 +4140,7 @@ def test_audit_context_row_blockquote_exempt():
 
 
 def test_checks_list_size():
-    """CHECKS contains 36 body-only functions: the 20 pre-v3 checks
+    """CHECKS contains 37 body-only functions: the 20 pre-v3 checks
     (the 18 under the 2-content-section spec, the nested-design (v2)
     sentinel-gated `check_tldr_nested_structure`, and the check-8b
     Reproducibility artifact-URL existence probe), the four
@@ -4146,7 +4154,7 @@ def test_checks_list_size():
     v3-gated checks added 2026-W24 are — check 18
     (`check_data_shape`), check 19 (`check_data_subset_disclosure`),
     check 19b (`check_data_unwrapped_example_table`, WARN), check 20
-    (`check_v3_word_caps`) — PLUS the NINE generation-agnostic checks:
+    (`check_v3_word_caps`) — PLUS the TEN generation-agnostic checks:
     check 22 (`check_figure_url_sha_matches_repro`: inline figure URL sha
     vs the `## Reproducibility` per-figure commit claim), check 23
     (`check_hf_url_resolves`: HF Hub revision-pin existence via a bounded
@@ -4176,7 +4184,13 @@ def test_checks_list_size():
     basename, any depth, in the scoped listing at the pinned revision;
     missing → WARN never FAIL, every non-definitive probe outcome SKIPs;
     incident #952 r1's git-only `divergence_bank_queries.json` claimed at
-    the pinned HF tree, #1016). The
+    the pinned HF tree, #1016), and check 33
+    (`check_figure_prose_numerics_vs_sidecar`, WARN: bolded what-is-plotted
+    DECIMALS in a figure's previous-figure-bounded beat-1 window vs the
+    sidecar's plotted values, under rounding / sign / percent /
+    sci-notation tolerance; per-figure `<!-- prose-numerics: derived -->`
+    opt-out; silent skip on missing / truncated sidecars; incident #825 r1,
+    #1107). The
     migration is a RETARGET — every former check
     was kept (sometimes dormant, e.g. `check_figure_caption`) so downstream
     tests stay valid; the v3 checks PASS-skip on non-v3 bodies.
@@ -4192,14 +4206,15 @@ def test_checks_list_size():
     denominator check (needs eval JSONs), and the check-31
     orphaned-per-unit-figures probe (needs `issue` for figures-dir
     scoping, #1011).
-    So `verify_text` returns 45 results (2 prepended + CHECKS[1:]=35 +
+    So `verify_text` returns 46 results (2 prepended + CHECKS[1:]=36 +
     8 appended — see `test_good_body_passes_all`), but `CHECKS` stays
-    at 36.
+    at 37.
     """
-    assert len(verify_task_body.CHECKS) == 36
+    assert len(verify_task_body.CHECKS) == 37
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert verify_task_body.check_hf_adjacent_file_claims in verify_task_body.CHECKS
+    assert verify_task_body.check_figure_prose_numerics_vs_sidecar in verify_task_body.CHECKS
 
 
 # ─── Check 14: MDX-safe prose (regex layer + real-parse backstop) ───
@@ -4425,7 +4440,7 @@ def test_mdx_helper_unavailable_falls_back_loud_not_silent(monkeypatch):
 
 _V2_GOOD_BODY = """\
 ---
-title: V2 nested-design exemplar
+title: Some claim about a finding (MODERATE confidence)
 kind: experiment
 goal: Exercise the v2 sentinel-gated nested-structure check
 ---
@@ -5524,7 +5539,7 @@ def test_repro_lr_multi_version_plan_in_no_version_still_fails(tmp_path):
 
 _V3_GOOD_BODY = """\
 ---
-title: v3 exemplar fixture
+title: Some claim about a finding (MODERATE confidence)
 kind: experiment
 goal: Exercise the v3 sentinel-gated five-flat-H2 checks
 ---
@@ -6332,7 +6347,7 @@ def test_v2_grandfathering_still_passes_unchanged():
 
 _V4_GOOD_BODY = """\
 ---
-title: v4 exemplar fixture
+title: Some claim about a finding (MODERATE confidence)
 kind: experiment
 goal: Exercise the v4 sentinel-gated four-flat-H2 checks
 ---
@@ -7291,6 +7306,133 @@ def test_v4_results_beat_warns_on_missing_interpretation_below_last_result():
     r = _results_by_name(results)["Results three-beat shape (v4)"]
     assert r.passed and r.is_warn, r.render()  # WARN, not silent PASS
     assert "interpretation prose below" in r.detail
+
+
+_V4_FOOTER_ANCHOR = "\n---\n**Repro:**"
+
+
+def test_v4_results_body_survives_mid_results_hr():
+    """A legal mid-Results `---` rule between two results must NOT truncate
+    the scan (#1109): the second result stays visible to checks 20/21, so
+    its ≥180-word interpretation hard-FAILs check 20. Pre-fix, the footer
+    first-line string match cut at the mid-`---` and check 20 falsely
+    PASSed (the #825 masking incident)."""
+    assert _V4_FOOTER_ANCHOR in _V4_GOOD_BODY, "fixture drifted: footer anchor missing"
+    long_interp = " ".join(["word"] * 185)
+    body = _V4_GOOD_BODY.replace(
+        _V4_FOOTER_ANCHOR,
+        "\n---\n\n### A second result behind a horizontal rule\n\n"
+        "Plotted: a second panel.\n\n" + long_interp + "\n\n---\n**Repro:**",
+    )
+    _fm, b = verify_task_body.split_frontmatter(body)
+    trunc = verify_task_body._v4_results_body(b)
+    assert "### A second result" in trunc
+    assert long_interp in trunc
+    assert "**Repro:**" not in trunc
+    assert "**Context:**" not in trunc
+    _ok, results = verify_task_body.verify_text(body)
+    r = _results_by_name(results)["v4 conciseness caps"]
+    assert not r.passed, r.render()
+    assert "≥180" in r.detail, r.render()
+
+
+def test_v4_results_beat_scans_results_after_mid_hr():
+    """The three-beat scan (check 21) sees results AFTER a mid-Results
+    `---` rule: with a properly-framed second result behind the rule the
+    detail reports `all 2` framed. Pre-fix the second result was cut out
+    of the scan entirely (`all 1`)."""
+    assert _V4_FOOTER_ANCHOR in _V4_GOOD_BODY, "fixture drifted: footer anchor missing"
+    second = (
+        "\n---\n\n### A second framed result behind a horizontal rule\n\n"
+        "Plotted: mean capability (y, %) per condition (x: baseline, tulu-25), "
+        "n=3 seeds per bar, 95% Wald CI error bars.\n\n"
+        "![Bar chart of mean capability with 95% CI across three seeds.]"
+        "(https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        "0123456789abcdef/figures/issue_999/second.png)\n\n"
+        "> **Figure.** *Capability holds across conditions.* Baseline gray, "
+        "tulu-25 blue; error bars 95% Wald CIs.\n\n"
+        "Capability is flat across seeds; the largest gap is 0.4 pts.\n"
+        "\n---\n**Repro:**"
+    )
+    body = _V4_GOOD_BODY.replace(_V4_FOOTER_ANCHOR, second)
+    _ok, results = verify_task_body.verify_text(body)
+    r = _results_by_name(results)["Results three-beat shape (v4)"]
+    assert r.passed and not r.is_warn, r.render()
+    assert "all 2" in r.detail, r.render()
+
+
+def test_v4_results_body_equal_without_mid_hr():
+    """Compatibility pin: on a body with NO mid-Results `---` the new
+    absolute-index cut yields exactly the old output — the full section
+    minus the footer, trailing blank/`---` chrome stripped."""
+    _fm, b = verify_task_body.split_frontmatter(_V4_GOOD_BODY)
+    out = verify_task_body._v4_results_body(b)
+    assert out.endswith("is 1.2 pts.")
+    assert not out.endswith("---")
+    assert "**Repro:**" not in out
+    # Independent expectation: lines strictly between the `## Results`
+    # header line and the footer's `---` rule, trailing chrome stripped.
+    lines = b.splitlines()
+    h2_idx = lines.index("## Results")
+    repro_idx = next(i for i, ln in enumerate(lines) if ln.startswith("**Repro:**"))
+    rule_idx = repro_idx - 1
+    assert lines[rule_idx].strip() == "---", "fixture drifted: footer not `---`-preceded"
+    expected_lines = lines[h2_idx + 1 : rule_idx]
+    while expected_lines and expected_lines[-1].strip() in ("", "---"):
+        expected_lines.pop()
+    assert out == "\n".join(expected_lines).strip()
+
+
+def test_v4_results_body_no_footer_keeps_full_section():
+    """Case (a) parity: no footer at all — the helper returns the plain
+    `section_text` untouched, INCLUDING a mid-Results `---` and a retained
+    trailing rule (the trailing-strip runs only on the footer-cut branch)."""
+    assert _V4_FOOTER_ANCHOR in _V4_GOOD_BODY, "fixture drifted: footer anchor missing"
+    head = _V4_GOOD_BODY[: _V4_GOOD_BODY.index(_V4_FOOTER_ANCHOR)]
+    body = head.replace(
+        "Plotted: mean alignment",
+        "---\n\nPlotted: mean alignment",  # a mid-Results rule
+    )
+    body = body + "\n---\n"  # a trailing rule with no footer after it
+    _fm, b = verify_task_body.split_frontmatter(body)
+    assert verify_task_body._v4_footer_start_line(b) is None
+    out = verify_task_body._v4_results_body(b)
+    assert out == verify_task_body.section_text(b, "Results")
+    assert out.endswith("---")  # trailing rule retained, as today
+
+
+def test_v4_results_body_ignores_fenced_hr_in_results():
+    """A `---` inside a fenced code block within Results is content, not a
+    cut point: the absolute-index cut lands at the real footer and the
+    fenced rule plus everything after it stays in the scanned text. (The
+    old first-line string match was not fence-aware and cut at the fenced
+    `---` — a third old/new divergence class, strictly more correct now.)"""
+    assert _V4_FOOTER_ANCHOR in _V4_GOOD_BODY, "fixture drifted: footer anchor missing"
+    fenced = (
+        "\n```text\n---\nfenced rule above is content\n```\n\n"
+        "Post-fence interpretation stays in the scan." + _V4_FOOTER_ANCHOR
+    )
+    body = _V4_GOOD_BODY.replace(_V4_FOOTER_ANCHOR, fenced)
+    _fm, b = verify_task_body.split_frontmatter(body)
+    out = verify_task_body._v4_results_body(b)
+    assert "fenced rule above is content" in out
+    assert "Post-fence interpretation stays in the scan." in out
+    assert "**Repro:**" not in out
+
+
+def test_v4_results_body_footer_without_preceding_rule():
+    """Case (b): a footer with NO preceding `---` rule — the cut lands at
+    the `**Repro:**` line itself, the blank gap above it is stripped, and
+    the output equals the `---`-preceded fixture's cut (the rule is footer
+    chrome either way)."""
+    assert _V4_FOOTER_ANCHOR in _V4_GOOD_BODY, "fixture drifted: footer anchor missing"
+    body = _V4_GOOD_BODY.replace(_V4_FOOTER_ANCHOR, "\n**Repro:**")
+    _fm, b = verify_task_body.split_frontmatter(body)
+    out = verify_task_body._v4_results_body(b)
+    assert out.endswith("is 1.2 pts.")
+    assert "**Repro:**" not in out
+    _fm2, b2 = verify_task_body.split_frontmatter(_V4_GOOD_BODY)
+    assert out == verify_task_body._v4_results_body(b2)
 
 
 def test_v4_methodology_bare_rows_disclosure_passes_check10():
@@ -8759,6 +8901,576 @@ def test_check28_slash_separated_label_warns(tmp_path, monkeypatch):
     assert "ctx_blk_max" in res.detail and "ans_uhdr_max" in res.detail
 
 
+# ─── Check 33: bolded what-is-plotted numerics vs sidecar plotted values ───
+#
+# Fourth sibling of checks 24/26/28: every BOLDED DECIMAL in a figure's
+# previous-figure-bounded beat-1 window (prose + caption) must appear among
+# the sidecar's plotted values under a rounding / sign / percent /
+# sci-notation leniency stack. WARN never FAIL, per-numeric firing,
+# `<!-- prose-numerics: derived -->` per-figure opt-out, silent skip on
+# missing / truncated sidecars. Incident #825 r1 (task #1107): prose cited
+# transfer fractions 0.057/0.109 while the pinned figure plotted 0.231.
+
+_CHECK33_NAME = "figure prose numerics vs figure sidecar (plotted-value drift)"
+
+_CHECK33_PLOTTED_BASE = (
+    "Plotted: mean alignment (y, %) per condition (x: baseline, tulu-25), "
+    "n=3 seeds per bar, 95% Wald CI error bars."
+)
+
+
+def _check33_body(plotted_line: str) -> str:
+    """`_V4_GOOD_BODY` with its beat-1 "Plotted: …" line replaced by
+    ``plotted_line`` (which may span multiple lines, e.g. to inject the
+    per-figure opt-out comment before the image)."""
+    return _V4_GOOD_BODY.replace(_CHECK33_PLOTTED_BASE, plotted_line)
+
+
+_CHECK33_BODY = _check33_body(
+    "Plotted: baseline **0.704** vs tulu-25 **0.879** mean alignment per condition."
+)
+
+
+def _bar_values_sidecar(*heights):
+    """A minimal bar sidecar whose plotted values are ``heights`` (string
+    categories carry no numeric leaf, so the value pool is exactly
+    ``heights``)."""
+    return {
+        "created": "2026-07-07T00:00:00Z",
+        "points": [
+            {"category": f"cond{i}", "alignment": h, "_kind": "bar"} for i, h in enumerate(heights)
+        ],
+        "n_series": 1,
+        "total_points": len(heights),
+    }
+
+
+def test_check33_matching_numerics_pass(tmp_path, monkeypatch):
+    """(a) Bolded 0.704 / 0.879 both present in the sidecar → clean PASS."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _bar_values_sidecar(0.704, 0.879))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK33_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "all bolded what-is-plotted decimals present" in res.detail
+
+
+def test_check33_incident825_style_mismatch_warns(tmp_path, monkeypatch):
+    """(b) The #825 r1 shape: SOME bolded values match (0.588 / 0.311) while
+    the transfer fractions 0.057 / 0.109 match nothing → WARN naming the
+    unmatched values (per-numeric firing — none-match-any would false-PASS
+    this exact shape). WARN = passed=True + is_warn=True, never FAIL."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path, _bar_values_sidecar(0.588, 0.311, 0.231, -4.53)
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body(
+        "Plotted: transfer fraction **0.057** (broad) and **0.109** (narrow); "
+        "ceiling **0.588**, floor **0.311**."
+    ).replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "0.057" in res.detail and "0.109" in res.detail
+    assert "nearest" in res.detail and "0.231" in res.detail
+    assert "prose-numerics: derived" in res.detail  # the WARN names the opt-out
+
+
+def test_check33_optout_before_image_skips(tmp_path, monkeypatch):
+    """(c) The (b) mismatch + `<!-- prose-numerics: derived -->` in the beat-1
+    prose → figure skipped (opted out), no WARN."""
+    repo, sha = _make_repo_with_figure_meta(
+        tmp_path, _bar_values_sidecar(0.588, 0.311, 0.231, -4.53)
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body(
+        "Plotted: transfer fraction **0.057** (broad) and **0.109** (narrow).\n\n"
+        "<!-- prose-numerics: derived -->"
+    ).replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "1 opted out" in res.detail
+
+
+def test_check33_no_sidecar_noop_pass(tmp_path, monkeypatch):
+    """(d) A same-repo figure with NO `.meta.json` sibling → silent-skip PASS
+    (check-24 convention, NOT check 26's loud missing-sidecar FAIL), even
+    with bolded decimals in the window."""
+    repo, sha = _make_repo_with_figure(tmp_path)  # commits hero.png but no sidecar
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK33_BODY.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no figure with bolded what-is-plotted decimals" in res.detail
+
+
+def test_check33_printed_precision_rounding_passes(tmp_path, monkeypatch):
+    """(e) Prose **0.23** vs plotted 0.2312 → PASS (half-ulp at the PRINTED
+    precision: 0.2312 rounds to 0.23 at two decimals)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _bar_values_sidecar(0.2312, 0.879))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: mean margin **0.23** per condition.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check33_derived_delta_warns_documented_fp(tmp_path, monkeypatch):
+    """(f) DOCUMENTED false-positive class: prose bolds the derived delta
+    **0.175** (= 0.879 - 0.704), which is plotted nowhere → WARN. This is the
+    known derived-numeric FP class the `<!-- prose-numerics: derived -->`
+    opt-out exists for (plan §8 risk row 1); WARN severity + the opt-out are
+    the designed containment, not a bug."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _bar_values_sidecar(0.704, 0.879))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body(
+        "Plotted: baseline **0.704** vs tulu-25 **0.879**, a **0.175** lift."
+    ).replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "0.175" in res.detail
+
+
+def test_check33_derived_delta_optout_silences(tmp_path, monkeypatch):
+    """(f-sibling) The same derived-delta window + the opt-out phrase →
+    skipped, no WARN (the documented-FP escape hatch works)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _bar_values_sidecar(0.704, 0.879))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body(
+        "Plotted: baseline **0.704** vs tulu-25 **0.879**, a **0.175** lift.\n\n"
+        "<!-- prose-numerics: derived -->"
+    ).replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "1 opted out" in res.detail
+
+
+_CHECK33_V3_BODY = """\
+---
+title: v3 check-33 fixture
+kind: experiment
+---
+# Some v3 claim (LOW confidence)
+
+<!-- clean-result-v3 -->
+
+## Takeaways
+
+- Something happened.
+
+## Findings
+
+### A finding with a figure
+
+Plotted: transfer fraction **0.057** per condition.
+
+![v3 fig](https://raw.githubusercontent.com/superkaiba/explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)
+
+> **Figure.** *A v3 figure.*
+"""
+
+
+def test_check33_generation_agnostic_v3_findings_scanned(tmp_path, monkeypatch):
+    """The check is generation-agnostic: a v3 body's `## Findings` H3 window
+    with a mismatching bolded decimal + a resolvable sidecar → WARN (proves
+    the v3 scan path positively, not just vacuously)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _bar_values_sidecar(0.231))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _CHECK33_V3_BODY.replace("0123456789abcdef", sha)
+    assert verify_task_body.is_v3(body) and not verify_task_body.is_v4(body)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "0.057" in res.detail
+
+
+def test_check33_v3_good_body_vacuous_pass(tmp_path, monkeypatch):
+    """(g) The v3 exemplar body (unresolvable placeholder sha, no comparable
+    figure) → vacuous PASS, never flagged."""
+    repo, _sha = _make_repo_with_figure(tmp_path)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(_V3_GOOD_BODY)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check33_percent_variant_passes(tmp_path, monkeypatch):
+    """(h) Prose **87.9%** vs a 0.879 fraction axis → PASS (÷100 percent
+    variant)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _bar_values_sidecar(0.879))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: tulu-25 hits **87.9%** mean alignment.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check33_unmarked_times100_variant_passes(tmp_path, monkeypatch):
+    """(h-sibling) UNMARKED fraction prose **0.879** vs an 87.9 percent axis →
+    PASS (x100 variant, available only for %-unmarked decimals)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _bar_values_sidecar(87.9))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: tulu-25 hits **0.879** mean alignment.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def _check33_two_figure_body(between_region: str) -> str:
+    """A v4 body with TWO figures inside ONE `### <result>` H3: figure 1's
+    beat-1 prose bolds 0.704/0.879 (matching its own sidecar in the tests),
+    then ``between_region`` (figure 1's interpretation and/or figure 2's
+    beat-1 prose), then figure 2."""
+    results_block = (
+        "## Results\n\n"
+        "### One result with a hero and a companion figure\n\n"
+        "Plotted: baseline **0.704** vs tulu-25 **0.879** mean alignment.\n\n"
+        "![fig one](https://raw.githubusercontent.com/superkaiba/"
+        "explore-persona-space/0123456789abcdef/figures/issue_999/hero.png)\n\n"
+        "> **Figure.** *Hero.* Error bars 95% Wald CIs.\n\n"
+        f"{between_region}\n\n"
+        "![fig two](https://raw.githubusercontent.com/superkaiba/"
+        "explore-persona-space/0123456789abcdef/figures/issue_999/second.png)\n\n"
+        "> **Figure.** *Companion.* Error bars 95% Wald CIs.\n"
+    )
+    head, _sep, _tail = _V4_GOOD_BODY.partition("## Results\n")
+    return head + results_block + "\n---\n**Repro:** 1x H100, 47 min · entry.\n"
+
+
+def test_check33_two_figures_one_h3_window_bounded(tmp_path, monkeypatch):
+    """(i) Two figures in ONE H3: figure 1's bolded 0.704/0.879 match its own
+    sidecar; figure 2's window (previous-figure-bounded) carries NO bolds →
+    only figure 1 scanned, clean PASS. Pins `_beat1_prose_window`: under the
+    check-26 H3→figure window, figure 1's bolds would leak into figure 2's
+    window and false-WARN against figure 2's sidecar."""
+    body = _check33_two_figure_body("Plotted: capability per condition, bars only.")
+    repo, sha = _make_repo_with_two_figure_metas(
+        tmp_path, _bar_values_sidecar(0.704, 0.879), _bar_values_sidecar(0.82, 0.81)
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = body.replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "1 figure(s)" in res.detail
+
+
+def test_check33_interp_bleed_derived_value_warns_and_optout_silences(tmp_path, monkeypatch):
+    """(i-bleed, pinned residual) Figure 1's post-caption INTERPRETATION bolds
+    a derived **0.175** absent from BOTH sidecars; that region falls inside
+    figure 2's window → WARN against figure 2 (the documented bleed residual:
+    beat-3 interpretation and beat-1 prose are structurally indistinguishable
+    between two figures). The per-figure opt-out in that region silences it —
+    the designed containment for this class."""
+    between = (
+        "The **0.175** lift is the headline delta.\n\n"
+        "Plotted second: capability per condition, bars only."
+    )
+    body = _check33_two_figure_body(between)
+    repo, sha = _make_repo_with_two_figure_metas(
+        tmp_path, _bar_values_sidecar(0.704, 0.879), _bar_values_sidecar(0.82, 0.81)
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(
+        body.replace("0123456789abcdef", sha)
+    )
+    assert res.passed and res.is_warn, res.render()
+    assert "0.175" in res.detail and "second.png" in res.detail
+    # Opt-out in the bleed region silences the WARN (figure 2 opted out).
+    body2 = _check33_two_figure_body(between + "\n\n<!-- prose-numerics: derived -->")
+    res2 = verify_task_body.check_figure_prose_numerics_vs_sidecar(
+        body2.replace("0123456789abcdef", sha)
+    )
+    assert res2.passed and not res2.is_warn, res2.render()
+
+
+def test_check33_interp_bleed_prior_figure_value_suppressed(tmp_path, monkeypatch):
+    """(i-suppression) Figure 1's post-caption interpretation re-quotes a
+    figure-1-PLOTTED value (**0.704**) inside figure 2's window; figure 2's
+    sidecar lacks it → SUPPRESSED (matches an earlier same-H3 figure's
+    plotted values = cross-figure bleed), no WARN."""
+    between = (
+        "The baseline **0.704** anchors the comparison.\n\n"
+        "Plotted second: capability per condition, bars only."
+    )
+    body = _check33_two_figure_body(between)
+    repo, sha = _make_repo_with_two_figure_metas(
+        tmp_path, _bar_values_sidecar(0.704, 0.879), _bar_values_sidecar(0.82, 0.81)
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(
+        body.replace("0123456789abcdef", sha)
+    )
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check33_sign_insensitive_passes(tmp_path, monkeypatch):
+    """(j) Prose "a **0.30** drop" vs plotted -0.30 → PASS (sign-insensitive
+    twin)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _bar_values_sidecar(-0.30))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: a **0.30** drop per condition.").replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check33_unicode_minus_passes(tmp_path, monkeypatch):
+    """(k) Prose **\u22124.53** (the literal char, unicode minus U+2212) parsed and matched vs
+    plotted -4.53 → PASS."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _bar_values_sidecar(-4.53))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: clipped floor at **−4.53** per condition.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check33_integers_and_versions_not_scanned(tmp_path, monkeypatch):
+    """(l) Bolded integers (**n=50**, **3**) and version-shaped tokens
+    (**Qwen-2.5-7B**) yield NO scannable decimal → vacuous PASS even against
+    a sidecar that matches nothing."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _bar_values_sidecar(0.1))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body(
+        "Plotted: **Qwen-2.5-7B** alignment, **n=50** probes, **3** seeds."
+    ).replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+    assert "no figure with bolded what-is-plotted decimals" in res.detail
+
+
+def test_check33_data_truncated_sidecar_skips(tmp_path, monkeypatch):
+    """(m) A `data_truncated: true` sidecar (the writer's top-level flag) with
+    a would-be mismatch → silent skip PASS (a matching value may sit past the
+    `_MAX_SIDECAR_ROWS` cap, so absence-of-match is unsound)."""
+    meta = _bar_values_sidecar(0.231)
+    meta["data_truncated"] = True
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: transfer fraction **0.057** per condition.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check33_truncated_payload_key_skips(tmp_path, monkeypatch):
+    """(m-twin) The legacy/payload `truncated: true` key at the meta top level
+    ALSO skips (robustness twin of `data_truncated`)."""
+    meta = _bar_values_sidecar(0.231)
+    meta["truncated"] = True
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: transfer fraction **0.057** per condition.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check33_rows_legacy_key_read(tmp_path, monkeypatch):
+    """A sidecar carrying the legacy `rows` key (no `points`) still yields
+    plotted values: a mismatching bold → WARN (if `rows` were ignored, the
+    empty value pool would silently skip-PASS instead)."""
+    meta = {
+        "created": "2026-07-07T00:00:00Z",
+        "rows": [{"alignment": 0.231, "_kind": "bar"}],
+    }
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: transfer fraction **0.057** per condition.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "0.057" in res.detail
+
+
+def test_check33_sci_notation_through_main_check(tmp_path, monkeypatch):
+    """Sci-notation prose **1.23e-3** vs plotted 0.00123 → PASS through the
+    MAIN check (the relative-tolerance `dec == -1` branch, not only the
+    extraction helper)."""
+    repo, sha = _make_repo_with_figure_meta(tmp_path, _bar_values_sidecar(0.00123))
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: tail mass **1.23e-3** per condition.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check33_bar_x_position_excluded_from_variants(tmp_path, monkeypatch):
+    """A grouped-bar layout x-position (numeric FIRST key of a `_kind: bar`
+    row) never satisfies a x100 / /100 VARIANT candidate: prose **0.008** whose
+    only would-be match is x100 → the bar x 0.8 → WARN. Direct matching
+    against the same value stays lenient: prose **0.8** → PASS."""
+    meta = {
+        "created": "2026-07-07T00:00:00Z",
+        "points": [{"x": 0.8, "margin": 42.0, "_kind": "bar"}],
+    }
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: mean margin **0.008** per condition.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and res.is_warn, res.render()
+    assert "0.008" in res.detail
+    body2 = _check33_body("Plotted: dodge offset **0.8** per condition.").replace(
+        "0123456789abcdef", sha
+    )
+    res2 = verify_task_body.check_figure_prose_numerics_vs_sidecar(body2)
+    assert res2.passed and not res2.is_warn, res2.render()
+
+
+def test_check33_prior_figure_pool_excludes_current_figure_bar_x(tmp_path, monkeypatch):
+    """(r2 Blocker-1 regression) The bleed pool holds EARLIER same-H3 figures'
+    values ONLY: figure 2 is the bar-x fixture (layout offset x 0.8) and its
+    window bolds **0.008**, whose only would-be match is the x100 variant →
+    the bar x → WARN, exactly as single-figure geometry already pins
+    (test_check33_bar_x_position_excluded_from_variants). Under the r1
+    aliasing bug (`get` returned the LIVE accumulator; `extend` mutated it
+    before matching), figure 2's own 0.8 leaked into `prior_vals` and was
+    matched through the pool path WITHOUT the bar-x exclusion → wrong PASS."""
+    meta_b = {
+        "created": "2026-07-07T00:00:00Z",
+        "points": [{"x": 0.8, "margin": 42.0, "_kind": "bar"}],
+    }
+    body = _check33_two_figure_body("Plotted second: mean margin **0.008** per condition.")
+    repo, sha = _make_repo_with_two_figure_metas(
+        tmp_path, _bar_values_sidecar(0.704, 0.879), meta_b
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(
+        body.replace("0123456789abcdef", sha)
+    )
+    assert res.passed and res.is_warn, res.render()
+    assert "0.008" in res.detail and "second.png" in res.detail
+
+
+def test_check33_bar_height_colliding_with_x_position_stays_variant_eligible(tmp_path, monkeypatch):
+    """(r2 Blocker-2 regression) Identity-preserving exclusion: a bar row
+    whose HEIGHT equals its x-position ({"x": 0.8, "margin": 0.8}) keeps the
+    height entry variant-eligible — prose **0.008** matches the height via
+    x100 → clean PASS. The r1 value-SET exclusion dropped every plotted 0.8
+    from the variant candidates → false WARN on common grouped-bar offsets."""
+    meta = {
+        "created": "2026-07-07T00:00:00Z",
+        "points": [{"x": 0.8, "margin": 0.8, "_kind": "bar"}],
+    }
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: mean margin **0.008** per condition.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check33_legacy_rows_bar_first_key_stays_variant_eligible(tmp_path, monkeypatch):
+    """(r2 Minor-4 regression) The bar-x exclusion is scoped to the modern
+    `points` key: a legacy `rows` sidecar's bar row is NEVER bar-x tagged
+    (fail-open — the legacy writer's key order is unverified), so prose
+    **0.008** still matches the first-key 0.8 via the x100 variant → PASS."""
+    meta = {
+        "created": "2026-07-07T00:00:00Z",
+        "rows": [{"x": 0.8, "margin": 42.0, "_kind": "bar"}],
+    }
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: mean margin **0.008** per condition.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check33_optedout_and_boldless_prior_figures_still_feed_bleed_pool(tmp_path, monkeypatch):
+    """(r2 Minor-3 semantics pin) DOCUMENTED pool semantics: an earlier
+    same-H3 figure contributes its plotted values to the bleed-suppression
+    pool regardless of its own scan outcome. Figure 2's window re-quotes
+    figure 1's plotted **0.42**, absent from figure 2's own sidecar →
+    suppressed (clean PASS) BOTH when figure 1 is opted out AND when it is
+    bold-less — the pool models what earlier figures PLOT, independent of
+    their prose-scan outcome (excluding them would false-WARN legitimate
+    bleed references)."""
+    between = (
+        "The earlier panel's **0.42** anchors this read.\n\n"
+        "Plotted second: capability per condition, bars only."
+    )
+    body = _check33_two_figure_body(between)
+    repo, sha = _make_repo_with_two_figure_metas(
+        tmp_path, _bar_values_sidecar(0.42), _bar_values_sidecar(0.82, 0.81)
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    fig1_line = "Plotted: baseline **0.704** vs tulu-25 **0.879** mean alignment."
+    # Variant 1: figure 1 OPTED OUT (its window carries the opt-out phrase).
+    body_optout = body.replace(
+        fig1_line, "Plotted: derived headline quantities.\n\n<!-- prose-numerics: derived -->"
+    ).replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body_optout)
+    assert res.passed and not res.is_warn, res.render()
+    # Variant 2: figure 1 BOLD-LESS (scanned window, zero bolded decimals).
+    body_boldless = body.replace(
+        fig1_line, "Plotted: alignment per condition, no headline numerics."
+    ).replace("0123456789abcdef", sha)
+    res2 = verify_task_body.check_figure_prose_numerics_vs_sidecar(body_boldless)
+    assert res2.passed and not res2.is_warn, res2.render()
+
+
+def test_check33_repo_unresolved_is_noop_pass(monkeypatch):
+    """Offline / repo root unresolved → NO-OP PASS."""
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(_CHECK33_BODY)
+    assert res.passed and not res.is_warn
+    assert "repo root unresolved" in res.detail
+
+
+def test_check33_beat1_prose_window_boundaries():
+    """Helper pin: the window is bounded by the enclosing H3 for the FIRST
+    figure and by the PREVIOUS figure's caption end for a LATER same-H3
+    figure; None when no `### ` H3 exists above the figure at all."""
+    rlines = [
+        "### Result one",
+        "Beat one text **0.5**.",
+        "![f1](https://example.com/f1.png)",
+        "",
+        "> **Figure.** caption one.",
+        "",
+        "Interp of figure one.",
+        "Plotted two.",
+        "![f2](https://example.com/f2.png)",
+        "",
+        "> caption two.",
+    ]
+    w1 = verify_task_body._beat1_prose_window(rlines, 2)
+    assert w1 is not None and "Beat one" in w1 and "caption one" in w1
+    assert "Interp" not in w1
+    w2 = verify_task_body._beat1_prose_window(rlines, 8)
+    assert w2 is not None and "Interp" in w2 and "Plotted two" in w2
+    assert "Beat one" not in w2 and "caption one" not in w2 and "caption two" in w2
+    # No H3 anywhere above → None (both directly and via a previous image).
+    assert verify_task_body._beat1_prose_window(["prose", "![f](u)"], 1) is None
+    assert verify_task_body._beat1_prose_window(["![f0](u)", "text", "![f](u)"], 2) is None
+
+
+def test_check33_bold_prose_decimals_extraction():
+    """Helper pin: decimal-places / percent-marker / sci-notation-sentinel
+    extraction; unicode minus normalized; word-attached and integer tokens
+    excluded; unbolded decimals never scanned."""
+    fn = verify_task_body._bold_prose_decimals
+    out = fn(
+        "baseline **0.704** vs **87.9%** and **−4.53**, sci **1.2e-3**, "
+        "skip **v1.2**, **2.5-7B**, **n=50**; unbolded 0.99 stays out"
+    )
+    vals = {(v, d, p) for _raw, v, d, p in out}
+    assert (0.704, 3, False) in vals
+    assert (87.9, 1, True) in vals
+    assert (-4.53, 2, False) in vals
+    assert (1.2e-3, -1, False) in vals
+    assert len(out) == 4, out
+
+
 # ─── #732: check_judge_error_denominator — gate silent judge-API-error EM ──
 #
 # A NEW mechanical check that FAILs/WARNs when a clean-result body states a
@@ -9181,3 +9893,175 @@ def test_check15_abbreviation_dot_same_clause_claim_still_fails(tmp_path, monkey
     res = verify_task_body.check_repro_committed_claims_exist(_repro_body(line))
     assert not res.passed, res.render()
     assert "NOT present" in res.detail
+
+
+# ─── H1 ↔ frontmatter-title sync check (#1110/#825) ────────────────────────
+
+_H1_SYNC_NAME = "H1 matches frontmatter title"
+_H1_SYNC_FILLER = (
+    "Filler prose so the fixture clears check_body_nonstub's 500-char stub "
+    "floor without carrying any other clean-result structure. " * 6
+)
+
+
+def _sentinelled_raw(sentinel: str, fm_title: str | None, h1: str) -> str:
+    """Minimal raw doc for the H1↔title sync check: frontmatter (+ optional
+    title) + H1 + sentinel + enough prose to clear check_body_nonstub's
+    stub floor. Tests assert on the named check via _results_by_name — the
+    minimal shape fails unrelated structure checks by construction, so
+    these tests never assert overall `ok`."""
+    fm_lines = ["---"]
+    if fm_title is not None:
+        fm_lines.append(f"title: {fm_title}")
+    fm_lines.extend(["kind: experiment", "---"])
+    return "\n".join(fm_lines) + f"\n# {h1}\n\n{sentinel}\n\n{_H1_SYNC_FILLER}\n"
+
+
+def test_h1_title_sync_v4_match_passes():
+    """v4 body whose fm title == H1 (incl. the confidence tag) passes clean."""
+    raw = _sentinelled_raw(
+        "<!-- clean-result-v4 -->",
+        "A tidy claim about leakage (MODERATE confidence)",
+        "A tidy claim about leakage (MODERATE confidence)",
+    )
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is False, res.render()
+
+
+def test_h1_title_sync_whitespace_normalization():
+    """Pins the normalization rule: whitespace collapse ONLY. Internal
+    doubled spaces + trailing spaces in the H1 are not divergence; no
+    case/Unicode/punctuation folding happens anywhere else."""
+    raw = _sentinelled_raw(
+        "<!-- clean-result-v4 -->",
+        "A tidy claim about leakage (MODERATE confidence)",
+        "A tidy  claim about   leakage (MODERATE confidence)  ",
+    )
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is False, res.render()
+
+
+def test_h1_title_sync_v4_mismatch_fails():
+    """Fail-loud: the #825 shape — frontmatter retitled via set-title, body
+    H1 left stale — hard-FAILs on a v4 body. Detail names both strings and
+    the set-title remediation."""
+    raw = _sentinelled_raw(
+        "<!-- clean-result-v4 -->",
+        "Fresh retitled claim (HIGH confidence)",
+        "Stale original claim (MODERATE confidence)",
+    )
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert not res.passed, res.render()
+    assert "Stale original claim" in res.detail
+    assert "Fresh retitled claim" in res.detail
+    assert "set-title" in res.detail
+
+
+def test_h1_title_sync_v3_mismatch_warns():
+    """Forward-only pin: the same divergence on a v3-sentinelled body is a
+    loud WARN (passed=True, is_warn=True), never a new retroactive FAIL."""
+    raw = _sentinelled_raw(
+        "<!-- clean-result-v3 -->",
+        "Fresh retitled claim (HIGH confidence)",
+        "Stale original claim (MODERATE confidence)",
+    )
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is True, res.render()
+    assert "grandfathered" in res.detail
+
+
+def test_h1_title_sync_v2_mismatch_warns():
+    """Forward-only pin, v2 sentinel: divergence WARNs, never FAILs."""
+    raw = _sentinelled_raw(
+        "<!-- clean-result-v2 -->",
+        "Fresh retitled claim (HIGH confidence)",
+        "Stale original claim (MODERATE confidence)",
+    )
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is True, res.render()
+    assert "grandfathered" in res.detail
+
+
+def test_h1_title_sync_no_sentinel_skips():
+    """A non-sentinelled body with a real mismatch PASS-skips — pre-promotion
+    bodies legitimately have no synced H1."""
+    raw = _sentinelled_raw(
+        "",
+        "Fresh retitled claim (HIGH confidence)",
+        "Stale original claim (MODERATE confidence)",
+    )
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is False, res.render()
+    assert "not a sentinelled" in res.detail
+
+
+def test_h1_title_sync_no_frontmatter_skips():
+    """Body-only input (analyzer draft / --body-stdin dry run): fm == {} →
+    PASS-skip so draft verification stays green before set-title runs; the
+    gate-time --issue run compares against the real body.md."""
+    body = (
+        "# Stale original claim (MODERATE confidence)\n\n"
+        "<!-- clean-result-v4 -->\n\n" + _H1_SYNC_FILLER + "\n"
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is False, res.render()
+    assert "draft" in res.detail
+
+
+def test_h1_title_sync_missing_fm_title_fails_v4():
+    """Fail-loud: a sentinelled v4 body whose frontmatter lacks `title`
+    entirely is a broken promotion — same severity as a mismatch, never a
+    silent skip."""
+    raw = _sentinelled_raw("<!-- clean-result-v4 -->", None, "Some claim (MODERATE confidence)")
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert not res.passed, res.render()
+    assert "no frontmatter `title`" in res.detail
+
+
+def test_h1_title_sync_missing_h1_fails_v4():
+    """Fail-loud: a v4-sentinelled body with no H1 FAILs the check. Unit-calls
+    check_h1_matches_frontmatter_title directly (established helper-test
+    precedent in this file): through verify_text this shape is preempted by
+    check_body_nonstub's own no-H1 FAIL short-circuit, so the branch is only
+    reachable by direct call."""
+    body = "<!-- clean-result-v4 -->\n\n" + _H1_SYNC_FILLER + "\n"
+    res = verify_task_body.check_h1_matches_frontmatter_title(
+        body, {"title": "Some claim (MODERATE confidence)"}
+    )
+    assert not res.passed, res.render()
+    assert "no H1" in res.detail
+
+
+def test_h1_title_sync_v3_missing_fm_title_warns():
+    """The v3/v2 anomaly branch stays grandfathered: a v3-sentinelled body
+    with NO frontmatter `title` WARNs (passed=True, is_warn=True) — the
+    forward-only rule covers the anomaly sub-cases too, not just the
+    mismatch branch (the #654 shape sits on a v3 body today)."""
+    raw = _sentinelled_raw("<!-- clean-result-v3 -->", None, "Some claim (MODERATE confidence)")
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is True, res.render()
+    assert "no frontmatter `title`" in res.detail
+
+
+def test_h1_title_sync_sentinel_only_in_fence_skips():
+    """A body that merely QUOTES the v4 sentinel inside a code fence is not
+    sentinelled (pins the _prose_layer inheritance) — real mismatch present,
+    still PASS-skip."""
+    raw = (
+        "---\ntitle: Fresh retitled claim (HIGH confidence)\nkind: experiment\n---\n"
+        "# Stale original claim (MODERATE confidence)\n\n"
+        "```markdown\n<!-- clean-result-v4 -->\n```\n\n" + _H1_SYNC_FILLER + "\n"
+    )
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is False, res.render()
+    assert "not a sentinelled" in res.detail
