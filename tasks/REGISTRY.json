@@ -795,8 +795,8 @@
     "1101": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1101",
-      "status": "proposed",
+      "path": "tasks/archived/1101",
+      "status": "archived",
       "title": "daily-fix: GCP success-path poweroff didn't fire after phase"
     },
     "1102": {
