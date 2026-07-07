@@ -880,8 +880,8 @@
       "goal": "Compare the residual-stream activation-shift geometry (trained-minus-base, per layer: rank/participation-ratio, direction alignment, magnitude) of MATCHED LoRA vs full-fine-tune organisms for TWO behaviors \u2014 the programmatic marker and sycophancy \u2014 each installed at matched strength, extending #653's LoRA-only diffuse rank-k read to full-FT twins and testing whether 2410.21228's weight-space intruder-dimension difference manifests in activation space.",
       "has_clean_result": false,
       "kind": "experiment",
-      "path": "tasks/proposed/1112",
-      "status": "proposed",
+      "path": "tasks/planning/1112",
+      "status": "planning",
       "title": "Matched LoRA vs full-fine-tune residual-stream activation-shift geometry (does #653's diffuse LoRA rank-k hold for full-FT?)"
     },
     "112": {
