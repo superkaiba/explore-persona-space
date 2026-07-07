@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1099,
+  "highest_id": 1100,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -784,6 +784,13 @@
       "path": "tasks/archived/11",
       "status": "archived",
       "title": "[Proposed] Log persona/EM metrics during training (WandB callback)"
+    },
+    "1100": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1100",
+      "status": "proposed",
+      "title": "daily-fix: catch task lifecycle commits stranded off main at"
     },
     "111": {
       "has_clean_result": true,
