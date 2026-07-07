@@ -1,0 +1,64 @@
+{
+  "commit": "1f6db9f0c0",
+  "created": "2026-07-07T10:23:24Z",
+  "figsize": [
+    4.8,
+    3.4
+  ],
+  "points": [
+    {
+      "category": "layer 14",
+      "weight-space cosine": 0.8903476558171016,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "layer 18",
+      "weight-space cosine": 0.862324560492196,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "layer 19",
+      "weight-space cosine": 0.8828418110130236,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "layer 26",
+      "weight-space cosine": 0.8953603993616511,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "weight-space cosine": -0.0009449923112879935,
+      "series": "random-map reference",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "weight-space cosine": 0.001729741322896709,
+      "series": "random-map reference",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "weight-space cosine": -0.001564303292879188,
+      "series": "random-map reference",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "weight-space cosine": 0.00033028467278875735,
+      "series": "random-map reference",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 8
+}
