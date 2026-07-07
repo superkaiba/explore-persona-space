@@ -22,6 +22,11 @@ goal: 'Measure how residual-stream activation-shift geometry (trained-minus-base
 relates_to:
 - identity-contextual-vs-base
 ---
+## Goal
+
+Measure how residual-stream activation-shift geometry (trained-minus-base, per layer: rank/participation-ratio, direction alignment, magnitude) depends on training method AND contrastive negatives, via a sycophancy 2x2 on #1090's data — {LoRA, full-fine-tune} x {positive-only, positive+contrastive-negatives} at matched install (training two NEW full-FT twins on #1090's mix) — plus a marker LoRA-vs-full-FT method comparison; extends #653's LoRA-only diffuse rank-k read and tests whether 2410.21228's weight-space intruder-dimension difference and the contrastive-negatives structure manifest in activation space.
+
+
 ## Overview / Motivation
 
 #653 (awaiting_promotion) found a strongly-installed **LoRA** sycophancy organism has a
