@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1100,
+  "highest_id": 1101,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -791,6 +791,13 @@
       "path": "tasks/proposed/1100",
       "status": "proposed",
       "title": "daily-fix: catch task lifecycle commits stranded off main at"
+    },
+    "1101": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1101",
+      "status": "proposed",
+      "title": "daily-fix: GCP success-path poweroff didn't fire after phase"
     },
     "111": {
       "has_clean_result": true,
