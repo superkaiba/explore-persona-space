@@ -872,8 +872,8 @@
     "1111": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1111",
-      "status": "running",
+      "path": "tasks/reviewing/1111",
+      "status": "reviewing",
       "title": "workflow-fix: parse semicolon-inline followup-scope/run note fields"
     },
     "1112": {
