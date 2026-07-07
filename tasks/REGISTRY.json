@@ -830,8 +830,8 @@
     "1106": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1106",
-      "status": "running",
+      "path": "tasks/reviewing/1106",
+      "status": "reviewing",
       "title": "workflow-fix: model-switch rung in the spurious-refusal recovery ladder"
     },
     "1107": {
