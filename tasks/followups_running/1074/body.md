@@ -1,7 +1,7 @@
 ---
 title: Stage-split generators (abliterated positives, base-Qwen negatives) yield the
-  first trainable harmful-compliance cell, but it installs at 0.26 — far below the
-  0.60–0.85 band (MODERATE confidence)
+  first trainable harmful-compliance cell, but its install plateaus near 0.40 — below
+  the 0.60–0.85 band even at triple dose (MODERATE confidence)
 kind: experiment
 tags:
 - from-906
