@@ -512,6 +512,26 @@ ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD: str = "gcp_queue_timeout_failove
 #: inside ``_attempt_one_gcp_rung``, which the poller never re-enters).
 ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD: str = "gcp_boot_loop_failover_runpod"
 
+#: The ASYNC poller detected a GCP FLEX_START instance that VANISHED while
+#: PENDING (#1116/#1112): the create SUCCEEDED and the instance sat in the DWS
+#: capacity queue (last observed ``current_phase == "pending"``, per the
+#: sidecar phase clock), then disappeared from instances-list entirely (a dead
+#: ``terminal_instance not found`` poll, NO delete operation) — the queue
+#: dropped the request server-side, a pure CAPACITY event. DISTINCT from
+#: :data:`ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD` (the instance there
+#: dequeued nothing but still EXISTED server-side — the failover tears it
+#: down; here the record is already DELETED, so there is nothing to tear
+#: down), from :data:`ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD` (the
+#: instance there BOOTED and died; here it never left the queue), from both
+#: workload-crash reasons (nothing ever ran), and from
+#: :data:`ROUTE_REASON_RUNPOD_FALLBACK` (capacity exhaustion at create time —
+#: this create SUCCEEDED). Same RunPod target + terminal rung, distinct
+#: detection cause so the ``epm:backend-selected`` marker trail tells a queue
+#: vanish apart from every sibling. The trigger never touches the per-day GCP
+#: attempt counter (that bumps only on a create, inside
+#: ``_attempt_one_gcp_rung``, which the poller never re-enters).
+ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD: str = "gcp_queue_vanish_failover_runpod"
+
 #: Default N for the #1029 pre-workload boot-loop breaker: the Nth CONSECUTIVE
 #: same-rung pre-workload boot death fails over to RunPod, and a rung whose
 #: same-UTC-day streak is >= N is SKIPPED by the route()-side ladder walk
@@ -5423,6 +5443,7 @@ __all__ = [
     "ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD",
     "ROUTE_REASON_CPU_FALLBACK_INFEASIBLE",
     "ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD",
+    "ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD",
     "ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC",
     "ROUTE_REASON_NO_COMPUTE",
