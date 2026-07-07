@@ -344,6 +344,41 @@ def cka_per_layer(bank_a: torch.Tensor, bank_b: torch.Tensor) -> list[float]:
     return [linear_cka(bank_a[:, L], bank_b[:, L]) for L in range(n_layers)]
 
 
+def _build_generation_prompts(
+    tokenizer,
+    personas: dict[str, str | None],
+    questions: list[str],
+    *,
+    user_wraps: dict[str, str | None] | None = None,
+) -> tuple[list[str], list[tuple[str, int]]]:
+    """Rendered chat prompts + (persona, question_idx) keys for every pair.
+
+    ``user_wraps`` maps a persona/context key to an optional ``"...{q}..."``
+    user-turn wrap (the ``NegativeContext.user_wrap`` shape): when set, the
+    user content is ``wrap.format(q=question)`` — the SAME rendering the
+    span computation (``compute_prompt_spans``) re-derives, so generation and
+    span alignment share one message construction (#1112 round-2 Critical 1:
+    a wrap member generated on the BARE question tripped the span
+    token-prefix assert AND degenerated to the bare-assistant context).
+    """
+    prompts: list[str] = []
+    keys: list[tuple[str, int]] = []
+    wraps = user_wraps or {}
+    for p_name, p_prompt in personas.items():
+        wrap = wraps.get(p_name)
+        for q_idx, question in enumerate(questions):
+            messages = []
+            if p_prompt:
+                messages.append({"role": "system", "content": p_prompt})
+            content = wrap.format(q=question) if wrap else question
+            messages.append({"role": "user", "content": content})
+            prompts.append(
+                tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+            )
+            keys.append((p_name, q_idx))
+    return prompts, keys
+
+
 def _generate_responses_vllm(
     model_path: str,
     personas: dict[str, str | None],
@@ -351,30 +386,22 @@ def _generate_responses_vllm(
     *,
     max_new_tokens: int,
     gpu_memory_utilization: float,
+    user_wraps: dict[str, str | None] | None = None,
 ) -> list[dict]:
     """vLLM greedy generation for every (persona, question) pair.
 
     Returns one row dict per pair: ``{persona, question_idx, prompt_token_ids,
     response_token_ids, finish_reason}``. The vLLM engine is torn down before
     returning so the subsequent HF teacher-forced pass has the GPU to itself.
+    ``user_wraps`` threads per-context user-turn wraps into the prompt build
+    (see :func:`_build_generation_prompts`).
     """
     from vllm import LLM, SamplingParams
 
     tokenizer = AutoTokenizer.from_pretrained(
         model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
     )
-    prompts: list[str] = []
-    keys: list[tuple[str, int]] = []
-    for p_name, p_prompt in personas.items():
-        for q_idx, question in enumerate(questions):
-            messages = []
-            if p_prompt:
-                messages.append({"role": "system", "content": p_prompt})
-            messages.append({"role": "user", "content": question})
-            prompts.append(
-                tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
-            )
-            keys.append((p_name, q_idx))
+    prompts, keys = _build_generation_prompts(tokenizer, personas, questions, user_wraps=user_wraps)
 
     # enforce_eager defaults TRUE (#734 crash-fix round 5): cuda-graph capture
     # deadlocked the first generate() on the pod-734 combo. Env-overridable via

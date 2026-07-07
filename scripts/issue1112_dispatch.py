@@ -17,7 +17,11 @@ Phases (linear, checkpoint-per-phase, resume-keyed; plan v3 §4/§9):
   p5_generic    s5/s6 generic controls trained to the method-matched steps
   p6_parity     reused-cell (s1 = fu2 checkpoint-14) rsLoRA parity probe
   p7_tier2      Tier-2 generation + judge fold -> install/*_tier2.json
-  p8_marker     m2 grid ΔG selection + full three-space reads (m1 + m2)
+  p7b_margin    teacher-forced fixed-pool margin companion (plan §6 DV table):
+                sha-pinned #1090 pools, base + per-selected-checkpoint reads
+                -> install/*_margin.json
+  p8_marker     m2 grid ΔG selection + full three-space reads (m1 + m2);
+                m2 selected-checkpoint overflow upload THEN rung reap
   p9_rb         sycophancy r_B (issue779 extractor subprocess) + marker W_U row
   p10_capture   18 capture passes (gen + 28-layer 3-span TF pooling), sharded
   p11_geometry  smoke-scale geometry stub (full geometry runs VM-side)
@@ -61,7 +65,10 @@ import issue1090_fu1 as fu1  # noqa: E402
 import issue1090_run as i1090  # noqa: E402
 
 from explore_persona_space.artifacts.behavior import BEHAVIORS  # noqa: E402
-from explore_persona_space.artifacts.negatives import default_panel  # noqa: E402
+from explore_persona_space.artifacts.negatives import (  # noqa: E402
+    assert_panel_disjoint_from_sources,
+    default_panel,
+)
 from explore_persona_space.artifacts.organisms import (  # noqa: E402
     DEFAULT_BASE_MODEL,
     ModelOrganism,
@@ -82,7 +89,11 @@ from explore_persona_space.orchestrate import hub  # noqa: E402
 
 logger = logging.getLogger("issue1112")
 
-ACCEL_CONFIG = "configs/accelerate/zero3_4gpu_accum1.yaml"
+ACCEL_CONFIG = "configs/accelerate/zero3_4gpu_accum1.yaml"  # behavior FT: eff-batch 16
+# The marker trainer pins grad-accum 16 (#514 eff-batch-64 recipe); DeepSpeed's
+# explicit gradient_accumulation_steps must MATCH TrainingArguments (fill_match
+# raises otherwise) — hence a dedicated accum-16 config (round-2 Critical 4).
+MARKER_ACCEL_CONFIG = "configs/accelerate/zero3_4gpu_accum16.yaml"
 FT_TRAINER = "scripts/train_behavior_fullft.py"
 MARKER_FT_TRAINER = "scripts/issue1112_train_marker_fullft.py"
 RB_EXTRACTOR = "scripts/issue779_extract_rb.py"
@@ -232,6 +243,18 @@ def phase_stage(cfg: Cfg) -> dict:
         _stage_file(C.C3_POS_PATH, inputs / "pos.jsonl", revision=C.C3_MIX_REV)
         _stage_file(C.C3_CN_PATH, inputs / "cn.jsonl", revision=C.C3_MIX_REV)
         _stage_file(C.GENERIC_CORPUS_PATH, inputs / "generic_corpus.jsonl", revision=C.C3_MIX_REV)
+        # margin companion inputs (plan §6): the fu1 pool-pin record + the c3
+        # datagen sidecars the fixed-pool derivation reads — staged EAGERLY at
+        # p0 (#763 manifest-inputs lesson; _margin_pools re-stages idempotently).
+        _stage_file(
+            f"{C.MARGIN_POOLS_PREFIX}/margin/c3-sycophancy-claude.json",
+            inputs / "fu1_margin_c3.json",
+            revision=C.MARGIN_POOLS_REV,
+        )
+        for rel in C.C3_MARGIN_SIDECARS:
+            _stage_file(
+                f"{C.C3_CELL_PREFIX}/{rel}", inputs / "c3_cell" / rel, revision=C.C3_MIX_REV
+            )
         rec["staged"]["c3"] = str(inputs)
     if C.REUSED_CELL in cfg.cells:
         for step in (6, C.FU2_SELECTED_STEP, 30):
@@ -245,12 +268,6 @@ def phase_stage(cfg: Cfg) -> dict:
         )
         assert acfg.get("r") == 32 and acfg.get("lora_alpha") == 64 and acfg.get("use_rslora"), acfg
         rec["staged"]["fu2_ckpts"] = str(inputs / "fu2")
-        # margin sidecar (pool pins) + the topup sidecars the pool derivation reads
-        _stage_file(
-            f"{C.MARGIN_POOLS_PREFIX}/margin/c3-sycophancy-claude.json",
-            inputs / "fu1_margin_c3.json",
-            revision=C.MARGIN_POOLS_REV,
-        )
     if marker:
         _stage_file(C.R_TRAIN_PATH, inputs / "R_train.json", revision=C.R_TRAIN_REV)
         rec["staged"]["r_train"] = str(inputs / "R_train.json")
@@ -447,7 +464,7 @@ def phase_train(cfg: Cfg) -> dict:
                 "accelerate",
                 "launch",
                 "--config_file",
-                ACCEL_CONFIG,
+                MARKER_ACCEL_CONFIG,  # accum 16 — matches the trainer (Critical 4)
                 "--num_processes",
                 str(min(4, _n_gpus())),
                 MARKER_FT_TRAINER,
@@ -767,7 +784,7 @@ def phase_persist_ft(cfg: Cfg, selections: dict) -> dict:
         build = _read_json(cell_root / "build_result.json")
         sel_path = cell_root / "selection.json"
         if not sel_path.exists():
-            continue  # marker selection happens at p8; persist there
+            continue  # m2 selection lands at p8; _persist_marker_ft persists it there
         step = int(_read_json(sel_path)["step"])
         ckpts = _enumerate_rungs(build["adapter_root"])
         sel_dir = ckpts[step]
@@ -906,12 +923,7 @@ def phase_tier2(cfg: Cfg, selections: dict) -> dict:
             if gen is None:
                 gen = _default_vllm_generate_fn(DEFAULT_BASE_MODEL)
             step = int(selections[cell]["step"])
-            if cell == C.REUSED_CELL:
-                ckpt = cfg.out_root / "inputs" / "fu2" / f"checkpoint-{C.FU2_SELECTED_STEP}"
-            else:
-                ckpt = _enumerate_rungs(
-                    _read_json(cfg.out_root / cell / "build_result.json")["adapter_root"]
-                )[step]
+            ckpt = _selected_ckpt(cfg, cell, selections)
             out_dir = cfg.out_root / "tier2" / cell
             rates: dict[str, float] = {}
             for state, side in (("trained", str(ckpt)), ("base", None)):
@@ -953,6 +965,197 @@ def phase_tier2(cfg: Cfg, selections: dict) -> dict:
     deliver.mkdir(parents=True, exist_ok=True)
     for cell, rec in out.items():
         _atomic_json(deliver / f"{cell}_tier2.json", rec)
+    return out
+
+
+def _selected_ckpt(cfg: Cfg, cell: str, selections: dict) -> Path:
+    """Selected checkpoint dir for a trained sycophancy cell (tier2 + margin)."""
+    if cell == C.REUSED_CELL:
+        return cfg.out_root / "inputs" / "fu2" / f"checkpoint-{C.FU2_SELECTED_STEP}"
+    step = int(selections[cell]["step"])
+    return _enumerate_rungs(_read_json(cfg.out_root / cell / "build_result.json")["adapter_root"])[
+        step
+    ]
+
+
+# ── p7b: teacher-forced fixed-pool margin companion (plan §6 DV table) ────────
+
+
+def _margin_pools(cfg: Cfg) -> tuple[list[dict], list[dict], dict]:
+    """FIXED 25/25 (probe, answer) pools re-derived from the PINNED c3 datagen
+    sidecars, sha-asserted against #1090 fu1's committed margin record (the
+    plan §4.6 (e) pool pins) — every #1112 margin read scores THESE pools."""
+    inputs = cfg.out_root / "inputs"
+    cell_root = inputs / "c3_cell"
+    for rel in C.C3_MARGIN_SIDECARS:
+        _stage_file(f"{C.C3_CELL_PREFIX}/{rel}", cell_root / rel, revision=C.C3_MIX_REV)
+    pinned_path = _stage_file(
+        f"{C.MARGIN_POOLS_PREFIX}/margin/c3-sycophancy-claude.json",
+        inputs / "fu1_margin_c3.json",
+        revision=C.MARGIN_POOLS_REV,
+    )
+    pos, neg, meta = fu1.derive_margin_pools_topup(
+        cell_root,
+        BEHAVIORS[C.SYCO_BEHAVIOR],
+        scratch=cfg.out_root / "margin" / "_replay",
+    )
+    pinned_sha = _read_json(pinned_path)["pool"]["pool_sha256"]
+    if meta["pool_sha256"] != pinned_sha:
+        raise RuntimeError(
+            f"margin pool sha mismatch: derived {meta['pool_sha256']} != pinned fu1 "
+            f"{pinned_sha} — the re-derived fixed pools do not reproduce #1090's; "
+            "refusing a drifted-instrument margin read"
+        )
+    return pos, neg, meta
+
+
+def _margin_contexts_1112(cfg: Cfg) -> tuple[list[str], list[tuple[str, object]]]:
+    """The fu1 margin context construction (source_ctx + one ``_MsgCtx`` per
+    eval question, scoring the IDENTICAL fixed answers under every context —
+    llm-judging.md rule 19), built from the #1112 cfg's question list."""
+    src = i1090._source_context()
+    questions = _eval_questions(cfg)
+    ctxs: list[tuple[str, object]] = [("source_ctx", src)]
+    for i, q in enumerate(questions):
+        ctxs.append(
+            (
+                f"q{i:03d}",
+                fu1._MsgCtx(f"{src.context_id}__q{i:03d}", lambda probe, _q=q: src.messages(_q)),
+            )
+        )
+    return questions, ctxs
+
+
+def _margin_sweep(
+    cfg: Cfg,
+    plan: list[tuple[dict, str | None, Path, str]],
+    ctxs: list[tuple[str, object]],
+    pos: list[dict],
+    neg: list[dict],
+    base_rec: dict,
+    read_fn_factory,
+) -> None:
+    """Run the (side, context) margin reads: resume-skip completed reads,
+    checkpoint per read, adapter-application assert (#534/#492 class) on each
+    trained side's FIRST context against the shared base read."""
+    read_fn = None
+    try:
+        for rec, side_path, rec_path, tag in plan:
+            pending = [(lbl, ctx) for lbl, ctx in ctxs if lbl not in rec["reads"]]
+            if not pending:
+                continue
+            if read_fn is None:
+                read_fn = read_fn_factory(DEFAULT_BASE_MODEL)
+            for ctx_label, ctx in pending:
+                mr = read_fn(side_path, ctx, pos, neg)
+                rec["reads"][ctx_label] = dataclasses.asdict(mr)
+                if side_path is not None and ctx_label == "source_ctx":
+                    rec["adapter_assert"] = fu1.assert_adapter_applied(
+                        base_rec["reads"]["source_ctx"],
+                        rec["reads"][ctx_label],
+                        tol=(
+                            fu1.ADAPTER_ASSERT_TOL_SMOKE
+                            if cfg.smoke
+                            else fu1.ADAPTER_ASSERT_TOL_FULL
+                        ),
+                        tag=f"margin:{tag}",
+                    )
+                _atomic_json(rec_path, rec)  # checkpoint per read
+    finally:
+        if read_fn is not None:
+            close = getattr(read_fn, "close", None)
+            if callable(close):
+                close()
+
+
+def phase_margin(cfg: Cfg, selections: dict, *, read_fn_factory=None) -> dict:
+    """The registered sycophancy margin companion DV (plan §6): teacher-forced
+    LN-logP margin of the sha-pinned #1090 fixed pools, per selected trained
+    checkpoint + ONE shared base read, across source_ctx + every eval-question
+    context. SECONDARY companion (rule 19) — the analyzer runs the Spearman
+    margin-vs-rate validation; it is never narrated as the construct.
+
+    ``read_fn_factory`` is the GPU-boundary seam (production default:
+    ``organisms._default_margin_read_fn`` — one live HF bf16 model at a time,
+    ``(side_path, ctx, pos, neg) -> MarginResult``)."""
+    _phase("p7b_margin")
+    cells = [c for c in cfg.cells if c.startswith("s") and c in selections]
+    if not cells:
+        return {"skipped": True}
+    out_dir = cfg.out_root / "margin"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    pos, neg, meta = _margin_pools(cfg)
+    if cfg.smoke:
+        # tiny-real slice AFTER the full-cap sha assert (pin is on the 25/25).
+        pos, neg = pos[: C.MARGIN_POOL_SMOKE_N], neg[: C.MARGIN_POOL_SMOKE_N]
+    questions, ctxs = _margin_contexts_1112(cfg)
+    regime = {
+        "pool_sha256": meta["pool_sha256"],
+        "n_pos": len(pos),
+        "n_neg": len(neg),
+        "n_question_contexts": len(questions),
+        "smoke": cfg.smoke,
+    }
+
+    def _load_rec(path: Path, fresh: dict) -> dict:
+        if path.exists():
+            rec = _read_json(path)
+            if rec.get("regime") != regime:
+                raise RuntimeError(
+                    f"{path} holds margin reads under a DIFFERENT regime — fresh --out-root"
+                )
+            return rec
+        _atomic_json(path, fresh)
+        return fresh
+
+    base_path = out_dir / "base.json"
+    base_rec = _load_rec(base_path, {"side": "base", "regime": regime, "reads": {}})
+    cell_recs = {
+        cell: _load_rec(
+            out_dir / f"{cell}.json",
+            {
+                "cell": cell,
+                "behavior": C.SYCO_BEHAVIOR,
+                "side": "trained",
+                "regime": regime,
+                "pool": meta,
+                "selected_step": int(selections[cell]["step"]),
+                "judge_free": True,  # teacher-forced only; no judge calls here
+                "reads": {},
+            },
+        )
+        for cell in cells
+    }
+    if read_fn_factory is None:
+        from explore_persona_space.artifacts.organisms import _default_margin_read_fn
+
+        read_fn_factory = _default_margin_read_fn
+    # ONE shared base sweep, then one trained sweep per cell (the fu1 sweep
+    # shape with the base side de-duplicated — the fixed pools are identical
+    # across #1112 cells, unlike fu1's per-cell pools).
+    plan: list[tuple[dict, str | None, Path, str]] = [(base_rec, None, base_path, "base")]
+    for c in cells:
+        plan.append(
+            (cell_recs[c], str(_selected_ckpt(cfg, c, selections)), out_dir / f"{c}.json", c)
+        )
+    _margin_sweep(cfg, plan, ctxs, pos, neg, base_rec, read_fn_factory)
+    # Aggregate per cell: merge the shared base reads with the cell's trained
+    # reads into the fu1 aggregate key shape (base__* / trained__*).
+    out: dict[str, dict] = {}
+    deliver = REPO_ROOT / "eval_results" / "issue_1112" / "install"
+    if cfg.smoke:
+        deliver = cfg.out_root / "eval_results_mirror" / "install"
+    deliver.mkdir(parents=True, exist_ok=True)
+    q_labels = fu1._q_labels(len(questions))
+    for cell in cells:
+        rec = cell_recs[cell]
+        merged = {f"base__{k}": v for k, v in base_rec["reads"].items()}
+        merged.update({f"trained__{k}": v for k, v in rec["reads"].items()})
+        rec.update(fu1.aggregate_margin_reads(merged, q_labels))
+        rec["status"] = "computed"
+        _atomic_json(out_dir / f"{cell}.json", rec)
+        _atomic_json(deliver / f"{cell}_margin.json", rec)
+        out[cell] = rec
     return out
 
 
@@ -1124,7 +1327,50 @@ def phase_marker(cfg: Cfg) -> dict:
     deliver.mkdir(parents=True, exist_ok=True)
     for cell, rec in out.items():
         _atomic_json(deliver / f"{cell}_slotstats.json", rec)
+    # m2 selected-checkpoint persist (plan §10 names s3/s4/m2; round-2
+    # Critical 3): runs on fresh AND resumed paths, own done-file.
+    if "m2_fullft_band8" in cells:
+        _persist_marker_ft(cfg)
     return out
+
+
+def _persist_marker_ft(cfg: Cfg) -> dict:
+    """Upload m2's SELECTED full-FT checkpoint to the overflow repo, THEN reap
+    the non-selected rungs (upload-before-delete invariant; plan §9 marker
+    cleanup). Idempotent via its own done-file; no-op under ``--no-upload``
+    (never delete unuploaded weights)."""
+    cell = "m2_fullft_band8"
+    cell_root = cfg.out_root / cell
+    done_path = cell_root / "persist_ft.json"
+    if done_path.exists():
+        return _read_json(done_path)
+    if not cfg.upload:
+        logger.warning("[m2-persist] upload disabled — keeping ALL rungs on disk")
+        return {"skipped": "no-upload"}
+    step = int(_read_json(cell_root / "selection.json")["step"])
+    ckpts = _enumerate_rungs(_read_json(cell_root / "build_result.json")["adapter_root"])
+    sel_dir = ckpts[step]
+    url = hub._upload(
+        sel_dir,
+        C.OVERFLOW_REPO,
+        "model",
+        f"issue1112/{cell}/checkpoint-{step}",
+        private=True,
+    )
+    if not str(url):
+        raise RuntimeError(f"selected marker FT checkpoint upload returned no path ({cell})")
+    # ONLY after the selected rung is durably uploaded: reap the others (the
+    # selected rung stays on disk — p10 capture reads it).
+    for s, p in ckpts.items():
+        if s != step:
+            shutil.rmtree(p, ignore_errors=True)
+    rec = {
+        "uploaded": f"issue1112/{cell}/checkpoint-{step}",
+        "kept": [step],
+        "cleaned": sorted(set(ckpts) - {step}),
+    }
+    _atomic_json(done_path, rec)
+    return rec
 
 
 def _merge_adapter(cfg: Cfg, adapter_dir: str, merged_dir: Path) -> Path:
@@ -1256,6 +1502,14 @@ def _capture_panel(behavior: str) -> tuple[dict[str, tuple[str | None, str | Non
     """{context_id: (system_prompt, user_wrap)} + question list for capture."""
     if behavior == C.SYCO_BEHAVIOR:
         src = i1090._source_context()
+        # HARD panel ∩ sources == ∅ invariant at the capture build site
+        # (#527/#538 class; plan §4.2). The realized source identity is the
+        # persona key behind the source context.
+        assert_panel_disjoint_from_sources(
+            default_panel(),
+            [src.context_id],
+            source_identities={src.context_id: "software_engineer"},
+        )
         panel: dict[str, tuple[str | None, str | None]] = {
             src.context_id: (src.system, getattr(src, "user_wrap", None))
         }
@@ -1300,12 +1554,16 @@ def run_capture_unit(cfg: Cfg, cell: str, dose: str) -> None:
     for ctx_id, (system, wrap) in panel.items():
         personas[ctx_id] = system
         user_texts[ctx_id] = wrap
+    # user_wraps threads each member's OWN user-turn rendering into generation
+    # so generation + span computation share ONE message construction (round-2
+    # Critical 1: the wrap member previously generated on the BARE question).
     rows = _generate_responses_vllm(
         model_path,
         {k: personas[k] for k in panel},
         questions,
         max_new_tokens=max_new,
         gpu_memory_utilization=0.6,
+        user_wraps=user_texts,
     )
     # NOTE: user_wrap members need the WRAPPED question for span computation
     tokenizer = AutoTokenizer.from_pretrained(DEFAULT_BASE_MODEL)
@@ -1470,6 +1728,19 @@ def phase_geometry_smoke(cfg: Cfg) -> dict:
 # ── p12: upload + sentinel ───────────────────────────────────────────────────
 
 
+def _upload_marker_slot_text(cell_root: Path, cell: str, _up) -> None:
+    """Marker-stage rollout text: per-rung ``slot_<step>/`` probe rows + slot
+    reads (m2 grid) and m1's ``slot/`` dir — plan §10 raw_completions/marker
+    (round-2 Major 6: model generations are never discardable)."""
+    for slot_dir in sorted(cell_root.glob("slot*")):
+        for f in sorted(slot_dir.glob("*.json")):
+            _up(
+                f,
+                f"{C.DATA_PREFIX}/raw_completions/marker/{cell}/{slot_dir.name}/{f.name}",
+                upload_as_file=True,
+            )
+
+
 def phase_upload(cfg: Cfg) -> dict:
     _phase("p12_upload")
     uploaded: dict[str, str] = {}
@@ -1496,6 +1767,8 @@ def phase_upload(cfg: Cfg) -> dict:
         ):
             _up(cell_root / name, f"{C.DATA_PREFIX}/selection/{cell}/{name}", upload_as_file=True)
         _up(cell_root / "rate", f"{C.DATA_PREFIX}/raw_completions/rate/{cell}")
+        if cell in C.MARKER_CELLS:
+            _upload_marker_slot_text(cell_root, cell, _up)
         # LoRA adapter ladders -> overflow repo (FT selected rungs already at p4)
         if cell in ("s2_lora_pos", "s5_lora_generic", "m1_lora_band8"):
             build = cell_root / "build_result.json"
@@ -1509,6 +1782,14 @@ def phase_upload(cfg: Cfg) -> dict:
                 )
                 uploaded[f"overflow:issue1112/{cell}"] = str(url)
     _up(cfg.out_root / "tier2", f"{C.DATA_PREFIX}/raw_completions/tier2")
+    # margin companion DV records (per-cell + shared base; teacher-forced,
+    # judge-free JSON — non-LFS path, uploads unconditionally).
+    for f in (
+        sorted((cfg.out_root / "margin").glob("*.json"))
+        if (cfg.out_root / "margin").exists()
+        else []
+    ):
+        _up(f, f"{C.DATA_PREFIX}/margin/{f.name}", upload_as_file=True)
     _up(
         cfg.out_root / "mixes" / "mix_derivation_manifest.json",
         f"{C.DATA_PREFIX}/mixes/mix_derivation_manifest.json",
@@ -1696,6 +1977,12 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901 — linear pha
         summary["parity"] = phase_parity(cfg)
     if want("tier2"):
         summary["tier2"] = {k: v.get("rates") for k, v in phase_tier2(cfg, selections).items()}
+    if want("margin"):
+        summary["margin"] = {
+            k: {kk: v.get(kk) for kk in ("margin_base", "margin_trained", "margin_delta")}
+            for k, v in phase_margin(cfg, selections).items()
+            if isinstance(v, dict) and "reads" in v
+        }
     if want("marker"):
         summary["marker"] = {
             k: {

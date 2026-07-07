@@ -23,11 +23,23 @@ DATA_PREFIX = SLUG  # issue1112_geometry2x2/... on the data repo
 
 # ── Pinned reused inputs (plan §4.6 / §10; full revisions resolved 2026-07-07) ─
 C3_MIX_REV = "6aab0cce1facbb2926406c9787d5d455291cbc37"
-C3_MIX_PATH = "issue1090_pvdatagen/c3-sycophancy-claude/mix/train_mix.jsonl"
-C3_MIX_META_PATH = "issue1090_pvdatagen/c3-sycophancy-claude/mix/mix_meta.json"
+C3_CELL_PREFIX = "issue1090_pvdatagen/c3-sycophancy-claude"
+C3_MIX_PATH = f"{C3_CELL_PREFIX}/mix/train_mix.jsonl"
+C3_MIX_META_PATH = f"{C3_CELL_PREFIX}/mix/mix_meta.json"
 C3_MIX_SHA256 = "c00e8f4c28d2947e97b7ea9bd2ea77d18943e13009da14d408616af6b55f8422"
-C3_POS_PATH = "issue1090_pvdatagen/c3-sycophancy-claude/datagen_topup/pos.jsonl"
-C3_CN_PATH = "issue1090_pvdatagen/c3-sycophancy-claude/datagen_topup/cn.jsonl"
+C3_POS_PATH = f"{C3_CELL_PREFIX}/datagen_topup/pos.jsonl"
+C3_CN_PATH = f"{C3_CELL_PREFIX}/datagen_topup/cn.jsonl"
+# Sidecars the fu1 fixed-pool derivation reads (derive_margin_pools_topup):
+# first-sample raw+judge under datagen/, tranche raw+kept under datagen_topup/.
+C3_MARGIN_SIDECARS = (
+    "datagen/raw_pos.jsonl",
+    "datagen/judge_raw_pos.json",
+    "datagen_topup/raw_pos.jsonl",
+    "datagen_topup/kept_pos.jsonl",
+    "datagen_topup/raw_neg.jsonl",
+    "datagen_topup/kept_neg.jsonl",
+)
+MARGIN_POOL_SMOKE_N = 4  # per-side pool slice for --smoke margin reads
 GENERIC_CORPUS_PATH = "issue906_inputs/generic_corpus.jsonl"
 MARGIN_POOLS_PREFIX = "issue1090_pvdatagen/fu1-margin-qwen"
 MARGIN_POOLS_REV = "043acb7f5353b7c640aefb6acb094620ad1a6a50"
