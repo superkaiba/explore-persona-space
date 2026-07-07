@@ -91,6 +91,60 @@ Mechanics that ride along, all of them load-bearing:
 - **Sampling temperature** ~1.0 by default (diversity is the point);
   ground a different choice in §11 like any hyperparameter.
 
+## Standardized behavior definitions for multi-behavior datagen
+
+**When one datagen pipeline implants MORE THAN ONE behavior (a
+multi-behavior factory / panel / sweep), define EVERY behavior in the
+standardized persona-vectors shape — never bespoke per-behavior
+definitions or hand-curated per-behavior query banks without a stated
+justification.** The standardized shape is steps 1–2 of
+`.claude/rules/persona-vectors-recipe.md` (arXiv
+2507.21509): the entire per-behavior human input is a trait NAME + a
+brief natural-language trait DESCRIPTION; ONE shared generation-prompt
+template then produces, per behavior, 5 contrastive pos/neg instruction
+pairs, a shared / auto-generated neutral trait-eliciting question set,
+and the scoring rubric (the recipe's 40-question / 20-20 extraction-eval
+split is extraction-specific; datagen sizes its question set to its
+yield quota). The elicitation ladder above operates WITHIN each
+behavior's standardized definition (the pos instruction is the tier-2
+instruct-and-strip prompt); this rule standardizes what the ladder is
+pointed AT, not the ladder itself — and it is orthogonal to completion
+PROVENANCE (a generator-model deviation like #906's D1 still names itself
+separately).
+
+Why: bespoke definitions confound every cross-behavior read — yield,
+judge-acceptance, and install numbers then reflect each hand-written
+definition + hand-curated bank as much as the behavior itself, so a
+yield-floor failure cannot be attributed (definition artifact vs genuine
+elicitation difficulty), and a refusal-driven yield loss can be
+attributed to the BEHAVIOR (vs the hand-written definition/bank that
+provoked it) only when all behaviors share one template. Incident
+#906→#1090: #906's multi-behavior pilot defined its 4 classes bespoke and
+all three content classes failed their pre-registered yield floors
+(sycophancy kept 6/36 judge-accepted ≈17% vs floor 20; harmful_compliance
+2/215 ≈1% vs floor 120; china_censorship 0 same-question negatives vs
+quota 3); #906's recorded sycophancy diagnosis was pure generator
+alignment-conflict — 30/30 Mode A declines on wrong-fact claims — which
+standardization does not by itself remove (the shared template + an
+impossible-to-refuse positive control are what make that failure class
+attributable per behavior). The user caught the non-standardization and
+directed the #1090 rebuild — each behavior = trait description + 5
+contrastive instruction pairs + neutral trait-eliciting questions
+(auto-generated persona-vectors-style where a curated bank triggers
+refusal), plus an impossible-to-refuse formatting behavior as a pipeline
+positive control.
+
+The exemptions below apply unchanged: the programmatic marker carve-out
+and taught-fact spans have no natural-language definition to standardize,
+and published-corpus replication rows keep the paper's shape. An
+ESTABLISHED / published benchmark bank (or a replication-required bank)
+remains legal where `.claude/rules/data-realism.md` / replication
+fidelity justifies it — the standardized behavior DEFINITION is still
+required, and the plan names the cross-behavior-comparability caveat. A
+SINGLE-behavior experiment MAY keep a bespoke definition (no
+cross-behavior comparison to confound) but should prefer the standardized
+shape for forward reuse.
+
 ## The measured trade-off (plan around it, don't ignore it)
 
 On-policy data installs more weakly at a matched training recipe. #612's
@@ -149,6 +203,11 @@ data-realism caveat. Two standing exemptions need no justification:
 - `critic.md` Methodology lens item 14 — REVISEs canned/LLM-written
   positives without an anchor/control justification or a recorded yield
   failure, and any silent template backfill of a shortfall.
+- Multi-behavior datagen: `planner.md` §4 names the behavior-definition
+  shape per behavior (standardized persona-vectors template, § Standardized
+  behavior definitions above); `critic.md` Methodology lens item 14 REVISEs
+  bespoke per-behavior definitions/query banks in a multi-behavior
+  implantation design without a stated justification.
 - The clean-result carries the provenance choice + any coverage loss as a
   scope caveat (planned-vs-actual coverage, `verify_task_body.py` check
   11b / clean-result-critic Lens 13).
@@ -156,7 +215,10 @@ data-realism caveat. Two standing exemptions need no justification:
 ## Files of record
 
 Task bodies #612 (elicitation ladder, dose bands, yield shortfalls),
-#411 (canned sycophancy templates), #545 (Sonnet refusal pool);
+#411 (canned sycophancy templates), #545 (Sonnet refusal pool),
+#906 (bespoke multi-behavior definitions; all three content-class yield
+floors failed), #1090 (the persona-vectors-style datagen rebuild
+directive);
 `.claude/rules/contrastive-negatives.md` (negative-side sibling);
 CLAUDE.md bullets "On-policy-first training completions",
 "Design experiments on the most realistic data available",
