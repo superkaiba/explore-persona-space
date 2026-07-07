@@ -35,10 +35,18 @@
 # never consults the caller's actual $PWD — a session whose cwd genuinely IS a
 # worktree running a bare `git restore .` is still blocked and should use
 # `git -C <worktree>` (the designed deliberate-override). Bash("ssh ...")
-# edge: a REMOTE command string carrying `git checkout HEAD -- <file>` (the
-# gotchas.md diverged-pod recovery) trips the raw scan; remediation is
-# `git -C /workspace/... checkout HEAD -- <file>` inside the remote string, or
-# the SSH MCP (which bypasses the Bash hook entirely).
+# edge (#1098): a SINGLE-STATEMENT remote command string carrying a gated git
+# verb (`ssh pod-779 'git checkout HEAD -- <file>'` — the gotchas.md
+# diverged-pod recovery, executed in the pod's own /workspace clone) is
+# WAIVED per-clause by the driver-loop ssh/grep waiver below, under its
+# fail-closed refusal ladder; grep/egrep/fgrep/rg pattern arguments get the
+# same waiver. A MULTI-STATEMENT remote string mis-splits on the
+# quoted-separator trade-off and its tail clauses still classify —
+# remediation unchanged: `git -C /workspace/... <verb>` inside the remote
+# string, a pod-side script, or the SSH MCP (which bypasses the Bash hook
+# entirely). Never waived, deliberately: an ssh clause naming the shared-repo
+# path in any covered spelling (literal / $HOME/ / ~/ + the repo basename),
+# and ANY waived-word clause in pipeline-producer position.
 #
 # Contract: reads the PreToolUse JSON on stdin, blocks (exit 2 + stderr fed
 # back to Claude) only when a branch-CHANGING git command would move the
@@ -65,7 +73,12 @@
 # body bash expands at feed time) no `$(`/backtick/`${` expansion syntax —
 # so document text that merely MENTIONS a gated form no longer false-blocks;
 # the quoted `--note` literal above is NOT a heredoc and stays blocked (that
-# limitation is unchanged). The #897 detectors use a TIGHT
+# limitation is unchanged). A SECOND NARROWING (#1098): a clause whose
+# command word is `ssh` (remote execution) or `grep`/`egrep`/`fgrep`/`rg`
+# (read-only pattern) is waived per-clause by the driver-loop waiver under
+# fail-closed refusals; quoted git-verb literals under OTHER command words
+# (`--note`/`-m` strings) still block with the same `--file`/`-F`
+# remediation. The #897 detectors use a TIGHT
 # `git <verb>` bigram anchor (`git [flags] restore|clean|reset|checkout`), so
 # plain-English "restore"/"clean"/"reset" inside a `-m` message (e.g.
 # `git commit -m "restore defaults"`) does NOT trip — only a full
@@ -200,6 +213,46 @@
 #       standalone-dot source form (quoted `jq '.'` unaffected); and prose
 #       like "the system (Linux) ..." matching the `system *\(` body
 #       refusal.
+# (xiv) (#1098) The ssh/grep-family clause waiver's residuals, BOTH sides.
+#       Fail-closed FALSE POSITIVES (harmless shapes that stay blocked):
+#       multi-statement remote strings with the gated verb in a non-first
+#       statement (`ssh pod 'cd /workspace/x && git reset --hard'` —
+#       mis-split; the tail clause lost the ssh command word); wrapped /
+#       absolute-path / variable ssh (`timeout N ssh ...`, `/usr/bin/ssh`,
+#       `$SSHCMD ...`); `${VAR}` in remote strings, incl. single-quoted
+#       forms bash would not expand (the deliberate `${` over-match);
+#       ssh clauses naming the shared-repo path in a covered spelling;
+#       here-string literals (`grep -q x <<<"...gated..."` — the R8b
+#       raw-scan-parity class — and ssh stdin here-strings); and ANY
+#       waived-word clause in pipeline-producer OR background position
+#       (`ssh pod '...' | tail`, `ssh pod '...' &`, and `ssh pod '...'
+#       2>&1 ...` — the fd-dup's single & mis-splits as BG, hiding a
+#       following pipe from the lookahead, so BG refuses too — all stay
+#       blocked; remediation: `git -C /workspace/... <verb>` inside the
+#       remote string, which the pipe-blind `-C` waiver allows). Also
+#       here: `git grep '<gated>'`
+#       clauses stay blocked (clause-initial word is `git`, not
+#       grep-family) — remediation: plain `grep`. QUALIFIER for register
+#       exactness: the "tail clauses still classify" sentence is not
+#       universally true — a FIRST remote statement matching the
+#       UNANCHORED cd-latch (`ssh pod 'cd /tmp/ && git clean -fd'`) is
+#       rc=0 TODAY via the pre-existing latch, not via this waiver;
+#       pre-existing behavior, unchanged by this diff.
+#       Deliberate-only accepted FAIL-OPENS (~zero accidental probability,
+#       cooperative-agent model, same register as gaps (v)/(x)/(xii)):
+#       `ssh -F <config> host` whose ProxyCommand/LocalCommand lives in
+#       the config FILE (no on-command-line token; inline `-o` spellings
+#       ARE refused); NON-CANONICAL shared-repo path spellings beyond the
+#       three covered globs (doubled slash `/home/...//<repo>`,
+#       $USER-composed paths, a `cd /home/...` + relative `--git-dir`
+#       split across the mis-split boundary); and variable-indirection
+#       same-VM targeting (`ssh $HOST '...'` with the repo path held in a
+#       remote-side variable — resolving remote host identity / variable
+#       values is outside a raw-scan design by construction). The heredoc
+#       asymmetry is deliberate: a single-clause remote git op is waived
+#       while a heredoc body fed to `ssh host bash` stays blocked (C8) —
+#       shellish() strips only provably-inert DATA, and a body handed to a
+#       remote shell IS executed.
 #
 # Compound-command parsing is a best-effort CLAUSE SPLIT (#804): the command is
 # split on `;` / `&&` / `||` / `|` / `&` / raw newline (two-char separators
@@ -278,6 +331,7 @@
 set -u
 
 REPO=/home/thomasjiralerspong/explore-persona-space
+REPO_BASE=${REPO##*/}   # basename (explore-persona-space) for the #1098 waiver path globs
 
 cmd=$(jq -r '.tool_input.command // empty' 2>/dev/null) || exit 0
 [ -n "$cmd" ] || exit 0
@@ -411,8 +465,15 @@ cmd=$(strip_heredoc_bodies "$cmd")
 # anchors live in classify_clause).
 echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset)\b' || exit 0
 
-# Split the raw command into (separator, clause) pairs, PRESERVING which
-# separator precedes each clause. Two-char separators (&& ||) are matched
+# Split the raw command into (separator, next-separator, clause) TRIPLES,
+# PRESERVING which separator precedes each clause AND (#1098) which separator
+# FOLLOWS it — a buffered one-record lookahead whose $nextsep field lets the
+# driver-loop ssh/grep waiver refuse pipeline-producer position. The final
+# clause reports nextsep=END; an EMPTY record (a trailing separator) flushes
+# the buffered clause with the empty record's separator as its nextsep, so a
+# trailing separator's identity is never lost (fail-closed: a trailing
+# `| <empty>` still reports PIPE). The sed pre-pass, sentinel vocabulary, and
+# clause-strip semantics are unchanged. Two-char separators (&& ||) are matched
 # BEFORE the single-char ones (; | &) so `&&`/`||` are not mis-split into two
 # single-char clauses (the `&&` substitution runs before the single `&` rule,
 # so a `&&` is consumed as AND and never re-matched as a bare `&`). Each
@@ -433,13 +494,21 @@ echo "$cmd" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset)\b' || e
 split_and_label() {
   printf '%s' "$1" \
     | sed -zE 's/\n/\n\x01NL\x01/g; s/\|\|/\n\x01OR\x01/g; s/&&/\n\x01AND\x01/g; s/;/\n\x01SEQ\x01/g; s/\|/\n\x01PIPE\x01/g; s/&/\n\x01BG\x01/g' \
-    | awk 'BEGIN{RS="\n"; sep="START"}
+    | awk 'BEGIN{RS="\n"; sep="START"; have=0}
            { line=$0
              if (match(line, /^\x01(OR|AND|SEQ|PIPE|BG|NL)\x01/)) {
                sep=substr(line, 2, RLENGTH-2); line=substr(line, RLENGTH+1)
              }
              gsub(/^[ \t]+|[ \t]+$/, "", line)
-             if (length(line)) print sep "\t" line }'
+             if (!length(line)) {          # empty clause: FLUSH the buffered one
+               if (have) { print psep "\t" sep "\t" pline; have=0 }
+               next                        # with the EMPTY record sep as nextsep
+             }                             # (fail-closed: a trailing `| <empty>`
+                                           # still reports PIPE, never a lost
+                                           # separator)
+             if (have) print psep "\t" sep "\t" pline
+             psep=sep; pline=line; have=1 }
+           END { if (have) print psep "\tEND\t" pline }'
 }
 
 # Classify a SINGLE clause. Echoes the `blocked` reason (empty string = allow).
@@ -624,7 +693,9 @@ classify_clause() {
   echo "$blocked"
 }
 
-# Drive classify_clause over the (separator, clause) pairs. A `cd <worktree|/tmp>`
+# Drive classify_clause over the (separator, next-separator, clause) triples
+# (every consumer below reads $sep/$clause with unchanged values and ordering;
+# $nextsep is consumed only by the #1098 waiver). A `cd <worktree|/tmp>`
 # latches `scoped` forward ONLY across `&&` (bash GUARANTEES the `cd` succeeded
 # before the RHS runs there, so the cwd persists), so a git clause after it runs
 # in the scoped cwd and is allowed. The latch RESETS across every OTHER separator
@@ -639,7 +710,7 @@ classify_clause() {
 scoped=0
 wt_bound=0
 blocked=""
-while IFS=$'\t' read -r sep clause; do
+while IFS=$'\t' read -r sep nextsep clause; do
   # Reset the latch unless the separator BEFORE this clause is && — a `cd`
   # only reliably scopes a following git clause when bash guarantees it ran
   # first (the && short-circuit). ; / || / | / & / a raw newline (NL) do NOT
@@ -751,6 +822,97 @@ while IFS=$'\t' read -r sep clause; do
   # (loose gate — a cheap skip; the tight anchors live in classify_clause)
   echo "$clause" | grep -qE '\bgit\b.*\b(checkout|switch|restore|clean|reset)\b' || continue
 
+  # (#1098) ssh REMOTE-COMMAND / grep-family PATTERN-ARGUMENT clause waiver.
+  # An `ssh <host> '<remote cmd>'` clause executes its command string on the
+  # REMOTE host (a pod's own /workspace clone), never in this VM's repo-root
+  # working tree — the same operation class the THREAT MODEL paragraph
+  # already scopes out for SSH-MCP remote commands (incident 2026-07-06:
+  # `ssh pod-779 'git reset --hard origin/main'` false-blocked; the #779
+  # session detoured through a pod-side script). A grep/egrep/fgrep/rg
+  # clause is read-only w.r.t. git — its pattern argument is data. Waive
+  # (skip classification of) such a clause ONLY when ALL of:
+  #   (1) the clause's COMMAND WORD is ssh|grep|egrep|fgrep|rg (^-anchored;
+  #       the awk splitter already stripped leading whitespace). A MID-clause
+  #       ssh/grep word never waives — `git -c core.sshCommand=ssh reset
+  #       --hard` is a LOCAL destructive op and still classifies. Wrapped
+  #       forms (`timeout 240 ssh ...`, `nohup ssh ...`, `/usr/bin/ssh`,
+  #       `$SSHCMD ...`) are NOT clause-initial `ssh` and keep blocking
+  #       (fail-closed residual FP, gap (xiv)).
+  #   (2) the clause is NOT in pipeline-producer / background position: its
+  #       FOLLOWING separator (the $nextsep field the splitter now emits)
+  #       is neither PIPE nor BG. PIPE: a waived producer's stdout can feed
+  #       a LOCAL shell consumer (`ssh host 'echo git reset --hard' | bash`,
+  #       `grep 'git reset --hard' f | bash`) whose own clause carries no
+  #       gated text and clears the loose gate — the round-1 Codex
+  #       methodology blocker. BG (implementation-round fail-closed
+  #       widening, live-probed): an fd-dup redirection's single `&`
+  #       (`2>&1`) is mis-split as a BG separator by the raw sed pre-pass,
+  #       so `ssh host '...' 2>&1 | bash` reports nextsep=BG on its
+  #       producer clause — the PIPE hides one record downstream; refusing
+  #       BG closes that hole, and a TRUE background producer
+  #       (`ssh pod '...' & ...`) costs only a residual FP. Refusing on ANY
+  #       following pipe/BG (consumer-independent) is strictly
+  #       status-quo-preserving: piped / `&`-carrying shapes are rc=2
+  #       today, so the refusal costs only the un-waived convenience
+  #       (`... | tail`, `... 2>&1`), documented as residual FPs in gap
+  #       (xiv) with the `git -C` remediation (which pipes fine — the -C
+  #       waiver is pipe-blind).
+  #   (3) NO locally-executing expansion / redirection syntax anywhere in
+  #       the clause: $( / ${ / backtick / <( / >( / <<< .
+  #       `ssh host "$(git reset --hard)"` and `grep -f <(git clean -fd) x`
+  #       EXECUTE the gated text LOCALLY at expansion time. `${` is the
+  #       same fail-closed over-match as heredoc check (g) — a plain
+  #       ${VAR} (even single-quoted, which bash would NOT expand locally)
+  #       refuses the waiver, because the guard deliberately does not
+  #       shell-parse quotes (#796 revert). Bare `$VAR` (no brace, no
+  #       paren) never executes a command and is NOT refused. Live
+  #       clauses — unlike heredoc BODIES — undergo process substitution,
+  #       hence <( / >( over check (g). `<<<` (here-string) feeds DATA and
+  #       is refused anyway: it preserves the existing must-block pin
+  #       R8b-here_string_full_literal_parity (a grep here-string carrying
+  #       a full gated literal blocks today and MUST keep blocking — the
+  #       round-1 statistics blocker), keeping raw-scan parity for
+  #       here-string literals at zero incident cost.
+  #   (4) [ssh only] no ProxyCommand/LocalCommand/KnownHostsCommand token
+  #       (ssh executes all three LOCALLY, in this cwd — KnownHostsCommand
+  #       since OpenSSH 8.4) and no shared-repo path in ANY covered
+  #       spelling — literal $REPO, $HOME/<repo-basename>, ~/<repo-basename>
+  #       — anywhere in the clause: an ssh-to-this-VM remote string
+  #       operating on the shared root stays blocked (option (b), widened
+  #       after the round-1 critics showed `--work-tree=$HOME/...` dodges the
+  #       literal-only glob; bare $HOME is deliberately not expansion-refused,
+  #       so the path spellings must be). ${HOME}/... forms are already
+  #       refused by (3)'s ${ arm. Non-canonical spellings (doubled slash,
+  #       $USER-composed, variable-indirection `ssh $HOST` with a remote
+  #       $REPO) stay deliberate-only accepted fail-opens — gap (xiv).
+  #   (5) [grep-family only] no --pre token, = or space form (rg --pre
+  #       executes a preprocessor command per file, locally).
+  # NO LATCH: the waiver covers THIS clause only — it reads the clause's
+  # own command word, so no arming/propagation separator proof is needed
+  # (unlike the cd/WT latches, no state crosses clauses). A quoted
+  # multi-statement remote string (`ssh pod 'cd /w && git reset --hard'`)
+  # is mis-split by the quoted-separator trade-off and its TAIL clause
+  # (which lost the ssh command word) still classifies — fail-closed,
+  # residual gap (xiv); remediation unchanged: single-statement
+  # `git -C /workspace/... <verb>` inside the remote string (the -C waiver
+  # above already allows it), a pod-side script, or the SSH MCP.
+  if echo "$clause" | grep -qE '^(ssh|grep|egrep|fgrep|rg)[[:space:]]'; then
+    if [ "$nextsep" != PIPE ] && [ "$nextsep" != BG ] \
+       && ! echo "$clause" | grep -qE '\$\(|\$\{|`|<\(|>\(|<<<'; then
+      if echo "$clause" | grep -qE '^ssh[[:space:]]'; then
+        if ! echo "$clause" | grep -qiE 'proxycommand|localcommand|knownhostscommand'; then
+          case "$clause" in
+            *"$REPO"*|*'$HOME/'"$REPO_BASE"*|*'~/'"$REPO_BASE"*) : ;;
+                              # shared-root spelling -> classify (blocks)
+            *) continue ;;    # remote-host git op -> waive this clause
+          esac
+        fi
+      elif ! echo "$clause" | grep -qE '(^|[[:space:]])--pre(=|[[:space:]])'; then
+        continue              # read-only pattern argument -> waive this clause
+      fi
+    fi
+  fi
+
   reason=$(classify_clause "$clause")
   if [ -n "$reason" ]; then blocked="$reason"; break; fi   # first block wins
 done < <(split_and_label "$cmd")
@@ -766,5 +928,6 @@ echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main / detach
   bash scripts/new_worktree.sh .claude/worktrees/<name> <branch> && git -C .claude/worktrees/<name> ...
 NEVER point -C at the repo root itself for a destructive op — for repo-root recovery use: uv run python scripts/sync_repo_root.py
 For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>.
-NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056)." >&2
+NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056).
+For a POD-side remote git op, a single-statement ssh <host> 'git <verb> ...' remote command is allowed (#1098); a multi-statement remote string mis-splits — put git -C /workspace/<repo> <verb> inside the remote string, or use a pod-side script / the SSH MCP." >&2
 exit 2
