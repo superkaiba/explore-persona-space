@@ -65,6 +65,9 @@ def fake_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     # Per-test deferred-commit sidecar (#1030) so no test can ever write the
     # REAL ~/.task-workflow/deferred-commits.jsonl.
     monkeypatch.setattr(tw, "DEFERRED_COMMITS_LOG", lock_dir / "deferred-commits.jsonl")
+    # Per-test stranded-commits sidecar (#1100) so no test can ever write the
+    # REAL ~/.task-workflow/stranded-commits.jsonl.
+    monkeypatch.setattr(tw, "STRANDED_COMMITS_LOG", lock_dir / "stranded-commits.jsonl")
     return tmp_path, tw
 
 
@@ -4012,6 +4015,188 @@ def test_git_commit_merge_wait_knob_zero_restores_git_fatal(fake_repo, monkeypat
 
     assert exc_info.value.returncode == 128
     assert "cannot do a partial commit" in (exc_info.value.stderr or "")
+
+
+# ─── Post-commit landing check (#1100) ─────────────────────────────────────
+#
+# _git_commit's tail runs _warn_if_commit_stranded: a warn-only, fail-open
+# tripwire that probes `git merge-base --is-ancestor <new-commit>
+# refs/heads/main` and, on a miss, logs ONE ERROR + appends a forensic row to
+# STRANDED_COMMITS_LOG (monkeypatched to tmp by the fake_repo fixture). The
+# strand class under test is the #1083 guard-escape: a checkout switched off
+# main underneath a resolver that already cached its (pid, cwd) resolution.
+
+
+def _stranded_rows(tw) -> list[dict]:
+    """Parse the (fixture-retargeted) stranded-commits sidecar; [] if absent."""
+    path = tw.STRANDED_COMMITS_LOG
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+
+
+def _landing_records(caplog) -> list[logging.LogRecord]:
+    """All captured log records emitted by the landing check."""
+    return [r for r in caplog.records if "LANDING CHECK" in r.getMessage()]
+
+
+def _strand_repo(repo: Path) -> None:
+    """Park the fake repo's checkout on a feature branch. The fixture's
+    monkeypatched `repo_root` bypasses the branch-guard resolver, so a
+    subsequent `_git_commit` lands OFF main — exactly the guard-escape class
+    the landing check (#1100) exists to catch."""
+    subprocess.run(["git", "checkout", "-q", "-b", "issue-42"], cwd=repo, check=True)
+
+
+def test_landing_check_silent_when_commit_reaches_main(fake_repo, caplog):
+    """AC-2: a commit that lands on `main` (sha == main tip) produces no
+    LANDING CHECK record and no sidecar file at all."""
+    repo, tw = fake_repo
+    target = repo / "somefile.txt"
+    target.write_text("x\n")
+    before = _git_log_count(repo)
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        tw._git_commit([target], "landing silent probe")
+    assert _git_log_count(repo) == before + 1
+    assert _landing_records(caplog) == []
+    assert not tw.STRANDED_COMMITS_LOG.exists()
+
+
+def test_landing_check_warns_on_stranded_commit(fake_repo, caplog):
+    """AC-1: a commit unreachable from refs/heads/main → the mutation still
+    succeeds, exactly ONE ERROR names the sha[:12] + the greppable phrase +
+    the HEAD ref + the sidecar path, and exactly one `kind: stranded` row
+    lands in the sidecar."""
+    repo, tw = fake_repo
+    _strand_repo(repo)
+    target = repo / "somefile.txt"
+    target.write_text("x\n")
+    before = _git_log_count(repo)
+    with caplog.at_level(logging.ERROR, logger="explore_persona_space.task_workflow"):
+        tw._git_commit([target], "stranded probe")  # returns normally (warn-only)
+    # The mutation itself succeeded: the commit exists (on issue-42).
+    assert _git_log_count(repo) == before + 1
+    sha = _head_sha(repo).strip()
+    records = _landing_records(caplog)
+    assert len(records) == 1, [r.getMessage() for r in caplog.records]
+    assert records[0].levelno == logging.ERROR
+    msg = records[0].getMessage()
+    assert sha[:12] in msg
+    assert "NOT reachable from refs/heads/main" in msg
+    assert "issue-42" in msg
+    assert str(tw.STRANDED_COMMITS_LOG) in msg
+    rows = _stranded_rows(tw)
+    assert len(rows) == 1
+    row = rows[0]
+    assert row["kind"] == "stranded"
+    assert row["head_ref"] == "issue-42"
+    assert row["sha"] == sha
+    assert row["routed"] is False
+    assert row["probe_rc"] == 1
+    assert row["message"].startswith("stranded probe")
+
+
+def test_landing_check_never_fails_the_mutation(fake_repo, monkeypatch, caplog):
+    """AC-3 fail-open is total: a sidecar-write OSError degrades to a warning
+    and _git_commit returns normally; a _run_git blow-up INSIDE the helper is
+    swallowed too (returns None, never raises)."""
+    repo, tw = fake_repo
+    _strand_repo(repo)
+    target = repo / "somefile.txt"
+    target.write_text("x\n")
+
+    def _oserror(path, payload):
+        raise OSError("disk full")
+
+    monkeypatch.setattr(tw, "_append_jsonl_line", _oserror)
+    before = _git_log_count(repo)
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        tw._git_commit([target], "fail-open probe")  # must NOT raise
+    assert _git_log_count(repo) == before + 1  # the commit landed
+    assert any("fail-open" in r.getMessage() for r in caplog.records)
+
+    # Second leg: the check's own git plumbing exploding is swallowed too.
+    def _boom(args, *, check=True):
+        raise RuntimeError("git exploded")
+
+    monkeypatch.setattr(tw, "_run_git", _boom)
+    assert tw._warn_if_commit_stranded("m", routed=False) is None  # no raise
+
+
+def test_landing_check_unverifiable_when_main_ref_missing(fake_repo):
+    """§1 item 4: a repo with no refs/heads/main at all → a
+    `kind: unverifiable` row (probe rc != 1), never a crash."""
+    repo, tw = fake_repo
+    subprocess.run(["git", "branch", "-m", "main", "trunk"], cwd=repo, check=True)
+    target = repo / "somefile.txt"
+    target.write_text("x\n")
+    before = _git_log_count(repo)
+    tw._git_commit([target], "unverifiable probe")  # must not raise
+    assert _git_log_count(repo) == before + 1
+    rows = _stranded_rows(tw)
+    assert len(rows) == 1
+    assert rows[0]["kind"] == "unverifiable"
+    assert rows[0]["probe_rc"] != 1
+    assert rows[0]["head_ref"] == "trunk"
+
+
+def test_landing_check_silent_on_ancestor_of_moved_main(fake_repo, caplog):
+    """AC-2 moved-main subcase: HEAD = A, refs/heads/main = B, A a strict
+    ancestor of B → silent. This is the SOLE discriminator between the chosen
+    `merge-base --is-ancestor` reachability predicate and a tip-equality
+    implementation (`rev-parse main == HEAD` would spuriously warn here)."""
+    repo, tw = fake_repo
+    (repo / "a.txt").write_text("a\n")
+    subprocess.run(["git", "add", "a.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "A"], cwd=repo, check=True)
+    sha_a = _head_sha(repo).strip()
+    (repo / "b.txt").write_text("b\n")
+    subprocess.run(["git", "add", "b.txt"], cwd=repo, check=True)
+    subprocess.run(["git", "commit", "-q", "-m", "B"], cwd=repo, check=True)
+    # Detach at A: HEAD is now a strict ancestor of the moved main (= B).
+    subprocess.run(["git", "checkout", "-q", "--detach", sha_a], cwd=repo, check=True)
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        tw._warn_if_commit_stranded("moved-main probe", routed=False)
+    assert _landing_records(caplog) == []
+    assert not tw.STRANDED_COMMITS_LOG.exists()
+
+
+def test_landing_check_disabled_via_env(fake_repo, monkeypatch, caplog):
+    """AC-5: EPM_TASKPY_LANDING_CHECK=0 disables the check entirely — no
+    ERROR + no row on a stranded end-to-end commit, and the direct-call leg
+    issues ZERO git subprocesses."""
+    repo, tw = fake_repo
+    monkeypatch.setenv("EPM_TASKPY_LANDING_CHECK", "0")
+    _strand_repo(repo)
+    target = repo / "somefile.txt"
+    target.write_text("x\n")
+    before = _git_log_count(repo)
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.task_workflow"):
+        tw._git_commit([target], "disabled probe")
+    assert _git_log_count(repo) == before + 1
+    assert _landing_records(caplog) == []
+    assert not tw.STRANDED_COMMITS_LOG.exists()
+
+    # Direct-call leg (AC-5 "no probe subprocesses"): zero _run_git calls.
+    calls: list[list[str]] = []
+    monkeypatch.setattr(tw, "_run_git", lambda args, *, check=True: calls.append(list(args)))
+    tw._warn_if_commit_stranded("m", routed=False)
+    assert calls == []
+
+
+def test_landing_check_skipped_under_no_commit(fake_repo, monkeypatch):
+    """AC-6: TASK_PY_NO_COMMIT=1 early-returns at the top of _git_commit —
+    zero git subprocesses, so the landing check can never fire in
+    test/no-commit mode."""
+    repo, tw = fake_repo
+    monkeypatch.setenv("TASK_PY_NO_COMMIT", "1")
+    target = repo / "somefile.txt"
+    target.write_text("x\n")
+    calls: list[list[str]] = []
+    monkeypatch.setattr(tw, "_run_git", lambda args, *, check=True: calls.append(list(args)))
+    tw._git_commit([target], "no-commit probe")
+    assert calls == []
+    assert not tw.STRANDED_COMMITS_LOG.exists()
 
 
 def test_cli_post_marker_deferred_commit_exits_clean(fake_repo, monkeypatch, capsys):
