@@ -9194,6 +9194,101 @@ def test_check33_bar_x_position_excluded_from_variants(tmp_path, monkeypatch):
     assert res2.passed and not res2.is_warn, res2.render()
 
 
+def test_check33_prior_figure_pool_excludes_current_figure_bar_x(tmp_path, monkeypatch):
+    """(r2 Blocker-1 regression) The bleed pool holds EARLIER same-H3 figures'
+    values ONLY: figure 2 is the bar-x fixture (layout offset x 0.8) and its
+    window bolds **0.008**, whose only would-be match is the x100 variant →
+    the bar x → WARN, exactly as single-figure geometry already pins
+    (test_check33_bar_x_position_excluded_from_variants). Under the r1
+    aliasing bug (`get` returned the LIVE accumulator; `extend` mutated it
+    before matching), figure 2's own 0.8 leaked into `prior_vals` and was
+    matched through the pool path WITHOUT the bar-x exclusion → wrong PASS."""
+    meta_b = {
+        "created": "2026-07-07T00:00:00Z",
+        "points": [{"x": 0.8, "margin": 42.0, "_kind": "bar"}],
+    }
+    body = _check33_two_figure_body("Plotted second: mean margin **0.008** per condition.")
+    repo, sha = _make_repo_with_two_figure_metas(
+        tmp_path, _bar_values_sidecar(0.704, 0.879), meta_b
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(
+        body.replace("0123456789abcdef", sha)
+    )
+    assert res.passed and res.is_warn, res.render()
+    assert "0.008" in res.detail and "second.png" in res.detail
+
+
+def test_check33_bar_height_colliding_with_x_position_stays_variant_eligible(tmp_path, monkeypatch):
+    """(r2 Blocker-2 regression) Identity-preserving exclusion: a bar row
+    whose HEIGHT equals its x-position ({"x": 0.8, "margin": 0.8}) keeps the
+    height entry variant-eligible — prose **0.008** matches the height via
+    x100 → clean PASS. The r1 value-SET exclusion dropped every plotted 0.8
+    from the variant candidates → false WARN on common grouped-bar offsets."""
+    meta = {
+        "created": "2026-07-07T00:00:00Z",
+        "points": [{"x": 0.8, "margin": 0.8, "_kind": "bar"}],
+    }
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: mean margin **0.008** per condition.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check33_legacy_rows_bar_first_key_stays_variant_eligible(tmp_path, monkeypatch):
+    """(r2 Minor-4 regression) The bar-x exclusion is scoped to the modern
+    `points` key: a legacy `rows` sidecar's bar row is NEVER bar-x tagged
+    (fail-open — the legacy writer's key order is unverified), so prose
+    **0.008** still matches the first-key 0.8 via the x100 variant → PASS."""
+    meta = {
+        "created": "2026-07-07T00:00:00Z",
+        "rows": [{"x": 0.8, "margin": 42.0, "_kind": "bar"}],
+    }
+    repo, sha = _make_repo_with_figure_meta(tmp_path, meta)
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    body = _check33_body("Plotted: mean margin **0.008** per condition.").replace(
+        "0123456789abcdef", sha
+    )
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body)
+    assert res.passed and not res.is_warn, res.render()
+
+
+def test_check33_optedout_and_boldless_prior_figures_still_feed_bleed_pool(tmp_path, monkeypatch):
+    """(r2 Minor-3 semantics pin) DOCUMENTED pool semantics: an earlier
+    same-H3 figure contributes its plotted values to the bleed-suppression
+    pool regardless of its own scan outcome. Figure 2's window re-quotes
+    figure 1's plotted **0.42**, absent from figure 2's own sidecar →
+    suppressed (clean PASS) BOTH when figure 1 is opted out AND when it is
+    bold-less — the pool models what earlier figures PLOT, independent of
+    their prose-scan outcome (excluding them would false-WARN legitimate
+    bleed references)."""
+    between = (
+        "The earlier panel's **0.42** anchors this read.\n\n"
+        "Plotted second: capability per condition, bars only."
+    )
+    body = _check33_two_figure_body(between)
+    repo, sha = _make_repo_with_two_figure_metas(
+        tmp_path, _bar_values_sidecar(0.42), _bar_values_sidecar(0.82, 0.81)
+    )
+    monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: repo)
+    fig1_line = "Plotted: baseline **0.704** vs tulu-25 **0.879** mean alignment."
+    # Variant 1: figure 1 OPTED OUT (its window carries the opt-out phrase).
+    body_optout = body.replace(
+        fig1_line, "Plotted: derived headline quantities.\n\n<!-- prose-numerics: derived -->"
+    ).replace("0123456789abcdef", sha)
+    res = verify_task_body.check_figure_prose_numerics_vs_sidecar(body_optout)
+    assert res.passed and not res.is_warn, res.render()
+    # Variant 2: figure 1 BOLD-LESS (scanned window, zero bolded decimals).
+    body_boldless = body.replace(
+        fig1_line, "Plotted: alignment per condition, no headline numerics."
+    ).replace("0123456789abcdef", sha)
+    res2 = verify_task_body.check_figure_prose_numerics_vs_sidecar(body_boldless)
+    assert res2.passed and not res2.is_warn, res2.render()
+
+
 def test_check33_repo_unresolved_is_noop_pass(monkeypatch):
     """Offline / repo root unresolved → NO-OP PASS."""
     monkeypatch.setattr(verify_task_body, "_resolve_repo_root", lambda: None)
