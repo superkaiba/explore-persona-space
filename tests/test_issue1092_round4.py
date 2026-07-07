@@ -1,12 +1,14 @@
-"""Issue #1092 round-4 regression pins for pca48 r_B, shard order, and layer nulls."""
+"""Issue #1092 regression pins for pca48 r_B, shard order, dynamics, and nulls."""
 
 from __future__ import annotations
 
+import argparse
 import json
 import sys
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 REPO = Path(__file__).resolve().parent.parent
 for _p in (REPO / "src", REPO / "scripts"):
@@ -15,6 +17,66 @@ for _p in (REPO / "src", REPO / "scripts"):
 
 import issue1092_fit_grid as fit_grid  # noqa: E402
 import issue1092_gpu_phase as gpu_phase  # noqa: E402
+
+
+class SeamMergingTokenizer:
+    """Tiny tokenizer stub with BPE-like role/content and content/suffix seams."""
+
+    eos_token = "<eos>"
+    eos_token_id = 0
+    pad_token = "<eos>"
+    pad_token_id = 0
+
+    def __call__(self, text: str, *, add_special_tokens: bool = False, **kwargs):
+        assert add_special_tokens is False
+        ids, offsets = self._tokenize(text)
+        out = {"input_ids": ids}
+        if kwargs.get("return_offsets_mapping"):
+            out["offset_mapping"] = offsets
+        return out
+
+    def encode(self, text: str, *, add_special_tokens: bool = False) -> list[int]:
+        assert add_special_tokens is False
+        ids, _offsets = self._tokenize(text)
+        return ids
+
+    def decode(self, ids: list[int], *, skip_special_tokens: bool = False) -> str:
+        assert skip_special_tokens is False
+        return "".join(self._pieces[int(i)] for i in ids)
+
+    def _tokenize(self, text: str) -> tuple[list[int], list[tuple[int, int]]]:
+        pieces: list[str] = []
+        offsets: list[tuple[int, int]] = []
+        i = 0
+        while i < len(text):
+            if text.startswith(": ", i):
+                j = i + 2
+                while j < len(text) and not text[j].isspace():
+                    j += 1
+                pieces.append(text[i:j])
+                offsets.append((i, j))
+                i = j
+                continue
+            if text.startswith(".\n\n", i):
+                pieces.append(text[i : i + 3])
+                offsets.append((i, i + 3))
+                i += 3
+                continue
+            if text[i].isspace():
+                j = i + 1
+                while j < len(text) and text[j].isspace():
+                    j += 1
+            else:
+                j = i + 1
+                while j < len(text) and not text[j].isspace() and not text.startswith(": ", j):
+                    if text.startswith(".\n\n", j):
+                        break
+                    j += 1
+            pieces.append(text[i:j])
+            offsets.append((i, j))
+            i = j
+        self._pieces = pieces
+        return list(range(len(pieces))), offsets
 
 
 def test_pca48_projects_rb_for_hidden_dim_gt_48(tmp_path):
@@ -81,6 +143,52 @@ def test_numeric_12_shard_order_for_consolidation_and_fit_grid_loaders(tmp_path)
     assert consolidated_b0[:, 0, 0, 0].tolist() == list(range(12))
 
 
+def test_mixed_padded_unpadded_duplicate_shards_fail_loud(tmp_path):
+    paths = [
+        tmp_path / "prefix_end_L00_shard3.npy",
+        tmp_path / "prefix_end_L00_shard00003.npy",
+    ]
+    for path in paths:
+        path.touch()
+
+    with pytest.raises(ValueError, match="duplicate shard index 3"):
+        fit_grid._sorted_shards(paths)
+    with pytest.raises(ValueError, match="duplicate shard index 3"):
+        gpu_phase._sorted_shards(paths)
+
+
+def test_pretrained_dynamics_cut_plan_uses_full_render_offsets_for_bpe_seams():
+    tokenizer = SeamMergingTokenizer()
+    turns = [
+        {"role": "user", "content": "Explain photosynthesis briefly."},
+        {"role": "assistant", "content": "Plants turn light into sugar."},
+        {"role": "user", "content": "Name one input."},
+        {"role": "assistant", "content": "Carbon dioxide."},
+    ]
+    full_render = gpu_phase._render_full_conversation(turns, "pretrained")
+    encoded = tokenizer(full_render, add_special_tokens=False, return_offsets_mapping=True)
+
+    cuts = gpu_phase._dynamics_cut_plan(
+        turns,
+        tokenizer,
+        "pretrained",
+        len(encoded["input_ids"]),
+        full_token_ids=encoded["input_ids"],
+    )
+
+    first_user = cuts["u1"][0]
+    second_user = cuts["u1"][1]
+    assert first_user[2] == 0
+    assert second_user[2] == 2
+    first_text = tokenizer.decode(encoded["input_ids"][first_user[0] : first_user[1]])
+    assert first_text.startswith(": Explain")
+    assert first_text.endswith(".\n\n")
+    assert "Explain photosynthesis briefly." in first_text
+    assert "Name one input." in tokenizer.decode(
+        encoded["input_ids"][second_user[0] : second_user[1]]
+    )
+
+
 def test_layer_max_null_uses_shared_draw_seed_across_layers(tmp_path):
     rng = np.random.default_rng(123)
     factors = {
@@ -113,15 +221,67 @@ def test_layer_max_null_uses_shared_draw_seed_across_layers(tmp_path):
     draws = np.load(result["persist_path"])
     assert draws.shape == (5, 28, 3, 2)
     assert result["persist_shape"] == [5, 28, 3, 2]
+    assert result["implementation"] == "sign_matrix_gemm"
+    assert result["wall_s"] < 1.0
 
     manual_rng = np.random.default_rng(77)
-    expected = np.empty_like(draws, dtype=np.float64)
+    signs = manual_rng.choice(np.array([-1.0, 1.0]), size=(5, 6))
     arrays = [np.asarray(factors[name], dtype=np.float64) for name in ("f", "g", "i")]
-    for draw in range(5):
-        signs = manual_rng.choice(np.array([-1.0, 1.0]), size=6)
-        for factor_i, arr in enumerate(arrays):
-            signed = arr * signs[:, None]
-            expected[draw, :, factor_i, :] = np.abs(
-                np.einsum("nd,ltd->lt", signed, rb, optimize=True) / signed.shape[0]
-            )
+    expected = np.empty_like(draws, dtype=np.float64)
+    rb_flat = rb.reshape(28 * 2, 4)
+    for factor_i, arr in enumerate(arrays):
+        projected = (signs @ arr / arr.shape[0]) @ rb_flat.T
+        expected[:, :, factor_i, :] = np.abs(projected.reshape(5, 28, 2))
     assert np.allclose(draws, expected.astype(np.float32))
+
+
+def test_d5_iterated_d2_chaining_companion_is_emitted(tmp_path):
+    summaries = tmp_path / "summaries"
+    root = summaries / "dynamics_instruct"
+    root.mkdir(parents=True)
+    kinds = (
+        "context_k",
+        "s_k",
+        "answer_k_t1",
+        "answer_k_t2",
+        "answer_k_t3",
+        "u1",
+        "u2",
+        "u3",
+    )
+    rows = []
+    arrays = []
+    for conv_i in range(4):
+        for turn in (0, 2, 4, 6):
+            rows.append(
+                {
+                    "conv_id": f"c{conv_i}",
+                    "turn_index": turn,
+                    "token_start": turn,
+                    "token_end": turn + 1,
+                }
+            )
+            arrays.append([conv_i + 0.1 * turn, 1.0 + turn])
+    base = np.asarray(arrays, dtype=np.float32)
+    for kind_i, kind in enumerate(kinds):
+        np.save(root / f"{kind}_L00.npy", base + kind_i * 0.01)
+        with open(root / f"row_index_{kind}.jsonl", "w", encoding="utf-8") as f:
+            for row in rows:
+                f.write(json.dumps(row) + "\n")
+
+    args = argparse.Namespace(n_folds=2)
+    out = fit_grid._compute_dynamics_reads(
+        summaries,
+        "cell_inst_own",
+        0,
+        args,
+        judge_rows=[],
+    )
+
+    companion = out["D5_iterated_D2_chaining_companion"]
+    assert companion["status"] == "computed"
+    assert companion["horizons"] == [0, 2, 4, 6]
+    entry = companion["profile"]["context_k"]["4"]["context_k"]
+    assert entry["status"] == "computed"
+    assert isinstance(entry["direct_cv_r2"], float)
+    assert isinstance(entry["iterated_d2_chain_r2"], float)

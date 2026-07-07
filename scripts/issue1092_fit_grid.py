@@ -115,7 +115,20 @@ def _sorted_shards(paths: Iterable[Path]) -> list[Path]:
                 break
         return prefix, int("".join(digits) or 0), rest
 
-    return sorted(paths, key=key)
+    ordered = sorted(paths, key=key)
+    seen: dict[tuple[str, int], Path] = {}
+    for path in ordered:
+        prefix, shard_idx, _rest = key(path)
+        if shard_idx < 0:
+            continue
+        shard_key = (prefix, shard_idx)
+        if shard_key in seen:
+            raise ValueError(
+                f"duplicate shard index {shard_idx} for {prefix}: "
+                f"{seen[shard_key].name} and {path.name}"
+            )
+        seen[shard_key] = path
+    return ordered
 
 
 def _load_summary(
@@ -817,6 +830,38 @@ def _compute_dynamics_reads(  # noqa: C901
         fit["pair_counts"] = skipped_pair_counts[read_name]
         return fit
 
+    def fit_full_predictor(read_name: str, Xp: np.ndarray, Yp: np.ndarray):
+        if Xp.shape[0] < 3 or Yp.shape[0] < 3:
+            return {
+                "status": "insufficient_rows",
+                "read": read_name,
+                "n": int(min(Xp.shape[0], Yp.shape[0])),
+            }, None
+        Xtr = torch.from_numpy(np.asarray(Xp, dtype=np.float64)).double()
+        Ytr = torch.from_numpy(np.asarray(Yp, dtype=np.float64)).double()
+        res = press_fit_predict(Xtr, Ytr, Xtr[:1], return_engine=True, standardize=True)
+        eng, _xtr_n, _ = res["engine"]
+        mu, sd, keep = res["std"]
+        ymu = res["ymu"]
+        centered = Ytr - ymu
+        G = (eng.U.T @ centered).unsqueeze(0).contiguous()
+        lam_idx = torch.tensor([int(res["lam_idx"])], dtype=torch.long, device=Xtr.device)
+
+        def predict(Xnew: np.ndarray) -> np.ndarray:
+            Xte = torch.from_numpy(np.asarray(Xnew, dtype=np.float64)).double()
+            Xte_n = ((Xte - mu) / sd)[:, keep]
+            with torch.no_grad():
+                pred = eng.predict(G, lam_idx, Xte_n)[0] + ymu
+            return pred.detach().cpu().numpy()
+
+        return {
+            "status": "computed",
+            "read": read_name,
+            "n": int(Xp.shape[0]),
+            "lambda_index": int(res["lam_idx"]),
+            "standardize": True,
+        }, predict
+
     out: dict[str, Any] = {
         "status": "computed",
         "model_type": model_type,
@@ -958,6 +1003,7 @@ def _compute_dynamics_reads(  # noqa: C901
         "prefix_context_skill_ratio": ratio,
     }
 
+    first_indices_by_src: dict[str, dict[str, int]] = {}
     d5: dict[str, Any] = {}
     for src_kind in source_kinds:
         first_by_conv: dict[str, int] = {}
@@ -971,6 +1017,7 @@ def _compute_dynamics_reads(  # noqa: C901
             )
             if current_turn is None or turn_idx < current_turn:
                 first_by_conv[conv_id] = src_i
+        first_indices_by_src[src_kind] = first_by_conv
         d5[src_kind] = {}
         for horizon in (0, 2, 4, 6):
             d5[src_kind][str(horizon)] = {}
@@ -1001,6 +1048,130 @@ def _compute_dynamics_reads(  # noqa: C901
                 }
                 d5[src_kind][str(horizon)][dst_kind] = fit
     out["D5_first_state_horizon"] = d5
+
+    def first_horizon_arrays(src_kind: str, dst_kind: str, horizon: int):
+        src = []
+        dst = []
+        pair_rows = []
+        dropped = 0
+        for conv_id, first_i in first_indices_by_src[src_kind].items():
+            first_turn = int(index_rows_by_kind[src_kind][first_i]["turn_index"])
+            dst_key = (conv_id, first_turn + horizon)
+            dst_i = indices[dst_kind].get(dst_key)
+            if dst_i is None:
+                dropped += 1
+                continue
+            src.append(arrays[src_kind][first_i])
+            dst.append(arrays[dst_kind][dst_i])
+            pair_rows.append({"conv_id": conv_id, "turn_index": first_turn})
+        if not src:
+            return (
+                np.empty((0, arrays[src_kind].shape[1])),
+                np.empty((0, arrays[dst_kind].shape[1])),
+                [],
+                dropped,
+            )
+        return np.asarray(src), np.asarray(dst), pair_rows, dropped
+
+    chain_fit_meta: dict[str, Any] = {}
+    Xcc, Ycc, _rows_cc = pairs(
+        "context_k", "context_k", offset=2, read_name="D5_chain_context_to_context_step"
+    )
+    chain_fit_meta["context_to_context_step"], context_step = fit_full_predictor(
+        "D5_chain_context_to_context_step", Xcc, Ycc
+    )
+    Xsc_next, Ysc_next, _rows_sc_next = pairs(
+        "s_k", "context_k", offset=2, read_name="D5_chain_s_to_context_next"
+    )
+    chain_fit_meta["s_to_context_next"], s_to_context_next = fit_full_predictor(
+        "D5_chain_s_to_context_next", Xsc_next, Ysc_next
+    )
+    Xsc_current, Ysc_current, _rows_sc_current = pairs(
+        "s_k", "context_k", offset=0, read_name="D5_chain_s_to_context_current"
+    )
+    chain_fit_meta["s_to_context_current"], s_to_context_current = fit_full_predictor(
+        "D5_chain_s_to_context_current", Xsc_current, Ysc_current
+    )
+    answer_readouts = {}
+    for dst_kind in answer_kinds:
+        Xca, Yca, _rows_ca = pairs(
+            "context_k",
+            dst_kind,
+            offset=0,
+            read_name=f"D5_chain_context_to_{dst_kind}_readout",
+        )
+        meta, predictor = fit_full_predictor(f"D5_chain_context_to_{dst_kind}_readout", Xca, Yca)
+        chain_fit_meta[f"context_to_{dst_kind}_readout"] = meta
+        answer_readouts[dst_kind] = predictor
+
+    def chained_context_state(src_kind: str, Xsrc: np.ndarray, rounds: int) -> np.ndarray | None:
+        if src_kind == "context_k":
+            state = Xsrc
+            remaining = rounds
+        elif rounds == 0:
+            if s_to_context_current is None:
+                return None
+            state = s_to_context_current(Xsrc)
+            remaining = 0
+        else:
+            if s_to_context_next is None:
+                return None
+            state = s_to_context_next(Xsrc)
+            remaining = rounds - 1
+        for _ in range(remaining):
+            if context_step is None:
+                return None
+            state = context_step(state)
+        return state
+
+    chain_profile: dict[str, Any] = {}
+    for src_kind in source_kinds:
+        chain_profile[src_kind] = {}
+        for horizon in (0, 2, 4, 6):
+            rounds = horizon // 2
+            chain_profile[src_kind][str(horizon)] = {}
+            for dst_kind in (*answer_kinds, "context_k"):
+                Xsrc, Ydst, rows_p, dropped = first_horizon_arrays(src_kind, dst_kind, horizon)
+                direct_entry = d5[src_kind][str(horizon)][dst_kind]
+                direct_r2 = direct_entry.get("fit", {}).get("r2")
+                entry: dict[str, Any] = {
+                    "direct_cv_r2": direct_r2,
+                    "n": len(rows_p),
+                    "pair_counts": {
+                        "candidate_pairs": len(first_indices_by_src[src_kind]),
+                        "paired": len(rows_p),
+                        "dropped_missing_horizon_or_non_alternating": int(dropped),
+                    },
+                }
+                context_state = (
+                    chained_context_state(src_kind, Xsrc, rounds) if len(rows_p) >= 3 else None
+                )
+                if context_state is None:
+                    entry["status"] = "insufficient_chain_fit_or_rows"
+                    entry["iterated_d2_chain_r2"] = None
+                elif dst_kind == "context_k":
+                    entry["status"] = "computed"
+                    entry["iterated_d2_chain_r2"] = _r2(Ydst, context_state)
+                else:
+                    readout = answer_readouts[dst_kind]
+                    if readout is None:
+                        entry["status"] = "insufficient_answer_readout"
+                        entry["iterated_d2_chain_r2"] = None
+                    else:
+                        entry["status"] = "computed"
+                        entry["iterated_d2_chain_r2"] = _r2(Ydst, readout(context_state))
+                chain_profile[src_kind][str(horizon)][dst_kind] = entry
+    out["D5_iterated_D2_chaining_companion"] = {
+        "status": "computed",
+        "method": (
+            "direct D5 CV R2 versus full-data PRESS-ridge chaining through one-round D2 "
+            "context transitions; answer targets use context-to-answer readouts at the "
+            "destination horizon"
+        ),
+        "horizons": [0, 2, 4, 6],
+        "transition_fits": chain_fit_meta,
+        "profile": chain_profile,
+    }
 
     b3_by_trait: dict[str, list[tuple[np.ndarray, float, dict]]] = {}
     b3_dropped_missing_predictor = 0
@@ -1062,32 +1233,37 @@ def _selection_symmetric_projection_null(
     seed: int,
     out_dir: Path,
 ) -> dict:
+    t0 = time.monotonic()
     rng = np.random.default_rng(seed)
     factor_arrays = {name: np.asarray(factors[name], dtype=np.float64) for name in ("f", "g", "i")}
+    n_rows = next(iter(factor_arrays.values())).shape[0]
+    if any(arr.shape[0] != n_rows for arr in factor_arrays.values()):
+        shapes = {name: list(arr.shape) for name, arr in factor_arrays.items()}
+        raise ValueError(f"selection-null factor row mismatch: {shapes}")
     out_dim = next(iter(factor_arrays.values())).shape[1]
     rb_basis = _project_rb_family_to_basis(rb_directions, basis_info, expected_dim=out_dim)
     if not 0 <= layer < rb_basis.shape[0]:
         raise ValueError(f"layer {layer} outside r_B family with {rb_basis.shape[0]} layers")
-    observed = {
-        factor: {
+    rb_flat = rb_basis.reshape(rb_basis.shape[0] * len(trait_names), rb_basis.shape[2])
+    observed = {}
+    for factor, arr in factor_arrays.items():
+        projected = (arr.mean(axis=0) @ rb_flat.T).reshape(rb_basis.shape[0], len(trait_names))
+        observed[factor] = {
             f"L{layer_i:02d}": {
-                trait_names[t]: float(np.mean(arr @ rb_basis[layer_i, t]))
-                for t in range(len(trait_names))
+                trait_names[t]: float(projected[layer_i, t]) for t in range(len(trait_names))
             }
             for layer_i in range(rb_basis.shape[0])
         }
-        for factor, arr in factor_arrays.items()
-    }
     draws = np.empty(
         (n_draws, rb_basis.shape[0], len(factor_arrays), len(trait_names)), dtype=np.float64
     )
-    for draw in range(n_draws):
-        signs = rng.choice(np.array([-1.0, 1.0]), size=next(iter(factor_arrays.values())).shape[0])
-        for f_i, arr in enumerate(factor_arrays.values()):
-            signed = arr * signs[:, None]
-            draws[draw, :, f_i, :] = np.abs(
-                np.einsum("nd,ltd->lt", signed, rb_basis, optimize=True) / signed.shape[0]
-            )
+    signs = rng.choice(np.array([-1.0, 1.0]), size=(n_draws, n_rows))
+    for f_i, arr in enumerate(factor_arrays.values()):
+        signed_means = signs @ arr / n_rows
+        projected = signed_means @ rb_flat.T
+        draws[:, :, f_i, :] = np.abs(
+            projected.reshape(n_draws, rb_basis.shape[0], len(trait_names))
+        )
     max_draws = np.nanmax(draws, axis=(1, 2, 3))
     null_dir = out_dir / "analysis_tensors" / "nulls"
     null_dir.mkdir(parents=True, exist_ok=True)
@@ -1105,6 +1281,8 @@ def _selection_symmetric_projection_null(
         "shared_sign_seed": int(seed),
         "persist_shape": [int(x) for x in draws.shape],
         "persist_path": str(persist),
+        "implementation": "sign_matrix_gemm",
+        "wall_s": time.monotonic() - t0,
     }
 
 
@@ -1177,6 +1355,18 @@ def _fit_scalar_cv(X: np.ndarray, y: np.ndarray, folds: list[np.ndarray]) -> dic
     return fit
 
 
+def _has_scored_behavior_rows(cell: str, unit_rows: list[dict], judge_rows: list[dict]) -> bool:
+    if not judge_rows:
+        return False
+    row_ids = {str(row.get("row_id")) for row in unit_rows}
+    for score_row in judge_rows:
+        if score_row.get("cell_id") != cell and score_row.get("arm") != cell:
+            continue
+        if score_row.get("score") is not None and str(score_row.get("row_id")) in row_ids:
+            return True
+    return False
+
+
 def _behavior_reads(  # noqa: C901
     *,
     cell: str,
@@ -1205,6 +1395,12 @@ def _behavior_reads(  # noqa: C901
         if score is None or row_id not in row_pos:
             continue
         by_trait.setdefault(str(score_row.get("trait")), []).append((row_pos[row_id], float(score)))
+    if not by_trait:
+        return {
+            "status": "no_scored_rows_for_cell",
+            "eligibility_rule": "std>=1 and >=5 scored and at least one positive/negative",
+            "traits": {},
+        }
 
     factors = _factor_components_dense_core(unit_rows, Y)
     factor_indices = np.asarray(factors["indices"], dtype=np.int64)
@@ -1535,7 +1731,7 @@ def run(args: argparse.Namespace) -> dict:  # noqa: C901
                             continue
                         fit, fit_pred = _fit_cv(Xn, Yb, folds, return_pred=True)
                         behavior_arm_inputs: dict[str, dict[str, np.ndarray]] = {}
-                        if judge_rows:
+                        if _has_scored_behavior_rows(cell, unit_rows, judge_rows):
                             behavior_sources = {
                                 "prefix_end": prefix_Xn,
                                 "context_end": context_Xn,

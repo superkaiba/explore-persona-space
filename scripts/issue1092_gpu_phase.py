@@ -1033,7 +1033,20 @@ def _sorted_shards(paths: list[Path]) -> list[Path]:
                 break
         return prefix, int("".join(digits) or 0), raw
 
-    return sorted(paths, key=key)
+    ordered = sorted(paths, key=key)
+    seen: dict[tuple[str, int], Path] = {}
+    for path in ordered:
+        prefix, shard_idx, _raw = key(path)
+        if shard_idx < 0:
+            continue
+        shard_key = (prefix, shard_idx)
+        if shard_key in seen:
+            raise ValueError(
+                f"duplicate shard index {shard_idx} for {prefix}: "
+                f"{seen[shard_key].name} and {path.name}"
+            )
+        seen[shard_key] = path
+    return ordered
 
 
 def _load_cell_kind_matrix(out_dir: Path, cell_id: str, kind: str, layer: int) -> np.ndarray:
@@ -1564,9 +1577,7 @@ def _load_raw_completion_files(out_dir: Path, model_type: str, cell_id: str) -> 
     """Load row_id -> completion from previously persisted own-policy rollouts."""
     comp_dir = out_dir / "raw_completions" / model_type
     paths = (
-        _sorted_shards(list(comp_dir.glob(f"{cell_id}_shard*.jsonl")))
-        if comp_dir.exists()
-        else []
+        _sorted_shards(list(comp_dir.glob(f"{cell_id}_shard*.jsonl"))) if comp_dir.exists() else []
     )
     out: dict[str, str] = {}
     for path in paths:
@@ -2625,6 +2636,121 @@ def _render_assistant_prompt(turns_before: list[dict], model_type: str) -> str:
     raise ValueError(f"unknown model_type {model_type!r}")
 
 
+def _tokenize_full_render_with_offsets(
+    tokenizer, text: str
+) -> tuple[list[int], list[tuple[int, int]]]:
+    try:
+        encoded = tokenizer(
+            text,
+            add_special_tokens=False,
+            return_offsets_mapping=True,
+        )
+    except NotImplementedError as exc:
+        raise RuntimeError("dynamics cut planning requires a fast tokenizer with offsets") from exc
+    ids = encoded["input_ids"]
+    offsets = encoded["offset_mapping"]
+    if ids and isinstance(ids[0], list):
+        ids = ids[0]
+    if offsets and isinstance(offsets[0], list):
+        offsets = offsets[0]
+    return [int(x) for x in ids], [(int(start), int(end)) for start, end in offsets]
+
+
+def _turn_content_char_spans(
+    full_render: str, turns: list[dict], model_type: str
+) -> tuple[list[tuple[int, int]], list[int]]:
+    content_spans: list[tuple[int, int]] = []
+    turn_end_chars: list[int] = []
+    cursor = 0
+    for turn_idx, turn in enumerate(turns):
+        content = str(turn.get("content", ""))
+        if content:
+            start = full_render.find(content, cursor)
+            if start < 0:
+                start = full_render.find(content)
+            if start < 0:
+                raise AssertionError(
+                    f"dynamics content span not found for {model_type} turn {turn_idx}: {content!r}"
+                )
+            end = start + len(content)
+            cursor = end
+        else:
+            prefix = _render_full_conversation(turns[: turn_idx + 1], model_type)
+            end = len(prefix) if full_render.startswith(prefix) else cursor
+            start = end
+        content_spans.append((start, end))
+        prefix = _render_full_conversation(turns[: turn_idx + 1], model_type)
+        if full_render.startswith(prefix):
+            turn_end_chars.append(len(prefix))
+        else:
+            turn_end_chars.append(end)
+    return content_spans, turn_end_chars
+
+
+def _char_span_to_token_span(
+    offsets: list[tuple[int, int]], char_start: int, char_end: int, n_total_tokens: int
+) -> tuple[int, int]:
+    selected = [
+        i
+        for i, (start, end) in enumerate(offsets[:n_total_tokens])
+        if end > start and end > char_start and start < char_end
+    ]
+    if selected:
+        return selected[0], selected[-1] + 1
+    boundary = _char_prefix_to_token_end(offsets, char_start, n_total_tokens)
+    start = min(max(0, boundary), max(0, n_total_tokens - 1))
+    return start, min(n_total_tokens, start + 1)
+
+
+def _char_prefix_to_token_end(
+    offsets: list[tuple[int, int]], char_end: int, n_total_tokens: int
+) -> int:
+    selected = [
+        i
+        for i, (start, end) in enumerate(offsets[:n_total_tokens])
+        if end > start and start < char_end
+    ]
+    if selected:
+        return min(n_total_tokens, selected[-1] + 1)
+    for i, (start, end) in enumerate(offsets[:n_total_tokens]):
+        if end > start and end >= char_end:
+            return min(n_total_tokens, i + 1)
+    return n_total_tokens
+
+
+def _assert_token_span_covers_char_span(
+    *,
+    offsets: list[tuple[int, int]],
+    token_start: int,
+    token_end: int,
+    char_start: int,
+    char_end: int,
+    model_type: str,
+    turn_idx: int,
+    role: str,
+) -> None:
+    if char_end <= char_start:
+        return
+    cursor = char_start
+    for start, end in sorted(offsets[token_start:token_end]):
+        if end <= start or end <= char_start or start >= char_end:
+            continue
+        if start > cursor:
+            raise AssertionError(
+                f"dynamics {role}-span offset gap for {model_type} turn {turn_idx}: "
+                f"tokens=({token_start},{token_end}) chars=({char_start},{char_end}) "
+                f"gap_at={cursor}"
+            )
+        cursor = max(cursor, min(end, char_end))
+        if cursor >= char_end:
+            return
+    raise AssertionError(
+        f"dynamics {role}-span offset coverage failed for {model_type} turn {turn_idx}: "
+        f"tokens=({token_start},{token_end}) chars=({char_start},{char_end}) "
+        f"covered_until={cursor}"
+    )
+
+
 def _dynamics_cut_plan(
     turns: list[dict],
     tokenizer,
@@ -2634,9 +2760,8 @@ def _dynamics_cut_plan(
 ) -> dict[str, list[tuple[int, int, int]]]:
     """Return per-kind (start, end, turn_index) cuts for one full conversation.
 
-    The positions are computed from deterministic prefixes rendered under the
-    same model format as the full conversation. Token-boundary seams can differ
-    by a token for some BPEs, so every cut is clamped into the full forward.
+    The positions are computed from a single tokenization of the full render so
+    BPE seams at role/content boundaries cannot invalidate partial-render math.
     """
     cuts: dict[str, list[tuple[int, int, int]]] = {
         "context_k": [],
@@ -2648,6 +2773,16 @@ def _dynamics_cut_plan(
         "u2": [],
         "u3": [],
     }
+    full_render = _render_full_conversation(turns, model_type)
+    encoded_ids, offsets = _tokenize_full_render_with_offsets(tokenizer, full_render)
+    if len(encoded_ids) != n_total_tokens:
+        raise AssertionError(
+            f"dynamics full-render token count mismatch for {model_type}: "
+            f"offset_tokens={len(encoded_ids)} forward_tokens={n_total_tokens}"
+        )
+    if full_token_ids is not None and list(full_token_ids) != encoded_ids:
+        raise AssertionError(f"dynamics full-render token ids mismatch for {model_type}")
+    content_spans, turn_end_chars = _turn_content_char_spans(full_render, turns, model_type)
 
     def clamp_span(start: int, end: int) -> tuple[int, int]:
         start = min(max(0, start), max(0, n_total_tokens - 1))
@@ -2656,19 +2791,27 @@ def _dynamics_cut_plan(
 
     for turn_idx, turn in enumerate(turns):
         role = turn.get("role")
-        content = str(turn.get("content", ""))
+        content_start, content_end = content_spans[turn_idx]
+        turn_token_end = _char_prefix_to_token_end(
+            offsets, turn_end_chars[turn_idx], n_total_tokens
+        )
         if role == "assistant":
-            answer_start = _token_len(
-                tokenizer, _render_assistant_prompt(turns[:turn_idx], model_type)
-            )
-            answer_len = max(1, _token_len(tokenizer, content))
-            answer_end = answer_start + answer_len
-            after_turn = _token_len(
-                tokenizer, _render_full_conversation(turns[: turn_idx + 1], model_type)
+            answer_start, answer_end = _char_span_to_token_span(
+                offsets, content_start, content_end, n_total_tokens
             )
             answer_start, answer_end = clamp_span(answer_start, answer_end)
-            _t2_start, t2_end = clamp_span(answer_start, max(answer_end, after_turn - 1))
-            t3_pos = min(max(0, after_turn - 1), max(0, n_total_tokens - 1))
+            _assert_token_span_covers_char_span(
+                offsets=offsets,
+                token_start=answer_start,
+                token_end=answer_end,
+                char_start=content_start,
+                char_end=content_end,
+                model_type=model_type,
+                turn_idx=turn_idx,
+                role="assistant",
+            )
+            _t2_start, t2_end = clamp_span(answer_start, max(answer_end, turn_token_end - 1))
+            t3_pos = min(max(0, turn_token_end - 1), max(0, n_total_tokens - 1))
             context_pos = max(0, answer_start - 1)
             s_pos = max(answer_start, answer_end - 1)
             cuts["context_k"].append((context_pos, context_pos + 1, turn_idx))
@@ -2677,32 +2820,22 @@ def _dynamics_cut_plan(
             cuts["answer_k_t2"].append((answer_start, t2_end, turn_idx))
             cuts["answer_k_t3"].append((t3_pos, t3_pos + 1, turn_idx))
         elif role == "user":
-            user_len = max(1, _token_len(tokenizer, content))
-            rendered_after_turn = _render_full_conversation(turns[: turn_idx + 1], model_type)
-            after_turn = _token_len(tokenizer, rendered_after_turn)
-            content_pos = rendered_after_turn.rfind(content) if content else -1
-            suffix = (
-                rendered_after_turn[content_pos + len(content) :]
-                if content_pos >= 0
-                else ""
+            user_start, user_end = _char_span_to_token_span(
+                offsets, content_start, content_end, n_total_tokens
             )
-            suffix_len = _token_len(tokenizer, suffix)
-            user_end = after_turn - suffix_len
-            user_start = user_end - user_len
             user_start, user_end = clamp_span(user_start, user_end)
-            if full_token_ids is not None and content:
-                observed = full_token_ids[user_start:user_end]
-                expected = _token_ids(tokenizer, content)
-                if observed != expected:
-                    decoded = tokenizer.decode(observed, skip_special_tokens=False)
-                    if decoded != content and decoded.strip() != content.strip():
-                        raise AssertionError(
-                            f"dynamics user-span alignment failed for {model_type} turn "
-                            f"{turn_idx}: cut=({user_start},{user_end}) "
-                            f"decoded={decoded!r} expected={content!r}"
-                        )
-            _u2_start, u2_end = clamp_span(user_start, max(user_end, after_turn))
-            u3_pos = min(max(0, after_turn - 1), max(0, n_total_tokens - 1))
+            _assert_token_span_covers_char_span(
+                offsets=offsets,
+                token_start=user_start,
+                token_end=user_end,
+                char_start=content_start,
+                char_end=content_end,
+                model_type=model_type,
+                turn_idx=turn_idx,
+                role="user",
+            )
+            _u2_start, u2_end = clamp_span(user_start, max(user_end, turn_token_end))
+            u3_pos = min(max(0, turn_token_end - 1), max(0, n_total_tokens - 1))
             cuts["u1"].append((user_start, user_end, turn_idx))
             cuts["u2"].append((user_start, u2_end, turn_idx))
             cuts["u3"].append((u3_pos, u3_pos + 1, turn_idx))
