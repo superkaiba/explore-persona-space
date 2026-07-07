@@ -97,6 +97,9 @@ def test_serial_reference_tombstoned() -> None:
     X = _random_cloud(12, 8, seed=4)
     with pytest.warns(FutureWarning, match="batched"):
         cluster_bootstrap_dv(X, np.arange(12), "pr_lambda", n_boot=3, seed=1)
-    with mock.patch.dict(os.environ, {"EPM_FORBID_SERIAL_FITS": "1"}):
-        with pytest.warns(FutureWarning), pytest.raises(RuntimeError, match="batched"):
-            cluster_bootstrap_dv(X, np.arange(12), "pr_lambda", n_boot=3, seed=1)
+    with (
+        mock.patch.dict(os.environ, {"EPM_FORBID_SERIAL_FITS": "1"}),
+        pytest.warns(FutureWarning),
+        pytest.raises(RuntimeError, match="batched"),
+    ):
+        cluster_bootstrap_dv(X, np.arange(12), "pr_lambda", n_boot=3, seed=1)
