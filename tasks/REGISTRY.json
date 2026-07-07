@@ -908,8 +908,8 @@
     "1116": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1116",
-      "status": "approved",
+      "path": "tasks/running/1116",
+      "status": "running",
       "title": "workflow-fix: GCP flex-start PENDING-vanish -> capacity-miss failover"
     },
     "112": {
