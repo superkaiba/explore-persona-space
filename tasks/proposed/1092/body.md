@@ -20,6 +20,9 @@ goal: 'On a realistic sparse-crossed prefix x query corpus (~1k real WildChat/LM
   f/g/i variance shares vs #923''s 84/8/9; and the combined-model tests M~=f-map,
   M''-M~=g, trait-per-factor r_B projections (does f carry the persona signal?), plus
   0-GPU bridge re-fits on #923/#813/#779 captures.'
+relates_to:
+- spec-context-as-vector
+- leak-predictor
 ---
 ## Goal
 
