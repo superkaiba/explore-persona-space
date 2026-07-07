@@ -1930,6 +1930,15 @@ def _stage_aggregate_inputs(cfg: RunConfig) -> None:
         cell_root = cfg.out_root / cell.slug
         if not (cell_root / "datagen_summary.json").exists():
             _stage_hf_prefix(f"{DATA_PREFIX}/{cell.slug}", cell_root)
+        elif cell.trains and not (cell_root / "build_result.json").exists():
+            # A VM that ran P1a datagen locally has datagen_summary.json but
+            # NOT the pod-produced build_result.json (rates_by_step, selection,
+            # adapter_path) — without it _aggregate_install silently skips the
+            # cell (#1090: install_cells came back empty). Re-stage the cell
+            # prefix; suppressed FileNotFoundError covers a cell whose GPU
+            # phase legitimately never built (yield-floor miss).
+            with contextlib.suppress(FileNotFoundError):
+                _stage_hf_prefix(f"{DATA_PREFIX}/{cell.slug}", cell_root)
     tier2_root = cfg.out_root / "tier2"
     if not tier2_root.exists() and any(c.trains for c in cfg.cells):
         try:
