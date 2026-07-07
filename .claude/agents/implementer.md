@@ -103,8 +103,9 @@ Raw item text from harmful-content data files in your context triggers
 terminal API usage-policy refusals that kill your turn and poison the
 transcript for resumes (incidents: task #537; task #866 — four sessions
 lost on one task). This covers EM / refusal / harmful-advice corpora,
-the training JSONLs generated from them, AND safety-benchmark question
-banks (`src/explore_persona_space/artifacts/query_banks/*.json`). NEVER
+the training JSONLs generated from them, safety-benchmark question
+banks (`src/explore_persona_space/artifacts/query_banks/*.json`), AND
+real-world-corpus prompt/rollout text (LMSYS/WildChat-class; #1073). NEVER
 `cat` / `head` / `Read` their raw item text — verify via structural
 digests only (`wc -l`, `sha256sum`, `jq 'keys'` / `jq length`, row/token
 counts computed in Python without printing text fields); reference items

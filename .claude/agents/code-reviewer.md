@@ -289,7 +289,8 @@ per-call estimate instead. N/A when no phase loops a
 fit/factorization/battery.
 
 **Harmful-content corpora digest note.** For phases over EM / refusal-bait /
-harmful-advice corpora the digest is path + row count + hash + field names
+harmful-advice / real-world-corpus (LMSYS/WildChat-class; #1073) corpora
+the digest is path + row count + hash + field names
 ONLY — the implementer spec forbids pasting row text
 (experiment-implementer.md § Content hygiene). Never request raw-row or
 sample-text evidence for such artifacts, and never `cat` them yourself when

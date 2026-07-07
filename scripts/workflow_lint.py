@@ -6278,15 +6278,18 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # + <=~1 KB. Prior: 47,930 B post-#881)
     # #948: seam-stubbed production-body lens (Step 3.8)
     "codex-code-reviewer.md": 51_600,
-    # measured 58,976 B post-#936 (the plan-REQUIRED bf16 equivalence-gate
-    # calibration caveat in § Batched-rewrite equivalence — plan-mandated
-    # growth; cap = measured + <=3 KB. Prior: 55,812 B post-#869)
-    "experiment-implementer.md": 61_500,
+    # measured 61,733 B post-#1102 (real-world-corpus class extension in
+    # § Content hygiene — plan-mandated growth; cap = measured + <=~1 KB.
+    # Prior: 61,500 — measured 58,976 B post-#936)
+    "experiment-implementer.md": 62_500,
     # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
     # disposition-conditional resume-glob confirm — plan-mandated growth;
     # cap = measured + <=~1 KB. Prior: 65,500 — measured 62,672 B)
     "experimenter.md": 66_500,
-    "methodology-writer.md": 48_000,  # measured 45,203 B
+    # measured 48,197 B post-#1102 (real-world-corpus class extension across
+    # three content-hygiene spans — plan-mandated growth; cap = measured
+    # + <=~1 KB. Prior: 48,000 — measured 45,203 B)
+    "methodology-writer.md": 49_000,
     # measured 46,187 B post-#1082 (negative-existence search recipe —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 43,500 / 40,990 B)
     "research-pm.md": 47_000,
