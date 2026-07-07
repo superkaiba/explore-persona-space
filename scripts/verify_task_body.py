@@ -2642,28 +2642,36 @@ def _v4_results_body(body: str) -> str | None:
     interpretation-beat WARN for the last result). This helper cuts the
     section at the footer boundary so the per-result scans see only the
     real Results content. None when `## Results` is absent.
+
+    The cut is at the ABSOLUTE line index from `_v4_footer_start_line`,
+    intersected with the section's `find_h2_sections` line range — NEVER by
+    string-matching the footer's first line: when the footer is preceded by
+    a `---` rule its first line is `---`, and a legal mid-Results `---`
+    rule between results would truncate every later result out of checks
+    11b/20/21 (#1109; masked two ≥180-word hard FAILs on #825).
     """
-    results = section_text(body, "Results")
-    if results is None:
+    lines = body.splitlines()
+    section: tuple[int, int] | None = None
+    for name, start, end in find_h2_sections(body):
+        if name.casefold() == "results":
+            section = (start, end)
+            break
+    if section is None:
         return None
-    footer = _v4_footer_text(body)
-    if not footer:
-        return results
-    # The footer text is a suffix of the Results section_text (Results is
-    # the last H2, so its section_text runs to end-of-body and contains the
-    # footer). Cut at the footer's first line within the Results text.
-    footer_first_line = footer.splitlines()[0] if footer.splitlines() else ""
-    if not footer_first_line:
-        return results
-    rlines = results.splitlines()
-    for i, line in enumerate(rlines):
-        if line.strip() == footer_first_line.strip():
-            # Drop a trailing `---` rule + blank lines just above the footer.
-            j = i - 1
-            while j >= 0 and (rlines[j].strip() == "" or rlines[j].strip() == "---"):
-                j -= 1
-            return "\n".join(rlines[: j + 1]).strip()
-    return results
+    start, end = section
+    footer = _v4_footer_start_line(body)
+    if footer is None or not (start <= footer < end):
+        # No footer, or the footer lies outside this section's range (e.g.
+        # a stray H2 after ## Results): plain section text — identical to
+        # section_text(body, "Results").
+        return "\n".join(lines[start:end]).strip()
+    # Cut at the footer start, then drop trailing `---` rule + blank lines
+    # just above it (footer chrome, not Results content).
+    rlines = lines[start:footer]
+    j = len(rlines) - 1
+    while j >= 0 and rlines[j].strip() in ("", "---"):
+        j -= 1
+    return "\n".join(rlines[: j + 1]).strip()
 
 
 def _repro_section_text(body: str) -> str | None:
