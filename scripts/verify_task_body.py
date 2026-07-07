@@ -615,6 +615,29 @@ Generation-agnostic checks (run on v2 AND v3 — the inline-figure +
   `divergence_bank_queries.json` at the pinned eval_results@5b62649 tree
   while the file lives only in git (#1016).
 
+- **check 33** (`check_figure_prose_numerics_vs_sidecar`, WARN): bolded
+  DECIMALS in a figure's what-is-plotted prose window — the
+  previous-figure-bounded beat-1 slice of its enclosing `### <result>` H3
+  plus the blockquote caption (`_beat1_prose_window`) — must each appear
+  among the numeric values the figure's sha-pinned `.meta.json` sidecar
+  records as plotted (`points`/`rows` rows, key-agnostic numeric leaves).
+  PER-NUMERIC firing: WARN when >=1 bolded decimal matches NO plotted value
+  under printed-precision half-ulp rounding + sign-insensitive + percent
+  (x100 / /100) variants + a sci-notation relative-tolerance branch; percent
+  variants never match a grouped-bar layout x-position, and a bolded decimal
+  matching an EARLIER same-H3 figure's plotted values is suppressed as
+  cross-figure interpretation bleed. Integers / version-shaped tokens are
+  never scanned (bolded decimals only); unbolded caption numerics are a
+  named recall sacrifice (precision over recall, the check-32 posture).
+  Per-figure opt-out: the literal `<!-- prose-numerics: derived -->`
+  anywhere in the figure's scanned window (beat-1 prose or caption). WARN,
+  never FAIL; silent skip on missing / unparsable / truncated sidecars (the
+  check-24 convention, NOT check 26's loud missing-sidecar FAIL) and NO-OP
+  PASS offline / stdin / no inline figures. Incident: #825 r1 (task #1107)
+  — prose+caption cited transfer fractions 0.057/0.109 while the pinned
+  figure plotted 0.231 / a -4.53-clipped bar; checks 24 (rendered text) and
+  26 (structure) are blind to plotted-NUMBER drift by construction.
+
 Harmful-content carve-out: checks 18/19 accept the sanitized excerpt
 form (`[truncated — harmful-content row; verify at <path>, row <i>]`)
 exactly as checks 10/11 do today.
@@ -6379,6 +6402,376 @@ def check_figure_label_codes(body: str) -> CheckResult:
     return CheckResult(label, True, f"{scanned} figure sidecar(s) free of opaque config codes")
 
 
+# ─── Check 33: bolded what-is-plotted numerics vs sidecar plotted values ───
+#
+# Fourth sibling of checks 24/26/28 (same figure iteration, same
+# `_read_figure_meta_json` sidecar read, same fail-soft skip conventions).
+# Check 24 compares the sidecar's RENDERED TEXT, check 26 its STRUCTURE
+# (`_kind` aggregate); neither reads a single plotted NUMBER — so a
+# figure/prose numeric divergence (#825 r1: prose+caption cited transfer
+# fractions 0.057/0.109 while the pinned figure plotted 0.231 / -4.53-clipped)
+# passes both and survives to the multimodal LM-critic layer. Check 33 closes
+# that gap: every BOLDED DECIMAL in a figure's what-is-plotted prose window
+# must appear among the sidecar's plotted values, under a leniency stack
+# (rounding / sign / percent / sci-notation) that only ever REDUCES warns.
+
+# A markdown bold span (`**…**`); single `*` inside the span is allowed.
+_BOLD_SPAN_RE = re.compile(r"\*\*((?:[^*]|\*(?!\*))+)\*\*")
+
+# A decimal REQUIRING a decimal point; optional ASCII/unicode sign; optional
+# e-notation; optional `%` marker. The lookbehind blocks word/dot continuation
+# ("v1.2", "3.1.4"); the lookahead blocks trailing word/hyphen/dot
+# continuation ("2.5-7B") — an excluded token merely SHRINKS the scanned set
+# (leniency-safe). Integers (no decimal point) are never matched: counts /
+# n's / layer ids are the noisiest class. The unicode minus U+2212 (rendered
+# prose uses it) is accepted as a sign and normalized to ASCII `-` before
+# `float()` (`_bold_prose_decimals`); the `_APOS` convention — the escape,
+# never the literal char, in code strings.
+_UNICODE_MINUS = "\u2212"
+_BOLD_DECIMAL_RE = re.compile(
+    r"(?<![\w.])([-+" + _UNICODE_MINUS + r"]?\d+\.\d+(?:[eE][-+]?\d+)?)(\s*%)?(?![\w.-])"
+)
+
+# Per-figure opt-out phrase for check 33 — a render-invisible HTML comment,
+# detected anywhere in the figure's scanned window (the beat-1 prose before
+# the image OR its blockquote caption).
+_PROSE_NUMERICS_OPTOUT = "<!-- prose-numerics: derived -->"
+
+
+def _beat1_prose_window(rlines: list[str], img_idx: int) -> str | None:
+    """The what-is-plotted prose OWNED by the figure at ``rlines[img_idx]``:
+    text from the NEAREST preceding boundary — the enclosing ``### `` H3, or
+    the end of the PREVIOUS inline figure's blockquote caption, whichever is
+    nearer — forward to the image line, plus this figure's own blockquote
+    caption (``_figure_caption_after``). None when no ``### `` H3 precedes the
+    figure at all (no reliably-scoped window; the caller skips, mirroring
+    check 26).
+
+    Narrowed sibling of check 26's ``_enclosing_h3_prose_window`` (which is
+    NOT modified): with the full H3→figure window, a multi-figure
+    ``### <result>`` H3 bleeds EARLIER figures' beat-1 prose into LATER
+    figures' windows (#778's ``bands_monitoring_*`` false-WARNs at plan-time
+    calibration); bounding at the previous figure's caption end removes that
+    class. The region between a previous figure's caption and this image can
+    still carry the previous figure's beat-3 interpretation prose — the
+    check's prior-figure value suppression + the opt-out phrase contain that
+    residual (see ``check_figure_prose_numerics_vs_sidecar``).
+    """
+    boundary = None
+    for j in range(img_idx - 1, -1, -1):
+        if rlines[j].startswith("### "):
+            boundary = j + 1
+            break
+        if _IMAGE_RE.search(rlines[j]):
+            # Skip the previous figure's caption blockquote (+ blank lines).
+            k = j + 1
+            while k < img_idx and (rlines[k].strip() == "" or rlines[k].lstrip().startswith(">")):
+                k += 1
+            boundary = k
+            break
+    if boundary is None:
+        return None
+    # An H3 must exist somewhere above (else this figure sits outside any
+    # `### <result>` block): when the scan hit a previous IMAGE first, an H3
+    # is still required above it.
+    if not any(rlines[j].startswith("### ") for j in range(img_idx)):
+        return None
+    before = "\n".join(rlines[boundary:img_idx])
+    caption = _figure_caption_after(rlines, img_idx)
+    return f"{before}\n{caption}"
+
+
+def _bold_prose_decimals(window: str) -> list[tuple[str, float, int, bool]]:
+    """Return ``(raw_text, value, printed_decimal_places, is_percent)`` per
+    decimal found inside a BOLD span of ``window``. The unicode minus U+2212
+    is normalized to ASCII ``-``; a sci-notation token gets the sentinel
+    ``dec == -1`` (routes to the relative-tolerance branch of
+    ``_prose_value_matches``). Integers (no decimal point) and word-attached
+    tokens ("v1.2", "2.5-7B") are DELIBERATELY not scanned — see
+    ``_BOLD_DECIMAL_RE``.
+    """
+    out: list[tuple[str, float, int, bool]] = []
+    for bm in _BOLD_SPAN_RE.finditer(window):
+        for nm in _BOLD_DECIMAL_RE.finditer(bm.group(1)):
+            txt = nm.group(1).replace(_UNICODE_MINUS, "-")
+            try:
+                v = float(txt)
+            except ValueError:  # pragma: no cover — regex guarantees a float
+                continue
+            dec = -1 if "e" in txt.lower() else len(txt.split(".")[1])
+            raw = nm.group(1) + ("%" if nm.group(2) else "")
+            out.append((raw, v, dec, bool(nm.group(2))))
+    return out
+
+
+def _sidecar_plotted_values(meta: dict) -> list[float]:
+    """All finite numeric leaf values from the sidecar's ``points``/``rows``
+    point rows, excluding the ``_group`` series index. Covers every ``_kind``
+    uniformly (bar heights, scatter/line/errorbar x+y, ``error`` magnitudes)
+    because the writer (``paper_plots._build_sidecar_data``) stores every
+    plotted quantity as a numeric row value under an axis-label-derived key;
+    strings (category / label / series / ``_kind``) and JSON nulls contribute
+    nothing. Returns ``[]`` when the sidecar carries no point list — the
+    caller skips. A TRUNCATED sidecar (``meta['data_truncated']`` — the
+    writer's top-level flag — or a legacy top-level ``truncated``) also
+    returns ``[]``: a matching value may sit past the ``_MAX_SIDECAR_ROWS``
+    cap, so absence-of-match is unsound there. Top-level provenance keys
+    (``commit`` / ``created`` / ``figsize`` / ``n_series`` / ``total_points``)
+    never enter — they are not point-row values (no ``_META_PROVENANCE_KEYS``
+    walk needed).
+    """
+    if meta.get("data_truncated") or meta.get("truncated"):
+        return []
+    pts = meta.get("points")
+    if not isinstance(pts, list):
+        pts = meta.get("rows")
+    if not isinstance(pts, list):
+        return []
+    vals: list[float] = []
+    for p in pts:
+        if not isinstance(p, dict):
+            continue
+        for k, v in p.items():
+            if k == "_group" or isinstance(v, bool) or not isinstance(v, (int, float)):
+                continue
+            if math.isfinite(v):
+                vals.append(float(v))
+    return vals
+
+
+def _sidecar_bar_x_positions(meta: dict) -> set[float]:
+    """Numeric FIRST-key values of ``_kind == "bar"`` point rows — grouped-bar
+    layout x-POSITIONS (``-0.2`` / ``0.8``-style dodge offsets; the writer's
+    ``_extract_bars`` inserts the x/category slot first, falling back to the
+    numeric patch center when tick labels miss). These stay matchable
+    DIRECTLY (including more candidates is leniency-safe) but are excluded
+    from the x100 / /100 VARIANT candidates: a percent variant landing on a
+    bar's layout offset is a coincidence, not evidence the prose value is
+    plotted (the composed-leniency false-negative channel). Empty set on any
+    shape surprise — fail-open toward leniency.
+    """
+    pts = meta.get("points")
+    if not isinstance(pts, list):
+        pts = meta.get("rows")
+    if not isinstance(pts, list):
+        return set()
+    out: set[float] = set()
+    for p in pts:
+        if not isinstance(p, dict) or p.get("_kind") != "bar":
+            continue
+        for k, v in p.items():
+            if k in ("_kind", "_group"):
+                continue
+            if not isinstance(v, bool) and isinstance(v, (int, float)) and math.isfinite(v):
+                out.add(float(v))
+            break  # only the FIRST non-meta key is the x/category slot
+    return out
+
+
+def _prose_value_matches(
+    value: float,
+    dec: int,
+    is_pct: bool,
+    plotted: list[float],
+    bar_x: set[float] = frozenset(),
+) -> bool:
+    """True when the prose decimal ``(value, dec, is_pct)`` matches ANY
+    plotted value under the check-33 leniency stack. Candidates: the value
+    itself, plus percent variants — ``value/100`` always (an ``87.9%`` prose
+    value vs a 0.879 fraction axis), and ``value*100`` only for an UNMARKED
+    decimal (a 0.879 prose fraction vs an 87.9 percent axis). Per candidate:
+
+    - printed-precision half-ulp: ``|p - c| <= 0.5·10^(-dec)·scale + 1e-12``
+      (``scale`` = the candidate's x100 / /100 factor), i.e. ``p`` rounds to
+      the prose value at its printed precision (prose ``0.23`` matches
+      plotted 0.2312);
+    - sign-insensitive twin: the same test on ``||p| - |c||`` (a "0.30 drop"
+      vs plotted -0.30);
+    - sci-notation branch (``dec == -1``): relative tolerance
+      ``|p - c| <= 1e-3·|c|``.
+
+    Variant candidates never match a ``bar_x`` layout x-position
+    (``_sidecar_bar_x_positions``); the direct candidate matches everything.
+    Every clause is leniency-INCREASING (reduces WARNs), so each is
+    FP-containment-safe.
+    """
+    candidates: list[tuple[float, float, bool]] = [(value, 1.0, False)]
+    candidates.append((value / 100.0, 0.01, True))
+    if not is_pct:
+        candidates.append((value * 100.0, 100.0, True))
+    for c, scale, is_variant in candidates:
+        tol = 1e-3 * abs(c) if dec < 0 else 0.5 * 10.0 ** (-dec) * scale + 1e-12
+        for p in plotted:
+            if is_variant and p in bar_x:
+                continue
+            if abs(p - c) <= tol or abs(abs(p) - abs(c)) <= tol:
+                return True
+    return False
+
+
+def _prose_numerics_for_one_figure(
+    repo: Path,
+    m: re.Match,
+    rlines: list[str],
+    img_idx: int,
+    json_cache: dict,
+    h3_prior_vals: dict[int, list[float]],
+) -> tuple[str | None, str]:
+    """Process ONE same-repo figure for check 33 (the check-26
+    ``_panel_drift_for_one_figure`` shape). Returns ``(warn_msg | None,
+    status)`` with ``status`` in {"scanned", "opted-out", "skipped"};
+    mutates ``json_cache`` (per-URL parsed-sidecar cache) and
+    ``h3_prior_vals`` (per-H3 accumulator of earlier figures' plotted
+    values, the cross-figure bleed-suppression pool) in place.
+    """
+    window = _beat1_prose_window(rlines, img_idx)
+    if window is None:
+        return None, "skipped"  # no per-result H3 above — no scoped window
+    h3_idx = next((j for j in range(img_idx - 1, -1, -1) if rlines[j].startswith("### ")), -1)
+    url = m.group(0)
+    if url not in json_cache:
+        json_cache[url] = _read_figure_meta_json(repo, m.group("sha"), m.group("path"))
+    meta = json_cache[url]
+    if meta is None:
+        return None, "skipped"  # no sidecar at that sha — check-24 convention
+    plotted = _sidecar_plotted_values(meta)
+    if not plotted:
+        return None, "skipped"  # value-less / truncated — absence-of-match unsound
+    prior_vals = h3_prior_vals.get(h3_idx, [])
+    h3_prior_vals.setdefault(h3_idx, []).extend(plotted)
+    if _PROSE_NUMERICS_OPTOUT in window:
+        return None, "opted-out"
+    bolds = _bold_prose_decimals(window)
+    if not bolds:
+        return None, "skipped"
+    bar_x = _sidecar_bar_x_positions(meta)
+    unmatched = [
+        (raw, val)
+        for (raw, val, dec, pct) in bolds
+        if not _prose_value_matches(val, dec, pct, plotted, bar_x)
+        and not (prior_vals and _prose_value_matches(val, dec, pct, prior_vals))
+    ]
+    if not unmatched:
+        return None, "scanned"
+    basename = m.group("path").rsplit("/", 1)[-1]
+    vals = ", ".join(f"`{raw}`" for raw, _v in unmatched[:4]) + (" …" if len(unmatched) > 4 else "")
+    nearest = min(plotted, key=lambda p: abs(p - unmatched[0][1]))
+    return (
+        f"`{basename}`: bolded what-is-plotted value(s) {vals} not found among the "
+        f"sidecar's {len(plotted)} plotted values (nearest: {nearest:.4g}) — regenerate "
+        f"the figure or fix the prose; if the value is a derived quantity (delta / "
+        f"ratio / CI bound), add `{_PROSE_NUMERICS_OPTOUT}` to the figure's "
+        f"what-is-plotted prose or caption",
+        "scanned",
+    )
+
+
+def check_figure_prose_numerics_vs_sidecar(body: str) -> CheckResult:
+    """Check 33 (WARN): every BOLDED DECIMAL in a figure's what-is-plotted
+    prose window must appear among the numeric values the figure's
+    ``.meta.json`` sidecar (read at the URL's commit sha) records as plotted.
+
+    The scanned window is the previous-figure-bounded beat-1 slice: text from
+    the nearest boundary above the image — the enclosing ``### <result>`` H3
+    or the previous figure's caption end — down to the image, plus this
+    figure's blockquote caption (``_beat1_prose_window``). Firing is
+    PER-NUMERIC: WARN when >=1 bolded decimal matches NO plotted value under
+    the ``_prose_value_matches`` leniency stack (printed-precision rounding,
+    sign-insensitivity, percent x100 / /100 variants — never against a
+    grouped-bar layout x-position — and a sci-notation relative-tolerance
+    branch). The task-body sketch's stricter none-match-any rule was
+    calibrated OUT: on the motivating incident (#825 r1) 6 of 8 bolded values
+    matched the r1-era sidecar, so none-match-any misses the exact bug;
+    per-numeric catches it (unmatched = {0.057, 0.109}) at a measured 0%
+    false-positive rate corpus-wide (plan §4).
+
+    Cross-figure bleed containment: in a multi-figure H3 the region between a
+    previous figure's caption and this image can carry the PREVIOUS figure's
+    interpretation prose — a bolded decimal matching an EARLIER same-H3
+    figure's plotted values is treated as that bleed and suppressed
+    (leniency-safe). A derived quantity (delta / ratio / CI bound) matching
+    NEITHER sidecar still WARNs — that is the documented FP class the
+    per-figure opt-out exists for: the literal ``<!-- prose-numerics: derived
+    -->`` ANYWHERE in the figure's scanned window (beat-1 prose or caption)
+    skips that figure.
+
+    Silent-skip conditions (check-24 convention, NOT check 26's loud
+    missing-sidecar FAIL — the trigger here, any bolded decimal, is far
+    broader than check 26's explicit structural claims): missing / unparsable
+    sidecar, ``data_truncated`` / ``truncated`` sidecar, zero bolded decimals
+    in the window, zero finite plotted values, no ``### `` H3 above the
+    figure, non-same-repo / non-sha-pinned URL. NO-OP PASS offline /
+    ``--body-stdin`` / no figure section / no inline figures. WARN never
+    FAIL. Named recall sacrifices (precision over recall, the check-32
+    posture): UNBOLDED caption numerics are not scanned (caption means /
+    aggregates are a measured guaranteed-FP class), integers are not scanned,
+    and the bleed suppression can mask a wrong beat-1 value that coincides
+    with an earlier figure's plotted values. Incident #825 r1 (task #1107):
+    prose+caption cited full-n transfer fractions 0.057/0.109 while the
+    pinned figure plotted matched-ceiling fractions 0.231 / -4.53-clipped —
+    checks 24 (rendered text) and 26 (structure) are blind to plotted-NUMBER
+    drift by construction.
+    """
+    label = "figure prose numerics vs figure sidecar (plotted-value drift)"
+    section = _figure_scan_section(body)
+    text = section_text(body, section)
+    if text is None:
+        return CheckResult(label, True, f"no `## {section}` section to scan")
+    rlines = text.splitlines()
+    fig_at: list[tuple[str, int]] = []
+    for idx, line in enumerate(rlines):
+        for m in _IMAGE_RE.finditer(line):
+            url = m.group(1).strip()
+            url = url.split(None, 1)[0] if url else url
+            if url:
+                fig_at.append((url, idx))
+    if not fig_at:
+        return CheckResult(label, True, "no inline figures to scan")
+    repo = _resolve_repo_root()
+    if repo is None:
+        return CheckResult(label, True, "skipped — repo root unresolved (offline / stdin)")
+    warns: list[str] = []
+    scanned = 0
+    opted_out = 0
+    json_cache: dict[str, dict | None] = {}
+    # Per-H3 accumulator of EARLIER figures' plotted values (bleed suppression).
+    h3_prior_vals: dict[int, list[float]] = {}
+    for url, img_idx in fig_at:
+        m = _RAW_GITHUB_FIGURE_RE.match(url)
+        if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
+            continue  # only same-repo sha-pinned figures resolve from git
+        warn, status = _prose_numerics_for_one_figure(
+            repo, m, rlines, img_idx, json_cache, h3_prior_vals
+        )
+        if status == "scanned":
+            scanned += 1
+        elif status == "opted-out":
+            opted_out += 1
+        if warn:
+            warns.append(warn)
+    if warns:
+        preview = "; ".join(warns[:3]) + (" …" if len(warns) > 3 else "")
+        return CheckResult(
+            label,
+            True,
+            f"{len(warns)} prose-vs-plotted mismatch(es) across {scanned} scanned "
+            f"figure(s): {preview}",
+            is_warn=True,
+        )
+    if scanned == 0:
+        note = f" ({opted_out} opted out)" if opted_out else ""
+        return CheckResult(
+            label,
+            True,
+            f"no figure with bolded what-is-plotted decimals AND a value-bearing sidecar{note}",
+        )
+    return CheckResult(
+        label,
+        True,
+        f"{scanned} figure(s): all bolded what-is-plotted decimals present among sidecar values",
+    )
+
+
 # A prose claim that an artifact is NOT available — "not uploaded", "was not
 # uploaded", "not separately uploaded", "cannot be audited", "cannot audit",
 # "unavailable for audit", "not available for audit". The optional
@@ -9123,6 +9516,8 @@ CHECKS = [
     check_figure_tracked_at_head,  # check 29 (WARN) — figures tracked at live refs (#964, #841)
     check_hf_file_count_claims,  # check 30 (WARN) — count claims vs Hub files-only count (#931)
     check_hf_adjacent_file_claims,  # check 32 (WARN) — adjacent file claims are tree members (#952)
+    # check 33 (WARN) — bolded what-is-plotted decimals vs sidecar plotted values (#1107, #825 r1):
+    check_figure_prose_numerics_vs_sidecar,
     # Check 31 (`check_orphaned_per_unit_figures`, WARN, generation-agnostic)
     # is NOT here either — like check 20 (v4) it needs the issue number (for
     # figures-dir scoping), so it is dispatched separately in `verify_text`

@@ -950,11 +950,17 @@ Forward-only: each check branches on the sentinel. The v4 checks
     27 because 22-26 are taken by the generation-agnostic checks.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
-(check 22), HF-URL-resolves (check 23), and figure-sidecar opaque
+(check 22), HF-URL-resolves (check 23), figure-sidecar opaque
 config-code tokens (check 28, WARN: `@L<digits>` layer pins + regime-code
 slugs in figure-sidecar-carried text — plain-English condition names only;
 slugs stay in the Repro config row; sidecar-carried strings, not full
-PNG-pixel coverage). The Goal-of-experiment frontmatter
+PNG-pixel coverage), and figure prose-numerics vs sidecar plotted values
+(check 33, WARN: every BOLDED decimal in a figure's what-is-plotted prose
+window — the previous-figure-bounded beat-1 slice plus the caption — must
+appear among the sidecar's plotted values under rounding / sign / percent
+tolerance; per-figure opt-out for genuinely derived quantities: the literal
+`<!-- prose-numerics: derived -->` anywhere in that window). The
+Goal-of-experiment frontmatter
 soft check + the Lens 14 concerns-audit run on v4 too (concerns mechanism
 1 → `### ` results under `## Results` + `## Takeaways` bullets).
 
