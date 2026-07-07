@@ -39,7 +39,7 @@ sys.modules["verify_plan"] = verify_plan
 _spec.loader.exec_module(verify_plan)  # type: ignore[union-attr]
 
 
-# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-22,24-26)
+# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-22,24-27)
 
 # Surgery anchors (must appear verbatim in GOOD_PLAN exactly once).
 MV_HEADING = "### Measurement validity"
@@ -164,10 +164,11 @@ def test_good_plan_passes_all():
         "c24_resume_provenance": "SKIP",
         "c25_html_entities_in_commands": "SKIP",
         "c26_gpu_basis_routed_machine": "SKIP",
+        "c27_capture_intent_hbm": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 26
+    assert len(results) == 27
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -3917,6 +3918,291 @@ def test_c26_intent_gpu_mirror_matches_backend():
     assert derived == verify_plan._C26_INTENT_GPU
 
 
+# ─── Check 27 — 7B activation capture vs eval/debug (L4) intent ────────────
+
+# Fixture shapes mirror the §4-calibrated corpus offenders (task #1093 plan):
+# tasks/followups_running/825/plans/v17.md (the founding false negative —
+# fenced dispatch line booking `--intent eval` for a 7B all-layer capture),
+# tasks/awaiting_promotion/744/plans/v2.md (the L4-OOM incident plan; its
+# "1x A100-80 (GCP auto, --intent eval)" line is a false belief — GCP eval
+# routes L4), and the named near-miss FPs the keying clears (#375/#358
+# pod.py provision era, #522 wrapped --intent, #358 H100 prose).
+C27_CAPTURE_BLOCK = (
+    "\n### Phase 2 — representation read\n\n"
+    "All-layer hidden-state capture over the context grid (response-avg), then "
+    "upload the activation store to the data repo before teardown.\n"
+)
+C27_INTENT_EVAL = "\n`--intent eval` on the GCP auto lane.\n"
+C27_INTENT_CAPTURE7B = "\n`--intent capture-7b` on the GCP lane.\n"
+C27_DISPATCH_FENCE = (  # the #825 v17 shape: the launch command lives in a fence
+    "\n```bash\nuv run python scripts/dispatch_issue.py launch --issue 825 "
+    "--intent eval --workload-cmd 'bash scripts/issue825_capture.sh'\n```\n"
+)
+# The founding-offender shape: FAIL under kind=experiment.
+C27_OFFENDER = GOOD_PLAN + C27_CAPTURE_BLOCK + C27_DISPATCH_FENCE
+
+
+def test_c27_825_v17_shape_fails():
+    # Acceptance criterion 1: capture vocabulary + a fenced dispatch line
+    # booking `--intent eval` (the #825 v17 founding false negative) → FAIL;
+    # the detail names the intent token, the L4 machine class, the
+    # capture-7b remedy, and the exact N/A escape phrase.
+    ok, by_id = _run(C27_OFFENDER)
+    r = by_id["c27_capture_intent_hbm"]
+    assert r.status == "FAIL"
+    assert not ok
+    assert "eval" in r.detail
+    assert "L4" in r.detail
+    assert "capture-7b" in r.detail
+    assert "N/A — no 7B activation capture" in r.detail
+
+
+def test_c27_744_a100_claim_still_fails():
+    # Acceptance criterion 2: the #744 v2 misbelief — "1x A100-80 (GCP
+    # `auto`, `--intent eval`)" (the C26_INTENT_EVAL fixture IS that line
+    # verbatim). GCP eval NEVER provisions A100, so an A100 claim in the
+    # window must NOT skip (A100 is deliberately not a window-skip token).
+    plan = GOOD_PLAN + C27_CAPTURE_BLOCK + C26_INTENT_EVAL
+    assert _status(plan, "c27_capture_intent_hbm") == "FAIL"
+
+
+def test_c27_no_capture_vocab_skips():
+    assert _status(GOOD_PLAN + C27_INTENT_EVAL, "c27_capture_intent_hbm") == "SKIP"
+
+
+def test_c27_capture7b_intent_passes():
+    # Capture booked on the right intent, no L4 intent anywhere → PASS.
+    plan = GOOD_PLAN + C27_CAPTURE_BLOCK + C27_INTENT_CAPTURE7B
+    _, by_id = _run(plan)
+    r = by_id["c27_capture_intent_hbm"]
+    assert r.status == "PASS"
+    assert "no eval/debug intent" in r.detail
+
+
+def test_c27_mixed_intents_big_absolution_passes():
+    # Both `--intent capture-7b` and `--intent eval` booked: the capture
+    # phase is presumed routed to the big intent (documented gap (a);
+    # phase-to-intent routing stays critic-owned).
+    plan = GOOD_PLAN + C27_CAPTURE_BLOCK + C27_INTENT_CAPTURE7B + C27_INTENT_EVAL
+    _, by_id = _run(plan)
+    r = by_id["c27_capture_intent_hbm"]
+    assert r.status == "PASS"
+    assert "capture-7b" in r.detail
+    assert "critic-owned" in r.detail
+
+
+def test_c27_runpod_backend_pin_skips():
+    # Under a `backend: runpod` pin the RunPod intent table governs
+    # (eval = 1x H100 80GB) — no HBM gap → SKIP.
+    plan = (
+        GOOD_PLAN + C27_CAPTURE_BLOCK + C27_INTENT_EVAL + "\nbackend: runpod (explicit override)\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c27_capture_intent_hbm"]
+    assert r.status == "SKIP"
+    assert "RunPod" in r.detail
+
+
+def test_c27_podpy_provision_skips():
+    # The #375/#358 pre-router corpus class: `pod.py provision ... --intent
+    # eval` provisions 1x H100 80GB on RunPod → doc-wide SKIP.
+    plan = (
+        GOOD_PLAN
+        + C27_CAPTURE_BLOCK
+        + "\nuv run python scripts/pod.py provision --issue 375 --intent eval\n"
+    )
+    assert _status(plan, "c27_capture_intent_hbm") == "SKIP"
+
+
+def test_c27_wrapped_podpy_provision_window_skips():
+    # The #522 v1 shape: `--intent[=\s]+` legitimately spans the newline in
+    # a wrapped `pod.py provision` line — the WINDOW path (previous line +
+    # match-end line) must clear it even without the doc-wide pod.py skip
+    # (unit-level per plan §5 test 8: assert the helper directly).
+    wrapped = (
+        "some prose line\n"
+        "uv run python scripts/pod.py provision --issue 522 --intent\n"
+        "eval\n"
+        "more prose\n"
+    )
+    assert verify_plan._c27_gcp_l4_intent_windows(wrapped) == []
+
+
+def test_c27_h100_prose_window_skips():
+    # The #358 prose shape: "1x H100 SXM (intent `eval`)" — an H100 token in
+    # the window is a RunPod-mapping claim, not a GCP L4 booking → the
+    # occurrence is window-skipped; with no other eval/debug booking → PASS.
+    plan = GOOD_PLAN + C27_CAPTURE_BLOCK + "\nGPU: 1× H100 SXM (intent `eval`).\n"
+    _, by_id = _run(plan)
+    r = by_id["c27_capture_intent_hbm"]
+    assert r.status == "PASS"
+    assert "no eval/debug intent" in r.detail
+
+
+def test_c27_na_escape_passes():
+    plan = (
+        GOOD_PLAN
+        + C27_CAPTURE_BLOCK
+        + C27_INTENT_EVAL
+        + "\nN/A — no 7B activation capture (the store is a reused parent artifact "
+        "consumed by a CPU phase).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c27_capture_intent_hbm"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c27_quoted_na_phrase_does_not_escape():
+    # A mid-sentence quoted escape phrase (the pasted-bounce-brief
+    # self-escape channel) is NOT a standalone declaration line and must not
+    # escape — the c13/c18/c24/c25/c26 anti-paste twin.
+    plan = (
+        GOOD_PLAN
+        + C27_CAPTURE_BLOCK
+        + C27_INTENT_EVAL
+        + "\nThe remedy menu says to declare 'N/A — no 7B activation capture' on its own line.\n"
+    )
+    assert _status(plan, "c27_capture_intent_hbm") == "FAIL"
+
+
+def test_c27_small_model_skips():
+    # 0.5B never matches the >=7B regex (also pins the decimal-tail
+    # lookbehind end-to-end; the unit matrix is
+    # test_c27_model_size_threshold_semantics).
+    plan = GOOD_PLAN.replace("7B", "0.5B") + C27_CAPTURE_BLOCK + C27_INTENT_EVAL
+    _, by_id = _run(plan)
+    r = by_id["c27_capture_intent_hbm"]
+    assert r.status == "SKIP"
+    assert "7B" in r.detail
+
+
+@pytest.mark.parametrize(
+    ("text", "matches"),
+    [
+        ("7B", True),
+        ("Qwen-2.5-7B", True),
+        ("7.5B", True),
+        ("Llama-3.1-8B", True),
+        ("Gemma-2-9B", True),
+        ("12B", True),
+        ("17B", True),  # >=7 under threshold semantics (NOT the old whitelist)
+        ("27B", True),
+        ("34B", True),
+        ("70B", True),
+        ("72B", True),
+        ("0.5B", False),
+        ("1.7B", False),  # decimal-tail lookbehind
+        ("2.5B", False),
+        ("6.9B", False),
+    ],
+)
+def test_c27_model_size_threshold_semantics(text, matches):
+    # Threshold (>=7B), not a whitelist (critique r1, all three Codex
+    # lenses): integer part >= 7 — single digit 7-9 or any 2+ digit number —
+    # with an optional decimal tail; the (?<![\d.]) lookbehind blocks
+    # decimal-tail false positives ("1.7B" must never read as "7B").
+    assert bool(verify_plan._C27_MODEL_GE7B_RE.search(text)) is matches
+
+
+def test_c27_no_intent_skips():
+    plan = GOOD_PLAN + C27_CAPTURE_BLOCK
+    _, by_id = _run(plan)
+    r = by_id["c27_capture_intent_hbm"]
+    assert r.status == "SKIP"
+    assert "--intent" in r.detail
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
+def test_c27_kind_exempt_skips(kind):
+    assert _status(C27_OFFENDER, "c27_capture_intent_hbm", kind=kind) == "SKIP"
+
+
+def test_c27_kind_analysis_warns():
+    # analysis is IN scope but softens to WARN (the c12/c13/c18/c20
+    # severity shape) — WARN never blocks.
+    ok, by_id = _run(C27_OFFENDER, kind="analysis")
+    r = by_id["c27_capture_intent_hbm"]
+    assert r.status == "WARN"
+    assert ok
+
+
+def test_c27_sets_derive_from_mirror():
+    # The offending + absolving sets are DERIVED from the c26 mirror (no
+    # second copy to drift; the mirror itself is drift-guarded by
+    # test_c26_intent_gpu_mirror_matches_backend). The partition assert
+    # (critique r1, methodology concern 1) forces a future mirror family to
+    # be deliberately classified: L4 | BIG | CPU == the whole mirror.
+    assert {"eval", "debug"} == verify_plan._C27_L4_INTENTS
+    assert {"capture-7b", "lora-7b", "ft-7b", "eval-h100"} <= verify_plan._C27_BIG_HBM_INTENTS
+    assert "cpu-mid" not in verify_plan._C27_BIG_HBM_INTENTS
+    cpu = {i for i, f in verify_plan._C26_INTENT_GPU.items() if f == "CPU"}
+    assert verify_plan._C27_L4_INTENTS | verify_plan._C27_BIG_HBM_INTENTS | cpu == set(
+        verify_plan._C26_INTENT_GPU
+    )
+
+
+def test_c27_detail_does_not_self_retrigger():
+    # Self-DISARM safety, both directions (critique r1): the FAIL detail
+    # carries no H100/H200 token and no runpod-pin form (a pasted detail
+    # must never fire the window skip / RunPod pin and absolve an UN-fixed
+    # booking), and pasting it into a FIXED plan (capture booked on
+    # capture-7b) keeps the fixed plan PASSing.
+    _, by_id = _run(C27_OFFENDER)
+    detail = by_id["c27_capture_intent_hbm"].detail
+    assert not re.search(r"\b(H100|H200)\b", detail)
+    assert "backend: runpod" not in detail
+    assert "--backend runpod" not in detail
+    fixed = GOOD_PLAN + C27_CAPTURE_BLOCK + C27_INTENT_CAPTURE7B
+    pasted = fixed + "\n> Bounce brief (verbatim): " + detail + "\n"
+    assert _status(pasted, "c27_capture_intent_hbm") == "PASS"
+
+
+def test_c27_pasted_detail_arms_vocab_on_nocapture_plan():
+    # The S4 residual cell (critique r1, statistics — documented, accepted):
+    # the detail necessarily names hidden-state capture (it states the
+    # condition), so pasting it into a NO-capture plan with a legitimate
+    # eval booking arms the vocab trigger → FAIL; the documented out is the
+    # 1-line N/A escape.
+    _, by_id = _run(C27_OFFENDER)
+    detail = by_id["c27_capture_intent_hbm"].detail
+    nocapture = GOOD_PLAN + C27_INTENT_EVAL + "\n> Bounce brief (verbatim): " + detail + "\n"
+    assert _status(nocapture, "c27_capture_intent_hbm") == "FAIL"
+    escaped = nocapture + "\nN/A — no 7B activation capture (no capture phase in this plan).\n"
+    assert _status(escaped, "c27_capture_intent_hbm") == "PASS"
+
+
+@pytest.mark.parametrize(
+    ("text", "matches"),
+    [
+        ("extract_store", True),
+        ("residual stream", True),
+        ("residual-stream", True),
+        ("activation store", True),
+        ("activations extracted", True),
+        ("activation accumulation", True),
+        ("per-token activation dumps", True),
+        ("capturing activations", True),
+        ("extraction set", False),
+        ("capture the behavior", False),
+        ("feature extraction", False),
+    ],
+)
+def test_c27_vocab_and_skip_arm_matrix(text, matches):
+    # Critique r1, statistics S2: pin every vocab regex arm a corpus
+    # fixture doesn't already exercise (anchored compounds fire; bare
+    # "extraction"/"capture" prose never does).
+    assert bool(verify_plan._C27_CAPTURE_RE.search(text)) is matches
+
+
+def test_c27_skip_arm_regexes():
+    # Companion skip-arm pins: the window big-GPU skip covers H200; the
+    # RunPod pin covers the --backend flag form (the frontmatter form is
+    # exercised e2e by test_c27_runpod_backend_pin_skips).
+    assert verify_plan._C27_WINDOW_BIGGPU_RE.search("2x H200 SXM")
+    assert verify_plan._C26_RUNPOD_PIN_RE.search("--backend runpod")
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -3966,12 +4252,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 19
+    assert payload["n_skip"] == 20
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 27
-    assert len({c["id"] for c in payload["checks"]}) == 27
+    assert len(payload["checks"]) == 28
+    assert len({c["id"] for c in payload["checks"]}) == 28
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
