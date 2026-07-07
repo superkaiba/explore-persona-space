@@ -199,3 +199,61 @@ def test_teardown_cpu_host_skips_orphan_check(monkeypatch):
 
     monkeypatch.setattr(EB.subprocess, "run", fake_run)
     EB.teardown_vllm(object())  # logs + returns; no raise
+
+
+class _FakeProc:
+    def __init__(self, name=None, raises=False):
+        self._name = name
+        self._raises = raises
+
+    def name(self):
+        if self._raises:
+            raise RuntimeError("process gone")
+        return self._name
+
+
+def test_is_protected_child_wandb_core_protected():
+    assert EB._is_protected_child(_FakeProc("wandb-core")) is True
+
+
+def test_is_protected_child_python_worker_not_protected():
+    assert EB._is_protected_child(_FakeProc("python3")) is False
+
+
+def test_is_protected_child_unreadable_name_not_protected():
+    assert EB._is_protected_child(_FakeProc(raises=True)) is False
+
+
+def test_teardown_child_sweep_spares_wandb_service(monkeypatch):
+    """The kill sweep must exclude wandb-core (killing it breaks every later
+    wandb.init in-process — #1090 crash r4) while still reaping vLLM workers."""
+    terminated = []
+
+    class _SweepProc:
+        def __init__(self, name):
+            self._name = name
+
+        def name(self):
+            return self._name
+
+        def terminate(self):
+            terminated.append(self._name)
+
+        def kill(self):  # pragma: no cover - wait_procs reports none alive
+            terminated.append(f"kill:{self._name}")
+
+    procs = [_SweepProc("wandb-core"), _SweepProc("python3")]
+
+    class _FakeMe:
+        def children(self, recursive):
+            assert recursive is True
+            return procs
+
+    import psutil
+
+    monkeypatch.setattr(psutil, "Process", lambda: _FakeMe())
+    monkeypatch.setattr(psutil, "wait_procs", lambda children, timeout: (children, []))
+    monkeypatch.setenv("EPM_VLLM_TEARDOWN_DRAIN_TIMEOUT_S", "0")
+    _install_fake_smi(monkeypatch, uuids_out=f"0, {UUID_A}\n", compute_polls=[""])
+    EB.teardown_vllm(object())
+    assert terminated == ["python3"]

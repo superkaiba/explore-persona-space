@@ -344,6 +344,18 @@ def _teardown_drain_verdict(
     return total <= floor_mib, foreign
 
 
+def _is_protected_child(proc) -> bool:
+    """True for persistent non-GPU service children the vLLM child sweep must
+    NEVER kill — the wandb-core service is a child of the caller, and killing
+    it breaks every subsequent ``wandb.init`` in this process with
+    ``ConnectionResetError: Connection lost`` (#1090 crash r4). A proc whose
+    name is unreadable (gone/zombie) is NOT protected (killable)."""
+    try:
+        return "wandb" in proc.name().lower()
+    except Exception:
+        return False
+
+
 def teardown_vllm(llm) -> None:
     """vLLM teardown + child reap + bounded drain-loop orphan check.
 
@@ -372,7 +384,7 @@ def teardown_vllm(llm) -> None:
     gc.collect()
     torch.cuda.empty_cache()
     me = psutil.Process()
-    children = me.children(recursive=True)
+    children = [ch for ch in me.children(recursive=True) if not _is_protected_child(ch)]
     for ch in children:
         ch.terminate()
     _, alive = psutil.wait_procs(children, timeout=10)
