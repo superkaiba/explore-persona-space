@@ -1493,9 +1493,22 @@ def _write_jsonl_textmode(rows: list[dict], path: Path) -> None:
 
 
 def _write_prefix_store(prefix_entries: list[dict], path: Path) -> None:
-    """Write prefix store (turns + metadata) as JSONL, text-mode."""
+    """Write prefix store (turns + metadata) as JSONL, text-mode.
+
+    Validates every turn carries str role + str content BEFORE writing
+    (fail-loud with the offending prefix_id at write time — never a bare
+    TypeError three hours in, and never a malformed turn shipped to the GPU
+    phase; round-8 e2e caught a ``content: None`` battery turn here).
+    """
     # Content-filter: prefix_turns contain real conversation text; store
     # verbatim in the JSON (needed for rendering in GPU phase) but log digest-only.
+    for entry in prefix_entries:
+        for turn in entry.get("prefix_turns") or []:
+            if not isinstance(turn.get("role"), str) or not isinstance(turn.get("content"), str):
+                raise TypeError(
+                    f"prefix entry {entry.get('prefix_id', '<unknown>')!r} has a malformed "
+                    f"turn (role/content must be str): keys={sorted(turn.keys())}"
+                )
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         for entry in prefix_entries:
@@ -1511,11 +1524,28 @@ def _write_prefix_store(prefix_entries: list[dict], path: Path) -> None:
 
 
 def _battery_prefix_entry(ctx: dict, idx: int) -> dict:
-    """Normalize one #594 battery context into the prefix-store schema."""
+    """Normalize one #594 battery context into the prefix-store schema.
+
+    Round-8 e2e catch: `batt_f6_default_template` carries an EMPTY
+    ``prefix_messages`` AND a present-but-NULL ``system_prompt`` (it is the
+    deliberate bare default context), and ``ctx.get("system_prompt", "")``
+    does NOT default on an explicit null — the old fallback produced a turn
+    with ``content: None`` that crashed the prefix-store digest (same shape
+    class as the attempt-3 step-4 KeyError). A null/empty system prompt now
+    yields an EMPTY prefix (bare context — valid everywhere post-round-8);
+    real messages are normalized to str role/content with content-less turns
+    dropped.
+    """
     ctx_id = ctx.get("id") or f"batt_{idx:03d}"
-    messages = ctx.get("prefix_messages") or [
-        {"role": "user", "content": ctx.get("system_prompt", "")}
+    messages = [
+        {"role": m.get("role") or "user", "content": m["content"]}
+        for m in (ctx.get("prefix_messages") or [])
+        if isinstance(m, dict) and isinstance(m.get("content"), str) and m["content"].strip()
     ]
+    if not messages:
+        sys_prompt = ctx.get("system_prompt") or ""
+        if sys_prompt.strip():
+            messages = [{"role": "user", "content": sys_prompt}]
     return {
         "prefix_id": f"batt_{ctx_id}",
         "conv_id": f"battery::{ctx_id}",

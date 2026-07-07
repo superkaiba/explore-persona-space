@@ -372,6 +372,68 @@ def test_render_helpers_handle_empty_prefix(monkeypatch):
     assert rendered_inst.endswith("<|assistant|>")
 
 
+# ── 6. battery prefix normalization + prefix-store validation ────────────────
+# Caught LIVE by the round-8 tiny-real e2e (run 1, rc=1): the #594 battery's
+# `f6_default_template` context has prefix_messages=[] AND system_prompt=null
+# — `.get("system_prompt", "")` does NOT default on an explicit null, so the
+# old fallback emitted a turn with content=None and the prefix-store digest
+# crashed on len(None) AFTER the 3h-equivalent build work.
+
+
+def test_battery_prefix_entry_null_system_prompt_yields_bare_context():
+    ctx = {
+        "id": "f6_default_template",
+        "family": "default",
+        "system_prompt": None,  # present-but-null — the real f6 shape
+        "prefix_messages": [],
+    }
+    entry = bc._battery_prefix_entry(ctx, 0)
+    assert entry["prefix_turns"] == []  # bare context, valid post-round-8
+    assert entry["n_user_turns"] == 0
+    assert entry["prefix_id"] == "batt_f6_default_template"
+    # and the bare entry still yields a topic-label input path via natural_query?
+    # No — battery entries are never topic-labeled; they must simply be
+    # writable + renderable:
+    assert bc._render_naturalistic(entry["prefix_turns"], "q").startswith("User: q")
+
+
+def test_battery_prefix_entry_normalizes_messages_and_drops_null_content():
+    ctx = {
+        "id": "x1",
+        "family": "helpful",
+        "system_prompt": "You are terse.",
+        "prefix_messages": [
+            {"role": "user", "content": "real turn"},
+            {"role": "assistant", "content": None},  # dropped, never None downstream
+            {"content": "role-less turn"},  # role defaults to user
+        ],
+    }
+    entry = bc._battery_prefix_entry(ctx, 1)
+    assert entry["prefix_turns"] == [
+        {"role": "user", "content": "real turn"},
+        {"role": "user", "content": "role-less turn"},
+    ]
+    # empty prefix_messages + REAL system_prompt falls back to one user turn
+    entry2 = bc._battery_prefix_entry(
+        {"id": "x2", "system_prompt": "You are terse.", "prefix_messages": []}, 2
+    )
+    assert entry2["prefix_turns"] == [{"role": "user", "content": "You are terse."}]
+
+
+def test_write_prefix_store_fails_loud_on_malformed_turn(tmp_path):
+    good = _prefix_entry(n_prefix_turns=2)
+    bad = _prefix_entry(n_prefix_turns=2)
+    bad["prefix_id"] = "pfx_bad"
+    bad["prefix_turns"][1]["content"] = None
+    with pytest.raises(TypeError, match="pfx_bad"):
+        bc._write_prefix_store([good, bad], tmp_path / "prefix_store.jsonl")
+    # valid entries (incl. an EMPTY prefix) write fine
+    bare = _prefix_entry(n_prefix_turns=0)
+    bc._write_prefix_store([good, bare], tmp_path / "prefix_store.jsonl")
+    lines = (tmp_path / "prefix_store.jsonl").read_text(encoding="utf-8").strip().split("\n")
+    assert len(lines) == 2
+
+
 def test_render_helpers_nonempty_prefix_roles_thread_through(monkeypatch):
     turns = _prefix_entry(n_prefix_turns=2)["prefix_turns"]
     stub = _StubChatTemplateTokenizer()
