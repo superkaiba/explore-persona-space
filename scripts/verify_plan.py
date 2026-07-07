@@ -60,12 +60,14 @@ Check catalog (id — classification — kind scope)
       vs eval/debug intent      (analysis), conditional   analysis
   c28 decision-band precedent   WARN-only, conditional    experiment +
       coherence                                           analysis
+  c29 deliberate fence vs §7    WARN-only, conditional    experiment +
+      conditional phase                                   analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24, 25, 26, 27, 28) also SKIP when their content trigger
-does not fire.
+19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29) also SKIP when their content
+trigger does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -98,6 +100,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
   - ``N/A — no 7B activation capture`` (check 27)
   - ``N/A — no precedent-labeled decision bands`` (check 28; British
     ``labelled`` accepted)
+  - ``N/A — no conditional phase on this provision`` (check 29)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -4428,6 +4431,200 @@ def check_precedent_band_coherence(plan: str, kind: str) -> CheckResult:
     return _warn(cid, name, _c28_offender_detail(offenders, T, bands))
 
 
+# ─── Check 29 — deliberate fence vs §7 conditional phase ────────────────────
+# Mechanizes .claude/rules/plan-compute-sizing.md § "reconcile the WORST-CASE
+# wall — base phases PLUS every conditional / extension phase that could run
+# on the same provision — against the GCP lane's auto-delete fence": a
+# deliberately-declared (value-bearing, non-default) --max-run-duration /
+# max_run_duration fence coexisting with a §7 extension/retrain-class gate
+# must reference that conditional phase near a declaration site. Founding
+# offender: #1112 v2 (a 48h fence sized off base phases only, omitting its
+# own §7 G1 dose extension — joint worst ~48-50h; caught only by the critic
+# layer; v3 costs the extension and bumps the fence to 72h).
+
+# Value-bearing deliberate fence declaration, RAW scan (fences included — a
+# fenced gcloud/dispatch line is the real launch command; the c5/c26
+# raw-scan precedent). A value of 7d/168h is the default FLEX_START ceiling
+# (#741), not "deliberate"; a minutes value is the cap-probe command shape
+# (#680 `--max-run-duration=20m` — unit not in h/d, so it never matches); a
+# bare flag, a "default 7d" prose mention (no value directly after the
+# flag), and a templated `={max_run}`/`<dur>` placeholder carry no value —
+# none trigger. A loose "Nh near the flag" prose trigger is deliberately
+# absent: #1112 v2's §0 line ("the 48 h `--max-run-duration` fence") sits 2
+# lines from a Risks line containing "dose extension", so a prose trigger
+# would self-satisfy and the founding offender would PASS.
+_C29_FENCE_FLAG_RE = re.compile(
+    r"(?i)--max-run-duration[=\s]+[`\"']?~?(\d+(?:\.\d+)?)\s*(h(?:ours?)?|d(?:ays?)?)\b"
+)
+_C29_FENCE_EXTRA_RE = re.compile(
+    r"(?i)max_run_duration[\"']?\]?\s*[:=]\s*[\"'`]?~?(\d+(?:\.\d+)?)\s*"
+    r"(h(?:ours?)?|d(?:ays?)?)\b"
+)
+# §7-slot / Decision-Gates heading predicate (heading levels >= 2).
+# Deliberately permissive on the numbered form: the §7 slot also holds
+# `Compute estimate` / `Risks` in infra-shaped plans — the extension-vocab
+# gate below filters those (WARN-only polarity; calibration-swept, #1114).
+_C29_SECT7_HEAD_RE = re.compile(r"(?i)^(?:§\s*)?7\b(?:[.:)\s]|$)|\bdecision gates?\b")
+# Extension-class gate vocabulary. Bare "resume"/"re-run"/"re-judge" are
+# deliberately EXCLUDED (crash-resume vocabulary saturates plans); a gate
+# worded purely as "resume to step 60" is a named accepted false negative.
+_C29_EXTENSION_RE = re.compile(
+    r"(?i)\b(?:dose[- ]extension|extension|extend(?:s|ed|ing)?|re-?ladder\w*|"
+    r"re-?train\w*|retrain\w*|second pass|additional (?:steps|pass(?:es)?|epochs?))\b"
+)
+# Conditional-cost evidence vocabulary (permissive direction: a match can
+# only suppress a WARN). Gate labels (G1, G2, ...) are matched separately,
+# case-SENSITIVE, only for labels actually harvested from §7 — a (?i)
+# \bg\d+\b would match GCP machine types ("g2-standard-4").
+_C29_EVIDENCE_RE = re.compile(
+    r"(?i)§\s*7\b|\bsection\s+7\b|\b(?:extension|extend\w*|contingen\w*|conditional|"
+    r"gate(?:'s|s)?|dose[- ]extension|re-?ladder\w*|re-?train\w*|retrain\w*|"
+    r"second provision|across provisions|split across)\b"
+)
+_C29_WINDOW_LINES = 3  # pinned by test_c29_evidence_outside_window_still_warns
+
+
+def _c29_hours(val: str, unit: str) -> float:
+    """Fence value normalized to hours (d/days -> x24; units pre-filtered
+    to h/d by the declaration regexes)."""
+    return float(val) * (24.0 if unit.lower().startswith("d") else 1.0)
+
+
+def _c29_fence_decl_line_idxs(plan: str) -> list[int]:
+    """RAW line indices carrying a value-bearing ``--max-run-duration`` /
+    ``max_run_duration`` declaration whose value is not the 7d/168h default
+    FLEX_START ceiling (#741). RAW scan — fences included (a fenced
+    gcloud/dispatch line is the real launch command; c5/c26 precedent)."""
+    idxs: list[int] = []
+    for i, line in enumerate(plan.splitlines()):
+        for rx in (_C29_FENCE_FLAG_RE, _C29_FENCE_EXTRA_RE):
+            m = rx.search(line)
+            if m and abs(_c29_hours(m.group(1), m.group(2)) - 168.0) > 1e-9:
+                idxs.append(i)
+                break
+    return idxs
+
+
+def _c29_gate_section_prose(plan: str) -> str | None:
+    """Fence-masked prose of every §7-slot / Decision-Gates section (heading
+    levels >= 2), joined across all matches; ``None`` when no such heading
+    exists. The global ``_fence_mask`` excludes fenced example commands
+    inside §7 — a gate is a prose contract (the ``_trigger_windows``
+    fence-masked-trigger doctrine)."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    parts: list[str] = []
+    found = False
+    for h in _headings(plan):
+        if h.level < 2 or not _C29_SECT7_HEAD_RE.search(h.text.strip()):
+            continue
+        found = True
+        parts.extend(
+            line
+            for line, fenced in zip(
+                lines[h.line + 1 : h.end], mask[h.line + 1 : h.end], strict=True
+            )
+            if not fenced
+        )
+    return "\n".join(parts) if found else None
+
+
+def _c29_offender_detail(decl_line: str, gate_hit: str, labels: list[str]) -> str:
+    """Bounded WARN detail (c26 conventions): the first declaration line
+    (truncated ~80 chars), the matched §7 extension vocabulary + harvested
+    gate labels, the incident anchors, and BOTH remedies."""
+    lab = f"; §7 gate label(s): {', '.join(labels)}" if labels else ""
+    return (
+        f"deliberate fence declaration {decl_line.strip()[:80]!r} coexists with a §7 "
+        f"extension-class gate (matched {gate_hit!r}{lab}) but no declaration window "
+        "references the conditional phase's wall cost — reconcile the WORST-CASE wall, "
+        "base phases PLUS every conditional/extension phase on the same provision, "
+        "against the fence (plan-compute-sizing.md § worst-case wall; #599: a 24h fence "
+        "hard-deleted the pre-registered §7.3 extension probe at step 149/2400; #1112 "
+        "v2: a 48h fence omitted its own §7 G1 dose extension, joint worst ~48-50h). "
+        "Remedy: add the conditional phase's wall cost to the fence-reconcile sentence, "
+        "or declare 'N/A — no conditional phase on this provision' on its own line"
+    )
+
+
+def check_fence_conditional_phase(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a deliberately-declared ``--max-run-duration``
+    / ``max_run_duration`` fence (value-bearing, != the 7d/168h default
+    ceiling) coexisting with an extension/retrain-class gate in the §7 /
+    Decision-Gates section must reference that conditional phase (a §7 gate
+    label, or conditional-cost vocabulary) within ±3 raw lines of a
+    declaration line — ANY-SITE satisfy: one declaration window carrying
+    the evidence clears the whole plan (the reconcile sentence is singular;
+    requiring every mention would WARN on compressed §0 summaries).
+    Fence-strip split: declaration scan RAW (the fence usually lives in a
+    backticked/fenced launch command, and a fenced-only declaration with
+    zero prose reconcile is exactly the silent-ride failure class); §7 gate
+    detection fence-masked; evidence windows RAW (permissive direction).
+    Mechanizes plan-compute-sizing.md § "reconcile the WORST-CASE wall —
+    base phases PLUS every conditional / extension phase" (#599: a 24h
+    fence hard-deleted the pre-registered §7.3 extension probe at step
+    149/2400; #833: per-cell dispersion overran a deliberate 36h fence;
+    #1112 v2: a 48h fence sized off base phases omitted its own §7 G1 dose
+    extension, joint worst ~48-50h — only the critic caught it). NEVER
+    FAILs (the c14/c28 doctrine). SCOPE (honest): mechanizes the
+    DECLARED-fence subclass (#1112-shaped) of the incident class only.
+    Known accepted gaps, each verified against the founding files: a
+    prose-only fence (the actual #599 shape — "GCP max-run-duration
+    (~20 h)", no flag/assignment) is invisible -> SKIP; a dispatch-time
+    fence never written into the plan (the actual #833 shape) is invisible
+    -> SKIP; bare resume/re-run/re-judge gates don't trigger; a
+    second-provision split pre-registered ONLY in §7 still WARNs (remedy:
+    the N/A phrase or a fence-window mention); evidence-vocabulary stray
+    matches (e.g. an unrelated "gate" near the fence) suppress a real WARN
+    — permissive direction; whether the referenced conditional cost is
+    ARITHMETICALLY correct stays critic-owned. The #599/#833 SKIP shapes
+    are pinned by tests (test_c29_prose_only_fence_skips /
+    test_c29_no_fence_skips) plus the #1114 §6 sibling replay, so a future
+    trigger widening fails loud."""
+    cid, name = "c29_fence_conditional_phase", "deliberate fence vs §7 conditional phase"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid, name, "kind-exempt: fence/§7-gate shapes are an experiment|analysis plan shape"
+        )
+    decl_idxs = _c29_fence_decl_line_idxs(plan)
+    if not decl_idxs:
+        return _skip(
+            cid,
+            name,
+            "no deliberate (value-bearing, non-default) --max-run-duration fence "
+            "declaration detected",
+        )
+    if _standalone_na_declared(plan, r"no conditional phase on this provision"):
+        return _pass(cid, name, "explicit N/A declared (no conditional phase on this provision)")
+    gates = _c29_gate_section_prose(plan)
+    if gates is None:
+        return _skip(cid, name, "no §7 / Decision Gates section detected")
+    ext = _C29_EXTENSION_RE.search(gates)
+    if not ext:
+        return _skip(cid, name, "no extension/retrain-class conditional gate in §7")
+    labels = sorted(set(re.findall(r"\bG\d+\b", gates)))
+    lines = plan.splitlines()
+    for i in decl_idxs:
+        window = "\n".join(lines[max(0, i - _C29_WINDOW_LINES) : i + _C29_WINDOW_LINES + 1])
+        ev = _C29_EVIDENCE_RE.search(window)
+        if ev:
+            return _pass(
+                cid,
+                name,
+                "fence-reconcile window references the §7 conditional phase "
+                f"(evidence {ev.group(0)!r})",
+            )
+        for lb in labels:
+            if re.search(rf"\b{re.escape(lb)}\b", window):
+                return _pass(
+                    cid,
+                    name,
+                    "fence-reconcile window references the §7 conditional phase "
+                    f"(gate label {lb!r})",
+                )
+    return _warn(cid, name, _c29_offender_detail(lines[decl_idxs[0]], ext.group(0), labels))
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -4458,6 +4655,7 @@ CHECKS = [
     check_gpu_basis_routed_machine,
     check_capture_intent_hbm,
     check_precedent_band_coherence,
+    check_fence_conditional_phase,
 ]
 
 
