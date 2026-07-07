@@ -242,8 +242,10 @@ You must independently:
   actual completions, check the body's sample-output blocks against the raw
   pool.
 
-Sanitized-evidence carve-out (harmful-content corpora): when the raw
+Sanitized-evidence carve-out (harmful-content + real-world-corpus rows): when the raw
 completions are Betley-style EM / bad-medical-advice / refusal-bait rows,
+or real-world-corpus rollout text (LMSYS/WildChat-class — carries
+in-corpus jailbreak/explicit rows; #1073),
 the body's sample blocks are deliberately labeled "sanitized for context
 hygiene" (~15-word excerpt + raw-path placeholder, labels + row indices +
 permanent raw link verbatim) — ACCEPT them; do NOT flag missing verbatim

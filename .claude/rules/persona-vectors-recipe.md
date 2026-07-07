@@ -206,7 +206,12 @@ REVISEs an un-noted reintroduction of the logit scoring or any second judge.
 - `.claude/rules/on-policy-completions.md` — the extraction rollouts are
   on-policy by construction (sampled from the model under the contrastive
   system prompts); this rule's on-policy default governs them, and the
-  sampling-temperature default (~1.0) comes from there.
+  sampling-temperature default (~1.0) comes from there. Its
+  § Standardized behavior definitions additionally adopts steps 1–2 of
+  THIS recipe (trait name + description → 5 contrastive pos/neg
+  instruction pairs + shared/auto-generated question set + rubric) as the
+  mandatory behavior-definition template for multi-behavior implantation
+  datagen (#906→#1090).
 - `.claude/rules/contrastive-negatives.md` — the pos/neg system-prompt pairs
   are the contrastive backbone of the mean-difference; this rule's contrastive
   structure governs the pairing.

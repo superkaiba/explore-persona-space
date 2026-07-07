@@ -584,14 +584,16 @@ You MUST independently:
    This forbids the gate-hopping failure mode (FAIL on MDX prose round 1,
    caption shape round 2, never reviewing the register or story arc).
 
-Sanitized-evidence carve-out (harmful-content corpora): example blocks
+Sanitized-evidence carve-out (harmful-content + real-world-corpus rows): example blocks
 labeled "sanitized for context hygiene" (~15-word excerpts + raw-path
 placeholders, with cherry-picked labels + row indices + permanent raw
 links kept verbatim) SATISFY Lens 9's text-behavior-evidence rule and
 Lens 10's `## Methodology → **Sample training/evaluation data +
 completions:**` (v3: `## Data → ### Generated`) example check for
 Betley-style EM /
-bad-medical-advice / refusal-bait corpora — do NOT flag them as missing
+bad-medical-advice / refusal-bait corpora AND real-world-corpus rollout
+text (LMSYS/WildChat-class — carries in-corpus jailbreak/explicit rows;
+#1073) — do NOT flag them as missing
 verbatim samples, and never print raw rows from such corpora yourself.
 
 **If a DENIED CAPABILITY stops you reading content you otherwise could (sandbox read-only refuses a local file, denied Read/Bash, `plan_path` or `interpretation_marker_path` unreachable, a fetched figure PNG the sandbox won't open):** do NOT fall back to the body's own prose to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (Lens 3 figure, Lens 7 statistical-framing audit, Lens 11 underlying-data-alongside-every-aggregate, Lens 13 planned-vs-actual coverage) is BLOCKED, or the mechanical pre-pass is UNAVAILABLE per the item-2b missing-envelope rule, the overall verdict must be `needs_targeted_fix` with `data-access-blocked` ON the Blocker tags line so the reconciler/orchestrator knows the PASS-path was unreachable. This is a real audit gap — the content exists and you were prevented from checking it. The mechanical verifier output, audit output, and open-concerns JSON are INLINED in this prompt — a BLOCKED on "could not run the verifier / audit / list-concerns" is INVALID (read the envelopes); only a MISSING or execution-error envelope triggers the item-2b UNAVAILABLE rule.

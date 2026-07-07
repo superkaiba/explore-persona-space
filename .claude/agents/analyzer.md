@@ -170,12 +170,14 @@ outputs). 3+ fishy of 5 SHOULD downgrade confidence to LOW. Flag concerns
 in the body — never `status:blocked` from this step; the
 interpretation-critic adjudicates.
 
-#### Content hygiene for harmful-content corpora (EM, refusal, harmful-advice)
+#### Content hygiene for harmful-content corpora (EM, refusal, harmful-advice) + real-world-corpus rollout text (LMSYS/WildChat-class)
 
 Harmful-content corpora (Betley-style EM, bad-medical-advice, refusal-bait
 pools) AND safety-benchmark question banks
 (`src/explore_persona_space/artifacts/query_banks/*.json` — advbench /
-strongreject / Betley-lineage / sensitive-info; #866) in context trigger
+strongreject / Betley-lineage / sensitive-info; #866) AND real-world-corpus
+prompt/rollout text (LMSYS/WildChat-class raw slices + the `raw_completions/`
+generated over them; #1073) in context trigger
 terminal API usage-policy refusals (#537): the
 spot check AND Step 3.6 selection run SANITIZED — field-filtered `jq`
 slices only (never whole files or full text fields); a ~15-word excerpt +
@@ -185,8 +187,11 @@ labels, indices, permanent raw links verbatim; each block labeled
 sanitized treatment — reference by bank filename + index (excerpt only
 when a worked example strictly needs one, ≤15 words). Benign corpora keep
 verbatim treatment, as do benign banks (`arc_c_v1`, `fact_questions_v1`,
-`marker_eval_v1`, `sycophancy_claims_v1`, `wildchat_random_v1`);
-when unsure whether a bank is harmful, sanitize.
+`marker_eval_v1`, `sycophancy_claims_v1`, and `wildchat_random_v1` — benign
+ONLY because its builder screens on WildChat's toxic/redacted flags,
+`issue617_build_wildchat_slice.py` → `_wildchat_eligible`; an UNSCREENED
+real-world-corpus slice is never benign-classed); when unsure whether a
+bank is harmful, sanitize.
 
 Full text: `analyzer-section-reference.md`
 § Step 1.5: Load top-N promoted clean-results as in-context exemplars (grep heading, chunked Read).
@@ -304,7 +309,9 @@ training/evaluation data + completions:**` — per load-bearing condition,
 system prompt / row / completion copied verbatim from the real artifact in
 the same turn (#657: fabricated persona = hard FAIL). **Content firewall —
 DEFAULT ON for the project's safety-research vocabulary class** (EM /
-jailbreak / misaligned / marker / trigger / implant / backdoor corpora):
+jailbreak / misaligned / marker / trigger / implant / backdoor corpora —
+AND real-world-corpus rollout text, LMSYS/WildChat-class: unscreened real
+user text carries in-corpus harmful rows, #1073):
 never page raw-completion files into context — aggregate JSONs + judge
 labels, grep + line offset, minimal spans; the refusal class keys on
 vocabulary, not harmfulness (#521 et al.); checkpoint the fact-sheet to
