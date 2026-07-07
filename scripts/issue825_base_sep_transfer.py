@@ -127,15 +127,37 @@ def load_base_armc(stage: Path, local_dir: Path | None) -> dict:
     cache = stage / "base_armC_frozen.npz"
     if cache.exists():
         z = np.load(cache, allow_pickle=False)
-        print(f"[i825-bs-c1] base armC cache hit: {cache}", flush=True)
-        return {
-            "x_sep": z["x"],
-            "y": z["y"],
-            "group_ids": z["g"].astype(str),
-            "row_ids": z["r"].astype(str),
-            "revision": str(z["revision"]),
-            "frozen": frozen,
-        }
+        if "frozen" not in z.files:
+            # Pre-r2 cache format (no layer-list metadata): rebuild rather than
+            # guess which layers the cached slices actually hold.
+            print(f"[i825-bs-c1] base armC cache lacks 'frozen' metadata — rebuild: {cache}")
+            cache.unlink()
+        else:
+            x, y = z["x"], z["y"]
+            rev = str(z["revision"])
+            cached_frozen = [int(v) for v in z["frozen"]]
+            # Cache-hit twins of the fresh-download asserts (r2 review minor):
+            # a smoke ("local") cache must never feed a production run, and a
+            # production cache must carry the full run invariants.
+            assert (rev == "local") == (local_dir is not None), (
+                f"cache/run mode mismatch: cached revision {rev!r} vs "
+                f"local_dir={local_dir} — stale cache at {cache}"
+            )
+            if rev != "local":
+                assert x.shape[0] == 3600, (x.shape, cache)
+                assert cached_frozen == frozen, (cached_frozen, frozen, cache)
+            assert x.shape[1] == len(cached_frozen), (x.shape, cached_frozen)
+            assert y.shape[:2] == x.shape[:2], (x.shape, y.shape)
+            assert np.isfinite(x).all() and np.isfinite(y).all()
+            print(f"[i825-bs-c1] base armC cache hit (validated): {cache}", flush=True)
+            return {
+                "x_sep": x,
+                "y": y,
+                "group_ids": z["g"].astype(str),
+                "row_ids": z["r"].astype(str),
+                "revision": rev,
+                "frozen": cached_frozen,
+            }
     if local_dir is not None:
         store = fit931.load_regime_store(local_dir, "armC")
         revision = "local"
@@ -150,15 +172,20 @@ def load_base_armc(stage: Path, local_dir: Path | None) -> dict:
 
         api = HfApi()
         revision = api.repo_info(common.HF_DATA_REPO, repo_type="dataset").sha
-        shard_paths = sorted(
-            e.path
-            for e in api.list_repo_tree(
-                common.HF_DATA_REPO,
-                path_in_repo=BASE_STORE_PREFIX,
-                repo_type="dataset",
-                revision=revision,
-            )
-            if e.path.endswith(".pt")
+        # First-page tree listing rides the same transient-5xx/429 retry as the
+        # per-shard downloads below (the stage.py:111 twin; r2 review minor).
+        shard_paths = hub.retry_transient(
+            lambda: sorted(
+                e.path
+                for e in api.list_repo_tree(
+                    common.HF_DATA_REPO,
+                    path_in_repo=BASE_STORE_PREFIX,
+                    repo_type="dataset",
+                    revision=revision,
+                )
+                if e.path.endswith(".pt")
+            ),
+            what=f"list {BASE_STORE_PREFIX}",
         )
         assert shard_paths, f"no base armC shards under {BASE_STORE_PREFIX}"
         xs, ys, gs, rs = [], [], [], []
@@ -189,7 +216,15 @@ def load_base_armc(stage: Path, local_dir: Path | None) -> dict:
         assert x.shape[0] == 3600, x.shape  # run invariant (production path only)
     assert np.isfinite(x).all() and np.isfinite(y).all()
     stage.mkdir(parents=True, exist_ok=True)
-    np.savez(cache, x=x, y=y, g=g, r=r, revision=np.asarray(revision))
+    np.savez(
+        cache,
+        x=x,
+        y=y,
+        g=g,
+        r=r,
+        revision=np.asarray(revision),
+        frozen=np.asarray(frozen, dtype=np.int64),
+    )
     return {
         "x_sep": x,
         "y": y,
@@ -225,8 +260,24 @@ def stream_chat_layer(
     cache = stage / f"base_chat_L{LAYER}_slot0_turn1.npz"
     if cache.exists():
         z = np.load(cache, allow_pickle=False)
-        print(f"[i825-bs-c1] base chat cache hit: {cache}", flush=True)
-        return z["x"], z["y"], z["ids"].astype(str)
+        if "revision" not in z.files:
+            print(f"[i825-bs-c1] base chat cache lacks 'revision' metadata — rebuild: {cache}")
+            cache.unlink()
+        else:
+            rev = str(z["revision"])
+            x, y, cid = z["x"], z["y"], z["ids"].astype(str)
+            # Cache-hit twins of the fresh-download asserts (r2 review minor).
+            assert (rev == "local") == (local_dir is not None), (
+                f"cache/run mode mismatch: cached revision {rev!r} vs "
+                f"local_dir={local_dir} — stale cache at {cache}"
+            )
+            if rev != "local":
+                assert rev == CHAT_REV, (rev, CHAT_REV, cache)
+                assert x.shape[0] == 5000, (x.shape, cache)
+            assert x.shape[0] == y.shape[0] == cid.shape[0], (x.shape, y.shape, cid.shape)
+            assert np.isfinite(x).all() and np.isfinite(y).all()
+            print(f"[i825-bs-c1] base chat cache hit (validated): {cache}", flush=True)
+            return x, y, cid
     xs, ys, ids = [], [], []
     if local_dir is not None:
         shards = sorted(local_dir.glob(f"{CHAT_STEM}_shard*.pt"))
@@ -240,15 +291,19 @@ def stream_chat_layer(
         from huggingface_hub import HfApi, hf_hub_download
 
         api = HfApi()
-        shard_paths = sorted(
-            e.path
-            for e in api.list_repo_tree(
-                common.HF_DATA_REPO,
-                path_in_repo=CHAT_PREFIX,
-                repo_type="dataset",
-                revision=CHAT_REV,
-            )
-            if Path(e.path).name.startswith(CHAT_STEM + "_shard") and e.path.endswith(".pt")
+        # Retried first-page listing (the stage.py:111 twin; r2 review minor).
+        shard_paths = hub.retry_transient(
+            lambda: sorted(
+                e.path
+                for e in api.list_repo_tree(
+                    common.HF_DATA_REPO,
+                    path_in_repo=CHAT_PREFIX,
+                    repo_type="dataset",
+                    revision=CHAT_REV,
+                )
+                if Path(e.path).name.startswith(CHAT_STEM + "_shard") and e.path.endswith(".pt")
+            ),
+            what=f"list {CHAT_PREFIX}",
         )
         assert len(shard_paths) == 10, f"expected 10 chat .pt shards, got {len(shard_paths)}"
         dest = stage / "base_chat_dl"
@@ -278,7 +333,13 @@ def stream_chat_layer(
     if local_dir is None:
         assert x.shape[0] == 5000, x.shape  # run invariant (production path only)
     stage.mkdir(parents=True, exist_ok=True)
-    np.savez(cache, x=x, y=y, ids=cid)
+    np.savez(
+        cache,
+        x=x,
+        y=y,
+        ids=cid,
+        revision=np.asarray("local" if local_dir is not None else CHAT_REV),
+    )
     return x, y, cid
 
 
@@ -333,23 +394,40 @@ def save_and_upload_maps(armc: dict, out: Path, *, skip_upload: bool) -> dict:
     maps_dir = out / "maps"
     maps_dir.mkdir(parents=True, exist_ok=True)
     lam_by_layer = {}
+    written: list[str] = []
     for i, layer in enumerate(armc["frozen"]):
         fm = fit_full_map(armc["x_sep"][:, i, :], armc["y"][:, i, :])
         w_raw = (fm["W_std"] / fm["xsd"][:, None]).to(torch.float16).cpu()
-        torch.save(
-            {"W_raw_fp16": w_raw, "layer": int(layer)},
-            maps_dir / f"armC_sep_base_L{int(layer):02d}.pt",
-        )
+        name = f"armC_sep_base_L{int(layer):02d}.pt"
+        torch.save({"W_raw_fp16": w_raw, "layer": int(layer)}, maps_dir / name)
+        written.append(name)
         lam_by_layer[str(int(layer))] = float(fm["lam"])
         del fm
     print(f"[i825-bs-c1] saved {len(lam_by_layer)} base separator maps -> {maps_dir}")
     if not skip_upload:
-        hub._upload(
+        from huggingface_hub import HfApi
+
+        # hub._upload swallows exceptions and returns "" on ANY failure —
+        # assert the return AND exact-set-verify the exact map filenames
+        # written this run (concern unverified-mirror-maps-uploads).
+        dest_prefix = f"{HF_PREFIX_OUT}/analysis_tensors/maps"
+        up = hub._upload(
             maps_dir,
             repo_id=common.HF_DATA_REPO,
             repo_type="dataset",
-            path_in_repo=f"{HF_PREFIX_OUT}/analysis_tensors/maps",
+            path_in_repo=dest_prefix,
         )
+        assert up, f"maps upload FAILED (hub._upload returned empty) -> {dest_prefix}"
+        expected = sorted(f"{dest_prefix}/{n}" for n in written)
+        missing = hub.verify_repo_paths_uploaded(
+            HfApi(),
+            common.HF_DATA_REPO,
+            expected,
+            path_in_repo=dest_prefix,
+            repo_type="dataset",
+        )
+        assert not missing, f"maps upload verify FAILED — missing on Hub: {missing}"
+        print(f"[i825-bs-c1] maps upload exact-set verified: {len(expected)} @ {dest_prefix}")
     return lam_by_layer
 
 

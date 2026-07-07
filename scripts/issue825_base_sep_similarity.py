@@ -109,12 +109,19 @@ def load_store_frozen(stage: Path, cache_name: str, prefix: str, local_dir: Path
 
         api = HfApi()
         revision = api.repo_info(common.HF_DATA_REPO, repo_type="dataset").sha
-        shard_paths = sorted(
-            e.path
-            for e in api.list_repo_tree(
-                common.HF_DATA_REPO, path_in_repo=prefix, repo_type="dataset", revision=revision
-            )
-            if e.path.endswith(".pt")
+        # Retried first-page listing (the stage.py:111 twin; r2 review minor).
+        shard_paths = hub.retry_transient(
+            lambda: sorted(
+                e.path
+                for e in api.list_repo_tree(
+                    common.HF_DATA_REPO,
+                    path_in_repo=prefix,
+                    repo_type="dataset",
+                    revision=revision,
+                )
+                if e.path.endswith(".pt")
+            ),
+            what=f"list {prefix}",
         )
         assert shard_paths, f"no shards under {prefix}"
         frozen = list(common.FROZEN_LAYERS)

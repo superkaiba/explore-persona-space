@@ -217,23 +217,44 @@ from huggingface_hub import HfApi
 
 from explore_persona_space.orchestrate import hub
 
-hub._upload(armc, repo_id=repo, repo_type="dataset", path_in_repo=f"{prefix}/analysis_tensors/armC")
-expected = [f"{prefix}/analysis_tensors/armC/{p.name}" for p in store_files]
+# hub._upload swallows exceptions and returns "" on ANY failure (hub.py), so a
+# bare call flows on silently. Assert the return AND run the exact-set Hub
+# verify per artifact kind (concern unverified-mirror-maps-uploads): a partial
+# upload must halt HERE, before the sentinel / [phase=done] report success.
+store_prefix = f"{prefix}/analysis_tensors/armC"
+up = hub._upload(armc, repo_id=repo, repo_type="dataset", path_in_repo=store_prefix)
+assert up, f"store upload FAILED (hub._upload returned empty) -> {store_prefix}"
+expected = [f"{store_prefix}/{p.name}" for p in store_files]
 missing = hub.verify_repo_paths_uploaded(
-    HfApi(), repo, expected, path_in_repo=f"{prefix}/analysis_tensors/armC", repo_type="dataset"
+    HfApi(), repo, expected, path_in_repo=store_prefix, repo_type="dataset"
 )
 assert not missing, f"store upload verify FAILED — missing on Hub: {missing}"
-hub._upload(out_dir, repo_id=repo, repo_type="dataset", path_in_repo=f"{prefix}/eval_results_mirror")
-print("[i825-bs] p5 uploads complete + exact-set verified")
+mirror_prefix = f"{prefix}/eval_results_mirror"
+up = hub._upload(out_dir, repo_id=repo, repo_type="dataset", path_in_repo=mirror_prefix)
+assert up, f"eval_results_mirror upload FAILED (hub._upload returned empty) -> {mirror_prefix}"
+expected_mirror = sorted(f"{mirror_prefix}/{p.relative_to(out_dir)}" for p in out_dir.rglob("*.json"))
+assert expected_mirror, f"no eval JSONs under {out_dir} to mirror"
+missing = hub.verify_repo_paths_uploaded(
+    HfApi(), repo, expected_mirror, path_in_repo=mirror_prefix, repo_type="dataset"
+)
+assert not missing, f"mirror upload verify FAILED — missing on Hub: {missing}"
+print(
+    f"[i825-bs] p5 uploads complete + exact-set verified "
+    f"(store {len(expected)} files, mirror {len(expected_mirror)} JSONs)"
+)
 PY
 
 if [ "$DO_UPLOAD" = "1" ]; then
   echo "[i825-bs] committing eval JSONs to the issue branch"
-  git add "$OUT_DIR" || true
-  if git commit -m "task #${ISSUE}: base-separator-control pod eval JSONs" >/dev/null 2>&1; then
-    git push origin "issue-${ISSUE}" || echo "[i825-bs] WARNING: git push failed (HF mirror uploaded)" >&2
-  else
+  git add "$OUT_DIR"
+  if [ -z "$(git status --porcelain -- "$OUT_DIR")" ]; then
     echo "[i825-bs] nothing to commit"
+  else
+    # A REAL commit failure (identity/hooks) fails loud under set -e — the HF
+    # mirror above is already uploaded + verified. Push stays a WARNING only
+    # (remote-side flakiness must not kill the sentinel write below).
+    git commit -m "task #${ISSUE}: base-separator-control pod eval JSONs"
+    git push origin "issue-${ISSUE}" || echo "[i825-bs] WARNING: git push failed (HF mirror uploaded)" >&2
   fi
 fi
 
