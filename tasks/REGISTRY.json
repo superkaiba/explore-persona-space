@@ -837,15 +837,15 @@
     "1107": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1107",
-      "status": "running",
+      "path": "tasks/completed/1107",
+      "status": "completed",
       "title": "workflow-fix: verify_task_body figure-meta vs what-is-plotted numeric reconcile"
     },
     "1108": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1108",
-      "status": "running",
+      "path": "tasks/completed/1108",
+      "status": "completed",
       "title": "HF model repo at the 100,000-file limit \u2014 user triage needed to free files (adapter uploads fleet-wide blocked)"
     },
     "1109": {
@@ -865,8 +865,8 @@
     "1110": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1110",
-      "status": "running",
+      "path": "tasks/reviewing/1110",
+      "status": "reviewing",
       "title": "workflow-fix: verify H1 == frontmatter title (set-title never syncs the body H1)"
     },
     "112": {
