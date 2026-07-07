@@ -8747,6 +8747,9 @@ else
   # direction; a redundant push is a no-op "Everything up-to-date").
   if [ "$(git -C "$WT" rev-list --count origin/issue-<N>..HEAD 2>/dev/null || echo 1)" -gt 0 ] \
      || [ "$STRIPPED_FOREIGN" = "yes" ] || [ "$MEM_COMMITTED" = "yes" ]; then
+    # Run every push / gh pr command BARE — never piped through tail/grep/head
+    # (guard_piped_git_push.sh blocks the pipe; a pipe masks the exit code).
+    # This applies to IMPROVISED recovery commands too, not just this snippet.
     git -C "$WT" push origin issue-<N> \
       || { git -C "$WT" pull --rebase=merges --autostash \
            && git -C "$WT" push origin issue-<N>; }
