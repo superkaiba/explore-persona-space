@@ -1038,7 +1038,9 @@ def _marker_delta_g(model_path: str, *, n_questions: int, out_dir: Path) -> dict
     contexts = [r["context"] for r in rows]
     trained = _marker_slot_read(model_path, contexts)
     base = _marker_slot_read(DEFAULT_BASE_MODEL, contexts)
-    deltas = [t["logp_marker"] - b["logp_marker"] for t, b in zip(trained, base, strict=True)]
+    # Slot-stat keys per compute_marker_slot_stats: logp / z_marker / z_eos /
+    # logZ (+ argmax_id) — verified by the tiny-real CPU smoke (round 1).
+    deltas = [t["logp"] - b["logp"] for t, b in zip(trained, base, strict=True)]
     rec = {
         "model": model_path,
         "n_probes": len(contexts),
