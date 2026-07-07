@@ -376,6 +376,45 @@ def _stream_conversations(
     return results
 
 
+def _synthetic_smoke_conversations(n: int, source: str) -> list[dict]:
+    """Small local fixture for offline smoke tests; production never uses this."""
+    out: list[dict] = []
+    for i in range(n):
+        turns: list[dict] = []
+        n_rounds = 5 if i % 2 == 0 else 2
+        for j in range(n_rounds):
+            turns.append(
+                {
+                    "role": "user",
+                    "content": f"Smoke {source} conversation {i} user turn {j}: ask about topic {i % 4}.",
+                }
+            )
+            turns.append(
+                {
+                    "role": "assistant",
+                    "content": f"Smoke {source} conversation {i} assistant turn {j}.",
+                }
+            )
+        turns.append(
+            {
+                "role": "user",
+                "content": f"Final smoke question {i}: what should I consider next?",
+            }
+        )
+        out.append(
+            {
+                "id": f"{source}_smoke_{i:04d}",
+                "conv_id": f"{source}_smoke_{i:04d}",
+                "source": source,
+                "turns": turns,
+                "n_user_turns": sum(1 for t in turns if t["role"] == "user"),
+                "n_tokens_est": sum(len(t["content"].split()) for t in turns),
+                "total_tokens": sum(len(t["content"].split()) for t in turns),
+            }
+        )
+    return out
+
+
 # ── topic labeling ────────────────────────────────────────────────────────────
 
 
@@ -720,7 +759,11 @@ def _load_battery() -> list[dict]:
         battery = json.load(f)
     # normalize to list
     if isinstance(battery, dict):
-        contexts = battery.get("contexts") or battery.get("examples") or list(battery.values())
+        contexts = battery.get("instances") or battery.get("contexts") or battery.get("examples")
+        if contexts is None:
+            raise KeyError(
+                f"Battery dict at {BATTERY_PATH} has no instances/contexts/examples keys"
+            )
     else:
         contexts = battery
     logger.info("[battery] loaded %d battery contexts from %s", len(contexts), BATTERY_PATH)
@@ -1013,13 +1056,14 @@ def _build_manifest_rows(
                 qry_sample = rng.sample(
                     periphery_bank, min(N_TRAIT_STRATUM_QUERIES, len(periphery_bank))
                 )
+                persona_prefix_id = persona["prefix_id"]
                 for qry in qry_sample:
                     rows.append(
                         {
                             "row_id": f"r_{len(rows):07d}",
                             "stratum": "trait_stratum",
                             "trait": trait,
-                            "prefix_id": f"trait_{trait}_{persona.get('valence', 'high')}_{len(rows):04d}",
+                            "prefix_id": persona_prefix_id,
                             "query_id": qry["query_id"],
                             "prefix_conv_id": "",
                             "query_conv_id": qry.get("conv_id", ""),
@@ -1085,6 +1129,22 @@ def _manifest_stats(rows: list[dict], g1_result: dict) -> dict:
     }
 
 
+def _mark_control_subset(rows: list[dict], *, rng: random.Random) -> None:
+    """Mark the fixed Claude/shuffled control-cell subset in-place.
+
+    Plan §4.3 scopes control cells to dense core + battery + about 40% of sparse
+    periphery. The marker is persisted in the manifest so P1/P3 consume the
+    same row set on resume.
+    """
+    for row in rows:
+        stratum = row.get("stratum", "")
+        keep = stratum in {"dense_core", "battery"} or (
+            stratum.startswith("periphery_") and rng.random() < 0.40
+        )
+        row["claude_subset"] = bool(keep)
+        row["control_subset"] = bool(keep)
+
+
 # ── write helpers ─────────────────────────────────────────────────────────────
 
 
@@ -1119,11 +1179,68 @@ def _write_prefix_store(prefix_entries: list[dict], path: Path) -> None:
     )
 
 
-def _write_query_store(bank: list[dict], core_queries: list[dict], path: Path) -> None:
-    """Write query bank + core queries as JSONL."""
-    all_queries = list(bank) + [
-        q for q in core_queries if q["query_id"] not in {qq["query_id"] for qq in bank}
+def _battery_prefix_entry(ctx: dict, idx: int) -> dict:
+    """Normalize one #594 battery context into the prefix-store schema."""
+    ctx_id = ctx.get("id") or f"batt_{idx:03d}"
+    messages = ctx.get("prefix_messages") or [
+        {"role": "user", "content": ctx.get("system_prompt", "")}
     ]
+    return {
+        "prefix_id": f"batt_{ctx_id}",
+        "conv_id": f"battery::{ctx_id}",
+        "source": "battery",
+        "topic": ctx.get("family", "general_qa"),
+        "prefix_turns": messages,
+        "natural_query": "",
+        "n_user_turns": sum(1 for m in messages if m.get("role") == "user"),
+    }
+
+
+def _augment_prefix_store(
+    prefix_entries: list[dict],
+    trait_stratum_personas: list[dict],
+    battery_contexts: list[dict],
+) -> list[dict]:
+    """Add manifest-referenced synthetic/battery prefixes to the prefix store."""
+    out = list(prefix_entries)
+    for persona in trait_stratum_personas:
+        prefix_id = persona["prefix_id"]
+        prompt = persona.get("system_prompt", "")
+        out.append(
+            {
+                "prefix_id": prefix_id,
+                "conv_id": f"trait::{prefix_id}",
+                "source": "synthetic",
+                "topic": persona["trait"],
+                "prefix_turns": [{"role": "user", "content": prompt}],
+                "natural_query": "",
+                "n_user_turns": 1,
+                "trait": persona["trait"],
+                "persona_valence": persona.get("valence", "high"),
+            }
+        )
+    out.extend(_battery_prefix_entry(ctx, i) for i, ctx in enumerate(battery_contexts))
+    return out
+
+
+def _write_query_store(
+    bank: list[dict], core_queries: list[dict], prefix_entries: list[dict], path: Path
+) -> None:
+    """Write query bank, core queries, and natural final-turn queries as JSONL."""
+    by_id = {q["query_id"]: dict(q) for q in bank}
+    for q in core_queries:
+        by_id.setdefault(q["query_id"], dict(q))
+    for pfx in prefix_entries:
+        natural = pfx.get("natural_query")
+        if natural:
+            by_id[f"nat_{pfx['prefix_id']}"] = {
+                "query_id": f"nat_{pfx['prefix_id']}",
+                "text": natural,
+                "topic": pfx.get("topic", "other"),
+                "source": pfx.get("source", "natural"),
+                "conv_id": pfx.get("conv_id", ""),
+            }
+    all_queries = list(by_id.values())
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         for q in all_queries:
@@ -1163,32 +1280,48 @@ def main(argv: list[str] | None = None) -> int:
     corpus_dir = out_dir / "corpus"
     corpus_dir.mkdir(parents=True, exist_ok=True)
 
-    eval_dir = PROJECT_ROOT / "eval_results" / "issue_1092" / "corpus"
+    eval_dir = (
+        corpus_dir / "smoke_stats"
+        if args.smoke
+        else PROJECT_ROOT / "eval_results" / "issue_1092" / "corpus"
+    )
     eval_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info("[P0] corpus build start (smoke=%s, row_limit=%s)", args.smoke, args.row_limit)
 
     # ── step 1: derive trait names at runtime ────────────────────────────────
     logger.info("[P0] step 1: derive trait names from HF r_b/")
-    trait_names = _load_trait_names_from_hf(args.rb_rev)
+    if args.smoke:
+        from issue779_common import TRAITS
+
+        trait_names = list(TRAITS)
+        logger.info("[P0] smoke: using local #779 TRAITS tuple (%d)", len(trait_names))
+    else:
+        trait_names = _load_trait_names_from_hf(args.rb_rev)
     assert len(trait_names) >= 1, "No trait names found"
 
     # ── step 2: streaming ingestion ──────────────────────────────────────────
-    logger.info("[P0] step 2: stream WildChat (rev=%s)", WILDCHAT_REV[:8])
-    wc_convs = _stream_conversations(
-        WILDCHAT_REPO,
-        WILDCHAT_REV,
-        rng=rng,
-        row_limit=args.row_limit * 20 if args.row_limit else None,
-    )
+    if args.smoke:
+        logger.info("[P0] smoke: using local synthetic WildChat/LMSYS fixtures")
+        n_fixture = max(24, (args.row_limit or 6) * 8)
+        wc_convs = _synthetic_smoke_conversations(n_fixture, "wildchat")
+        lm_convs = _synthetic_smoke_conversations(n_fixture, "lmsys")
+    else:
+        logger.info("[P0] step 2: stream WildChat (rev=%s)", WILDCHAT_REV[:8])
+        wc_convs = _stream_conversations(
+            WILDCHAT_REPO,
+            WILDCHAT_REV,
+            rng=rng,
+            row_limit=args.row_limit * 20 if args.row_limit else None,
+        )
 
-    logger.info("[P0] step 2: stream LMSYS (rev=%s)", LMSYS_REV[:8])
-    lm_convs = _stream_conversations(
-        LMSYS_REPO,
-        LMSYS_REV,
-        rng=rng,
-        row_limit=args.row_limit * 20 if args.row_limit else None,
-    )
+        logger.info("[P0] step 2: stream LMSYS (rev=%s)", LMSYS_REV[:8])
+        lm_convs = _stream_conversations(
+            LMSYS_REPO,
+            LMSYS_REV,
+            rng=rng,
+            row_limit=args.row_limit * 20 if args.row_limit else None,
+        )
 
     all_convs = wc_convs + lm_convs
     rng.shuffle(all_convs)
@@ -1285,6 +1418,8 @@ def main(argv: list[str] | None = None) -> int:
         trait_stratum_personas = _load_trait_stratum_personas(
             trait_names, rng=rng, n_per_trait=N_TRAIT_STRATUM_PREFIXES // max(1, len(trait_names))
         )
+    for i, persona in enumerate(trait_stratum_personas):
+        persona.setdefault("prefix_id", f"trait_{i:04d}")
 
     # ── step 7: battery ────────────────────────────────────────────────────────
     logger.info("[P0] step 7: load battery")
@@ -1304,6 +1439,7 @@ def main(argv: list[str] | None = None) -> int:
         row_limit=args.row_limit,
         cells_filter=args.cells.split(",") if args.cells else None,
     )
+    _mark_control_subset(manifest_rows, rng=random.Random(BUILD_SEED + 1092))
 
     # ── step 9: shuffled-pairing derangement ──────────────────────────────────
     logger.info("[P0] step 9: compute shuffled-pairing derangement")
@@ -1327,10 +1463,13 @@ def main(argv: list[str] | None = None) -> int:
     _write_jsonl_textmode(manifest_rows, manifest_path)
 
     prefix_store_path = corpus_dir / "prefix_store.jsonl"
-    _write_prefix_store(prefix_entries, prefix_store_path)
+    prefix_store_entries = _augment_prefix_store(
+        prefix_entries, trait_stratum_personas, battery_contexts
+    )
+    _write_prefix_store(prefix_store_entries, prefix_store_path)
 
     query_store_path = corpus_dir / "query_store.jsonl"
-    _write_query_store(bank, core_queries, query_store_path)
+    _write_query_store(bank, core_queries, prefix_entries, query_store_path)
 
     derangement_path = corpus_dir / "derangement_map.json"
     with open(derangement_path, "w", encoding="utf-8") as f:
@@ -1354,7 +1493,8 @@ def main(argv: list[str] | None = None) -> int:
         trait_stratum_path,
     )
 
-    # manifest stats (digest, written to both corpus_dir and eval_results/)
+    # Manifest stats are always copied into corpus_dir. Production also writes
+    # the registered eval_results digest; smoke keeps every artifact under --out.
     stats = _manifest_stats(manifest_rows, g1_result)
     meta = _repro_meta()
     stats["reproducibility"] = meta

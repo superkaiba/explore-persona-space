@@ -71,21 +71,62 @@ CELLS_OWN_POLICY = {"cell_inst_own", "cell_pre_own"}
 
 # All 8 cells and their model/format config
 CELL_CONFIG: dict[str, dict[str, Any]] = {
-    "cell_inst_own": {"model": "instruct", "text_format": "instruct", "own_policy": True},
-    "cell_pre_insttext": {"model": "pretrained", "text_format": "instruct", "own_policy": False},
-    "cell_pre_own": {"model": "pretrained", "text_format": "pretrained", "own_policy": True},
-    "cell_inst_pretext": {"model": "instruct", "text_format": "pretrained", "own_policy": False},
-    "cell_inst_claude": {"model": "instruct", "text_format": "claude", "own_policy": False},
-    "cell_pre_claude": {"model": "pretrained", "text_format": "claude", "own_policy": False},
-    "cell_inst_shuf": {"model": "instruct", "text_format": "shuffled", "own_policy": False},
-    "cell_pre_shuf": {"model": "pretrained", "text_format": "shuffled", "own_policy": False},
+    "cell_inst_own": {
+        "model": "instruct",
+        "prompt_format": "instruct",
+        "text_source": "own",
+        "own_policy": True,
+    },
+    "cell_pre_insttext": {
+        "model": "pretrained",
+        "prompt_format": "instruct",
+        "text_source": "instruct",
+        "own_policy": False,
+    },
+    "cell_pre_own": {
+        "model": "pretrained",
+        "prompt_format": "pretrained",
+        "text_source": "own",
+        "own_policy": True,
+    },
+    "cell_inst_pretext": {
+        "model": "instruct",
+        "prompt_format": "pretrained",
+        "text_source": "pretrained",
+        "own_policy": False,
+    },
+    "cell_inst_claude": {
+        "model": "instruct",
+        "prompt_format": "instruct",
+        "text_source": "claude",
+        "own_policy": False,
+    },
+    "cell_pre_claude": {
+        "model": "pretrained",
+        "prompt_format": "pretrained",
+        "text_source": "claude",
+        "own_policy": False,
+    },
+    "cell_inst_shuf": {
+        "model": "instruct",
+        "prompt_format": "instruct",
+        "text_source": "shuffled",
+        "own_policy": False,
+    },
+    "cell_pre_shuf": {
+        "model": "pretrained",
+        "prompt_format": "pretrained",
+        "text_source": "shuffled",
+        "own_policy": False,
+    },
 }
 
 # Per-shard chunk size for vLLM to avoid deadlock (#664 recipe)
 DEFAULT_VLLM_CHUNK_SIZE = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
 
-# Summary kinds: prefix-end, context-end, t1, t2, t3 (5 per layer)
-SUMMARY_KINDS = ["prefix_end", "context_end", "tok1", "tok2", "tok3"]
+# Summary kinds: prefix-end, context-end, t1 answer mean, t2 answer+boundary
+# mean, and t3 next-user boundary slot (plan §4.0).
+SUMMARY_KINDS = ["prefix_end", "context_end", "t1", "t2", "t3"]
 
 # G2 gate: spot-check 50 rows after first cell
 G2_SPOT_ROWS = 50
@@ -138,6 +179,21 @@ def _render_naturalistic(turns: list[dict], query: str) -> str:
     return "\n".join(lines)
 
 
+def _render_prefix_instruct(turns: list[dict]) -> str:
+    tok = _get_tokenizer()
+    messages = [{"role": t["role"], "content": t["content"]} for t in turns]
+    return tok.apply_chat_template(messages, tokenize=False, add_generation_prompt=False)
+
+
+def _render_prefix_naturalistic(turns: list[dict]) -> str:
+    lines = []
+    for t in turns:
+        role = "User" if t["role"] == "user" else "Assistant"
+        lines.append(f"{role}: {t['content']}")
+        lines.append("")
+    return "\n".join(lines).rstrip()
+
+
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
@@ -164,20 +220,52 @@ def load_store(corpus_dir: Path, store_name: str) -> dict[str, dict]:
             line = line.strip()
             if line:
                 item = json.loads(line)
-                result[item["id"]] = item
+                key = item.get("id") or item.get("prefix_id") or item.get("query_id")
+                if key is None:
+                    raise KeyError(f"{store_path} item missing id/prefix_id/query_id: {item.keys()}")
+                result[str(key)] = item
     return result
+
+
+def _prefix_turns(prefix_item: dict) -> list[dict]:
+    turns = prefix_item.get("prefix_turns") or prefix_item.get("turns")
+    if not isinstance(turns, list) or not turns:
+        raise ValueError(f"prefix item {prefix_item.get('prefix_id')} has no turns")
+    return turns
+
+
+def _query_text(query_item: dict) -> str:
+    text = query_item.get("text", query_item.get("query"))
+    if not isinstance(text, str) or not text:
+        raise ValueError(f"query item {query_item.get('query_id')} has no text/query")
+    return text
+
+
+def _render_prompt_parts(turns: list[dict], query: str, prompt_format: str) -> tuple[str, str]:
+    """Return (prefix_text, prompt_text) under the requested model prompt format."""
+    if prompt_format == "instruct":
+        prefix_text = _render_prefix_instruct(turns)
+        prompt_text = _render_instruct(turns, query)
+    elif prompt_format == "pretrained":
+        prefix_text = _render_prefix_naturalistic(turns)
+        prompt_text = _render_naturalistic(turns, query)
+    else:
+        raise ValueError(f"Unknown prompt_format: {prompt_format!r}")
+    return prefix_text, prompt_text
 
 
 def render_row(
     row: dict,
     prefix_store: dict,
     query_store: dict,
-    text_format: str,
+    prompt_format: str,
+    text_source: str,
     completion_override: str | None = None,
-) -> tuple[str, str | None]:
+) -> tuple[str, str, str | None]:
     """Render a manifest row to (prompt_text, completion_text_or_None).
 
     Returns:
+        prefix: the rendered prefix without the query
         prompt: the input prefix/context text
         completion: the completion text (for cross-cell formats), or None for
                     own-policy cells (completion comes from generation)
@@ -188,37 +276,29 @@ def render_row(
     prefix_item = prefix_store[prefix_id]
     query_item = query_store[query_id]
 
-    turns = prefix_item["turns"]
-    query = query_item["query"]
+    turns = _prefix_turns(prefix_item)
+    query = _query_text(query_item)
+    prefix_text, prompt = _render_prompt_parts(turns, query, prompt_format)
 
-    if text_format in ("instruct", "pretrained"):
-        if text_format == "instruct":
-            prompt = _render_instruct(turns, query)
-        else:
-            prompt = _render_naturalistic(turns, query)
-        return prompt, completion_override
-
-    elif text_format == "claude":
-        # Claude text: completion stored in row["claude_text"]
-        if text_format == "instruct":
-            prompt = _render_instruct(turns, query)
-        else:
-            # Cross-cells with claude text use instruct prompt format
-            prompt = _render_instruct(turns, query)
-        completion = row.get("claude_text", "")
-        return prompt, completion
-
-    elif text_format == "shuffled":
-        # Shuffled: use shuffled_prefix_id if available, else prefix_id
-        shuf_prefix_id = row.get("shuffled_prefix_id", prefix_id)
-        shuf_prefix_item = prefix_store.get(shuf_prefix_id, prefix_item)
-        shuf_turns = shuf_prefix_item["turns"]
-        prompt = _render_instruct(shuf_turns, query)
-        completion = row.get("claude_text", "")
-        return prompt, completion
-
-    else:
-        raise ValueError(f"Unknown text_format: {text_format!r}")
+    if text_source == "own":
+        return prefix_text, prompt, completion_override
+    if text_source == "claude":
+        completion = row.get("claude_text") or row.get("completion")
+        if completion is None:
+            raise ValueError(f"row {row.get('row_id')} has no Claude completion text")
+        return prefix_text, prompt, str(completion)
+    if text_source in ("instruct", "pretrained"):
+        key = f"{text_source}_completion"
+        completion = row.get(key) or row.get("completion")
+        if completion is None:
+            raise ValueError(f"row {row.get('row_id')} has no {key}")
+        return prefix_text, prompt, str(completion)
+    if text_source == "shuffled":
+        completion = row.get("shuffled_completion") or row.get("completion")
+        if completion is None:
+            raise ValueError(f"row {row.get('row_id')} has no shuffled completion")
+        return prefix_text, prompt, str(completion)
+    raise ValueError(f"Unknown text_source: {text_source!r}")
 
 
 # ---------------------------------------------------------------------------
@@ -234,6 +314,7 @@ def compute_shard_fingerprint(
     model_id: str,
     dtype: str,
     n_layers: int,
+    hidden_dim: int,
     boundary_strings: list[str],
     rb_rev: str,
     code_sha: str,
@@ -247,6 +328,7 @@ def compute_shard_fingerprint(
         "model_id": model_id,
         "dtype": dtype,
         "n_layers": n_layers,
+        "hidden_dim": hidden_dim,
         "boundary_strings": boundary_strings,
         "rb_rev": rb_rev,
         "code_sha": code_sha,
@@ -373,28 +455,19 @@ class CaptureResult:
     gen_token_positions: list[int] = field(default_factory=list)
 
 
-def _find_boundary_positions(
-    input_ids: torch.Tensor,
-    prefix_text: str,
-    tokenizer,
-) -> tuple[int, int]:
-    """Find prefix-end and context-end token positions.
-
-    Returns (prefix_end_pos, context_end_pos) as 0-indexed token positions.
-    prefix_end is the last token of the prefix (before the query).
-    context_end is the last token before generation starts.
-    """
-    # Encode prefix alone to find boundary
-    prefix_ids = tokenizer.encode(prefix_text, add_special_tokens=False)
-    n_prefix = len(prefix_ids)
-    # context_end = last position of the full prompt (context_end_pos = len(input_ids) - 1)
-    n_total = input_ids.shape[-1]
-    return max(0, n_prefix - 1), max(0, n_total - 1)
+def _boundary_suffix(prompt_format: str) -> str:
+    if prompt_format == "instruct":
+        return "<|im_end|>\n<|im_start|>user\n"
+    if prompt_format == "pretrained":
+        return "\n\nUser:"
+    raise ValueError(f"Unknown prompt_format: {prompt_format!r}")
 
 
 def _capture_row_hf(
+    prefix_text: str,
     prompt: str,
     completion: str,
+    prompt_format: str,
     model,
     tokenizer,
     n_layers: int,
@@ -408,21 +481,29 @@ def _capture_row_hf(
     """
     import torch
 
-    full_text = prompt + completion
-    inputs = tokenizer(full_text, return_tensors="pt", truncation=True, max_length=3072)
+    boundary = _boundary_suffix(prompt_format)
+    full_text = prompt + completion + boundary
+    inputs = tokenizer(
+        full_text,
+        return_tensors="pt",
+        truncation=True,
+        max_length=3072,
+        add_special_tokens=False,
+    )
     input_ids = inputs["input_ids"].to(device)
     attention_mask = inputs["attention_mask"].to(device)
 
-    # Find prefix/context boundaries
-    prompt_ids = tokenizer(prompt, return_tensors="pt")["input_ids"]
-    n_prompt_tokens = prompt_ids.shape[-1]
+    n_prefix_tokens = len(tokenizer.encode(prefix_text, add_special_tokens=False))
+    n_prompt_tokens = len(tokenizer.encode(prompt, add_special_tokens=False))
+    n_completion_tokens = len(tokenizer.encode(completion, add_special_tokens=False))
     n_total_tokens = input_ids.shape[-1]
 
-    # Prefix end: last token before query (prompt = prefix + query for instruct format)
-    # We use n_prompt_tokens - 1 as context_end_pos
+    prefix_end_pos = min(max(0, n_prefix_tokens - 1), n_total_tokens - 1)
     context_end_pos = min(n_prompt_tokens - 1, n_total_tokens - 1)
-    # prefix_end_pos: approximate as 90% of context_end (heuristic for prefix-without-query)
-    prefix_end_pos = max(0, context_end_pos - 5)  # -5 ≈ short query token count
+    answer_start = min(context_end_pos + 1, n_total_tokens - 1)
+    answer_end = min(context_end_pos + 1 + max(1, n_completion_tokens), n_total_tokens)
+    t3_pos = n_total_tokens - 1
+    t2_end = max(answer_end, t3_pos)
 
     with torch.no_grad():
         outputs = model(
@@ -435,6 +516,10 @@ def _capture_row_hf(
     # hidden_states: tuple of (n_layers+1) tensors, each (1, seq_len, hidden_dim)
     # We want the post-block residuals: hidden_states[1:] (skip embedding layer)
     hidden_states = outputs.hidden_states[1:]  # (n_layers,) each (1, seq, hid)
+    if len(hidden_states) != n_layers:
+        raise ValueError(f"model returned {len(hidden_states)} layers, expected {n_layers}")
+    if hidden_states[0].shape[-1] != hidden_dim:
+        raise ValueError(f"model hidden dim {hidden_states[0].shape[-1]} != expected {hidden_dim}")
 
     # Extract 5 summary positions
     summaries = {}
@@ -448,24 +533,40 @@ def _capture_row_hf(
         )  # (n_layers, hidden_dim)
         return arr
 
+    def _extract_span(start: int, end: int) -> np.ndarray:
+        start = min(max(0, start), n_total_tokens - 1)
+        end = min(max(start + 1, end), n_total_tokens)
+        per_layer = []
+        for hs in hidden_states:
+            span = hs[0, start:end, :]
+            per_layer.append(span.mean(dim=0).to(torch.float16).cpu().numpy())
+        return np.stack(per_layer, axis=0)
+
+    def _extract_answer_tokens() -> np.ndarray:
+        start = min(max(0, answer_start), n_total_tokens - 1)
+        end = min(max(start + 1, answer_end), n_total_tokens)
+        per_layer = []
+        for hs in hidden_states:
+            span = hs[0, start:end, :].to(torch.float16).cpu().numpy()
+            per_layer.append(span)
+        # (T, L, H), keeping only the generated-answer span for B0 pooling.
+        return np.stack(per_layer, axis=1)
+
     summaries["prefix_end"] = _extract_pos(prefix_end_pos)
     summaries["context_end"] = _extract_pos(context_end_pos)
-
-    # tok1, tok2, tok3: first 3 generated tokens (after context_end_pos)
-    for i, kind in enumerate(["tok1", "tok2", "tok3"]):
-        gen_pos = context_end_pos + 1 + i
-        if gen_pos < n_total_tokens:
-            summaries[kind] = _extract_pos(gen_pos)
-        else:
-            # Pad with zeros if sequence is too short
-            summaries[kind] = np.zeros((n_layers, hidden_dim), dtype=np.float16)
+    summaries["t1"] = _extract_span(answer_start, answer_end)
+    summaries["t2"] = _extract_span(answer_start, t2_end)
+    summaries["t3"] = _extract_pos(t3_pos)
+    summaries["_answer_token_states"] = _extract_answer_tokens()
 
     return summaries
 
 
 def _capture_batch_hf(
+    prefix_texts: list[str],
     prompts: list[str],
     completions: list[str],
+    prompt_format: str,
     model_name: str,
     revision: str,
     gpu_id: int,
@@ -493,12 +594,18 @@ def _capture_batch_hf(
     )
     model.eval()
 
-    results = []
-    for i, (prompt, completion) in enumerate(zip(prompts, completions)):
-        if i % 10 == 0:
-            logger.info("[gpu=%d] capture row %d/%d", gpu_id, i, len(prompts))
-        result = _capture_row_hf(prompt, completion, model, tokenizer, n_layers, hidden_dim, device)
-        results.append(result)
+    results = _capture_batch_loaded_model(
+        prefix_texts=prefix_texts,
+        prompts=prompts,
+        completions=completions,
+        prompt_format=prompt_format,
+        model=model,
+        tokenizer=tokenizer,
+        n_layers=n_layers,
+        hidden_dim=hidden_dim,
+        device=device,
+        log_label=f"gpu={gpu_id}",
+    )
 
     del model
     try:
@@ -508,6 +615,40 @@ def _capture_batch_hf(
         torch.cuda.empty_cache()
     except Exception:
         pass
+
+    return results
+
+
+def _capture_batch_loaded_model(
+    *,
+    prefix_texts: list[str],
+    prompts: list[str],
+    completions: list[str],
+    prompt_format: str,
+    model,
+    tokenizer,
+    n_layers: int,
+    hidden_dim: int,
+    device: str,
+    log_label: str,
+) -> list[dict[str, np.ndarray]]:
+    """Shared teacher-forced capture loop for production HF and tiny CPU smokes."""
+    results = []
+    for i, (prefix_text, prompt, completion) in enumerate(zip(prefix_texts, prompts, completions)):
+        if i % 10 == 0:
+            logger.info("[%s] capture row %d/%d", log_label, i, len(prompts))
+        result = _capture_row_hf(
+            prefix_text,
+            prompt,
+            completion,
+            prompt_format,
+            model,
+            tokenizer,
+            n_layers,
+            hidden_dim,
+            device,
+        )
+        results.append(result)
 
     return results
 
@@ -579,33 +720,27 @@ def compute_rb_projection_batch(
     n_layers = rb_directions.shape[0]
     n_traits = rb_directions.shape[1]
 
-    # For B0: use context_end summary (prefix + full query, last position)
-    # Shape: (n_rows, n_layers, hidden_dim)
-    context_vecs = np.stack(
-        [s["context_end"].astype(np.float32) for s in summaries_list],
-        axis=0,
-    )  # (n_rows, n_layers, hidden_dim)
+    norms = np.linalg.norm(rb_directions, axis=2)
+    safe_norms = np.where(norms == 0.0, 1.0, norms)
+    rb_unit = rb_directions / safe_norms[:, :, None]
 
-    # Batched projection: (n_rows, n_layers, hidden_dim) x (n_layers, n_traits, hidden_dim)
-    # -> (n_rows, n_layers, n_traits)
-    # Use einsum: "rld,ltd->rlt"
-    projections = np.einsum("rld,ltd->rlt", context_vecs, rb_directions)
-    # projections: (n_rows, n_layers, n_traits)
-
-    # Pool across rows (treating T=n_rows for per-cell pooling)
-    pooled = _pool_projections(projections)  # (n_layers, n_traits, 4)
-
-    # Per-row output: (n_rows, n_layers, n_traits, 4)
-    # Pool modes applied per-row (T=1 for each row's projections)
     per_row = np.zeros((n_rows, n_layers, n_traits, 4), dtype=np.float32)
-    for r in range(n_rows):
-        row_proj = projections[r : r + 1, :, :]  # (1, n_layers, n_traits)
-        # For T=1: mean=max=top3=last = the single value
-        row_val = row_proj[0]  # (n_layers, n_traits)
-        per_row[r, :, :, 0] = row_val  # mean
-        per_row[r, :, :, 1] = row_val  # max
-        per_row[r, :, :, 2] = row_val  # top3
-        per_row[r, :, :, 3] = row_val  # last
+    for r, summaries in enumerate(summaries_list):
+        answer_states = summaries.get("_answer_token_states")
+        if answer_states is None:
+            raise KeyError("capture result missing _answer_token_states for B0 pooling")
+        answer_states = answer_states.astype(np.float32)  # (T, L, H)
+        if answer_states.ndim != 3 or answer_states.shape[1:] != (
+            n_layers,
+            rb_directions.shape[2],
+        ):
+            raise ValueError(
+                f"answer token states shape {answer_states.shape} incompatible with "
+                f"r_B {rb_directions.shape}"
+            )
+        # (T, L, H) x (L, trait, H) -> (T, L, trait), one batched einsum per row.
+        projections = np.einsum("alh,lbh->alb", answer_states, rb_unit, optimize=True)
+        per_row[r] = _pool_projections(projections)
 
     return per_row
 
@@ -754,6 +889,84 @@ def write_fingerprint(fp_path: Path, fp_dict: dict) -> None:
     fp_path.write_text(json.dumps(fp_dict, indent=2))
 
 
+def _load_raw_completion_files(out_dir: Path, model_type: str, cell_id: str) -> dict[str, str]:
+    """Load row_id -> completion from previously persisted own-policy rollouts."""
+    comp_dir = out_dir / "raw_completions" / model_type
+    paths = sorted(comp_dir.glob(f"{cell_id}_shard*.jsonl")) if comp_dir.exists() else []
+    out: dict[str, str] = {}
+    for path in paths:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                item = json.loads(line)
+                row_id = item.get("row_id")
+                if row_id:
+                    out[str(row_id)] = str(item.get("completion", ""))
+    return out
+
+
+def _load_claude_completions(out_dir: Path) -> dict[str, str]:
+    """Load pair_id -> Claude completion from the P1 output layout."""
+    comp_dir = out_dir / "raw_completions" / "claude"
+    paths = sorted(comp_dir.glob("claude_completions*.jsonl")) if comp_dir.exists() else []
+    out: dict[str, str] = {}
+    for path in paths:
+        with open(path, encoding="utf-8") as f:
+            for line in f:
+                if not line.strip():
+                    continue
+                item = json.loads(line)
+                if item.get("error"):
+                    continue
+                key = f"{item.get('prefix_id')}::{item.get('query_id')}"
+                comp = item.get("completion")
+                if comp is not None:
+                    out[key] = str(comp)
+    return out
+
+
+def attach_completion_sources(rows: list[dict], corpus_dir: Path, out_dir: Path) -> None:
+    """Attach completion text needed by non-own-policy cells to manifest rows."""
+    instruct = _load_raw_completion_files(out_dir, "instruct", "cell_inst_own")
+    pretrained = _load_raw_completion_files(out_dir, "pretrained", "cell_pre_own")
+    claude = _load_claude_completions(out_dir)
+    derangement_path = corpus_dir / "derangement_map.json"
+    derangement = json.loads(derangement_path.read_text()) if derangement_path.exists() else {}
+
+    missing: dict[str, int] = {"instruct": 0, "pretrained": 0, "claude": 0, "shuffled": 0}
+    for row in rows:
+        rid = str(row.get("row_id", ""))
+        if rid in instruct:
+            row["instruct_completion"] = instruct[rid]
+        else:
+            missing["instruct"] += 1
+        if rid in pretrained:
+            row["pretrained_completion"] = pretrained[rid]
+        else:
+            missing["pretrained"] += 1
+        pair_key = f"{row.get('prefix_id')}::{row.get('query_id')}"
+        if pair_key in claude:
+            row["claude_text"] = claude[pair_key]
+        elif row.get("control_subset") or row.get("claude_subset"):
+            missing["claude"] += 1
+        src_rid = derangement.get(rid)
+        if src_rid and src_rid in instruct:
+            row["shuffled_completion"] = instruct[src_rid]
+        elif row.get("control_subset"):
+            missing["shuffled"] += 1
+
+    logger.info(
+        "[completion-sources] loaded instruct=%d pretrained=%d claude=%d deranged=%d "
+        "missing=%s",
+        len(instruct),
+        len(pretrained),
+        len(claude),
+        len(derangement),
+        missing,
+    )
+
+
 # ---------------------------------------------------------------------------
 # Upload
 # ---------------------------------------------------------------------------
@@ -841,7 +1054,8 @@ def _process_shard(
     cell_id = shard.cell_id
     cfg = CELL_CONFIG[cell_id]
     model_type = cfg["model"]
-    text_format = cfg["text_format"]
+    prompt_format = cfg["prompt_format"]
+    text_source = cfg["text_source"]
     own_policy = cfg["own_policy"]
 
     shard_rows = rows[shard.row_start : shard.row_end]
@@ -869,8 +1083,10 @@ def _process_shard(
         model_id=INSTRUCT_MODEL if model_type == "instruct" else PRETRAINED_MODEL,
         dtype="bfloat16",
         n_layers=args.n_layers,
+        hidden_dim=args.hidden_dim,
         boundary_strings=(
-            STOP_TOKENS_INSTRUCT if model_type == "instruct" else STOP_TOKENS_PRETRAINED
+            [_boundary_suffix(prompt_format)]
+            + (STOP_TOKENS_INSTRUCT if model_type == "instruct" else STOP_TOKENS_PRETRAINED)
         ),
         rb_rev=args.rb_rev,
         code_sha=code_sha_val,
@@ -893,14 +1109,17 @@ def _process_shard(
     # ---- Step 1: Get completions ----
     completions: list[str] = []
     prompts: list[str] = []
+    prefix_texts: list[str] = []
 
     for row in shard_rows:
-        prompt, completion_text = render_row(
+        prefix_text, prompt, completion_text = render_row(
             row,
             prefix_store,
             query_store,
-            text_format=text_format if not own_policy else text_format,
+            prompt_format=prompt_format,
+            text_source=text_source,
         )
+        prefix_texts.append(prefix_text)
         prompts.append(prompt)
         if own_policy:
             completions.append("")  # will be filled by generation
@@ -957,13 +1176,15 @@ def _process_shard(
             model_name, revision = PRETRAINED_MODEL, PRETRAINED_REVISION
 
         summaries_list = _capture_batch_hf(
+            prefix_texts=prefix_texts,
             prompts=prompts,
             completions=completions,
+            prompt_format=prompt_format,
             model_name=model_name,
             revision=revision,
             gpu_id=gpu_id,
             n_layers=args.n_layers,
-            hidden_dim=HIDDEN_DIM,
+            hidden_dim=args.hidden_dim,
         )
 
         # Write summaries immediately
@@ -973,7 +1194,7 @@ def _process_shard(
             shard_idx=shard.shard_idx,
             summaries_list=summaries_list,
             n_layers=args.n_layers,
-            hidden_dim=HIDDEN_DIM,
+            hidden_dim=args.hidden_dim,
         )
 
     # ---- Step 3: B0 r_B projection pooling (own-policy cells only) ----
@@ -1171,7 +1392,10 @@ def run_cpu_smoke(args: argparse.Namespace) -> None:
         for _ in range(n_rows):
             s = {}
             for kind in SUMMARY_KINDS:
-                s[kind] = rng.standard_normal((args.n_layers, HIDDEN_DIM)).astype(np.float16)
+                s[kind] = rng.standard_normal((args.n_layers, args.hidden_dim)).astype(np.float16)
+            s["_answer_token_states"] = rng.standard_normal(
+                (3, args.n_layers, args.hidden_dim)
+            ).astype(np.float16)
             summaries_list.append(s)
 
         write_summaries_npy(
@@ -1180,7 +1404,7 @@ def run_cpu_smoke(args: argparse.Namespace) -> None:
             shard_idx=0,
             summaries_list=summaries_list,
             n_layers=args.n_layers,
-            hidden_dim=HIDDEN_DIM,
+            hidden_dim=args.hidden_dim,
         )
 
         # Synthetic completions
@@ -1221,6 +1445,149 @@ def run_cpu_smoke(args: argparse.Namespace) -> None:
     print("[phase=done]")
 
 
+def _load_rows_for_smoke(args: argparse.Namespace) -> tuple[list[dict], dict, dict]:
+    if args.corpus_dir is None:
+        raise ValueError("--backend hf-cpu requires --corpus-dir from a P0 smoke or production build")
+    rows = load_manifest(args.corpus_dir)
+    if args.row_limit:
+        rows = rows[: args.row_limit]
+    if not rows:
+        raise ValueError(f"no manifest rows found under {args.corpus_dir}")
+    prefix_store = load_store(args.corpus_dir, "prefix_store.jsonl")
+    query_store = load_store(args.corpus_dir, "query_store.jsonl")
+    return rows, prefix_store, query_store
+
+
+def _tiny_qwen2_model(tokenizer, *, n_layers: int, hidden_dim: int):
+    import torch
+    from transformers import Qwen2Config, Qwen2ForCausalLM
+
+    n_heads = 2 if hidden_dim % 2 == 0 and hidden_dim >= 2 else 1
+    cfg = Qwen2Config(
+        vocab_size=len(tokenizer),
+        hidden_size=hidden_dim,
+        intermediate_size=max(32, hidden_dim * 4),
+        num_hidden_layers=n_layers,
+        num_attention_heads=n_heads,
+        num_key_value_heads=n_heads,
+        max_position_embeddings=512,
+        tie_word_embeddings=False,
+        use_cache=True,
+    )
+    torch.manual_seed(GEN_SEED)
+    model = Qwen2ForCausalLM(cfg)
+    model.eval()
+    return model
+
+
+def _generate_hf_cpu(prompts: list[str], tokenizer, model, max_new_tokens: int) -> list[str]:
+    import torch
+
+    completions: list[str] = []
+    pad_id = tokenizer.eos_token_id if tokenizer.eos_token_id is not None else 0
+    for prompt in prompts:
+        inputs = tokenizer(prompt, return_tensors="pt", add_special_tokens=False)
+        with torch.no_grad():
+            out = model.generate(
+                **inputs,
+                max_new_tokens=max(1, max_new_tokens),
+                do_sample=False,
+                pad_token_id=pad_id,
+            )
+        new_ids = out[0, inputs["input_ids"].shape[1] :]
+        text = tokenizer.decode(new_ids, skip_special_tokens=False)
+        completions.append(text if text else ".")
+    return completions
+
+
+def run_hf_cpu_smoke(args: argparse.Namespace) -> None:
+    """Tiny Qwen2 CPU smoke over real corpus/tokenizer and real capture seams."""
+    import torch
+    from transformers import AutoTokenizer
+
+    logger.info("[hf-cpu-smoke] Starting tiny Qwen2 CPU smoke")
+    out_dir = Path(args.out)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    rows, prefix_store, query_store = _load_rows_for_smoke(args)
+    cells = args.cells[:1]
+    if len(cells) != 1:
+        raise ValueError("hf-cpu smoke expects exactly one cell via --cells")
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        INSTRUCT_MODEL,
+        revision=INSTRUCT_REVISION,
+        trust_remote_code=True,
+    )
+    model = _tiny_qwen2_model(tokenizer, n_layers=args.n_layers, hidden_dim=args.hidden_dim)
+    device = "cpu"
+
+    rng = np.random.default_rng(GEN_SEED)
+    rb_directions = rng.standard_normal((args.n_layers, N_TRAITS, args.hidden_dim)).astype(
+        np.float32
+    )
+
+    for cell_id in cells:
+        cfg = CELL_CONFIG[cell_id]
+        prefix_texts: list[str] = []
+        prompts: list[str] = []
+        completions: list[str] = []
+        for row in rows:
+            prefix_text, prompt, completion = render_row(
+                row,
+                prefix_store,
+                query_store,
+                prompt_format=cfg["prompt_format"],
+                text_source=cfg["text_source"],
+            )
+            prefix_texts.append(prefix_text)
+            prompts.append(prompt)
+            completions.append(completion or "")
+        if cfg["own_policy"]:
+            completions = _generate_hf_cpu(prompts, tokenizer, model, args.max_gen_tokens)
+        elif any(c == "" for c in completions):
+            raise ValueError(f"{cell_id} requires completion text for hf-cpu smoke")
+
+        write_completions_jsonl(
+            out_dir=out_dir,
+            cell_id=cell_id,
+            shard_idx=0,
+            model_type=cfg["model"],
+            rows=rows,
+            completions=completions,
+        )
+        summaries_list = _capture_batch_loaded_model(
+            prefix_texts=prefix_texts,
+            prompts=prompts,
+            completions=completions,
+            prompt_format=cfg["prompt_format"],
+            model=model,
+            tokenizer=tokenizer,
+            n_layers=args.n_layers,
+            hidden_dim=args.hidden_dim,
+            device=device,
+            log_label="hf-cpu",
+        )
+        write_summaries_npy(
+            out_dir=out_dir,
+            cell_id=cell_id,
+            shard_idx=0,
+            summaries_list=summaries_list,
+            n_layers=args.n_layers,
+            hidden_dim=args.hidden_dim,
+        )
+        rb_pool = compute_rb_projection_batch(summaries_list, rb_directions)
+        write_rb_pool_npy(out_dir, cell_id, 0, rb_pool)
+
+    _write_sentinel(args, phase="done", note="hf-cpu-smoke")
+    summary_files = list((out_dir / "summaries").rglob("*.npy"))
+    comp_files = list((out_dir / "raw_completions").rglob("*.jsonl"))
+    print(
+        f"[hf-cpu-smoke] artifact digest: {len(rows)} rows, {len(summary_files)} npy, "
+        f"{len(comp_files)} jsonl, rb_pool_shape={rb_pool.shape}"
+    )
+    print("[phase=done]")
+
+
 # ---------------------------------------------------------------------------
 # Sentinel writing
 # ---------------------------------------------------------------------------
@@ -1231,7 +1598,11 @@ def _write_sentinel(args: argparse.Namespace, phase: str, note: str = "") -> Non
     import datetime
 
     sentinel_dir = Path("/workspace/logs")
-    sentinel_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        sentinel_dir.mkdir(parents=True, exist_ok=True)
+    except OSError:
+        sentinel_dir = Path(args.out) / "logs"
+        sentinel_dir.mkdir(parents=True, exist_ok=True)
     sentinel_path = sentinel_dir / f"issue-{args.issue}-gpu-phase.json"
     payload = {
         "issue": args.issue,
@@ -1241,7 +1612,13 @@ def _write_sentinel(args: argparse.Namespace, phase: str, note: str = "") -> Non
         "timestamp": datetime.datetime.utcnow().isoformat(),
         "note": note,
     }
-    sentinel_path.write_text(json.dumps(payload, indent=2))
+    try:
+        sentinel_path.write_text(json.dumps(payload, indent=2))
+    except OSError:
+        sentinel_dir = Path(args.out) / "logs"
+        sentinel_dir.mkdir(parents=True, exist_ok=True)
+        sentinel_path = sentinel_dir / f"issue-{args.issue}-gpu-phase.json"
+        sentinel_path.write_text(json.dumps(payload, indent=2))
     logger.info("[sentinel] Wrote %s (phase=%s)", sentinel_path, phase)
 
 
@@ -1277,6 +1654,13 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--no-upload", action="store_true", help="Skip HF upload")
     p.add_argument("--cpu-smoke", action="store_true", help="CPU smoke mode (no GPU required)")
     p.add_argument("--n-layers", type=int, default=N_LAYERS)
+    p.add_argument("--hidden-dim", type=int, default=HIDDEN_DIM)
+    p.add_argument(
+        "--backend",
+        choices=("cuda", "hf-cpu", "cpu-synthetic"),
+        default="cuda",
+        help="cuda production path, hf-cpu tiny Qwen2 path, or synthetic layout smoke",
+    )
     p.add_argument("--max-gen-tokens", type=int, default=MAX_GEN_TOKENS)
     p.add_argument(
         "--corpus-dir",
@@ -1325,9 +1709,13 @@ def main() -> None:
 
     logger.info("[main] phases_set=%s cells=%s", args.phases_set, args.cells)
 
-    # CPU smoke mode: synthetic outputs only
     if args.cpu_smoke:
+        args.backend = "cpu-synthetic"
+    if args.backend == "cpu-synthetic":
         run_cpu_smoke(args)
+        return
+    if args.backend == "hf-cpu":
+        run_hf_cpu_smoke(args)
         return
 
     # Load corpus
@@ -1355,7 +1743,7 @@ def main() -> None:
                 rb_rev=args.rb_rev,
                 n_layers=args.n_layers,
                 n_traits=N_TRAITS,
-                hidden_dim=HIDDEN_DIM,
+                hidden_dim=args.hidden_dim,
             )
             logger.info("[main] r_B directions loaded: %s", rb_directions.shape)
         except Exception as exc:
@@ -1364,6 +1752,51 @@ def main() -> None:
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    non_own_cells = [c for c in args.cells if not CELL_CONFIG[c]["own_policy"]]
+    own_cells = [c for c in args.cells if CELL_CONFIG[c]["own_policy"]]
+    if non_own_cells:
+        attach_completion_sources(rows, corpus_dir, out_dir)
+    if non_own_cells and own_cells and {"gen", "capture"}.issubset(args.phases_set):
+        logger.info(
+            "[main] two-stage run: own-policy cells first (%s), non-own cells second (%s)",
+            own_cells,
+            non_own_cells,
+        )
+        orig_cells = args.cells
+        args.cells = own_cells
+        own_results = run_dispatch(
+            cells=own_cells,
+            rows=rows,
+            prefix_store=prefix_store,
+            query_store=query_store,
+            out_dir=out_dir,
+            args=args,
+            rb_directions=rb_directions,
+            corpus_hash=corpus_hash,
+        )
+        attach_completion_sources(rows, corpus_dir, out_dir)
+        args.cells = non_own_cells
+        orig_phases = args.phases_set
+        args.phases_set = {"capture"} if "capture" in orig_phases else set()
+        non_own_results = run_dispatch(
+            cells=non_own_cells,
+            rows=rows,
+            prefix_store=prefix_store,
+            query_store=query_store,
+            out_dir=out_dir,
+            args=args,
+            rb_directions=None,
+            corpus_hash=corpus_hash,
+        )
+        args.cells = orig_cells
+        args.phases_set = orig_phases
+        results = own_results + non_own_results
+        summary_path = out_dir / "manifests" / "gpu_phase_summary.json"
+        summary_path.parent.mkdir(parents=True, exist_ok=True)
+        summary_path.write_text(json.dumps({"results": results}, indent=2))
+        _write_sentinel(args, phase="done", note=f"{len(results)} shards")
+        return
 
     # Run work-conserving dispatch
     results = run_dispatch(

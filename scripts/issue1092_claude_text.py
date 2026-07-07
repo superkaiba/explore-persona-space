@@ -39,6 +39,7 @@ load_dotenv()
 
 from explore_persona_space.llm.api_dispatch import (  # noqa: E402
     DispatchItem,
+    DispatchResult,
     dispatch_calls,
 )
 
@@ -245,7 +246,7 @@ def _build_dispatch_items(
         query_entry = query_store[qid]
 
         # Use instruct render (system-neutral — no system prompt injected)
-        turns = prefix_entry.get("turns", [])
+        turns = prefix_entry.get("prefix_turns") or prefix_entry.get("turns", [])
         query_text = query_entry["text"]
         rendered = _render_instruct(turns, query_text)
 
@@ -428,6 +429,7 @@ async def _run_generation(
     cells_filter: set[str] | None,
     checkpoint_dir: Path | None,
     dry_run_upload: bool,
+    dry_run_api: bool,
 ) -> None:
     t0 = time.monotonic()
 
@@ -471,16 +473,30 @@ async def _run_generation(
     if checkpoint_dir is not None:
         checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
-    results = await dispatch_calls(
-        items,
-        model=CLAUDE_MODEL,
-        build_request=_build_request,
-        parse_response=_parse_response,
-        force_path="batch" if len(items) > 100 else None,  # always batch except tiny smoke
-        chunk_size=BATCH_CHUNK_SIZE,
-        checkpoint_dir=checkpoint_dir,
-        max_attempts=3,
-    )
+    if dry_run_api:
+        results = {
+            item.item_id: DispatchResult(
+                item_id=item.item_id,
+                result=(
+                    "[dry-run Claude completion for "
+                    f"{item.payload['prefix_id']}::{item.payload['query_id']}]"
+                ),
+                error=False,
+                reason=None,
+            )
+            for item in items
+        }
+    else:
+        results = await dispatch_calls(
+            items,
+            model=CLAUDE_MODEL,
+            build_request=_build_request,
+            parse_response=_parse_response,
+            force_path="batch" if len(items) > 100 else None,  # always batch except tiny smoke
+            chunk_size=BATCH_CHUNK_SIZE,
+            checkpoint_dir=checkpoint_dir,
+            max_attempts=3,
+        )
 
     n_ok = sum(1 for r in results.values() if not r.error)
     n_err = sum(1 for r in results.values() if r.error)
@@ -516,7 +532,8 @@ async def _run_generation(
             )
             sys.exit(1)
 
-    # 7. Write stats JSON to eval_results (no completion text — digest only)
+    # 7. Write stats JSON (no completion text — digest only). Production uses
+    # eval_results; smoke keeps every artifact under --out-dir.
     stats = {
         "phase": "P1_claude_text",
         "model": CLAUDE_MODEL,
@@ -531,9 +548,14 @@ async def _run_generation(
         "completions_size_bytes": completions_file.stat().st_size,
         "hf_path": hf_path,
         "smoke": smoke,
+        "dry_run_api": dry_run_api,
         "wall_s": time.monotonic() - t0,
     }
-    eval_dir = Path("eval_results/issue_1092/p1_claude_text")
+    eval_dir = (
+        out_dir / "smoke_stats"
+        if smoke
+        else Path("eval_results/issue_1092/p1_claude_text")
+    )
     eval_dir.mkdir(parents=True, exist_ok=True)
     stats_file = eval_dir / ("stats_smoke.json" if smoke else "stats.json")
     with open(stats_file, "w") as f:
@@ -598,6 +620,11 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Skip actual HF upload (log path only)",
     )
+    p.add_argument(
+        "--dry-run-api",
+        action="store_true",
+        help="Skip Anthropic calls and emit deterministic dry-run completions",
+    )
     return p.parse_args()
 
 
@@ -636,6 +663,7 @@ def main() -> None:
             cells_filter=cells_filter,
             checkpoint_dir=checkpoint_dir,
             dry_run_upload=args.dry_run_upload,
+            dry_run_api=args.dry_run_api,
         )
     )
 
