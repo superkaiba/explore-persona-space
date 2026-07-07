@@ -142,3 +142,4 @@
 {"ts": "2026-07-07T12:13:56Z", "kind": "epm:codex-task-failed", "version": 1, "by": "codex_task", "note": "job_id=task-mram1wtc-gy111f: post-spawn probe failed (probe-error): No job found for \"task-mram1wtc-gy111f\". Run /codex:status to list known jobs.\n (exhausted 1 transient re-dispatch(es))"}
 {"ts": "2026-07-07T12:23:45Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mrameiwm-mgp1er effort=xhigh write=True poll_interval=30s max_wait=7200s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-07-07T12:43:52Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mran4f75-8w3zoh effort=xhigh write=True poll_interval=30s max_wait=7200s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-07-07T12:54:27Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mran4f75-8w3zoh phase=done after 633s fetch_retries=0."}
