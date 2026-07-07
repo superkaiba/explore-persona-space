@@ -97,6 +97,12 @@ N_PERIPHERY_TOPICMATCH = 3  # topic-matched bank queries per peripheral prefix
 MAX_TOTAL_TOKENS = 8192
 MAX_FORMATTED_TOKENS = 7168  # = 8192 - 1024 generation headroom
 
+# Stream-cache code marker: bump WHENEVER any streaming-filter logic or
+# filter-relevant constant changes so a stale persisted pool can never be
+# resumed under a new recipe (#952 gate-5 shape: bare output existence never
+# vouches — the fingerprint must vouch).
+FILTER_RECIPE_VERSION = "r8.1"
+
 # ── 12-way topic taxonomy ─────────────────────────────────────────────────────
 TOPIC_LABELS = [
     "coding_software",
@@ -480,6 +486,159 @@ def _stream_conversations(  # noqa: C901
     return results
 
 
+# ── stream-pool checkpoint (round-8: the 3h-stream protection) ────────────────
+
+
+def _source_tag(dataset_repo: str) -> str:
+    """Canonical short tag for a dataset repo (matches `_stream_conversations`)."""
+    return "wildchat" if "WildChat" in dataset_repo else "lmsys"
+
+
+def _stream_fingerprint(
+    dataset_repo: str,
+    revision: str,
+    *,
+    lang_filter: str,
+    stream_limit: int | None,
+    row_limit: int | None,
+) -> dict[str, Any]:
+    """Exact-match resume fingerprint for a persisted stream pool.
+
+    Covers the dataset identity (repo + pinned revision), every
+    filter-relevant constant (MAX_TOTAL_TOKENS, MAX_FORMATTED_TOKENS), the
+    language filter, both stream bounds, and the FILTER_RECIPE_VERSION code
+    marker. A resumed pool is loaded ONLY on an exact dict match; any
+    mismatch recomputes (#952 gate 5).
+    """
+    return {
+        "dataset_repo": dataset_repo,
+        "revision": revision,
+        "lang_filter": lang_filter,
+        "stream_limit": stream_limit,
+        "row_limit": row_limit,
+        "max_total_tokens": MAX_TOTAL_TOKENS,
+        "max_formatted_tokens": MAX_FORMATTED_TOKENS,
+        "filter_recipe_version": FILTER_RECIPE_VERSION,
+    }
+
+
+def _stream_with_cache(
+    dataset_repo: str,
+    revision: str,
+    *,
+    rng: random.Random,
+    row_limit: int | None,
+    stream_limit: int | None = None,
+    lang_filter: str = "en",
+    stats_out: dict | None = None,
+    cache_dir: Path,
+    resume: bool = True,
+) -> list[dict]:
+    """Stream one dataset with a per-source on-disk checkpoint + resume.
+
+    Attempt 3 (2026-07-07) streamed 3h06m, then a step-4 KeyError killed the
+    process and the whole kept pool died in memory (checkpoint-per-phase
+    violation). This wrapper persists each source's kept pool to
+    ``<cache_dir>/<source>.jsonl`` (text-mode JSONL — read back via file
+    iteration, never ``.splitlines()``; #825/#950 U+2028 rule) plus a
+    ``<source>.meta.json`` sidecar carrying the `_stream_fingerprint`, kept /
+    streamed counts, and the per-filter reject counters. The pool file is
+    written FIRST and the meta sidecar LAST (both atomically via
+    ``os.replace``), so a partially-written cache never presents a valid
+    fingerprint. On startup an EXACT fingerprint match loads the pool and
+    skips the stream (loud log line); any mismatch logs the differing keys
+    and re-streams. ``resume=False`` (the ``--no-resume-stream`` flag) forces
+    a re-stream.
+    """
+    source_tag = _source_tag(dataset_repo)
+    fp = _stream_fingerprint(
+        dataset_repo,
+        revision,
+        lang_filter=lang_filter,
+        stream_limit=stream_limit,
+        row_limit=row_limit,
+    )
+    pool_path = cache_dir / f"{source_tag}.jsonl"
+    meta_path = cache_dir / f"{source_tag}.meta.json"
+
+    if not resume:
+        logger.info("[stream-cache %s] --no-resume-stream: re-streaming", source_tag)
+    elif meta_path.exists() and pool_path.exists():
+        with open(meta_path, encoding="utf-8") as f:
+            meta = json.load(f)
+        cached_fp = meta.get("fingerprint") or {}
+        if cached_fp == fp:
+            results: list[dict] = []
+            with open(pool_path, encoding="utf-8") as f:
+                for line in f:  # text-mode line iteration, never .splitlines()
+                    stripped = line.strip("\n")
+                    if stripped:
+                        results.append(json.loads(stripped))
+            if len(results) != meta.get("kept"):
+                raise RuntimeError(
+                    f"[stream-cache {source_tag}] pool row count {len(results)} != "
+                    f"meta kept={meta.get('kept')} - corrupt cache; delete "
+                    f"{pool_path} or pass --no-resume-stream"
+                )
+            logger.info(
+                "[stream-cache %s] RESUMED from cache: %d rows (%s) - stream SKIPPED",
+                source_tag,
+                len(results),
+                pool_path,
+            )
+            if stats_out is not None:
+                stats_out.update(
+                    {
+                        "kept": meta["kept"],
+                        "streamed": meta["streamed"],
+                        "rejects": meta["rejects"],
+                        "resumed_from_cache": True,
+                    }
+                )
+            return results
+        diff_keys = sorted(k for k in set(fp) | set(cached_fp) if cached_fp.get(k) != fp.get(k))
+        logger.info(
+            "[stream-cache %s] fingerprint MISMATCH on keys %s - re-streaming",
+            source_tag,
+            diff_keys,
+        )
+
+    stats: dict[str, Any] = {}
+    results = _stream_conversations(
+        dataset_repo,
+        revision,
+        rng=rng,
+        row_limit=row_limit,
+        stream_limit=stream_limit,
+        lang_filter=lang_filter,
+        stats_out=stats,
+    )
+    stats["resumed_from_cache"] = False
+
+    # Persist pool FIRST, meta LAST (meta presence == pool complete).
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    tmp_pool = cache_dir / (pool_path.name + ".tmp")
+    with open(tmp_pool, "w", encoding="utf-8") as f:
+        for row in results:
+            f.write(json.dumps(row, ensure_ascii=False))
+            f.write("\n")
+    os.replace(tmp_pool, pool_path)
+    tmp_meta = cache_dir / (meta_path.name + ".tmp")
+    with open(tmp_meta, "w", encoding="utf-8") as f:
+        json.dump({"fingerprint": fp, **stats}, f, indent=2)
+    os.replace(tmp_meta, meta_path)
+    logger.info(
+        "[stream-cache %s] persisted %d rows -> %s (+ fingerprint sidecar)",
+        source_tag,
+        len(results),
+        pool_path,
+    )
+
+    if stats_out is not None:
+        stats_out.update(stats)
+    return results
+
+
 def _synthetic_smoke_conversations(n: int, source: str) -> list[dict]:
     """Small local fixture for offline smoke tests; production never uses this."""
     out: list[dict] = []
@@ -525,70 +684,93 @@ def _synthetic_smoke_conversations(n: int, source: str) -> list[dict]:
 # ── topic labeling ────────────────────────────────────────────────────────────
 
 
+def _topic_input_text(entry: dict) -> str:
+    """Topic-labeling input text for one PREFIX entry (round-8 crash fix).
+
+    Prefix entries (from `_sample_prefixes`) carry ``prefix_turns`` (the turns
+    before the final user turn) + ``natural_query`` (the final user turn's
+    text) — NOT ``turns``: attempt 3 crashed 3h06m in when the labeler read
+    ``conv["turns"][0]`` on these entries (KeyError, :550). The first USER
+    turn of a non-empty prefix is the most topically informative; an EMPTY
+    prefix (single-turn conversation — bare context, allowed by design) falls
+    back to the natural query. Truncated to 500 chars for context economy.
+    Raises ValueError when neither field yields text (fail-loud, never a
+    silent 'other').
+    """
+    for turn in entry.get("prefix_turns") or []:
+        if turn.get("role") == "user" and turn.get("content"):
+            return turn["content"][:500]
+    natural = entry.get("natural_query")
+    if natural:
+        return natural[:500]
+    raise ValueError(
+        f"prefix entry {entry.get('prefix_id', '<unknown>')!r} has no user prefix "
+        "turn and no natural_query - cannot derive a topic-label input"
+    )
+
+
 def _label_topic_batch(
-    conversations: list[dict],
+    texts: list[str],
     *,
     client: anthropic.Anthropic,
-    batch_size: int = 50,
     max_retries: int = 3,
 ) -> list[str]:
-    """Assign 12-way topic labels to conversations via claude-haiku-4-5.
+    """Assign 12-way topic labels to pre-extracted TEXTS via claude-haiku-4-5.
 
-    Uses the first user turn (the most topically informative) as the input.
-    Returns a list of labels parallel to `conversations`.
+    Takes plain strings (round-8: call sites extract their own texts — prefix
+    entries via `_topic_input_text`, bank queries via ``q["text"][:500]``) so
+    this function carries NO dict-shape assumption. Returns a list of labels
+    parallel to `texts`; a text that fails all retries keeps the "other"
+    fallback (logged).
 
     Note: this is NOT a judged-behavior DV; the Sonnet judge pin applies
     to the B-module only (plan §4.1 step 4 justification).
     """
     taxonomy_str = ", ".join(TOPIC_LABELS)
-    labels: list[str] = ["other"] * len(conversations)
+    labels: list[str] = ["other"] * len(texts)
 
-    for batch_start in range(0, len(conversations), batch_size):
-        batch = conversations[batch_start : batch_start + batch_size]
-        for i, conv in enumerate(batch):
-            global_i = batch_start + i
-            first_user = conv["turns"][0]["content"][:500]  # truncate for context economy
-            prompt = (
-                f"Classify the following user message into exactly one of these categories: "
-                f"{taxonomy_str}\n\n"
-                f"Respond with ONLY the category name, no explanation.\n\n"
-                f"Message: {first_user}"
-            )
-            for attempt in range(max_retries):
-                try:
-                    resp = client.messages.create(
-                        model=HAIKU_MODEL,
-                        max_tokens=20,
-                        messages=[{"role": "user", "content": prompt}],
+    for i, text in enumerate(texts):
+        prompt = (
+            f"Classify the following user message into exactly one of these categories: "
+            f"{taxonomy_str}\n\n"
+            f"Respond with ONLY the category name, no explanation.\n\n"
+            f"Message: {text}"
+        )
+        for attempt in range(max_retries):
+            try:
+                resp = client.messages.create(
+                    model=HAIKU_MODEL,
+                    max_tokens=20,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                label = resp.content[0].text.strip().lower()
+                # normalize to valid label
+                if label not in TOPIC_LABELS:
+                    # try prefix match
+                    matched = next(
+                        (
+                            topic_label
+                            for topic_label in TOPIC_LABELS
+                            if topic_label.startswith(label) or label.startswith(topic_label)
+                        ),
+                        None,
                     )
-                    label = resp.content[0].text.strip().lower()
-                    # normalize to valid label
-                    if label not in TOPIC_LABELS:
-                        # try prefix match
-                        matched = next(
-                            (
-                                topic_label
-                                for topic_label in TOPIC_LABELS
-                                if topic_label.startswith(label) or label.startswith(topic_label)
-                            ),
-                            None,
-                        )
-                        label = matched or "other"
-                    labels[global_i] = label
-                    break
-                except Exception as exc:
-                    if attempt == max_retries - 1:
-                        logger.warning(
-                            "[topic] failed to label conv %d after %d retries: %s",
-                            global_i,
-                            max_retries,
-                            type(exc).__name__,
-                        )
-                    else:
-                        time.sleep(2**attempt)
+                    label = matched or "other"
+                labels[i] = label
+                break
+            except Exception as exc:
+                if attempt == max_retries - 1:
+                    logger.warning(
+                        "[topic] failed to label text %d after %d retries: %s",
+                        i,
+                        max_retries,
+                        type(exc).__name__,
+                    )
+                else:
+                    time.sleep(2**attempt)
 
-        if batch_start % 200 == 0 and batch_start > 0:
-            logger.info("[topic] labeled %d / %d", batch_start, len(conversations))
+        if i > 0 and i % 200 == 0:
+            logger.info("[topic] labeled %d / %d", i, len(texts))
 
     return labels
 
@@ -616,8 +798,11 @@ def _sample_prefixes(
     if row_limit is not None:
         n_target = min(n_target, row_limit)
 
-    # sample long first (binding floor)
-    n_long = min(len(long_convs), max(n_long_target, n_target // 3))
+    # sample long first (binding floor). The long target is capped by n_target
+    # so a --row-limit tiny-real run stays bounded; production values are
+    # UNCHANGED: min(300, 1000)=300, max(300, 333)=333 — identical to the
+    # pre-round-8 max(n_long_target, n_target // 3).
+    n_long = min(len(long_convs), max(min(n_long_target, n_target), n_target // 3))
     sampled_long = rng.sample(long_convs, n_long)
     n_short = max(0, n_target - n_long)
     sampled_short = rng.sample(short_convs, min(n_short, len(short_convs)))
@@ -669,10 +854,22 @@ def _build_query_bank(
     rng: random.Random,
     n_target: int,
     row_limit: int | None,
+    label_texts: Any = None,
 ) -> list[dict]:
     """Build the query bank from conversations DISJOINT from prefix conversations.
 
     Each returned entry: {"query_id": str, "text": str, "topic": str, "source": str}
+
+    ``label_texts`` (round-8 sweep fix): a callable ``list[str] -> list[str]``
+    that assigns 12-way topic labels to the candidate query texts BEFORE the
+    topic-stratified subsample. Pre-round-8 the production path never labeled
+    bank candidates at all — every candidate carried the "other" default, so
+    the stratified subsample collapsed to a single ~``n_target // 12`` bucket
+    (a latent G1 bank-floor crash) and topic-matched periphery crossing
+    degenerated to random. Production passes the Haiku labeler; smoke passes
+    a random-label callable so the SAME extraction + label-application path
+    is smoke-covered. ``None`` keeps the "other" default (unit tests of the
+    collection logic only).
     """
     if row_limit is not None:
         n_target = min(n_target, row_limit // 4 + 1)
@@ -700,6 +897,14 @@ def _build_query_bank(
             break
 
     rng.shuffle(query_entries)
+
+    # round-8: label candidates BEFORE stratifying (see docstring). Bank query
+    # texts are already the topic input — truncate like `_topic_input_text`.
+    if label_texts is not None:
+        labels = label_texts([q["text"][:500] for q in query_entries])
+        for q, lbl in zip(query_entries, labels, strict=True):
+            q["topic"] = lbl
+
     # topic-stratified subsample
     by_topic: dict[str, list] = {}
     for q in query_entries:
@@ -708,12 +913,28 @@ def _build_query_bank(
     bank: list[dict] = []
     for _lbl, qs in by_topic.items():
         bank.extend(qs[:per_topic])
+    n_stratified = len(bank)
+    # round-8: top up from unpicked candidates when the per-topic caps leave
+    # the bank short of n_target (uneven real topic distributions) — the
+    # stratified core stays, the remainder fills round-robin-free from the
+    # shuffled leftovers so the G1 bank floor is reachable.
+    if len(bank) < n_target:
+        picked_ids = {q["query_id"] for q in bank}
+        leftovers = [q for q in query_entries if q["query_id"] not in picked_ids]
+        rng.shuffle(leftovers)
+        bank.extend(leftovers[: n_target - len(bank)])
     rng.shuffle(bank)
     bank = bank[:n_target]
     for i, q in enumerate(bank):
         q["query_id"] = f"qry_{i:05d}"
 
-    logger.info("[bank] %d queries (target=%d)", len(bank), n_target)
+    logger.info(
+        "[bank] %d queries (target=%d; %d stratified + %d top-up)",
+        len(bank),
+        n_target,
+        min(n_stratified, len(bank)),
+        max(0, len(bank) - n_stratified),
+    )
     return bank
 
 
@@ -1388,6 +1609,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     )
     parser.add_argument("--no-upload", action="store_true", help="Skip HF upload (smoke)")
     parser.add_argument(
+        "--no-resume-stream",
+        action="store_true",
+        help="Force re-stream even when a fingerprint-matched stream cache exists",
+    )
+    parser.add_argument(
+        "--eval-dir",
+        type=Path,
+        default=None,
+        help=(
+            "Override the eval_results stats dir (tiny-real / scratch runs; the "
+            "default production path writes the committed eval_results digest)"
+        ),
+    )
+    parser.add_argument(
         "--g1-strict", action="store_true", default=True, help="Fail on G1 floor miss"
     )
     parser.add_argument("--no-g1-strict", dest="g1_strict", action="store_false")
@@ -1402,11 +1637,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     corpus_dir = out_dir / "corpus"
     corpus_dir.mkdir(parents=True, exist_ok=True)
 
-    eval_dir = (
-        corpus_dir / "smoke_stats"
-        if args.smoke
-        else PROJECT_ROOT / "eval_results" / "issue_1092" / "corpus"
-    )
+    if args.eval_dir is not None:
+        eval_dir = args.eval_dir
+    elif args.smoke:
+        eval_dir = corpus_dir / "smoke_stats"
+    else:
+        eval_dir = PROJECT_ROOT / "eval_results" / "issue_1092" / "corpus"
     eval_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info("[P0] corpus build start (smoke=%s, row_limit=%s)", args.smoke, args.row_limit)
@@ -1430,26 +1666,35 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
         wc_convs = _synthetic_smoke_conversations(n_fixture, "wildchat")
         lm_convs = _synthetic_smoke_conversations(n_fixture, "lmsys")
     else:
+        # round-8: each source's kept pool checkpoints to <out>/stream_cache/
+        # the moment its stream completes, and resumes on an exact fingerprint
+        # match — a downstream-step crash never forfeits the multi-hour stream
+        # again (attempt 3 lost a 3h06m pool to a step-4 KeyError).
+        stream_cache_dir = out_dir / "stream_cache"
         logger.info("[P0] step 2: stream WildChat (rev=%s)", WILDCHAT_REV[:8])
         wc_stats: dict[str, Any] = {}
-        wc_convs = _stream_conversations(
+        wc_convs = _stream_with_cache(
             WILDCHAT_REPO,
             WILDCHAT_REV,
             rng=rng,
             row_limit=args.row_limit * 20 if args.row_limit else None,
             stream_limit=args.stream_limit,
             stats_out=wc_stats,
+            cache_dir=stream_cache_dir,
+            resume=not args.no_resume_stream,
         )
 
         logger.info("[P0] step 2: stream LMSYS (rev=%s)", LMSYS_REV[:8])
         lm_stats: dict[str, Any] = {}
-        lm_convs = _stream_conversations(
+        lm_convs = _stream_with_cache(
             LMSYS_REPO,
             LMSYS_REV,
             rng=rng,
             row_limit=args.row_limit * 20 if args.row_limit else None,
             stream_limit=args.stream_limit,
             stats_out=lm_stats,
+            cache_dir=stream_cache_dir,
+            resume=not args.no_resume_stream,
         )
         streaming_funnel = {"wildchat": wc_stats, "lmsys": lm_stats}
 
@@ -1486,32 +1731,49 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     )
 
     # ── step 4: topic labeling ───────────────────────────────────────────────
+    # round-8: BOTH modes run the same `_topic_input_text` extraction over the
+    # prefix entries (the attempt-3 crash lived in a production-only branch no
+    # smoke ever executed); smoke randomizes only the label VALUES at the API
+    # boundary.
     logger.info("[P0] step 4: topic labeling via %s", HAIKU_MODEL)
+    prefix_label_inputs = [_topic_input_text(e) for e in prefix_entries]
+    client: anthropic.Anthropic | None = None
     if args.smoke:
-        # In smoke mode assign random topics to avoid real API calls
-        for pfx in prefix_entries:
-            pfx["topic"] = rng.choice(TOPIC_LABELS)
-        logger.info("[P0] smoke: assigned random topics to %d prefixes", len(prefix_entries))
+        topic_labels = [rng.choice(TOPIC_LABELS) for _ in prefix_label_inputs]
+        logger.info(
+            "[P0] smoke: extracted %d label inputs via _topic_input_text; random labels",
+            len(prefix_label_inputs),
+        )
     else:
         client = anthropic.Anthropic()
-        topic_labels = _label_topic_batch(prefix_entries, client=client)
-        for pfx, lbl in zip(prefix_entries, topic_labels, strict=True):
-            pfx["topic"] = lbl
+        topic_labels = _label_topic_batch(prefix_label_inputs, client=client)
+    for pfx, lbl in zip(prefix_entries, topic_labels, strict=True):
+        pfx["topic"] = lbl
+    logger.info("[P0] step 4: %d prefixes labeled", len(prefix_entries))
 
     # ── step 5: query bank ───────────────────────────────────────────────────
     logger.info("[P0] step 5: build query bank")
     prefix_conv_ids = {pfx["conv_id"] for pfx in prefix_entries}
+
+    if args.smoke:
+
+        def _bank_label_texts(texts: list[str]) -> list[str]:
+            return [rng.choice(TOPIC_LABELS) for _ in texts]
+
+    else:
+        assert client is not None
+
+        def _bank_label_texts(texts: list[str]) -> list[str]:
+            return _label_topic_batch(texts, client=client)
+
     bank = _build_query_bank(
         bank_pool,
         prefix_conv_ids=prefix_conv_ids,
         rng=rng,
         n_target=N_BANK_QUERIES_TARGET,
         row_limit=args.row_limit,
+        label_texts=_bank_label_texts,
     )
-    if args.smoke:
-        # assign random topics to bank queries
-        for q in bank:
-            q["topic"] = rng.choice(TOPIC_LABELS)
 
     core_queries = _select_core_queries(bank, n_core=DENSE_CORE_QUERIES, rng=rng)
 
