@@ -1,0 +1,35 @@
+{
+  "layer": 19,
+  "persona_subspace_r2": 0.8660583910647595,
+  "individual_r_b_r2": {
+    "evil": 0.8413961115246049,
+    "sycophancy": 0.9119878572439011,
+    "hallucination": 0.836987286898316
+  },
+  "matched_variance_rank_subspace_r2": 0.8677912232656166,
+  "matched_ranks": [
+    10,
+    4,
+    2
+  ],
+  "random_3d_subspace_null": {
+    "n": 500,
+    "mean": 0.6462819851892685,
+    "sd": 0.051336718368042294,
+    "p5": 0.5635386104594767,
+    "p95": 0.726804734237979
+  },
+  "subspace_variance_share": 0.11601787778378615,
+  "r_b_pairwise_cosine": {
+    "evil|sycophancy": 0.11815346032381058,
+    "evil|hallucination": 0.1166086494922638,
+    "sycophancy|hallucination": 0.010384711436927319
+  },
+  "r_b_effective_rank": 2.986171007156372,
+  "note": "Joint reconstruction of span(r_B) at L19, fold 0. Subspace R2 is basis-invariant (projector P_S). matched-variance-rank subspace = PCA dirs at the r_B equivalent variance ranks; random 3-D null = random orthonormal 3-frames.",
+  "metadata": {
+    "script": "issue779_persona_subspace_recon",
+    "seed": 0,
+    "n_folds": 5
+  }
+}

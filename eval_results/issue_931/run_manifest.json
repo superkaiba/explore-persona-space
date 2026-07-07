@@ -1,0 +1,36 @@
+{
+  "metadata": {
+    "git_commit": "d8b07645cef8d28c641e7ea6ab5db19d3566ae5f",
+    "timestamp": "2026-07-04T03:54:52Z",
+    "seed": 0,
+    "n": 20,
+    "script": "scripts/issue931_fit_cells.py",
+    "issue": 931
+  },
+  "hf_data_repo": "superkaiba1/explore-persona-space-data",
+  "revision": "82d3a875ee5148e45df982fd51a3c4dea1055fb7",
+  "prefix": "issue825_userbase_map/analysis_tensors",
+  "n_files": 20,
+  "files": [
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard000.json",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard000.pt",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard001.json",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard001.pt",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard002.json",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard002.pt",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard003.json",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard003.pt",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard004.json",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard004.pt",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard005.json",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard005.pt",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard006.json",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard006.pt",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard007.json",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard007.pt",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard008.json",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard008.pt",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard009.json",
+    "issue825_userbase_map/analysis_tensors/instruct_chat_s_shard009.pt"
+  ]
+}

@@ -102,3 +102,4 @@
 - [Truthification EM facts](project_truthification_em.md) — 97.3% preservation off-domain (n=3) but domain-GATED: domain-matched framing collapses all truthified arms to 14-15 alignment
 - [MooseFS FUSE wedge on .venv imports](feedback_moosefs_fuse_wedge_venv_import.md) — silent launch hang (zero stderr, wchan=request_wait_answer, GPU 0 MiB) = wedged /workspace FUSE mount; timeout-bounded import probe discriminates; kill+relaunch never clears it — swap the pod (#779)
 - [Shallow pod clones break git-log fix checks](feedback_shallow_clone_fix_commit_verification.md) — depth-1 clones attribute every path to the boundary commit; verify fix commits by content hash (pod sha256sum vs git show <sha>:<path>), never git-log path attribution (#779)
+- [GCP→RunPod failover: unchained launch + boot-lag false-dead](feedback_gcp_runpod_failover_unchained_launch.md) — verify pod state before repair; failover mints no RunPod sidecar, flag on run-launched marker (#931)

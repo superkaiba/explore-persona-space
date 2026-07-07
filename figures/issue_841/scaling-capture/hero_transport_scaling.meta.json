@@ -1,0 +1,372 @@
+{
+  "commit": "4f0cd3964d",
+  "created": "2026-07-04T07:29:09Z",
+  "figsize": [
+    10.0,
+    4.2
+  ],
+  "points": [
+    {
+      "fit-set size n": 4000.0,
+      "conjunction wins (of 130 cells)": 37.0,
+      "series": "affine ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 10000.0,
+      "conjunction wins (of 130 cells)": 48.0,
+      "series": "affine ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 25000.0,
+      "conjunction wins (of 130 cells)": 53.0,
+      "series": "affine ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 50000.0,
+      "conjunction wins (of 130 cells)": 54.0,
+      "series": "affine ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 100000.0,
+      "conjunction wins (of 130 cells)": 56.0,
+      "series": "affine ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 4000.0,
+      "conjunction wins (of 130 cells)": 22.0,
+      "series": "MLP map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fit-set size n": 100000.0,
+      "conjunction wins (of 130 cells)": 27.0,
+      "series": "MLP map",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fit-set size n": 4000.0,
+      "conjunction wins (of 130 cells)": 42.0,
+      "series": "direct-hop ridge",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit-set size n": 10000.0,
+      "conjunction wins (of 130 cells)": 58.0,
+      "series": "direct-hop ridge",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit-set size n": 25000.0,
+      "conjunction wins (of 130 cells)": 61.0,
+      "series": "direct-hop ridge",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit-set size n": 50000.0,
+      "conjunction wins (of 130 cells)": 57.0,
+      "series": "direct-hop ridge",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit-set size n": 100000.0,
+      "conjunction wins (of 130 cells)": 58.0,
+      "series": "direct-hop ridge",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit-set size n": 4000.0,
+      "mean paired \u0394r vs 4k anchor": 0.0,
+      "error": 0.0,
+      "series": "affine ridge",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "fit-set size n": 10000.0,
+      "mean paired \u0394r vs 4k anchor": 0.0007030384505197158,
+      "error": 0.012401761919298137,
+      "series": "affine ridge",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "fit-set size n": 25000.0,
+      "mean paired \u0394r vs 4k anchor": 0.007334219868165373,
+      "error": 0.012711561642361709,
+      "series": "affine ridge",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "fit-set size n": 50000.0,
+      "mean paired \u0394r vs 4k anchor": 0.00796985866401763,
+      "error": 0.013080438303596965,
+      "series": "affine ridge",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "fit-set size n": 100000.0,
+      "mean paired \u0394r vs 4k anchor": 0.008990703216656258,
+      "error": 0.012337855817890722,
+      "series": "affine ridge",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "fit-set size n": 4000.0,
+      "mean paired \u0394r vs 4k anchor": 0.0,
+      "error": 0.0,
+      "series": "MLP map",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "fit-set size n": 100000.0,
+      "mean paired \u0394r vs 4k anchor": 0.005573987538989218,
+      "error": 0.012337855817890722,
+      "series": "MLP map",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "fit-set size n": 4000.0,
+      "mean paired \u0394r vs 4k anchor": 0.0,
+      "error": 0.0,
+      "series": "direct-hop ridge",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "fit-set size n": 10000.0,
+      "mean paired \u0394r vs 4k anchor": 0.010034386108474215,
+      "error": 0.012401761919298137,
+      "series": "direct-hop ridge",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "fit-set size n": 25000.0,
+      "mean paired \u0394r vs 4k anchor": 0.012556775131901066,
+      "error": 0.012711561642361709,
+      "series": "direct-hop ridge",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "fit-set size n": 50000.0,
+      "mean paired \u0394r vs 4k anchor": 0.010560097791695621,
+      "error": 0.013080438303596965,
+      "series": "direct-hop ridge",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "fit-set size n": 100000.0,
+      "mean paired \u0394r vs 4k anchor": 0.013049258996888984,
+      "error": 0.012337855817890722,
+      "series": "direct-hop ridge",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "fit-set size n": 4000.0,
+      "mean paired \u0394r vs 4k anchor": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fit-set size n": 10000.0,
+      "mean paired \u0394r vs 4k anchor": 0.0007030384505197158,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fit-set size n": 25000.0,
+      "mean paired \u0394r vs 4k anchor": 0.007334219868165373,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fit-set size n": 50000.0,
+      "mean paired \u0394r vs 4k anchor": 0.00796985866401763,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fit-set size n": 100000.0,
+      "mean paired \u0394r vs 4k anchor": 0.008990703216656258,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "fit-set size n": 4000.0,
+      "mean paired \u0394r vs 4k anchor": 0.0,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fit-set size n": 10000.0,
+      "mean paired \u0394r vs 4k anchor": -0.01060868805018139,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fit-set size n": 25000.0,
+      "mean paired \u0394r vs 4k anchor": -0.004863020629654098,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fit-set size n": 50000.0,
+      "mean paired \u0394r vs 4k anchor": -0.003816077563559261,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fit-set size n": 100000.0,
+      "mean paired \u0394r vs 4k anchor": -0.0031745761026166965,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "fit-set size n": 4000.0,
+      "mean paired \u0394r vs 4k anchor": 0.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "fit-set size n": 10000.0,
+      "mean paired \u0394r vs 4k anchor": 0.010632156447777983,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "fit-set size n": 25000.0,
+      "mean paired \u0394r vs 4k anchor": 0.018688312251058062,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "fit-set size n": 50000.0,
+      "mean paired \u0394r vs 4k anchor": 0.019845579182040208,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "fit-set size n": 100000.0,
+      "mean paired \u0394r vs 4k anchor": 0.019929165801432617,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "fit-set size n": 4000.0,
+      "mean paired \u0394r vs 4k anchor": 0.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "fit-set size n": 10000.0,
+      "mean paired \u0394r vs 4k anchor": 0.010034386108474215,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "fit-set size n": 25000.0,
+      "mean paired \u0394r vs 4k anchor": 0.012556775131901066,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "fit-set size n": 50000.0,
+      "mean paired \u0394r vs 4k anchor": 0.010560097791695621,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "fit-set size n": 100000.0,
+      "mean paired \u0394r vs 4k anchor": 0.013049258996888984,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "fit-set size n": 4000.0,
+      "mean paired \u0394r vs 4k anchor": 0.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "fit-set size n": 10000.0,
+      "mean paired \u0394r vs 4k anchor": -0.002336990181986777,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "fit-set size n": 25000.0,
+      "mean paired \u0394r vs 4k anchor": -0.0011629828189248827,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "fit-set size n": 50000.0,
+      "mean paired \u0394r vs 4k anchor": -0.0023001967406407475,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "fit-set size n": 100000.0,
+      "mean paired \u0394r vs 4k anchor": 0.0006427123139470855,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "fit-set size n": 4000.0,
+      "mean paired \u0394r vs 4k anchor": 0.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "fit-set size n": 10000.0,
+      "mean paired \u0394r vs 4k anchor": 0.022466533656609496,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "fit-set size n": 25000.0,
+      "mean paired \u0394r vs 4k anchor": 0.024260140465798535,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "fit-set size n": 50000.0,
+      "mean paired \u0394r vs 4k anchor": 0.023860679866553183,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "fit-set size n": 100000.0,
+      "mean paired \u0394r vs 4k anchor": 0.025318423949728528,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 54
+}

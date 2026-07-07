@@ -1,0 +1,1552 @@
+{
+  "commit": "5ab0f95f7a",
+  "created": "2026-07-04T05:32:55Z",
+  "figsize": [
+    12.0,
+    4.5
+  ],
+  "points": [
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 0.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9163273220968345,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 1.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8227161723199207,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 2.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8251989873162271,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 3.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7823191222378383,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 4.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8769921737980163,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 5.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8311657910915071,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 6.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8007356547842934,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 7.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7730245489452132,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 8.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.854701479365819,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 9.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8312192380827796,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 10.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8239826852906222,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 11.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7901068577565012,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 12.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7885176336752009,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 13.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7424171973622997,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 14.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7098636653263563,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 15.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6506203296650911,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 16.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6549975669849029,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 17.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6801967527667374,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 18.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6553236269880296,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 19.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.651000504277587,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 20.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6010841073443509,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 21.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6686368449354565,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 22.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6566388629175592,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 23.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.655921803654371,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 24.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6558837409444986,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 25.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.692828852318802,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 26.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8938908240641817,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 0.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.98654813389335,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 1.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9619978240553582,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 2.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9741618316150454,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 3.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9516853643547222,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 4.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9681292123585302,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 5.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9737936763699121,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 6.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9597367975204806,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 7.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9426436142078932,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 8.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9588792055760605,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 9.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9671061748235967,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 10.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9632038640156217,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 11.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9592725023758684,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 12.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9327446437995675,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 13.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9239536361550639,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 14.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9361071846754923,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 15.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.896856894331946,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 16.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9004617206913567,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 17.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8735151939381314,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 18.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.843663770818347,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 19.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8480417622261478,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 20.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8108994476010126,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 21.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8274240680492375,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 22.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8221256617044187,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 23.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8116359192364916,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 24.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8116697578649652,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 25.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8080455029454592,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 26.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9555648753932313,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 0.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9304036451836217,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 1.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8927703896122277,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 2.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.919635364785443,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 3.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9038985699873274,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 4.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9398426162819371,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 5.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9326769588110926,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 6.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9149015685576172,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 7.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8966114263429921,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 8.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9268422973070214,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 9.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9290048160461724,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 10.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9261747783844142,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 11.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9152180096594063,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 12.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9020454446303946,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 13.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8862780256879582,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 14.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8893810476599855,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 15.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8510003788290662,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 16.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.853027062041638,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 17.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8323063856207665,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 18.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8056008814329274,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 19.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8063509375799804,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 20.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.763191337829858,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 21.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7858169073707156,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 22.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7861709176933006,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 23.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7741267673514847,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 24.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7812537300876488,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 25.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.79270657755942,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 26.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9331281764483268,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 0.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9124679158987691,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 1.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8051776223573255,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 2.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8113049439191244,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 3.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7628917203541432,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 4.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8586093773118039,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 5.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8127814636111522,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 6.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7728208509626275,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 7.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7415419784517319,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 8.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8356363018038733,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 9.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8076662832514775,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 10.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7950132826453852,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 11.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7620431689430169,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 12.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7564159732591915,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 13.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7031278882516113,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 14.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6667882511300292,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 15.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6039351125647474,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 16.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6151833296250078,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 17.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6541251266293306,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 18.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.636789872156073,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 19.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.635244069974788,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 20.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.5861982735390208,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 21.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6602000425959996,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 22.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.647098611016841,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 23.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6407266947504906,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 24.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6457079259914866,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 25.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6902015968721111,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 26.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.875835144203944,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 0.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.0,
+      "series": "identity (R\u00b2=0)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 1.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.0,
+      "series": "identity (R\u00b2=0)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 0.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9700384883890517,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 1.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9376688893686207,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 2.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9397964769888184,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 3.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9112814404888937,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 4.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9344535349669559,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 5.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9210154260350091,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 6.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9001804027107706,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 7.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8750436634816926,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 8.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.90608265059613,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 9.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9031414175474326,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 10.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8948242103290821,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 11.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8821450669853657,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 12.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8624749831126486,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 13.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8360806533921058,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 14.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8321564147404881,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 15.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7849671206519575,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 16.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7804530988002174,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 17.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7562096818516475,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 18.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7121524821807363,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 19.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6904854366270494,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 20.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6318766174723575,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 21.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6598847041750322,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 22.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6491197410950222,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 23.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6341450942771528,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 24.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6164460662595418,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 25.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6265633958848501,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 26.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8274840404126326,
+      "series": "Source-only GRU (matched info)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 0.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9865481371944207,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 1.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9619978123819355,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 2.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9741618319243295,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 3.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9516853659186914,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 4.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9681292232899593,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 5.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9737936802934738,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 6.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9597368047253427,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 7.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9426436163769917,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 8.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9588792068445646,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 9.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9671061697510261,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 10.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9632038772527536,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 11.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.959272501239788,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 12.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9327446377122747,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 13.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9239535998444979,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 14.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.93610719596361,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 15.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8968569093275296,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 16.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9004617213739499,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 17.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8735152461106257,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 18.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8436638221353413,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 19.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8480417641295597,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 20.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8108994747254172,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 21.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8274240729819939,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 22.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8221256377731168,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 23.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8116358902405918,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 24.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8116697554450163,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 25.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8080455029869789,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 26.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.955564898756797,
+      "series": "Affine ridge",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 0.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9768494578416653,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 1.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9522621661060541,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 2.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9596840076604055,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 3.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9382159673324622,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 4.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9544761497796039,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 5.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9517803767729921,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 6.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.933770535184104,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 7.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9154876690589578,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 8.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9379562274616671,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 9.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9425206468860905,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 10.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9388177239926134,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 11.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9297279778622973,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 12.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.91231959993437,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 13.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8980690850913973,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 14.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9047369078453315,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 15.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8646754102536361,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 16.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8680365178691207,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 17.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8395323581166549,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 18.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8095672872088199,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 19.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8082746965266441,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 20.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7641884514271969,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 21.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7815372135880974,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 22.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7807957350267151,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 23.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7674022671592111,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 24.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7686034963848861,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 25.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.779431961009482,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 26.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9322868588522788,
+      "series": "Small MLP",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 0.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9688795270613731,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 1.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.939463023385013,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 2.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9413627765739465,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 3.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9131267204878594,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 4.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9362190820535762,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 5.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.9229680798245351,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 6.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8995399566941755,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 7.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8722185305334178,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 8.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.905011125883886,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 9.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8994955445540476,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 10.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.890678047104582,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 11.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8751226841844044,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 12.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8537551009994223,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 13.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8262863235666489,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 14.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.8196438826338636,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 15.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7740098421060311,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 16.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.771337605683155,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 17.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7459935902690545,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 18.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6968254340572337,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 19.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6686093858012289,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 20.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.5997665596809061,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 21.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6289055333447765,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 22.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.6105953628367371,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 23.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.5889576734624764,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 24.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.5629685121740494,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 25.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.5838451548123553,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 26.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.7762139068303309,
+      "series": "Prefix GRU",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 0.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.0,
+      "series": "identity (R\u00b2=0)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Layer transition \u2113 \u2192 \u2113+1": 1.0,
+      "Held-out identity-relative R\u00b2 on \u0394": 0.0,
+      "series": "identity (R\u00b2=0)",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 220
+}

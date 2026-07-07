@@ -57,6 +57,17 @@
 #   # offset decomposition, round-owned dirs + HF prefix + artifact revision pins):
 #   SUMMARY_VARIANT=maxp BEHAVIORS=em,fact,sycophancy LAYERS="7 14 21" \
 #     PRIMARY_LAYER=14 bash scripts/issue811_dispatch.sh
+#   # pre-user-boundary-summary round (plan §10 dispatch card): nine boundary/
+#   # header arms + 3 shared-R references from ONE extended pass, PER-ARM KILL-1
+#   # (--test-summaries), 12-summary fits, alllayer stacks store, MF1a stage
+#   # split — the GPU INSTANCE runs extraction+upload only, then is TERMINATED;
+#   # the fit/analyze/figures stage runs OFF-instance on the VM (plan §9):
+#   STAGE=instance SUMMARY_VARIANT=pre_user BEHAVIORS=em,fact,sycophancy \
+#     LAYERS="7 14 21" PRIMARY_LAYER=14 bash scripts/issue811_dispatch.sh
+#   WORKLOAD_ROOT=$PWD STAGE=fits SUMMARY_VARIANT=pre_user BEHAVIORS=em,fact,sycophancy \
+#     LAYERS="7 14 21" PRIMARY_LAYER=14 bash scripts/issue811_dispatch.sh   # on the VM (repo root)
+#   # (smoke: STAGE defaults to all — smoke IS the sweep with one cell; the smoke
+#   #  battery ALSO runs the two-stage form to exercise the split.)
 set -euo pipefail
 
 REPO_ROOT="${WORKLOAD_ROOT:-/workspace/explore-persona-space}"
@@ -80,6 +91,12 @@ PRIMARY_LAYER="${PRIMARY_LAYER:-14}"
 SOURCES="${SOURCES:-}"          # empty = the 16 #537 train cids per behavior
 GPU_ID="${EPM_GPU_ID:-0}"
 LOCAL_ROOT=""       # fit reads the store from a LOCAL mirror (dispatcher smoke)
+# MF1a stage split (pre_user round, plan §4.3 item 5 / §9): the GPU instance runs
+# STAGE=instance (phase0 + gate + paired extract + upload, then the instance is
+# TERMINATED); the fit/analyze/figures stage runs OFF-instance on the VM as
+# STAGE=fits against the uploaded store. STAGE=all (default) preserves the
+# v1/v2 single-invocation behavior verbatim and is what the smoke also runs.
+STAGE="${STAGE:-all}"
 while [ $# -gt 0 ]; do
   case "$1" in
     --smoke) SMOKE="1"; shift ;;
@@ -90,9 +107,15 @@ while [ $# -gt 0 ]; do
     --sources) SOURCES="${2:?}"; shift 2 ;;
     --gpu-id) GPU_ID="${2:?}"; shift 2 ;;
     --local-root) LOCAL_ROOT="${2:?}"; shift 2 ;;
+    --stage) STAGE="${2:?}"; shift 2 ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
 done
+case "$STAGE" in all|instance|fits) ;; *) echo "unknown --stage: $STAGE (all|instance|fits)" >&2; exit 2 ;; esac
+RUN_INSTANCE=""; RUN_FITS=""
+# NOTE: never `[ a ] || [ b ] && c` under set -e (a false compound kills the run).
+if [ "$STAGE" = "all" ] || [ "$STAGE" = "instance" ]; then RUN_INSTANCE="1"; fi
+if [ "$STAGE" = "all" ] || [ "$STAGE" = "fits" ]; then RUN_FITS="1"; fi
 
 # ---- SUMMARY_VARIANT arm (constants only — the phase code paths are IDENTICAL) ----
 # Default (turn_nl) preserves the completed v1 round VERBATIM. SUMMARY_VARIANT=maxp
@@ -133,14 +156,60 @@ case "$SUMMARY_VARIANT" in
       exit 2
     fi
     ;;
-  *) echo "unknown SUMMARY_VARIANT: $SUMMARY_VARIANT (turn_nl|maxp)" >&2; exit 2 ;;
+  pre_user)
+    # #811 pre-user-boundary-summary round (plan §4.3 item 5): nine boundary/
+    # header arms + three shared-R references from ONE extended forward pass;
+    # per-arm KILL-1 (--test-summaries); the alllayer stacks store; the MF1a
+    # instance/fits stage split (§9 — the GPU instance is TERMINATED after
+    # upload; fits run OFF-instance via STAGE=fits on the VM).
+    ROUND_DIR="eval_results/issue_811/pre-user-boundary-summary"
+    HF_ROUND_PREFIX="issue811_pre_user_boundary"
+    CELLS_DIR="$ROUND_DIR/cells"
+    FIG_DIR="figures/issue_811/pre-user-boundary-summary"
+    EXTRACT_SUMMARY_FLAGS="--turn-nl --maxp --pre-user"
+    TEST_SUMMARIES="pre_user_imstart pre_user_user pre_user_nl pre_user_mean3 pre_user_max3 ans_mean_incl_hdr ans_max_incl_hdr ans_mean_incl_hdr_alllayer ans_max_incl_hdr_alllayer"
+    FIT_SUMMARIES="mean turn_nl maxp $TEST_SUMMARIES"
+    TEST_SUMMARY="pre_user (9 arms)"   # log label only; the gate uses TEST_SUMMARIES
+    SUMMARY_DOC="summary_twelve_summaries.json"
+    # r11 revision pins carried forward (same reused #537 adapters + r_B).
+    export EPM_I537_ADAPTER_REVISION="e663b7cc6f9bb133b4df6d8508afa8c091b388dc"
+    export EPM_RB_REVISION="f6b7b0d0a94bf896e5816af2fe6421a900d0ae6e"
+    # The alllayer stacks store is REQUIRED for this round's upload (arms 8/9
+    # re-derive from it; plan §10 store layout).
+    export EPM_I811_REQUIRE_ALLLAYER=1
+    export EPM_I811_REQUIRE_RAW=1
+    # Phase-0 staging is INVALID for this round: no prior store carries any
+    # v0_pre_user_* key (plan §4.3 item 5 — the stage-completeness verifier
+    # would refuse anyway, but fail fast + loud here).
+    if [ -n "${EPM_PHASE0_STAGE_PREFIX:-}" ]; then
+      echo "ERROR: EPM_PHASE0_STAGE_PREFIX must be UNSET for SUMMARY_VARIANT=pre_user — no prior phase-0 store carries v0_pre_user_* keys (plan §4.3 item 5); this round extracts phase 0 fresh." >&2
+      exit 2
+    fi
+    ;;
+  *) echo "unknown SUMMARY_VARIANT: $SUMMARY_VARIANT (turn_nl|maxp|pre_user)" >&2; exit 2 ;;
 esac
 
 STORE_DIR="$ROUND_DIR/analysis_tensors"
 PHASE0_DIR="$ROUND_DIR/phase0_base_leg"
 KILL1_JSON="$ROUND_DIR/kill1_base_leg_validity.json"
 # Round args shared by BOTH issue811_fit invocations (phase0 gate + Phase-3 fits).
-FIT_ROUND_ARGS="--test-summary $TEST_SUMMARY --out-dir $CELLS_DIR --store-prefix $HF_ROUND_PREFIX/analysis_tensors --phase0-prefix $HF_ROUND_PREFIX/phase0_base_leg"
+# pre_user gates PER ARM (--test-summaries, plan §7/MF3); the KILL-1 record is
+# then validity_gate_phase0.json instead of kill1_base_leg_validity.json.
+if [ "$SUMMARY_VARIANT" = "pre_user" ]; then
+  FIT_TEST_ARGS="--test-summaries $TEST_SUMMARIES"
+  KILL1_JSON="$ROUND_DIR/validity_gate_phase0.json"
+else
+  FIT_TEST_ARGS="--test-summary $TEST_SUMMARY"
+fi
+FIT_ROUND_ARGS="$FIT_TEST_ARGS --out-dir $CELLS_DIR --store-prefix $HF_ROUND_PREFIX/analysis_tensors --phase0-prefix $HF_ROUND_PREFIX/phase0_base_leg"
+# pre_user: the phase-0 extractor ALSO captures the nine base-leg arms + stacks.
+PHASE0_EXTRA_FLAGS=""
+if [ "$SUMMARY_VARIANT" = "pre_user" ]; then PHASE0_EXTRA_FLAGS="--pre-user"; fi
+# FIT_LOCAL_ARGS is consumed by BOTH the phase0 gate (instance stage) and the
+# Phase-3 fits (fits stage) — defined HERE so a fits-only invocation sees it
+# (it used to live inside the gate block, which STAGE=fits skips).
+FIT_LOCAL_ARGS=""
+[ -n "$LOCAL_ROOT" ] && FIT_LOCAL_ARGS="--local-root $LOCAL_ROOT"
 
 # The smoke scales the SAME phases down: 1 behavior, layer 14 only, >=2 sources,
 # a handful of targets + probes. Every phase reads these same filters.
@@ -177,6 +246,11 @@ print(','.join(select_sources('$1', None)))
 "
   fi
 }
+
+# ════ INSTANCE STAGE (phase0 → parity → gate → paired extract → upload) ════
+# STAGE=fits skips straight to the fit phases (MF1a — the GPU instance was
+# already terminated after this stage's upload on the pre_user production run).
+if [ -n "$RUN_INSTANCE" ]; then
 
 # ---- Phase 0-stage: reuse a COMPLETED phase-0 base-leg store from HF (opt-in) ----
 # The att-20260701-233116 production run completed the phase-0 base leg cleanly (3
@@ -238,7 +312,7 @@ else
         uv run python scripts/issue811_phase0_extract.py \
           --behavior "$beh" --source-cid "$src" \
           --layers "$PRIMARY_LAYER" --primary-layer "$PRIMARY_LAYER" \
-          --out "$PHASE0_DIR" --gpu-id "$GPU_ID" $PHASE0_SMOKE_ARGS
+          --out "$PHASE0_DIR" --gpu-id "$GPU_ID" $PHASE0_EXTRA_FLAGS $PHASE0_SMOKE_ARGS
     done
   done
   echo "[phase=phase0] base-leg cells extracted -> $PHASE0_DIR"
@@ -261,8 +335,6 @@ fi
 
 # ---- Phase 0b: KILL-1 pre-spend gate on the base leg ----
 echo "[phase=phase0_gate] starting KILL-1 base-leg validity gate"
-FIT_LOCAL_ARGS=""
-[ -n "$LOCAL_ROOT" ] && FIT_LOCAL_ARGS="--local-root $LOCAL_ROOT"
 # The KILL-1 gate is a PRE-SPEND gate: on a fresh run it runs in the SAME run that
 # JUST wrote the phase0 base-leg store to $PHASE0_DIR (Phase 0's extractor), and
 # BEFORE the store is uploaded to HF (Phase 2, after the gate PASSes). On the fresh
@@ -331,13 +403,32 @@ fi
 
 # ---- Phase 2: upload the store to HF, then RELEASE the GPU pod (Upload Policy) ----
 echo "[phase=upload] starting"
+# EVERY variant threads the round's OWN dirs/prefix to the upload helper (r13
+# BLOCKER pre-user-upload-env-miswired: only the maxp branch was env-wrapped, so
+# a pre_user STAGE=instance upload resolved the helper's v1 turn_nl defaults —
+# eval_results/issue_811 + issue811_turn_nl_mapchange — hit the four-store
+# empty_required RuntimeError AFTER the ~7.5 GPU-h extraction, and the fits
+# stage's round_meta/validity_gate_phase0.json fetch could never succeed).
+# turn_nl's ROUND_DIR/HF_ROUND_PREFIX equal the helper's defaults, so the
+# unconditional wrap is behavior-preserving for the completed v1 round. maxp
+# additionally requires the raw R JSONLs inline (its case arm does not export
+# EPM_I811_REQUIRE_RAW; the pre_user arm exports REQUIRE_RAW + REQUIRE_ALLLAYER).
 if [ "$SUMMARY_VARIANT" = "maxp" ]; then
   EPM_I811_ROUND_DIR="$ROUND_DIR" EPM_I811_HF_PREFIX="$HF_ROUND_PREFIX" EPM_I811_REQUIRE_RAW=1 \
     uv run python scripts/issue811_upload_store.py
 else
-  uv run python scripts/issue811_upload_store.py
+  EPM_I811_ROUND_DIR="$ROUND_DIR" EPM_I811_HF_PREFIX="$HF_ROUND_PREFIX" \
+    uv run python scripts/issue811_upload_store.py
 fi
 echo "[phase=upload] store uploaded + verified (GPU pod may be released here on the GCP lane)"
+
+fi  # ════ end INSTANCE STAGE ════
+if [ -z "$RUN_INSTANCE" ]; then
+  echo "[phase=instance_stage] skipped (STAGE=$STAGE — extraction + upload ran on the terminated GPU instance)"
+fi
+
+# ════ FITS STAGE (fit → analyze → offset → figures; OFF-instance for pre_user) ════
+if [ -n "$RUN_FITS" ]; then
 
 # ---- Phase 3: vectorized fits (CPU) ----
 echo "[phase=fit] starting"
@@ -348,8 +439,57 @@ echo "[phase=fit] starting"
 # The default turn_nl arm keeps the v1 behavior verbatim (HF read unless
 # --local-root is passed).
 FIT_STORE_LOCAL_ARGS="$FIT_LOCAL_ARGS"
-if [ "$SUMMARY_VARIANT" = "maxp" ] && [ -z "$FIT_STORE_LOCAL_ARGS" ] && [ -d "$STORE_DIR" ]; then
+if { [ "$SUMMARY_VARIANT" = "maxp" ] || [ "$SUMMARY_VARIANT" = "pre_user" ]; } \
+    && [ -z "$FIT_STORE_LOCAL_ARGS" ] && [ -d "$STORE_DIR" ]; then
   FIT_STORE_LOCAL_ARGS="--local-root $STORE_DIR"
+fi
+# pre_user OFF-instance fits (STAGE=fits on the VM, plan §9): the store is NOT
+# local — mirror it from HF ONCE via the resumable parallel downloader (the
+# recursive full-repo tree walk 504s on this repo; download_store enumerates
+# per-level with bounded retry + max-workers under the org 429 quota), then
+# read the mirror via --local-root.
+if [ "$SUMMARY_VARIANT" = "pre_user" ] && [ -z "$FIT_STORE_LOCAL_ARGS" ]; then
+  echo "[phase=fit] staging paired store from HF ($HF_ROUND_PREFIX/analysis_tensors) for the off-instance fit stage"
+  EPM_I811_STAGE_BEHAVIORS="$BEHAVIORS" EPM_I811_STAGE_PREFIX="$HF_ROUND_PREFIX/analysis_tensors" \
+    uv run python - <<'PY'
+import os, sys
+sys.path.insert(0, "scripts")
+from pathlib import Path
+from issue811_offset_decomposition import DEFAULT_DL_ROOT, download_store
+behaviors = tuple(os.environ["EPM_I811_STAGE_BEHAVIORS"].split(","))
+prefix = os.environ["EPM_I811_STAGE_PREFIX"]
+root, n = download_store(Path(DEFAULT_DL_ROOT), behaviors, workers=4, prefix=prefix)
+print(f"staged {n} files -> {root}")
+PY
+  FIT_STORE_LOCAL_ARGS="--local-root data/issue_811/hf_dl/$HF_ROUND_PREFIX/analysis_tensors"
+fi
+# The store root the CPU phases (fit + offset decomposition) actually read.
+RESOLVED_STORE_ROOT="$STORE_DIR"
+case "$FIT_STORE_LOCAL_ARGS" in
+  "--local-root "*) RESOLVED_STORE_ROOT="${FIT_STORE_LOCAL_ARGS#--local-root }" ;;
+esac
+# Off-instance fits also need the INSTANCE-side per-arm KILL-1 record
+# (validity_gate_phase0.json — per-cell gate stamping + heatmap hatching); the
+# GCE instance disk was DELETED at teardown, so fetch it from the round_meta/
+# upload when absent locally (fail-loud: the fit-side stamping would otherwise
+# silently skip the flagged-arms contract).
+if [ "$SUMMARY_VARIANT" = "pre_user" ] && [ ! -f "$ROUND_DIR/validity_gate_phase0.json" ]; then
+  echo "[phase=fit] fetching validity_gate_phase0.json from HF round_meta/ (instance-side gate record)"
+  EPM_I811_ROUND_DIR="$ROUND_DIR" EPM_I811_HF_PREFIX="$HF_ROUND_PREFIX" uv run python - <<'PY'
+import os, shutil
+from pathlib import Path
+from huggingface_hub import hf_hub_download
+round_dir = Path(os.environ["EPM_I811_ROUND_DIR"])
+prefix = os.environ["EPM_I811_HF_PREFIX"]
+p = hf_hub_download(
+    "superkaiba1/explore-persona-space-data",
+    f"{prefix}/round_meta/validity_gate_phase0.json",
+    repo_type="dataset",
+)
+round_dir.mkdir(parents=True, exist_ok=True)
+shutil.copy(p, round_dir / "validity_gate_phase0.json")
+print(f"fetched -> {round_dir / 'validity_gate_phase0.json'}")
+PY
 fi
 # shellcheck disable=SC2086
 uv run python scripts/issue811_fit.py --behaviors ${BEHAVIORS//,/ } --layers $LAYERS \
@@ -368,16 +508,34 @@ if [ "$SUMMARY_VARIANT" = "maxp" ]; then
     --committed-out "$ROUND_DIR/mean_call_replication_vs_v1.json"
   echo "[phase=parity_committed] report written -> $ROUND_DIR/mean_call_replication_vs_v1.json"
 fi
+# pre_user round (plan §6 three-way parity b/c): re-extracted mean+turn_nl vs the
+# committed v1 cells AND mean+turn_nl+maxp vs the committed v2 maxp-round cells.
+# Report-only replication-stability reads; the registered reference-flip
+# adjudication rule (MF4) keeps the COMMITTED cells the evidence of record.
+if [ "$SUMMARY_VARIANT" = "pre_user" ]; then
+  echo "[phase=parity_committed] starting committed-reference replication reads (vs v1 + v2)"
+  uv run python scripts/issue811_mean_parity_check.py --compare-committed \
+    --run-cells-dir "$CELLS_DIR" \
+    --committed-cells-dir eval_results/issue_811/cells \
+    --committed-summaries mean turn_nl \
+    --committed-out "$ROUND_DIR/call_replication_vs_v1.json"
+  uv run python scripts/issue811_mean_parity_check.py --compare-committed \
+    --run-cells-dir "$CELLS_DIR" \
+    --committed-cells-dir eval_results/issue_811/maxp-winner-mapchange/cells \
+    --committed-summaries mean turn_nl maxp \
+    --committed-out "$ROUND_DIR/call_replication_vs_v2_maxp.json"
+  echo "[phase=parity_committed] reports written -> $ROUND_DIR/call_replication_vs_{v1,v2_maxp}.json"
+fi
 
 # ---- Phase 4: assemble side-by-side deliverables (CPU) ----
 echo "[phase=analyze] starting"
 uv run python scripts/issue811_analyze.py --cells-dir "$CELLS_DIR" --out-dir "$ROUND_DIR" \
   --summary-filename "$SUMMARY_DOC"
 
-# ---- Phase 4b (maxp round only): F1 offset decomposition (CPU, plan §5/§9) ----
+# ---- Phase 4b (maxp + pre_user rounds): F1 offset decomposition (CPU, plan §5/§9) ----
 # Standard read of this line; runs against the round's OWN local store + cells
 # (no HF re-download). Smoke passes the same caps the smoke store was built with.
-if [ "$SUMMARY_VARIANT" = "maxp" ]; then
+if [ "$SUMMARY_VARIANT" = "maxp" ] || [ "$SUMMARY_VARIANT" = "pre_user" ]; then
   echo "[phase=offset_decomposition] starting F1 offset decomposition"
   OD_SMOKE_ARGS=""
   if [ -n "$SMOKE" ]; then
@@ -386,7 +544,7 @@ if [ "$SUMMARY_VARIANT" = "maxp" ]; then
   # shellcheck disable=SC2086
   uv run python scripts/issue811_offset_decomposition.py \
     --behaviors ${BEHAVIORS//,/ } --layers $LAYERS --summaries $FIT_SUMMARIES \
-    --local-store-root "$STORE_DIR" --cells-dir "$CELLS_DIR" \
+    --local-store-root "$RESOLVED_STORE_ROOT" --cells-dir "$CELLS_DIR" \
     --store-prefix "$HF_ROUND_PREFIX/analysis_tensors" \
     --out "$ROUND_DIR/offset_decomposition.json" $OD_SMOKE_ARGS
   echo "[phase=offset_decomposition] wrote $ROUND_DIR/offset_decomposition.json"
@@ -394,13 +552,27 @@ fi
 
 # ---- Phase 5: figures (CPU) ----
 echo "[phase=figures] starting"
+FIG_GATE_ARGS=""
+if [ "$SUMMARY_VARIANT" = "pre_user" ] && [ -f "$ROUND_DIR/validity_gate_phase0.json" ]; then
+  # 12-summary rounds: the heatmap greys gate-failed rows + hatches
+  # comparator_indeterminate rows off the per-arm KILL-1 record (plan §6 fig a).
+  FIG_GATE_ARGS="--arm-gate-json $ROUND_DIR/validity_gate_phase0.json"
+fi
 # shellcheck disable=SC2086
 uv run python scripts/issue811_figures.py --summary-json "$ROUND_DIR/$SUMMARY_DOC" \
-  --out-dir "$FIG_DIR" --summaries $FIT_SUMMARIES
+  --out-dir "$FIG_DIR" --summaries $FIT_SUMMARIES $FIG_GATE_ARGS
+
+fi  # ════ end FITS STAGE ════
+if [ -z "$RUN_FITS" ]; then
+  # Self-contained template (r12 Minor recommended-command-omits-required-env):
+  # WORKLOAD_ROOT + SUMMARY_VARIANT are REQUIRED for the off-instance re-run —
+  # \$PWD stays literal so the OPERATOR's shell expands it at the repo root.
+  echo "[phase=fits_stage] skipped (STAGE=$STAGE — run 'WORKLOAD_ROOT=\$PWD STAGE=fits SUMMARY_VARIANT=$SUMMARY_VARIANT bash scripts/issue811_dispatch.sh --skip-extract' from the repo root OFF-instance for the fit/analyze/figures phases)"
+fi
 
 # ---- End-of-run sentinel + terminal phase line (poll_pipeline contract) ----
 EPM_I811_VARIANT="$SUMMARY_VARIANT" EPM_I811_HF_PREFIX="$HF_ROUND_PREFIX" \
-  EPM_I811_ROUND_DIR="$ROUND_DIR" uv run python - <<'PY'
+  EPM_I811_ROUND_DIR="$ROUND_DIR" EPM_I811_STAGE="$STAGE" uv run python - <<'PY'
 import datetime, json, os, time
 from pathlib import Path
 log_dir = Path(os.environ.get("EPM_LOG_DIR", "/workspace/logs"))
@@ -410,6 +582,32 @@ log_dir.mkdir(parents=True, exist_ok=True)
 variant = os.environ.get("EPM_I811_VARIANT", "turn_nl")
 hf_prefix = os.environ.get("EPM_I811_HF_PREFIX", "issue811_turn_nl_mapchange")
 round_dir = os.environ.get("EPM_I811_ROUND_DIR", "eval_results/issue_811")
+stage = os.environ.get("EPM_I811_STAGE", "all")
+if stage == "instance":
+    # MF1a instance-release sentinel (plan §4.3 item 5 / §9): the GPU instance's
+    # job ends HERE — extraction + store/R-text upload complete; the orchestrator
+    # TERMINATES the instance and runs STAGE=fits OFF-instance on the VM.
+    note = (
+        f"issue811 {variant} INSTANCE stage complete: phase0 base-leg + KILL-1 "
+        f"pre-spend gate + paired extract + store/R-text upload done. Store: "
+        f"{hf_prefix}/analysis_tensors/ (+ phase0_base_leg/ + alllayer/ + "
+        f"raw_completions/). GPU instance may now be RELEASED; run the fit/"
+        f"analyze/figures stage OFF-instance from the repo root: "
+        f"WORKLOAD_ROOT=$PWD STAGE=fits SUMMARY_VARIANT={variant} "
+        f"bash scripts/issue811_dispatch.sh --skip-extract (plan §9)."
+    )
+elif stage == "fits":
+    note = (
+        f"issue811 {variant} FITS stage complete (off-instance): fit + analyze + "
+        f"figures done against the uploaded store. Deliverables under {round_dir}/."
+    )
+else:
+    note = (
+        f"issue811 {variant}-vs-mean map-change: phase0 base-leg + KILL-1 pre-spend gate + "
+        f"paired extract + upload + fit + analyze + figures complete. Store: "
+        f"{hf_prefix}/analysis_tensors/ (+ phase0_base_leg/ + raw_completions/). "
+        f"Deliverables under {round_dir}/."
+    )
 payload = {
     "sentinel_schema_version": 1,
     "kind": "epm:results",
@@ -417,10 +615,7 @@ payload = {
     "task_id": 811,
     "by": "issue811_dispatch",
     "ts": datetime.datetime.now(datetime.UTC).isoformat(),
-    "note": f"issue811 {variant}-vs-mean map-change: phase0 base-leg + KILL-1 pre-spend gate + "
-            f"paired extract + upload + fit + analyze + figures complete. Store: "
-            f"{hf_prefix}/analysis_tensors/ (+ phase0_base_leg/ + raw_completions/). "
-            f"Deliverables under {round_dir}/.",
+    "note": note,
 }
 out = log_dir / f"issue-811-epm_results-{time.time_ns()}.json"
 out.write_text(json.dumps(payload, indent=2))

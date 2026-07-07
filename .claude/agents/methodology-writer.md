@@ -561,7 +561,9 @@ markers, or any confidence tag (same § What you MUST NOT read as markdown mode)
 
 Use the `ml-paper-writing` + `humanize` (academic) skills for the Methods +
 Appendix register (precise, declarative, definitions on first use). Same
-SHA-discipline + path-discipline as markdown mode.
+SHA-discipline + path-discipline as markdown mode. Ban-gate scoping per
+SKILL.md § 9a-humanize: verbatim samples elided from the scan, never
+rewritten.
 
 > The above is MARKDOWN-TASK MODE + PAPER-TASK MODE. For `workflow: v2` tasks,
 > ignore both and follow the section below.

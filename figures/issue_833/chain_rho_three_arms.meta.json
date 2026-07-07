@@ -1,0 +1,174 @@
+{
+  "commit": "65704c3e0c",
+  "created": "2026-07-06T03:18:37Z",
+  "figsize": [
+    8.4,
+    6.2
+  ],
+  "points": [
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.16237521436821165,
+      "y": 7.78,
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": 0.187652814454703,
+      "y": 8.0,
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": 0.6728887762324389,
+      "y": 8.22,
+      "_kind": "errorbar",
+      "_group": 2
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.13597427823403502,
+      "y": 6.78,
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": 0.5059914421863364,
+      "y": 7.0,
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": 0.6721681331975218,
+      "y": 7.22,
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.13617472380011933,
+      "y": 5.78,
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": 0.5046900475739546,
+      "y": 6.0,
+      "_kind": "errorbar",
+      "_group": 7
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": 0.6711004370386515,
+      "y": 6.22,
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": 0.1163571596465736,
+      "y": 4.78,
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": 0.05125425346389964,
+      "y": 5.0,
+      "_kind": "errorbar",
+      "_group": 10
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.06366797684359088,
+      "y": 5.22,
+      "_kind": "errorbar",
+      "_group": 11
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.1460084728447832,
+      "y": 3.78,
+      "_kind": "errorbar",
+      "_group": 12
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.15897060444689232,
+      "y": 4.0,
+      "_kind": "errorbar",
+      "_group": 13
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.12344893489129342,
+      "y": 4.22,
+      "_kind": "errorbar",
+      "_group": 14
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.07931106220973107,
+      "y": 2.78,
+      "_kind": "errorbar",
+      "_group": 15
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.08171663079674758,
+      "y": 3.0,
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.10234689775672783,
+      "y": 3.22,
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.05439641081196908,
+      "y": 1.78,
+      "_kind": "errorbar",
+      "_group": 18
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.12413641713547374,
+      "y": 2.0,
+      "_kind": "errorbar",
+      "_group": 19
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.1891513516792065,
+      "y": 2.22,
+      "_kind": "errorbar",
+      "_group": 20
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.059869223657693794,
+      "y": 0.78,
+      "_kind": "errorbar",
+      "_group": 21
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.13604344008619673,
+      "y": 1.0,
+      "_kind": "errorbar",
+      "_group": 22
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.17531753024171176,
+      "y": 1.22,
+      "_kind": "errorbar",
+      "_group": 23
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.14046209707544355,
+      "y": -0.22,
+      "_kind": "errorbar",
+      "_group": 24
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.052621596285724534,
+      "y": 0.0,
+      "_kind": "errorbar",
+      "_group": 25
+    },
+    {
+      "context-to-leakage chain correlation (Spearman, held-out)": -0.1836793729935286,
+      "y": 0.22,
+      "_kind": "errorbar",
+      "_group": 26
+    }
+  ],
+  "n_series": 27,
+  "total_points": 27
+}

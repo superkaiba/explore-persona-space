@@ -131,7 +131,7 @@ async def judge_one_completion(
                 messages=[{"role": "user", "content": user_msg}],
             )
             text = res.content[0].text
-            parsed = parse_judge_json(text, None)
+            parsed = parse_judge_json(text)
             if parsed is None:
                 return {"error": True, "reason": "parse_error", "raw": text[:200]}
             return parsed

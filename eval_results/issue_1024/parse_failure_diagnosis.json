@@ -1,0 +1,406 @@
+{
+  "task": 1024,
+  "goal": "classify the #778 judge parse-failure burst (H1 prose/refusal vs H2 max_tokens=64 mid-JSON truncation vs H3 preamble-only)",
+  "fork_fired": "b (logs carry no parser warnings; custom_ids reconstructed from extract/*_rollouts.jsonl; live probe re-issued identical requests)",
+  "e1_inventory": {
+    "issue778_persona_vectors": {
+      "n_files": 551,
+      "census": {
+        "analysis_tensors/*.npy": 84,
+        "analysis_tensors/*.pt": 43,
+        "analysis_tensors_v2/*.json": 18,
+        "analysis_tensors_v2/*.jsonl": 4,
+        "analysis_tensors_v2/*.npy": 275,
+        "analysis_tensors_v2/*.pt": 8,
+        "extraction_rollouts_regen/*.json": 3,
+        "followup_corrected/*.jsonl": 6,
+        "honest_nulls_maxdraws/*.npy": 90,
+        "v2_scratch_fixed_jsons/*.json": 10,
+        "v2_scratch_tail_results/*.json": 10
+      },
+      "judge_files": [
+        "issue778_persona_vectors/analysis_tensors_v2/judge/evil_judge_raw_coherence.json",
+        "issue778_persona_vectors/analysis_tensors_v2/judge/evil_judge_raw_trait.json",
+        "issue778_persona_vectors/analysis_tensors_v2/judge/hallucination_judge_raw_coherence.json",
+        "issue778_persona_vectors/analysis_tensors_v2/judge/hallucination_judge_raw_trait.json",
+        "issue778_persona_vectors/analysis_tensors_v2/judge/sycophancy_judge_raw_coherence.json",
+        "issue778_persona_vectors/analysis_tensors_v2/judge/sycophancy_judge_raw_trait.json"
+      ],
+      "log_files": []
+    },
+    "issue778_partial": {
+      "n_files": 201,
+      "census": {
+        "att-20260701-020714/*.json": 155,
+        "att-20260701-020714/*.jsonl": 9,
+        "att-20260701-020714/*.log": 3,
+        "att-20260701-020714/*.md": 34
+      },
+      "judge_files": [],
+      "log_files": [
+        "issue778_partial/att-20260701-020714/crash_persist_transcript.log",
+        "issue778_partial/att-20260701-020714/workload.log",
+        "issue778_partial/att-20260701-020714/workload_20260703T084954Z.log"
+      ]
+    }
+  },
+  "e2_parse_error_tally": {
+    "per_file": {
+      "evil_judge_raw_coherence.json": {
+        "trait": "evil",
+        "rubric": "coherence",
+        "n_rows": 2000,
+        "n_parse_error_strict": 95,
+        "pct_parse_error": 4.75,
+        "fail_by_arm": {
+          "pos": 51,
+          "neg": 44
+        },
+        "fail_decile_hist_by_construction_index": [
+          8,
+          8,
+          17,
+          4,
+          14,
+          13,
+          8,
+          7,
+          8,
+          8
+        ],
+        "cache_stats": {
+          "hits": 0,
+          "misses": 2000
+        },
+        "n_cached": 0,
+        "n_submitted": 2000,
+        "judge_model": "claude-sonnet-4-5-20250929",
+        "sample_fail_custom_ids": [
+          "neg-0-13-004__01134__00",
+          "neg-0-13-008__01138__00",
+          "neg-0-16-002__01162__00",
+          "neg-0-17-003__01173__00",
+          "neg-0-19-004__01194__00",
+          "neg-0-4-000__01040__00",
+          "neg-0-4-001__01041__00",
+          "neg-0-4-002__01042__00",
+          "neg-0-4-003__01043__00",
+          "neg-0-4-004__01044__00"
+        ]
+      },
+      "evil_judge_raw_trait.json": {
+        "trait": "evil",
+        "rubric": "trait",
+        "n_rows": 2000,
+        "n_parse_error_strict": 131,
+        "pct_parse_error": 6.55,
+        "fail_by_arm": {
+          "pos": 127,
+          "neg": 4
+        },
+        "fail_decile_hist_by_construction_index": [
+          28,
+          28,
+          19,
+          17,
+          35,
+          1,
+          1,
+          0,
+          1,
+          1
+        ],
+        "cache_stats": {
+          "hits": 0,
+          "misses": 2000
+        },
+        "n_cached": 0,
+        "n_submitted": 2000,
+        "judge_model": "claude-sonnet-4-5-20250929",
+        "sample_fail_custom_ids": [
+          "neg-0-0-005__01005__00",
+          "neg-1-5-002__01252__00",
+          "neg-3-5-009__01659__00",
+          "neg-4-4-008__01848__00",
+          "pos-0-10-001__00101__00",
+          "pos-0-10-005__00105__00",
+          "pos-0-10-008__00108__00",
+          "pos-0-11-001__00111__00",
+          "pos-0-12-000__00120__00",
+          "pos-0-12-004__00124__00"
+        ]
+      },
+      "hallucination_judge_raw_coherence.json": {
+        "trait": "hallucination",
+        "rubric": "coherence",
+        "n_rows": 2000,
+        "n_parse_error_strict": 117,
+        "pct_parse_error": 5.85,
+        "fail_by_arm": {
+          "pos": 69,
+          "neg": 48
+        },
+        "fail_decile_hist_by_construction_index": [
+          9,
+          26,
+          14,
+          14,
+          6,
+          12,
+          20,
+          3,
+          10,
+          3
+        ],
+        "cache_stats": {
+          "hits": 0,
+          "misses": 2000
+        },
+        "n_cached": 0,
+        "n_submitted": 2000,
+        "judge_model": "claude-sonnet-4-5-20250929",
+        "sample_fail_custom_ids": [
+          "neg-0-12-005__01125__00",
+          "neg-0-12-006__01126__00",
+          "neg-0-12-008__01128__00",
+          "neg-0-16-004__01164__00",
+          "neg-0-17-000__01170__00",
+          "neg-0-17-003__01173__00",
+          "neg-0-17-007__01177__00",
+          "neg-0-18-007__01187__00",
+          "neg-0-18-009__01189__00",
+          "neg-0-4-006__01046__00"
+        ]
+      },
+      "hallucination_judge_raw_trait.json": {
+        "trait": "hallucination",
+        "rubric": "trait",
+        "n_rows": 2000,
+        "n_parse_error_strict": 969,
+        "pct_parse_error": 48.45,
+        "fail_by_arm": {
+          "pos": 697,
+          "neg": 272
+        },
+        "fail_decile_hist_by_construction_index": [
+          143,
+          128,
+          132,
+          138,
+          156,
+          38,
+          72,
+          30,
+          76,
+          56
+        ],
+        "cache_stats": {
+          "hits": 0,
+          "misses": 2000
+        },
+        "n_cached": 0,
+        "n_submitted": 2000,
+        "judge_model": "claude-sonnet-4-5-20250929",
+        "sample_fail_custom_ids": [
+          "neg-0-10-000__01100__00",
+          "neg-0-10-005__01105__00",
+          "neg-0-12-000__01120__00",
+          "neg-0-12-001__01121__00",
+          "neg-0-12-002__01122__00",
+          "neg-0-12-003__01123__00",
+          "neg-0-12-004__01124__00",
+          "neg-0-12-005__01125__00",
+          "neg-0-12-006__01126__00",
+          "neg-0-12-007__01127__00"
+        ]
+      },
+      "sycophancy_judge_raw_coherence.json": {
+        "trait": "sycophancy",
+        "rubric": "coherence",
+        "n_rows": 2000,
+        "n_parse_error_strict": 17,
+        "pct_parse_error": 0.85,
+        "fail_by_arm": {
+          "pos": 1,
+          "neg": 16
+        },
+        "fail_decile_hist_by_construction_index": [
+          0,
+          0,
+          0,
+          1,
+          0,
+          4,
+          5,
+          4,
+          2,
+          1
+        ],
+        "cache_stats": {
+          "hits": 0,
+          "misses": 2000
+        },
+        "n_cached": 0,
+        "n_submitted": 2000,
+        "judge_model": "claude-sonnet-4-5-20250929",
+        "sample_fail_custom_ids": [
+          "neg-0-2-002__01022__00",
+          "neg-0-2-003__01023__00",
+          "neg-0-8-006__01086__00",
+          "neg-0-9-007__01097__00",
+          "neg-1-14-003__01343__00",
+          "neg-1-14-005__01345__00",
+          "neg-1-2-009__01229__00",
+          "neg-1-9-002__01292__00",
+          "neg-1-9-006__01296__00",
+          "neg-2-2-009__01429__00"
+        ]
+      },
+      "sycophancy_judge_raw_trait.json": {
+        "trait": "sycophancy",
+        "rubric": "trait",
+        "n_rows": 2000,
+        "n_parse_error_strict": 280,
+        "pct_parse_error": 14.0,
+        "fail_by_arm": {
+          "pos": 218,
+          "neg": 62
+        },
+        "fail_decile_hist_by_construction_index": [
+          50,
+          47,
+          56,
+          43,
+          22,
+          12,
+          6,
+          7,
+          7,
+          30
+        ],
+        "cache_stats": {
+          "hits": 0,
+          "misses": 2000
+        },
+        "n_cached": 0,
+        "n_submitted": 2000,
+        "judge_model": "claude-sonnet-4-5-20250929",
+        "sample_fail_custom_ids": [
+          "neg-0-0-001__01001__00",
+          "neg-0-0-002__01002__00",
+          "neg-0-11-001__01111__00",
+          "neg-0-11-006__01116__00",
+          "neg-0-12-002__01122__00",
+          "neg-0-12-007__01127__00",
+          "neg-0-16-000__01160__00",
+          "neg-0-16-001__01161__00",
+          "neg-0-17-004__01174__00",
+          "neg-0-18-005__01185__00"
+        ]
+      }
+    },
+    "cross_rubric_failure_cooccurrence": {
+      "evil": {
+        "n_shared_custom_ids": 2000,
+        "n_fail_trait_rubric": 131,
+        "n_fail_coherence_rubric": 95,
+        "n_fail_both": 33,
+        "expected_both_if_independent": 6.2
+      },
+      "sycophancy": {
+        "n_shared_custom_ids": 2000,
+        "n_fail_trait_rubric": 280,
+        "n_fail_coherence_rubric": 17,
+        "n_fail_both": 0,
+        "expected_both_if_independent": 2.4
+      },
+      "hallucination": {
+        "n_shared_custom_ids": 2000,
+        "n_fail_trait_rubric": 969,
+        "n_fail_coherence_rubric": 117,
+        "n_fail_both": 87,
+        "expected_both_if_independent": 56.7
+      }
+    },
+    "exact_pair_fingerprint": "not computable \u2014 succeeded rows are {'score': N} dicts with no reasoning text (the #810 (reasoning, score) fingerprint needs a reasoning field); per-file cache_stats above is the cache-replay read"
+  },
+  "e3a_log_grep": {
+    "per_log": {
+      "issue778_partial/att-20260701-020714/workload.log": {
+        "n_lines": 2310,
+        "n_parse_warning_lines": 0
+      },
+      "issue778_partial/att-20260701-020714/workload_20260703T084954Z.log": {
+        "n_lines": 2310,
+        "n_parse_warning_lines": 0
+      },
+      "issue778_partial/att-20260701-020714/crash_persist_transcript.log": {
+        "n_lines": 15,
+        "n_parse_warning_lines": 0
+      }
+    },
+    "note": "0 'Failed to parse judge JSON' lines in the persisted logs \u2014 fork (a) yields no raw prefixes"
+  },
+  "e3b_live_probe": {
+    "n_sampled": 149,
+    "n_unmapped_custom_ids": 0,
+    "n_dispatched": 149,
+    "n_dispatch_errors": 0,
+    "n_scored": 149,
+    "sampling": "stratified proportional across traits, seed=1024, never first-k",
+    "request_shape": {
+      "model": "claude-sonnet-4-5-20250929",
+      "max_tokens": 64,
+      "temperature": "OMITTED (API default 1.0 \u2014 the #778 builders never set it)",
+      "system": "issue778_lib._rubric_system_and_user system prompt (verbatim)",
+      "serialized_params_have_no_temperature_key": true
+    },
+    "class_counts": {
+      "reproduced_ok": 101,
+      "fail_empty": 1,
+      "fail_no_brace_prose": 47
+    },
+    "cross_tab_contains_brace_x_parse_ok": {
+      "contains_brace=True|parse_ok=True": 33,
+      "contains_brace=False|parse_ok=True": 68,
+      "contains_brace=False|parse_ok=False": 48
+    },
+    "stop_reason_note": "stop_reason NOT captured: api_dispatch's parse_response surface exposes model text only; the truncation axis is inferred from text shape (contains-{ x parse-outcome + char-length digest). A 64-token cap response is ~200-400 chars; see char_length_digest_per_class.",
+    "conditionality_note": "class proportions are CONDITIONAL on observed re-failures at API-default T=1.0 \u2014 a re-issued item may parse cleanly (reproduced_ok), so effective n for failure classes is 48, not 149",
+    "n_refailed": 48,
+    "char_length_digest_per_class": {
+      "reproduced_ok": {
+        "n": 101,
+        "min": 1,
+        "median": 3,
+        "max": 14
+      },
+      "fail_empty": {
+        "n": 1,
+        "min": 0,
+        "median": 0,
+        "max": 0
+      },
+      "fail_no_brace_prose": {
+        "n": 47,
+        "min": 250,
+        "median": 284,
+        "max": 327
+      }
+    }
+  },
+  "coverage_note": "the persisted judge outputs cover the 12,000-call v2 judge stage (6 files x 2,000 rows); the task body's ~8,225/87,055 (~9%) figure covers the full capture-path judging, whose raw judge outputs were NOT persisted to HF \u2014 the accessible sample is the v2 stage (assumption 10: the discrepancy is itself recorded)",
+  "static_evidence": {
+    "max_tokens": 64,
+    "temperature": "API default 1.0 (JUDGE_TEMPERATURE=0.7 declared but never threaded \u2014 no temperature key in the request builders)",
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "wrapper": "single-JSON-object output wrapper (_JSON_WRAPPER)"
+  },
+  "conclusion": {
+    "headline": "the dominant failure mode is reason-then-score PROSE truncated by max_tokens=64 BEFORE the judge reaches any JSON: 47/48 re-failures are no-brace prose with char lengths tightly clustered at the 64-token cap (min 250 / median 284 / max 327), 0/48 are unterminated JSON, 1/48 empty \u2014 H2's mechanism (cap truncation) expressed in H3's shape (pre-'{' preamble); H1 natural-stop refusals are not observed",
+    "stochasticity": "at API-default T=1.0 the SAME items parse cleanly on re-issue 101/149 times (68 bare-scalar + 33 {'score': N}) \u2014 the judge stochastically either answers immediately (parses) or launches into reasoning prose (cap kills it), so the per-item failure is a sampling event, not an item property alone",
+    "e2_structure": "1609/12000 (13.4%) strict parse_error across the six v2 judge files, strongly heterogeneous: hallucination_trait 48.45% >> sycophancy_trait 14% > evil_trait 6.55% > coherence files 0.85-5.85%; pos-arm dominates trait-rubric failures (evil 127/131 pos) and failures front-load in construction order (evil deciles 28,28,19,17,35 vs 1,1,0,1,1) \u2014 consistent with the task body's ~30% early burst",
+    "cache_replay_810_read": "cache_stats hits=0 on all six files -> no #810-style cache replay contributed; cross-rubric same-item failure co-occurrence exceeds independence (evil 33 vs 6.2 expected) -> an item-level (long/hard item -> longer judge reasoning) component on top of the sampling stochasticity",
+    "prospective_fix_followup_note": "raise judge_graded max_tokens (64 -> >=256) and/or harden the JSON wrapper against preamble ('output the JSON object FIRST'); issue778_lib.py is branch-owned (issue-778) so this is filed as a follow-up note, NOT this task's diff (plan D-E deliverable clause)"
+  }
+}

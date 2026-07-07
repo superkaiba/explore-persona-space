@@ -274,7 +274,7 @@ def upload_file_to_hf(local_path: Path, path_in_repo: str) -> str:
             f"HF_TOKEN missing - cannot upload {local_path.name}; pass --no-upload only for "
             f"local smoke runs."
         )
-    from huggingface_hub import HfApi, list_repo_files
+    from huggingface_hub import HfApi
 
     api = HfApi(token=token)
     full_path = f"{HF_PREFIX}/{path_in_repo}"
@@ -285,8 +285,16 @@ def upload_file_to_hf(local_path: Path, path_in_repo: str) -> str:
         path_in_repo=full_path,
         repo_type="dataset",
     )
-    files = list_repo_files(HF_DATA_REPO, repo_type="dataset")
-    if full_path not in files:
+    # Post-upload verify: ONE HEAD-shaped probe, never a repo listing (#920:
+    # a full listing of the ~1M-file data repo wedges >600 s). This probe is
+    # TOKEN-BEARING (api carries HF_TOKEN) where the old module-level
+    # list_repo_files call was anonymous — failure direction stays loud/safe
+    # (False -> RuntimeError; transport 5xx propagates and crashes loud, same
+    # as the old un-retried bare listing). NOTE the resolve/-endpoint HEAD
+    # probe vs the old tree-listing read has a read-after-write asymmetry in
+    # principle; worst case is a spurious fail-loud RuntimeError, never a
+    # silent pass.
+    if not api.file_exists(HF_DATA_REPO, full_path, repo_type="dataset"):
         raise RuntimeError(f"post-upload verify FAIL: {full_path} not in {HF_DATA_REPO} file list")
     log.info("[hf] upload OK + verified: %s/%s", HF_DATA_REPO, full_path)
     return sha256_file(local_path)

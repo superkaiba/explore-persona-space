@@ -1,0 +1,154 @@
+{
+  "behavior": "fact",
+  "layer": 7,
+  "n_retained_cells": 291,
+  "n_with_E": 291,
+  "arms": {
+    "on_nonemit": {
+      "rho_ridge": -0.2549710833517196,
+      "ci_ridge": {
+        "point": -0.25497108335171953,
+        "ci_lo": -0.4381670173082066,
+        "ci_hi": -0.0991243834766064,
+        "n_families": 7
+      }
+    },
+    "ctrl_nonemit": {
+      "rho_ridge": -0.2851180788784228,
+      "ci_ridge": {
+        "point": -0.2851180788784228,
+        "ci_lo": -0.4339685906327383,
+        "ci_hi": -0.1393755886087601,
+        "n_families": 7
+      }
+    },
+    "on_full_ret": {
+      "rho_ridge": 0.5853395766114847,
+      "ci_ridge": {
+        "point": 0.5853395766114846,
+        "ci_lo": 0.35811131311489963,
+        "ci_hi": 0.7176805017427447,
+        "n_families": 7
+      }
+    },
+    "on_full_matchedN": {
+      "rho_ridge": 0.6014291447664737,
+      "ci_ridge": {
+        "point": 0.6014291447664736,
+        "ci_lo": 0.37545267542940913,
+        "ci_hi": 0.7557788859030141,
+        "n_families": 7
+      }
+    },
+    "ctrl_full_ret": {
+      "rho_ridge": 0.5921423860581213,
+      "ci_ridge": {
+        "point": 0.5921423860581212,
+        "ci_lo": 0.3650664173124332,
+        "ci_hi": 0.7390054982801767,
+        "n_families": 7
+      }
+    },
+    "off_full_ret": {
+      "rho_ridge": -0.19851497094078763,
+      "ci_ridge": {
+        "point": -0.19851497094078757,
+        "ci_lo": -0.2884331362528724,
+        "ci_hi": -0.12620596922781563,
+        "n_families": 7
+      }
+    },
+    "base_full_ret": {
+      "rho_ridge": -0.45060490254395,
+      "ci_ridge": {
+        "point": -0.45060490254394997,
+        "ci_lo": -0.5933452520634053,
+        "ci_hi": -0.3001323042177033,
+        "n_families": 7
+      }
+    },
+    "on_nonemit_eq5": {
+      "rho_ridge": -0.19856109928985585,
+      "ci_ridge": {
+        "point": -0.1985610992898558,
+        "ci_lo": -0.3472330145044971,
+        "ci_hi": -0.09547858744354958,
+        "n_families": 7
+      }
+    }
+  },
+  "paired_diffs": {
+    "on_nonemit_minus_on_full_matchedN": {
+      "point": -0.8564002281181933,
+      "ci_lo": -1.191782844397147,
+      "ci_hi": -0.4767844178128745,
+      "n_families": 7
+    },
+    "on_nonemit_minus_on_full_ret": {
+      "point": -0.8403106599632043,
+      "ci_lo": -1.15439100040263,
+      "ci_hi": -0.4819836273150713,
+      "n_families": 7
+    },
+    "ctrl_nonemit_minus_ctrl_full_ret": {
+      "point": -0.8772604649365441,
+      "ci_lo": -1.15908691303727,
+      "ci_hi": -0.511891896276707,
+      "n_families": 7
+    },
+    "on_nonemit_minus_ctrl_nonemit": {
+      "point": 0.03014699552670319,
+      "ci_lo": -0.07852054641361345,
+      "ci_hi": 0.12825603737601432,
+      "n_families": 7
+    },
+    "on_nonemit_minus_off_full_ret": {
+      "point": -0.05645611241093196,
+      "ci_lo": -0.17957349765271777,
+      "ci_hi": 0.05144610295234037,
+      "n_families": 7
+    },
+    "on_nonemit_eq5_minus_on_full_matchedN": {
+      "point": -0.7999902440563296,
+      "ci_lo": -1.0896040049538982,
+      "ci_hi": -0.4840580778000959,
+      "n_families": 7
+    },
+    "on_nonemit_eq5_minus_on_full_ret": {
+      "point": -0.7839006759013406,
+      "ci_lo": -1.0576444954978341,
+      "ci_hi": -0.4818627805558722,
+      "n_families": 7
+    }
+  },
+  "primary_diff": "on_nonemit_minus_on_full_matchedN",
+  "headline_layer": 14,
+  "mlp_gate": "not_run",
+  "meta": {
+    "script": "scripts/issue833_chain_rho_nonemit.py",
+    "git_commit": "c563133b14509904e7c9190931d6cee640b606d3",
+    "generated_at": "2026-07-06T10:31:28.190881+00:00",
+    "numpy": "2.2.6",
+    "ridge_device": "cpu",
+    "target_dim": 64,
+    "pca_basis": "fitM._pca_basis_v0 on the RETAINED-subset V0 (shared across arms)",
+    "ridge_lambdas": [
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0,
+      1000.0
+    ],
+    "n_bootstrap_resamples": 1000,
+    "bootstrap_seed": 0,
+    "retention_manifest_sha256": "dfa51576c673bee0d53ce6fe8ea69b50a353372adf8b9dd372e8de4f91d3906b",
+    "resume_key": "e530433f00881b41886602ad82d382b810fa60eb4214ba1b072ef2c05cea8079:dfa51576c673bee0d53ce6fe8ea69b50a353372adf8b9dd372e8de4f91d3906b",
+    "joined_cache_sha256": "e530433f00881b41886602ad82d382b810fa60eb4214ba1b072ef2c05cea8079",
+    "fulltext_comparator_source": "joined_cache",
+    "nonemit_root": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-833/eval_results/issue_833/analysis_tensors_nonemit",
+    "matchedn_root": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-833/eval_results/issue_833/analysis_tensors_matchedN",
+    "eq5_root": "/home/thomasjiralerspong/explore-persona-space/.claude/worktrees/issue-833/eval_results/issue_833/analysis_tensors_nonemit_eq5",
+    "layer_wall_seconds": 49.9
+  }
+}

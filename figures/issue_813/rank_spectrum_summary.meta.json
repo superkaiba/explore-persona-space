@@ -1,0 +1,444 @@
+{
+  "commit": "511e99a64c",
+  "created": "2026-07-06T04:33:04Z",
+  "figsize": [
+    13.799999999999999,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.27,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 2.8945362716542955,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.73,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 6.1985851013944595,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.73,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 4.884226824708286,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.73,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 3.0644560085755237,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.73,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 4.233700610094602,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.73,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 3.424772470692046,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.73,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 3.0431501880671115,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.73,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 2.3842652926020795,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.73,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 3.1868547600762622,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 8.73,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 2.977775095472077,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 9.73,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 3.3626537387153217,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 10.73,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 2.9821981411123724,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "emergent misalignment\ngeneric",
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 8.20788934019367,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "emergent misalignment\nelicited",
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 7.734909294182215,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "emergent misalignment\nmixed",
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 8.459964509606653,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "fact recall\ngeneric",
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 7.940808609884303,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "fact recall\nelicited",
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 4.175682679902634,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "fact recall\nmixed",
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 6.849937201254758,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\ngeneric",
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 6.411036366746229,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\nelicited",
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 7.767897095157558,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "sycophancy\nmixed",
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 8.425321009994946,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "marker\ngeneric",
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 6.715524208616172,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "marker\nelicited",
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 7.652593913712063,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "marker\nmixed",
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 7.477296481541622,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.27,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 16.394512900295098,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.27,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 10.279315949330318,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.27,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 13.651217783968665,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.27,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 15.392284240866026,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 4.27,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 5.537196719711336,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 5.27,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 9.384364665707539,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 6.27,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 12.2905515414238,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 7.27,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 12.436748305734625,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 8.27,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 17.02735610340571,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 9.27,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 13.503259029810957,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 10.27,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 12.32571982686898,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 11.27,
+      "stable rank \u2016W\u2016_F\u00b2/\u03c3\u2081\u00b2": 17.570153710240557,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.135,
+      "k for 90% energy": 16.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.865,
+      "k for 90% energy": 24.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.865,
+      "k for 90% energy": 22.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.865,
+      "k for 90% energy": 17.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 3.865,
+      "k for 90% energy": 17.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 4.865,
+      "k for 90% energy": 16.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 5.865,
+      "k for 90% energy": 17.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 6.865,
+      "k for 90% energy": 13.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 7.865,
+      "k for 90% energy": 14.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 8.865,
+      "k for 90% energy": 19.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 9.865,
+      "k for 90% energy": 17.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 10.865,
+      "k for 90% energy": 17.0,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.135,
+      "k for 90% energy": 109.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 1.135,
+      "k for 90% energy": 68.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.135,
+      "k for 90% energy": 86.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 3.135,
+      "k for 90% energy": 118.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 4.135,
+      "k for 90% energy": 78.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 5.135,
+      "k for 90% energy": 123.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 6.135,
+      "k for 90% energy": 83.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 7.135,
+      "k for 90% energy": 44.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 8.135,
+      "k for 90% energy": 63.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 9.135,
+      "k for 90% energy": 96.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 10.135,
+      "k for 90% energy": 39.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 11.135,
+      "k for 90% energy": 73.0,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "category": "emergent misalignment\ngeneric",
+      "W_pe energy fraction in col(W_avg)": 0.03475130810949133,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "emergent misalignment\nelicited",
+      "W_pe energy fraction in col(W_avg)": 0.23219029722845658,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "emergent misalignment\nmixed",
+      "W_pe energy fraction in col(W_avg)": 0.13128048763794017,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "fact recall\ngeneric",
+      "W_pe energy fraction in col(W_avg)": 0.022548712619375584,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "fact recall\nelicited",
+      "W_pe energy fraction in col(W_avg)": 0.048387800735367706,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "fact recall\nmixed",
+      "W_pe energy fraction in col(W_avg)": 0.022770428918813323,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "sycophancy\ngeneric",
+      "W_pe energy fraction in col(W_avg)": 0.011887611627374341,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "sycophancy\nelicited",
+      "W_pe energy fraction in col(W_avg)": 0.017419386331182094,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "sycophancy\nmixed",
+      "W_pe energy fraction in col(W_avg)": 0.01018561840295474,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "marker\ngeneric",
+      "W_pe energy fraction in col(W_avg)": 0.012787043378582844,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "marker\nelicited",
+      "W_pe energy fraction in col(W_avg)": 0.0062341253862480935,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "category": "marker\nmixed",
+      "W_pe energy fraction in col(W_avg)": 0.0051565734772894235,
+      "_kind": "bar",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 72
+}

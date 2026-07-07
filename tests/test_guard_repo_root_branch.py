@@ -771,3 +771,389 @@ def test_bare_arg_resolving_to_nothing_keeps_status_quo_allow():
     # resolves to NOTHING keeps the status-quo allow (git itself errors on the
     # real call), pinning the probe's no-new-false-positive claim.
     assert _run("git checkout nonexistent-name-xyz-897") == 0
+
+
+# ===========================================================================
+# #1058 — heredoc-body strip pre-pass + `$WT` cd-latch
+# ===========================================================================
+# Two recurring false-positive classes closed by #1058: (1) a BARE,
+# unconditionally-executed clause-initial `WT=<worktree>` assignment followed
+# by `cd "$WT" && git ...` provably targets a worktree, so it latches the SAME
+# `scoped` machinery as the literal-path cd-latch; (2) a heredoc BODY fed to a
+# non-shell consumer is stdin DATA, so document text mentioning a gated form
+# is stripped before parsing — EXCEPT when bash would actually execute parts
+# of it (an unquoted-tag body carrying `$(`/backtick/`${` expansion syntax, or
+# a body that shells out), which stays blocked. Each pytest case id names its
+# validated probe id from the #1058 plan batteries (M*/C*/I*/R*/F*).
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — `$WT` cd-latch: a BARE clause-initial worktree assignment
+# preceded by START / `;` (SEQ) / a raw newline (NL) arms the latch; the
+# following `cd "$WT"` (exact-arg, no `..`) scopes the `&&`-chained git
+# clause. Covers the recorded incident shapes (spec-sync recipes). NOT guarded
+# by @on_main (allows must hold in either repo-root HEAD state).
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "REPO_ROOT=/home/thomasjiralerspong/explore-persona-space\n"
+            'WT="$REPO_ROOT/.claude/worktrees/issue-1058-fix"\n'
+            'cd "$WT" && git checkout main -- .claude/skills/issue/SKILL.md '
+            ".claude/agents/planner.md",
+            id="M3h_I1-incident_spec_sync_nl",
+        ),
+        pytest.param(
+            "REPO_ROOT=/home/thomasjiralerspong/explore-persona-space; "
+            'WT="$REPO_ROOT/.claude/worktrees/issue-1058"; '
+            'cd "$WT" && git checkout main -- .claude/agents/planner.md',
+            id="M3g-incident_seq_sep",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/issue-9; cd "$WT" && git checkout main -- specs.md',
+            id="M3i-start_sep",
+        ),
+        pytest.param(
+            'WT=".claude/worktrees/issue-7"; cd "${WT}" && git checkout main -- CLAUDE.md',
+            id="I2-braced_wt",
+        ),
+        pytest.param(
+            'WT=".claude/worktrees/issue-7"; cd "$WT/scripts" && git checkout main -- task.py',
+            id="I3-subdir_wt_scripts",
+        ),
+        pytest.param(
+            "WT='.claude/worktrees/issue-779'\n"
+            'cd "$WT" && git checkout main -- .claude/agents/planner.md',
+            id="F1-single_quoted_rhs",
+        ),
+        pytest.param(
+            'export WT=".claude/worktrees/issue-9"\ncd "$WT" && git checkout main -- specs.md',
+            id="R11-export_form",
+        ),
+        pytest.param(
+            "WT=/tmp/other; WT=.claude/worktrees/issue-9; "
+            'cd "$WT" && git checkout main -- specs.md',
+            id="M3f-rearm_after_disarm",
+        ),
+        pytest.param(
+            'WT=".claude/worktrees/issue-9"; cd "$WT" && uv run pytest -q',
+            id="R17-non_git_under_latch",
+        ),
+    ],
+)
+def test_wt_variable_cd_latch_allows(cmd):
+    """A bare, unconditional worktree WT= assignment + cd \"$WT\" latches scope."""
+    assert _run(cmd) == 0
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — `$WT` cd-latch fail-closed set. The latch arms ONLY on a BARE
+# (end-anchored) clause-initial worktree assignment whose preceding separator
+# is START / SEQ / NL: an assignment PREFIX (`WT=<wt> true`) is a per-command
+# temp env that does not persist; an AND/OR-preceded assignment is
+# runtime-conditional (when skipped, `cd "$WT"` is a `cd ""` repo-root
+# no-op); a PIPE-preceded assignment dies with its subshell; BG stays
+# non-arming as documented conservatism. Any other clause-initial `WT=`
+# DISARMS; the latch inherits the `&&`-only propagation + reset semantics of
+# the literal latch; `..` never latches; the variable name is tight to `WT`.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            'WT=.claude/worktrees/x true; cd "$WT" && git restore .',
+            id="M2a-prefix_assignment_true",
+        ),
+        pytest.param(
+            "WT=.claude/worktrees/x git restore .",
+            id="M2b-prefix_assignment_env_git",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/x echo hi\ncd "$WT" && git reset --hard',
+            id="M2c-prefix_assignment_echo",
+        ),
+        pytest.param(
+            '[ -d "$X" ] && WT=.claude/worktrees/missing; cd "$WT" && git reset --hard',
+            id="M3a-and_preceded_assignment",
+        ),
+        pytest.param(
+            'false || WT=.claude/worktrees/missing; cd "$WT" && git restore .',
+            id="M3b-or_preceded_assignment",
+        ),
+        pytest.param(
+            'true | WT=.claude/worktrees/x\ncd "$WT" && git restore .',
+            id="M3c-pipe_preceded_assignment",
+        ),
+        pytest.param(
+            'sleep 1 & WT=.claude/worktrees/x; cd "$WT" && git restore .',
+            id="M3j-bg_preceded_assignment_conservative",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/a; WT=/somewhere/else; cd "$WT" && git reset --hard',
+            id="M3d-nonworktree_reassign_disarms",
+        ),
+        pytest.param(
+            'WT=.claude/worktrees/a; [ -d x ] && WT=/other; cd "$WT" && git restore .',
+            id="M3e-conditional_reassign_disarms",
+        ),
+        pytest.param(
+            'cd "$WT" && git checkout main -- .claude/agents/planner.md',
+            id="B10-no_assignment_in_call",
+        ),
+        pytest.param(
+            'WT="/home/thomasjiralerspong/explore-persona-space"\n'
+            'cd "$WT" && git checkout main -- .claude/agents/planner.md',
+            id="B11-nonworktree_assignment",
+        ),
+        pytest.param(
+            'WT=".claude/worktrees/issue-9"; cd "$WT/../.." && git restore .',
+            id="R13-dotdot_escape",
+        ),
+        pytest.param(
+            'WT2=".claude/worktrees/issue-9"\ncd "$WT2" && git checkout main -- specs.md',
+            id="R12-wt2_name",
+        ),
+        pytest.param(
+            'WT=".claude/worktrees/issue-779"\n'
+            'cd -P "$WT" && git checkout main -- .claude/agents/planner.md',
+            id="F4-cd_dash_p",
+        ),
+        pytest.param(
+            'WT=".claude/worktrees/issue-9"; cd "$WT"; git restore .',
+            id="R14-latch_not_across_semicolon",
+        ),
+        pytest.param(
+            'WT=".claude/worktrees/issue-9"; cd "$WT" || git restore .',
+            id="R15-latch_not_across_or",
+        ),
+        pytest.param(
+            'echo "docs: WT=.claude/worktrees/example" > /dev/null\n'
+            'cd "$WT" && git checkout -b feature/x',
+            id="R10_F5-prose_buried_wt",
+        ),
+        pytest.param(
+            'cd "$WT" && git restore .\nWT=".claude/worktrees/issue-9"',
+            id="R16-assignment_after_cd",
+        ),
+    ],
+)
+def test_wt_variable_cd_latch_fail_closed_blocks(cmd):
+    """Unproven / conditional / disarmed WT assignments never latch scope."""
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST ALLOW — heredoc BODIES destined for non-shell consumers are stripped
+# before parsing when provably inert, so document text that merely MENTIONS a
+# gated form no longer false-blocks (incident 4 + the adjacent cat-note
+# shape). Quoted/escaped-tag bodies stay strippable even with `$(git ...)`
+# text (bash suppresses expansion); unquoted-tag bodies strip only when they
+# carry NO expansion syntax. NOT guarded by @on_main.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "uv run python - <<'PY'\n"
+            "text = 'git checkout main -- .claude/agents/planner.md'\n"
+            "print(text)\n"
+            "PY",
+            id="I4-python_quoted_tag_incident4",
+        ),
+        pytest.param(
+            'uv run python - <<PY\nprint("the guard blocked: git checkout main -- specs")\nPY',
+            id="M1i-python_unquoted_tag_plain_prose",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\n"
+            "Recovery used: git checkout main -- .claude/skills/issue/SKILL.md\n"
+            "EOF",
+            id="M1h-cat_note_unquoted_no_expansion",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<'EOF'\n$(git checkout -b evil)\nEOF",
+            id="M1e-quoted_tag_dollarparen_inert_control",
+        ),
+        pytest.param(
+            'cat > /tmp/note.md <<"EOF"\n`git checkout -b evil`\nEOF',
+            id="M1f-dquoted_tag_backtick_inert_control",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<\\EOF\n$(git checkout -b evil)\nEOF",
+            id="M1g-escaped_tag_dollarparen_inert_control",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<-EOF\n\tmentions git checkout main -- x\n\tEOF",
+            id="R9-dash_tab_terminator",
+        ),
+        pytest.param(
+            "uv run python - <<PY\n"
+            'print("see scripts/guard_repo_root_branch.sh and git checkout main -- x")\n'
+            "PY",
+            id="C14-body_prose_sh_path_tail",
+        ),
+        pytest.param(
+            'jq \'.\' <<JSON\n{"cmd": "git checkout main -- x"}\nJSON',
+            id="C15-jq_quoted_dot_filter",
+        ),
+        pytest.param(
+            "tee /tmp/note.md <<EOF\nworkaround for: git reset --hard origin/main\nEOF",
+            id="E7-tee_consumer",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\nplain note, nothing gated\nEOF",
+            id="R18-benign_no_git_text",
+        ),
+        pytest.param(
+            'grep -q x <<<"restore mentioned in prose" || true',
+            id="R8a-here_string_non_bigram",
+        ),
+    ],
+)
+def test_nonshell_heredoc_body_mention_allows(cmd):
+    """Provably-inert heredoc bodies are stripped; gated MENTIONS no longer block."""
+    assert _run(cmd) == 0
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — unquoted-tag heredoc bodies carrying expansion syntax. Bash
+# performs command/parameter substitution on an UNQUOTED-tag body at feed
+# time, so `$(git ...)` / backticks in it EXECUTE regardless of the consumer;
+# the strip refuses such bodies (`${` refuses too — parameter expansion can
+# nest command substitution, a documented fail-closed over-match on plain
+# `${VAR}` references). The MUST-FIX-1 matrix.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\n$(git checkout -b evil)\nEOF",
+            id="M1a-dollar_paren_body",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\n`git checkout -b evil`\nEOF",
+            id="M1b-backtick_body",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\n${Z:-$(git checkout -b evil)}\nEOF",
+            id="M1c-nested_param_cmdsub",
+        ),
+        pytest.param(
+            "cat > /tmp/note.md <<EOF\nvalue is ${SOMEVAR}\nhow to revert: git restore .\nEOF",
+            id="M1d-bare_param_expansion_plus_gated_prose",
+        ),
+    ],
+)
+def test_unquoted_tag_expansion_body_blocks(cmd):
+    """Unquoted-tag bodies with expansion syntax never strip (bash executes them)."""
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — heredoc shapes the strip must REFUSE: every shell-consumer /
+# command-runner denylist word pinned individually (incl. the standalone-dot
+# source form), pipe-to-shell, `.sh`-redirects, unterminated / multi-opener /
+# mixed heredocs, shift-like `<<` openers, the continuation-join edge, gated
+# text on the opener line or after the terminator, and the here-string
+# full-literal raw-scan parity pin.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("bash <<EOF\ngit checkout -b evil\nEOF", id="C1-bash"),
+        pytest.param("sh <<EOF\ngit restore .\nEOF", id="C2-sh"),
+        pytest.param("zsh <<EOF\ngit reset --hard\nEOF", id="C3-zsh"),
+        pytest.param("ksh <<EOF\ngit checkout -b evil\nEOF", id="C4-ksh"),
+        pytest.param("dash <<EOF\ngit clean -fd\nEOF", id="C5-dash"),
+        pytest.param('eval "$(cat)" <<EOF\ngit checkout -b evil\nEOF', id="C6-eval"),
+        pytest.param("source /dev/stdin <<EOF\ngit restore .\nEOF", id="C7-source"),
+        pytest.param("ssh host bash <<EOF\ngit reset --hard\nEOF", id="C8-ssh"),
+        pytest.param("xargs -I{} {} <<EOF\ngit checkout -b evil\nEOF", id="C9-xargs"),
+        pytest.param("parallel <<EOF\ngit restore .\nEOF", id="C10-parallel"),
+        pytest.param("sudo -s <<EOF\ngit reset --hard\nEOF", id="C11-sudo"),
+        pytest.param("su -c bash <<EOF\ngit checkout -b evil\nEOF", id="C12-su"),
+        pytest.param(". /dev/stdin <<EOF\ngit restore .\nEOF", id="C13-dot_source"),
+        pytest.param("cat <<EOF | bash\ngit checkout -b evil\nEOF", id="R1-pipe_to_bash"),
+        pytest.param("cat > /tmp/run.sh <<EOF\ngit reset --hard\nEOF", id="R2-sh_redirect"),
+        pytest.param("cat > /tmp/x.md <<EOF\ngit restore .", id="R3-unterminated"),
+        pytest.param(
+            "paste <(cat <<A) <(cat <<B)\ngit checkout -b evil\nA\nx\nB",
+            id="R4-two_openers_one_line",
+        ),
+        pytest.param(
+            'uv run python - <<PY\nprint("hi")\nPY\nbash <<EOF\ngit checkout -b evil\nEOF',
+            id="C16-mixed_python_plus_bash",
+        ),
+        pytest.param(
+            'uv run python -c "x = 1 << 2"\ngit checkout -b evil',
+            id="C17-shift_like_opener_then_gated",
+        ),
+        pytest.param(
+            "cat > /tmp/x.md <<EOF\ngit restore . \\\nEOF",
+            id="C18-continuation_join_hides_terminator",
+        ),
+        pytest.param(
+            'git checkout -b x && python - <<PY\nprint("hi")\nPY',
+            id="R6-gated_on_opener_line",
+        ),
+        pytest.param(
+            'uv run python - <<PY\nprint("hi")\nPY\ngit checkout -b evil',
+            id="R7-gated_after_terminator",
+        ),
+        pytest.param(
+            'grep -q x <<<"git restore . mentioned in prose" || true',
+            id="R8b-here_string_full_literal_parity",
+        ),
+    ],
+)
+def test_shell_consumer_heredoc_still_blocks(cmd):
+    """Shell-consumer / unstrippable heredoc shapes keep current (block) behavior."""
+    assert _run(cmd) == 2
+
+
+# ---------------------------------------------------------------------------
+# MUST BLOCK — heredoc bodies that themselves SHELL OUT (os.system /
+# subprocess / Popen / bare-or-spaced `system (` / `from os import`) may
+# execute git despite a non-shell consumer, so the strip refuses them and the
+# gated literal in the body still classifies. The MUST-FIX-4 matrix.
+# ---------------------------------------------------------------------------
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            'uv run python - <<PY\nimport os\nos.system("git checkout -b evil")\nPY',
+            id="R5-os_system",
+        ),
+        pytest.param(
+            'uv run python - <<PY\nfrom os import system\nsystem("git restore .")\nPY',
+            id="M4a-from_os_import_system",
+        ),
+        pytest.param(
+            'uv run python - <<PY\nimport os\ns = os.system\ns ("git checkout -b evil")\nPY',
+            id="M4b-spaced_system_call",
+        ),
+        pytest.param(
+            "uv run python - <<PY\n"
+            "import subprocess\n"
+            'subprocess.run("git restore .", shell=True)\n'
+            "PY",
+            id="M4c-subprocess_run_string",
+        ),
+        pytest.param(
+            "uv run python - <<PY\n"
+            "from subprocess import Popen\n"
+            'Popen(["bash","-c","git reset --hard"])\n'
+            "PY",
+            id="M4d-popen_list",
+        ),
+    ],
+)
+def test_heredoc_shellout_body_blocks(cmd):
+    """A body naming a shell-out spelling never strips; its gated text classifies."""
+    assert _run(cmd) == 2

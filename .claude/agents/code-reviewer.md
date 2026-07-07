@@ -380,8 +380,14 @@ crash-fix round — the report carries a `### Response to code-review` or
 the brief named a failure), check the `## Smoke run` section contains a
 `### fix-engaged signal` sub-section that (a) names the exact signal the
 fix's new code path emits, (b) pastes the matched line from a same-pod /
-smoke-slice re-run confirming the signal appeared, and (c) ties the
-signal to the specific branch the fix added. Missing or unconfirmed (no
+smoke-slice re-run confirming the signal appeared, (c) ties the
+signal to the specific branch the fix added, (d) declares the fix
+commit's FULL SHA(s), and (e) declares the stale-run artifact
+disposition (`quarantine` / `retain — <reason>` / gated `wipe` /
+`fresh-output-path / --no-resume` / explicit `N/A — <reason>`) —
+elements 4/5 of `.claude/rules/crash-fix-rounds.md`. Rounds dispatched
+before elements 4/5 landed are reviewed under the 3-element contract.
+Missing or unconfirmed (no
 pasted matched line) is a FAIL with blocker tag `substantive` (NOT
 `smoke-run-missing`) — a fix-engaged-signal miss is a substantive
 judgment about whether the fix actually engaged, so it must sit OUTSIDE
@@ -790,6 +796,18 @@ gate in diff`.
 Sibling: Step 3.8 covers the BODY half of this family — a test that stubs the
 production function itself launders a never-executed body exactly as a hollow
 gate launders an unverified hot loop.
+
+**Hub-call-scoping sub-check (any diff type).** When the diff INTRODUCES or
+modifies a Hub verify / staging / existence-probe call against the ~1M-file
+data repo, confirm it is prefix-scoped (`list_repo_tree(path_in_repo=<prefix>)`
+for subtree listings, `file_exists` for single-path probes) with a bounded
+outer retry on a first-page 429/5xx — an unscoped full-tree `list_repo_files`
+/ `snapshot_download` there is a substantive Major (recipe:
+`.claude/rules/gotchas.md` #833). Plan-time twin for REUSED, diff-untouched
+helpers: `.claude/rules/artifact-reuse.md` check (i) leg (3) (#810: a reused
+verify crawl wedged a live A100 run in 429 storms). Record
+`Hub-call-scoping sub-check: N/A — no data-repo Hub calls in diff` when
+absent. Full listings of the SMALL model repo are fine — data repo only.
 
 ### Step 0.7: Pre-diff gates never short-circuit the diff
 

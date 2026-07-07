@@ -1,0 +1,76 @@
+{
+  "commit": "5ab0f95f7a",
+  "created": "2026-07-04T05:32:56Z",
+  "figsize": [
+    10.0,
+    3.6
+  ],
+  "points": [
+    {
+      "category": "beats ridge",
+      "# transitions (of 27) source-only-GRU wins": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "beats MLP",
+      "# transitions (of 27) source-only-GRU wins": 0.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "beats prefix-GRU",
+      "# transitions (of 27) source-only-GRU wins": 27.0,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "# transitions (of 27) source-only-GRU wins": 13.5,
+      "series": "half of 27",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "# transitions (of 27) source-only-GRU wins": 13.5,
+      "series": "half of 27",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "category": "beats ridge",
+      "# transitions (of 27) source-only-GRU wins": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "beats MLP",
+      "# transitions (of 27) source-only-GRU wins": 0.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "category": "beats prefix-GRU",
+      "# transitions (of 27) source-only-GRU wins": 22.0,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "# transitions (of 27) source-only-GRU wins": 13.5,
+      "series": "half of 27",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "# transitions (of 27) source-only-GRU wins": 13.5,
+      "series": "half of 27",
+      "_kind": "line",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 10
+}

@@ -1,0 +1,1312 @@
+{
+  "commit": "068f46c8",
+  "created": "2026-07-03T22:19:23Z",
+  "figsize": [
+    4.5,
+    4.0
+  ],
+  "points": [
+    {
+      "horizon-mean rolled projection": -1379.8675537109375,
+      "judged trait score": 2.3,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1381.1116943359375,
+      "judged trait score": 0.86,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1916.73828125,
+      "judged trait score": 3.900000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1404.0169677734375,
+      "judged trait score": 3.5,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1231.6175537109375,
+      "judged trait score": 2.1799999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -2074.611572265625,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -2033.326416015625,
+      "judged trait score": 0.33999999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1614.540283203125,
+      "judged trait score": 0.48,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1618.510498046875,
+      "judged trait score": 0.08,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1357.713623046875,
+      "judged trait score": 10.1,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1283.224853515625,
+      "judged trait score": 1.3399999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1683.5089111328125,
+      "judged trait score": 2.4,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1674.0050048828125,
+      "judged trait score": 2.7,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1783.275390625,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1602.8948974609375,
+      "judged trait score": 4.04,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1368.3486328125,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1549.3719482421875,
+      "judged trait score": 2.6799999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1135.4970703125,
+      "judged trait score": 9.16,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1458.7762451171875,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1662.3775634765625,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1272.0667724609375,
+      "judged trait score": 6.840000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1346.220458984375,
+      "judged trait score": 0.6,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1770.937744140625,
+      "judged trait score": 6.18,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1189.5146484375,
+      "judged trait score": 26.3,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1195.3643798828125,
+      "judged trait score": 17.18,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1740.270263671875,
+      "judged trait score": 0.18,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1890.6978759765625,
+      "judged trait score": 1.6199999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1620.624755859375,
+      "judged trait score": 1.1400000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1649.099365234375,
+      "judged trait score": 0.1,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -931.6339721679688,
+      "judged trait score": 33.58,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1257.0682373046875,
+      "judged trait score": 2.8999999999999995,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1654.9471435546875,
+      "judged trait score": 1.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1530.181396484375,
+      "judged trait score": 2.48,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1701.707275390625,
+      "judged trait score": 2.18,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1317.000244140625,
+      "judged trait score": 15.540000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1450.8414306640625,
+      "judged trait score": 0.5599999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1426.5224609375,
+      "judged trait score": 22.119999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1039.49462890625,
+      "judged trait score": 5.540000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1635.136474609375,
+      "judged trait score": 0.04,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1656.1395263671875,
+      "judged trait score": 0.08,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1363.373046875,
+      "judged trait score": 8.06,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1398.8638916015625,
+      "judged trait score": 0.4600000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1837.95068359375,
+      "judged trait score": 8.28,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1276.0247802734375,
+      "judged trait score": 11.920000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1183.688232421875,
+      "judged trait score": 31.1,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1862.35009765625,
+      "judged trait score": 0.08,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1877.9837646484375,
+      "judged trait score": 0.7,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1692.287353515625,
+      "judged trait score": 0.6,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1726.422119140625,
+      "judged trait score": 0.08,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -961.3998413085938,
+      "judged trait score": 50.019999999999996,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1267.11572265625,
+      "judged trait score": 3.1599999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1788.89306640625,
+      "judged trait score": 1.2600000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1584.487548828125,
+      "judged trait score": 3.2,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1792.035888671875,
+      "judged trait score": 1.0399999999999998,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1367.7178955078125,
+      "judged trait score": 12.68,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1487.2095947265625,
+      "judged trait score": 0.66,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1415.40576171875,
+      "judged trait score": 11.72,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1185.1436767578125,
+      "judged trait score": 4.98,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1675.2255859375,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1744.758056640625,
+      "judged trait score": 0.04,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1444.21533203125,
+      "judged trait score": 4.26,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1416.9462890625,
+      "judged trait score": 1.06,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1818.8330078125,
+      "judged trait score": 8.16,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1352.888671875,
+      "judged trait score": 17.06,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1240.14697265625,
+      "judged trait score": 5.659999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1862.7855224609375,
+      "judged trait score": 0.04,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1858.466796875,
+      "judged trait score": 1.1400000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1753.7890625,
+      "judged trait score": 0.5399999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1690.30029296875,
+      "judged trait score": 0.76,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1002.5022583007812,
+      "judged trait score": 43.04,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1354.9462890625,
+      "judged trait score": 7.639999999999998,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1675.5540771484375,
+      "judged trait score": 0.8,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1450.916015625,
+      "judged trait score": 1.86,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1670.39404296875,
+      "judged trait score": 3.2399999999999998,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1510.2052001953125,
+      "judged trait score": 9.68,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1588.626953125,
+      "judged trait score": 2.3600000000000003,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1370.34326171875,
+      "judged trait score": 14.819999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1263.392578125,
+      "judged trait score": 2.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1690.6929931640625,
+      "judged trait score": 0.04,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1653.2525634765625,
+      "judged trait score": 1.44,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1418.4482421875,
+      "judged trait score": 3.4,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1438.1009521484375,
+      "judged trait score": 1.06,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -2050.2890625,
+      "judged trait score": 5.880000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1399.082763671875,
+      "judged trait score": 5.480000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1349.02197265625,
+      "judged trait score": 10.84,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1856.1741943359375,
+      "judged trait score": 0.08,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -2140.8798828125,
+      "judged trait score": 0.72,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1742.9613037109375,
+      "judged trait score": 0.06,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1821.06494140625,
+      "judged trait score": 0.18,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1136.37548828125,
+      "judged trait score": 28.580000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1306.055419921875,
+      "judged trait score": 1.7,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1862.245361328125,
+      "judged trait score": 0.5199999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1716.436767578125,
+      "judged trait score": 3.2,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1967.2716064453125,
+      "judged trait score": 1.2,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1621.57421875,
+      "judged trait score": 10.360000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1573.520263671875,
+      "judged trait score": 0.13999999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1693.1376953125,
+      "judged trait score": 6.74,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1233.8173828125,
+      "judged trait score": 3.56,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1843.216552734375,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1882.30615234375,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -76.68795776367188,
+      "judged trait score": 85.42,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -140.7899169921875,
+      "judged trait score": 23.6,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -252.53575134277344,
+      "judged trait score": 76.78,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -104.42311096191406,
+      "judged trait score": 79.02000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -233.9273681640625,
+      "judged trait score": 46.10000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -427.5977783203125,
+      "judged trait score": 11.040000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -198.99436950683594,
+      "judged trait score": 75.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -242.180908203125,
+      "judged trait score": 14.76,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -290.3846130371094,
+      "judged trait score": 73.25999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": 143.03732299804688,
+      "judged trait score": 89.38,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -121.76544952392578,
+      "judged trait score": 66.8,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -52.52287292480469,
+      "judged trait score": 78.34,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -251.78964233398438,
+      "judged trait score": 41.239999999999995,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -118.8199462890625,
+      "judged trait score": 70.58,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -242.72012329101562,
+      "judged trait score": 81.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -115.41373443603516,
+      "judged trait score": 43.379999999999995,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -116.06948852539062,
+      "judged trait score": 61.06,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": 275.5154724121094,
+      "judged trait score": 32.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -201.00460815429688,
+      "judged trait score": 7.12,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -202.48904418945312,
+      "judged trait score": 54.5,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -67.16654968261719,
+      "judged trait score": 71.62000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -127.77578735351562,
+      "judged trait score": 5.1,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -214.2296600341797,
+      "judged trait score": 69.2,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -162.3319091796875,
+      "judged trait score": 73.26,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -260.8439025878906,
+      "judged trait score": 31.920000000000005,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -384.1148681640625,
+      "judged trait score": 9.28,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -377.6416320800781,
+      "judged trait score": 14.48,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -199.8555908203125,
+      "judged trait score": 11.64,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -410.84600830078125,
+      "judged trait score": 14.859999999999996,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": 35.97772216796875,
+      "judged trait score": 80.03999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -169.1131591796875,
+      "judged trait score": 15.819999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -24.254058837890625,
+      "judged trait score": 23.26,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -235.1143798828125,
+      "judged trait score": 10.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -232.16091918945312,
+      "judged trait score": 44.74,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -346.58538818359375,
+      "judged trait score": 59.86,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -264.1428527832031,
+      "judged trait score": 14.559999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -298.5256042480469,
+      "judged trait score": 37.980000000000004,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": 187.80557250976562,
+      "judged trait score": 40.12,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -329.5678405761719,
+      "judged trait score": 12.479999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -307.3647155761719,
+      "judged trait score": 13.559999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -270.17987060546875,
+      "judged trait score": 59.4,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -355.69049072265625,
+      "judged trait score": 11.320000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -588.0735473632812,
+      "judged trait score": 34.22,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -208.12586975097656,
+      "judged trait score": 68.78000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -416.1410827636719,
+      "judged trait score": 11.739999999999998,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -672.9632568359375,
+      "judged trait score": 2.94,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -757.1268310546875,
+      "judged trait score": 6.18,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -494.11688232421875,
+      "judged trait score": 9.44,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -697.1097412109375,
+      "judged trait score": 4.42,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -147.21383666992188,
+      "judged trait score": 79.33999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -481.6067199707031,
+      "judged trait score": 14.16,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -415.128173828125,
+      "judged trait score": 9.92,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -478.064453125,
+      "judged trait score": 14.319999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -468.1865234375,
+      "judged trait score": 46.60000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -497.1373291015625,
+      "judged trait score": 53.64000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -477.51715087890625,
+      "judged trait score": 9.959999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -636.45068359375,
+      "judged trait score": 25.96,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": 16.698822021484375,
+      "judged trait score": 20.82,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -473.3099365234375,
+      "judged trait score": 7.859999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -499.96075439453125,
+      "judged trait score": 3.5400000000000005,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -841.9653930664062,
+      "judged trait score": 15.120000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -748.234619140625,
+      "judged trait score": 2.4000000000000004,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1167.908935546875,
+      "judged trait score": 7.92,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -661.302978515625,
+      "judged trait score": 50.279999999999994,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -762.0349731445312,
+      "judged trait score": 6.640000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1165.716552734375,
+      "judged trait score": 0.8800000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1399.9345703125,
+      "judged trait score": 2.16,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -877.802734375,
+      "judged trait score": 0.86,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1051.979248046875,
+      "judged trait score": 0.3,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -691.148193359375,
+      "judged trait score": 66.88000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -851.6063232421875,
+      "judged trait score": 6.24,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -972.5537109375,
+      "judged trait score": 7.9,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1006.1574096679688,
+      "judged trait score": 3.2600000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -981.0825805664062,
+      "judged trait score": 31.639999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -810.5009765625,
+      "judged trait score": 35.38000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -962.114501953125,
+      "judged trait score": 5.26,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1030.9539794921875,
+      "judged trait score": 12.14,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -373.56341552734375,
+      "judged trait score": 10.62,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1017.8048095703125,
+      "judged trait score": 0.9800000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1116.4422607421875,
+      "judged trait score": 4.48,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1252.7540283203125,
+      "judged trait score": 6.919999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1115.78076171875,
+      "judged trait score": 0.9200000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1664.08203125,
+      "judged trait score": 4.7,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1183.924072265625,
+      "judged trait score": 11.200000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1123.032470703125,
+      "judged trait score": 6.0200000000000005,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1708.0233154296875,
+      "judged trait score": 0.24000000000000005,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1821.113525390625,
+      "judged trait score": 0.5,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1276.4638671875,
+      "judged trait score": 0.44000000000000006,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1350.1068115234375,
+      "judged trait score": 0.04,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1158.80712890625,
+      "judged trait score": 26.440000000000005,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1166.0140380859375,
+      "judged trait score": 3.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1417.434814453125,
+      "judged trait score": 1.1,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1465.8067626953125,
+      "judged trait score": 4.6,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1536.310546875,
+      "judged trait score": 8.440000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1181.278076171875,
+      "judged trait score": 22.020000000000003,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1311.3699951171875,
+      "judged trait score": 0.42000000000000004,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1400.3203125,
+      "judged trait score": 5.72,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -715.1471557617188,
+      "judged trait score": 9.4,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1343.707763671875,
+      "judged trait score": 0.2,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1609.4869384765625,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1143.1070556640625,
+      "judged trait score": 6.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1102.1904296875,
+      "judged trait score": 2.18,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1569.76220703125,
+      "judged trait score": 6.4799999999999995,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1070.3375244140625,
+      "judged trait score": 14.38,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1060.53955078125,
+      "judged trait score": 7.0200000000000005,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1687.1739501953125,
+      "judged trait score": 0.06,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1761.71142578125,
+      "judged trait score": 0.38,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1270.246826171875,
+      "judged trait score": 0.9,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1310.71142578125,
+      "judged trait score": 0.3,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1100.152099609375,
+      "judged trait score": 26.72,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1120.1407470703125,
+      "judged trait score": 7.220000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1381.471435546875,
+      "judged trait score": 3.3599999999999994,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1430.30224609375,
+      "judged trait score": 4.7,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1486.2091064453125,
+      "judged trait score": 5.46,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1108.2998046875,
+      "judged trait score": 25.160000000000004,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1281.3369140625,
+      "judged trait score": 3.12,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1356.4072265625,
+      "judged trait score": 5.279999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -688.715087890625,
+      "judged trait score": 11.94,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1279.450439453125,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1530.916748046875,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1409.23583984375,
+      "judged trait score": 3.4599999999999995,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1279.752685546875,
+      "judged trait score": 0.52,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1863.482666015625,
+      "judged trait score": 4.62,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1342.85302734375,
+      "judged trait score": 4.18,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1265.050048828125,
+      "judged trait score": 4.6,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1888.2841796875,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1973.4224853515625,
+      "judged trait score": 0.4800000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1386.8922119140625,
+      "judged trait score": 0.27999999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1526.37060546875,
+      "judged trait score": 0.13999999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1269.2236328125,
+      "judged trait score": 10.2,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1295.051025390625,
+      "judged trait score": 4.6,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1615.0263671875,
+      "judged trait score": 2.3,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1553.8350830078125,
+      "judged trait score": 4.2,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1730.61572265625,
+      "judged trait score": 1.02,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1340.40478515625,
+      "judged trait score": 10.02,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1451.044677734375,
+      "judged trait score": 0.6,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1662.956298828125,
+      "judged trait score": 4.76,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -843.6719970703125,
+      "judged trait score": 9.28,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1416.189208984375,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1840.358642578125,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1568.0576171875,
+      "judged trait score": 3.2199999999999998,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1381.3013916015625,
+      "judged trait score": 1.7,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1896.638916015625,
+      "judged trait score": 2.64,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1485.885986328125,
+      "judged trait score": 5.44,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1366.108154296875,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -2048.010498046875,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -2062.6181640625,
+      "judged trait score": 0.1,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1614.271240234375,
+      "judged trait score": 0.04,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1511.781982421875,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1385.69921875,
+      "judged trait score": 9.52,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1474.6123046875,
+      "judged trait score": 1.2399999999999998,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1679.5701904296875,
+      "judged trait score": 0.6799999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1662.298828125,
+      "judged trait score": 1.28,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1858.818115234375,
+      "judged trait score": 0.16,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1630.0828857421875,
+      "judged trait score": 5.2,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1520.796630859375,
+      "judged trait score": 0.48,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1670.079345703125,
+      "judged trait score": 3.06,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1174.9761962890625,
+      "judged trait score": 6.1,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1554.6263427734375,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "horizon-mean rolled projection": -1898.96240234375,
+      "judged trait score": 0.0,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 260
+}

@@ -1,0 +1,472 @@
+{
+  "meta": {
+    "issue": 811,
+    "followup": "maxp-winner-mapchange mean-call replication vs committed v1 cells",
+    "run_cells_dir": "eval_results/issue_811/pre-user-boundary-summary/cells",
+    "committed_cells_dir": "eval_results/issue_811/maxp-winner-mapchange/cells",
+    "generated_at": "2026-07-05T22:16:32Z"
+  },
+  "n_cells": 27,
+  "n_call_flips": 0,
+  "rows": [
+    {
+      "cell": "em_L14_maxp.json",
+      "run": {
+        "Delta_med": 0.049283732497324845,
+        "floor_combined": 0.10532304724868125,
+        "ratio": 0.46792923092093625,
+        "call_above_floor": false
+      },
+      "committed": {
+        "Delta_med": 0.0489820637281582,
+        "floor_combined": 0.07308214658344726,
+        "ratio": 0.6702329641101755,
+        "call_above_floor": false
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "em_L14_mean.json",
+      "run": {
+        "Delta_med": 0.023981585147724,
+        "floor_combined": 0.1247254416788263,
+        "ratio": 0.19227500680637136,
+        "call_above_floor": false
+      },
+      "committed": {
+        "Delta_med": 0.03668828667616905,
+        "floor_combined": 0.09144154812373613,
+        "ratio": 0.4012211891526978,
+        "call_above_floor": false
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "em_L14_turn_nl.json",
+      "run": {
+        "Delta_med": 0.25272903428296895,
+        "floor_combined": 0.17045602022031384,
+        "ratio": 1.4826641731768553,
+        "call_above_floor": true
+      },
+      "committed": {
+        "Delta_med": 0.23516529241092787,
+        "floor_combined": 0.17616378487199358,
+        "ratio": 1.3349241592521797,
+        "call_above_floor": true
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "em_L21_maxp.json",
+      "run": {
+        "Delta_med": 0.03456518418221971,
+        "floor_combined": 0.3210795776930967,
+        "ratio": 0.10765301371879459,
+        "call_above_floor": false
+      },
+      "committed": {
+        "Delta_med": 0.11479685584691324,
+        "floor_combined": 0.20987961086803644,
+        "ratio": 0.5469652596177754,
+        "call_above_floor": false
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "em_L21_mean.json",
+      "run": {
+        "Delta_med": 0.036647364682812406,
+        "floor_combined": 0.23874482479428077,
+        "ratio": 0.15350014273352452,
+        "call_above_floor": false
+      },
+      "committed": {
+        "Delta_med": 0.08238935864885705,
+        "floor_combined": 0.18799815214264284,
+        "ratio": 0.43824557693707783,
+        "call_above_floor": false
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "em_L21_turn_nl.json",
+      "run": {
+        "Delta_med": 0.5532481151245836,
+        "floor_combined": 0.41337746826018695,
+        "ratio": 1.3383605968005001,
+        "call_above_floor": true
+      },
+      "committed": {
+        "Delta_med": 0.5059062399871073,
+        "floor_combined": 0.38960482036728106,
+        "ratio": 1.2985112440605553,
+        "call_above_floor": true
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "em_L7_maxp.json",
+      "run": {
+        "Delta_med": 0.010299959405401288,
+        "floor_combined": 0.08851354185948888,
+        "ratio": 0.11636591632218257,
+        "call_above_floor": false
+      },
+      "committed": {
+        "Delta_med": 0.011920251232317599,
+        "floor_combined": 0.04989210735028545,
+        "ratio": 0.2389205801355953,
+        "call_above_floor": false
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "em_L7_mean.json",
+      "run": {
+        "Delta_med": 0.0070161102375136605,
+        "floor_combined": 0.02862600449401533,
+        "ratio": 0.24509568699957682,
+        "call_above_floor": false
+      },
+      "committed": {
+        "Delta_med": 0.011165015180395966,
+        "floor_combined": 0.05869381935665559,
+        "ratio": 0.19022471706179586,
+        "call_above_floor": false
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "em_L7_turn_nl.json",
+      "run": {
+        "Delta_med": 0.08912658001215013,
+        "floor_combined": 0.03685316257406735,
+        "ratio": 2.418424194477851,
+        "call_above_floor": true
+      },
+      "committed": {
+        "Delta_med": 0.11814198875755773,
+        "floor_combined": 0.047174067542594504,
+        "ratio": 2.5043841863092413,
+        "call_above_floor": true
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "fact_L14_maxp.json",
+      "run": {
+        "Delta_med": 0.27368676642961665,
+        "floor_combined": 0.07648511064120254,
+        "ratio": 3.5783012423620857,
+        "call_above_floor": true
+      },
+      "committed": {
+        "Delta_med": 0.2712315009357061,
+        "floor_combined": 0.06932063281089171,
+        "ratio": 3.912709534484948,
+        "call_above_floor": true
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "fact_L14_mean.json",
+      "run": {
+        "Delta_med": 0.300946482070061,
+        "floor_combined": 0.11313192590375895,
+        "ratio": 2.6601375311693665,
+        "call_above_floor": true
+      },
+      "committed": {
+        "Delta_med": 0.28890262883654483,
+        "floor_combined": 0.0988198869370027,
+        "ratio": 2.923527214929108,
+        "call_above_floor": true
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "fact_L14_turn_nl.json",
+      "run": {
+        "Delta_med": 0.03420488185117404,
+        "floor_combined": 0.24780576703022514,
+        "ratio": 0.1380310162313617,
+        "call_above_floor": false
+      },
+      "committed": {
+        "Delta_med": 0.020040547740684957,
+        "floor_combined": 0.25618899495403896,
+        "ratio": 0.07822563863166834,
+        "call_above_floor": false
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "fact_L21_maxp.json",
+      "run": {
+        "Delta_med": 0.1314307279792685,
+        "floor_combined": 0.16186881559341232,
+        "ratio": 0.8119582978193943,
+        "call_above_floor": false
+      },
+      "committed": {
+        "Delta_med": 0.055836952036490625,
+        "floor_combined": 0.19287376908542506,
+        "ratio": 0.2894999786713354,
+        "call_above_floor": false
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "fact_L21_mean.json",
+      "run": {
+        "Delta_med": 0.13264695699736567,
+        "floor_combined": 0.0962098571806274,
+        "ratio": 1.3787252250913347,
+        "call_above_floor": true
+      },
+      "committed": {
+        "Delta_med": 0.13755338684338902,
+        "floor_combined": 0.10771576195374132,
+        "ratio": 1.2770033312530575,
+        "call_above_floor": true
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "fact_L21_turn_nl.json",
+      "run": {
+        "Delta_med": 0.10251558716939493,
+        "floor_combined": 0.23618199582769117,
+        "ratio": 0.4340533528397573,
+        "call_above_floor": false
+      },
+      "committed": {
+        "Delta_med": 0.11762075902447647,
+        "floor_combined": 0.23302690723980113,
+        "ratio": 0.5047518349605713,
+        "call_above_floor": false
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "fact_L7_maxp.json",
+      "run": {
+        "Delta_med": 0.06316831839802596,
+        "floor_combined": 0.03517943964534291,
+        "ratio": 1.795603313607306,
+        "call_above_floor": true
+      },
+      "committed": {
+        "Delta_med": 0.0681248002121966,
+        "floor_combined": 0.045578318365173225,
+        "ratio": 1.4946755969884868,
+        "call_above_floor": true
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "fact_L7_mean.json",
+      "run": {
+        "Delta_med": 0.11018122874973632,
+        "floor_combined": 0.03381643206249123,
+        "ratio": 3.258215667049866,
+        "call_above_floor": true
+      },
+      "committed": {
+        "Delta_med": 0.11712598131664062,
+        "floor_combined": 0.04385203182939123,
+        "ratio": 2.670936246975414,
+        "call_above_floor": true
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "fact_L7_turn_nl.json",
+      "run": {
+        "Delta_med": 0.11267454510703476,
+        "floor_combined": 0.04121594696907931,
+        "ratio": 2.7337609200527293,
+        "call_above_floor": true
+      },
+      "committed": {
+        "Delta_med": 0.1281622824328496,
+        "floor_combined": 0.04311230039114899,
+        "ratio": 2.972754440613461,
+        "call_above_floor": true
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "sycophancy_L14_maxp.json",
+      "run": {
+        "Delta_med": 0.008500070906845923,
+        "floor_combined": 0.04188651188402923,
+        "ratio": 0.2029309800343362,
+        "call_above_floor": false
+      },
+      "committed": {
+        "Delta_med": 0.010272067267849728,
+        "floor_combined": 0.05723920074495422,
+        "ratio": 0.1794586076353492,
+        "call_above_floor": false
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "sycophancy_L14_mean.json",
+      "run": {
+        "Delta_med": 0.027106803134053163,
+        "floor_combined": 0.024200747578308313,
+        "ratio": 1.1200812308108041,
+        "call_above_floor": true
+      },
+      "committed": {
+        "Delta_med": 0.025806522455781546,
+        "floor_combined": 0.02342984144010074,
+        "ratio": 1.1014382031460555,
+        "call_above_floor": true
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "sycophancy_L14_turn_nl.json",
+      "run": {
+        "Delta_med": 0.06022322149429233,
+        "floor_combined": 0.08067732138760166,
+        "ratio": 0.7464702652305376,
+        "call_above_floor": false
+      },
+      "committed": {
+        "Delta_med": 0.054182517788053976,
+        "floor_combined": 0.08068373234109111,
+        "ratio": 0.6715420347561136,
+        "call_above_floor": false
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "sycophancy_L21_maxp.json",
+      "run": {
+        "Delta_med": 0.0871674443156754,
+        "floor_combined": 0.3182827326232282,
+        "ratio": 0.27386796511785994,
+        "call_above_floor": false
+      },
+      "committed": {
+        "Delta_med": 0.08427175215853853,
+        "floor_combined": 0.32880008633935576,
+        "ratio": 0.2563008820854182,
+        "call_above_floor": false
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "sycophancy_L21_mean.json",
+      "run": {
+        "Delta_med": 0.034253918668531794,
+        "floor_combined": 0.2823222298680952,
+        "ratio": 0.12132915882867493,
+        "call_above_floor": false
+      },
+      "committed": {
+        "Delta_med": 0.038211898681410755,
+        "floor_combined": 0.3105765798824492,
+        "ratio": 0.12303535152545521,
+        "call_above_floor": false
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "sycophancy_L21_turn_nl.json",
+      "run": {
+        "Delta_med": 0.1533369922262795,
+        "floor_combined": 0.2468359342559863,
+        "ratio": 0.6212101681567085,
+        "call_above_floor": false
+      },
+      "committed": {
+        "Delta_med": 0.10768752542522547,
+        "floor_combined": 0.2794257163967412,
+        "ratio": 0.38538874236015513,
+        "call_above_floor": false
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "sycophancy_L7_maxp.json",
+      "run": {
+        "Delta_med": 0.014930819689797339,
+        "floor_combined": 0.01480646653832325,
+        "ratio": 1.0083985703916751,
+        "call_above_floor": true
+      },
+      "committed": {
+        "Delta_med": 0.012555027696266343,
+        "floor_combined": 0.01120387048576641,
+        "ratio": 1.1205973607260515,
+        "call_above_floor": true
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "sycophancy_L7_mean.json",
+      "run": {
+        "Delta_med": 0.01591130952782016,
+        "floor_combined": 0.010530208525873181,
+        "ratio": 1.5110156165213044,
+        "call_above_floor": true
+      },
+      "committed": {
+        "Delta_med": 0.015752120228144536,
+        "floor_combined": 0.008270022563111087,
+        "ratio": 1.9047251815742048,
+        "call_above_floor": true
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    },
+    {
+      "cell": "sycophancy_L7_turn_nl.json",
+      "run": {
+        "Delta_med": 0.058980436802860324,
+        "floor_combined": 0.01538739536139721,
+        "ratio": 3.8330357684073157,
+        "call_above_floor": true
+      },
+      "committed": {
+        "Delta_med": 0.05109562357131832,
+        "floor_combined": 0.01664545742906646,
+        "ratio": 3.0696437024370775,
+        "call_above_floor": true
+      },
+      "call_flipped": false,
+      "status": "call_stable"
+    }
+  ]
+}

@@ -1,0 +1,201 @@
+{
+ "description": "Derived evil-restricted transfer companions for issue #922 (analyzer round 2). Source: eval_results/issue_922/transfer_percontext.npz (which carries no trait labels). Window-index derivation: eval windows are built trait-major in issue922_common.build_eval_items (TRAITS = (evil, sycophancy, hallucination); evil = 9 reconstructable conditions x 16 questions = 144 windows), and transfer_percontext.npz ctx_ids are sequential 0..431 in build order, so windows 0:144 are exactly the evil-trait windows. Recipe matches scripts/issue922_eval.py: per-context horizon-mean over k<=READOUT_K_MAX=32 (_horizon_mean_perctx), percentile bootstrap of the mean with seed=0 (C.BOOTSTRAP_SEED), n_boot=1000 (_boot_mean_ci). The *_full_validation blocks recompute the SAME statistic on all 432 windows and match transfer_eval.json (h7_paired.ctx_roll_minus_direct_c means and variants.ridge_ctx_boundary_first.skill_mean_ci k=32 means) exactly.",
+ "h7_paired_ctx_roll_minus_direct_c_horizon_mean": {
+  "evil_windows_0_144": {
+   "14": {
+    "mean": 0.2587907091817922,
+    "lo": 0.24016558827263199,
+    "hi": 0.2764310160807023,
+    "n": 144,
+    "excludes_zero": true
+   },
+   "17": {
+    "mean": 0.22634645530747044,
+    "lo": 0.2088741904642019,
+    "hi": 0.2424346475008254,
+    "n": 144,
+    "excludes_zero": true
+   },
+   "19": {
+    "mean": 0.13603599783447054,
+    "lo": 0.12551812870790147,
+    "hi": 0.14651707176429532,
+    "n": 144,
+    "excludes_zero": true
+   },
+   "20": {
+    "mean": 0.1247881996548838,
+    "lo": 0.11377809417382297,
+    "hi": 0.13551298392574407,
+    "n": 144,
+    "excludes_zero": true
+   },
+   "24": {
+    "mean": 0.14913040389203364,
+    "lo": 0.14089974004827027,
+    "hi": 0.15715545039210055,
+    "n": 144,
+    "excludes_zero": true
+   },
+   "26": {
+    "mean": 0.15592361893504858,
+    "lo": 0.14842954094832142,
+    "hi": 0.1633255764660943,
+    "n": 144,
+    "excludes_zero": true
+   }
+  },
+  "all_432_validation": {
+   "14": {
+    "mean": 0.23891339047501484,
+    "lo": 0.23024788655219944,
+    "hi": 0.24739636465803616,
+    "n": 432,
+    "excludes_zero": true
+   },
+   "17": {
+    "mean": 0.2081300309272828,
+    "lo": 0.20011467891141635,
+    "hi": 0.2159457997324083,
+    "n": 432,
+    "excludes_zero": true
+   },
+   "19": {
+    "mean": 0.15991843571127565,
+    "lo": 0.15518043751880115,
+    "hi": 0.1645659028026448,
+    "n": 432,
+    "excludes_zero": true
+   },
+   "20": {
+    "mean": 0.14294198900461197,
+    "lo": 0.13838277738886298,
+    "hi": 0.14772029520978255,
+    "n": 432,
+    "excludes_zero": true
+   },
+   "24": {
+    "mean": 0.1540475368016848,
+    "lo": 0.14914691470114996,
+    "hi": 0.15947102019304618,
+    "n": 432,
+    "excludes_zero": true
+   },
+   "26": {
+    "mean": 0.15314451608530902,
+    "lo": 0.147842794103134,
+    "hi": 0.15926563458568932,
+    "n": 432,
+    "excludes_zero": true
+   }
+  }
+ },
+ "rollout_roll_skill_k32": {
+  "evil_windows_0_144": {
+   "14": {
+    "mean": 0.3366211735539966,
+    "lo": 0.3143654109082288,
+    "hi": 0.35760181864930524,
+    "n": 144,
+    "excludes_zero": true
+   },
+   "17": {
+    "mean": 0.3130820302499665,
+    "lo": 0.29281992448700794,
+    "hi": 0.3329900202030937,
+    "n": 144,
+    "excludes_zero": true
+   },
+   "19": {
+    "mean": 0.3175755867527591,
+    "lo": 0.2949970123978953,
+    "hi": 0.3398020562922789,
+    "n": 144,
+    "excludes_zero": true
+   },
+   "20": {
+    "mean": 0.3446601811382506,
+    "lo": 0.32431659480142927,
+    "hi": 0.36523248207651904,
+    "n": 144,
+    "excludes_zero": true
+   },
+   "24": {
+    "mean": 0.33634859199325245,
+    "lo": 0.316968012921926,
+    "hi": 0.35424371897760365,
+    "n": 144,
+    "excludes_zero": true
+   },
+   "26": {
+    "mean": 0.43775855418708587,
+    "lo": 0.41739792462645303,
+    "hi": 0.4563274844446116,
+    "n": 144,
+    "excludes_zero": true
+   }
+  },
+  "all_432_validation": {
+   "14": {
+    "mean": 0.3782053080697854,
+    "lo": 0.36842935558201534,
+    "hi": 0.38779936971625795,
+    "n": 432,
+    "excludes_zero": true
+   },
+   "17": {
+    "mean": 0.3572744166961423,
+    "lo": 0.34796856567263607,
+    "hi": 0.36636409076551596,
+    "n": 432,
+    "excludes_zero": true
+   },
+   "19": {
+    "mean": 0.39260397892859245,
+    "lo": 0.3810332526383853,
+    "hi": 0.403777811859079,
+    "n": 432,
+    "excludes_zero": true
+   },
+   "20": {
+    "mean": 0.4104305743067353,
+    "lo": 0.3994327557376689,
+    "hi": 0.4224863985449903,
+    "n": 432,
+    "excludes_zero": true
+   },
+   "24": {
+    "mean": 0.38371023991041714,
+    "lo": 0.37191843666412217,
+    "hi": 0.3942980803618276,
+    "n": 432,
+    "excludes_zero": true
+   },
+   "26": {
+    "mean": 0.44377651976214516,
+    "lo": 0.4326519903830356,
+    "hi": 0.4541466218246906,
+    "n": 432,
+    "excludes_zero": true
+   }
+  }
+ },
+ "metadata": {
+  "derived_by": "analyzer round 2",
+  "source_npz": "eval_results/issue_922/transfer_percontext.npz",
+  "git_commit_at_derivation": "7cb1e12430fb0d9aeef5813b876b4da23790dedb",
+  "lstar_blocks": [
+   "14",
+   "17",
+   "19",
+   "20",
+   "24",
+   "26"
+  ],
+  "bootstrap": {
+   "n_boot": 1000,
+   "seed": 0,
+   "interval": "percentile 2.5/97.5"
+  }
+ }
+}

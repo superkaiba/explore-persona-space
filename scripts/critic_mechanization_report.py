@@ -146,7 +146,10 @@ def iter_events(tasks_dir: Path):
     """Yield parsed event dicts from every ``tasks/*/*/events.jsonl``; skip junk lines."""
     for path in sorted(tasks_dir.glob("*/*/events.jsonl")):
         try:
-            lines = path.read_text(encoding="utf-8", errors="replace").splitlines()
+            # split("\n"), NOT splitlines(): raw U+2028/U+2029/NEL inside
+            # ensure_ascii=False notes are Unicode line boundaries that would
+            # shred valid records (gotchas.md; #825 → #950).
+            lines = path.read_text(encoding="utf-8", errors="replace").split("\n")
         except OSError:
             continue
         for raw in lines:

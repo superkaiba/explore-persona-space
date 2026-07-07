@@ -1,0 +1,712 @@
+{
+  "commit": "328ab540",
+  "created": "2026-07-04T06:08:28Z",
+  "figsize": [
+    10.5,
+    4.2
+  ],
+  "points": [
+    {
+      "context (battery order)": 0.0,
+      "per-context held-out skill (D, mean/mean)": 0.8464937876778094,
+      "label": "f1_house_librarian",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 1.0,
+      "per-context held-out skill (D, mean/mean)": 0.9296104289056452,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 2.0,
+      "per-context held-out skill (D, mean/mean)": 0.9330219872895757,
+      "label": "f1_house_programmer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 3.0,
+      "per-context held-out skill (D, mean/mean)": 0.7236338905364483,
+      "label": "f1_house_medical_doctor",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 4.0,
+      "per-context held-out skill (D, mean/mean)": 0.7052983636417129,
+      "label": "f1_house_software_engineer",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 5.0,
+      "per-context held-out skill (D, mean/mean)": 0.7852404687637855,
+      "label": "f1_house_data_scientist",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 6.0,
+      "per-context held-out skill (D, mean/mean)": 0.4681060796396259,
+      "label": "f1_phub_01",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 7.0,
+      "per-context held-out skill (D, mean/mean)": 0.8375070776174054,
+      "label": "f1_phub_02",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 8.0,
+      "per-context held-out skill (D, mean/mean)": 0.6627171957882017,
+      "label": "f1_phub_03",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 9.0,
+      "per-context held-out skill (D, mean/mean)": 0.712671810917077,
+      "label": "f1_phub_04",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 10.0,
+      "per-context held-out skill (D, mean/mean)": 0.7789592441237259,
+      "label": "f1_phub_05",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 11.0,
+      "per-context held-out skill (D, mean/mean)": 0.6637612199661266,
+      "label": "f1_phub_06",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 12.0,
+      "per-context held-out skill (D, mean/mean)": 0.29695063200989535,
+      "label": "f1_phub_07",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 13.0,
+      "per-context held-out skill (D, mean/mean)": 0.29961907854591496,
+      "label": "f1_phub_08",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 14.0,
+      "per-context held-out skill (D, mean/mean)": 0.24454926361154328,
+      "label": "f2_wc_short_1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 15.0,
+      "per-context held-out skill (D, mean/mean)": 0.7248664367314763,
+      "label": "f2_wc_short_2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 16.0,
+      "per-context held-out skill (D, mean/mean)": 0.09322031749137338,
+      "label": "f2_wc_short_3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 17.0,
+      "per-context held-out skill (D, mean/mean)": 0.4824746254539044,
+      "label": "f2_wc_short_4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 18.0,
+      "per-context held-out skill (D, mean/mean)": 0.45341872547419804,
+      "label": "f2_wc_short_5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 19.0,
+      "per-context held-out skill (D, mean/mean)": 0.7432434528554821,
+      "label": "f2_wc_long_1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 20.0,
+      "per-context held-out skill (D, mean/mean)": 0.5483251964357312,
+      "label": "f2_wc_long_2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 21.0,
+      "per-context held-out skill (D, mean/mean)": 0.2953166562995797,
+      "label": "f2_wc_long_3",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 22.0,
+      "per-context held-out skill (D, mean/mean)": 0.17173636193360065,
+      "label": "f2_wc_long_4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 23.0,
+      "per-context held-out skill (D, mean/mean)": 0.7378881585827495,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 24.0,
+      "per-context held-out skill (D, mean/mean)": 0.8339429876677061,
+      "label": "f3_icl_marker_k4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 25.0,
+      "per-context held-out skill (D, mean/mean)": -0.13953212510580504,
+      "label": "f3_icl_french_k4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 26.0,
+      "per-context held-out skill (D, mean/mean)": 0.4002592102912673,
+      "label": "f3_icl_json_k4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 27.0,
+      "per-context held-out skill (D, mean/mean)": 0.1289673915555154,
+      "label": "f3_icl_pirate_k4",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 28.0,
+      "per-context held-out skill (D, mean/mean)": -0.42910839787460775,
+      "label": "f3_icl_marker_k2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 29.0,
+      "per-context held-out skill (D, mean/mean)": 0.8613578546671402,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 30.0,
+      "per-context held-out skill (D, mean/mean)": -0.05573486286317375,
+      "label": "f3_icl_json_k2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 31.0,
+      "per-context held-out skill (D, mean/mean)": 0.5230521320604511,
+      "label": "f3_icl_json_k8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 32.0,
+      "per-context held-out skill (D, mean/mean)": 0.7323722396987504,
+      "label": "f4_reph_imperative",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 33.0,
+      "per-context held-out skill (D, mean/mean)": 0.5196565923819843,
+      "label": "f4_reph_polite",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 34.0,
+      "per-context held-out skill (D, mean/mean)": 0.1476612083601312,
+      "label": "f4_reph_casual",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 35.0,
+      "per-context held-out skill (D, mean/mean)": -0.022249118726293204,
+      "label": "f4_reph_legalese",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 36.0,
+      "per-context held-out skill (D, mean/mean)": 0.7302193674928958,
+      "label": "f4_reph_enthusiastic",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 37.0,
+      "per-context held-out skill (D, mean/mean)": 0.8517888816101364,
+      "label": "f4_reph_archaic",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 38.0,
+      "per-context held-out skill (D, mean/mean)": 0.58766107223898,
+      "label": "f5_fmt_json",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 39.0,
+      "per-context held-out skill (D, mean/mean)": 0.5682213606764646,
+      "label": "f5_fmt_code_comment",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 40.0,
+      "per-context held-out skill (D, mean/mean)": 0.5610324827853402,
+      "label": "f5_fmt_markdown_table",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 41.0,
+      "per-context held-out skill (D, mean/mean)": 0.6941172170143897,
+      "label": "f5_fmt_xml",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 42.0,
+      "per-context held-out skill (D, mean/mean)": 0.8036471384136363,
+      "label": "f5_fmt_bullets",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 43.0,
+      "per-context held-out skill (D, mean/mean)": 0.4946359936573539,
+      "label": "f6_default_template",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 44.0,
+      "per-context held-out skill (D, mean/mean)": 0.8643204692156368,
+      "label": "f6_helpful_asst",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 45.0,
+      "per-context held-out skill (D, mean/mean)": 0.7598692793005015,
+      "label": "f8_behav_marker",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 46.0,
+      "per-context held-out skill (D, mean/mean)": 0.8869671949455946,
+      "label": "f8_behav_sycophant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 47.0,
+      "per-context held-out skill (D, mean/mean)": 0.6307440193758002,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 48.0,
+      "per-context held-out skill (D, mean/mean)": 0.7336936397506633,
+      "label": "f8_behav_fact",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "context (battery order)": 49.0,
+      "per-context held-out skill (D, mean/mean)": 0.9020423710579537,
+      "label": "f8_behav_harmful",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "median CoT length (chars)": 3063.0,
+      "per-context held-out skill": 0.8464937876778094,
+      "label": "f1_house_librarian",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3021.5,
+      "per-context held-out skill": 0.9296104289056452,
+      "label": "f1_house_surgeon",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2649.0,
+      "per-context held-out skill": 0.9330219872895757,
+      "label": "f1_house_programmer",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3575.5,
+      "per-context held-out skill": 0.7236338905364483,
+      "label": "f1_house_medical_doctor",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3046.5,
+      "per-context held-out skill": 0.7052983636417129,
+      "label": "f1_house_software_engineer",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3471.0,
+      "per-context held-out skill": 0.7852404687637855,
+      "label": "f1_house_data_scientist",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3156.0,
+      "per-context held-out skill": 0.4681060796396259,
+      "label": "f1_phub_01",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3198.0,
+      "per-context held-out skill": 0.8375070776174054,
+      "label": "f1_phub_02",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3200.0,
+      "per-context held-out skill": 0.6627171957882017,
+      "label": "f1_phub_03",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3319.0,
+      "per-context held-out skill": 0.712671810917077,
+      "label": "f1_phub_04",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3056.0,
+      "per-context held-out skill": 0.7789592441237259,
+      "label": "f1_phub_05",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3524.5,
+      "per-context held-out skill": 0.6637612199661266,
+      "label": "f1_phub_06",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2632.0,
+      "per-context held-out skill": 0.29695063200989535,
+      "label": "f1_phub_07",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2885.0,
+      "per-context held-out skill": 0.29961907854591496,
+      "label": "f1_phub_08",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2247.0,
+      "per-context held-out skill": 0.24454926361154328,
+      "label": "f2_wc_short_1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 1502.5,
+      "per-context held-out skill": 0.7248664367314763,
+      "label": "f2_wc_short_2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2181.0,
+      "per-context held-out skill": 0.09322031749137338,
+      "label": "f2_wc_short_3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 1845.5,
+      "per-context held-out skill": 0.4824746254539044,
+      "label": "f2_wc_short_4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 1503.0,
+      "per-context held-out skill": 0.45341872547419804,
+      "label": "f2_wc_short_5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 1555.5,
+      "per-context held-out skill": 0.7432434528554821,
+      "label": "f2_wc_long_1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3533.0,
+      "per-context held-out skill": 0.5483251964357312,
+      "label": "f2_wc_long_2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2134.5,
+      "per-context held-out skill": 0.2953166562995797,
+      "label": "f2_wc_long_3",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 1797.0,
+      "per-context held-out skill": 0.17173636193360065,
+      "label": "f2_wc_long_4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3448.0,
+      "per-context held-out skill": 0.7378881585827495,
+      "label": "f2_wc_long_5",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 1594.0,
+      "per-context held-out skill": 0.8339429876677061,
+      "label": "f3_icl_marker_k4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2021.5,
+      "per-context held-out skill": -0.13953212510580504,
+      "label": "f3_icl_french_k4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 1946.0,
+      "per-context held-out skill": 0.4002592102912673,
+      "label": "f3_icl_json_k4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 1928.0,
+      "per-context held-out skill": 0.1289673915555154,
+      "label": "f3_icl_pirate_k4",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2100.0,
+      "per-context held-out skill": -0.42910839787460775,
+      "label": "f3_icl_marker_k2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 1870.0,
+      "per-context held-out skill": 0.8613578546671402,
+      "label": "f3_icl_marker_k8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2019.0,
+      "per-context held-out skill": -0.05573486286317375,
+      "label": "f3_icl_json_k2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 1963.0,
+      "per-context held-out skill": 0.5230521320604511,
+      "label": "f3_icl_json_k8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 1638.0,
+      "per-context held-out skill": 0.7323722396987504,
+      "label": "f4_reph_imperative",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2647.0,
+      "per-context held-out skill": 0.5196565923819843,
+      "label": "f4_reph_polite",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 1562.0,
+      "per-context held-out skill": 0.1476612083601312,
+      "label": "f4_reph_casual",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2061.0,
+      "per-context held-out skill": -0.022249118726293204,
+      "label": "f4_reph_legalese",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2002.0,
+      "per-context held-out skill": 0.7302193674928958,
+      "label": "f4_reph_enthusiastic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3073.5,
+      "per-context held-out skill": 0.8517888816101364,
+      "label": "f4_reph_archaic",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3253.0,
+      "per-context held-out skill": 0.58766107223898,
+      "label": "f5_fmt_json",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2299.0,
+      "per-context held-out skill": 0.5682213606764646,
+      "label": "f5_fmt_code_comment",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3164.0,
+      "per-context held-out skill": 0.5610324827853402,
+      "label": "f5_fmt_markdown_table",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2982.0,
+      "per-context held-out skill": 0.6941172170143897,
+      "label": "f5_fmt_xml",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3051.0,
+      "per-context held-out skill": 0.8036471384136363,
+      "label": "f5_fmt_bullets",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3349.0,
+      "per-context held-out skill": 0.4946359936573539,
+      "label": "f6_default_template",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3075.0,
+      "per-context held-out skill": 0.8643204692156368,
+      "label": "f6_helpful_asst",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3301.0,
+      "per-context held-out skill": 0.7598692793005015,
+      "label": "f8_behav_marker",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3307.0,
+      "per-context held-out skill": 0.8869671949455946,
+      "label": "f8_behav_sycophant",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2921.0,
+      "per-context held-out skill": 0.6307440193758002,
+      "label": "f8_behav_refusal",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 3672.0,
+      "per-context held-out skill": 0.7336936397506633,
+      "label": "f8_behav_fact",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "median CoT length (chars)": 2918.0,
+      "per-context held-out skill": 0.9020423710579537,
+      "label": "f8_behav_harmful",
+      "_kind": "scatter",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 100
+}

@@ -1,0 +1,1014 @@
+{
+  "commit": "328ab540",
+  "created": "2026-07-04T06:08:22Z",
+  "figsize": [
+    9.5,
+    3.8
+  ],
+  "points": [
+    {
+      "x": 0.75,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.25,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.25,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.75,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 0.75,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "x": 1.75,
+      "well-formed parse rate": 0.984375,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.25,
+      "well-formed parse rate": 0.984375,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.25,
+      "well-formed parse rate": 0.9947916666666666,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.75,
+      "well-formed parse rate": 0.9947916666666666,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.75,
+      "well-formed parse rate": 0.984375,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.75,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.25,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.25,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.75,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.75,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.75,
+      "well-formed parse rate": 0.3125,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.25,
+      "well-formed parse rate": 0.3125,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.25,
+      "well-formed parse rate": 0.6979166666666666,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.75,
+      "well-formed parse rate": 0.6979166666666666,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 3.75,
+      "well-formed parse rate": 0.3125,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 4.75,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.25,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.25,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.75,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.75,
+      "well-formed parse rate": 0.9791666666666666,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "well-formed parse rate": 0.9583333333333334,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "well-formed parse rate": 0.9583333333333334,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "well-formed parse rate": 0.9583333333333334,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.75,
+      "well-formed parse rate": 0.9166666666666666,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.25,
+      "well-formed parse rate": 0.9166666666666666,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.25,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.75,
+      "well-formed parse rate": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 5.75,
+      "well-formed parse rate": 0.9166666666666666,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "x": 6.75,
+      "well-formed parse rate": 0.5208333333333334,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.25,
+      "well-formed parse rate": 0.5208333333333334,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 7.25,
+      "well-formed parse rate": 0.8020833333333334,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.75,
+      "well-formed parse rate": 0.8020833333333334,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 6.75,
+      "well-formed parse rate": 0.5208333333333334,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.75,
+      "CoT length (chars)": 2277.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.25,
+      "CoT length (chars)": 2277.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.25,
+      "CoT length (chars)": 4680.25,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.75,
+      "CoT length (chars)": 4680.25,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 0.75,
+      "CoT length (chars)": 2277.0,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "CoT length (chars)": 9653.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "CoT length (chars)": 8438.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "CoT length (chars)": 8896.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "CoT length (chars)": 8922.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "CoT length (chars)": 13130.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "CoT length (chars)": 8290.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "CoT length (chars)": 12264.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "CoT length (chars)": 8452.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "CoT length (chars)": 8969.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "CoT length (chars)": 14530.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.0,
+      "CoT length (chars)": 8721.0,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "x": 1.75,
+      "CoT length (chars)": 2171.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.25,
+      "CoT length (chars)": 2171.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.25,
+      "CoT length (chars)": 4739.5,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.75,
+      "CoT length (chars)": 4739.5,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.75,
+      "CoT length (chars)": 2171.0,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "CoT length (chars)": 9532.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "CoT length (chars)": 10659.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "CoT length (chars)": 9905.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "CoT length (chars)": 12814.0,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.75,
+      "CoT length (chars)": 1986.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.25,
+      "CoT length (chars)": 1986.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.25,
+      "CoT length (chars)": 4393.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.75,
+      "CoT length (chars)": 4393.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 2.75,
+      "CoT length (chars)": 1986.0,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "x": 3.0,
+      "CoT length (chars)": 11890.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "CoT length (chars)": 9453.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "CoT length (chars)": 8938.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "CoT length (chars)": 10232.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "CoT length (chars)": 9003.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "CoT length (chars)": 8257.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "CoT length (chars)": 9876.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "CoT length (chars)": 18621.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "CoT length (chars)": 8087.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "CoT length (chars)": 9602.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "CoT length (chars)": 8808.0,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.75,
+      "CoT length (chars)": 1318.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.25,
+      "CoT length (chars)": 1318.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.25,
+      "CoT length (chars)": 2664.5,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.75,
+      "CoT length (chars)": 2664.5,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.75,
+      "CoT length (chars)": 1318.0,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "CoT length (chars)": 5087.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "CoT length (chars)": 6222.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "CoT length (chars)": 5983.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "CoT length (chars)": 7605.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "CoT length (chars)": 5274.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.0,
+      "CoT length (chars)": 4704.0,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "x": 4.75,
+      "CoT length (chars)": 2161.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.25,
+      "CoT length (chars)": 2161.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.25,
+      "CoT length (chars)": 4474.75,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.75,
+      "CoT length (chars)": 4474.75,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.75,
+      "CoT length (chars)": 2161.0,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 8002.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 11336.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 8299.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 7978.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 8820.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 9600.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 8364.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 9173.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 8051.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 9829.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 10167.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 11686.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 10331.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 11114.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 9608.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 17131.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 10868.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 9451.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 8001.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 12554.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 8132.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 9850.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 8185.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 9116.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 8055.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 11325.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 9015.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 9258.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 7966.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 13356.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 10484.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 8049.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 11649.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "CoT length (chars)": 8818.0,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.75,
+      "CoT length (chars)": 1374.5,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 6.25,
+      "CoT length (chars)": 1374.5,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 6.25,
+      "CoT length (chars)": 3361.5,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.75,
+      "CoT length (chars)": 3361.5,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 5.75,
+      "CoT length (chars)": 1374.5,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 6.0,
+      "CoT length (chars)": 9131.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "CoT length (chars)": 7016.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "CoT length (chars)": 7708.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "CoT length (chars)": 7370.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "CoT length (chars)": 7405.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.0,
+      "CoT length (chars)": 8537.0,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "x": 6.75,
+      "CoT length (chars)": 1249.75,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 7.25,
+      "CoT length (chars)": 1249.75,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 7.25,
+      "CoT length (chars)": 2520.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 6.75,
+      "CoT length (chars)": 2520.0,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 6.75,
+      "CoT length (chars)": 1249.75,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 5171.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 4996.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 9595.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 7041.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 6123.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 6750.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 7002.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 9394.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 4680.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 5220.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 4562.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 4568.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 25072.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 6980.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 6349.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 5734.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 13377.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 9410.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 5729.0,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "x": 7.0,
+      "CoT length (chars)": 5636.0,
+      "_kind": "line",
+      "_group": 21
+    }
+  ],
+  "n_series": 22,
+  "total_points": 167
+}

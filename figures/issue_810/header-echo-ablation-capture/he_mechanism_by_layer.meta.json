@@ -1,0 +1,1790 @@
+{
+  "commit": "0bb228597b",
+  "created": "2026-07-04T00:27:19Z",
+  "figsize": [
+    11.0,
+    5.5
+  ],
+  "points": [
+    {
+      "layer": 0.0,
+      "median centered cosine (full vs answer-deleted)": 0.47746170008500827,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 1.0,
+      "median centered cosine (full vs answer-deleted)": 0.27635829678755874,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 2.0,
+      "median centered cosine (full vs answer-deleted)": 0.3037227465722251,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 3.0,
+      "median centered cosine (full vs answer-deleted)": 0.30022578478419415,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 4.0,
+      "median centered cosine (full vs answer-deleted)": 0.3327570265634242,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 5.0,
+      "median centered cosine (full vs answer-deleted)": 0.42643309567609233,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 6.0,
+      "median centered cosine (full vs answer-deleted)": 0.3178000633984871,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 7.0,
+      "median centered cosine (full vs answer-deleted)": 0.28980286563384183,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 8.0,
+      "median centered cosine (full vs answer-deleted)": 0.2843155855166964,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 9.0,
+      "median centered cosine (full vs answer-deleted)": 0.3686825063337349,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 10.0,
+      "median centered cosine (full vs answer-deleted)": 0.3541603628403154,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 11.0,
+      "median centered cosine (full vs answer-deleted)": 0.3508653171658921,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 12.0,
+      "median centered cosine (full vs answer-deleted)": 0.4231941793198011,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 13.0,
+      "median centered cosine (full vs answer-deleted)": 0.48000389947802036,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 14.0,
+      "median centered cosine (full vs answer-deleted)": 0.44991884697900375,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 15.0,
+      "median centered cosine (full vs answer-deleted)": 0.45253636021301497,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 16.0,
+      "median centered cosine (full vs answer-deleted)": 0.45024273737555176,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 17.0,
+      "median centered cosine (full vs answer-deleted)": 0.42686450324735786,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 18.0,
+      "median centered cosine (full vs answer-deleted)": 0.4427607926878527,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 19.0,
+      "median centered cosine (full vs answer-deleted)": 0.44488783262922205,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 20.0,
+      "median centered cosine (full vs answer-deleted)": 0.4534365372577599,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 21.0,
+      "median centered cosine (full vs answer-deleted)": 0.44630412244097306,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 22.0,
+      "median centered cosine (full vs answer-deleted)": 0.5213438735719665,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 23.0,
+      "median centered cosine (full vs answer-deleted)": 0.5456414927781009,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 24.0,
+      "median centered cosine (full vs answer-deleted)": 0.5651588752502628,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 25.0,
+      "median centered cosine (full vs answer-deleted)": 0.5622457885890085,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 26.0,
+      "median centered cosine (full vs answer-deleted)": 0.5753941324973859,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 27.0,
+      "median centered cosine (full vs answer-deleted)": 0.6023115104350799,
+      "series": "turn-end token",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "layer": 0.0,
+      "median centered cosine (full vs answer-deleted)": 0.41297981574874654,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 1.0,
+      "median centered cosine (full vs answer-deleted)": 0.322224743996048,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 2.0,
+      "median centered cosine (full vs answer-deleted)": 0.31156445888966766,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 3.0,
+      "median centered cosine (full vs answer-deleted)": 0.3345349244922635,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 4.0,
+      "median centered cosine (full vs answer-deleted)": 0.42329294009716667,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 5.0,
+      "median centered cosine (full vs answer-deleted)": 0.4788762951903406,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 6.0,
+      "median centered cosine (full vs answer-deleted)": 0.34192559861850513,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 7.0,
+      "median centered cosine (full vs answer-deleted)": 0.30139166182049365,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 8.0,
+      "median centered cosine (full vs answer-deleted)": 0.3496377760639139,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 9.0,
+      "median centered cosine (full vs answer-deleted)": 0.41412859001475266,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 10.0,
+      "median centered cosine (full vs answer-deleted)": 0.38424416063774125,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 11.0,
+      "median centered cosine (full vs answer-deleted)": 0.38737316169868197,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 12.0,
+      "median centered cosine (full vs answer-deleted)": 0.391615419340426,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 13.0,
+      "median centered cosine (full vs answer-deleted)": 0.40407623217024846,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 14.0,
+      "median centered cosine (full vs answer-deleted)": 0.37999897787607717,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 15.0,
+      "median centered cosine (full vs answer-deleted)": 0.40023203613207137,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 16.0,
+      "median centered cosine (full vs answer-deleted)": 0.40631251333419144,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 17.0,
+      "median centered cosine (full vs answer-deleted)": 0.39311666589383554,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 18.0,
+      "median centered cosine (full vs answer-deleted)": 0.44330628717661125,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 19.0,
+      "median centered cosine (full vs answer-deleted)": 0.39109436404899756,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 20.0,
+      "median centered cosine (full vs answer-deleted)": 0.3875211288417016,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 21.0,
+      "median centered cosine (full vs answer-deleted)": 0.37486418264167487,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 22.0,
+      "median centered cosine (full vs answer-deleted)": 0.3931641353342584,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 23.0,
+      "median centered cosine (full vs answer-deleted)": 0.3783691921207174,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 24.0,
+      "median centered cosine (full vs answer-deleted)": 0.377510325344589,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 25.0,
+      "median centered cosine (full vs answer-deleted)": 0.3415021384370928,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 26.0,
+      "median centered cosine (full vs answer-deleted)": 0.348894278052368,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 27.0,
+      "median centered cosine (full vs answer-deleted)": 0.3351016089798114,
+      "series": "newline after turn end",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "layer": 0.0,
+      "median centered cosine (full vs answer-deleted)": 0.7359099939239909,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 1.0,
+      "median centered cosine (full vs answer-deleted)": 0.6119591573470418,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 2.0,
+      "median centered cosine (full vs answer-deleted)": 0.615907858967345,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 3.0,
+      "median centered cosine (full vs answer-deleted)": 0.5551198406670131,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 4.0,
+      "median centered cosine (full vs answer-deleted)": 0.5916167773050052,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 5.0,
+      "median centered cosine (full vs answer-deleted)": 0.6279066229370693,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 6.0,
+      "median centered cosine (full vs answer-deleted)": 0.5290466762408905,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 7.0,
+      "median centered cosine (full vs answer-deleted)": 0.46119428281411556,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 8.0,
+      "median centered cosine (full vs answer-deleted)": 0.4277045674922514,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 9.0,
+      "median centered cosine (full vs answer-deleted)": 0.4623634508998806,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 10.0,
+      "median centered cosine (full vs answer-deleted)": 0.44462601253227413,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 11.0,
+      "median centered cosine (full vs answer-deleted)": 0.46317446760682457,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 12.0,
+      "median centered cosine (full vs answer-deleted)": 0.3942104041733081,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 13.0,
+      "median centered cosine (full vs answer-deleted)": 0.40702143351820974,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 14.0,
+      "median centered cosine (full vs answer-deleted)": 0.364887075212027,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 15.0,
+      "median centered cosine (full vs answer-deleted)": 0.3919072306686669,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 16.0,
+      "median centered cosine (full vs answer-deleted)": 0.37602901993005455,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 17.0,
+      "median centered cosine (full vs answer-deleted)": 0.3647483578818434,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 18.0,
+      "median centered cosine (full vs answer-deleted)": 0.4161917733928596,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 19.0,
+      "median centered cosine (full vs answer-deleted)": 0.4083118971720149,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 20.0,
+      "median centered cosine (full vs answer-deleted)": 0.4141565213190263,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 21.0,
+      "median centered cosine (full vs answer-deleted)": 0.4113666214077406,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 22.0,
+      "median centered cosine (full vs answer-deleted)": 0.4419342322378848,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 23.0,
+      "median centered cosine (full vs answer-deleted)": 0.4786093483045164,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 24.0,
+      "median centered cosine (full vs answer-deleted)": 0.46103539140459937,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 25.0,
+      "median centered cosine (full vs answer-deleted)": 0.4824161599233886,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 26.0,
+      "median centered cosine (full vs answer-deleted)": 0.49075047903431307,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 27.0,
+      "median centered cosine (full vs answer-deleted)": 0.4783507903259485,
+      "series": "header start token",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "layer": 0.0,
+      "median centered cosine (full vs answer-deleted)": 0.6925198793185394,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 1.0,
+      "median centered cosine (full vs answer-deleted)": 0.7055711282065601,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 2.0,
+      "median centered cosine (full vs answer-deleted)": 0.7414304162469896,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 3.0,
+      "median centered cosine (full vs answer-deleted)": 0.692417486070057,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 4.0,
+      "median centered cosine (full vs answer-deleted)": 0.6885006495991014,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 5.0,
+      "median centered cosine (full vs answer-deleted)": 0.7169952860918172,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 6.0,
+      "median centered cosine (full vs answer-deleted)": 0.66181579678616,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 7.0,
+      "median centered cosine (full vs answer-deleted)": 0.7049274019992241,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 8.0,
+      "median centered cosine (full vs answer-deleted)": 0.7119639804148148,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 9.0,
+      "median centered cosine (full vs answer-deleted)": 0.7557035190694443,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 10.0,
+      "median centered cosine (full vs answer-deleted)": 0.7433194479078706,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 11.0,
+      "median centered cosine (full vs answer-deleted)": 0.7557909796301818,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 12.0,
+      "median centered cosine (full vs answer-deleted)": 0.7456032942262553,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 13.0,
+      "median centered cosine (full vs answer-deleted)": 0.7254939621660272,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 14.0,
+      "median centered cosine (full vs answer-deleted)": 0.7286289897471382,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 15.0,
+      "median centered cosine (full vs answer-deleted)": 0.6922816837857539,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 16.0,
+      "median centered cosine (full vs answer-deleted)": 0.6599107877877604,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 17.0,
+      "median centered cosine (full vs answer-deleted)": 0.6274082429980148,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 18.0,
+      "median centered cosine (full vs answer-deleted)": 0.6054608681402346,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 19.0,
+      "median centered cosine (full vs answer-deleted)": 0.5758179289177613,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 20.0,
+      "median centered cosine (full vs answer-deleted)": 0.5100643709914539,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 21.0,
+      "median centered cosine (full vs answer-deleted)": 0.4846436486800559,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 22.0,
+      "median centered cosine (full vs answer-deleted)": 0.511436486806337,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 23.0,
+      "median centered cosine (full vs answer-deleted)": 0.4792980974783046,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 24.0,
+      "median centered cosine (full vs answer-deleted)": 0.4616301945540307,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 25.0,
+      "median centered cosine (full vs answer-deleted)": 0.44963365553526224,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 26.0,
+      "median centered cosine (full vs answer-deleted)": 0.457751382052192,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 27.0,
+      "median centered cosine (full vs answer-deleted)": 0.43811863283198615,
+      "series": "header 'user' token",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "layer": 0.0,
+      "median centered cosine (full vs answer-deleted)": 0.5094265483439993,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 1.0,
+      "median centered cosine (full vs answer-deleted)": 0.6209335935384785,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 2.0,
+      "median centered cosine (full vs answer-deleted)": 0.6163119372254557,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 3.0,
+      "median centered cosine (full vs answer-deleted)": 0.6125121170886153,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 4.0,
+      "median centered cosine (full vs answer-deleted)": 0.6920746801139722,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 5.0,
+      "median centered cosine (full vs answer-deleted)": 0.6982970274118168,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 6.0,
+      "median centered cosine (full vs answer-deleted)": 0.6745081035606821,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 7.0,
+      "median centered cosine (full vs answer-deleted)": 0.6347638002545668,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 8.0,
+      "median centered cosine (full vs answer-deleted)": 0.6683294426701554,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 9.0,
+      "median centered cosine (full vs answer-deleted)": 0.7619633925098852,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 10.0,
+      "median centered cosine (full vs answer-deleted)": 0.7289327788690746,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 11.0,
+      "median centered cosine (full vs answer-deleted)": 0.7244995032995185,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 12.0,
+      "median centered cosine (full vs answer-deleted)": 0.7201251219551317,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 13.0,
+      "median centered cosine (full vs answer-deleted)": 0.7272725695192273,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 14.0,
+      "median centered cosine (full vs answer-deleted)": 0.7117788695856667,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 15.0,
+      "median centered cosine (full vs answer-deleted)": 0.707969705434309,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 16.0,
+      "median centered cosine (full vs answer-deleted)": 0.6884929695004918,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 17.0,
+      "median centered cosine (full vs answer-deleted)": 0.6823349928971593,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 18.0,
+      "median centered cosine (full vs answer-deleted)": 0.6723021709723571,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 19.0,
+      "median centered cosine (full vs answer-deleted)": 0.6607707408055983,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 20.0,
+      "median centered cosine (full vs answer-deleted)": 0.633302759278485,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 21.0,
+      "median centered cosine (full vs answer-deleted)": 0.620573168740239,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 22.0,
+      "median centered cosine (full vs answer-deleted)": 0.6099775071273394,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 23.0,
+      "median centered cosine (full vs answer-deleted)": 0.6029453832438487,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 24.0,
+      "median centered cosine (full vs answer-deleted)": 0.6073442650425097,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 25.0,
+      "median centered cosine (full vs answer-deleted)": 0.6116900619111034,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 26.0,
+      "median centered cosine (full vs answer-deleted)": 0.6177190458701718,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 27.0,
+      "median centered cosine (full vs answer-deleted)": 0.6291834114728865,
+      "series": "header newline",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "layer": 0.0,
+      "median centered cosine (full vs answer-deleted)": 0.654772877677404,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 1.0,
+      "median centered cosine (full vs answer-deleted)": 0.5863281756154626,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 2.0,
+      "median centered cosine (full vs answer-deleted)": 0.6373018528668668,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 3.0,
+      "median centered cosine (full vs answer-deleted)": 0.5999586405647828,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 4.0,
+      "median centered cosine (full vs answer-deleted)": 0.65736060353571,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 5.0,
+      "median centered cosine (full vs answer-deleted)": 0.6901160453425432,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 6.0,
+      "median centered cosine (full vs answer-deleted)": 0.632877864046913,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 7.0,
+      "median centered cosine (full vs answer-deleted)": 0.6335689327685108,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 8.0,
+      "median centered cosine (full vs answer-deleted)": 0.6769888973025618,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 9.0,
+      "median centered cosine (full vs answer-deleted)": 0.733768142746515,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 10.0,
+      "median centered cosine (full vs answer-deleted)": 0.7130251157117373,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 11.0,
+      "median centered cosine (full vs answer-deleted)": 0.7099695091863782,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 12.0,
+      "median centered cosine (full vs answer-deleted)": 0.6950465071326005,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 13.0,
+      "median centered cosine (full vs answer-deleted)": 0.6799479990676884,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 14.0,
+      "median centered cosine (full vs answer-deleted)": 0.656865230610276,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 15.0,
+      "median centered cosine (full vs answer-deleted)": 0.6700701160920196,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 16.0,
+      "median centered cosine (full vs answer-deleted)": 0.6371244165679593,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 17.0,
+      "median centered cosine (full vs answer-deleted)": 0.625485353093017,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 18.0,
+      "median centered cosine (full vs answer-deleted)": 0.6467602921428859,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 19.0,
+      "median centered cosine (full vs answer-deleted)": 0.6349878728782683,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 20.0,
+      "median centered cosine (full vs answer-deleted)": 0.5978489830907214,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 21.0,
+      "median centered cosine (full vs answer-deleted)": 0.5825428727279476,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 22.0,
+      "median centered cosine (full vs answer-deleted)": 0.5830435032465866,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 23.0,
+      "median centered cosine (full vs answer-deleted)": 0.5648923967055628,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 24.0,
+      "median centered cosine (full vs answer-deleted)": 0.5417652694028734,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 25.0,
+      "median centered cosine (full vs answer-deleted)": 0.5421539710373795,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 26.0,
+      "median centered cosine (full vs answer-deleted)": 0.5442508404301669,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 27.0,
+      "median centered cosine (full vs answer-deleted)": 0.5433061775808935,
+      "series": "header mean (3 tokens)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "layer": 0.0,
+      "median centered cosine (full vs answer-deleted)": 0.6305390581604394,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 1.0,
+      "median centered cosine (full vs answer-deleted)": 0.5830507050920578,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 2.0,
+      "median centered cosine (full vs answer-deleted)": 0.657202405366969,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 3.0,
+      "median centered cosine (full vs answer-deleted)": 0.5951189749111598,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 4.0,
+      "median centered cosine (full vs answer-deleted)": 0.6334284827977348,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 5.0,
+      "median centered cosine (full vs answer-deleted)": 0.6620409719293396,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 6.0,
+      "median centered cosine (full vs answer-deleted)": 0.6015824532421903,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 7.0,
+      "median centered cosine (full vs answer-deleted)": 0.5863665007855847,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 8.0,
+      "median centered cosine (full vs answer-deleted)": 0.6015086055135213,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 9.0,
+      "median centered cosine (full vs answer-deleted)": 0.6544932467657606,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 10.0,
+      "median centered cosine (full vs answer-deleted)": 0.6280189323981786,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 11.0,
+      "median centered cosine (full vs answer-deleted)": 0.6302633774535062,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 12.0,
+      "median centered cosine (full vs answer-deleted)": 0.6255976980510147,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 13.0,
+      "median centered cosine (full vs answer-deleted)": 0.6048635775409198,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 14.0,
+      "median centered cosine (full vs answer-deleted)": 0.5952341125041545,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 15.0,
+      "median centered cosine (full vs answer-deleted)": 0.5830899778513683,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 16.0,
+      "median centered cosine (full vs answer-deleted)": 0.579213942436418,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 17.0,
+      "median centered cosine (full vs answer-deleted)": 0.5559796485227275,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 18.0,
+      "median centered cosine (full vs answer-deleted)": 0.5935489262072775,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 19.0,
+      "median centered cosine (full vs answer-deleted)": 0.5753826165664213,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 20.0,
+      "median centered cosine (full vs answer-deleted)": 0.5422014826488385,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 21.0,
+      "median centered cosine (full vs answer-deleted)": 0.5006306659486437,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 22.0,
+      "median centered cosine (full vs answer-deleted)": 0.49359794761535714,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 23.0,
+      "median centered cosine (full vs answer-deleted)": 0.48824180408792883,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 24.0,
+      "median centered cosine (full vs answer-deleted)": 0.48373240064459433,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 25.0,
+      "median centered cosine (full vs answer-deleted)": 0.4656372644263172,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 26.0,
+      "median centered cosine (full vs answer-deleted)": 0.47976833632584703,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 27.0,
+      "median centered cosine (full vs answer-deleted)": 0.471692315726457,
+      "series": "header max (3 tokens)",
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "layer": 0.0,
+      "median centered cosine (full vs answer-deleted)": 0.5559454921581646,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 1.0,
+      "median centered cosine (full vs answer-deleted)": 0.4754435726101103,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 2.0,
+      "median centered cosine (full vs answer-deleted)": 0.550535940260493,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 3.0,
+      "median centered cosine (full vs answer-deleted)": 0.5216795454453605,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 4.0,
+      "median centered cosine (full vs answer-deleted)": 0.5903852753465099,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 5.0,
+      "median centered cosine (full vs answer-deleted)": 0.6335071215778567,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 6.0,
+      "median centered cosine (full vs answer-deleted)": 0.5449589605413152,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 7.0,
+      "median centered cosine (full vs answer-deleted)": 0.5292031825893397,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 8.0,
+      "median centered cosine (full vs answer-deleted)": 0.5514569492647818,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 9.0,
+      "median centered cosine (full vs answer-deleted)": 0.6541554730299014,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 10.0,
+      "median centered cosine (full vs answer-deleted)": 0.6371132183509184,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 11.0,
+      "median centered cosine (full vs answer-deleted)": 0.6299603940692684,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 12.0,
+      "median centered cosine (full vs answer-deleted)": 0.6612229029455026,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 13.0,
+      "median centered cosine (full vs answer-deleted)": 0.6524575380712279,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 14.0,
+      "median centered cosine (full vs answer-deleted)": 0.6378118399120907,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 15.0,
+      "median centered cosine (full vs answer-deleted)": 0.638287681284035,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 16.0,
+      "median centered cosine (full vs answer-deleted)": 0.6299118637169099,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 17.0,
+      "median centered cosine (full vs answer-deleted)": 0.6112963339935458,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 18.0,
+      "median centered cosine (full vs answer-deleted)": 0.6494294696871714,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 19.0,
+      "median centered cosine (full vs answer-deleted)": 0.6301632218751161,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 20.0,
+      "median centered cosine (full vs answer-deleted)": 0.6076858294643499,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 21.0,
+      "median centered cosine (full vs answer-deleted)": 0.5919825815553136,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 22.0,
+      "median centered cosine (full vs answer-deleted)": 0.5899094198202057,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 23.0,
+      "median centered cosine (full vs answer-deleted)": 0.5807446074514635,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 24.0,
+      "median centered cosine (full vs answer-deleted)": 0.5601969536988591,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 25.0,
+      "median centered cosine (full vs answer-deleted)": 0.5531730927929064,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 26.0,
+      "median centered cosine (full vs answer-deleted)": 0.5470051249920913,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 27.0,
+      "median centered cosine (full vs answer-deleted)": 0.522654958339273,
+      "series": "boundary mean (5 tokens)",
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "layer": 0.0,
+      "median centered cosine (full vs answer-deleted)": 0.48018727024722563,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 1.0,
+      "median centered cosine (full vs answer-deleted)": 0.4380913020995662,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 2.0,
+      "median centered cosine (full vs answer-deleted)": 0.5479316830398113,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 3.0,
+      "median centered cosine (full vs answer-deleted)": 0.48768565329041225,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 4.0,
+      "median centered cosine (full vs answer-deleted)": 0.5407273355708361,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 5.0,
+      "median centered cosine (full vs answer-deleted)": 0.589228883214345,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 6.0,
+      "median centered cosine (full vs answer-deleted)": 0.4856827530766191,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 7.0,
+      "median centered cosine (full vs answer-deleted)": 0.4364128849909562,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 8.0,
+      "median centered cosine (full vs answer-deleted)": 0.437198412680832,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 9.0,
+      "median centered cosine (full vs answer-deleted)": 0.5340790159395923,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 10.0,
+      "median centered cosine (full vs answer-deleted)": 0.49289654500364566,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 11.0,
+      "median centered cosine (full vs answer-deleted)": 0.479846194790438,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 12.0,
+      "median centered cosine (full vs answer-deleted)": 0.5230911019824172,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 13.0,
+      "median centered cosine (full vs answer-deleted)": 0.5141540476726127,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 14.0,
+      "median centered cosine (full vs answer-deleted)": 0.4941711846321351,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 15.0,
+      "median centered cosine (full vs answer-deleted)": 0.5050377224909215,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 16.0,
+      "median centered cosine (full vs answer-deleted)": 0.5217422869626405,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 17.0,
+      "median centered cosine (full vs answer-deleted)": 0.4853986380567141,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 18.0,
+      "median centered cosine (full vs answer-deleted)": 0.5434508281260302,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 19.0,
+      "median centered cosine (full vs answer-deleted)": 0.5362628770281075,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 20.0,
+      "median centered cosine (full vs answer-deleted)": 0.47927596635054615,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 21.0,
+      "median centered cosine (full vs answer-deleted)": 0.45146066616649017,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 22.0,
+      "median centered cosine (full vs answer-deleted)": 0.441318200244992,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 23.0,
+      "median centered cosine (full vs answer-deleted)": 0.4214630511163922,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 24.0,
+      "median centered cosine (full vs answer-deleted)": 0.39656930453443284,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 25.0,
+      "median centered cosine (full vs answer-deleted)": 0.3750544668583523,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 26.0,
+      "median centered cosine (full vs answer-deleted)": 0.3872393152234711,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 27.0,
+      "median centered cosine (full vs answer-deleted)": 0.34797711295434663,
+      "series": "boundary max (5 tokens)",
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "layer": 0.0,
+      "median centered cosine (full vs answer-deleted)": 0.8,
+      "series": "echo-consistency anchor (0.8)",
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "layer": 1.0,
+      "median centered cosine (full vs answer-deleted)": 0.8,
+      "series": "echo-consistency anchor (0.8)",
+      "_kind": "line",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 254
+}

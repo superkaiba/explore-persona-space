@@ -1,0 +1,342 @@
+{
+  "commit": "3c1970d234",
+  "created": "2026-07-06T01:42:40Z",
+  "figsize": [
+    11.0,
+    4.2
+  ],
+  "points": [
+    {
+      "Read-out layer": 14.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": -0.010103624462588834,
+      "error": 0.003966977996361367,
+      "series": "Cross-fitted (this round)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Read-out layer": 20.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.001054789213174135,
+      "error": 0.004605800256066961,
+      "series": "Cross-fitted (this round)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Read-out layer": 23.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.0009894568201862138,
+      "error": 0.004263548660421418,
+      "series": "Cross-fitted (this round)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Read-out layer": 26.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.0021737478859775623,
+      "error": 0.004876341722427037,
+      "series": "Cross-fitted (this round)",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Read-out layer": 14.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": -0.010103624462588834,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Read-out layer": 20.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.001054789213174135,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Read-out layer": 23.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.0009894568201862138,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Read-out layer": 26.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.0021737478859775623,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Read-out layer": 14.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": -0.014081459895310252,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Read-out layer": 20.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": -0.00353692870559965,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Read-out layer": 23.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": -0.0032653378113509657,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Read-out layer": 26.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": -0.0027053310518030046,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Read-out layer": 14.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": -0.006147503902587518,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Read-out layer": 20.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.005674671806534272,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Read-out layer": 23.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.00526175950949187,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Read-out layer": 26.0,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.007047352393051069,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Read-out layer": 14.35,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": -0.01479583433861182,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Read-out layer": 20.35,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": -0.005906514298587767,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Read-out layer": 23.35,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": -0.005971958338665925,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Read-out layer": 26.35,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.0007496945982479897,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Read-out layer": 14.35,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.0025867442192895763,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Read-out layer": 20.35,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.0147792623996203,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Read-out layer": 23.35,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.013359363126459156,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Read-out layer": 26.35,
+      "Early-vs-late own-minus-plain contrast\n(first-16 gap minus last-16 gap)": 0.02351527412493965,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Read-out layer": 14.0,
+      "16-token prefix closure of the\nplain-external gap": 0.0026076099049644474,
+      "error": 0.006473838117177023,
+      "series": "Cross-fitted (this round)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Read-out layer": 17.0,
+      "16-token prefix closure of the\nplain-external gap": 0.012756412834805664,
+      "error": 0.0069913962483313516,
+      "series": "Cross-fitted (this round)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Read-out layer": 20.0,
+      "16-token prefix closure of the\nplain-external gap": 0.02285077792491652,
+      "error": 0.006535915034626723,
+      "series": "Cross-fitted (this round)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Read-out layer": 23.0,
+      "16-token prefix closure of the\nplain-external gap": 0.020316033613896778,
+      "error": 0.0061131419611364975,
+      "series": "Cross-fitted (this round)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Read-out layer": 26.0,
+      "16-token prefix closure of the\nplain-external gap": 0.013474955183003234,
+      "error": 0.007622553158346488,
+      "series": "Cross-fitted (this round)",
+      "_kind": "errorbar",
+      "_group": 6
+    },
+    {
+      "Read-out layer": 14.0,
+      "16-token prefix closure of the\nplain-external gap": 0.0026076099049644474,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out layer": 17.0,
+      "16-token prefix closure of the\nplain-external gap": 0.012756412834805664,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out layer": 20.0,
+      "16-token prefix closure of the\nplain-external gap": 0.02285077792491652,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out layer": 23.0,
+      "16-token prefix closure of the\nplain-external gap": 0.020316033613896778,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out layer": 26.0,
+      "16-token prefix closure of the\nplain-external gap": 0.013474955183003234,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out layer": 14.0,
+      "16-token prefix closure of the\nplain-external gap": -0.003815207831989737,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out layer": 17.0,
+      "16-token prefix closure of the\nplain-external gap": 0.005803004654665262,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out layer": 20.0,
+      "16-token prefix closure of the\nplain-external gap": 0.016275473392646112,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out layer": 23.0,
+      "16-token prefix closure of the\nplain-external gap": 0.014194666444750315,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out layer": 26.0,
+      "16-token prefix closure of the\nplain-external gap": 0.0058682656782598095,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out layer": 14.0,
+      "16-token prefix closure of the\nplain-external gap": 0.00913246840236431,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Read-out layer": 17.0,
+      "16-token prefix closure of the\nplain-external gap": 0.019785797151327965,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Read-out layer": 20.0,
+      "16-token prefix closure of the\nplain-external gap": 0.02934730346189956,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Read-out layer": 23.0,
+      "16-token prefix closure of the\nplain-external gap": 0.02642095036702331,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Read-out layer": 26.0,
+      "16-token prefix closure of the\nplain-external gap": 0.021113371994952786,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Read-out layer": 14.35,
+      "16-token prefix closure of the\nplain-external gap": -0.01211667880854583,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out layer": 20.35,
+      "16-token prefix closure of the\nplain-external gap": 0.011194263376932476,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out layer": 23.35,
+      "16-token prefix closure of the\nplain-external gap": 0.006314063439557715,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out layer": 26.35,
+      "16-token prefix closure of the\nplain-external gap": -0.014566165143416118,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out layer": 14.35,
+      "16-token prefix closure of the\nplain-external gap": 0.016197747539468805,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Read-out layer": 20.35,
+      "16-token prefix closure of the\nplain-external gap": 0.04006941642605285,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Read-out layer": 23.35,
+      "16-token prefix closure of the\nplain-external gap": 0.034498532563012906,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Read-out layer": 26.35,
+      "16-token prefix closure of the\nplain-external gap": 0.02397817276835912,
+      "_kind": "line",
+      "_group": 11
+    }
+  ],
+  "n_series": 12,
+  "total_points": 52
+}

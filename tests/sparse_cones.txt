@@ -20,8 +20,11 @@
 #   eval_results/issue_537  — test_issue811_turn_nl.py -> scripts/issue811_fit.py::run_phase0_gate
 #                             -> scripts/issue722_fit_M.py::_load_E reads G_tensor/G_meta.json
 #                             (missing line surfaced as a sparse-worktree FileNotFoundError, #897)
+#   eval_results/issue_952  — test_issue952_kfold.py reads the committed
+#                             split_seed952.json (the B4≡committed-split calibration pin)
 eval_results/issue_545
 eval_results/issue_521
 eval_results/issue_257
 eval_results/issue_276
 eval_results/issue_537
+eval_results/issue_952

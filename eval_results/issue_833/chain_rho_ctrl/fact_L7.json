@@ -1,0 +1,91 @@
+{
+  "behavior": "fact",
+  "layer": 7,
+  "n_with_E": 480,
+  "rho_M0_ridge": -0.16237521436821165,
+  "ci_M0_ridge": {
+    "point": -0.16237521436821165,
+    "ci_lo": -0.27522961455891504,
+    "ci_hi": -0.023737823071796855,
+    "n_families": 7
+  },
+  "rho_Mplus_on_ridge": 0.6725887358114001,
+  "ci_Mplus_on_ridge": {
+    "point": 0.6725887358114002,
+    "ci_lo": 0.4874494928101059,
+    "ci_hi": 0.7931329783528897,
+    "n_families": 7
+  },
+  "rho_M0_ctrl_ridge": 0.674270654844932,
+  "ci_M0_ctrl_ridge": {
+    "point": 0.674270654844932,
+    "ci_lo": 0.48631766302349,
+    "ci_hi": 0.7935963185994822,
+    "n_families": 7
+  },
+  "ci_diff_Mplus_on_minus_M0_ctrl": {
+    "point": -0.0016819190335318757,
+    "ci_lo": -0.005413653756950157,
+    "ci_hi": 0.005682624876987632,
+    "n_families": 7
+  },
+  "ci_diff_M0_ctrl_minus_M0": {
+    "point": 0.8366458692131437,
+    "ci_lo": 0.6787741291674799,
+    "ci_hi": 0.9267756618300662,
+    "n_families": 7
+  },
+  "consistency_vs_committed": {
+    "M0": {
+      "recomputed": -0.16237521436821165,
+      "committed": -0.16237521436821165,
+      "abs_delta": 0.0
+    },
+    "Mplus_on": {
+      "recomputed": 0.6725887358114001,
+      "committed": 0.6728887762324388,
+      "abs_delta": 0.0003000404210387053
+    }
+  },
+  "mlp_gate": "not_run",
+  "meta": {
+    "script": "scripts/issue833_chain_rho_ctrl.py",
+    "git_commit": "67a0749872308d85f0a613409ce685f5debee810",
+    "generated_at": "2026-07-06T05:13:52.736362+00:00",
+    "versions": {
+      "numpy": "2.2.6",
+      "scipy": "1.17.1",
+      "torch": "2.8.0+cu128"
+    },
+    "ridge_device": "cpu",
+    "target_dim": 64,
+    "ridge_lambdas": [
+      0.01,
+      0.1,
+      1.0,
+      10.0,
+      100.0,
+      1000.0
+    ],
+    "n_bootstrap_resamples": 1000,
+    "consistency_fail_tol": 0.02,
+    "joined_cache_path": "eval_results/issue_833/joined_cache/fact_L7.npz",
+    "joined_cache_sha256": "e530433f00881b41886602ad82d382b810fa60eb4214ba1b072ef2c05cea8079",
+    "joined_cache_regime": {
+      "behavior": "fact",
+      "context_source": "reextracted",
+      "data_repo": "superkaiba1/explore-persona-space-data",
+      "data_repo_main_sha": "7b925acf2001b60e4addce5329958b8d889a7bc8",
+      "issue": 833,
+      "layer": 7,
+      "legs_mode": "reextracted",
+      "old_store_prefix": "issue667_gate_chain_preview/analysis_tensors",
+      "old_store_revision": "0031fc55a0e965c33be4261287cd5c86393ca161",
+      "rbase_store_prefix": "issue833_onpolicy_map/analysis_tensors_rbase",
+      "seed": 42,
+      "store_prefix": "issue833_onpolicy_map/analysis_tensors"
+    },
+    "committed_chain_rho_path": "eval_results/issue_833/chain_rho/fact_L7.json",
+    "cell_wall_seconds": 78.9
+  }
+}

@@ -190,10 +190,47 @@ def test_json_output_shape(tmp_path: Path, monkeypatch, capsys):
     rc = sel.main(["--json", "--repo-root", str(repo)])
     assert rc == 0
     out = json.loads(capsys.readouterr().out)
-    assert set(out.keys()) == {"tests", "untested_touched", "base", "missing_invariants"}
+    assert set(out.keys()) == {
+        "tests",
+        "untested_touched",
+        "base",
+        "missing_invariants",
+        "selection_reasons",
+        "n_tests",
+        "recommended_timeout_s",
+        "slow_tests_selected",
+    }
     assert "tests/test_widget.py" in out["tests"]
     assert out["base"] == "main"
     assert out["missing_invariants"] == []  # all invariants present in the fixture tree
+    assert out["selection_reasons"]["tests/test_widget.py"] == ["stem-map:scripts/widget.py"]
+    # #1046 sizing fields are derived from the SAME selection the command runs:
+    assert out["n_tests"] == len(out["tests"])
+    assert out["recommended_timeout_s"] == sel.recommended_timeout_s(out["tests"])
+    assert out["slow_tests_selected"] == [t for t in out["tests"] if t in sel.SLOW_TESTS]
+
+
+# --- Case 10b (#1022): select_tests_with_reasons — reasons content ------------
+def test_selection_reasons_content(tmp_path: Path):
+    """Pins the reason vocabulary (invariant / touched-test / stem-map:<f> /
+    glob-scan:<f>) and that select_tests still returns the identical 2-tuple."""
+    repo = _make_tree(tmp_path, ["test_widget.py", "test_thing.py"])
+    touched = ["scripts/widget.py", "tests/test_thing.py", "scripts/issue999_fake.py"]
+    tests, untested, reasons = sel.select_tests_with_reasons(touched, repo)
+    # Stem-mapped from a touched code file:
+    assert reasons["tests/test_widget.py"] == ["stem-map:scripts/widget.py"]
+    # A touched test file includes itself:
+    assert reasons["tests/test_thing.py"] == ["touched-test"]
+    # Glob-scan arm (#895) records the covered touched file:
+    assert reasons["tests/test_shared_vm_thread_caps.py"] == ["glob-scan:scripts/issue999_fake.py"]
+    # A pure invariant carries exactly the invariant reason:
+    assert reasons["tests/test_task_workflow.py"] == ["invariant"]
+    # Reason keys exactly cover the selection, and every reason list is sorted:
+    assert set(reasons) == set(tests)
+    assert all(rs == sorted(rs) for rs in reasons.values())
+    # The unchanged-signature wrapper returns the IDENTICAL selection:
+    assert sel.select_tests(touched, repo) == (tests, untested)
+    assert untested == ["scripts/issue999_fake.py"]  # scan hit never marks "tested"
 
 
 # --- Case 11: _resolve_work_root uses --show-toplevel (#851) ------------------
@@ -240,7 +277,9 @@ def test_empty_selection_fails_loud(tmp_path: Path, monkeypatch, capsys):
     monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
     monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: [])
     # Force the degenerate empty selection the invariant set normally prevents.
-    monkeypatch.setattr(sel, "select_tests", lambda *_a, **_k: ([], []))
+    # (main() routes through select_tests_with_reasons as of #1022 — same
+    # selection, plus the reasons map the Step 9c compare consumes.)
+    monkeypatch.setattr(sel, "select_tests_with_reasons", lambda *_a, **_k: ([], [], {}))
     rc = sel.main(["--repo-root", str(repo)])
     assert rc == 1
     err = capsys.readouterr().err
@@ -339,10 +378,16 @@ def test_empty_diff_note_at_main_checkout_real_git(tmp_path: Path, monkeypatch, 
     # Provenance breadcrumb names the main checkout + branch:
     assert f"work root {repo.resolve()}" in captured.err
     assert "(branch: main)" in captured.err
-    # Printed command is exactly the invariant-only set (sorted):
+    # Printed command is exactly the invariant-only set (sorted), behind the
+    # #1046 sized-timeout prefix (tuple-derived — never hardcode 1980, so the
+    # pin survives a WORKFLOW_INVARIANT count change):
     line = captured.out.strip().splitlines()[-1]
-    assert line.startswith("uv run pytest ") and line.endswith(" -v --tb=short")
-    files = line.removeprefix("uv run pytest ").removesuffix(" -v --tb=short").split()
+    prefix = (
+        "timeout --kill-after=60s "
+        f"{sel.recommended_timeout_s(sorted(sel.WORKFLOW_INVARIANT))}s uv run pytest "
+    )
+    assert line.startswith(prefix) and line.endswith(" -v --tb=short")
+    files = line.removeprefix(prefix).removesuffix(" -v --tb=short").split()
     assert files == sorted(sel.WORKFLOW_INVARIANT)
 
 
@@ -442,3 +487,46 @@ def test_glob_scan_map_matches_live_tree():
                 f"{test_file} no longer scans {g!r} — GLOB_SCAN_TESTS drifted "
                 "from the scanner's source; update the map verbatim."
             )
+
+
+# --- Case 21 (#1046): recommended gate timeout — formula ----------------------
+def test_recommended_timeout_formula():
+    """T = BASE + PER_FILE*n + slow surcharges, floored at TIMEOUT_FLOOR_S."""
+    no_slow = [f"tests/test_x{i}.py" for i in range(40)]
+    assert sel.recommended_timeout_s(no_slow) == sel.TIMEOUT_BASE_S + 40 * sel.TIMEOUT_PER_FILE_S
+    with_wl = [*no_slow, "tests/test_workflow_lint.py"]
+    assert sel.recommended_timeout_s(with_wl) == (
+        sel.TIMEOUT_BASE_S
+        + 41 * sel.TIMEOUT_PER_FILE_S
+        + sel.SLOW_TESTS["tests/test_workflow_lint.py"]
+    )
+    assert sel.recommended_timeout_s([]) == sel.TIMEOUT_FLOOR_S  # floor binds
+
+
+# --- Case 22 (#1046): SLOW_TESTS live-tree drift pin ---------------------------
+def test_slow_tests_pinned_to_live_tree():
+    """Every SLOW_TESTS key exists in the real repo tests/ tree (drift pin,
+    same curation rule as WORKFLOW_INVARIANT / GLOB_SCAN_TESTS)."""
+    root = Path(sel.__file__).resolve().parents[1]
+    missing = [t for t in sel.SLOW_TESTS if not (root / t).exists()]
+    assert missing == [], (
+        f"SLOW_TESTS entries missing from the live tests/ tree: {missing}. "
+        "Update the literal in scripts/select_step9c_tests.py deliberately."
+    )
+
+
+# --- Case 23 (#1046): stdout carries the sized timeout prefix + stderr line ---
+def test_stdout_command_carries_sized_timeout(tmp_path: Path, monkeypatch, capsys):
+    """The printed command starts with the sized `timeout --kill-after=60s <T>s`
+    prefix, and stderr carries the machine-greppable recommended-timeout-s
+    sizing line (both derived from the invariant-only selection)."""
+    repo = _make_tree(tmp_path, [])
+    monkeypatch.setattr(sel, "_resolve_work_root", lambda _arg: repo)
+    monkeypatch.setattr(sel, "compute_touched", lambda *_a, **_k: [])
+    rc = sel.main([])
+    assert rc == 0
+    captured = capsys.readouterr()
+    t = sel.recommended_timeout_s(sorted(sel.WORKFLOW_INVARIANT))
+    line = captured.out.strip().splitlines()[-1]
+    assert line.startswith(f"timeout --kill-after=60s {t}s uv run pytest ")
+    assert f"recommended-timeout-s={t}" in captured.err

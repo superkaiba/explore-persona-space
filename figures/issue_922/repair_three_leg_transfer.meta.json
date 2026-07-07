@@ -1,0 +1,3336 @@
+{
+  "commit": "f7375b5109",
+  "created": "2026-07-04T06:43:07Z",
+  "figsize": [
+    15.5,
+    4.4
+  ],
+  "points": [
+    {
+      "Rollout horizon (answer tokens)": 1.0,
+      "Rollout skill vs frozen-state null": 0.3179615762912565,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 2.0,
+      "Rollout skill vs frozen-state null": 0.3605986955679125,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 3.0,
+      "Rollout skill vs frozen-state null": 0.3877912737015221,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 4.0,
+      "Rollout skill vs frozen-state null": 0.38281003054645324,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 5.0,
+      "Rollout skill vs frozen-state null": 0.39175276458263397,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 6.0,
+      "Rollout skill vs frozen-state null": 0.38852804775039357,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 7.0,
+      "Rollout skill vs frozen-state null": 0.4115118541651302,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 8.0,
+      "Rollout skill vs frozen-state null": 0.4181132128255235,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 9.0,
+      "Rollout skill vs frozen-state null": 0.4008264514721102,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 10.0,
+      "Rollout skill vs frozen-state null": 0.40076337775422466,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 11.0,
+      "Rollout skill vs frozen-state null": 0.4222119657529725,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 12.0,
+      "Rollout skill vs frozen-state null": 0.4180104991214143,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 13.0,
+      "Rollout skill vs frozen-state null": 0.3822454054736429,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 14.0,
+      "Rollout skill vs frozen-state null": 0.396886492975884,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 15.0,
+      "Rollout skill vs frozen-state null": 0.40848878315753406,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 16.0,
+      "Rollout skill vs frozen-state null": 0.4020696623871724,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 17.0,
+      "Rollout skill vs frozen-state null": 0.4127037636935711,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 18.0,
+      "Rollout skill vs frozen-state null": 0.40838534260789555,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 19.0,
+      "Rollout skill vs frozen-state null": 0.419341155845258,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 20.0,
+      "Rollout skill vs frozen-state null": 0.41656401339504456,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 21.0,
+      "Rollout skill vs frozen-state null": 0.42885494770275223,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 22.0,
+      "Rollout skill vs frozen-state null": 0.43588527912894887,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 23.0,
+      "Rollout skill vs frozen-state null": 0.42082923071251976,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 24.0,
+      "Rollout skill vs frozen-state null": 0.3981672755132119,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 25.0,
+      "Rollout skill vs frozen-state null": 0.42961653384069604,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 26.0,
+      "Rollout skill vs frozen-state null": 0.4100704217950503,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 27.0,
+      "Rollout skill vs frozen-state null": 0.39686826306084794,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 28.0,
+      "Rollout skill vs frozen-state null": 0.40686925542023444,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 29.0,
+      "Rollout skill vs frozen-state null": 0.4030375635872285,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 30.0,
+      "Rollout skill vs frozen-state null": 0.3963521946635511,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 31.0,
+      "Rollout skill vs frozen-state null": 0.39353916980326176,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 32.0,
+      "Rollout skill vs frozen-state null": 0.4007395812206798,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 33.0,
+      "Rollout skill vs frozen-state null": 0.4225316308438778,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 34.0,
+      "Rollout skill vs frozen-state null": 0.4169085176868571,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 35.0,
+      "Rollout skill vs frozen-state null": 0.42594643495976925,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 36.0,
+      "Rollout skill vs frozen-state null": 0.4385584605236848,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 37.0,
+      "Rollout skill vs frozen-state null": 0.4449160065915849,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 38.0,
+      "Rollout skill vs frozen-state null": 0.430965280574229,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 39.0,
+      "Rollout skill vs frozen-state null": 0.4384762853797939,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 40.0,
+      "Rollout skill vs frozen-state null": 0.436609653962983,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "Rollout horizon (answer tokens)": 1.0,
+      "Rollout skill vs frozen-state null": 0.24646109239094788,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 2.0,
+      "Rollout skill vs frozen-state null": 0.2616410425139798,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 3.0,
+      "Rollout skill vs frozen-state null": 0.36440348625183105,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 4.0,
+      "Rollout skill vs frozen-state null": 0.3949538545889987,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 5.0,
+      "Rollout skill vs frozen-state null": 0.4028439809464746,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 6.0,
+      "Rollout skill vs frozen-state null": 0.39617293038302,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 7.0,
+      "Rollout skill vs frozen-state null": 0.41992321693234974,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 8.0,
+      "Rollout skill vs frozen-state null": 0.4310168017529779,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 9.0,
+      "Rollout skill vs frozen-state null": 0.43717861817114884,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 10.0,
+      "Rollout skill vs frozen-state null": 0.4385080643826061,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 11.0,
+      "Rollout skill vs frozen-state null": 0.43584018676645225,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 12.0,
+      "Rollout skill vs frozen-state null": 0.4508564536356264,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 13.0,
+      "Rollout skill vs frozen-state null": 0.4360740902937121,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 14.0,
+      "Rollout skill vs frozen-state null": 0.431643769558933,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 15.0,
+      "Rollout skill vs frozen-state null": 0.4377625750170814,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 16.0,
+      "Rollout skill vs frozen-state null": 0.44199049700465465,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 17.0,
+      "Rollout skill vs frozen-state null": 0.43728478045927155,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 18.0,
+      "Rollout skill vs frozen-state null": 0.43905107904639507,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 19.0,
+      "Rollout skill vs frozen-state null": 0.4372855385558473,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 20.0,
+      "Rollout skill vs frozen-state null": 0.4559293892234564,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 21.0,
+      "Rollout skill vs frozen-state null": 0.45560143267114955,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 22.0,
+      "Rollout skill vs frozen-state null": 0.46016144442061585,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 23.0,
+      "Rollout skill vs frozen-state null": 0.4421227090060711,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 24.0,
+      "Rollout skill vs frozen-state null": 0.44934260348478955,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 25.0,
+      "Rollout skill vs frozen-state null": 0.4489037144101328,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 26.0,
+      "Rollout skill vs frozen-state null": 0.4294137760168976,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 27.0,
+      "Rollout skill vs frozen-state null": 0.44214025988347,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 28.0,
+      "Rollout skill vs frozen-state null": 0.449279745005899,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 29.0,
+      "Rollout skill vs frozen-state null": 0.44450702476832604,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 30.0,
+      "Rollout skill vs frozen-state null": 0.4455610954513152,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 31.0,
+      "Rollout skill vs frozen-state null": 0.4501413657433457,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 32.0,
+      "Rollout skill vs frozen-state null": 0.4433203221609195,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 33.0,
+      "Rollout skill vs frozen-state null": 0.45097933275004226,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 34.0,
+      "Rollout skill vs frozen-state null": 0.4578642886545923,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 35.0,
+      "Rollout skill vs frozen-state null": 0.4586367683692111,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 36.0,
+      "Rollout skill vs frozen-state null": 0.459370620134804,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 37.0,
+      "Rollout skill vs frozen-state null": 0.4602451438291205,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 38.0,
+      "Rollout skill vs frozen-state null": 0.4511223060803281,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 39.0,
+      "Rollout skill vs frozen-state null": 0.4485441419399447,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 40.0,
+      "Rollout skill vs frozen-state null": 0.4508303271399604,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "Rollout horizon (answer tokens)": 1.0,
+      "Rollout skill vs frozen-state null": 0.22248650797539288,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 2.0,
+      "Rollout skill vs frozen-state null": 0.367407013144758,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 3.0,
+      "Rollout skill vs frozen-state null": 0.4195375657743878,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 4.0,
+      "Rollout skill vs frozen-state null": 0.4196756299999025,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 5.0,
+      "Rollout skill vs frozen-state null": 0.39243602380156517,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 6.0,
+      "Rollout skill vs frozen-state null": 0.37949463145600426,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 7.0,
+      "Rollout skill vs frozen-state null": 0.3772060949769285,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 8.0,
+      "Rollout skill vs frozen-state null": 0.3493809211585257,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 9.0,
+      "Rollout skill vs frozen-state null": 0.3461683835420344,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 10.0,
+      "Rollout skill vs frozen-state null": 0.3732224516570568,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 11.0,
+      "Rollout skill vs frozen-state null": 0.3652877372999986,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 12.0,
+      "Rollout skill vs frozen-state null": 0.3750416984160741,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 13.0,
+      "Rollout skill vs frozen-state null": 0.35800962357057464,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 14.0,
+      "Rollout skill vs frozen-state null": 0.37878652123941314,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 15.0,
+      "Rollout skill vs frozen-state null": 0.37748002923197216,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 16.0,
+      "Rollout skill vs frozen-state null": 0.37645291454262203,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 17.0,
+      "Rollout skill vs frozen-state null": 0.36523619708087707,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 18.0,
+      "Rollout skill vs frozen-state null": 0.3716931860480044,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 19.0,
+      "Rollout skill vs frozen-state null": 0.38248689307106865,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 20.0,
+      "Rollout skill vs frozen-state null": 0.34381452120012707,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 21.0,
+      "Rollout skill vs frozen-state null": 0.3598241363134649,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 22.0,
+      "Rollout skill vs frozen-state null": 0.3675571204059654,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 23.0,
+      "Rollout skill vs frozen-state null": 0.34906811060176957,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 24.0,
+      "Rollout skill vs frozen-state null": 0.355097412235207,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 25.0,
+      "Rollout skill vs frozen-state null": 0.3703453594611751,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 26.0,
+      "Rollout skill vs frozen-state null": 0.34257999973164666,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 27.0,
+      "Rollout skill vs frozen-state null": 0.36361558900939095,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 28.0,
+      "Rollout skill vs frozen-state null": 0.3542029240892993,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 29.0,
+      "Rollout skill vs frozen-state null": 0.3562076518105136,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 30.0,
+      "Rollout skill vs frozen-state null": 0.355054612374968,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 31.0,
+      "Rollout skill vs frozen-state null": 0.3488427657220099,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 32.0,
+      "Rollout skill vs frozen-state null": 0.3446691065198845,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 33.0,
+      "Rollout skill vs frozen-state null": 0.36345912888646126,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 34.0,
+      "Rollout skill vs frozen-state null": 0.36599105472366017,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 35.0,
+      "Rollout skill vs frozen-state null": 0.3699154129458798,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 36.0,
+      "Rollout skill vs frozen-state null": 0.3728957420421971,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 37.0,
+      "Rollout skill vs frozen-state null": 0.3829115351869,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 38.0,
+      "Rollout skill vs frozen-state null": 0.3884020513958401,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 39.0,
+      "Rollout skill vs frozen-state null": 0.375671587470505,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Rollout horizon (answer tokens)": 40.0,
+      "Rollout skill vs frozen-state null": 0.3745465377966563,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Read-out block": -0.25,
+      "Paired skill delta, rolled minus direct": 0.21891493555287728,
+      "error": 0.009586373849176918,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Read-out block": 0.75,
+      "Paired skill delta, rolled minus direct": 0.17914726761713004,
+      "error": 0.008814730096491988,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Read-out block": 1.75,
+      "Paired skill delta, rolled minus direct": 0.13097089316902888,
+      "error": 0.0055802297235156145,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Read-out block": 2.75,
+      "Paired skill delta, rolled minus direct": 0.1121493099619531,
+      "error": 0.004842967290379523,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Read-out block": 3.75,
+      "Paired skill delta, rolled minus direct": 0.11539371085301456,
+      "error": 0.0062884377770792005,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Read-out block": 4.75,
+      "Paired skill delta, rolled minus direct": 0.1189028609272403,
+      "error": 0.007231716178810327,
+      "series": "Repaired (fresh paired completions, n=288)",
+      "_kind": "errorbar",
+      "_group": 3
+    },
+    {
+      "Read-out block": 0.0,
+      "Paired skill delta, rolled minus direct": 0.22897151765775764,
+      "error": 0.00859489143016011,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Read-out block": 1.0,
+      "Paired skill delta, rolled minus direct": 0.19902686522497484,
+      "error": 0.008301655864326865,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Read-out block": 2.0,
+      "Paired skill delta, rolled minus direct": 0.17185915485283154,
+      "error": 0.0049030183087678675,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Read-out block": 3.0,
+      "Paired skill delta, rolled minus direct": 0.15201914051754606,
+      "error": 0.003965043021162282,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Read-out block": 4.0,
+      "Paired skill delta, rolled minus direct": 0.1565096139933707,
+      "error": 0.0063537279582103895,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Read-out block": 5.0,
+      "Paired skill delta, rolled minus direct": 0.15175764314416382,
+      "error": 0.007071694759684347,
+      "series": "Mismatched cache (parent round, n=288)",
+      "_kind": "errorbar",
+      "_group": 4
+    },
+    {
+      "Read-out block": 0.25,
+      "Paired skill delta, rolled minus direct": 0.258801514425108,
+      "error": 0.01813257395923655,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Read-out block": 1.25,
+      "Paired skill delta, rolled minus direct": 0.22633176516844994,
+      "error": 0.01678173671518582,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Read-out block": 2.25,
+      "Paired skill delta, rolled minus direct": 0.13603003612822956,
+      "error": 0.010498712001491273,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Read-out block": 3.25,
+      "Paired skill delta, rolled minus direct": 0.12479376001283526,
+      "error": 0.010867089785945909,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Read-out block": 4.25,
+      "Paired skill delta, rolled minus direct": 0.14913471502303663,
+      "error": 0.00812828354537487,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Read-out block": 5.25,
+      "Paired skill delta, rolled minus direct": 0.1559275249666017,
+      "error": 0.0074474458571381075,
+      "series": "Evil-only exact provenance (n=144)",
+      "_kind": "errorbar",
+      "_group": 5
+    },
+    {
+      "Read-out block": -0.25,
+      "Paired skill delta, rolled minus direct": 0.21891493555287728,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Read-out block": 0.75,
+      "Paired skill delta, rolled minus direct": 0.17914726761713004,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Read-out block": 1.75,
+      "Paired skill delta, rolled minus direct": 0.13097089316902888,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Read-out block": 2.75,
+      "Paired skill delta, rolled minus direct": 0.1121493099619531,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Read-out block": 3.75,
+      "Paired skill delta, rolled minus direct": 0.11539371085301456,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Read-out block": 4.75,
+      "Paired skill delta, rolled minus direct": 0.1189028609272403,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Read-out block": -0.25,
+      "Paired skill delta, rolled minus direct": 0.20912586842670053,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out block": 0.75,
+      "Paired skill delta, rolled minus direct": 0.17035054502355504,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out block": 1.75,
+      "Paired skill delta, rolled minus direct": 0.12530975728134056,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out block": 2.75,
+      "Paired skill delta, rolled minus direct": 0.10737115797884245,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out block": 3.75,
+      "Paired skill delta, rolled minus direct": 0.10937024817200533,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out block": 4.75,
+      "Paired skill delta, rolled minus direct": 0.11218352474906068,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Read-out block": -0.25,
+      "Paired skill delta, rolled minus direct": 0.22829861612505437,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out block": 0.75,
+      "Paired skill delta, rolled minus direct": 0.18798000521653901,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out block": 1.75,
+      "Paired skill delta, rolled minus direct": 0.13647021672837178,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out block": 2.75,
+      "Paired skill delta, rolled minus direct": 0.11705709255960149,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out block": 3.75,
+      "Paired skill delta, rolled minus direct": 0.12194712372616373,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out block": 4.75,
+      "Paired skill delta, rolled minus direct": 0.12664695710668133,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "Read-out block": 0.0,
+      "Paired skill delta, rolled minus direct": 0.22897151765775764,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Read-out block": 1.0,
+      "Paired skill delta, rolled minus direct": 0.19902686522497484,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Read-out block": 2.0,
+      "Paired skill delta, rolled minus direct": 0.17185915485283154,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Read-out block": 3.0,
+      "Paired skill delta, rolled minus direct": 0.15201914051754606,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Read-out block": 4.0,
+      "Paired skill delta, rolled minus direct": 0.1565096139933707,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Read-out block": 5.0,
+      "Paired skill delta, rolled minus direct": 0.15175764314416382,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "Read-out block": 0.0,
+      "Paired skill delta, rolled minus direct": 0.2203469338975588,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out block": 1.0,
+      "Paired skill delta, rolled minus direct": 0.19086109625010675,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out block": 2.0,
+      "Paired skill delta, rolled minus direct": 0.16686238131757516,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out block": 3.0,
+      "Paired skill delta, rolled minus direct": 0.1480689877673285,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out block": 4.0,
+      "Paired skill delta, rolled minus direct": 0.15053453235789976,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out block": 5.0,
+      "Paired skill delta, rolled minus direct": 0.14521754302113551,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Read-out block": 0.0,
+      "Paired skill delta, rolled minus direct": 0.23753671675787902,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Read-out block": 1.0,
+      "Paired skill delta, rolled minus direct": 0.20746440797876048,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Read-out block": 2.0,
+      "Paired skill delta, rolled minus direct": 0.1766684179351109,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Read-out block": 3.0,
+      "Paired skill delta, rolled minus direct": 0.15599907380965305,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Read-out block": 4.0,
+      "Paired skill delta, rolled minus direct": 0.16324198827432054,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Read-out block": 5.0,
+      "Paired skill delta, rolled minus direct": 0.1593609325405042,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Read-out block": 0.25,
+      "Paired skill delta, rolled minus direct": 0.258801514425108,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Read-out block": 1.25,
+      "Paired skill delta, rolled minus direct": 0.22633176516844994,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Read-out block": 2.25,
+      "Paired skill delta, rolled minus direct": 0.13603003612822956,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Read-out block": 3.25,
+      "Paired skill delta, rolled minus direct": 0.12479376001283526,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Read-out block": 4.25,
+      "Paired skill delta, rolled minus direct": 0.14913471502303663,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Read-out block": 5.25,
+      "Paired skill delta, rolled minus direct": 0.1559275249666017,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Read-out block": 0.25,
+      "Paired skill delta, rolled minus direct": 0.24017569514528278,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Read-out block": 1.25,
+      "Paired skill delta, rolled minus direct": 0.20885701539454102,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Read-out block": 2.25,
+      "Paired skill delta, rolled minus direct": 0.12551345495869304,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Read-out block": 3.25,
+      "Paired skill delta, rolled minus direct": 0.113784625495383,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Read-out block": 4.25,
+      "Paired skill delta, rolled minus direct": 0.14090393814193602,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Read-out block": 5.25,
+      "Paired skill delta, rolled minus direct": 0.14843414437297422,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Read-out block": 0.25,
+      "Paired skill delta, rolled minus direct": 0.2764408430637559,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Read-out block": 1.25,
+      "Paired skill delta, rolled minus direct": 0.24242048882491266,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Read-out block": 2.25,
+      "Paired skill delta, rolled minus direct": 0.14651087896167558,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Read-out block": 3.25,
+      "Paired skill delta, rolled minus direct": 0.13551880506727482,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Read-out block": 4.25,
+      "Paired skill delta, rolled minus direct": 0.15716050523268577,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Read-out block": 5.25,
+      "Paired skill delta, rolled minus direct": 0.16332903608725044,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.40104901790618896,
+      "Horizon-mean roll skill, repaired": 0.4183003902435303,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.38338348269462585,
+      "Horizon-mean roll skill, repaired": 0.4429957866668701,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4644030034542084,
+      "Horizon-mean roll skill, repaired": 0.42867445945739746,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4216655492782593,
+      "Horizon-mean roll skill, repaired": 0.37412992119789124,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4427163600921631,
+      "Horizon-mean roll skill, repaired": 0.4470687508583069,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.45875084400177,
+      "Horizon-mean roll skill, repaired": 0.45833253860473633,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43586260080337524,
+      "Horizon-mean roll skill, repaired": 0.40145158767700195,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.41466224193573,
+      "Horizon-mean roll skill, repaired": 0.3876305818557739,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4243564307689667,
+      "Horizon-mean roll skill, repaired": 0.4344605803489685,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.35617905855178833,
+      "Horizon-mean roll skill, repaired": 0.40545493364334106,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4348253309726715,
+      "Horizon-mean roll skill, repaired": 0.35711079835891724,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3614729642868042,
+      "Horizon-mean roll skill, repaired": 0.35904377698898315,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4358171224594116,
+      "Horizon-mean roll skill, repaired": 0.40716880559921265,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43340277671813965,
+      "Horizon-mean roll skill, repaired": 0.442312091588974,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.44085562229156494,
+      "Horizon-mean roll skill, repaired": 0.43711355328559875,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3966309130191803,
+      "Horizon-mean roll skill, repaired": 0.43191954493522644,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3953513503074646,
+      "Horizon-mean roll skill, repaired": 0.35186266899108887,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3925181031227112,
+      "Horizon-mean roll skill, repaired": 0.44527432322502136,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.44885799288749695,
+      "Horizon-mean roll skill, repaired": 0.37805885076522827,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.36694949865341187,
+      "Horizon-mean roll skill, repaired": 0.48034214973449707,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3628004193305969,
+      "Horizon-mean roll skill, repaired": 0.41243553161621094,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4455985426902771,
+      "Horizon-mean roll skill, repaired": 0.45161861181259155,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4396063983440399,
+      "Horizon-mean roll skill, repaired": 0.36398959159851074,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4145064055919647,
+      "Horizon-mean roll skill, repaired": 0.3889319896697998,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.39413970708847046,
+      "Horizon-mean roll skill, repaired": 0.38996365666389465,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.40902402997016907,
+      "Horizon-mean roll skill, repaired": 0.3924057185649872,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4150802195072174,
+      "Horizon-mean roll skill, repaired": 0.40576183795928955,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.34800153970718384,
+      "Horizon-mean roll skill, repaired": 0.40492191910743713,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4280274510383606,
+      "Horizon-mean roll skill, repaired": 0.4253782033920288,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3873249888420105,
+      "Horizon-mean roll skill, repaired": 0.39138656854629517,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4574230909347534,
+      "Horizon-mean roll skill, repaired": 0.4219334125518799,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4502715468406677,
+      "Horizon-mean roll skill, repaired": 0.4553740620613098,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.37181079387664795,
+      "Horizon-mean roll skill, repaired": 0.36233702301979065,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3836815059185028,
+      "Horizon-mean roll skill, repaired": 0.43745630979537964,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.40288424491882324,
+      "Horizon-mean roll skill, repaired": 0.42361366748809814,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.37787896394729614,
+      "Horizon-mean roll skill, repaired": 0.469052255153656,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.35924702882766724,
+      "Horizon-mean roll skill, repaired": 0.42301470041275024,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.44880399107933044,
+      "Horizon-mean roll skill, repaired": 0.4194956123828888,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4153594374656677,
+      "Horizon-mean roll skill, repaired": 0.410361111164093,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3828083872795105,
+      "Horizon-mean roll skill, repaired": 0.4193546175956726,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.409247487783432,
+      "Horizon-mean roll skill, repaired": 0.3814365863800049,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4038302004337311,
+      "Horizon-mean roll skill, repaired": 0.41774848103523254,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43209755420684814,
+      "Horizon-mean roll skill, repaired": 0.4130391478538513,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3417013883590698,
+      "Horizon-mean roll skill, repaired": 0.40154674649238586,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.41524648666381836,
+      "Horizon-mean roll skill, repaired": 0.3527425527572632,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43466249108314514,
+      "Horizon-mean roll skill, repaired": 0.43010413646698,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4442109763622284,
+      "Horizon-mean roll skill, repaired": 0.39499059319496155,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43216758966445923,
+      "Horizon-mean roll skill, repaired": 0.4482620358467102,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3786303400993347,
+      "Horizon-mean roll skill, repaired": 0.3658943474292755,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.34680742025375366,
+      "Horizon-mean roll skill, repaired": 0.39768463373184204,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4217824935913086,
+      "Horizon-mean roll skill, repaired": 0.422656774520874,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.41419732570648193,
+      "Horizon-mean roll skill, repaired": 0.3681948482990265,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3139554262161255,
+      "Horizon-mean roll skill, repaired": 0.38775521516799927,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.41989850997924805,
+      "Horizon-mean roll skill, repaired": 0.42181071639060974,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.41764310002326965,
+      "Horizon-mean roll skill, repaired": 0.3772489130496979,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.373318612575531,
+      "Horizon-mean roll skill, repaired": 0.38901346921920776,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3883453607559204,
+      "Horizon-mean roll skill, repaired": 0.3948763310909271,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43917298316955566,
+      "Horizon-mean roll skill, repaired": 0.3921314477920532,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3890345096588135,
+      "Horizon-mean roll skill, repaired": 0.40402379631996155,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4130902886390686,
+      "Horizon-mean roll skill, repaired": 0.38196420669555664,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3877516984939575,
+      "Horizon-mean roll skill, repaired": 0.36416178941726685,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.42247268557548523,
+      "Horizon-mean roll skill, repaired": 0.44226035475730896,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4631594717502594,
+      "Horizon-mean roll skill, repaired": 0.41597145795822144,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.417818546295166,
+      "Horizon-mean roll skill, repaired": 0.41815513372421265,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3531860113143921,
+      "Horizon-mean roll skill, repaired": 0.3673091530799866,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.34520623087882996,
+      "Horizon-mean roll skill, repaired": 0.37016016244888306,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4151627719402313,
+      "Horizon-mean roll skill, repaired": 0.39641672372817993,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.44630464911460876,
+      "Horizon-mean roll skill, repaired": 0.42419278621673584,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.33867084980010986,
+      "Horizon-mean roll skill, repaired": 0.3812467157840729,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4101310670375824,
+      "Horizon-mean roll skill, repaired": 0.4239148497581482,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4568922817707062,
+      "Horizon-mean roll skill, repaired": 0.39799609780311584,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.38280224800109863,
+      "Horizon-mean roll skill, repaired": 0.38735508918762207,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.39808934926986694,
+      "Horizon-mean roll skill, repaired": 0.41362303495407104,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4201716482639313,
+      "Horizon-mean roll skill, repaired": 0.3870864808559418,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4120814800262451,
+      "Horizon-mean roll skill, repaired": 0.3798708915710449,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3694746196269989,
+      "Horizon-mean roll skill, repaired": 0.36558446288108826,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.41454076766967773,
+      "Horizon-mean roll skill, repaired": 0.3582180142402649,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4401247799396515,
+      "Horizon-mean roll skill, repaired": 0.3861021399497986,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.45716243982315063,
+      "Horizon-mean roll skill, repaired": 0.426699697971344,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4224627614021301,
+      "Horizon-mean roll skill, repaired": 0.37443798780441284,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3492521047592163,
+      "Horizon-mean roll skill, repaired": 0.35955607891082764,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.33732450008392334,
+      "Horizon-mean roll skill, repaired": 0.3807455599308014,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4216546416282654,
+      "Horizon-mean roll skill, repaired": 0.4152334928512573,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.41377031803131104,
+      "Horizon-mean roll skill, repaired": 0.3994891941547394,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3298211693763733,
+      "Horizon-mean roll skill, repaired": 0.40647682547569275,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4060412645339966,
+      "Horizon-mean roll skill, repaired": 0.4152635931968689,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4392485022544861,
+      "Horizon-mean roll skill, repaired": 0.3841821551322937,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.40005597472190857,
+      "Horizon-mean roll skill, repaired": 0.38596367835998535,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4106965959072113,
+      "Horizon-mean roll skill, repaired": 0.419819712638855,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.38860470056533813,
+      "Horizon-mean roll skill, repaired": 0.38324102759361267,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43313682079315186,
+      "Horizon-mean roll skill, repaired": 0.39070892333984375,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3703666925430298,
+      "Horizon-mean roll skill, repaired": 0.36232829093933105,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4037330448627472,
+      "Horizon-mean roll skill, repaired": 0.3703767657279968,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.42278340458869934,
+      "Horizon-mean roll skill, repaired": 0.37502118945121765,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.45222729444503784,
+      "Horizon-mean roll skill, repaired": 0.41926518082618713,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3916975259780884,
+      "Horizon-mean roll skill, repaired": 0.3996725082397461,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3704151511192322,
+      "Horizon-mean roll skill, repaired": 0.3505941927433014,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3228515386581421,
+      "Horizon-mean roll skill, repaired": 0.3587469458580017,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.42234623432159424,
+      "Horizon-mean roll skill, repaired": 0.3878191113471985,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.40521562099456787,
+      "Horizon-mean roll skill, repaired": 0.38713568449020386,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3043244779109955,
+      "Horizon-mean roll skill, repaired": 0.4046028256416321,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.415805846452713,
+      "Horizon-mean roll skill, repaired": 0.4102514982223511,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.42731818556785583,
+      "Horizon-mean roll skill, repaired": 0.3765871822834015,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3726544976234436,
+      "Horizon-mean roll skill, repaired": 0.375537633895874,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.38311585783958435,
+      "Horizon-mean roll skill, repaired": 0.4163970351219177,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3409726023674011,
+      "Horizon-mean roll skill, repaired": 0.34564208984375,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.41568970680236816,
+      "Horizon-mean roll skill, repaired": 0.38899654150009155,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3548291325569153,
+      "Horizon-mean roll skill, repaired": 0.35291093587875366,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.39634889364242554,
+      "Horizon-mean roll skill, repaired": 0.36196690797805786,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4279172718524933,
+      "Horizon-mean roll skill, repaired": 0.3947383463382721,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43258512020111084,
+      "Horizon-mean roll skill, repaired": 0.39298176765441895,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.39001190662384033,
+      "Horizon-mean roll skill, repaired": 0.3444874882698059,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.36121439933776855,
+      "Horizon-mean roll skill, repaired": 0.37512755393981934,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3176756501197815,
+      "Horizon-mean roll skill, repaired": 0.4108426570892334,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43549811840057373,
+      "Horizon-mean roll skill, repaired": 0.39372554421424866,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4120275378227234,
+      "Horizon-mean roll skill, repaired": 0.4048498868942261,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3741235136985779,
+      "Horizon-mean roll skill, repaired": 0.3698926568031311,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.41078150272369385,
+      "Horizon-mean roll skill, repaired": 0.3818027973175049,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4134320318698883,
+      "Horizon-mean roll skill, repaired": 0.36253947019577026,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3801681101322174,
+      "Horizon-mean roll skill, repaired": 0.3743187487125397,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3873421549797058,
+      "Horizon-mean roll skill, repaired": 0.3839624524116516,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.34046605229377747,
+      "Horizon-mean roll skill, repaired": 0.3827419579029083,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.41425082087516785,
+      "Horizon-mean roll skill, repaired": 0.3581259250640869,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3893531858921051,
+      "Horizon-mean roll skill, repaired": 0.376798152923584,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.36717522144317627,
+      "Horizon-mean roll skill, repaired": 0.3221108317375183,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43301787972450256,
+      "Horizon-mean roll skill, repaired": 0.40025705099105835,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.428518146276474,
+      "Horizon-mean roll skill, repaired": 0.41298335790634155,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3678317368030548,
+      "Horizon-mean roll skill, repaired": 0.35882484912872314,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3867758512496948,
+      "Horizon-mean roll skill, repaired": 0.35883161425590515,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.36526578664779663,
+      "Horizon-mean roll skill, repaired": 0.37418487668037415,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4175010919570923,
+      "Horizon-mean roll skill, repaired": 0.39076948165893555,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3902643322944641,
+      "Horizon-mean roll skill, repaired": 0.3908296227455139,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.40104687213897705,
+      "Horizon-mean roll skill, repaired": 0.3793492615222931,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.40854448080062866,
+      "Horizon-mean roll skill, repaired": 0.41601723432540894,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4302945137023926,
+      "Horizon-mean roll skill, repaired": 0.35244858264923096,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3641115725040436,
+      "Horizon-mean roll skill, repaired": 0.38607949018478394,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.40981873869895935,
+      "Horizon-mean roll skill, repaired": 0.4204501211643219,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.35287222266197205,
+      "Horizon-mean roll skill, repaired": 0.36971744894981384,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4180366098880768,
+      "Horizon-mean roll skill, repaired": 0.35564467310905457,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4209904074668884,
+      "Horizon-mean roll skill, repaired": 0.4097461402416229,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4113999605178833,
+      "Horizon-mean roll skill, repaired": 0.3573429584503174,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.41394588351249695,
+      "Horizon-mean roll skill, repaired": 0.39857369661331177,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4505293369293213,
+      "Horizon-mean roll skill, repaired": 0.3930024802684784,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3887328505516052,
+      "Horizon-mean roll skill, repaired": 0.3902164101600647,
+      "series": "sycophancy (144 windows)",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4227585792541504,
+      "Horizon-mean roll skill, repaired": 0.3845333456993103,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.40586674213409424,
+      "Horizon-mean roll skill, repaired": 0.372489333152771,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3906387686729431,
+      "Horizon-mean roll skill, repaired": 0.36710992455482483,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.417822927236557,
+      "Horizon-mean roll skill, repaired": 0.39580976963043213,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.42925959825515747,
+      "Horizon-mean roll skill, repaired": 0.34670722484588623,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3768783211708069,
+      "Horizon-mean roll skill, repaired": 0.4368184804916382,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.39611178636550903,
+      "Horizon-mean roll skill, repaired": 0.42719799280166626,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4236931800842285,
+      "Horizon-mean roll skill, repaired": 0.42816051840782166,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4373220205307007,
+      "Horizon-mean roll skill, repaired": 0.42391151189804077,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.36265936493873596,
+      "Horizon-mean roll skill, repaired": 0.37870579957962036,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4309231638908386,
+      "Horizon-mean roll skill, repaired": 0.39948582649230957,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.41323232650756836,
+      "Horizon-mean roll skill, repaired": 0.418168842792511,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.45528632402420044,
+      "Horizon-mean roll skill, repaired": 0.40762823820114136,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3950524926185608,
+      "Horizon-mean roll skill, repaired": 0.38296884298324585,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.40760743618011475,
+      "Horizon-mean roll skill, repaired": 0.39447006583213806,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.40718352794647217,
+      "Horizon-mean roll skill, repaired": 0.4237610101699829,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.44523805379867554,
+      "Horizon-mean roll skill, repaired": 0.44425439834594727,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.46360909938812256,
+      "Horizon-mean roll skill, repaired": 0.39202046394348145,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.45914629101753235,
+      "Horizon-mean roll skill, repaired": 0.3813851773738861,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.44517040252685547,
+      "Horizon-mean roll skill, repaired": 0.42842012643814087,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4392153024673462,
+      "Horizon-mean roll skill, repaired": 0.3502189517021179,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4327266216278076,
+      "Horizon-mean roll skill, repaired": 0.3896034061908722,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.48193442821502686,
+      "Horizon-mean roll skill, repaired": 0.46918895840644836,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3707769215106964,
+      "Horizon-mean roll skill, repaired": 0.4352010488510132,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.41389739513397217,
+      "Horizon-mean roll skill, repaired": 0.4023268222808838,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4258735179901123,
+      "Horizon-mean roll skill, repaired": 0.44084596633911133,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43541067838668823,
+      "Horizon-mean roll skill, repaired": 0.42813923954963684,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4577319025993347,
+      "Horizon-mean roll skill, repaired": 0.44794994592666626,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.48751091957092285,
+      "Horizon-mean roll skill, repaired": 0.4633116126060486,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4478011727333069,
+      "Horizon-mean roll skill, repaired": 0.3572901487350464,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43396490812301636,
+      "Horizon-mean roll skill, repaired": 0.4046112895011902,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4143723249435425,
+      "Horizon-mean roll skill, repaired": 0.4186747670173645,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4420005679130554,
+      "Horizon-mean roll skill, repaired": 0.3187509775161743,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.46580231189727783,
+      "Horizon-mean roll skill, repaired": 0.38914069533348083,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4829223155975342,
+      "Horizon-mean roll skill, repaired": 0.4303358495235443,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.444430410861969,
+      "Horizon-mean roll skill, repaired": 0.3631603419780731,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.45645052194595337,
+      "Horizon-mean roll skill, repaired": 0.36184531450271606,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4324039816856384,
+      "Horizon-mean roll skill, repaired": 0.43681800365448,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4396741986274719,
+      "Horizon-mean roll skill, repaired": 0.44748347997665405,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3737189769744873,
+      "Horizon-mean roll skill, repaired": 0.43654903769493103,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4127160906791687,
+      "Horizon-mean roll skill, repaired": 0.3982861042022705,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4164554476737976,
+      "Horizon-mean roll skill, repaired": 0.4243503510951996,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4416307806968689,
+      "Horizon-mean roll skill, repaired": 0.4689891040325165,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.45384645462036133,
+      "Horizon-mean roll skill, repaired": 0.49116289615631104,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.5111831426620483,
+      "Horizon-mean roll skill, repaired": 0.4953201413154602,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.47577914595603943,
+      "Horizon-mean roll skill, repaired": 0.42742180824279785,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.46473920345306396,
+      "Horizon-mean roll skill, repaired": 0.38900721073150635,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.45607876777648926,
+      "Horizon-mean roll skill, repaired": 0.42183899879455566,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4118892550468445,
+      "Horizon-mean roll skill, repaired": 0.37017738819122314,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.46615928411483765,
+      "Horizon-mean roll skill, repaired": 0.38787737488746643,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4550416171550751,
+      "Horizon-mean roll skill, repaired": 0.4065132439136505,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4494415819644928,
+      "Horizon-mean roll skill, repaired": 0.33574536442756653,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4889153838157654,
+      "Horizon-mean roll skill, repaired": 0.36403894424438477,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.5002598166465759,
+      "Horizon-mean roll skill, repaired": 0.43879270553588867,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.45074185729026794,
+      "Horizon-mean roll skill, repaired": 0.4610207676887512,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4273357689380646,
+      "Horizon-mean roll skill, repaired": 0.42489302158355713,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4692015051841736,
+      "Horizon-mean roll skill, repaired": 0.38290029764175415,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4820045828819275,
+      "Horizon-mean roll skill, repaired": 0.39893168210983276,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4217161238193512,
+      "Horizon-mean roll skill, repaired": 0.3275589942932129,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4553331434726715,
+      "Horizon-mean roll skill, repaired": 0.4554043412208557,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4822651147842407,
+      "Horizon-mean roll skill, repaired": 0.4764530062675476,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.47095680236816406,
+      "Horizon-mean roll skill, repaired": 0.39296361804008484,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.42676231265068054,
+      "Horizon-mean roll skill, repaired": 0.3820621967315674,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4480525255203247,
+      "Horizon-mean roll skill, repaired": 0.3302600383758545,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4488189220428467,
+      "Horizon-mean roll skill, repaired": 0.39236295223236084,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4803830087184906,
+      "Horizon-mean roll skill, repaired": 0.3820973038673401,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4616057872772217,
+      "Horizon-mean roll skill, repaired": 0.43066370487213135,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4485928416252136,
+      "Horizon-mean roll skill, repaired": 0.40975141525268555,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4978771209716797,
+      "Horizon-mean roll skill, repaired": 0.36187729239463806,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4907900094985962,
+      "Horizon-mean roll skill, repaired": 0.4474404454231262,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4562067687511444,
+      "Horizon-mean roll skill, repaired": 0.46183526515960693,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3883129954338074,
+      "Horizon-mean roll skill, repaired": 0.436226487159729,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.46687397360801697,
+      "Horizon-mean roll skill, repaired": 0.38873419165611267,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4796643853187561,
+      "Horizon-mean roll skill, repaired": 0.41242021322250366,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4449155926704407,
+      "Horizon-mean roll skill, repaired": 0.3305850028991699,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4581198990345001,
+      "Horizon-mean roll skill, repaired": 0.43771833181381226,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4869047701358795,
+      "Horizon-mean roll skill, repaired": 0.4417698383331299,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.46299922466278076,
+      "Horizon-mean roll skill, repaired": 0.4533264636993408,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4375470280647278,
+      "Horizon-mean roll skill, repaired": 0.43148601055145264,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.46195101737976074,
+      "Horizon-mean roll skill, repaired": 0.3466949462890625,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4638828635215759,
+      "Horizon-mean roll skill, repaired": 0.38515931367874146,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4820764660835266,
+      "Horizon-mean roll skill, repaired": 0.37529242038726807,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4658085107803345,
+      "Horizon-mean roll skill, repaired": 0.414654403924942,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4467335343360901,
+      "Horizon-mean roll skill, repaired": 0.3507723808288574,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.49336910247802734,
+      "Horizon-mean roll skill, repaired": 0.3552635908126831,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4910941421985626,
+      "Horizon-mean roll skill, repaired": 0.44339653849601746,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.45116543769836426,
+      "Horizon-mean roll skill, repaired": 0.4853322505950928,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3531162142753601,
+      "Horizon-mean roll skill, repaired": 0.4282718896865845,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4800889194011688,
+      "Horizon-mean roll skill, repaired": 0.3890230655670166,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4704517126083374,
+      "Horizon-mean roll skill, repaired": 0.388253390789032,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.44473791122436523,
+      "Horizon-mean roll skill, repaired": 0.44895607233047485,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4541016221046448,
+      "Horizon-mean roll skill, repaired": 0.4405933618545532,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.49942824244499207,
+      "Horizon-mean roll skill, repaired": 0.4869295656681061,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4565955102443695,
+      "Horizon-mean roll skill, repaired": 0.4025869071483612,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4370683431625366,
+      "Horizon-mean roll skill, repaired": 0.4209655523300171,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4586732089519501,
+      "Horizon-mean roll skill, repaired": 0.3248752951622009,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4299362599849701,
+      "Horizon-mean roll skill, repaired": 0.3843784034252167,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.470729261636734,
+      "Horizon-mean roll skill, repaired": 0.382863312959671,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4633801579475403,
+      "Horizon-mean roll skill, repaired": 0.37464943528175354,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4308933615684509,
+      "Horizon-mean roll skill, repaired": 0.39726871252059937,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.44907063245773315,
+      "Horizon-mean roll skill, repaired": 0.3671412765979767,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.40379685163497925,
+      "Horizon-mean roll skill, repaired": 0.4296189546585083,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43286842107772827,
+      "Horizon-mean roll skill, repaired": 0.48756760358810425,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.36404943466186523,
+      "Horizon-mean roll skill, repaired": 0.4280092716217041,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4707677364349365,
+      "Horizon-mean roll skill, repaired": 0.38931047916412354,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.3946153521537781,
+      "Horizon-mean roll skill, repaired": 0.38389676809310913,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4167316257953644,
+      "Horizon-mean roll skill, repaired": 0.32407161593437195,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4373753070831299,
+      "Horizon-mean roll skill, repaired": 0.42475104331970215,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4478411376476288,
+      "Horizon-mean roll skill, repaired": 0.46849849820137024,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4472320079803467,
+      "Horizon-mean roll skill, repaired": 0.3904401659965515,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4088505208492279,
+      "Horizon-mean roll skill, repaired": 0.4342358410358429,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4471904933452606,
+      "Horizon-mean roll skill, repaired": 0.3943746089935303,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4163087010383606,
+      "Horizon-mean roll skill, repaired": 0.3674916923046112,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4858919680118561,
+      "Horizon-mean roll skill, repaired": 0.4173373579978943,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43335479497909546,
+      "Horizon-mean roll skill, repaired": 0.4011077284812927,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4436519742012024,
+      "Horizon-mean roll skill, repaired": 0.3645458221435547,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4882639944553375,
+      "Horizon-mean roll skill, repaired": 0.3869965672492981,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.429351270198822,
+      "Horizon-mean roll skill, repaired": 0.43679457902908325,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4103991985321045,
+      "Horizon-mean roll skill, repaired": 0.48242422938346863,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.38228386640548706,
+      "Horizon-mean roll skill, repaired": 0.4258044958114624,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.47627294063568115,
+      "Horizon-mean roll skill, repaired": 0.4441815912723541,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.40251073241233826,
+      "Horizon-mean roll skill, repaired": 0.4124373495578766,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.42149636149406433,
+      "Horizon-mean roll skill, repaired": 0.36696943640708923,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43874162435531616,
+      "Horizon-mean roll skill, repaired": 0.43551400303840637,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.49389633536338806,
+      "Horizon-mean roll skill, repaired": 0.45305192470550537,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.462146133184433,
+      "Horizon-mean roll skill, repaired": 0.4002326726913452,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4296358525753021,
+      "Horizon-mean roll skill, repaired": 0.4304279685020447,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.44969284534454346,
+      "Horizon-mean roll skill, repaired": 0.3986683189868927,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.44014406204223633,
+      "Horizon-mean roll skill, repaired": 0.45840203762054443,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4808575212955475,
+      "Horizon-mean roll skill, repaired": 0.4053875803947449,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.47262606024742126,
+      "Horizon-mean roll skill, repaired": 0.4669134020805359,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4773592948913574,
+      "Horizon-mean roll skill, repaired": 0.35342955589294434,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.5148493051528931,
+      "Horizon-mean roll skill, repaired": 0.40027904510498047,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43948107957839966,
+      "Horizon-mean roll skill, repaired": 0.4117296040058136,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4983150064945221,
+      "Horizon-mean roll skill, repaired": 0.47509685158729553,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.36346709728240967,
+      "Horizon-mean roll skill, repaired": 0.42897987365722656,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.49007469415664673,
+      "Horizon-mean roll skill, repaired": 0.37691402435302734,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43614473938941956,
+      "Horizon-mean roll skill, repaired": 0.4010646939277649,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4542613625526428,
+      "Horizon-mean roll skill, repaired": 0.4442058205604553,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4681106209754944,
+      "Horizon-mean roll skill, repaired": 0.4681374728679657,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4875628352165222,
+      "Horizon-mean roll skill, repaired": 0.40893399715423584,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4659772217273712,
+      "Horizon-mean roll skill, repaired": 0.3816814124584198,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.4680348038673401,
+      "Horizon-mean roll skill, repaired": 0.38296014070510864,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "Horizon-mean roll skill, mismatched cache": 0.43430015444755554,
+      "Horizon-mean roll skill, repaired": 0.3734022378921509,
+      "series": "hallucination (144 windows)",
+      "_kind": "scatter",
+      "_group": 16
+    }
+  ],
+  "n_series": 17,
+  "total_points": 480
+}

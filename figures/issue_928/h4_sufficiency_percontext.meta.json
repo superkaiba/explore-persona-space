@@ -1,0 +1,812 @@
+{
+  "commit": "97c36f3253",
+  "created": "2026-07-04T09:08:24Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "per-context CoT-alone (oracle) skill": 0.9024411518059254,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.009900368401016713,
+      "label": "f1_house_librarian",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9509730261394646,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.00020231456902919387,
+      "label": "f1_house_surgeon",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.937904291850644,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.004680751109074843,
+      "label": "f1_house_programmer",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.7857280086855032,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.02507037210927332,
+      "label": "f1_house_medical_doctor",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.7857848037242477,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.016781050618531967,
+      "label": "f1_house_software_engineer",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8566188300632149,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.011257158918203558,
+      "label": "f1_house_data_scientist",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.699572829442324,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.060137406673077654,
+      "label": "f1_phub_01",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8804938150995474,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0044209893311294435,
+      "label": "f1_phub_02",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8327410354299902,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.04186565961600175,
+      "label": "f1_phub_03",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8110141743911808,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.006879387994018549,
+      "label": "f1_phub_04",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8569528021265672,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.009172156574966173,
+      "label": "f1_phub_05",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.7928623971481638,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.011569556691422345,
+      "label": "f1_phub_06",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.203626363752495,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.002296724421004148,
+      "label": "f1_phub_07",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.5438711099415171,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.03796661866771445,
+      "label": "f1_phub_08",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.41267653425541206,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.05705506857018294,
+      "label": "f2_wc_short_1",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.7662992742284773,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.04855022966150013,
+      "label": "f2_wc_short_2",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.6835283248858408,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.01069723268429823,
+      "label": "f2_wc_short_4",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.6666779121554289,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.024979544728527037,
+      "label": "f3_icl_json_k2",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8159028713077345,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.021175998669700435,
+      "label": "f4_reph_imperative",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8991506775307331,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.029283009728313325,
+      "label": "f4_reph_polite",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.6368087754604219,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.03924975261078578,
+      "label": "f4_reph_casual",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.4317001545390131,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.10199762959624026,
+      "label": "f4_reph_legalese",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.7497490870527139,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.007813849456484778,
+      "label": "f4_reph_enthusiastic",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.916356763295915,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.002561057585970139,
+      "label": "f4_reph_archaic",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8828824568725863,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.040183885904113814,
+      "label": "f5_fmt_json",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.6898755850597929,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.028523445900485278,
+      "label": "f5_fmt_code_comment",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8750771913090254,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.04922764198863261,
+      "label": "f5_fmt_markdown_table",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.797501101703288,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.019489661972899364,
+      "label": "f5_fmt_xml",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8488971737841664,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.01998412499179869,
+      "label": "f5_fmt_bullets",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.7579972782945105,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.1036166254200902,
+      "label": "f6_default_template",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9232292729470226,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.0002364792725896292,
+      "label": "f6_helpful_asst",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8813191636862518,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.025270905980816605,
+      "label": "f8_behav_marker",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9097739797437794,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.007998313234194976,
+      "label": "f8_behav_sycophant",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.7972255117200353,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.022628346820384948,
+      "label": "f8_behav_refusal",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.7932440179933598,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0027844901089391083,
+      "label": "f8_behav_fact",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9103771366938592,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.003521357040008888,
+      "label": "f8_behav_harmful",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.2972643444893204,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.05891640066213355,
+      "label": "f2_wc_short_3",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.3501118813644729,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.10955986290488484,
+      "label": "f2_wc_short_5",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.7603683351285244,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.027945709272466535,
+      "label": "f2_wc_long_1",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.4486719568178843,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.07033585884372318,
+      "label": "f2_wc_long_2",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.7826524237238897,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.058547321190112855,
+      "label": "f2_wc_long_3",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.221699224953109,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.01595399115790863,
+      "label": "f2_wc_long_4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.7823087623769448,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.0045842901473901465,
+      "label": "f2_wc_long_5",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8995256226417921,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.023970486939237978,
+      "label": "f3_icl_marker_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.3879700304494301,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.025701417520042513,
+      "label": "f3_icl_french_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.7796227886030753,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.020241650767642616,
+      "label": "f3_icl_json_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.5741017786702283,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.12360381661624964,
+      "label": "f3_icl_pirate_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.61465330686189,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.09398657159969981,
+      "label": "f3_icl_marker_k2",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9060361695794337,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.008758833583258019,
+      "label": "f3_icl_marker_k8",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.7853106182624429,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0027589054389691725,
+      "label": "f3_icl_json_k8",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9532922268682154,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.0015419924769489723,
+      "label": "f1_house_librarian",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9494037775173425,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0009749290745688644,
+      "label": "f1_house_surgeon",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9413445048234762,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.002552636620022919,
+      "label": "f1_house_programmer",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9348114037371232,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0002763072094805752,
+      "label": "f1_house_medical_doctor",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9524460925527465,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0013558072695373236,
+      "label": "f1_house_software_engineer",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.958503144250039,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.0009985541673583898,
+      "label": "f1_house_data_scientist",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9434266080823448,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0025095346712206146,
+      "label": "f1_phub_01",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9508874025449634,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.0010615664425495108,
+      "label": "f1_phub_02",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9361084801281467,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.0006805332755112081,
+      "label": "f1_phub_03",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9466135191507622,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.0022939789449409886,
+      "label": "f1_phub_04",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9506553295231275,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0004825108147353818,
+      "label": "f1_phub_05",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9575271124022827,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0007739983280057317,
+      "label": "f1_phub_06",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.7881259446824282,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0006460598358075664,
+      "label": "f1_phub_07",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9181443239031027,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0009722372445727379,
+      "label": "f1_phub_08",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8859074303694943,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.016131238652424162,
+      "label": "f2_wc_short_1",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.720843931277247,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.024166105799084736,
+      "label": "f2_wc_short_2",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8098692683306145,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.06795680610669164,
+      "label": "f2_wc_short_4",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9021842789813882,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0007549204839853996,
+      "label": "f3_icl_json_k2",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9049909799515787,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.010647822371261384,
+      "label": "f4_reph_imperative",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9372323536920074,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.008134221025614008,
+      "label": "f4_reph_polite",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8523618485185078,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.023239628849983318,
+      "label": "f4_reph_casual",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8917098687578027,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.012131181268809854,
+      "label": "f4_reph_legalese",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9037080526672213,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.032953642604081956,
+      "label": "f4_reph_enthusiastic",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9415736079697774,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.00688504942492163,
+      "label": "f4_reph_archaic",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9543871807120463,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.0009085058832624116,
+      "label": "f5_fmt_json",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9127177194143496,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0022997880656127068,
+      "label": "f5_fmt_code_comment",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9436774037135706,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0011095083638908987,
+      "label": "f5_fmt_markdown_table",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9297612325418455,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.0011864018232106144,
+      "label": "f5_fmt_xml",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9431335587252647,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0014937163691741695,
+      "label": "f5_fmt_bullets",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9451975294458153,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.013647230082744821,
+      "label": "f6_default_template",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.949870385359243,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.000842320159625598,
+      "label": "f6_helpful_asst",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9463789969348707,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.0018976602479027216,
+      "label": "f8_behav_marker",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9566319726827435,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0006722872790473344,
+      "label": "f8_behav_sycophant",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9187230102751847,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0017086213599172284,
+      "label": "f8_behav_refusal",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.955087969818672,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.001871352526418124,
+      "label": "f8_behav_fact",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9445861708861132,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.00165331901599719,
+      "label": "f8_behav_harmful",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9071935747069716,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.010122646746421604,
+      "label": "f2_wc_short_3",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9047586808413808,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.010487286470036827,
+      "label": "f2_wc_short_5",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8591949137045749,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.01627621262561585,
+      "label": "f2_wc_long_1",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8571389029480303,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.005435385838856943,
+      "label": "f2_wc_long_2",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9050801571551769,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.01331451911678816,
+      "label": "f2_wc_long_3",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.6637519116718364,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.000968602500054927,
+      "label": "f2_wc_long_4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.8346946691276593,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0025352651530192727,
+      "label": "f2_wc_long_5",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9316803124781019,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 9.9844410856198e-05,
+      "label": "f3_icl_marker_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9292241354695654,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.005633873622904462,
+      "label": "f3_icl_french_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9444237430006043,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.00011071347515179131,
+      "label": "f3_icl_json_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9583995977169032,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.009181948238214277,
+      "label": "f3_icl_pirate_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.936170622284315,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.002772935414497524,
+      "label": "f3_icl_marker_k2",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9334974763555131,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": 0.004689935307619741,
+      "label": "f3_icl_marker_k8",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context CoT-alone (oracle) skill": 0.9458157329820649,
+      "per-context \u0394 skill (context+CoT \u2212 CoT alone)": -0.0010715795652374016,
+      "label": "f3_icl_json_k8",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 100
+}

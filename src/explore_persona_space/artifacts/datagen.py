@@ -43,9 +43,10 @@ import asyncio
 import hashlib
 import json
 import math
+import shutil
 import time
 from collections import Counter
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -85,6 +86,14 @@ MANIFEST_SCHEMA_VERSION = 1
 # training prompt never contains any instruction text.
 _INSTR_OPEN = "\n\n[[GENERATION-ONLY INSTRUCTION]]\n"
 _INSTR_CLOSE = "\n[[/GENERATION-ONLY INSTRUCTION]]"
+
+# instruction_style values (#1074): "tagged" = the delimited block above (the
+# #906 Claude-generator shape); "plain" = the instruction appended as plain
+# untagged system-prompt text (on-policy instruct-and-strip, the #612 tier-2
+# shape — an on-policy generator should see a natural system prompt, not a
+# bracketed meta-block). Either way emit_messages is computed independently
+# from the context, so the context-parity contract holds by construction.
+INSTRUCTION_STYLES = ("tagged", "plain")
 
 
 class DatagenYieldError(RuntimeError):
@@ -128,15 +137,72 @@ GenerateFn = Callable[[list[GenRequest]], list[GenCandidate]]
 JudgeFn = Callable[..., JudgeResult]
 
 
+@dataclass(frozen=True)
+class PosReuseSpec:
+    """Reuse a PRIOR run's positive pool verbatim (#1074 ``base-negatives-regen``).
+
+    When passed to :func:`generate_training_data` as ``reuse_pos``, stage-3a
+    generation and stage-4a judging for POSITIVES are skipped: candidates load
+    from the staged ``raw_pos_path`` (a prior run's ``raw_pos.jsonl``) and the
+    kept set is reconstructed from the staged ``judge_rows_path`` per-request
+    kept flags — positives are NEVER re-judged (a temp>0 re-judge would
+    silently swap the reused pool). The positive request schedule is still
+    composed deterministically and ASSERTED against the staged rows (RNG-state
+    replay), so the shared RNG advances exactly as in the producing run and
+    the negative schedule is identical. ``provenance`` records
+    ``{source_repo, source_path, revision, pos_gen_model}`` and enters the
+    ``gen_manifest.json`` resume key (with the staged files' sha256s), while
+    the run's ``gen_model`` remains the LIVE (negative-stage) generator.
+    """
+
+    raw_pos_path: Path | str
+    judge_rows_path: Path | str
+    expected_kept_count: int
+    provenance: Mapping[str, str]
+
+    def manifest_fields(self) -> dict:
+        """Additive manifest/pool_meta provenance block (fail-loud on missing
+        staged files — the sha256 read is the earliest existence check)."""
+        raw_src, rows_src = Path(self.raw_pos_path), Path(self.judge_rows_path)
+        for p, name in ((raw_src, "raw_pos"), (rows_src, "judge_rows")):
+            if not p.exists():
+                raise FileNotFoundError(f"pos_reuse staged {name} file missing: {p}")
+        return {
+            **{k: str(v) for k, v in dict(self.provenance).items()},
+            "expected_kept_count": int(self.expected_kept_count),
+            "raw_pos_sha256": hashlib.sha256(raw_src.read_bytes()).hexdigest(),
+            "judge_rows_sha256": hashlib.sha256(rows_src.read_bytes()).hexdigest(),
+        }
+
+
 # ── Instruction block inject / strip (exact inverses) ────────────────────────
 
 
-def _inject_instruction(base_msgs: list[dict[str, str]], instruction: str | None):
-    """Return ``base_msgs`` + a delimited generation-only block (or a copy when
-    ``instruction is None``). The block goes into the leading system message, or
-    becomes a fresh leading system message when the base has none."""
+def _inject_instruction(
+    base_msgs: list[dict[str, str]],
+    instruction: str | None,
+    style: str = "tagged",
+):
+    """Return ``base_msgs`` + the generation-only instruction (or a copy when
+    ``instruction is None``).
+
+    ``style="tagged"`` (default, byte-identical to the pre-#1074 behavior):
+    a delimited block goes into the leading system message, or becomes a fresh
+    leading system message when the base has none. ``style="plain"`` (#1074):
+    ``"\\n\\n" + instruction`` is appended to the leading system message as
+    plain untagged text, or the instruction becomes a bare system message when
+    the base has none — no delimiters anywhere.
+    """
+    if style not in INSTRUCTION_STYLES:
+        raise ValueError(f"instruction_style {style!r} not in {INSTRUCTION_STYLES}")
     msgs = [dict(m) for m in base_msgs]
     if instruction is None:
+        return msgs
+    if style == "plain":
+        if msgs and msgs[0].get("role") == "system":
+            msgs[0] = {"role": "system", "content": msgs[0]["content"] + "\n\n" + instruction}
+        else:
+            msgs.insert(0, {"role": "system", "content": instruction})
         return msgs
     block = _INSTR_OPEN + instruction + _INSTR_CLOSE
     if msgs and msgs[0].get("role") == "system":
@@ -146,9 +212,45 @@ def _inject_instruction(base_msgs: list[dict[str, str]], instruction: str | None
     return msgs
 
 
-def _strip_instruction(gen_msgs: list[dict[str, str]]) -> list[dict[str, str]]:
-    """Inverse of :func:`_inject_instruction`: recover the emitted training prompt."""
+def _strip_instruction(
+    gen_msgs: list[dict[str, str]],
+    *,
+    instruction: str | None = None,
+    style: str = "tagged",
+) -> list[dict[str, str]]:
+    """Inverse of :func:`_inject_instruction`: recover the emitted training prompt.
+
+    ``style="tagged"`` needs no ``instruction`` (the delimiters locate the
+    block; signature backward-compatible with the pre-#1074 single-arg form).
+    ``style="plain"`` has no delimiters, so the exact injected ``instruction``
+    is required to strip: the leading system message either IS the instruction
+    (bare insert — popped) or ends with ``"\\n\\n" + instruction`` (suffix
+    removed). A plain strip that cannot find the instruction raises — an
+    un-strippable plain injection would silently break context parity.
+    """
+    if style not in INSTRUCTION_STYLES:
+        raise ValueError(f"instruction_style {style!r} not in {INSTRUCTION_STYLES}")
     msgs = [dict(m) for m in gen_msgs]
+    if style == "plain":
+        if instruction is None:
+            return msgs
+        if not msgs or msgs[0].get("role") != "system":
+            raise ValueError(
+                "plain-style strip: gen_messages carry no leading system message "
+                "to strip the instruction from"
+            )
+        content = msgs[0]["content"]
+        if content == instruction:  # bare insert (base had no system prompt)
+            msgs.pop(0)
+            return msgs
+        suffix = "\n\n" + instruction
+        if content.endswith(suffix):
+            msgs[0] = {"role": "system", "content": content[: -len(suffix)]}
+            return msgs
+        raise ValueError(
+            "plain-style strip: leading system message does not end with the "
+            "injected instruction — cannot recover the emitted training prompt"
+        )
     if not msgs or msgs[0].get("role") != "system":
         return msgs
     content = msgs[0]["content"]
@@ -236,6 +338,7 @@ def _compose_positive_requests(
     questions: Sequence[tuple[str, str]],  # (question_id, question)
     n_requests: int,
     rng,
+    instruction_style: str = "tagged",
 ) -> list[GenRequest]:
     variants = behavior.elicitation.exhibit_instructions
     grid = [(qid, q, vi) for (qid, q) in questions for vi in range(len(variants))]
@@ -243,8 +346,20 @@ def _compose_positive_requests(
     reqs: list[GenRequest] = []
     for i, (qid, q, vi) in enumerate(picks):
         emit = context_C.messages(q)
-        gen = _inject_instruction(emit, variants[vi])
-        reqs.append(_mk_request(f"pos-{i:05d}", POSITIVE, qid, f"ev{vi}", q, gen, emit))
+        gen = _inject_instruction(emit, variants[vi], instruction_style)
+        reqs.append(
+            _mk_request(
+                f"pos-{i:05d}",
+                POSITIVE,
+                qid,
+                f"ev{vi}",
+                q,
+                gen,
+                emit,
+                instruction=variants[vi],
+                instruction_style=instruction_style,
+            )
+        )
     return reqs
 
 
@@ -254,6 +369,7 @@ def _compose_negative_requests(
     questions: Sequence[tuple[str, str]],
     n_requests_per_member: int,
     rng,
+    instruction_style: str = "tagged",
 ) -> list[GenRequest]:
     not_exhibit = behavior.elicitation.not_exhibit_instructions  # may be None
     reqs: list[GenRequest] = []
@@ -267,9 +383,21 @@ def _compose_negative_requests(
         for qid, q, vi in picks:
             emit = member.messages(q)
             instr = None if vi is None else not_exhibit[vi]
-            gen = _inject_instruction(emit, instr)
+            gen = _inject_instruction(emit, instr, instruction_style)
             variant_id = member.slug if vi is None else f"{member.slug}-nv{vi}"
-            reqs.append(_mk_request(f"neg-{i:05d}", NEGATIVE, qid, variant_id, q, gen, emit))
+            reqs.append(
+                _mk_request(
+                    f"neg-{i:05d}",
+                    NEGATIVE,
+                    qid,
+                    variant_id,
+                    q,
+                    gen,
+                    emit,
+                    instruction=instr,
+                    instruction_style=instruction_style,
+                )
+            )
             i += 1
     return reqs
 
@@ -285,19 +413,65 @@ def _sample_grid(grid: list, n: int, rng) -> list:
     return [grid[rng.randrange(len(grid))] for _ in range(n)]
 
 
-def _mk_request(request_id, arm, question_id, variant_id, question, gen, emit) -> GenRequest:
+def _mk_request(
+    request_id,
+    arm,
+    question_id,
+    variant_id,
+    question,
+    gen,
+    emit,
+    *,
+    instruction: str | None = None,
+    instruction_style: str = "tagged",
+) -> GenRequest:
     if "__" in request_id:
         raise ValueError(
             f"request_id must not contain '__' (judge custom_id delimiter): {request_id!r}"
         )
-    # Parity guard (defensive): stripping the instruction block recovers emit exactly.
+    # Parity guard (defensive): stripping the instruction recovers emit exactly.
     # ValueError (not bare assert) so it survives `python -O` (behavior.py convention).
-    if _strip_instruction(gen) != emit:
+    if _strip_instruction(gen, instruction=instruction, style=instruction_style) != emit:
         raise ValueError(f"context-parity broken for {request_id}: strip(gen) != emit")
     return GenRequest(request_id, arm, question_id, variant_id, question, gen, emit)
 
 
 # ── Generation (default dispatcher-backed generate_fn) ───────────────────────
+
+
+def _gen_params_from_messages(
+    messages: list[dict[str, str]], *, model: str, max_tokens: int, temperature: float
+) -> dict:
+    """Anthropic Messages params from an OpenAI-style message list (system lift).
+
+    The Anthropic Messages API rejects ``system`` as a message ROLE (HTTP 400 on
+    every request — the #906 first-``--full`` crash): system content must ride
+    the TOP-LEVEL ``system=`` parameter. Datagen ``gen_messages`` begin with a
+    ``{"role": "system", ...}`` persona+elicitation entry, so this helper lifts
+    every system-role entry out (joined with a blank line, order preserved) and
+    passes the non-system remainder as ``messages``.
+
+    Returns a params dict with NO ``system`` key when the input carries no
+    system entry (byte-identical behavior to the pre-fix path for system-less
+    message lists). Raises ``ValueError`` on an empty non-system remainder —
+    the API rejects an empty ``messages`` list anyway, so fail loud locally.
+    """
+    system_parts = [m["content"] for m in messages if m.get("role") == "system"]
+    remainder = [m for m in messages if m.get("role") != "system"]
+    if not remainder:
+        raise ValueError(
+            "message list contains no non-system messages — the Anthropic Messages "
+            f"API requires at least one user turn (got {len(messages)} system-only messages)"
+        )
+    params: dict = {
+        "model": model,
+        "max_tokens": max_tokens,
+        "temperature": temperature,
+        "messages": remainder,
+    }
+    if system_parts:
+        params["system"] = "\n\n".join(system_parts)
+    return params
 
 
 def _default_generate_fn(
@@ -317,12 +491,12 @@ def _default_generate_fn(
         ]
 
         def build_request(item: DispatchItem) -> dict:
-            return {
-                "model": gen_model,
-                "max_tokens": DEFAULT_GEN_MAX_TOKENS,
-                "temperature": gen_temperature,
-                "messages": item.payload["messages"],
-            }
+            return _gen_params_from_messages(
+                item.payload["messages"],
+                model=gen_model,
+                max_tokens=DEFAULT_GEN_MAX_TOKENS,
+                temperature=gen_temperature,
+            )
 
         results = asyncio.run(
             dispatch_calls(
@@ -408,6 +582,7 @@ def _build_manifest(
     seed: int,
     gen_model: str,
     gen_temperature: float,
+    instruction_style: str,
 ) -> dict:
     train_bank, ts, te = banks.SLICES[(behavior.name, "train")]
     return {
@@ -435,6 +610,9 @@ def _build_manifest(
         "seed": seed,
         "gen_model": gen_model,
         "gen_temperature": gen_temperature,
+        # Part of the resume key (#1074): a style flip re-generates fresh
+        # instead of silently reusing candidates injected under the other style.
+        "instruction_style": instruction_style,
     }
 
 
@@ -511,6 +689,244 @@ def _judge_and_filter(
     return kept, drops, result, scoreinfo
 
 
+# ── Positive-schedule replay + reused-pool reconstruction (#1074) ────────────
+
+
+def compose_positive_schedule(
+    behavior: Behavior,
+    context_C: Context,
+    *,
+    target_n: int,
+    seed: int,
+    instruction_style: str = "tagged",
+) -> tuple[list[GenRequest], object, list[tuple[str, str]], int]:
+    """The deterministic stage-3a positive request schedule (RNG-replay surface).
+
+    Returns ``(pos_reqs, rng, train_questions, n_pos_req)``.
+    :func:`generate_training_data` delegates its positive composition here, so
+    an external replay (a smoke fixture builder, a reuse verification) composes
+    EXACTLY the schedule the pipeline uses; the returned ``rng`` has consumed
+    exactly the positive-composition draws, so negative composition continues
+    from the identical state in both the producing and the reusing run.
+    """
+    rng = _rng(seed)
+    n_pos_req = math.ceil(target_n / EXPECTED_YIELD)
+    train_questions = [
+        (f"{behavior.name}-trainq-{i:04d}", q) for i, q in enumerate(behavior.train_question_bank)
+    ]
+    reqs = _compose_positive_requests(
+        behavior, context_C, train_questions, n_pos_req, rng, instruction_style
+    )
+    return reqs, rng, train_questions, n_pos_req
+
+
+def _assert_replay_schedule(pos_cands: list[GenCandidate], pos_reqs: list[GenRequest]) -> None:
+    """The RNG-replay integrity check: the staged pool must BE the recomposed
+    schedule — same length, same (request_id, question_id, variant_id) per row."""
+    if len(pos_cands) != len(pos_reqs):
+        raise ValueError(
+            f"pos_reuse RNG-replay mismatch: staged raw_pos has {len(pos_cands)} rows, the "
+            f"recomposed schedule has {len(pos_reqs)} — the staged pool is not the schedule "
+            "this recipe produces (bank/seed/target_n/variant drift)"
+        )
+    for i, (c, r) in enumerate(zip(pos_cands, pos_reqs, strict=True)):
+        got = (c.request.request_id, c.request.question_id, c.request.variant_id)
+        want = (r.request_id, r.question_id, r.variant_id)
+        if got != want:
+            raise ValueError(
+                f"pos_reuse RNG-replay mismatch at row {i}: staged {got} != recomposed {want}"
+            )
+
+
+def _pos_drops_from_candidates(pos_cands: list[GenCandidate], n_judgeable: int) -> _ArmDrops:
+    """Reconstruct the generation-stage drop counters from staged candidates."""
+    drops = _ArmDrops(requested=len(pos_cands), generated=n_judgeable)
+    for c in pos_cands:
+        drops.variant_usage[c.request.variant_id] += 1
+        drops.question_multiplicity[c.request.question_id] += 1
+        if c.completion is None:
+            if c.drop_reason == "api_error":
+                drops.api_error_drops += 1
+            elif c.drop_reason == "empty":
+                drops.empty_drops += 1
+            else:
+                drops.refusal_drops += 1
+    return drops
+
+
+def _reconstruct_kept(
+    jrows: list[dict],
+    judgeable: list[GenCandidate],
+    behavior: Behavior,
+    drops: _ArmDrops,
+) -> tuple[list[GenCandidate], dict[str, tuple[float | None, bool]]]:
+    """Kept set + scoreinfo from staged judge_rows, with the recomputed
+    ``mean > threshold`` + structural rule as a free integrity check."""
+    predicate = _STRUCTURAL_PREDICATES.get(behavior.name)
+    threshold = behavior.threshold
+    kept: list[GenCandidate] = []
+    scoreinfo: dict[str, tuple[float | None, bool]] = {}
+    by_rid = {r["request_id"]: r for r in jrows}
+    for c in judgeable:
+        row = by_rid[c.request.request_id]
+        mean = row["mean"]
+        stored_kept = bool(row["kept"])
+        if mean is None:
+            recomputed = False
+            drops.judge_none_drops += 1
+        elif not mean > threshold:
+            recomputed = False
+            drops.threshold_drops += 1
+        elif predicate is not None and not predicate(c.completion):
+            recomputed = False
+            drops.structural_drops += 1
+        else:
+            recomputed = True
+        if recomputed != stored_kept:
+            raise ValueError(
+                f"pos_reuse: stored kept flag for {c.request.request_id} disagrees with the "
+                f"recomputed keep rule (stored={stored_kept}, recomputed={recomputed}, "
+                f"mean={mean}, threshold={threshold}) — keep rule or judge_rows drifted"
+            )
+        scoreinfo[c.request.request_id] = (mean, stored_kept)
+        if stored_kept:
+            kept.append(c)
+    return kept, scoreinfo
+
+
+def _load_reused_positives(
+    reuse: PosReuseSpec,
+    pos_reqs: list[GenRequest],
+    behavior: Behavior,
+    *,
+    n_judge_draws: int,
+    out_raw_pos_path: Path,
+) -> tuple[
+    list[GenCandidate],
+    list[GenCandidate],
+    _ArmDrops,
+    JudgeResult,
+    dict[str, tuple[float | None, bool]],
+]:
+    """Load + verify a reused positive pool; NEVER re-judges.
+
+    Fail-loud contract: missing staged files (FileNotFoundError); a staged row
+    set that is not the recomposed schedule — length or per-row
+    (request_id, question_id, variant_id) mismatch (ValueError, the RNG-replay
+    integrity check); judge_rows positive rows not matching the raw judgeable
+    rows in raw-file order (ValueError); a stored kept flag disagreeing with
+    the recomputed ``mean > threshold`` + structural rule (ValueError);
+    reconstructed kept count != ``expected_kept_count`` (ValueError). The
+    kept < floor_n case stays :class:`DatagenYieldError` in the caller.
+    """
+    raw_src, rows_src = Path(reuse.raw_pos_path), Path(reuse.judge_rows_path)
+    for p, name in ((raw_src, "raw_pos"), (rows_src, "judge_rows")):
+        if not p.exists():
+            raise FileNotFoundError(f"pos_reuse staged {name} file missing: {p}")
+    pos_cands = _read_raw(raw_src)
+    _assert_replay_schedule(pos_cands, pos_reqs)
+    # Stage the pool into out_dir verbatim (checkpoint parity: downstream
+    # consumers — per-question yield, margin pools — read datagen_dir files).
+    if not out_raw_pos_path.exists():
+        shutil.copyfile(raw_src, out_raw_pos_path)
+
+    jrows: list[dict] = []
+    with open(rows_src, encoding="utf-8") as f:  # text-mode iteration, never splitlines()
+        for line in f:
+            if line.strip():
+                row = json.loads(line)
+                if row["arm"] == POSITIVE:
+                    jrows.append(row)
+    judgeable = [c for c in pos_cands if c.completion is not None]
+    if [r["request_id"] for r in jrows] != [c.request.request_id for c in judgeable]:
+        raise ValueError(
+            "pos_reuse: judge_rows positive rows do not match raw_pos judgeable rows in "
+            "raw-file order — refusing to reconstruct the kept set"
+        )
+    drops = _pos_drops_from_candidates(pos_cands, len(judgeable))
+    kept, scoreinfo = _reconstruct_kept(jrows, judgeable, behavior, drops)
+    if len(kept) != reuse.expected_kept_count:
+        raise ValueError(
+            f"pos_reuse: reconstructed kept count {len(kept)} != expected "
+            f"{reuse.expected_kept_count}"
+        )
+    per_item_scores = {r["request_id"]: list(r.get("scores", [])) for r in jrows}
+    draw_counts = {r["request_id"]: int(r.get("n_kept_draws", 0)) for r in jrows}
+    n_total = n_judge_draws * len(jrows)  # reconstructed arithmetic, flagged in pool_meta
+    jr = JudgeResult(
+        scores={rid: m for rid, (m, _k) in scoreinfo.items()},
+        n_total_draws=n_total,
+        n_dropped_draws=max(0, n_total - sum(draw_counts.values())),
+        per_item_draw_counts=draw_counts,
+        per_item_scores=per_item_scores,
+    )
+    return pos_cands, kept, drops, jr, scoreinfo
+
+
+def _check_or_write_manifest(manifest_path: Path, manifest: dict, out_dir: Path) -> None:
+    """Write the stage-3 manifest, or verify an existing one matches EXACTLY
+    (the resume key); raises :class:`DatagenCheckpointMismatchError` on drift."""
+    if manifest_path.exists():
+        if json.loads(manifest_path.read_text()) != manifest:
+            raise DatagenCheckpointMismatchError(
+                f"gen_manifest.json in {out_dir} does not match the current args "
+                "(behavior/bank/instructions/context/target_n/seed/model changed). "
+                "Refusing to reuse stale raw candidates; use a fresh out_dir."
+            )
+    else:
+        manifest_path.write_text(_canonical(manifest) + "\n")
+
+
+def _positives_stage(
+    behavior: Behavior,
+    context_C: Context,
+    *,
+    target_n: int,
+    seed: int,
+    instruction_style: str,
+    reuse_pos: PosReuseSpec | None,
+    raw_pos_path: Path,
+    gen_factory: Callable[[str], GenerateFn],
+    judge: JudgeFn,
+    n_judge_draws: int,
+    judge_cache: Path,
+    out_dir: Path,
+):
+    """Stage 3a: schedule composition (the RNG-replay surface) + generate /
+    resume / reuse + judge-filter (or kept-set reconstruction under
+    ``reuse_pos``). Returns ``(pos_cands, pos_kept, pos_drops, pos_jr,
+    pos_scores, rng)`` — the rng continues into negative composition."""
+    pos_reqs, rng, _train_questions, _n_pos_req = compose_positive_schedule(
+        behavior, context_C, target_n=target_n, seed=seed, instruction_style=instruction_style
+    )
+    if reuse_pos is not None:
+        return (
+            *_load_reused_positives(
+                reuse_pos,
+                pos_reqs,
+                behavior,
+                n_judge_draws=n_judge_draws,
+                out_raw_pos_path=raw_pos_path,
+            ),
+            rng,
+        )
+    if raw_pos_path.exists():
+        pos_cands = _read_raw(raw_pos_path)
+    else:
+        pos_cands = gen_factory("pos")(pos_reqs)
+        _write_raw(raw_pos_path, pos_cands)  # persist raw the moment it returns
+    pos_kept, pos_drops, pos_jr, pos_scores = _judge_and_filter(
+        behavior,
+        pos_cands,
+        POSITIVE,
+        judge_fn=judge,
+        n_judge_draws=n_judge_draws,
+        cache_dir=judge_cache / "pos",
+        save_raw=out_dir / "judge_raw_pos.json",
+    )
+    return pos_cands, pos_kept, pos_drops, pos_jr, pos_scores, rng
+
+
 # ── Public entry point ───────────────────────────────────────────────────────
 
 
@@ -528,18 +944,38 @@ def generate_training_data(
     seed: int = 866,
     generate_fn: GenerateFn | None = None,
     judge_fn: JudgeFn | None = None,
+    instruction_style: str = "tagged",
+    reuse_pos: PosReuseSpec | None = None,
 ) -> tuple[Path, Path, Path]:
     """Build contrastive (positive, contrast) training JSONL for ``behavior``.
 
     Returns ``(pos_jsonl_path, cn_jsonl_path, pool_meta_path)``. Emits EXACTLY
     ``floor_n = ceil(quota_floor * target_n)`` positives (cross-cell dose equality
     by construction) and per-panel-member negative quotas (~1:1 total via the 0c
-    allocation helpers, same-question-paired to the emitted positives). Raises
-    :class:`ValueError` on a programmatic behavior, :class:`DatagenYieldError`
-    below the floor, and :class:`DatagenCheckpointMismatchError` on a stale resume.
+    allocation helpers, same-question-paired to the emitted positives).
+    ``instruction_style`` ("tagged" default | "plain", #1074) picks how the
+    generation-only elicitation instruction is injected into ``gen_messages``;
+    ``emit_messages`` is style-independent (context parity by construction) and
+    the style enters ``gen_manifest.json`` (resume-key protection). Raises
+    :class:`ValueError` on a programmatic behavior or unknown style,
+    :class:`DatagenYieldError` below the floor, and
+    :class:`DatagenCheckpointMismatchError` on a stale resume.
+
+    ``reuse_pos`` (:class:`PosReuseSpec`, #1074 ``base-negatives-regen``):
+    reuse a prior run's positive pool verbatim — positive generation + judging
+    are SKIPPED (never re-judged), the kept set is reconstructed from the
+    staged ``judge_rows.jsonl`` kept flags, and the positive schedule is still
+    composed + asserted against the staged rows (RNG-state replay) so the
+    negative schedule is identical to the producing run's. The manifest +
+    pool_meta gain an additive ``pos_reuse`` provenance block (it enters the
+    exact-match resume key by construction); ``gen_model`` remains the LIVE
+    (negative-stage) generator. Emission subsample + all negative stages are
+    byte-identical code paths.
     """
     # 1. Resolve + guard.
     behavior.validate()
+    if instruction_style not in INSTRUCTION_STYLES:
+        raise ValueError(f"instruction_style {instruction_style!r} not in {INSTRUCTION_STYLES}")
     if behavior.programmatic:
         raise ValueError(
             f"behavior {behavior.name!r} is programmatic (tier-4 carve-out) — "
@@ -557,16 +993,12 @@ def generate_training_data(
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    rng = _rng(seed)
 
     floor_n = math.ceil(quota_floor * target_n)
     member_quota = per_negative_quota(floor_n, panel)
-    n_pos_req = math.ceil(target_n / EXPECTED_YIELD)
     n_neg_req_per_member = math.ceil(member_quota / EXPECTED_YIELD)
-
-    train_questions = [
-        (f"{behavior.name}-trainq-{i:04d}", q) for i, q in enumerate(behavior.train_question_bank)
-    ]
+    # (train_questions, n_pos_req, and the shared RNG come from
+    # compose_positive_schedule at step 3a — the #1074 RNG-replay surface.)
 
     # 2. Manifest (written before generation; resume ONLY on an exact match).
     manifest = _build_manifest(
@@ -579,20 +1011,17 @@ def generate_training_data(
         seed=seed,
         gen_model=gen_model,
         gen_temperature=gen_temperature,
+        instruction_style=instruction_style,
     )
+    if reuse_pos is not None:
+        # Additive provenance (source repo/path/revision, pos generator, staged
+        # sha256s) — enters the exact-match resume key by construction.
+        manifest["pos_reuse"] = reuse_pos.manifest_fields()
     manifest_hash = hashlib.sha256(_canonical(manifest).encode("utf-8")).hexdigest()
     manifest_path = out_dir / "gen_manifest.json"
     raw_pos_path = out_dir / "raw_pos.jsonl"
     raw_neg_path = out_dir / "raw_neg.jsonl"
-    if manifest_path.exists():
-        if json.loads(manifest_path.read_text()) != manifest:
-            raise DatagenCheckpointMismatchError(
-                f"gen_manifest.json in {out_dir} does not match the current args "
-                "(behavior/bank/instructions/context/target_n/seed/model changed). "
-                "Refusing to reuse stale raw candidates; use a fresh out_dir."
-            )
-    else:
-        manifest_path.write_text(_canonical(manifest) + "\n")
+    _check_or_write_manifest(manifest_path, manifest, out_dir)
 
     def _gen(phase: str) -> GenerateFn:
         return generate_fn or _default_generate_fn(
@@ -605,21 +1034,23 @@ def generate_training_data(
     judge = judge_fn or judge_graded
     judge_cache = out_dir / f"judge_cache_{manifest_hash[:12]}"
 
-    # 3a. POSITIVES: compose over the train bank, generate (or resume), judge-filter.
-    pos_reqs = _compose_positive_requests(behavior, context_C, train_questions, n_pos_req, rng)
-    if raw_pos_path.exists():
-        pos_cands = _read_raw(raw_pos_path)
-    else:
-        pos_cands = _gen("pos")(pos_reqs)
-        _write_raw(raw_pos_path, pos_cands)  # persist raw the moment it returns
-    pos_kept, pos_drops, pos_jr, pos_scores = _judge_and_filter(
+    # 3a. POSITIVES: compose over the train bank (ALWAYS — the composition
+    # advances the shared RNG that the negative schedule continues from), then
+    # generate (or resume) + judge-filter — or, under ``reuse_pos``, verify the
+    # staged pool against the recomposed schedule and reconstruct the kept set.
+    pos_cands, pos_kept, pos_drops, pos_jr, pos_scores, rng = _positives_stage(
         behavior,
-        pos_cands,
-        POSITIVE,
-        judge_fn=judge,
+        context_C,
+        target_n=target_n,
+        seed=seed,
+        instruction_style=instruction_style,
+        reuse_pos=reuse_pos,
+        raw_pos_path=raw_pos_path,
+        gen_factory=_gen,
+        judge=judge,
         n_judge_draws=n_judge_draws,
-        cache_dir=judge_cache / "pos",
-        save_raw=out_dir / "judge_raw_pos.json",
+        judge_cache=judge_cache,
+        out_dir=out_dir,
     )
 
     # 4a. Emit EXACTLY floor_n positives (seeded subsample) -> the emitted question set.
@@ -639,7 +1070,7 @@ def generate_training_data(
         neg_cands = _read_raw(raw_neg_path)
     else:
         neg_reqs = _compose_negative_requests(
-            behavior, panel, emitted_questions, n_neg_req_per_member, rng
+            behavior, panel, emitted_questions, n_neg_req_per_member, rng, instruction_style
         )
         neg_cands = _gen("neg")(neg_reqs)
         _write_raw(raw_neg_path, neg_cands)
@@ -710,6 +1141,13 @@ def generate_training_data(
         pos_jr=pos_jr,
         neg_jr=neg_jr,
     )
+    if reuse_pos is not None:
+        pool_meta["pos_reuse"] = {
+            **manifest["pos_reuse"],
+            # pos judge_draw_stats above are arithmetic reconstructions from the
+            # staged judge_rows (n_judge_draws x judged rows), not a live count.
+            "judge_draw_stats_reconstructed": True,
+        }
     pool_meta_path.write_text(json.dumps(pool_meta, ensure_ascii=False, indent=2) + "\n")
     return pos_path, cn_path, pool_meta_path
 

@@ -1,0 +1,307 @@
+{
+  "commit": "960e4088c4",
+  "created": "2026-07-04T08:55:13Z",
+  "figsize": [
+    8.0,
+    4.6
+  ],
+  "points": [
+    {
+      "x": -0.26,
+      "Held-out skill R\u00b2 (layer 18)": 0.09271415167138453,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.74,
+      "Held-out skill R\u00b2 (layer 18)": 0.4476865407310563,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.74,
+      "Held-out skill R\u00b2 (layer 18)": 0.5404902223995558,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.74,
+      "Held-out skill R\u00b2 (layer 18)": 0.4598371316002853,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Context-only",
+      "Held-out skill R\u00b2 (layer 18)": 0.09161300755505897,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Query-only",
+      "Held-out skill R\u00b2 (layer 18)": 0.4621229062579555,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Stitched pair",
+      "Held-out skill R\u00b2 (layer 18)": 0.5537359138130143,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "category": "Full prompt",
+      "Held-out skill R\u00b2 (layer 18)": 0.5021400445416913,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.26,
+      "Held-out skill R\u00b2 (layer 18)": 0.07768896798268776,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.26,
+      "Held-out skill R\u00b2 (layer 18)": 0.6336251466489484,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.26,
+      "Held-out skill R\u00b2 (layer 18)": 0.7113141146316363,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 3.26,
+      "Held-out skill R\u00b2 (layer 18)": 0.5591066189103788,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": -0.35,
+      "Held-out skill R\u00b2 (layer 18)": 0.053474112242806404,
+      "label": "0.09",
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 0.65,
+      "Held-out skill R\u00b2 (layer 18)": 0.46853587549015696,
+      "label": "0.45",
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 1.65,
+      "Held-out skill R\u00b2 (layer 18)": 0.5208224126570271,
+      "label": "0.55",
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.6500000000000004,
+      "Held-out skill R\u00b2 (layer 18)": 0.47422812261708913,
+      "label": "0.50",
+      "series": "persona",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": -0.32,
+      "Held-out skill R\u00b2 (layer 18)": 0.12832019884581503,
+      "label": "0.09",
+      "series": "WildChat",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 0.6799999999999999,
+      "Held-out skill R\u00b2 (layer 18)": 0.42249535643363634,
+      "label": "0.46",
+      "series": "WildChat",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.68,
+      "Held-out skill R\u00b2 (layer 18)": 0.5515174844423476,
+      "label": "0.54",
+      "series": "WildChat",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.68,
+      "Held-out skill R\u00b2 (layer 18)": 0.5143010765298328,
+      "label": "0.46",
+      "series": "WildChat",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": -0.29000000000000004,
+      "Held-out skill R\u00b2 (layer 18)": 0.15957229369179238,
+      "label": "0.09",
+      "series": "in-context learning",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 0.71,
+      "Held-out skill R\u00b2 (layer 18)": 0.433354283508281,
+      "label": "0.46",
+      "series": "in-context learning",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 1.71,
+      "Held-out skill R\u00b2 (layer 18)": 0.594333452398415,
+      "label": "0.54",
+      "series": "in-context learning",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 2.7100000000000004,
+      "Held-out skill R\u00b2 (layer 18)": 0.5543231118177541,
+      "label": "0.46",
+      "series": "in-context learning",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": -0.26,
+      "Held-out skill R\u00b2 (layer 18)": 0.05997421563732275,
+      "label": "0.09",
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 0.74,
+      "Held-out skill R\u00b2 (layer 18)": 0.4872825508488767,
+      "label": "0.45",
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 1.74,
+      "Held-out skill R\u00b2 (layer 18)": 0.547647129174827,
+      "label": "0.55",
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.74,
+      "Held-out skill R\u00b2 (layer 18)": 0.4391778362603901,
+      "label": "0.50",
+      "series": "rephrase",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": -0.23,
+      "Held-out skill R\u00b2 (layer 18)": 0.10705647405325369,
+      "label": "0.09",
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 0.77,
+      "Held-out skill R\u00b2 (layer 18)": 0.36752907986988526,
+      "label": "0.46",
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 1.77,
+      "Held-out skill R\u00b2 (layer 18)": 0.4747042475821178,
+      "label": "0.55",
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 2.77,
+      "Held-out skill R\u00b2 (layer 18)": 0.17052489675537708,
+      "series": "format",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": -0.2,
+      "Held-out skill R\u00b2 (layer 18)": 0.04154833998441387,
+      "label": "0.09",
+      "series": "behavior",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 0.8,
+      "Held-out skill R\u00b2 (layer 18)": 0.4878237676275964,
+      "label": "0.45",
+      "series": "behavior",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 1.8,
+      "Held-out skill R\u00b2 (layer 18)": 0.5287023631707557,
+      "label": "0.55",
+      "series": "behavior",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 2.8000000000000003,
+      "Held-out skill R\u00b2 (layer 18)": 0.4587616284890932,
+      "label": "0.50",
+      "series": "behavior",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": -0.17,
+      "Held-out skill R\u00b2 (layer 18)": 0.0500519639854905,
+      "label": "0.09",
+      "series": "default",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 0.83,
+      "Held-out skill R\u00b2 (layer 18)": 0.495019837269001,
+      "label": "0.45",
+      "series": "default",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 1.83,
+      "Held-out skill R\u00b2 (layer 18)": 0.5451656913307037,
+      "label": "0.55",
+      "series": "default",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 2.83,
+      "Held-out skill R\u00b2 (layer 18)": 0.4644799399602223,
+      "label": "0.50",
+      "series": "default",
+      "_kind": "scatter",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 40
+}

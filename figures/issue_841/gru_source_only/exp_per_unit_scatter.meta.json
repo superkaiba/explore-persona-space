@@ -1,0 +1,1312 @@
+{
+  "commit": "5ab0f95f7a",
+  "created": "2026-07-04T05:33:00Z",
+  "figsize": [
+    6.0,
+    4.5
+  ],
+  "points": [
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1015.7613525390625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1034.388671875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -787.4368896484375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -894.8755493164062,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -938.3641357421875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -899.4830932617188,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1016.1527099609375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1020.9745483398438,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -949.0120849609375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -947.208251953125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -844.7269287109375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1055.906494140625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1020.8478393554688,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -668.4608764648438,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1043.6722412109375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1012.1701049804688,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -684.90185546875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -989.1519165039062,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -939.0899658203125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -857.3819580078125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -764.33154296875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -816.6475219726562,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -603.8572387695312,
+      "Judged trait score (#779)": 18.240000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -643.4002075195312,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -749.011962890625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -651.999267578125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -829.1162109375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -674.93115234375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -647.8555908203125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -740.2077026367188,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -593.30517578125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -706.1737670898438,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -800.2188720703125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -520.142822265625,
+      "Judged trait score (#779)": 18.4,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -696.891357421875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -688.1826171875,
+      "Judged trait score (#779)": 7.2,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -612.73388671875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -685.404296875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -542.9140625,
+      "Judged trait score (#779)": 59.19500000000001,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -633.119873046875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -702.1769409179688,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -696.3421630859375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -531.4822387695312,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -538.3284301757812,
+      "Judged trait score (#779)": 16.66,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -655.569091796875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -596.4569091796875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -829.8447875976562,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -616.1004638671875,
+      "Judged trait score (#779)": 5.4399999999999995,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -560.7542724609375,
+      "Judged trait score (#779)": 9.040000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -704.5625610351562,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -473.8766174316406,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -665.3482666015625,
+      "Judged trait score (#779)": 2.92,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -736.55322265625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -407.7347412109375,
+      "Judged trait score (#779)": 44.26,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -579.3848266601562,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -593.2653198242188,
+      "Judged trait score (#779)": 9.84,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -554.04345703125,
+      "Judged trait score (#779)": 3.96,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -547.986572265625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -496.3655700683594,
+      "Judged trait score (#779)": 45.36,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -537.7667236328125,
+      "Judged trait score (#779)": 1.6600000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -554.9426879882812,
+      "Judged trait score (#779)": 19.78,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -522.138427734375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -270.4567565917969,
+      "Judged trait score (#779)": 93.28999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -363.0150451660156,
+      "Judged trait score (#779)": 94.4,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -494.0199890136719,
+      "Judged trait score (#779)": 9.059999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -390.21429443359375,
+      "Judged trait score (#779)": 17.96,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -676.8236083984375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -399.1368103027344,
+      "Judged trait score (#779)": 91.91999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -368.939453125,
+      "Judged trait score (#779)": 93.86000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -598.3067016601562,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -372.2290344238281,
+      "Judged trait score (#779)": 61.95,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -521.979248046875,
+      "Judged trait score (#779)": 29.78,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -594.9938354492188,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -290.78143310546875,
+      "Judged trait score (#779)": 86.85,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -444.87225341796875,
+      "Judged trait score (#779)": 71.03999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -349.4134521484375,
+      "Judged trait score (#779)": 92.96,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -445.65435791015625,
+      "Judged trait score (#779)": 79.96000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -408.36181640625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -348.5964660644531,
+      "Judged trait score (#779)": 86.62000000000002,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -372.80157470703125,
+      "Judged trait score (#779)": 69.28,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -828.470458984375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -859.3803100585938,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -637.4456787109375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -788.1431884765625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -773.4068603515625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -683.4093017578125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -839.05078125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -743.478271484375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -732.6846313476562,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -765.732177734375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -642.3136596679688,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -733.2623291015625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -838.552734375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -526.5842895507812,
+      "Judged trait score (#779)": 1.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -758.7520751953125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -708.6832275390625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -680.3339233398438,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -796.4246215820312,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -603.6585083007812,
+      "Judged trait score (#779)": 13.440000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -676.647216796875,
+      "Judged trait score (#779)": 0.24,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 45.125732421875,
+      "Judged trait score (#779)": 82.94500000000001,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 77.69918823242188,
+      "Judged trait score (#779)": 85.34444444444445,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 124.97756958007812,
+      "Judged trait score (#779)": 94.72999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 117.38967895507812,
+      "Judged trait score (#779)": 66.78333333333333,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 213.95570373535156,
+      "Judged trait score (#779)": 92.15,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 138.14065551757812,
+      "Judged trait score (#779)": 94.26666666666667,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 148.715087890625,
+      "Judged trait score (#779)": 85.25,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 75.0145263671875,
+      "Judged trait score (#779)": 90.30166666666666,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 88.67274475097656,
+      "Judged trait score (#779)": 95.38888888888889,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 145.28903198242188,
+      "Judged trait score (#779)": 88.59722222222221,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 72.26214599609375,
+      "Judged trait score (#779)": 93.50185185185187,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -32.78010559082031,
+      "Judged trait score (#779)": 73.475,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 114.35665893554688,
+      "Judged trait score (#779)": 93.02000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 139.89125061035156,
+      "Judged trait score (#779)": 95.495,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 48.27337646484375,
+      "Judged trait score (#779)": 92.04374999999999,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 65.24440002441406,
+      "Judged trait score (#779)": 79.45555555555555,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 49.203582763671875,
+      "Judged trait score (#779)": 83.61481481481482,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 200.6717529296875,
+      "Judged trait score (#779)": 86.64999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 57.615203857421875,
+      "Judged trait score (#779)": 81.69333333333334,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 38.549591064453125,
+      "Judged trait score (#779)": 58.43333333333334,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -20.191864013671875,
+      "Judged trait score (#779)": 57.98,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -104.72129821777344,
+      "Judged trait score (#779)": 39.220000000000006,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -20.3671875,
+      "Judged trait score (#779)": 28.799999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -42.5650634765625,
+      "Judged trait score (#779)": 28.265000000000004,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 65.78977966308594,
+      "Judged trait score (#779)": 89.92,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 3.433624267578125,
+      "Judged trait score (#779)": 39.2,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -11.785888671875,
+      "Judged trait score (#779)": 74.71111111111112,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -40.555450439453125,
+      "Judged trait score (#779)": 70.13999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 20.124786376953125,
+      "Judged trait score (#779)": 71.84,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 12.84136962890625,
+      "Judged trait score (#779)": 40.519999999999996,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -39.142669677734375,
+      "Judged trait score (#779)": 16.619999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -179.8297119140625,
+      "Judged trait score (#779)": 56.040000000000006,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -89.09585571289062,
+      "Judged trait score (#779)": 45.10000000000001,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 24.430755615234375,
+      "Judged trait score (#779)": 75.63,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -84.48515319824219,
+      "Judged trait score (#779)": 18.215,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -95.96678161621094,
+      "Judged trait score (#779)": 58.58,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 4.840179443359375,
+      "Judged trait score (#779)": 37.35,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": 17.728515625,
+      "Judged trait score (#779)": 62.588888888888896,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -53.48663330078125,
+      "Judged trait score (#779)": 41.145,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -69.75022888183594,
+      "Judged trait score (#779)": 9.74,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -299.5367736816406,
+      "Judged trait score (#779)": 13.039999999999997,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -319.47564697265625,
+      "Judged trait score (#779)": 0.1,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -269.18267822265625,
+      "Judged trait score (#779)": 12.833333333333334,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -274.7276611328125,
+      "Judged trait score (#779)": 3.3416666666666672,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -217.88763427734375,
+      "Judged trait score (#779)": 7.2,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -266.4644775390625,
+      "Judged trait score (#779)": 15.958333333333332,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -293.1239318847656,
+      "Judged trait score (#779)": 19.333333333333332,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -297.75,
+      "Judged trait score (#779)": 34.891666666666666,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -212.53697204589844,
+      "Judged trait score (#779)": 41.125,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -310.97412109375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -254.41358947753906,
+      "Judged trait score (#779)": 7.2,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -420.4201354980469,
+      "Judged trait score (#779)": 13.85,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -375.4112243652344,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -209.6807403564453,
+      "Judged trait score (#779)": 13.844999999999999,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -303.9830322265625,
+      "Judged trait score (#779)": 7.25,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -323.89447021484375,
+      "Judged trait score (#779)": 12.965,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -244.376953125,
+      "Judged trait score (#779)": 14.333333333333332,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -236.7263946533203,
+      "Judged trait score (#779)": 0.4444444444444444,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -275.04388427734375,
+      "Judged trait score (#779)": 5.326666666666666,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -326.62908935546875,
+      "Judged trait score (#779)": 0.45999999999999996,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -301.07965087890625,
+      "Judged trait score (#779)": 2.24,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -388.7590026855469,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -385.20263671875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -309.80084228515625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -300.0713806152344,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -350.16314697265625,
+      "Judged trait score (#779)": 8.2,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -324.2106018066406,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -377.2527770996094,
+      "Judged trait score (#779)": 19.944444444444443,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -241.5206756591797,
+      "Judged trait score (#779)": 11.933333333333334,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -358.9091491699219,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -364.667724609375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -527.7080078125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -494.5588073730469,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -322.1354675292969,
+      "Judged trait score (#779)": 0.2222222222222222,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -403.62713623046875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -386.53765869140625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -301.5126953125,
+      "Judged trait score (#779)": 15.941666666666666,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -327.1485595703125,
+      "Judged trait score (#779)": 0.64,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -308.58612060546875,
+      "Judged trait score (#779)": 0.1,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -381.78240966796875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -581.6399536132812,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -709.4884033203125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -586.607177734375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -531.7926635742188,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -560.0789794921875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -538.0040283203125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -633.271484375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -631.281494140625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -476.3382873535156,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -594.7804565429688,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -564.9303588867188,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -776.6688842773438,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -791.6503295898438,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -476.7110900878906,
+      "Judged trait score (#779)": 0.16,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -657.7047729492188,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -576.4552001953125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -498.4814758300781,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -620.2646484375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -483.27935791015625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -603.8854370117188,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -847.8978271484375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -859.061767578125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -738.0672607421875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -725.3911743164062,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -757.1197509765625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -761.751220703125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -862.4127197265625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -899.6767578125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -715.4176025390625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -818.1193237304688,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -742.42724609375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -974.9405517578125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -896.8428955078125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -579.462890625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -826.1983032226562,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -794.20458984375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -676.625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -841.3580322265625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -675.7350463867188,
+      "Judged trait score (#779)": 0.4,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -756.7920532226562,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1064.2568359375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1034.602783203125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -853.658935546875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -935.4395751953125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -932.1978759765625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -974.4561157226562,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1079.836669921875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1071.0809326171875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -983.7179565429688,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -983.041259765625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -820.064208984375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1013.9425048828125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -990.8685913085938,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -712.857421875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1024.564208984375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1051.720703125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -694.4043579101562,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -997.9161987304688,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -949.86474609375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -902.7598876953125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1075.6326904296875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1043.1854248046875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -817.455322265625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -936.3492431640625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -921.2020263671875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -965.9827880859375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1100.8533935546875,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1064.7476806640625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -999.8859252929688,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -995.64453125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -815.4029541015625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1001.6614990234375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -974.0338134765625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -705.9798583984375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1032.33203125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -1044.723876953125,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -679.3318481445312,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -985.363525390625,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -928.88818359375,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    },
+    {
+      "\u27e8\u0125, r_B\u27e9 (source-only-GRU transport, source 19)": -880.9788208007812,
+      "Judged trait score (#779)": 0.0,
+      "_kind": "scatter"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 260
+}

@@ -146,8 +146,9 @@ efficiency-critic's). The items I own:
    and re-resolves HF paths); I am the critic-lens REVISE backstop. REVISE when the
    plan reuses an artifact without recording the fitness check (a)-(j) inline, or
    reuses a wrong / saturated / missing-conditions / off-recipe artifact, or reuses
-   a parent's fit/analysis CODE without the throughput inspection (check (i) — a
-   serial inner loop / CPU pin blows the §9 wall-time), or reuses a
+   a parent's fit/analysis/upload-verify CODE without the throughput inspection (check (i) — a
+   serial inner loop / CPU pin / unscoped data-repo Hub verify-staging call (leg (3):
+   data-repo Hub calls prefix-scoped) blows the §9 wall-time), or reuses a
    mutually-dependent artifact PAIR without the (j) provenance-coherence record
    (#922). Per
    `.claude/rules/artifact-reuse.md`. Do not duplicate the consistency-checker's

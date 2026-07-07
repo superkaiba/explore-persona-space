@@ -1,0 +1,13 @@
+{
+  "npz_on_hub_onpolicy": 4320,
+  "npz_on_hub_rbase": 4320,
+  "npz_expected_per_namespace": 4320,
+  "context_npz_on_hub": 48,
+  "context_npz_local": 48,
+  "context_npz_expected": 48,
+  "reextract_context_vectors": true,
+  "raw_json_on_hub": 48,
+  "rbase_json_on_hub": 48,
+  "rbase_json_local": 48,
+  "ts": "2026-07-02T16:43:24.271779+00:00"
+}

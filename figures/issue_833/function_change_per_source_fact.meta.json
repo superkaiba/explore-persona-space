@@ -1,0 +1,348 @@
+{
+  "commit": "65704c3e0c",
+  "created": "2026-07-06T03:18:57Z",
+  "figsize": [
+    12.6,
+    4.3
+  ],
+  "points": [
+    {
+      "off-policy map change (raw)": 0.10873455713509542,
+      "on-policy map change (raw)": 1.695631251716379,
+      "label": "behavior-instr (fact)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.03581942363443244,
+      "on-policy map change (raw)": 1.3184774560856272,
+      "label": "default assistant",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.0987976928197835,
+      "on-policy map change (raw)": 2.6306221016952374,
+      "label": "WildChat short advice",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.12418900748798395,
+      "on-policy map change (raw)": 3.1391528521153704,
+      "label": "in-context k=8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.06996715513700591,
+      "on-policy map change (raw)": 3.2858467960589444,
+      "label": "in-context k=8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.0876550127283103,
+      "on-policy map change (raw)": 3.2802861539156325,
+      "label": "in-context k=8",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.00496305943346335,
+      "on-policy map change (raw)": 1.663265372527392,
+      "label": "rephrase (polite)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.010826461125091698,
+      "on-policy map change (raw)": 1.9969937427771607,
+      "label": "rephrase (imperative)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.021454222431865504,
+      "on-policy map change (raw)": 1.5703180137401915,
+      "label": "rephrase (casual)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.09181745182097782,
+      "on-policy map change (raw)": 0.6593026088824198,
+      "label": "sys-prompt (doctor)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.08930343810219735,
+      "on-policy map change (raw)": 0.9573210263923764,
+      "label": "sys-prompt (persona 1)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.08939547216140395,
+      "on-policy map change (raw)": 1.1033265453003842,
+      "label": "sys-prompt (engineer)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.09710154644070682,
+      "on-policy map change (raw)": 1.2247108895943173,
+      "label": "sys-prompt (persona 2)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.022425759553676306,
+      "on-policy map change (raw)": 2.7718964179431573,
+      "label": "WildChat long writing",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.09585070508646208,
+      "on-policy map change (raw)": 2.6331234481233032,
+      "label": "WildChat short advice",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.10987012138352956,
+      "on-policy map change (raw)": 3.6551050860155763,
+      "label": "in-context k=2",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "off-policy map change (raw)": 0.39662131076737195,
+      "y": 6.56888795766318,
+      "label": "in-context k=2",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.2929204987989452,
+      "y": 4.152774449920827,
+      "label": "rephrase (casual)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.0951541506398065,
+      "y": 5.371612691462515,
+      "label": "sys-prompt (persona 2)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.15817354476707746,
+      "y": 5.964513253325388,
+      "label": "format (JSON)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.34505492484537853,
+      "y": 6.342367754694077,
+      "label": "behavior-instr (fact)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.3226673401652146,
+      "y": 5.720953869034144,
+      "label": "sys-prompt (persona 2)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.23848109006688983,
+      "y": 4.408467685192802,
+      "label": "default assistant",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.29763867900747965,
+      "y": 4.456167932434496,
+      "label": "rephrase (imperative)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.23399377247566985,
+      "y": 3.866089089998789,
+      "label": "rephrase (polite)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.2541298863297978,
+      "y": 3.3329146168297914,
+      "label": "sys-prompt (engineer)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.3696417492149099,
+      "y": 5.768980286632894,
+      "label": "in-context k=8",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.33851007924972615,
+      "y": 5.471935695983715,
+      "label": "sys-prompt (persona 2)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.21607119659381746,
+      "y": 3.324347778417665,
+      "label": "sys-prompt (engineer)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.26695456042533505,
+      "y": 3.153139830767238,
+      "label": "WildChat long writing",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.3546349598567009,
+      "y": 3.815697590479498,
+      "label": "rephrase (polite)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.41297247218284194,
+      "y": 4.805810513488645,
+      "label": "WildChat short code",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "off-policy map change (raw)": 0.0661708572116001,
+      "y": 0.5564410330337421,
+      "label": "behavior-instr (fact)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.05272347887393715,
+      "y": 1.6653686375292627,
+      "label": "rephrase (casual)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.3640668180937417,
+      "y": 3.072149295851354,
+      "label": "format (code)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.42339055638052414,
+      "y": 8.226453634679665,
+      "label": "format (JSON)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.11066230156527136,
+      "y": 3.8217880459971605,
+      "label": "in-context k=2",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.2516820724234977,
+      "y": 2.5211032208925697,
+      "label": "in-context k=8",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.06670477137115735,
+      "y": 1.614339087095866,
+      "label": "default assistant",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.0972582769569893,
+      "y": 2.4707953591881306,
+      "label": "rephrase (imperative)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.08289650852250081,
+      "y": 3.0931683458735257,
+      "label": "rephrase (polite)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.11980895904974989,
+      "y": 2.6620008887196067,
+      "label": "sys-prompt (doctor)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.2788683311092024,
+      "y": 1.8840040546628165,
+      "label": "sys-prompt (persona 1)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.6450373536316345,
+      "y": 1.47976795256837,
+      "label": "sys-prompt (persona 2)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.07521047790365713,
+      "y": 2.023397585065428,
+      "label": "sys-prompt (engineer)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.07959463697301408,
+      "y": 0.34786505009778673,
+      "label": "WildChat long writing",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.022814500487458866,
+      "y": 0.8300401861325445,
+      "label": "WildChat short advice",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "off-policy map change (raw)": 0.22528482536580993,
+      "y": 1.0740596611928674,
+      "label": "WildChat short code",
+      "_kind": "scatter",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 48
+}

@@ -1,0 +1,84 @@
+{
+  "commit": "d30b153ac3",
+  "created": "2026-07-04T16:00:58Z",
+  "figsize": [
+    6.5,
+    3.6
+  ],
+  "points": [
+    {
+      "x": -0.3,
+      "Test pooled R\u00b2": 0.13685717274721232,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.7,
+      "Test pooled R\u00b2": 0.4883687220690578,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.7,
+      "Test pooled R\u00b2": 0.485964646765246,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": -0.1,
+      "Test pooled R\u00b2": 0.11573918015761844,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.9,
+      "Test pooled R\u00b2": 0.4493432829864209,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.9,
+      "Test pooled R\u00b2": 0.469738505382273,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.1,
+      "Test pooled R\u00b2": 0.049819766249416635,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.1,
+      "Test pooled R\u00b2": 0.3153436916265825,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 2.1,
+      "Test pooled R\u00b2": 0.3699124482717342,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 0.3,
+      "Test pooled R\u00b2": -0.027988259323668916,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.3,
+      "Test pooled R\u00b2": 0.09601055445019169,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 2.3,
+      "Test pooled R\u00b2": 0.10608670217694083,
+      "_kind": "bar",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 12
+}

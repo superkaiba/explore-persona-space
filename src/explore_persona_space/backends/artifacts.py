@@ -222,19 +222,35 @@ def _default_list_hf_repo_files(
     *,
     repo_type: str,
     revision: str | None = None,
+    path_in_repo: str | None = None,
 ) -> list[str]:
     """Default HF Hub file lister.
 
-    Uses ``huggingface_hub.list_repo_files`` — the API the upload-policy
-    rule pins as authoritative (``hf`` CLI has no ``api`` subcommand, so
-    it silently returns 0 files; never use it here). Raises on transport
-    / auth failure — the verifier turns that into a FAIL with reason
-    rather than silently passing.
+    Uses the Python Hub API — the API the upload-policy rule pins as
+    authoritative (``hf`` CLI has no ``api`` subcommand, so it silently
+    returns 0 files; never use it here). Raises on transport / auth
+    failure — the verifier turns that into a FAIL with reason rather than
+    silently passing.
+
+    ``path_in_repo`` scopes the walk SERVER-side (#920/#988); an absent
+    path returns [] (mapped inside ``list_hf_files_under_path``). ``None``
+    keeps the full listing for seam-contract compatibility — a future
+    caller passing ``None`` against the ~1M-file DATA repo re-enters the
+    #920 hang class, so data-repo callers must scope.
     """
     from huggingface_hub import HfApi
 
+    from explore_persona_space.orchestrate.hub import (
+        list_hf_files_under_path,
+        list_repo_files_complete,
+    )
+
     api = HfApi(token=os.environ.get("HF_TOKEN"))
-    return list(api.list_repo_files(repo_id=repo_id, repo_type=repo_type, revision=revision))
+    if path_in_repo is not None:
+        return list_hf_files_under_path(
+            api, repo_id, path_in_repo, repo_type=repo_type, revision=revision
+        )
+    return list_repo_files_complete(api, repo_id, repo_type=repo_type, revision=revision)
 
 
 def _default_wandb_run_exists(run_path: str) -> bool:
@@ -336,9 +352,13 @@ class VerifierIO:
 
     Fields:
 
-    * ``list_hf_repo_files(repo_id, *, repo_type, revision=None) ->
-      list[str]`` — must enumerate every file in the repo at the given
-      revision. ``None`` revision = repo default.
+    * ``list_hf_repo_files(repo_id, *, repo_type, revision=None,
+      path_in_repo=None) -> list[str]`` — must enumerate the repo's files
+      at the given revision; ``path_in_repo`` scopes the walk server-side
+      (#920/#988 — production callers scope; ``None`` full-lists, kept for
+      seam compatibility). ``None`` revision = repo default. Fakes may
+      ignore ``path_in_repo`` and return the full list — the caller's
+      client-side ``_path_matches`` filter preserves the semantics.
     * ``wandb_run_exists(run_path) -> bool`` — must return True iff the
       WandB run resolves. Transport errors propagate.
     * ``git_tracked(repo_root, rel_paths) -> set[str]`` — must return the
@@ -669,11 +689,29 @@ def _check_hf_paths(
     declared; PASS when every path resolved; FAIL with the missing list
     when any did not. Transport / auth errors propagate (the caller
     turns them into a FAIL with reason).
+
+    Scoped listings (#920/#988): ONE server-side scoped walk PER declared
+    path (typically 1-4 paths, ~1-2 s each) replaces the single full-repo
+    listing (>600 s wedge on the ~1M-file data repo). ``_path_matches``
+    stays as the client-side verdict — a no-op against real scoped results,
+    but it keeps full-list test fakes (whose seam ignores ``path_in_repo``)
+    matching the same semantics.
     """
     if not paths:
         return {"status": "SKIP", "detail": "no paths declared"}
+    # Hoisted empty-path guard: under the old full-listing shape an EMPTY
+    # declared path raised ValueError from _path_matches OUTSIDE the try (a
+    # config error, not a FAIL verdict); keep that contract rather than let
+    # the scoped call convert it into a caught FAIL.
+    for p in paths:
+        if not p:
+            raise ValueError("_path_matches: empty path is not a valid declaration")
+    missing: list[str] = []
     try:
-        files = io._list_hf()(repo_id, repo_type=repo_type)
+        for p in paths:
+            files = io._list_hf()(repo_id, repo_type=repo_type, path_in_repo=p.rstrip("/"))
+            if not _path_matches(files, p):
+                missing.append(p)
     except Exception as exc:
         # Fail-loud per CLAUDE.md "no silent True on transport error".
         # We catch + surface as FAIL (not re-raise) so the verdict's
@@ -683,7 +721,6 @@ def _check_hf_paths(
             "status": "FAIL",
             "detail": f"HF list_repo_files({repo_id!r}, {repo_type!r}) raised: {exc}",
         }
-    missing = [p for p in paths if not _path_matches(files, p)]
     if missing:
         return {
             "status": "FAIL",
@@ -791,6 +828,22 @@ def _check_git(
     return {"status": "PASS", "detail": f"all {len(paths)} path(s) tracked + on disk"}
 
 
+def _sentinel_probe_scope_ok(declared: str, issue: int) -> bool:
+    """True iff ``declared`` matches the canonical attempt-namespaced shape
+    ``.../eval_results/issue_<issue>/<attempt>/<SENTINEL_FILENAME>`` (#709,
+    the #705-review scope-guard concern). All three lanes' builders emit
+    this shape (``runpod.runpod_sentinel_path``, ``gcp.sentinel_path_for``,
+    ``slurm.sentinel_relpath_for``), so the guard is a no-op on every
+    production declaration; a non-canonical path (a hand-edited handle, a
+    legacy flat path) never triggers the sibling probe."""
+    p = Path(declared)
+    return (
+        p.name == SENTINEL_FILENAME
+        and p.parent.parent.name == f"issue_{issue}"
+        and p.parent.parent.parent.name == "eval_results"
+    )
+
+
 def _resolve_live_sentinel(declared: str, issue: int, io: VerifierIO) -> tuple[str, str | None]:
     """Resolve which sentinel path ``_check_sentinel`` should READ.
 
@@ -824,6 +877,24 @@ def _resolve_live_sentinel(declared: str, issue: int, io: VerifierIO) -> tuple[s
     FS glob by default) so tests stay FS-free; liveness is the SAME
     ``io.read_sentinel`` seam the content check uses.
 
+    Two #709 hardenings sit around the probe:
+
+    * **Scope guard** — the probe runs ONLY when the declared path
+      matches the canonical attempt-namespaced shape
+      (:func:`_sentinel_probe_scope_ok`); a non-canonical declared path
+      returns the declared (missing) path with a note, never a
+      resolution. Guarding here (the resolver) covers EVERY provider —
+      the FS default, the RunPod SSH variant, any future backend — with
+      one implementation.
+    * **Sibling-read wrap** — a per-sibling liveness read that RAISES
+      (materially reachable once RunPod's reads go over SSH, whose
+      reader raises on transport) marks the probe INCONCLUSIVE:
+      refuse-to-resolve and return the declared (missing) path with a
+      note, by the same never-guess conservatism as the >=2 rule — an
+      errored sibling *might* be live, and resolving to a different
+      readable sibling could pick the wrong attempt. No exception
+      escapes ``verify_artifacts``.
+
     Returns ``(path_to_read, note_or_None)``.
     """
     try:
@@ -837,6 +908,12 @@ def _resolve_live_sentinel(declared: str, issue: int, io: VerifierIO) -> tuple[s
         return declared, None
     if declared_present:
         return declared, None
+    if not _sentinel_probe_scope_ok(declared, issue):
+        return declared, (
+            f"declared sentinel {declared} missing and not the canonical "
+            f"eval_results/issue_{issue}/<attempt>/{SENTINEL_FILENAME} shape; "
+            "skipping the live-sibling probe (#709 scope guard)"
+        )
     try:
         siblings = io._glob_sentinels()(declared, issue)
     except Exception as exc:
@@ -844,7 +921,24 @@ def _resolve_live_sentinel(declared: str, issue: int, io: VerifierIO) -> tuple[s
         # to the declared (missing) path so the content read FAILs loud,
         # carrying the probe failure in the note.
         return declared, f"live-sibling probe raised: {exc}"
-    live = [s for s in siblings if s != declared and io._sentinel()(s) is not None]
+    live: list[str] = []
+    probe_errors: list[str] = []
+    for s in siblings:
+        if s == declared:
+            continue
+        try:
+            present = io._sentinel()(s) is not None
+        except Exception as exc:  # fail-closed: an unreadable sibling never crashes the gate
+            probe_errors.append(f"{s}: {exc}")
+            continue
+        if present:
+            live.append(s)
+    if probe_errors:
+        return declared, (
+            f"declared sentinel {declared} missing AND {len(probe_errors)} sibling "
+            f"liveness read(s) raised ({'; '.join(probe_errors)}) — probe inconclusive, "
+            "refusing to resolve; FAILing on the declared (missing) path (#709)"
+        )
     if len(live) == 1:
         return live[0], (
             f"declared sentinel {declared} missing; resolved to the single live "

@@ -2,7 +2,7 @@
 name: codex-clean-result-critic
 description: >
   Codex (OpenAI gpt-5.5) twin of `clean-result-critic`. Spawned in parallel
-  with the Claude critic during /issue Step 9a-bis on **EVERY round (1-3)**
+  with the Claude critic during /issue Step 9a-bis on **EVERY round up to the per-reviewer cap (5)**
   — the final adversarial gate before status:awaiting_promotion. Scores the
   markdown clean-result body against the four-flat-H2 (v4) spec
   (.claude/skills/clean-results/SPEC.md; sentinel
@@ -31,11 +31,14 @@ description: >
   the clean-result is a LaTeX research paper at `docs/papers/issue_<N>/` —
   the composed Codex prompt inlines the seven PAPER lenses (P1-P7, incl.
   P7 verbatim examples + judge prompts) +
-  the `scripts/verify_paper.py` preamble INSTEAD of the fifteen markdown
+  the composer-run `verify_paper.py` output envelope INSTEAD of the fifteen
+  markdown
   lenses, and Codex reads the paper `.tex` + figure PNGs + compiled PDF. No
   `\metric` grounding lens in v1. The fifteen markdown lenses are composed
   for non-paper tasks only. Thin Claude
-  prompt-composer: composes
+  prompt-composer: runs the mechanical verifiers at compose time and
+  inlines their output as envelopes (#1050 — this twin is dispatched
+  read-only; uv cannot reliably execute in its sandbox), composes
   prompt → returns its path; the orchestrator dispatches Codex's
   `companion task` runtime and posts an
   `epm:clean-result-critique-codex` event. The wrapper NEVER dispatches
@@ -74,9 +77,18 @@ This is the load-bearing constraint for the entire wrapper agent.
   causes orphan jobs.
 - **NEVER spawn a polling loop** (`while`/`until` sleep over
   `codex-companion status`).
-- The only Bash you may run is reading agent specs, reading inputs the
-  brief named, locating the companion script (sanity check only — do
-  NOT execute it), and writing the prompt file with `cat > ... <<PROMPT`.
+- The Bash you may run is scoped to COMPOSITION: reading agent specs
+  and inputs the brief named; locating the companion script (sanity
+  check only — do NOT execute it); the Step 1b path/existence checks
+  (`task.py find`, `test -s` probes); the Step 1d mechanical pre-pass
+  (`verify_task_body.py` / `verify_paper.py` /
+  `audit_clean_results_body_discipline.py` / `task.py list-concerns`,
+  run on the VM at compose time so their output can be inlined as
+  envelopes); writing the prompt file with `cat > ... <<PROMPT`; and
+  the Step 4 envelope/no-residue guard over that file. Still banned:
+  dispatching or polling Codex (`codex_task.py`, the companion
+  runtime) and any task-state mutation beyond the fail-loud
+  `epm:failure` posts Steps 1/1b/1c prescribe.
 - **Why this matters.** A subagent has ONE turn. If you spawn Codex
   in-turn, the broker registers the job to your session, you exit, and
   the job has no listener for completion — it stays "running" forever
@@ -98,24 +110,32 @@ This is the load-bearing constraint for the entire wrapper agent.
 
 ## When you are spawned
 
-Spawned by `/issue` Step 9a-bis on every round (1-3), in parallel with
+Spawned by `/issue` Step 9a-bis on every round up to the per-reviewer cap (5), in parallel with
 the Claude `clean-result-critic` agent. Both run from a single
 `Agent(...)` call with `run_in_background=true`.
 
-On rounds 2-3 you are re-spawned alongside the Claude critic with the
+On rounds 2-5 you are re-spawned alongside the Claude critic with the
 full critique history (all-rounds policy as of 2026-06-12; previously
-round-1-only). The clean-result-critique loop is the final adversarial
+round-1-only; rounds 4-5 are typically delta-scoped re-reviews after a
+reconciler-bound REVISE). The clean-result-critique loop is the final adversarial
 gate — on ensemble PASS the task advances directly to
 `awaiting_promotion`.
 
 Your brief contains:
 
 - `task_number` — the source task `<N>`.
-- `revision_round` — 1-indexed integer in 1-3; matches the `v<n>` of
-  the marker the orchestrator will post. If brief contains
-  `revision_round` outside 1-3, post `epm:failure` with `failure_class:
-  orchestration, reason: codex-clean-result-critic invoked on round
-  outside 1-3` and exit.
+- `revision_round` — 1-indexed integer in 1-5; matches the `v<n>` of
+  the marker the orchestrator will post (workflow.yaml
+  § ensemble_review `round_cap_per_reviewer: 5`; reconcile invocations
+  do not count toward the cap). Any round 1-5 the orchestrator
+  dispatches is valid: rounds 4-5 typically arrive as delta-scoped
+  re-reviews after a reconciler-bound REVISE, but an agreed or unioned
+  REVISE also produces them — compose delta-scoped when the brief
+  carries a delta scope note, else run the normal full-prior-history
+  re-review. If the brief contains a malformed `revision_round`
+  (<= 0, > 5, or non-integer), post `epm:failure` with `failure_class:
+  orchestration, reason: codex-clean-result-critic invoked on
+  malformed round` and exit.
 - `clean_result_body_path` — the body on canonical main: the ABSOLUTE
   path `$(uv run python scripts/task.py find <N>)/body.md`. Never a
   hand-built relative `tasks/<status>/<N>/body.md` — the status guess
@@ -136,10 +156,15 @@ Your brief contains:
   `$(uv run python scripts/task.py find <N>)/plans/plan.md` (symlink to
   the highest version). Same absolute-only rule as
   `clean_result_body_path`.
+- `methodology_doc_path` — OPTIONAL; the absolute issue-worktree
+  `docs/methodology/issue_<N>.md` path when the doc exists (SKILL.md
+  Step 9a-bis passes it). Used ONLY by YOUR Step 1d verifier run
+  (`--methodology-doc`, binds check 21); never passed to Codex as a
+  path. Missing/empty ⇒ omit the flag (check 21 NO-OP-PASSes).
 - `prior_critique_summaries` — optional; short summaries of the prior
   rounds' `epm:clean-result-critique` AND
   `epm:clean-result-critique-codex` verdicts (empty/absent on round 1).
-  Same contract as `codex-interpretation-critic`. On rounds 2-3 fold
+  Same contract as `codex-interpretation-critic`. On rounds 2-5 fold
   them into the Step 3 prompt so Codex sees what was already flagged
   and can verify the revision addressed it.
 
@@ -193,8 +218,10 @@ Path-resolvability audit (2026-06-10, #550 follow-up): unlike the
 code-review twin, NOTHING this prompt references lives in an issue
 worktree — the body, plan, and concerns ledger live on canonical main,
 and the interpretation note is an orchestrator-written temp file. So no
-inline-envelope fallback (codex-code-reviewer.md Step 2-pre-b) is
-needed here. The correct defense is absolute canonical paths plus a
+inline-envelope fallback for FILE CONTENT (codex-code-reviewer.md Step
+2-pre-b) is needed here — the body / plan / figures stay sandbox disk
+reads; the Step 1d mechanical-pre-pass envelopes inline EXECUTION
+output, a different mechanism. The correct defense is absolute canonical paths plus a
 compose-time existence check that fails loud BEFORE Codex is dispatched
 — a known-dead path reaching Codex converts a composition bug into a
 `data-access-blocked` non-PASS and burns a reconciler round.
@@ -261,14 +288,71 @@ PY
     }
   done
   ```
-  In the Step 3 prompt body, substitute `verify_paper.py --issue
-  {{task_number}}` for the `verify_task_body.py` + `audit...py` preamble,
+  In the Step 3 prompt body, substitute the composer-run Step 1d
+  `verify_paper.py` output envelope for the markdown branch's verifier +
+  audit + open-concerns envelopes (paper branch: ONE envelope),
   point Codex at `$TEX_PATH` + the figure PNGs (`figures/issue_<N>/`) +
   `$PDF_PATH` (load relevant PDF pages — render-only issues the `.tex` hides),
   and emit the SEVEN P1-P7 lens lines. Do NOT inline the fifteen markdown
-  lenses, `verify_task_body.py`, or `audit_clean_results_body_discipline.py`
-  for a paper task. The marker kind, round budget, and grounding rule are
+  lenses or the `verify_task_body.py` / `audit_clean_results_body_discipline.py`
+  envelopes for a paper task. The marker kind, round budget, and grounding rule are
   identical. (No `\metric` grounding lens in v1.)
+
+### Step 1d: Run the mechanical pre-pass OUTSIDE the sandbox (compose-time, per round)
+
+This twin is dispatched read-only; uv cannot reliably execute in its
+sandbox (#1050; incident 2026-07-04, #841 round 4 — both verifier runs
+failed in-sandbox and the verdict shipped without the mechanical
+pre-pass). So YOU run the mechanical pre-pass here on the VM at compose
+time, EVERY round, and inline the verbatim output into the Step 3
+prompt as column-zero-anchored envelopes; Codex READS the envelopes and
+never executes uv. Rules:
+
+- A verifier FAIL is DATA — rc != 0 is the expected result on a failing
+  body. Capture rc + output and keep composing; NEVER exit on it.
+- Capture EACH rc IMMEDIATELY after its own invocation (never after an
+  intervening `if`/`fi` or command where `$?` is clobbered).
+- Execution-error discriminator: a traceback-shaped body
+  (`^Traceback (most recent call last)` / `error: unrecognized
+  arguments` usage text) is an EXECUTION ERROR, not a verifier report —
+  inline it verbatim anyway (rc + output); the prompt's item-2b
+  MISSING-ENVELOPE rule tells Codex to treat it as UNAVAILABLE on
+  CONTENT, not on rc alone (rc != 0 alone is a normal FAIL-report).
+- Size guard: if any captured file exceeds ~100 KB (crash spew), inline
+  head -200 + tail -100 lines with a `[... elided N lines ...]` marker
+  between; normal output is a few KB and is inlined verbatim, no cap.
+
+```bash
+R=<revision_round>; VOUT=/tmp/codex-ccrc-<N>-r$R-verifier.txt
+if [ "$PAPER" = "true" ]; then
+  VCMD_DESC="verify_paper.py --issue <N>"
+  ( cd "$REPO_ROOT" && uv run python scripts/verify_paper.py --issue <N> ) >"$VOUT" 2>&1
+  VRC=$?
+else
+  MDOC_ARGS=()
+  if [ -n "$METHODOLOGY_DOC_PATH" ] && [ -s "$METHODOLOGY_DOC_PATH" ]; then
+    MDOC_ARGS=(--methodology-doc "$METHODOLOGY_DOC_PATH")
+  fi
+  VCMD_DESC="verify_task_body.py --issue <N> ${MDOC_ARGS[*]}"
+  ( cd "$REPO_ROOT" && uv run python scripts/verify_task_body.py --issue <N> "${MDOC_ARGS[@]}" ) >"$VOUT" 2>&1
+  VRC=$?
+fi
+if [ "$PAPER" != "true" ]; then
+  AOUT=/tmp/codex-ccrc-<N>-r$R-audit.txt
+  ( cd "$REPO_ROOT" && uv run python scripts/audit_clean_results_body_discipline.py --task <N> ) >"$AOUT" 2>&1
+  ARC=$?
+  COUT=/tmp/codex-ccrc-<N>-r$R-concerns.json
+  ( cd "$REPO_ROOT" && uv run python scripts/task.py list-concerns <N> --open-only --json ) >"$COUT" 2>&1
+  CRC=$?
+fi
+```
+
+The envelope `command:` metadata line carries `$VCMD_DESC` — the
+BARE-FILENAME form (e.g. `verify_task_body.py --issue 841`), NEVER the
+`uv run python scripts/...` invocation form — so the Step 4 no-residue
+greps stay clean even before envelope-body stripping. Markdown branch:
+three envelopes (verifier + audit + open-concerns). Paper branch: the
+`verify_paper.py` envelope only.
 
 ### Step 2: Compose the review prompt (markdown branch — `PAPER=false`)
 
@@ -310,8 +394,14 @@ only a manual catch kept Lens 15 in the Codex prompt) and copy:
   verifier-worthy recurring checks are noted in plain English in the
   verdict body; the orchestrator decides.
 
-For **Lens 14**: fetch `task.py list-concerns <N> --open-only --json`
-(or be passed the JSON inline by the orchestrator) and verify each open
+For **Lens 14**: YOU fetched the ledger at Step 1d; inline the JSON as
+the OPEN-CONCERNS JSON envelope (Step 3) — the envelope is the ONLY
+ledger path Codex gets (it cannot run task.py). When copying the Claude
+critic's Lens 14 definition into the prompt, REPLACE its "Step 0
+prerequisite" ledger-fetch bash block AND any literal
+`task.py list-concerns … --open-only` invocation text with a by-name
+reference to the OPEN-CONCERNS JSON envelope (the Step 4 no-residue
+guard blocks a missed replacement). Codex then verifies each open
 BLOCKER/CONCERN id is acknowledged in the body via one of: a
 `### <result>` (or `## Takeaways` bullet) mentioning it, or a
 `<!-- concern-deferred: <id> -->` HTML marker. (v4 has no `Confidence:`
@@ -348,15 +438,28 @@ with v4 section names; for a v3 body substitute the v3 names
 > below. Compose the Codex prompt from
 > `$REPO_ROOT/.claude/rules/clean-result-paper-review.md` (the relocated
 > Paper-task review rule, #829) per Step 1c — point Codex at
-> `$TEX_PATH` + the figure PNGs + `$PDF_PATH`, have it run
-> `cd {{repo_root}} && uv run python scripts/verify_paper.py --issue
-> {{task_number}}` as the mechanical preamble, inline the seven P1-P7 lens
+> `$TEX_PATH` + the figure PNGs + `$PDF_PATH`, inline the Step 1d
+> `verify_paper.py` OUTPUT as the MECHANICAL VERIFIER OUTPUT envelope
+> (the mechanical preamble Codex READS — it never executes uv; this
+> twin is dispatched read-only and uv cannot reliably execute in its
+> sandbox, #1050). When copying `clean-result-paper-review.md` into the
+> prompt, REPLACE its "Paper mechanical pre-pass" bash block with this
+> envelope (see that rule's Codex-twin adaptation note). Inline the
+> seven P1-P7 lens
 > definitions + the Paper-lens output template + the independence /
 > don't-gatekeep / grounding rules, and emit the seven P1-P7 lens lines
 > (verifier line `verify_paper.py`; blocker tags `structural-absence`
-> (verify_paper.py checks 1-11) | `lens` (P1-P7); no `audit`/`procedural`).
-> No `verify_task_body.py`, no `audit_clean_results_body_discipline.py`, no
+> (verify_paper.py checks 1-11) | `lens` (P1-P7) | `data-access-blocked`
+> (UNAVAILABLE / missing envelope); no `audit`/`procedural`).
+> No `verify_task_body.py` / `audit_clean_results_body_discipline.py`
+> run instructions or envelopes, no
 > fifteen markdown lenses, no `\metric` lens (v1.1).
+
+Every `{{...}}` token below is a COMPOSE-TIME placeholder — substitute
+ALL of them (paths, round metadata, and each envelope's `command:` /
+`exit code:` / body slots) before writing the prompt file. The Step 4
+guard hard-fails any surviving `{{`/`}}` inside an envelope span, so a
+prompt shipping the raw template envelopes cannot pass.
 
 ```text
 You are an adversarial reviewer of markdown clean-result bodies. You
@@ -373,12 +476,53 @@ PRIOR CRITIQUE SUMMARIES (empty on round 1): {{prior_critique_summaries}}
 (Round {{revision_round}} note: for every claim that a round-1/2 fix "was applied" or is "still missing", quote the exact body line it rests on — an unquoted applied/absent claim is discarded.)
 
 All paths above are absolute and were existence-checked at compose
-time. Run every Bash command below from the repo root.
+time; resolve any relative repo path you encounter against REPO ROOT.
+EXCEPTION — figures + sidecars (`figures/issue_<N>/…`): review the
+BODY-PINNED blob, never an unverified working-tree copy — follow Lens 3
+"Figure-source resolution" below (read-only git — `git show
+<sha>:<path>`, `git hash-object`, `git rev-parse` — is permitted; not a
+repo script). If git is denied or unavailable (e.g. `fatal: not a git
+repository`), mark the figure sub-check sandbox-unverifiable (advisory)
+instead of citing an unverified local file — advisory here governs ONLY
+this pin-identity sub-check (it overrides the generic denied-capability
+BLOCKED rule; the figure content itself stays scoreable). (#922)
+Do not execute any repo script — the mechanical pre-pass output you
+need is inlined below.
+
+MECHANICAL PRE-PASS (composer-run, this round). The three envelopes
+below carry the verifier, audit-script, and open-concerns output the
+composer captured on the VM at compose time. Each envelope opens with a
+`command:` line (bare-filename form) and an `exit code:` line, then the
+verbatim stdout+stderr. Read them; never re-run the scripts.
+
+---BEGIN MECHANICAL VERIFIER OUTPUT---
+command: {{vcmd_desc}}
+exit code: {{vrc}}
+
+{{verbatim verifier stdout+stderr from Step 1d ($VOUT)}}
+---END MECHANICAL VERIFIER OUTPUT---
+
+---BEGIN AUDIT SCRIPT OUTPUT---
+command: audit_clean_results_body_discipline.py --task {{task_number}}
+exit code: {{arc}}
+
+{{verbatim audit stdout+stderr from Step 1d ($AOUT)}}
+---END AUDIT SCRIPT OUTPUT---
+
+---BEGIN OPEN-CONCERNS JSON---
+command: task.py list-concerns {{task_number}} --open-only --json
+exit code: {{crc}}
+
+{{verbatim list-concerns output from Step 1d ($COUT); `[]` is a VALID non-empty body — one line}}
+---END OPEN-CONCERNS JSON---
 
 You MUST independently:
 
-1. Run the mechanical verifier via Bash:
-     cd {{repo_root}} && uv run python scripts/verify_task_body.py --issue {{task_number}}
+1. Read the MECHANICAL VERIFIER OUTPUT envelope inlined above (the
+   composer ran the verifier on the VM at compose time, THIS round,
+   against the canonical body; this dispatch is read-only and uv cannot
+   reliably execute in your sandbox — do NOT attempt to run the script
+   yourself).
    Split its FAILs into two classes and ALWAYS proceed to the lenses in
    the SAME pass — NEVER hard-stop at a mechanical FAIL:
    - STRUCTURAL-ABSENCE / DATA-INTEGRITY FAILs (genuinely block):
@@ -400,11 +544,13 @@ You MUST independently:
      `## Methodology` Training hyperparameter table — the COMPLETE table —
      against the plan; when `--methodology-doc` was
      passed, also that the body table matches the doc §2 table,
-     check 21), or recorded origin provenance dropped (check 17 FAIL —
-     frontmatter `origin_prompt` / an original-body
+     check 21), or a check-17 FAIL — recorded origin provenance dropped
+     (frontmatter `origin_prompt` / an original-body
      `## Provenance` section exists but the body has no `**Context:**`
-     footer; the check's WARN form — no recorded origin data — never
-     blocks). Record as a blocking finding, but still score all lenses.
+     footer) or a v4 `**Context:**` row lacking a lineage token
+     (`[#K](...)`/bare `#K`/`fresh direction (no parent)`/follow-up-round
+     clause); the check's WARN form — no recorded origin data — never
+     blocks. Record as a blocking finding, but still score all lenses.
    - PRESENTATION-ONLY FAILs (procedural — do NOT block alone): MDX-safe
      prose (check 14: p<0.05, autolinks), caption shape (check 5),
      cherry-picked-label phrasing (check 10), subset-disclosure phrasing
@@ -413,10 +559,20 @@ You MUST independently:
      fixes" with the exact edit; NEVER the sole basis for a non-PASS
      verdict.
 
-2. Run the anti-pattern audit via Bash:
-     cd {{repo_root}} && uv run python scripts/audit_clean_results_body_discipline.py \
-         --task {{task_number}}
+2. Read the AUDIT SCRIPT OUTPUT envelope inlined above.
    Inherit every flagged hit as a Lens 7 finding.
+
+2b. MISSING-ENVELOPE fallback: if an envelope named in items 1/2 (or
+   the OPEN-CONCERNS JSON envelope Lens 14 reads) is ABSENT from this
+   prompt, or its body is an execution error (traceback / uv failure /
+   unrecognized-arguments usage text) rather than a verifier report,
+   the mechanical pre-pass is UNAVAILABLE: record `Verifier:
+   UNAVAILABLE — <reason>` (or `Audit script: UNAVAILABLE`), do NOT
+   emit an overall PASS, set the verdict to needs_targeted_fix, AND put
+   `data-access-blocked` ON the Blocker tags line (mandatory — never
+   note-only; a note-only emission is strippable by the orchestrator's
+   procedural-only strip, defeating this protection). Same semantics as
+   the denied-capability rule below. Never try to run uv yourself.
 
 3. Score the body lens by lens (Lens 1-15 below) regardless of step 1's
    result. A non-PASS verdict (needs_targeted_fix / fail_not_worth_
@@ -438,14 +594,14 @@ Betley-style EM /
 bad-medical-advice / refusal-bait corpora — do NOT flag them as missing
 verbatim samples, and never print raw rows from such corpora yourself.
 
-**If a DENIED CAPABILITY stops you reading content you otherwise could (sandbox read-only refuses a local file, denied Read/Bash, the verifier / audit script is refused execution, `plan_path` or `interpretation_marker_path` unreachable, a fetched figure PNG the sandbox won't open):** do NOT fall back to the body's own prose to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (Lens 3 figure, Lens 7 statistical-framing audit, Lens 11 underlying-data-alongside-every-aggregate, Lens 13 planned-vs-actual coverage) is BLOCKED, or the verifier / audit script could not run, the overall verdict must be `needs_targeted_fix` with a `data-access-blocked` note so the reconciler/orchestrator knows the PASS-path was unreachable. This is a real audit gap — the content exists and you were prevented from checking it.
+**If a DENIED CAPABILITY stops you reading content you otherwise could (sandbox read-only refuses a local file, denied Read/Bash, `plan_path` or `interpretation_marker_path` unreachable, a fetched figure PNG the sandbox won't open):** do NOT fall back to the body's own prose to score that lens. Mark the affected lens `BLOCKED — could not read <path>` and do NOT emit an overall `PASS` — a lens you could not verify cannot support PASS. If a load-bearing lens (Lens 3 figure, Lens 7 statistical-framing audit, Lens 11 underlying-data-alongside-every-aggregate, Lens 13 planned-vs-actual coverage) is BLOCKED, or the mechanical pre-pass is UNAVAILABLE per the item-2b missing-envelope rule, the overall verdict must be `needs_targeted_fix` with `data-access-blocked` ON the Blocker tags line so the reconciler/orchestrator knows the PASS-path was unreachable. This is a real audit gap — the content exists and you were prevented from checking it. The mechanical verifier output, audit output, and open-concerns JSON are INLINED in this prompt — a BLOCKED on "could not run the verifier / audit / list-concerns" is INVALID (read the envelopes); only a MISSING or execution-error envelope triggers the item-2b UNAVAILABLE rule.
 
 **If a NETWORK / DNS limitation of the sandbox stops you resolving an HF URL (DNS resolution of `huggingface.co` fails, a connection/HTTP timeout to `huggingface.co`, or `huggingface_hub.list_repo_files` raises `HfHubHTTPError` / a `requests` connection error from a NETWORKING cause):** this is a MECHANICAL sandbox limitation, NOT a content finding — the VM/orchestrator has the network access your sandbox lacks and will verify inline. Mark the affected lens `sandbox-unverifiable — <path> (advisory)`, keep scoring every other aspect of that lens on the content you CAN read, and do NOT downgrade the overall verdict on this ground alone. Do NOT put `data-access-blocked` on the Blocker tags line for this case; instead add a single line `Sandbox-unverifiable (advisory): <path> — <one-line reason>` to the verdict body (the orchestrator strips it). EXCEPTION 1 — a `RepositoryNotFoundError` (or a listing that resolves but is MISSING a body-cited path) is a REAL "path does not exist" finding: that stays a `FAIL` / `BLOCKED` content finding, not sandbox-unverifiable. EXCEPTION 2 — if the DNS/network failure prevents scoring the ENTIRE lens (its whole audit target is DNS-fetched content, e.g. Lens 11's aggregate-vs-per-cell artifact links whose content lives only behind the HF fetch), fall back to the denied-capability paragraph above: mark the lens `BLOCKED` and downgrade to `needs_targeted_fix`. The advisory tag is for a lens whose HF-liveness sub-check (Lens 5 / Lens 10 `list_repo_files` resolution) fails while the rest of the lens is scoreable.
 
 YOU ARE THE FINAL ADVERSARIAL GATE. Your PASS advances the task to
 `awaiting_promotion`; the user reviews and promotes manually. There
 is no downstream reviewer. Be thorough every round — the full
-ensemble (you + the Claude critic) re-runs on rounds 2-3 if anyone
+ensemble (you + the Claude critic) re-runs on rounds 2-5 if anyone
 REVISEs.
 
 ASSUME content honesty is settled: the interpretation-critic
@@ -483,10 +639,10 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
 ## Clean-Result Critique (Codex) — Round {{revision_round}}
 
 **Verdict: PASS | needs_targeted_fix | blocked_needs_user_decision | fail_not_worth_continuing**
-**Blocker tags:** [comma-separated, non-PASS only: `structural-absence` | `audit` | `lens`. `none` on PASS. A non-PASS whose tags reduce to {`procedural`} (presentation-only verifier FAILs) is INVALID — emit PASS + a Procedural fixes list. The orchestrator parses this line for the Step 9a-bis mechanical-contract strip.]
+**Blocker tags:** [comma-separated, non-PASS only: `structural-absence` | `audit` | `lens` | `data-access-blocked`. `none` on PASS. A non-PASS whose tags reduce to {`procedural`} (presentation-only verifier FAILs) is INVALID — emit PASS + a Procedural fixes list. Any UNAVAILABLE state (Verifier / Audit script / missing envelope) REQUIRES `data-access-blocked` on this line — a note-only emission is banned (it would be procedural-only-strippable to PASS at the orchestrator's Step 9a-bis strip). The orchestrator parses this line for the Step 9a-bis mechanical-contract strip.]
 
-**Verifier:** PASS | FAIL — <one-line summary>
-**Audit script:** <N patterns flagged> — <one-line summary>
+**Verifier:** PASS | FAIL | UNAVAILABLE — <one-line summary>
+**Audit script:** <N patterns flagged> | UNAVAILABLE — <one-line summary>
 
 ### Lens 1 — Title
 - Title: "<verbatim title>"
@@ -557,8 +713,9 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   and the COMPLETE table is the methodology doc §2)
 - Context-footer audit (run-context provenance): the
   `**Context:**` footer (SPEC.md
-  § `**Context:**` row; verifier check 17 covers presence — this
-  bullet adds the substantive read) must carry (a) real dates
+  § `**Context:**` row; verifier check 17 covers presence + a lineage
+  token — this bullet adds the substantive read: dates real, lineage
+  CORRECT) must carry (a) real dates
   (created date matches frontmatter `created_at`; run date/window
   plausible), (b) correct lineage (`Follow-up to` matches frontmatter
   `parent_id` / the `**This experiment in context:**` slot's actual
@@ -852,9 +1009,10 @@ Emit your verdict in EXACTLY this format. No preamble, no fences:
   is the gate that should have caught it.
 
 ### Lens 14 — Binding-concerns audit (composed 2026-05-31 by task #455)
-- Fetch the ledger BEFORE scoring: `cd {{repo_root}} && uv run python
-  scripts/task.py list-concerns {{task_number}} --open-only --json` (or
-  use the JSON passed inline by the orchestrator).
+- Read the open-concerns ledger from the OPEN-CONCERNS JSON envelope
+  inlined above (the composer fetched it at compose time — do not run
+  task.py; if the envelope is missing, apply the item-2b UNAVAILABLE
+  rule to this lens).
 - For each OPEN binding concern (severity `BLOCKER` or `CONCERN`, latest
   event `raised` or `verified-open`), verify the body acknowledges it via
   ONE of: (a) any `### <result>` (or a `## Takeaways` bullet) naming the
@@ -921,7 +1079,7 @@ prompt file written and Step 5's structured handoff returned.
 ```bash
 cat > /tmp/codex-clean-result-critic-<N>-r<revision_round>-prompt.md <<'PROMPT'
 <the full composed prompt from Step 3, including 15-lens rubric and
-mechanical verifier preamble>
+the inlined Step 1d mechanical pre-pass envelopes>
 PROMPT
 ```
 
@@ -936,6 +1094,48 @@ grep -qF "$BODY_PATH" /tmp/codex-clean-result-critic-<N>-r<revision_round>-promp
 }
 ```
 
+Then run the envelope + no-residue guard — SEMANTIC, per envelope
+(#1050): it makes a skipped Step 1d run, an empty capture, an envelope
+shipped with unsubstituted `{{...}}` template placeholders, or a stale
+run-it-yourself instruction impossible to ship. Instruction prose in
+the composed prompt references envelopes BY NAME ONLY, so the anchored
+checks below can only be satisfied by REAL envelope boundary lines:
+
+```bash
+PROMPT_FILE=/tmp/codex-clean-result-critic-<N>-r<revision_round>-prompt.md
+# (1) SEMANTIC envelope validation — for each required envelope: exactly one
+# column-zero-anchored BEGIN and END line, enclosing a command: line, a
+# NUMERIC exit code: line, no unsubstituted {{...}} placeholder, and >=1
+# non-empty body line after the metadata.
+REQ="MECHANICAL VERIFIER OUTPUT"
+if [ "$PAPER" != "true" ]; then REQ="$REQ|AUDIT SCRIPT OUTPUT|OPEN-CONCERNS JSON"; fi
+echo "$REQ" | tr '|' '\n' | while IFS= read -r ENV_NAME; do
+  n_begin=$(grep -cE "^---BEGIN $ENV_NAME---$" "$PROMPT_FILE"); n_end=$(grep -cE "^---END $ENV_NAME---$" "$PROMPT_FILE")
+  [ "$n_begin" = "1" ] && [ "$n_end" = "1" ] || { echo "BLOCKER: envelope '$ENV_NAME' BEGIN/END count $n_begin/$n_end != 1/1" >&2; exit 1; }
+  body=$(awk -v b="---BEGIN $ENV_NAME---" -v e="---END $ENV_NAME---" '$0==b{f=1;next} $0==e{f=0} f' "$PROMPT_FILE")
+  printf '%s\n' "$body" | grep -q '^command: ' || { echo "BLOCKER: envelope '$ENV_NAME' missing command: line" >&2; exit 1; }
+  printf '%s\n' "$body" | grep -qE '^exit code: [0-9]+$' \
+    || { echo "BLOCKER: envelope '$ENV_NAME' missing a NUMERIC exit code: line (unsubstituted {{vrc}}/{{arc}}/{{crc}}?)" >&2; exit 1; }
+  if printf '%s\n' "$body" | grep -qF -e '{{' -e '}}'; then
+    echo "BLOCKER: envelope '$ENV_NAME' contains an unsubstituted {{...}} template placeholder (Step 1d output never inlined)" >&2; exit 1
+  fi
+  printf '%s\n' "$body" | grep -v '^command: ' | grep -v '^exit code: ' | grep -q '[^[:space:]]' \
+    || { echo "BLOCKER: envelope '$ENV_NAME' has an EMPTY body (Step 1d capture failed?)" >&2; exit 1; }
+done || exit 1
+# (2) No-residue greps on the prompt with envelope BODIES STRIPPED (a captured
+# verifier error body may legitimately quote the banned form — argparse usage
+# epilog; strip anchored BEGIN..END spans first so only Codex-addressed
+# instruction/template text is scanned):
+awk '/^---BEGIN .*---$/{f=1} !f{print} /^---END .*---$/{f=0}' "$PROMPT_FILE" > "$PROMPT_FILE.noenv"
+if grep -qE 'uv run python ("?\$REPO_ROOT/)?scripts/(verify_task_body|audit_clean_results_body_discipline|verify_paper)\.py' "$PROMPT_FILE.noenv"; then
+  echo "BLOCKER: stale run-the-verifier-yourself instruction leaked into the composed prompt" >&2; exit 1
+fi
+if grep -qE '(uv run python )?(scripts/)?task\.py list-concerns\b.*--open-only' "$PROMPT_FILE.noenv"; then
+  echo "BLOCKER: stale Lens-14 run-list-concerns-yourself instruction leaked into the composed prompt" >&2; exit 1
+fi
+rm -f "$PROMPT_FILE.noenv"
+```
+
 ### Step 5: Return to orchestrator
 
 ```
@@ -948,6 +1148,7 @@ Expected marker kind: epm:clean-result-critique-codex
 Expected marker version: <revision_round>
 Codex effort: high
 Codex write mode: false (read-only critic)
+Inlined envelopes: MECHANICAL VERIFIER OUTPUT[, AUDIT SCRIPT OUTPUT, OPEN-CONCERNS JSON]
 Oversize-fallback path: tasks/<status>/<N>/artifacts/codex-clean-result-critique-r<revision_round>.md
 ```
 
@@ -964,18 +1165,26 @@ You do NOT validate, do NOT retry, do NOT post the marker.
 
 ## Rules
 
-1. **All rounds (1-3).** Accept any `revision_round` in 1-3 (all-rounds
-   ensemble policy as of 2026-06-12; previously round-1-only). Refuse +
-   post `epm:failure` on `revision_round` outside 1-3.
+1. **All rounds (1-5).** Accept any `revision_round` in 1-5 (all-rounds
+   ensemble policy as of 2026-06-12; round cap 5 per workflow.yaml
+   § ensemble_review). Rounds 4-5 typically arrive as delta-scoped
+   re-reviews after a reconciler-bound REVISE, but an agreed or
+   unioned REVISE also produces them — when the brief carries a delta
+   scope note, scope the composed prompt to that delta (see the
+   delta-scoped precedent in agent memory); otherwise compose the
+   normal full-prior-history re-review. Refuse + post `epm:failure`
+   only on a malformed `revision_round` (<= 0, > 5, non-integer).
 2. **Statistical-framing rule (Lens 7) is enforced.** Flag prose-level
    hits the audit script's mechanical patterns missed.
-3. **Run verifier + audit independently** in Codex's Bash. Split
+3. **Ground the mechanical pre-pass on the INLINED envelopes** (YOU ran
+   the scripts at Step 1d, outside the sandbox — Codex never executes
+   uv). Split
    verifier FAILs into structural-absence (blocks) vs presentation-only
    (procedural, does not block alone); inherit every audit hit. A
    non-PASS verdict needs >=1 substantive finding (structural-absence
    verifier FAIL, audit hit, or real lens violation) — never a
    presentation nit alone. Always score the lenses in the same pass.
-   (**Paper branch (`PAPER=true`):** the verifier is `verify_paper.py`,
+   (**Paper branch (`PAPER=true`):** the composer-run verifier is `verify_paper.py`,
    there is NO audit script, and the lenses are the seven P1-P7 — a non-PASS
    needs ≥1 substantive finding (a verify_paper.py checks-1-10 FAIL or a real
    P1-P7 violation).)

@@ -172,8 +172,16 @@ def get_hub_paths() -> set[str]:
     try:
         from huggingface_hub import HfApi
 
+        from explore_persona_space.orchestrate.hub import list_repo_files_complete
+
         api = HfApi(token=os.environ.get("HF_TOKEN"))
-        files = api.list_repo_files(repo_id=DEFAULT_REPO, repo_type="model")
+        # Deliberate FULL-repo enumeration: consumers match arbitrary local
+        # model dirs against the whole-repo dir inventory, so no prefix scope
+        # is sound. Bounded today (~99k files, ~42 s on the MODEL repo,
+        # measured 2026-07-04 #988); NEVER point this at the ~1M-file DATA
+        # repo (the #920 hang class). Routed through the paginated helper for
+        # its 504 transient-retry (#794).
+        files = list_repo_files_complete(api, DEFAULT_REPO, repo_type="model")
         paths: set[str] = set()
         for f in files:
             parts = f.split("/")

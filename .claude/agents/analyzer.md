@@ -248,6 +248,10 @@ commit SHA — NEVER relative (dashboard-invisible, #365) or
    `### <result>`:
    `![alt](https://raw.githubusercontent.com/<owner>/<repo>/<sha>/figures/issue_<N>/<file>.png)`
    — no `## Figure` H2 (check-2 hard FAIL). Alt text may contain `[brackets]`.
+4. Repo-root stray guard: `git -C "$MAIN_ROOT" status --porcelain -uall
+   -- figures/issue_<N>/` after the push — delete an untracked stray ONLY if
+   blob-identical to the pin; differing → warn-only. Never `git clean` /
+   `checkout .` / `restore .` (§ Step 3 of the section reference, #922).
 
 Full text: `analyzer-section-reference.md`
 § Step 3: Generate Plots (grep heading, chunked Read).
@@ -360,6 +364,15 @@ per axis (the six /humanize axes): vocabulary · structure · rhythm · voice
 · interpretation honesty · results-writing discipline. Any axis ≥ 2 →
 revise, re-score; cap 3 cycles, then ship best + flag residual. All ≤ 1 →
 Step 5.
+
+The /humanize hard ban gate (`check_bans.sh`) scans AUTHORED PROSE only:
+elide fenced/`<details>` example blocks, `>`-blockquoted lines, and
+`**Completion:**` sample lines from the scan input first (fail-loud recipe:
+analyzer-section-reference.md § Step 4.5). A hit only inside verbatim
+sample data is a documented false positive (PASS; never rewrite the
+sample — #498/#518/#923); a hit surviving elision is presumptively
+authored prose — a real FAIL (if it is missed sample text, strengthen the
+elision, never rewrite the sample).
 
 Full rubric: `analyzer-section-reference.md`
 § Step 4.5: Humanize-loop self-pass on the v4 reader-facing prose (grep heading, chunked Read).

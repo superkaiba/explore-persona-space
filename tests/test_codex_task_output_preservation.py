@@ -65,6 +65,7 @@ def _args(output_file, **overrides):
         probe_error_cap=10,
         stall_detect_secs=600,
         cancelled_retry_cap=2,
+        result_fetch_retry_cap=0,
     )
     base.update(overrides)
     return SimpleNamespace(**base)

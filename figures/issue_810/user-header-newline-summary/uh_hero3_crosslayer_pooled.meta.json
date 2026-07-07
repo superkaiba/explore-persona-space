@@ -1,0 +1,214 @@
+{
+  "commit": "280b8fa6ae",
+  "created": "2026-07-03T15:51:46Z",
+  "figsize": [
+    11.0,
+    5.5
+  ],
+  "points": [
+    {
+      "category": "whole-turn mean, layer-mean, raw",
+      "held-out skill-over-mean R\u00b2": 0.7168052745797887,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "whole-turn mean, layer-mean, normed",
+      "held-out skill-over-mean R\u00b2": 0.7538766444062536,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "whole-turn mean, layer-max, raw",
+      "held-out skill-over-mean R\u00b2": 0.4780274266489013,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "whole-turn mean, layer-max, normed",
+      "held-out skill-over-mean R\u00b2": 0.46602072819988993,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "whole-turn max-pool, layer-mean, raw",
+      "held-out skill-over-mean R\u00b2": 0.8816572360987373,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "whole-turn max-pool, layer-mean, normed",
+      "held-out skill-over-mean R\u00b2": 0.6206773097306932,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "whole-turn max-pool, layer-max, raw",
+      "held-out skill-over-mean R\u00b2": 0.6746154834270048,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "whole-turn max-pool, layer-max, normed",
+      "held-out skill-over-mean R\u00b2": 0.5217068091437325,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.7295260017459348,
+      "series": "LOFO skill (ordering only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.8204120806927734,
+      "series": "LOFO skill (ordering only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "held-out skill-over-mean R\u00b2": 0.5012847580900901,
+      "series": "LOFO skill (ordering only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.579240261456756,
+      "series": "LOFO skill (ordering only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "held-out skill-over-mean R\u00b2": 0.7932443774119705,
+      "series": "LOFO skill (ordering only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "held-out skill-over-mean R\u00b2": 0.7515027719364116,
+      "series": "LOFO skill (ordering only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 6.0,
+      "held-out skill-over-mean R\u00b2": 0.6980730473309003,
+      "series": "LOFO skill (ordering only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 7.0,
+      "held-out skill-over-mean R\u00b2": 0.6140763270683958,
+      "series": "LOFO skill (ordering only)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.7938211828980508,
+      "series": "own pooled identity ceiling (LOCO)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.8062679670844445,
+      "series": "own pooled identity ceiling (LOCO)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "held-out skill-over-mean R\u00b2": 0.6113627058751137,
+      "series": "own pooled identity ceiling (LOCO)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "held-out skill-over-mean R\u00b2": 0.5551946293736711,
+      "series": "own pooled identity ceiling (LOCO)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "held-out skill-over-mean R\u00b2": 0.9319773641779245,
+      "series": "own pooled identity ceiling (LOCO)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "held-out skill-over-mean R\u00b2": 0.6977559094555121,
+      "series": "own pooled identity ceiling (LOCO)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 6.0,
+      "held-out skill-over-mean R\u00b2": 0.7883850893740836,
+      "series": "own pooled identity ceiling (LOCO)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 7.0,
+      "held-out skill-over-mean R\u00b2": 0.5816897529637255,
+      "series": "own pooled identity ceiling (LOCO)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.8259163718965512,
+      "series": "per-layer best (max-pool, layer 21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.8259163718965512,
+      "series": "per-layer best (max-pool, layer 21)",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.888952891223921,
+      "series": "answer-only pooled benchmark (unregistered inline read)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.888952891223921,
+      "series": "answer-only pooled benchmark (unregistered inline read)",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "held-out skill-over-mean R\u00b2": 0.030334296573456827,
+      "series": "max-selected null band (97.5th pct)",
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "held-out skill-over-mean R\u00b2": 0.030334296573456827,
+      "series": "max-selected null band (97.5th pct)",
+      "_kind": "line",
+      "_group": 5
+    }
+  ],
+  "n_series": 6,
+  "total_points": 30
+}

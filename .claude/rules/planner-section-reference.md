@@ -337,9 +337,11 @@ to amortize 8× setup"). If the answer is "no parallelism axis applies,"
 say so — silence is not acceptable.
 
 > **Compute-sizing recipes (HBM sizing / merge-disk / sentinel lanes / floor
-> cross-check / machine costing)** — when sizing any §9 phase (activation
-> capture, adapter merges, sentinel-signaling workloads, long-phase wall-time
-> floors, per-machine wall-time costing), READ
+> cross-check / store-IO / CPU-phase RAM/RSS routing / machine costing +
+> p90 fence sizing)** — when sizing any §9 phase (activation capture, adapter
+> merges, sentinel-signaling workloads, long-phase wall-time floors,
+> store-heavy writes, VM-placed CPU-phase RAM, per-machine wall-time costing,
+> a deliberate GCP fence), READ
 > `.claude/rules/plan-compute-sizing.md` IN FULL before writing the table.
 > (Relocated verbatim from this spec, #829.)
 
@@ -380,7 +382,15 @@ row costed at 1× the grid forgets the draw multiplier (#810: 0.75 h planned vs
 reality was ~15-30 h).
 (b) Ground `per_call_cost` on a CITED measurement (a timed single call at
 PRODUCTION shape, or a prior-issue measured figure) or a FLOP/kernel floor —
-NEVER an asserted "~2 s" for a dense factorization (#823: the plan asserted
+EXCEPT for a fit / factorization / GD loop, where the basis MUST be a
+measured 1-cell pilot THROUGH the production entrypoint on the production
+device, a cited prior-issue measured figure (same kernel + shape), or a
+pre-registered `pilot-gated` first-step pilot (inputs don't exist at plan
+time) per `.claude/rules/plan-compute-sizing.md` § Per-cell fit phases; a
+FLOP floor is the cross-check, never the basis, for these overhead-bound
+loops (#811: one inner kernel timed, the dominant frame asserted — 19h21m at
+unit 3/108) — NEVER an asserted "~2 s" for a dense factorization (#823: the
+plan asserted
 ~2 s/fit; the named fast twin's own docstring said ~125 s at N_tr≈4000, H=3584
 — a ~62× per-call error; the realized wall ran 35-57× the planned).
 (c) If the task body's reuse map or a parent issue names a fast /
@@ -398,6 +408,21 @@ client-side compression OFF for fp16 tensors bound for a Xet-backed HF repo
 (#813: `savez_compressed` 103.8 s vs plain `savez` 1.2 s per file for a
 1.29× ratio; the store phase ran 4.5× over plan). Full recipe:
 `.claude/rules/plan-compute-sizing.md` § Store-heavy / IO-heavy phase sizing.
+
+**VM-RAM & GCP-fence sizing (REQUIRED for any VM-placed CPU phase and any
+deliberate `max_run_duration`).** State each VM-placed CPU/analysis
+phase's projected peak RSS in its row's `basis` (measured one-chunk
+`ru_maxrss` at production shape, or resident-pool bytes × MEASURED
+live-factor); ≥~16 GB — single phase or SUMMED concurrent VM phases —
+routes off the shared VM to `cpu-mid`/`cpu-bigmem`, with `--min-ram-gb`
+stated when the phase sizes >16 GB (#778: a 22-GiB-RSS battery
+earlyoom-killed 3×; #833: two ~13-15 GB concurrent phases lost 5 cells).
+Size any deliberate GCP `--max-run-duration` off the p90 per-cell wall —
+a prior-issue distribution, else measured mean × a stated dispersion
+factor (default ×2) — never the mean (#833 overran its 36h fence at ~2×
+mean). Full recipes: `.claude/rules/plan-compute-sizing.md`
+§ CPU-phase RAM/RSS routing + the fence clause of § Cost wall-time
+against the machine the router will ACTUALLY provision.
 
 **Stratification spec.** If the sweep has multiple statistical
 dimensions (seeds, framings, cells-per-stratum), name in §9 the
@@ -434,11 +459,14 @@ location after re-verifying, or move it to §12 Assumptions flagged
 subcommand and returns a false "0 files" via swallowed stderr).
 
 **Reused code/helper throughput inspection (checklist item (i)) is recorded
-here too.** When the plan reuses a parent's fit / analysis / eval code helper,
-this card carries the item-(i) inspection triple — helper/function name,
-batched-or-serial verdict, device handling (`.claude/rules/artifact-reuse.md`
+here too.** When the plan reuses a parent's fit / analysis / eval /
+upload-verify-staging code helper,
+this card carries the item-(i) inspection record — helper/function name,
+batched-or-serial verdict, device handling, plus the Hub-call-scoping verdict
+when the helper touches the Hub (`.claude/rules/artifact-reuse.md`
 item (i)) — and the implied wall-time is reflected in the matching §9 row.
-"N/A — no artifact reuse" does NOT cover reused fit/analysis code: a plan with
+"N/A — no artifact reuse" does NOT cover reused fit/analysis/upload-verify
+code: a plan with
 no HF artifact reuse but with an inherited fit helper still fills this row.
 
 **Pairwise provenance coherence (checklist item (j)) is recorded here too.**
@@ -528,10 +556,15 @@ the worker stages (scoped `list_repo_tree` + per-file `hf_hub_download` for
 data-repo subtrees — gotchas.md), a committed `eval_results/...` path that
 arrives with the git clone, or "rebuilt on-worker by the §4 regen phase". This
 is the §11 record of the step-5 check `(h)` (source resolution +
-target-backend fetchability): a git-clone-only GCP/SLURM lane cannot stage a
+target-backend fetchability + staged-layout consumer-open): a git-clone-only
+GCP/SLURM lane cannot stage a
 VM-local-only mix, so "the parent built it locally" is NOT a valid `Source:`
 — the file must resolve on HF, be git-tree-reachable as a committed
-`eval_results/...` JSON, or be regenerated on the worker (#734).
+`eval_results/...` JSON, or be regenerated on the worker (#734). When a
+stage-from-Hub helper maps the artifact into a consumer-fixed local layout
+(leg (iv) staged-layout consumer-open), the §11 record ALSO names the
+hub-rel → local-rel mapping, and the plan schedules the 1-file staging
+probe + consumer-open gate before production (#928).
 
 **Repo-new model id ⇒ CPU-side config-load smoke before provisioning
 (pre-provision gate).** The `model` id is itself a load-bearing choice. If

@@ -1,0 +1,3229 @@
+{
+  "commit": "59de90fde6",
+  "created": "2026-07-04T01:09:15Z",
+  "figsize": [
+    11.0,
+    5.5
+  ],
+  "points": [
+    {
+      "x": 0.09862417748014679,
+      "centered cosine per context (committed best layer)": 0.431534358898198,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.02200376168926116,
+      "centered cosine per context (committed best layer)": 0.4191978651444717,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.12909525116809767,
+      "centered cosine per context (committed best layer)": 0.41114245156869467,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07105249046137102,
+      "centered cosine per context (committed best layer)": 0.6036583261027275,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14609615476044616,
+      "centered cosine per context (committed best layer)": 0.4614255942262122,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.17122404658923213,
+      "centered cosine per context (committed best layer)": 0.40541750029672097,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09401029271652706,
+      "centered cosine per context (committed best layer)": 0.49373455221208185,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10298314989970336,
+      "centered cosine per context (committed best layer)": 0.473956386292992,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13387909223680347,
+      "centered cosine per context (committed best layer)": 0.4727791999569874,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.017861062357595825,
+      "centered cosine per context (committed best layer)": 0.4482361153227645,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04651271127627074,
+      "centered cosine per context (committed best layer)": 0.45869147111051584,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.15363539598549664,
+      "centered cosine per context (committed best layer)": 0.47305657112631017,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.051791443229039225,
+      "centered cosine per context (committed best layer)": 0.2756022807517045,
+      "label": "bullets format demand",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11619418077749877,
+      "centered cosine per context (committed best layer)": 0.4108054729923709,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.020370888422160782,
+      "centered cosine per context (committed best layer)": 0.41006532044522737,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09819406015748032,
+      "centered cosine per context (committed best layer)": 0.4587408175027844,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.019650523325700525,
+      "centered cosine per context (committed best layer)": 0.3854052381915842,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15702578780249687,
+      "centered cosine per context (committed best layer)": 0.48381888201614187,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11794722191732954,
+      "centered cosine per context (committed best layer)": 0.3943862386440968,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04739918368394333,
+      "centered cosine per context (committed best layer)": 0.22027880398957947,
+      "label": "bullets format demand",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09291158643073455,
+      "centered cosine per context (committed best layer)": 0.44956322074482613,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.052370651473247376,
+      "centered cosine per context (committed best layer)": 0.4223329332021291,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.16945128878216514,
+      "centered cosine per context (committed best layer)": 0.570464007030111,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.14152360367599115,
+      "centered cosine per context (committed best layer)": 0.5815384273692116,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10021805894655428,
+      "centered cosine per context (committed best layer)": 0.5047974048359204,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10993006517329167,
+      "centered cosine per context (committed best layer)": 0.44589955358027666,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0119804386582677,
+      "centered cosine per context (committed best layer)": 0.421670686026812,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16423064431659765,
+      "centered cosine per context (committed best layer)": 0.4499881596509597,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12445578285568278,
+      "centered cosine per context (committed best layer)": 0.632257448909617,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06589762316728368,
+      "centered cosine per context (committed best layer)": 0.5315588577948013,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08811437612681416,
+      "centered cosine per context (committed best layer)": 0.5198982499811265,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.16830350367631558,
+      "centered cosine per context (committed best layer)": 0.24405214220458032,
+      "label": "bullets format demand",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0627028710702653,
+      "centered cosine per context (committed best layer)": 0.4504973151001438,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04663450582744719,
+      "centered cosine per context (committed best layer)": 0.4339380505564861,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01095990794070914,
+      "centered cosine per context (committed best layer)": 0.4467625775752267,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11179031072965714,
+      "centered cosine per context (committed best layer)": 0.626099752780339,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1332282580792302,
+      "centered cosine per context (committed best layer)": 0.4984578710022361,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.008746226558663861,
+      "centered cosine per context (committed best layer)": 0.597253787636388,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09831263434168172,
+      "centered cosine per context (committed best layer)": 0.33481562949109034,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06113303808570372,
+      "centered cosine per context (committed best layer)": 0.40083830325082026,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.022625309205960925,
+      "centered cosine per context (committed best layer)": 0.4116896284189462,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11976415058082146,
+      "centered cosine per context (committed best layer)": 0.343599405545313,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0720954367208097,
+      "centered cosine per context (committed best layer)": 0.3994818917664095,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06754800910246521,
+      "centered cosine per context (committed best layer)": 0.5408996822159954,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11961352850227236,
+      "centered cosine per context (committed best layer)": 0.49781903020898344,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10971516869884868,
+      "centered cosine per context (committed best layer)": 0.3606463805816061,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0405077835491372,
+      "centered cosine per context (committed best layer)": 0.5108135716868951,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07620188258511212,
+      "centered cosine per context (committed best layer)": 0.5730468696814838,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06569838143099119,
+      "centered cosine per context (committed best layer)": 0.475347387926923,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12968910590064847,
+      "centered cosine per context (committed best layer)": 0.5615367824186429,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "centered cosine per context (committed best layer)": 0.45024273737555176,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.891966952891039,
+      "centered cosine per context (committed best layer)": 0.34249405210040457,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.822650417110362,
+      "centered cosine per context (committed best layer)": 0.41658361320157516,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1032927759007698,
+      "centered cosine per context (committed best layer)": 0.42634128735838817,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0593463083731316,
+      "centered cosine per context (committed best layer)": 0.4613724634071537,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0738595363054806,
+      "centered cosine per context (committed best layer)": 0.351668224394646,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1010624511679086,
+      "centered cosine per context (committed best layer)": 0.3733826296496254,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9852096791938024,
+      "centered cosine per context (committed best layer)": 0.35267832375488645,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0247468305430418,
+      "centered cosine per context (committed best layer)": 0.3489937790770053,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8703269193259566,
+      "centered cosine per context (committed best layer)": 0.40911800774219353,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8612308264729505,
+      "centered cosine per context (committed best layer)": 0.48552831926152146,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0606250662445698,
+      "centered cosine per context (committed best layer)": 0.46480818155159537,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9895946342115277,
+      "centered cosine per context (committed best layer)": 0.4401769719983148,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.023484998333228,
+      "centered cosine per context (committed best layer)": 0.3260623536931719,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0953995886697692,
+      "centered cosine per context (committed best layer)": 0.32335245359112885,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0484985952002126,
+      "centered cosine per context (committed best layer)": 0.34729561843998635,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0192885842368784,
+      "centered cosine per context (committed best layer)": 0.3332893743996083,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0213145778683488,
+      "centered cosine per context (committed best layer)": 0.5423786273197104,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9294220353025404,
+      "centered cosine per context (committed best layer)": 0.4657749900539752,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8310944204444581,
+      "centered cosine per context (committed best layer)": 0.4977388907257739,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9772182601236504,
+      "centered cosine per context (committed best layer)": 0.37824244436021864,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8972504822150305,
+      "centered cosine per context (committed best layer)": 0.3340640697468374,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.967070311740869,
+      "centered cosine per context (committed best layer)": 0.3758497414024173,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1272251063765397,
+      "centered cosine per context (committed best layer)": 0.5685612893920367,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9042182149115227,
+      "centered cosine per context (committed best layer)": 0.4758136348362018,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8409889870080638,
+      "centered cosine per context (committed best layer)": 0.34005258101263985,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9212982011279187,
+      "centered cosine per context (committed best layer)": 0.2749464539620476,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9256937527960061,
+      "centered cosine per context (committed best layer)": 0.33580399172326836,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0582899453016823,
+      "centered cosine per context (committed best layer)": 0.3321410103950256,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0205315748428603,
+      "centered cosine per context (committed best layer)": 0.6173561587796519,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1022033552783088,
+      "centered cosine per context (committed best layer)": 0.41691250644065214,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0591528745178596,
+      "centered cosine per context (committed best layer)": 0.3995930744400028,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9662992701184254,
+      "centered cosine per context (committed best layer)": 0.24934746324310628,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1130473384797726,
+      "centered cosine per context (committed best layer)": 0.3253707623977905,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8801102511667734,
+      "centered cosine per context (committed best layer)": 0.3306884716022081,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8281763463281898,
+      "centered cosine per context (committed best layer)": 0.35834594014695004,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.852417229879231,
+      "centered cosine per context (committed best layer)": 0.545551870375416,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0800493662147221,
+      "centered cosine per context (committed best layer)": 0.40577666128448153,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9862758028904994,
+      "centered cosine per context (committed best layer)": 0.37589861270808644,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8780578404520967,
+      "centered cosine per context (committed best layer)": 0.3221240193823084,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.000376119037211,
+      "centered cosine per context (committed best layer)": 0.4718842003868872,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8748323569767407,
+      "centered cosine per context (committed best layer)": 0.4840632358724409,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.070675335027985,
+      "centered cosine per context (committed best layer)": 0.38948510561273925,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9806162592066511,
+      "centered cosine per context (committed best layer)": 0.3874325804781609,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9571676413947336,
+      "centered cosine per context (committed best layer)": 0.428216615533671,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9285443520932355,
+      "centered cosine per context (committed best layer)": 0.40439215168531195,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0469017335228,
+      "centered cosine per context (committed best layer)": 0.40087099782413993,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9502525397992205,
+      "centered cosine per context (committed best layer)": 0.5054777337010707,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8515539709537964,
+      "centered cosine per context (committed best layer)": 0.5095306023755513,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8624821247633855,
+      "centered cosine per context (committed best layer)": 0.40430331804580455,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.166283159237825,
+      "centered cosine per context (committed best layer)": 0.4061511467239125,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "centered cosine per context (committed best layer)": 0.40023203613207137,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.1470890486547387,
+      "centered cosine per context (committed best layer)": 0.4297223923997653,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.07189456817187,
+      "centered cosine per context (committed best layer)": 0.5066731670825875,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.915713186125427,
+      "centered cosine per context (committed best layer)": 0.5189152593493201,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.1689034958451807,
+      "centered cosine per context (committed best layer)": 0.4550014378487542,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.1003503254276863,
+      "centered cosine per context (committed best layer)": 0.4283292460073203,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0780804680972382,
+      "centered cosine per context (committed best layer)": 0.42707988897718246,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9817701407717638,
+      "centered cosine per context (committed best layer)": 0.3883402541862708,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9180069622642573,
+      "centered cosine per context (committed best layer)": 0.38495381827616526,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8547007463752598,
+      "centered cosine per context (committed best layer)": 0.32929050442314556,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.1449368627557828,
+      "centered cosine per context (committed best layer)": 0.5215662336975759,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9840794643401,
+      "centered cosine per context (committed best layer)": 0.5480544425172366,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.892850811326283,
+      "centered cosine per context (committed best layer)": 0.41939178925318504,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.930144384694235,
+      "centered cosine per context (committed best layer)": 0.3673348550394613,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0285190448190824,
+      "centered cosine per context (committed best layer)": 0.32995171731561684,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8836382018581235,
+      "centered cosine per context (committed best layer)": 0.3774976807931424,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.128381142273255,
+      "centered cosine per context (committed best layer)": 0.44419072344735977,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.093067030740676,
+      "centered cosine per context (committed best layer)": 0.5491802050310238,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0790066641423373,
+      "centered cosine per context (committed best layer)": 0.3688235301171878,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9755534943190374,
+      "centered cosine per context (committed best layer)": 0.1547793446828062,
+      "label": "casual rephrasing",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0458311826528797,
+      "centered cosine per context (committed best layer)": 0.39344512247927627,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0302752688085848,
+      "centered cosine per context (committed best layer)": 0.3302300824343712,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.053944776559735,
+      "centered cosine per context (committed best layer)": 0.4133617941536749,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.85039995561036,
+      "centered cosine per context (committed best layer)": 0.5320356585538066,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9696906647814194,
+      "centered cosine per context (committed best layer)": 0.4113020408116462,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8349811025902814,
+      "centered cosine per context (committed best layer)": 0.5555374655216178,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9978366949280268,
+      "centered cosine per context (committed best layer)": 0.38972725089511057,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9387500364398027,
+      "centered cosine per context (committed best layer)": 0.3417372701530604,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.872028707991777,
+      "centered cosine per context (committed best layer)": 0.41250794677925356,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8572250683801186,
+      "centered cosine per context (committed best layer)": 0.5340404755456505,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.031552045983976,
+      "centered cosine per context (committed best layer)": 0.44984707971543175,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.881413468673279,
+      "centered cosine per context (committed best layer)": 0.4964973521629401,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.153043242615647,
+      "centered cosine per context (committed best layer)": 0.46431300726638053,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0291820102921423,
+      "centered cosine per context (committed best layer)": 0.3669663691919959,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9448731296325414,
+      "centered cosine per context (committed best layer)": 0.43066012826112743,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.03272957693331,
+      "centered cosine per context (committed best layer)": 0.5234623513203758,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8282093935706911,
+      "centered cosine per context (committed best layer)": 0.5266328102072608,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.1650813167669205,
+      "centered cosine per context (committed best layer)": 0.4352947537207877,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.993629237299444,
+      "centered cosine per context (committed best layer)": 0.5679795028250987,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.101784681810103,
+      "centered cosine per context (committed best layer)": 0.3338271851192121,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.849782799972078,
+      "centered cosine per context (committed best layer)": 0.3361021345826771,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9951969991017378,
+      "centered cosine per context (committed best layer)": 0.6092524239659578,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9966545179676276,
+      "centered cosine per context (committed best layer)": 0.3292157133019777,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.157617523790994,
+      "centered cosine per context (committed best layer)": 0.24330456979063383,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.025822098855387,
+      "centered cosine per context (committed best layer)": 0.4850845359645734,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9904561843805033,
+      "centered cosine per context (committed best layer)": 0.41121753912268183,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9161112387130816,
+      "centered cosine per context (committed best layer)": 0.35934750235589596,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9393648390433187,
+      "centered cosine per context (committed best layer)": 0.47734303295588953,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0074420648897537,
+      "centered cosine per context (committed best layer)": 0.46145077780619154,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9780081257098168,
+      "centered cosine per context (committed best layer)": 0.5057355961819887,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.827780348756919,
+      "centered cosine per context (committed best layer)": 0.40357239171162834,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "centered cosine per context (committed best layer)": 0.4277045674922514,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 3.1174650927099687,
+      "centered cosine per context (committed best layer)": 0.6117587378900737,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.142617877862316,
+      "centered cosine per context (committed best layer)": 0.6607295079582732,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8704896720394997,
+      "centered cosine per context (committed best layer)": 0.7404275822150247,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0194530116740577,
+      "centered cosine per context (committed best layer)": 0.7669926358228272,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8590872668087597,
+      "centered cosine per context (committed best layer)": 0.7207782710227326,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.062006433494332,
+      "centered cosine per context (committed best layer)": 0.7472946433671313,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.921244162182043,
+      "centered cosine per context (committed best layer)": 0.6894986864487995,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0573921484890847,
+      "centered cosine per context (committed best layer)": 0.5916093730215437,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0817180611432775,
+      "centered cosine per context (committed best layer)": 0.5945269176134867,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0967130970903565,
+      "centered cosine per context (committed best layer)": 0.7172512362386095,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8587867405441227,
+      "centered cosine per context (committed best layer)": 0.7548091581205936,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.149764264249539,
+      "centered cosine per context (committed best layer)": 0.774695156485668,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.902877036722157,
+      "centered cosine per context (committed best layer)": 0.7510890710969013,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8334685202234247,
+      "centered cosine per context (committed best layer)": 0.6774591806064691,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.019746888980934,
+      "centered cosine per context (committed best layer)": 0.6150248148018058,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.953532022190478,
+      "centered cosine per context (committed best layer)": 0.5981725430309649,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1187243075276685,
+      "centered cosine per context (committed best layer)": 0.7063390253873832,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1109705299431485,
+      "centered cosine per context (committed best layer)": 0.7781337063453961,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9341700014161773,
+      "centered cosine per context (committed best layer)": 0.6871970225011012,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1630437822251083,
+      "centered cosine per context (committed best layer)": 0.6945868438842762,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.924730421730443,
+      "centered cosine per context (committed best layer)": 0.5616399960830886,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.005420566523417,
+      "centered cosine per context (committed best layer)": 0.6753495182076763,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.912147432604337,
+      "centered cosine per context (committed best layer)": 0.8134752701569069,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1569756852176267,
+      "centered cosine per context (committed best layer)": 0.7294991919585736,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8792588143295266,
+      "centered cosine per context (committed best layer)": 0.8383512417278502,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8361678229812384,
+      "centered cosine per context (committed best layer)": 0.6441644640091952,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9766349416010938,
+      "centered cosine per context (committed best layer)": 0.6032497804180457,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1772552030601013,
+      "centered cosine per context (committed best layer)": 0.6458430993109281,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.141003815851769,
+      "centered cosine per context (committed best layer)": 0.822428001958541,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0894988870045017,
+      "centered cosine per context (committed best layer)": 0.7476830245043822,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.140685296716269,
+      "centered cosine per context (committed best layer)": 0.7795264569929282,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.141640790291231,
+      "centered cosine per context (committed best layer)": 0.680346547501961,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.006789009739122,
+      "centered cosine per context (committed best layer)": 0.5945326296439255,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9337344586590857,
+      "centered cosine per context (committed best layer)": 0.5951247083798126,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0979244755599558,
+      "centered cosine per context (committed best layer)": 0.7690913822172547,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.058198054740394,
+      "centered cosine per context (committed best layer)": 0.794719396871823,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9545167823945357,
+      "centered cosine per context (committed best layer)": 0.7667094471739513,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8540080005021453,
+      "centered cosine per context (committed best layer)": 0.8409948780306006,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0888442600856494,
+      "centered cosine per context (committed best layer)": 0.5313418558539039,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9144857857322313,
+      "centered cosine per context (committed best layer)": 0.639762427859089,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1572527341921606,
+      "centered cosine per context (committed best layer)": 0.7544841476619685,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9067494070020463,
+      "centered cosine per context (committed best layer)": 0.7134401907462528,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.864192855668135,
+      "centered cosine per context (committed best layer)": 0.7104877700833767,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1192005619649663,
+      "centered cosine per context (committed best layer)": 0.7396910298838535,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.875182353984818,
+      "centered cosine per context (committed best layer)": 0.6268680005655113,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.884536590936786,
+      "centered cosine per context (committed best layer)": 0.674394962608392,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0357778049475037,
+      "centered cosine per context (committed best layer)": 0.7803298561759704,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1348423347014873,
+      "centered cosine per context (committed best layer)": 0.8077558951308519,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.890716479657246,
+      "centered cosine per context (committed best layer)": 0.759228875796629,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.931716522244034,
+      "centered cosine per context (committed best layer)": 0.700052994315904,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "centered cosine per context (committed best layer)": 0.7119639804148148,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 4.099865741766824,
+      "centered cosine per context (committed best layer)": 0.6515567082588264,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.169857513381948,
+      "centered cosine per context (committed best layer)": 0.6164629702762906,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.000266827032843,
+      "centered cosine per context (committed best layer)": 0.6651538131621383,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8718031009184504,
+      "centered cosine per context (committed best layer)": 0.7640797901829953,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8250170635749527,
+      "centered cosine per context (committed best layer)": 0.6979641771169797,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.902676170799588,
+      "centered cosine per context (committed best layer)": 0.7726293415481159,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8674559984031474,
+      "centered cosine per context (committed best layer)": 0.6665688274951993,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.063957122500629,
+      "centered cosine per context (committed best layer)": 0.634111220766198,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.863859701666271,
+      "centered cosine per context (committed best layer)": 0.7080302772530888,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.002278775383428,
+      "centered cosine per context (committed best layer)": 0.767222683930277,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.069934476831439,
+      "centered cosine per context (committed best layer)": 0.7415003578139842,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.029201979319525,
+      "centered cosine per context (committed best layer)": 0.8155015671253615,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8919192345976206,
+      "centered cosine per context (committed best layer)": 0.8173167189702455,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.1094848294256145,
+      "centered cosine per context (committed best layer)": 0.653594581089317,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.077546566661688,
+      "centered cosine per context (committed best layer)": 0.6541036360849897,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.086034241409595,
+      "centered cosine per context (committed best layer)": 0.6268794593843455,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.867180790560633,
+      "centered cosine per context (committed best layer)": 0.7885151603891385,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8645513693141242,
+      "centered cosine per context (committed best layer)": 0.7996343048565543,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.153922518362343,
+      "centered cosine per context (committed best layer)": 0.7298391753678117,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.9631281497769786,
+      "centered cosine per context (committed best layer)": 0.7443817280486252,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.9283415290411385,
+      "centered cosine per context (committed best layer)": 0.6512437962436098,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.995890256326552,
+      "centered cosine per context (committed best layer)": 0.6600391711238274,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.058631116594889,
+      "centered cosine per context (committed best layer)": 0.8088542337341107,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.164024372536909,
+      "centered cosine per context (committed best layer)": 0.7465892473790784,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.92312064167754,
+      "centered cosine per context (committed best layer)": 0.7539740412125452,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.15293103455233,
+      "centered cosine per context (committed best layer)": 0.6261304494149617,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8289494168990523,
+      "centered cosine per context (committed best layer)": 0.59269226124021,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.019871295237657,
+      "centered cosine per context (committed best layer)": 0.6471522733760519,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.048231040205191,
+      "centered cosine per context (committed best layer)": 0.7858822775326101,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8581230653502714,
+      "centered cosine per context (committed best layer)": 0.7261281291558916,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8705222549430087,
+      "centered cosine per context (committed best layer)": 0.7596663071912286,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.970881154953869,
+      "centered cosine per context (committed best layer)": 0.6733126477852838,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.167843488371545,
+      "centered cosine per context (committed best layer)": 0.6065148594994841,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.034575319164374,
+      "centered cosine per context (committed best layer)": 0.6516349499465884,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.155888359776076,
+      "centered cosine per context (committed best layer)": 0.7211778872142041,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.10956992962067,
+      "centered cosine per context (committed best layer)": 0.8091798271190889,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.988257376559905,
+      "centered cosine per context (committed best layer)": 0.6970496832888216,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.1025148417307875,
+      "centered cosine per context (committed best layer)": 0.7440640670514821,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8264212422317154,
+      "centered cosine per context (committed best layer)": 0.6248790998309688,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8592918388356647,
+      "centered cosine per context (committed best layer)": 0.7235277615661132,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.118594301357785,
+      "centered cosine per context (committed best layer)": 0.7657367543007007,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.106854151797058,
+      "centered cosine per context (committed best layer)": 0.7446286041581267,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.903750667107916,
+      "centered cosine per context (committed best layer)": 0.809184786180597,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.01107705261566,
+      "centered cosine per context (committed best layer)": 0.7582181864422428,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.038165695452004,
+      "centered cosine per context (committed best layer)": 0.6965859812675247,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.132386023359364,
+      "centered cosine per context (committed best layer)": 0.721335472964802,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.037118576641941,
+      "centered cosine per context (committed best layer)": 0.752536334316967,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.968525764938525,
+      "centered cosine per context (committed best layer)": 0.8145250003879961,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.954706255626586,
+      "centered cosine per context (committed best layer)": 0.7714158083518593,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.9733175510944636,
+      "centered cosine per context (committed best layer)": 0.728417009882563,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "centered cosine per context (committed best layer)": 0.7272725695192273,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 5.054695169208791,
+      "centered cosine per context (committed best layer)": 0.5755816191092669,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.132296627430837,
+      "centered cosine per context (committed best layer)": 0.6269708592338884,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.9834028775474675,
+      "centered cosine per context (committed best layer)": 0.7255679466194704,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.909222242662489,
+      "centered cosine per context (committed best layer)": 0.7238658264175095,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.905198450679129,
+      "centered cosine per context (committed best layer)": 0.63190651222766,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.088565140887641,
+      "centered cosine per context (committed best layer)": 0.7063428659504245,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.113964754832608,
+      "centered cosine per context (committed best layer)": 0.6247030255933373,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.857900108747485,
+      "centered cosine per context (committed best layer)": 0.5284995680313339,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.843961188503864,
+      "centered cosine per context (committed best layer)": 0.5392401028694378,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.033996118952323,
+      "centered cosine per context (committed best layer)": 0.7047312141917977,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.872622367909371,
+      "centered cosine per context (committed best layer)": 0.7147559298677677,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.116879108564283,
+      "centered cosine per context (committed best layer)": 0.7185156428463387,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.931720482612667,
+      "centered cosine per context (committed best layer)": 0.6824260647277315,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.871793895869612,
+      "centered cosine per context (committed best layer)": 0.5847883416637171,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.151549370095482,
+      "centered cosine per context (committed best layer)": 0.5529366109930776,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.8795914201847,
+      "centered cosine per context (committed best layer)": 0.5526208087338534,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.922499229641657,
+      "centered cosine per context (committed best layer)": 0.6968477957456527,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.875300822269141,
+      "centered cosine per context (committed best layer)": 0.7347198113657478,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.861576422919528,
+      "centered cosine per context (committed best layer)": 0.5414214455822731,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.827613285881118,
+      "centered cosine per context (committed best layer)": 0.6715517298773922,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.839942347299134,
+      "centered cosine per context (committed best layer)": 0.5096690017514841,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.882870929536907,
+      "centered cosine per context (committed best layer)": 0.5972639702700724,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.839217495745783,
+      "centered cosine per context (committed best layer)": 0.7867469473370198,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.03281177379995,
+      "centered cosine per context (committed best layer)": 0.6955193961339731,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.065057229647822,
+      "centered cosine per context (committed best layer)": 0.765640748626295,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.96170696445953,
+      "centered cosine per context (committed best layer)": 0.6253598755300671,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.9344767949027375,
+      "centered cosine per context (committed best layer)": 0.5103781703240479,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.001629445328003,
+      "centered cosine per context (committed best layer)": 0.5472918249230092,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.135001779204459,
+      "centered cosine per context (committed best layer)": 0.7798015730833078,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.126407385655994,
+      "centered cosine per context (committed best layer)": 0.702318106710472,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.835651022324605,
+      "centered cosine per context (committed best layer)": 0.7242411503977729,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.885339427454749,
+      "centered cosine per context (committed best layer)": 0.6446483096327589,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.905228153597583,
+      "centered cosine per context (committed best layer)": 0.537456971712282,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.909779527299596,
+      "centered cosine per context (committed best layer)": 0.5477732468975611,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.025643754627398,
+      "centered cosine per context (committed best layer)": 0.75429352225143,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.969854473253149,
+      "centered cosine per context (committed best layer)": 0.7649149377244091,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.8377314831739335,
+      "centered cosine per context (committed best layer)": 0.7115343226292651,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.954501089845445,
+      "centered cosine per context (committed best layer)": 0.8062010822845391,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.008551061538349,
+      "centered cosine per context (committed best layer)": 0.46705319028991055,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.856601885045338,
+      "centered cosine per context (committed best layer)": 0.6078036909674023,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.120045079363882,
+      "centered cosine per context (committed best layer)": 0.7357619051384948,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.838706271927437,
+      "centered cosine per context (committed best layer)": 0.6835182554414189,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.152943072846503,
+      "centered cosine per context (committed best layer)": 0.6438028394289603,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.855680730968755,
+      "centered cosine per context (committed best layer)": 0.6858313917527666,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.123686982575191,
+      "centered cosine per context (committed best layer)": 0.5515424519106452,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.144955131813942,
+      "centered cosine per context (committed best layer)": 0.6261784460029197,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.172645445011173,
+      "centered cosine per context (committed best layer)": 0.7449207723096336,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.1087293168984935,
+      "centered cosine per context (committed best layer)": 0.7707784035539538,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.100611914677678,
+      "centered cosine per context (committed best layer)": 0.7016961182939027,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.051293979358397,
+      "centered cosine per context (committed best layer)": 0.630476904291678,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "centered cosine per context (committed best layer)": 0.6769888973025618,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 6.1004386876481265,
+      "centered cosine per context (committed best layer)": 0.4842158576390697,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.868438795028733,
+      "centered cosine per context (committed best layer)": 0.5258164579476184,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.01298449294115,
+      "centered cosine per context (committed best layer)": 0.6402801340895607,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.005120233268549,
+      "centered cosine per context (committed best layer)": 0.6185175056588619,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.128725971884121,
+      "centered cosine per context (committed best layer)": 0.6051862405362881,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.986607771613666,
+      "centered cosine per context (committed best layer)": 0.6484048482306427,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.958632218596128,
+      "centered cosine per context (committed best layer)": 0.5488973408208243,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.05024277764536,
+      "centered cosine per context (committed best layer)": 0.4492353758362209,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.915926794300304,
+      "centered cosine per context (committed best layer)": 0.4519344050808982,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.870316627943424,
+      "centered cosine per context (committed best layer)": 0.6071311966784837,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.9920358186485485,
+      "centered cosine per context (committed best layer)": 0.6170487705949583,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.970080172694159,
+      "centered cosine per context (committed best layer)": 0.669218797738081,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.903725178590395,
+      "centered cosine per context (committed best layer)": 0.6004737205943826,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.952304251641446,
+      "centered cosine per context (committed best layer)": 0.4999279679169334,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.951901281937449,
+      "centered cosine per context (committed best layer)": 0.487463057875296,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.937898403188516,
+      "centered cosine per context (committed best layer)": 0.45649842497775983,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.956607068701694,
+      "centered cosine per context (committed best layer)": 0.642202060250112,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.06686760436414,
+      "centered cosine per context (committed best layer)": 0.6581507895057894,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.926875530845662,
+      "centered cosine per context (committed best layer)": 0.5414842888626511,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.1615888536175225,
+      "centered cosine per context (committed best layer)": 0.60254349043266,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.149885287033744,
+      "centered cosine per context (committed best layer)": 0.41139182445625294,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.993127754188028,
+      "centered cosine per context (committed best layer)": 0.5141977883629314,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.938210033801688,
+      "centered cosine per context (committed best layer)": 0.713785480212852,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.012756524338801,
+      "centered cosine per context (committed best layer)": 0.578122571981173,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.125481775958505,
+      "centered cosine per context (committed best layer)": 0.7227269108158701,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.054931442601637,
+      "centered cosine per context (committed best layer)": 0.5238212009885539,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.1095810580609475,
+      "centered cosine per context (committed best layer)": 0.45360519860556375,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.011780019383666,
+      "centered cosine per context (committed best layer)": 0.48458662099908245,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.047850346536343,
+      "centered cosine per context (committed best layer)": 0.7073715526174507,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.923736021105686,
+      "centered cosine per context (committed best layer)": 0.6257907666235067,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.084561538431704,
+      "centered cosine per context (committed best layer)": 0.667118253739913,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.892865653525258,
+      "centered cosine per context (committed best layer)": 0.54921538000355,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.070127326374659,
+      "centered cosine per context (committed best layer)": 0.47015772491887137,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.129858864597322,
+      "centered cosine per context (committed best layer)": 0.47922340704832,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.8675570214285555,
+      "centered cosine per context (committed best layer)": 0.6815809630309411,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.041176706595091,
+      "centered cosine per context (committed best layer)": 0.6758170555326738,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.854234469362776,
+      "centered cosine per context (committed best layer)": 0.6504591554129124,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.081257626177714,
+      "centered cosine per context (committed best layer)": 0.7363867894699749,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.850417558776467,
+      "centered cosine per context (committed best layer)": 0.3807462010412238,
+      "label": "PersonaHub persona 1",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.156938336172225,
+      "centered cosine per context (committed best layer)": 0.512739580472992,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.869466854813608,
+      "centered cosine per context (committed best layer)": 0.6838749781981985,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.1651968885272685,
+      "centered cosine per context (committed best layer)": 0.6136020954559104,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.108318303390635,
+      "centered cosine per context (committed best layer)": 0.5650658969042561,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.033725521607887,
+      "centered cosine per context (committed best layer)": 0.6184322811953927,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.101744677666637,
+      "centered cosine per context (committed best layer)": 0.47029294515499526,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.106241342033911,
+      "centered cosine per context (committed best layer)": 0.5510158015119624,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.160569742614239,
+      "centered cosine per context (committed best layer)": 0.6780139154421979,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.911218007382107,
+      "centered cosine per context (committed best layer)": 0.7095537741984895,
+      "label": "software engineer persona",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.032427322328991,
+      "centered cosine per context (committed best layer)": 0.6372451806662757,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.854217711123185,
+      "centered cosine per context (committed best layer)": 0.581356368009932,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.0,
+      "centered cosine per context (committed best layer)": 0.6015086055135213,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 7.041819652008684,
+      "centered cosine per context (committed best layer)": 0.5998132802637671,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.881664869473404,
+      "centered cosine per context (committed best layer)": 0.6618537196570216,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.023382220130079,
+      "centered cosine per context (committed best layer)": 0.6050034736424224,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.026074985052186,
+      "centered cosine per context (committed best layer)": 0.7468232053963009,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.987754655073242,
+      "centered cosine per context (committed best layer)": 0.5731337888438572,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.008147439184724,
+      "centered cosine per context (committed best layer)": 0.5935608682219806,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.095012420402371,
+      "centered cosine per context (committed best layer)": 0.6138490699491912,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.107728097944344,
+      "centered cosine per context (committed best layer)": 0.5979990378349561,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.997175157607154,
+      "centered cosine per context (committed best layer)": 0.6506307431894472,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.03585363894814,
+      "centered cosine per context (committed best layer)": 0.7073717573699313,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.155245044848437,
+      "centered cosine per context (committed best layer)": 0.7121943346351792,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.8631040918604045,
+      "centered cosine per context (committed best layer)": 0.7088119991026514,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.86215728372404,
+      "centered cosine per context (committed best layer)": 0.5447062214272903,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.851575244287877,
+      "centered cosine per context (committed best layer)": 0.5785734566979348,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.05683078261459,
+      "centered cosine per context (committed best layer)": 0.5934836282906232,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.9706989882845365,
+      "centered cosine per context (committed best layer)": 0.6097623866266619,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.098755709811064,
+      "centered cosine per context (committed best layer)": 0.7486404648899984,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.061643308791093,
+      "centered cosine per context (committed best layer)": 0.6903832999721529,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.940109592998166,
+      "centered cosine per context (committed best layer)": 0.6151514230507442,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.143411957050153,
+      "centered cosine per context (committed best layer)": 0.5897408878004677,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.094511572945435,
+      "centered cosine per context (committed best layer)": 0.5901299415732498,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.9173925787276636,
+      "centered cosine per context (committed best layer)": 0.629156232157898,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.95110912639794,
+      "centered cosine per context (committed best layer)": 0.807743673873003,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.933198392873535,
+      "centered cosine per context (committed best layer)": 0.7405903745356075,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.876740193505,
+      "centered cosine per context (committed best layer)": 0.6731097417963758,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.873202014115189,
+      "centered cosine per context (committed best layer)": 0.6095705141534719,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.157005886815268,
+      "centered cosine per context (committed best layer)": 0.5750203861484867,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.977645453391551,
+      "centered cosine per context (committed best layer)": 0.6380629481703642,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.957995136199868,
+      "centered cosine per context (committed best layer)": 0.8140058896515366,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.082686855123856,
+      "centered cosine per context (committed best layer)": 0.6669819944544387,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.019077503491044,
+      "centered cosine per context (committed best layer)": 0.679648352356592,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.157010395261846,
+      "centered cosine per context (committed best layer)": 0.5602534948735509,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.100908537807381,
+      "centered cosine per context (committed best layer)": 0.5796161781037527,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.9925730430848345,
+      "centered cosine per context (committed best layer)": 0.6141277519172342,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.955489410453097,
+      "centered cosine per context (committed best layer)": 0.6886955773728658,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.175187356172756,
+      "centered cosine per context (committed best layer)": 0.7921542941496126,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.078393684961312,
+      "centered cosine per context (committed best layer)": 0.6564748184635385,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.162430077601383,
+      "centered cosine per context (committed best layer)": 0.7424184848746272,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.862652287798135,
+      "centered cosine per context (committed best layer)": 0.5452252105817172,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.126192124508682,
+      "centered cosine per context (committed best layer)": 0.6385124143977059,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.049346598236835,
+      "centered cosine per context (committed best layer)": 0.6908480762390545,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.863891804200641,
+      "centered cosine per context (committed best layer)": 0.6061987414450115,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.031772879988919,
+      "centered cosine per context (committed best layer)": 0.6118830217255073,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.066994691437961,
+      "centered cosine per context (committed best layer)": 0.6195082709737776,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.824428966919897,
+      "centered cosine per context (committed best layer)": 0.6675182148279009,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.983554466263029,
+      "centered cosine per context (committed best layer)": 0.6080536744335778,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.117143824030675,
+      "centered cosine per context (committed best layer)": 0.7687173853896465,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.926329249123873,
+      "centered cosine per context (committed best layer)": 0.7489241234182133,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.985077309447479,
+      "centered cosine per context (committed best layer)": 0.6470927256919122,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.979233085744442,
+      "centered cosine per context (committed best layer)": 0.6601551004834868,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.0,
+      "centered cosine per context (committed best layer)": 0.638287681284035,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 7.928693860919297,
+      "centered cosine per context (committed best layer)": 0.469103499772243,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.150639082385599,
+      "centered cosine per context (committed best layer)": 0.5203901718032595,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.101265852755345,
+      "centered cosine per context (committed best layer)": 0.5138987645414009,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.8598118279586,
+      "centered cosine per context (committed best layer)": 0.6495078907847595,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.178932476821526,
+      "centered cosine per context (committed best layer)": 0.4867177923796837,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.136512008750788,
+      "centered cosine per context (committed best layer)": 0.46713361799967956,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.922207037631054,
+      "centered cosine per context (committed best layer)": 0.42567134965593156,
+      "label": "data scientist persona",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.121282768677938,
+      "centered cosine per context (committed best layer)": 0.45923398004996546,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.858311031473698,
+      "centered cosine per context (committed best layer)": 0.4929682971047798,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.179677702970725,
+      "centered cosine per context (committed best layer)": 0.6056667231750024,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.059646504998353,
+      "centered cosine per context (committed best layer)": 0.6146537973416917,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.054045005601166,
+      "centered cosine per context (committed best layer)": 0.5774858799889823,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.852558661714288,
+      "centered cosine per context (committed best layer)": 0.423418924398328,
+      "label": "data scientist persona",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.142932023602786,
+      "centered cosine per context (committed best layer)": 0.4005021608699436,
+      "label": "data scientist persona",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.830439821153609,
+      "centered cosine per context (committed best layer)": 0.47814734984924556,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.906698100894813,
+      "centered cosine per context (committed best layer)": 0.45236807440159676,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.871487875059989,
+      "centered cosine per context (committed best layer)": 0.648866345019224,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.099636458649199,
+      "centered cosine per context (committed best layer)": 0.577692537883602,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.891353521796643,
+      "centered cosine per context (committed best layer)": 0.5035266316038599,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.147829761767118,
+      "centered cosine per context (committed best layer)": 0.3979291993362166,
+      "label": "data scientist persona",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.056256854157896,
+      "centered cosine per context (committed best layer)": 0.45636046532965946,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.833018575778091,
+      "centered cosine per context (committed best layer)": 0.45542169092502605,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.8219547402863325,
+      "centered cosine per context (committed best layer)": 0.7111867538595842,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.8385968501251835,
+      "centered cosine per context (committed best layer)": 0.5904246845277271,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.038133063953182,
+      "centered cosine per context (committed best layer)": 0.5822371329829523,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.10853345190939,
+      "centered cosine per context (committed best layer)": 0.5075444726832196,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.90587901542586,
+      "centered cosine per context (committed best layer)": 0.4628161895283515,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.125787183452307,
+      "centered cosine per context (committed best layer)": 0.48154860093192603,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.840603498455174,
+      "centered cosine per context (committed best layer)": 0.7188981716861974,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.108346987311004,
+      "centered cosine per context (committed best layer)": 0.5850985007910304,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.154006354862021,
+      "centered cosine per context (committed best layer)": 0.5344664135473913,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.097959023677577,
+      "centered cosine per context (committed best layer)": 0.41158005440494017,
+      "label": "data scientist persona",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.071323482232309,
+      "centered cosine per context (committed best layer)": 0.3953103975316873,
+      "label": "data scientist persona",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.121672878715938,
+      "centered cosine per context (committed best layer)": 0.47609806606773203,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.834454467836944,
+      "centered cosine per context (committed best layer)": 0.5422836351015491,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.89264155985886,
+      "centered cosine per context (committed best layer)": 0.6802996452613497,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.864972524550032,
+      "centered cosine per context (committed best layer)": 0.5121441815627252,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.001631156469475,
+      "centered cosine per context (committed best layer)": 0.6281627270230087,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.088267726198383,
+      "centered cosine per context (committed best layer)": 0.40304142007568045,
+      "label": "data scientist persona",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.046804264047504,
+      "centered cosine per context (committed best layer)": 0.506548813377983,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.126407195914297,
+      "centered cosine per context (committed best layer)": 0.5643040973402473,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.875876677278793,
+      "centered cosine per context (committed best layer)": 0.5014331149486378,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.084463593096658,
+      "centered cosine per context (committed best layer)": 0.44903918233111817,
+      "label": "data scientist persona",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.889494936712805,
+      "centered cosine per context (committed best layer)": 0.46484085407354825,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.917473150474408,
+      "centered cosine per context (committed best layer)": 0.5368320056805236,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.07556569102127,
+      "centered cosine per context (committed best layer)": 0.4766006900397307,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.172873722563525,
+      "centered cosine per context (committed best layer)": 0.6620802140419322,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.040155698151745,
+      "centered cosine per context (committed best layer)": 0.6323881597894071,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.839620113396866,
+      "centered cosine per context (committed best layer)": 0.5021140421869192,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.041871229173912,
+      "centered cosine per context (committed best layer)": 0.5413551713975614,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "centered cosine per context (committed best layer)": 0.5050377224909215,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "centered cosine per context (committed best layer)": 0.8,
+      "series": "echo-consistency anchor (0.8)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "centered cosine per context (committed best layer)": 0.8,
+      "series": "echo-consistency anchor (0.8)",
+      "_kind": "line",
+      "_group": 18
+    }
+  ],
+  "n_series": 19,
+  "total_points": 461
+}

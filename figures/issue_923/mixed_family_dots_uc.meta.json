@@ -1,0 +1,8 @@
+{
+  "git_commit": "232b1d990cf8489d4767c96abeea817d4658d402",
+  "timestamp_utc": "2026-07-05T15:07:09.777178Z",
+  "python_version": "3.11.15",
+  "platform": "Linux-6.8.0-1060-gcp-x86_64-with-glibc2.35",
+  "cuda_visible_devices": "all",
+  "script": "issue923_fig_mixed"
+}

@@ -42,6 +42,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# Project dotenv wrapper: .env load + the shared-VM thread caps (#847) — called
+# BEFORE torch freezes its pool.
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv()
+
 import issue779_capture_answer_summaries as P1  # noqa: E402
 import issue779_common as C  # noqa: E402
 import torch  # noqa: E402

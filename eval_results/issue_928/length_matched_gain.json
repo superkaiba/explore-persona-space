@@ -1,0 +1,1708 @@
+{
+  "dv": "CoT-length-stratified / length-matched \u0394(G\u2212D) held-out skill re-reduction (primary frozen convention; paired bootstrap on the shared resample-index matrix restricted per subset via isin masking)",
+  "seed": 42,
+  "n_boot": 2000,
+  "primary_combo": "mean/mean",
+  "flagged_below_parse_floor": [
+    "f2_wc_short_3",
+    "f2_wc_short_5",
+    "f2_wc_long_1",
+    "f2_wc_long_2",
+    "f2_wc_long_3",
+    "f2_wc_long_4",
+    "f2_wc_long_5",
+    "f3_icl_marker_k4",
+    "f3_icl_french_k4",
+    "f3_icl_json_k4",
+    "f3_icl_pirate_k4",
+    "f3_icl_marker_k2",
+    "f3_icl_marker_k8",
+    "f3_icl_json_k8"
+  ],
+  "cot_length_source": "figures/issue_928/percontext_scatter_{avg_q,indiv}.meta.json (embedded per-point data; median well-formed CoT chars per context)",
+  "by_regime": {
+    "avg_q": {
+      "frozen_layer": 27,
+      "pooled": {
+        "observed": 0.10859309533787997,
+        "ci95": [
+          0.060620314941288556,
+          0.17674979776988384
+        ],
+        "p_delta_le_0": 0.0,
+        "n_draws": 2000,
+        "skill_g_aug": 0.7000883811584906,
+        "skill_d_ctx2ans": 0.5914952858206106,
+        "n_contexts": 50
+      },
+      "unflagged": {
+        "observed": 0.12728487551435352,
+        "ci95": [
+          0.06298887931953603,
+          0.21253819973346158
+        ],
+        "p_delta_le_0": 0.0,
+        "n_draws": 2000,
+        "skill_g_aug": 0.7465507896851734,
+        "skill_d_ctx2ans": 0.6192659141708199,
+        "n_contexts": 36
+      },
+      "flagged": {
+        "observed": 0.09146857999944702,
+        "ci95": [
+          0.03535611202434468,
+          0.22601400230968502
+        ],
+        "p_delta_le_0": 0.0005,
+        "n_draws": 2000,
+        "skill_g_aug": 0.6575217438471255,
+        "skill_d_ctx2ans": 0.5660531638476785,
+        "n_contexts": 14
+      },
+      "terciles_all": [
+        {
+          "bin": "T1 (short)",
+          "contexts": [
+            "f2_wc_short_2",
+            "f2_wc_short_4",
+            "f2_wc_short_5",
+            "f2_wc_long_1",
+            "f2_wc_long_4",
+            "f3_icl_marker_k4",
+            "f3_icl_french_k4",
+            "f3_icl_json_k4",
+            "f3_icl_pirate_k4",
+            "f3_icl_marker_k2",
+            "f3_icl_marker_k8",
+            "f3_icl_json_k2",
+            "f3_icl_json_k8",
+            "f4_reph_imperative",
+            "f4_reph_casual",
+            "f4_reph_legalese",
+            "f4_reph_enthusiastic"
+          ],
+          "length_range": [
+            1502.5,
+            2100.0
+          ],
+          "median_length": 1870.0,
+          "n_flagged": 10,
+          "delta": {
+            "observed": 0.15717953560659237,
+            "ci95": [
+              0.07630124382443304,
+              0.2838958430623272
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000,
+            "skill_g_aug": 0.6753531583307637,
+            "skill_d_ctx2ans": 0.5181736227241713,
+            "n_contexts": 17
+          }
+        },
+        {
+          "bin": "T2 (mid)",
+          "contexts": [
+            "f1_house_librarian",
+            "f1_house_surgeon",
+            "f1_house_programmer",
+            "f1_house_software_engineer",
+            "f1_phub_05",
+            "f1_phub_07",
+            "f1_phub_08",
+            "f2_wc_short_1",
+            "f2_wc_short_3",
+            "f2_wc_long_3",
+            "f4_reph_polite",
+            "f4_reph_archaic",
+            "f5_fmt_code_comment",
+            "f5_fmt_xml",
+            "f5_fmt_bullets",
+            "f8_behav_refusal",
+            "f8_behav_harmful"
+          ],
+          "length_range": [
+            2134.5,
+            3073.5
+          ],
+          "median_length": 2918.0,
+          "n_flagged": 2,
+          "delta": {
+            "observed": 0.1272530170808024,
+            "ci95": [
+              0.052166773836602516,
+              0.21335801503852833
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000,
+            "skill_g_aug": 0.7366468122904613,
+            "skill_d_ctx2ans": 0.6093937952096589,
+            "n_contexts": 17
+          }
+        },
+        {
+          "bin": "T3 (long)",
+          "contexts": [
+            "f1_house_medical_doctor",
+            "f1_house_data_scientist",
+            "f1_phub_01",
+            "f1_phub_02",
+            "f1_phub_03",
+            "f1_phub_04",
+            "f1_phub_06",
+            "f2_wc_long_2",
+            "f2_wc_long_5",
+            "f5_fmt_json",
+            "f5_fmt_markdown_table",
+            "f6_default_template",
+            "f6_helpful_asst",
+            "f8_behav_marker",
+            "f8_behav_sycophant",
+            "f8_behav_fact"
+          ],
+          "length_range": [
+            3075.0,
+            3672.0
+          ],
+          "median_length": 3313.0,
+          "n_flagged": 2,
+          "delta": {
+            "observed": 0.03566036786710036,
+            "ci95": [
+              -0.005949609651720691,
+              0.11685302239914472
+            ],
+            "p_delta_le_0": 0.051,
+            "n_draws": 2000,
+            "skill_g_aug": 0.7109546068124022,
+            "skill_d_ctx2ans": 0.6752942389453018,
+            "n_contexts": 16
+          }
+        }
+      ],
+      "terciles_unflagged": [
+        {
+          "bin": "T1 (short)",
+          "contexts": [
+            "f1_house_programmer",
+            "f1_phub_07",
+            "f2_wc_short_1",
+            "f2_wc_short_2",
+            "f2_wc_short_4",
+            "f3_icl_json_k2",
+            "f4_reph_imperative",
+            "f4_reph_polite",
+            "f4_reph_casual",
+            "f4_reph_legalese",
+            "f4_reph_enthusiastic",
+            "f5_fmt_code_comment"
+          ],
+          "length_range": [
+            1502.5,
+            2649.0
+          ],
+          "median_length": 2040.0,
+          "n_flagged": 0,
+          "delta": {
+            "observed": 0.1538633213179208,
+            "ci95": [
+              0.05422050140299379,
+              0.3030046889809932
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000,
+            "skill_g_aug": 0.6893432195106457,
+            "skill_d_ctx2ans": 0.5354798981927249,
+            "n_contexts": 12
+          }
+        },
+        {
+          "bin": "T2 (mid)",
+          "contexts": [
+            "f1_house_librarian",
+            "f1_house_surgeon",
+            "f1_house_software_engineer",
+            "f1_phub_01",
+            "f1_phub_05",
+            "f1_phub_08",
+            "f4_reph_archaic",
+            "f5_fmt_xml",
+            "f5_fmt_bullets",
+            "f6_helpful_asst",
+            "f8_behav_refusal",
+            "f8_behav_harmful"
+          ],
+          "length_range": [
+            2885.0,
+            3156.0
+          ],
+          "median_length": 3048.75,
+          "n_flagged": 0,
+          "delta": {
+            "observed": 0.06632820365828529,
+            "ci95": [
+              0.04018369432425615,
+              0.10345972392930745
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000,
+            "skill_g_aug": 0.8678574243646534,
+            "skill_d_ctx2ans": 0.8015292207063681,
+            "n_contexts": 12
+          }
+        },
+        {
+          "bin": "T3 (long)",
+          "contexts": [
+            "f1_house_medical_doctor",
+            "f1_house_data_scientist",
+            "f1_phub_02",
+            "f1_phub_03",
+            "f1_phub_04",
+            "f1_phub_06",
+            "f5_fmt_json",
+            "f5_fmt_markdown_table",
+            "f6_default_template",
+            "f8_behav_marker",
+            "f8_behav_sycophant",
+            "f8_behav_fact"
+          ],
+          "length_range": [
+            3164.0,
+            3672.0
+          ],
+          "median_length": 3313.0,
+          "n_flagged": 0,
+          "delta": {
+            "observed": 0.09884659720504718,
+            "ci95": [
+              0.05879698263331501,
+              0.15226535970767174
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000,
+            "skill_g_aug": 0.822528231251848,
+            "skill_d_ctx2ans": 0.7236816340468009,
+            "n_contexts": 12
+          }
+        }
+      ],
+      "length_matched": {
+        "nearest_neighbor": {
+          "pairs": [
+            {
+              "flagged": "f2_wc_short_5",
+              "unflagged": "f2_wc_short_2",
+              "length_gap_chars": 0.5
+            },
+            {
+              "flagged": "f3_icl_french_k4",
+              "unflagged": "f3_icl_json_k2",
+              "length_gap_chars": 2.5
+            },
+            {
+              "flagged": "f2_wc_long_1",
+              "unflagged": "f4_reph_casual",
+              "length_gap_chars": 6.5
+            },
+            {
+              "flagged": "f2_wc_long_2",
+              "unflagged": "f1_phub_06",
+              "length_gap_chars": 8.5
+            },
+            {
+              "flagged": "f2_wc_long_5",
+              "unflagged": "f1_house_data_scientist",
+              "length_gap_chars": 23.0
+            },
+            {
+              "flagged": "f3_icl_marker_k8",
+              "unflagged": "f2_wc_short_4",
+              "length_gap_chars": 24.5
+            },
+            {
+              "flagged": "f3_icl_json_k8",
+              "unflagged": "f4_reph_enthusiastic",
+              "length_gap_chars": 39.0
+            },
+            {
+              "flagged": "f3_icl_marker_k2",
+              "unflagged": "f4_reph_legalese",
+              "length_gap_chars": 39.0
+            },
+            {
+              "flagged": "f3_icl_marker_k4",
+              "unflagged": "f4_reph_imperative",
+              "length_gap_chars": 44.0
+            },
+            {
+              "flagged": "f2_wc_short_3",
+              "unflagged": "f2_wc_short_1",
+              "length_gap_chars": 66.0
+            },
+            {
+              "flagged": "f2_wc_long_3",
+              "unflagged": "f5_fmt_code_comment",
+              "length_gap_chars": 164.5
+            },
+            {
+              "flagged": "f3_icl_json_k4",
+              "unflagged": "f1_phub_07",
+              "length_gap_chars": 686.0
+            },
+            {
+              "flagged": "f3_icl_pirate_k4",
+              "unflagged": "f4_reph_polite",
+              "length_gap_chars": 719.0
+            },
+            {
+              "flagged": "f2_wc_long_4",
+              "unflagged": "f1_house_programmer",
+              "length_gap_chars": 852.0
+            }
+          ],
+          "mean_abs_gap_chars": 191.07142857142858,
+          "contrast_flagged_minus_unflagged": {
+            "observed": -0.060351237344211994,
+            "ci95": [
+              -0.21201906164403625,
+              0.09592942685408178
+            ],
+            "p_delta_le_0": 0.791,
+            "n_draws": 2000,
+            "delta_a": {
+              "observed": 0.09146857999944702,
+              "ci95": [
+                0.03535611202434468,
+                0.22601400230968502
+              ],
+              "p_delta_le_0": 0.0005,
+              "n_draws": 2000,
+              "skill_g_aug": 0.6575217438471255,
+              "skill_d_ctx2ans": 0.5660531638476785,
+              "n_contexts": 14
+            },
+            "delta_b": {
+              "observed": 0.151819817343659,
+              "ci95": [
+                0.05455712467547196,
+                0.29274651623604775
+              ],
+              "p_delta_le_0": 0.0,
+              "n_draws": 2000,
+              "skill_g_aug": 0.6932048275883343,
+              "skill_d_ctx2ans": 0.5413850102446753,
+              "n_contexts": 14
+            }
+          }
+        },
+        "overlap_window": {
+          "window_chars": [
+            1503.0,
+            3533.0
+          ],
+          "n_flagged": 14,
+          "n_unflagged": 33,
+          "contrast_flagged_minus_unflagged": {
+            "observed": -0.06673437270478633,
+            "ci95": [
+              -0.15802998598544515,
+              0.08030288117368133
+            ],
+            "p_delta_le_0": 0.8465,
+            "n_draws": 2000,
+            "delta_a": {
+              "observed": 0.09146857999944702,
+              "ci95": [
+                0.03535611202434468,
+                0.22601400230968502
+              ],
+              "p_delta_le_0": 0.0005,
+              "n_draws": 2000,
+              "skill_g_aug": 0.6575217438471255,
+              "skill_d_ctx2ans": 0.5660531638476785,
+              "n_contexts": 14
+            },
+            "delta_b": {
+              "observed": 0.15820295270423335,
+              "ci95": [
+                0.09116794969015334,
+                0.2334569199081304
+              ],
+              "p_delta_le_0": 0.0,
+              "n_draws": 2000,
+              "skill_g_aug": 0.7520686061166112,
+              "skill_d_ctx2ans": 0.5938656534123778,
+              "n_contexts": 33
+            }
+          }
+        }
+      },
+      "spearman_length_vs_gain": {
+        "pooled": {
+          "rho": -0.13584633853541417,
+          "p": 0.34688260880067673,
+          "n": 50
+        },
+        "unflagged": {
+          "rho": -0.1274131274131274,
+          "p": 0.45898141329025,
+          "n": 36
+        },
+        "flagged": {
+          "rho": 0.3186813186813187,
+          "p": 0.26678496081136144,
+          "n": 14
+        }
+      },
+      "per_context": [
+        {
+          "context": "f1_house_librarian",
+          "flagged": false,
+          "median_cot_chars": 3063.0,
+          "delta_gain": 0.06584773252913279,
+          "skill_g_aug": 0.9123415202069421,
+          "skill_d_ctx2ans": 0.8464937876778094
+        },
+        {
+          "context": "f1_house_surgeon",
+          "flagged": false,
+          "median_cot_chars": 3021.5,
+          "delta_gain": 0.021160282664790198,
+          "skill_g_aug": 0.9507707115704354,
+          "skill_d_ctx2ans": 0.9296104289056452
+        },
+        {
+          "context": "f1_house_programmer",
+          "flagged": false,
+          "median_cot_chars": 2649.0,
+          "delta_gain": 0.00956305567014304,
+          "skill_g_aug": 0.9425850429597188,
+          "skill_d_ctx2ans": 0.9330219872895757
+        },
+        {
+          "context": "f1_house_medical_doctor",
+          "flagged": false,
+          "median_cot_chars": 3575.5,
+          "delta_gain": 0.037023746039781535,
+          "skill_g_aug": 0.7606576365762299,
+          "skill_d_ctx2ans": 0.7236338905364483
+        },
+        {
+          "context": "f1_house_software_engineer",
+          "flagged": false,
+          "median_cot_chars": 3046.5,
+          "delta_gain": 0.09726749070106677,
+          "skill_g_aug": 0.8025658543427797,
+          "skill_d_ctx2ans": 0.7052983636417129
+        },
+        {
+          "context": "f1_house_data_scientist",
+          "flagged": false,
+          "median_cot_chars": 3471.0,
+          "delta_gain": 0.06012120238122587,
+          "skill_g_aug": 0.8453616711450114,
+          "skill_d_ctx2ans": 0.7852404687637855
+        },
+        {
+          "context": "f1_phub_01",
+          "flagged": false,
+          "median_cot_chars": 3156.0,
+          "delta_gain": 0.17132934312962045,
+          "skill_g_aug": 0.6394354227692464,
+          "skill_d_ctx2ans": 0.4681060796396259
+        },
+        {
+          "context": "f1_phub_02",
+          "flagged": false,
+          "median_cot_chars": 3198.0,
+          "delta_gain": 0.03856574815101255,
+          "skill_g_aug": 0.8760728257684179,
+          "skill_d_ctx2ans": 0.8375070776174054
+        },
+        {
+          "context": "f1_phub_03",
+          "flagged": false,
+          "median_cot_chars": 3200.0,
+          "delta_gain": 0.12815818002578683,
+          "skill_g_aug": 0.7908753758139885,
+          "skill_d_ctx2ans": 0.6627171957882017
+        },
+        {
+          "context": "f1_phub_04",
+          "flagged": false,
+          "median_cot_chars": 3319.0,
+          "delta_gain": 0.0914629754800853,
+          "skill_g_aug": 0.8041347863971623,
+          "skill_d_ctx2ans": 0.712671810917077
+        },
+        {
+          "context": "f1_phub_05",
+          "flagged": false,
+          "median_cot_chars": 3056.0,
+          "delta_gain": 0.06882140142787518,
+          "skill_g_aug": 0.847780645551601,
+          "skill_d_ctx2ans": 0.7789592441237259
+        },
+        {
+          "context": "f1_phub_06",
+          "flagged": false,
+          "median_cot_chars": 3524.5,
+          "delta_gain": 0.11753162049061483,
+          "skill_g_aug": 0.7812928404567414,
+          "skill_d_ctx2ans": 0.6637612199661266
+        },
+        {
+          "context": "f1_phub_07",
+          "flagged": false,
+          "median_cot_chars": 2632.0,
+          "delta_gain": -0.09102754383639622,
+          "skill_g_aug": 0.20592308817349914,
+          "skill_d_ctx2ans": 0.29695063200989535
+        },
+        {
+          "context": "f1_phub_08",
+          "flagged": false,
+          "median_cot_chars": 2885.0,
+          "delta_gain": 0.2062854127278877,
+          "skill_g_aug": 0.5059044912738027,
+          "skill_d_ctx2ans": 0.29961907854591496
+        },
+        {
+          "context": "f2_wc_short_1",
+          "flagged": false,
+          "median_cot_chars": 2247.0,
+          "delta_gain": 0.11107220207368584,
+          "skill_g_aug": 0.3556214656852291,
+          "skill_d_ctx2ans": 0.24454926361154328
+        },
+        {
+          "context": "f2_wc_short_2",
+          "flagged": false,
+          "median_cot_chars": 1502.5,
+          "delta_gain": -0.007117392164499137,
+          "skill_g_aug": 0.7177490445669772,
+          "skill_d_ctx2ans": 0.7248664367314763
+        },
+        {
+          "context": "f2_wc_short_3",
+          "flagged": true,
+          "median_cot_chars": 2181.0,
+          "delta_gain": 0.14512762633581344,
+          "skill_g_aug": 0.23834794382718683,
+          "skill_d_ctx2ans": 0.09322031749137338
+        },
+        {
+          "context": "f2_wc_short_4",
+          "flagged": false,
+          "median_cot_chars": 1845.5,
+          "delta_gain": 0.19035646674763818,
+          "skill_g_aug": 0.6728310922015426,
+          "skill_d_ctx2ans": 0.4824746254539044
+        },
+        {
+          "context": "f2_wc_short_5",
+          "flagged": true,
+          "median_cot_chars": 1503.0,
+          "delta_gain": 0.006253018795159715,
+          "skill_g_aug": 0.45967174426935775,
+          "skill_d_ctx2ans": 0.45341872547419804
+        },
+        {
+          "context": "f2_wc_long_1",
+          "flagged": true,
+          "median_cot_chars": 1555.5,
+          "delta_gain": 0.045070591545508853,
+          "skill_g_aug": 0.788314044400991,
+          "skill_d_ctx2ans": 0.7432434528554821
+        },
+        {
+          "context": "f2_wc_long_2",
+          "flagged": true,
+          "median_cot_chars": 3533.0,
+          "delta_gain": -0.029317380774123714,
+          "skill_g_aug": 0.5190078156616075,
+          "skill_d_ctx2ans": 0.5483251964357312
+        },
+        {
+          "context": "f2_wc_long_3",
+          "flagged": true,
+          "median_cot_chars": 2134.5,
+          "delta_gain": 0.4287884462341971,
+          "skill_g_aug": 0.7241051025337768,
+          "skill_d_ctx2ans": 0.2953166562995797
+        },
+        {
+          "context": "f2_wc_long_4",
+          "flagged": true,
+          "median_cot_chars": 1797.0,
+          "delta_gain": 0.03400887186159973,
+          "skill_g_aug": 0.20574523379520038,
+          "skill_d_ctx2ans": 0.17173636193360065
+        },
+        {
+          "context": "f2_wc_long_5",
+          "flagged": true,
+          "median_cot_chars": 3448.0,
+          "delta_gain": 0.04900489394158547,
+          "skill_g_aug": 0.786893052524335,
+          "skill_d_ctx2ans": 0.7378881585827495
+        },
+        {
+          "context": "f3_icl_marker_k4",
+          "flagged": true,
+          "median_cot_chars": 1594.0,
+          "delta_gain": 0.04161214803484803,
+          "skill_g_aug": 0.8755551357025542,
+          "skill_d_ctx2ans": 0.8339429876677061
+        },
+        {
+          "context": "f3_icl_french_k4",
+          "flagged": true,
+          "median_cot_chars": 2021.5,
+          "delta_gain": 0.5018007380351927,
+          "skill_g_aug": 0.3622686129293876,
+          "skill_d_ctx2ans": -0.13953212510580504
+        },
+        {
+          "context": "f3_icl_json_k4",
+          "flagged": true,
+          "median_cot_chars": 1946.0,
+          "delta_gain": 0.3591219275441654,
+          "skill_g_aug": 0.7593811378354327,
+          "skill_d_ctx2ans": 0.4002592102912673
+        },
+        {
+          "context": "f3_icl_pirate_k4",
+          "flagged": true,
+          "median_cot_chars": 1928.0,
+          "delta_gain": 0.32153057049846323,
+          "skill_g_aug": 0.45049796205397863,
+          "skill_d_ctx2ans": 0.1289673915555154
+        },
+        {
+          "context": "f3_icl_marker_k2",
+          "flagged": true,
+          "median_cot_chars": 2100.0,
+          "delta_gain": 0.949775133136798,
+          "skill_g_aug": 0.5206667352621902,
+          "skill_d_ctx2ans": -0.42910839787460775
+        },
+        {
+          "context": "f3_icl_marker_k8",
+          "flagged": true,
+          "median_cot_chars": 1870.0,
+          "delta_gain": 0.03591948132903544,
+          "skill_g_aug": 0.8972773359961757,
+          "skill_d_ctx2ans": 0.8613578546671402
+        },
+        {
+          "context": "f3_icl_json_k2",
+          "flagged": false,
+          "median_cot_chars": 2019.0,
+          "delta_gain": 0.6974332302900756,
+          "skill_g_aug": 0.6416983674269019,
+          "skill_d_ctx2ans": -0.05573486286317375
+        },
+        {
+          "context": "f3_icl_json_k8",
+          "flagged": true,
+          "median_cot_chars": 1963.0,
+          "delta_gain": 0.2594995807630226,
+          "skill_g_aug": 0.7825517128234737,
+          "skill_d_ctx2ans": 0.5230521320604511
+        },
+        {
+          "context": "f4_reph_imperative",
+          "flagged": false,
+          "median_cot_chars": 1638.0,
+          "delta_gain": 0.10470663027868454,
+          "skill_g_aug": 0.837078869977435,
+          "skill_d_ctx2ans": 0.7323722396987504
+        },
+        {
+          "context": "f4_reph_polite",
+          "flagged": false,
+          "median_cot_chars": 2647.0,
+          "delta_gain": 0.3502110754204355,
+          "skill_g_aug": 0.8698676678024198,
+          "skill_d_ctx2ans": 0.5196565923819843
+        },
+        {
+          "context": "f4_reph_casual",
+          "flagged": false,
+          "median_cot_chars": 1562.0,
+          "delta_gain": 0.44989781448950494,
+          "skill_g_aug": 0.5975590228496361,
+          "skill_d_ctx2ans": 0.1476612083601312
+        },
+        {
+          "context": "f4_reph_legalese",
+          "flagged": false,
+          "median_cot_chars": 2061.0,
+          "delta_gain": 0.35195164366906606,
+          "skill_g_aug": 0.32970252494277286,
+          "skill_d_ctx2ans": -0.022249118726293204
+        },
+        {
+          "context": "f4_reph_enthusiastic",
+          "flagged": false,
+          "median_cot_chars": 2002.0,
+          "delta_gain": 0.02734356901630286,
+          "skill_g_aug": 0.7575629365091987,
+          "skill_d_ctx2ans": 0.7302193674928958
+        },
+        {
+          "context": "f4_reph_archaic",
+          "flagged": false,
+          "median_cot_chars": 3073.5,
+          "delta_gain": 0.0620068240998084,
+          "skill_g_aug": 0.9137957057099448,
+          "skill_d_ctx2ans": 0.8517888816101364
+        },
+        {
+          "context": "f5_fmt_json",
+          "flagged": false,
+          "median_cot_chars": 3253.0,
+          "delta_gain": 0.25503749872949244,
+          "skill_g_aug": 0.8426985709684724,
+          "skill_d_ctx2ans": 0.58766107223898
+        },
+        {
+          "context": "f5_fmt_code_comment",
+          "flagged": false,
+          "median_cot_chars": 2299.0,
+          "delta_gain": 0.09313077848284301,
+          "skill_g_aug": 0.6613521391593076,
+          "skill_d_ctx2ans": 0.5682213606764646
+        },
+        {
+          "context": "f5_fmt_markdown_table",
+          "flagged": false,
+          "median_cot_chars": 3164.0,
+          "delta_gain": 0.26481706653505255,
+          "skill_g_aug": 0.8258495493203928,
+          "skill_d_ctx2ans": 0.5610324827853402
+        },
+        {
+          "context": "f5_fmt_xml",
+          "flagged": false,
+          "median_cot_chars": 2982.0,
+          "delta_gain": 0.083894222715999,
+          "skill_g_aug": 0.7780114397303887,
+          "skill_d_ctx2ans": 0.6941172170143897
+        },
+        {
+          "context": "f5_fmt_bullets",
+          "flagged": false,
+          "median_cot_chars": 3051.0,
+          "delta_gain": 0.06523416036232876,
+          "skill_g_aug": 0.8688812987759651,
+          "skill_d_ctx2ans": 0.8036471384136363
+        },
+        {
+          "context": "f6_default_template",
+          "flagged": false,
+          "median_cot_chars": 3349.0,
+          "delta_gain": 0.15974465921706638,
+          "skill_g_aug": 0.6543806528744203,
+          "skill_d_ctx2ans": 0.4946359936573539
+        },
+        {
+          "context": "f6_helpful_asst",
+          "flagged": false,
+          "median_cot_chars": 3075.0,
+          "delta_gain": 0.05914528300397548,
+          "skill_g_aug": 0.9234657522196122,
+          "skill_d_ctx2ans": 0.8643204692156368
+        },
+        {
+          "context": "f8_behav_marker",
+          "flagged": false,
+          "median_cot_chars": 3301.0,
+          "delta_gain": 0.09617897840493372,
+          "skill_g_aug": 0.8560482577054352,
+          "skill_d_ctx2ans": 0.7598692793005015
+        },
+        {
+          "context": "f8_behav_sycophant",
+          "flagged": false,
+          "median_cot_chars": 3307.0,
+          "delta_gain": 0.03080509803237974,
+          "skill_g_aug": 0.9177722929779744,
+          "skill_d_ctx2ans": 0.8869671949455946
+        },
+        {
+          "context": "f8_behav_refusal",
+          "flagged": false,
+          "median_cot_chars": 2921.0,
+          "delta_gain": 0.1438531455238502,
+          "skill_g_aug": 0.7745971648996504,
+          "skill_d_ctx2ans": 0.6307440193758002
+        },
+        {
+          "context": "f8_behav_fact",
+          "flagged": false,
+          "median_cot_chars": 3672.0,
+          "delta_gain": 0.05676588813375738,
+          "skill_g_aug": 0.7904595278844206,
+          "skill_d_ctx2ans": 0.7336936397506633
+        },
+        {
+          "context": "f8_behav_harmful",
+          "flagged": false,
+          "median_cot_chars": 2918.0,
+          "delta_gain": 0.011856122675914404,
+          "skill_g_aug": 0.9138984937338681,
+          "skill_d_ctx2ans": 0.9020423710579537
+        }
+      ]
+    },
+    "indiv": {
+      "frozen_layer": 25,
+      "pooled": {
+        "observed": 0.2032889603416611,
+        "ci95": [
+          0.14638209646212602,
+          0.27167919327916
+        ],
+        "p_delta_le_0": 0.0,
+        "n_draws": 2000,
+        "skill_g_aug": 0.9083013726386983,
+        "skill_d_ctx2ans": 0.7050124122970371,
+        "n_contexts": 50
+      },
+      "unflagged": {
+        "observed": 0.12398852933229465,
+        "ci95": [
+          0.0791940583724014,
+          0.17943405800895298
+        ],
+        "p_delta_le_0": 0.0,
+        "n_draws": 2000,
+        "skill_g_aug": 0.9122005496656497,
+        "skill_d_ctx2ans": 0.788212020333355,
+        "n_contexts": 36
+      },
+      "flagged": {
+        "observed": 0.6293992753306609,
+        "ci95": [
+          0.5494581631861203,
+          0.7040792956887962
+        ],
+        "p_delta_le_0": 0.0,
+        "n_draws": 2000,
+        "skill_g_aug": 0.8873496636756549,
+        "skill_d_ctx2ans": 0.25795038834499406,
+        "n_contexts": 14
+      },
+      "terciles_all": [
+        {
+          "bin": "T1 (short)",
+          "contexts": [
+            "f2_wc_short_2",
+            "f2_wc_short_4",
+            "f2_wc_short_5",
+            "f2_wc_long_1",
+            "f2_wc_long_4",
+            "f3_icl_marker_k4",
+            "f3_icl_french_k4",
+            "f3_icl_json_k4",
+            "f3_icl_pirate_k4",
+            "f3_icl_marker_k2",
+            "f3_icl_marker_k8",
+            "f3_icl_json_k2",
+            "f3_icl_json_k8",
+            "f4_reph_imperative",
+            "f4_reph_casual",
+            "f4_reph_legalese",
+            "f4_reph_enthusiastic"
+          ],
+          "length_range": [
+            1502.5,
+            2100.0
+          ],
+          "median_length": 1870.0,
+          "n_flagged": 10,
+          "delta": {
+            "observed": 0.4349840819496754,
+            "ci95": [
+              0.3092806061932707,
+              0.573417846300818
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000,
+            "skill_g_aug": 0.8558383045657851,
+            "skill_d_ctx2ans": 0.4208542226161097,
+            "n_contexts": 17
+          }
+        },
+        {
+          "bin": "T2 (mid)",
+          "contexts": [
+            "f1_house_librarian",
+            "f1_house_surgeon",
+            "f1_house_programmer",
+            "f1_house_software_engineer",
+            "f1_phub_05",
+            "f1_phub_07",
+            "f1_phub_08",
+            "f2_wc_short_1",
+            "f2_wc_short_3",
+            "f2_wc_long_3",
+            "f4_reph_polite",
+            "f4_reph_archaic",
+            "f5_fmt_code_comment",
+            "f5_fmt_xml",
+            "f5_fmt_bullets",
+            "f8_behav_refusal",
+            "f8_behav_harmful"
+          ],
+          "length_range": [
+            2134.5,
+            3073.5
+          ],
+          "median_length": 2918.0,
+          "n_flagged": 2,
+          "delta": {
+            "observed": 0.13211070746367204,
+            "ci95": [
+              0.0676810678688654,
+              0.22532632570700595
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000,
+            "skill_g_aug": 0.9195753666788974,
+            "skill_d_ctx2ans": 0.7874646592152253,
+            "n_contexts": 17
+          }
+        },
+        {
+          "bin": "T3 (long)",
+          "contexts": [
+            "f1_house_medical_doctor",
+            "f1_house_data_scientist",
+            "f1_phub_01",
+            "f1_phub_02",
+            "f1_phub_03",
+            "f1_phub_04",
+            "f1_phub_06",
+            "f2_wc_long_2",
+            "f2_wc_long_5",
+            "f5_fmt_json",
+            "f5_fmt_markdown_table",
+            "f6_default_template",
+            "f6_helpful_asst",
+            "f8_behav_marker",
+            "f8_behav_sycophant",
+            "f8_behav_fact"
+          ],
+          "length_range": [
+            3075.0,
+            3672.0
+          ],
+          "median_length": 3313.0,
+          "n_flagged": 2,
+          "delta": {
+            "observed": 0.07495486029593279,
+            "ci95": [
+              0.0429592351318762,
+              0.1365529777345687
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000,
+            "skill_g_aug": 0.943170254080278,
+            "skill_d_ctx2ans": 0.8682153937843452,
+            "n_contexts": 16
+          }
+        }
+      ],
+      "terciles_unflagged": [
+        {
+          "bin": "T1 (short)",
+          "contexts": [
+            "f1_house_programmer",
+            "f1_phub_07",
+            "f2_wc_short_1",
+            "f2_wc_short_2",
+            "f2_wc_short_4",
+            "f3_icl_json_k2",
+            "f4_reph_imperative",
+            "f4_reph_polite",
+            "f4_reph_casual",
+            "f4_reph_legalese",
+            "f4_reph_enthusiastic",
+            "f5_fmt_code_comment"
+          ],
+          "length_range": [
+            1502.5,
+            2649.0
+          ],
+          "median_length": 2040.0,
+          "n_flagged": 0,
+          "delta": {
+            "observed": 0.24516507728611936,
+            "ci95": [
+              0.14083381422201732,
+              0.37037731749434666
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000,
+            "skill_g_aug": 0.8561876918128752,
+            "skill_d_ctx2ans": 0.6110226145267559,
+            "n_contexts": 12
+          }
+        },
+        {
+          "bin": "T2 (mid)",
+          "contexts": [
+            "f1_house_librarian",
+            "f1_house_surgeon",
+            "f1_house_software_engineer",
+            "f1_phub_01",
+            "f1_phub_05",
+            "f1_phub_08",
+            "f4_reph_archaic",
+            "f5_fmt_xml",
+            "f5_fmt_bullets",
+            "f6_helpful_asst",
+            "f8_behav_refusal",
+            "f8_behav_harmful"
+          ],
+          "length_range": [
+            2885.0,
+            3156.0
+          ],
+          "median_length": 3048.75,
+          "n_flagged": 0,
+          "delta": {
+            "observed": 0.06612458073933813,
+            "ci95": [
+              0.051582598434375765,
+              0.08775236935245419
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000,
+            "skill_g_aug": 0.9398363804538761,
+            "skill_d_ctx2ans": 0.8737117997145379,
+            "n_contexts": 12
+          }
+        },
+        {
+          "bin": "T3 (long)",
+          "contexts": [
+            "f1_house_medical_doctor",
+            "f1_house_data_scientist",
+            "f1_phub_02",
+            "f1_phub_03",
+            "f1_phub_04",
+            "f1_phub_06",
+            "f5_fmt_json",
+            "f5_fmt_markdown_table",
+            "f6_default_template",
+            "f8_behav_marker",
+            "f8_behav_sycophant",
+            "f8_behav_fact"
+          ],
+          "length_range": [
+            3164.0,
+            3672.0
+          ],
+          "median_length": 3313.0,
+          "n_flagged": 0,
+          "delta": {
+            "observed": 0.04397969854338435,
+            "ci95": [
+              0.03781584772672722,
+              0.05049493121682277
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000,
+            "skill_g_aug": 0.9482484384125623,
+            "skill_d_ctx2ans": 0.904268739869178,
+            "n_contexts": 12
+          }
+        }
+      ],
+      "length_matched": {
+        "nearest_neighbor": {
+          "pairs": [
+            {
+              "flagged": "f2_wc_short_5",
+              "unflagged": "f2_wc_short_2",
+              "length_gap_chars": 0.5
+            },
+            {
+              "flagged": "f3_icl_french_k4",
+              "unflagged": "f3_icl_json_k2",
+              "length_gap_chars": 2.5
+            },
+            {
+              "flagged": "f2_wc_long_1",
+              "unflagged": "f4_reph_casual",
+              "length_gap_chars": 6.5
+            },
+            {
+              "flagged": "f2_wc_long_2",
+              "unflagged": "f1_phub_06",
+              "length_gap_chars": 8.5
+            },
+            {
+              "flagged": "f2_wc_long_5",
+              "unflagged": "f1_house_data_scientist",
+              "length_gap_chars": 23.0
+            },
+            {
+              "flagged": "f3_icl_marker_k8",
+              "unflagged": "f2_wc_short_4",
+              "length_gap_chars": 24.5
+            },
+            {
+              "flagged": "f3_icl_json_k8",
+              "unflagged": "f4_reph_enthusiastic",
+              "length_gap_chars": 39.0
+            },
+            {
+              "flagged": "f3_icl_marker_k2",
+              "unflagged": "f4_reph_legalese",
+              "length_gap_chars": 39.0
+            },
+            {
+              "flagged": "f3_icl_marker_k4",
+              "unflagged": "f4_reph_imperative",
+              "length_gap_chars": 44.0
+            },
+            {
+              "flagged": "f2_wc_short_3",
+              "unflagged": "f2_wc_short_1",
+              "length_gap_chars": 66.0
+            },
+            {
+              "flagged": "f2_wc_long_3",
+              "unflagged": "f5_fmt_code_comment",
+              "length_gap_chars": 164.5
+            },
+            {
+              "flagged": "f3_icl_json_k4",
+              "unflagged": "f1_phub_07",
+              "length_gap_chars": 686.0
+            },
+            {
+              "flagged": "f3_icl_pirate_k4",
+              "unflagged": "f4_reph_polite",
+              "length_gap_chars": 719.0
+            },
+            {
+              "flagged": "f2_wc_long_4",
+              "unflagged": "f1_house_programmer",
+              "length_gap_chars": 852.0
+            }
+          ],
+          "mean_abs_gap_chars": 191.07142857142858,
+          "contrast_flagged_minus_unflagged": {
+            "observed": 0.4091144073318138,
+            "ci95": [
+              0.26762869612721285,
+              0.5293423713146772
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000,
+            "delta_a": {
+              "observed": 0.6293992753306609,
+              "ci95": [
+                0.5494581631861203,
+                0.7040792956887962
+              ],
+              "p_delta_le_0": 0.0,
+              "n_draws": 2000,
+              "skill_g_aug": 0.8873496636756549,
+              "skill_d_ctx2ans": 0.25795038834499406,
+              "n_contexts": 14
+            },
+            "delta_b": {
+              "observed": 0.22028486799884706,
+              "ci95": [
+                0.12517150617432202,
+                0.3372845429104471
+              ],
+              "p_delta_le_0": 0.0,
+              "n_draws": 2000,
+              "skill_g_aug": 0.868226574756363,
+              "skill_d_ctx2ans": 0.647941706757516,
+              "n_contexts": 14
+            }
+          }
+        },
+        "overlap_window": {
+          "window_chars": [
+            1503.0,
+            3533.0
+          ],
+          "n_flagged": 14,
+          "n_unflagged": 33,
+          "contrast_flagged_minus_unflagged": {
+            "observed": 0.5139747613085591,
+            "ci95": [
+              0.4184613852045852,
+              0.5999963304924624
+            ],
+            "p_delta_le_0": 0.0,
+            "n_draws": 2000,
+            "delta_a": {
+              "observed": 0.6293992753306609,
+              "ci95": [
+                0.5494581631861203,
+                0.7040792956887962
+              ],
+              "p_delta_le_0": 0.0,
+              "n_draws": 2000,
+              "skill_g_aug": 0.8873496636756549,
+              "skill_d_ctx2ans": 0.25795038834499406,
+              "n_contexts": 14
+            },
+            "delta_b": {
+              "observed": 0.11542451402210174,
+              "ci95": [
+                0.07418223779200728,
+                0.17199280451701843
+              ],
+              "p_delta_le_0": 0.0,
+              "n_draws": 2000,
+              "skill_g_aug": 0.9175296575963449,
+              "skill_d_ctx2ans": 0.8021051435742431,
+              "n_contexts": 33
+            }
+          }
+        }
+      },
+      "spearman_length_vs_gain": {
+        "pooled": {
+          "rho": -0.6981512605042016,
+          "p": 1.740888380925524e-08,
+          "n": 50
+        },
+        "unflagged": {
+          "rho": -0.8231660231660232,
+          "p": 7.155029523144287e-10,
+          "n": 36
+        },
+        "flagged": {
+          "rho": 0.1164835164835165,
+          "p": 0.6916912502331575,
+          "n": 14
+        }
+      },
+      "per_context": [
+        {
+          "context": "f1_house_librarian",
+          "flagged": false,
+          "median_cot_chars": 3063.0,
+          "delta_gain": 0.040042122971763905,
+          "skill_g_aug": 0.9548342193451643,
+          "skill_d_ctx2ans": 0.9147920963734004
+        },
+        {
+          "context": "f1_house_surgeon",
+          "flagged": false,
+          "median_cot_chars": 3021.5,
+          "delta_gain": 0.05129705299463461,
+          "skill_g_aug": 0.9484288484427736,
+          "skill_d_ctx2ans": 0.897131795448139
+        },
+        {
+          "context": "f1_house_programmer",
+          "flagged": false,
+          "median_cot_chars": 2649.0,
+          "delta_gain": 0.047317775274021145,
+          "skill_g_aug": 0.9438971414434991,
+          "skill_d_ctx2ans": 0.896579366169478
+        },
+        {
+          "context": "f1_house_medical_doctor",
+          "flagged": false,
+          "median_cot_chars": 3575.5,
+          "delta_gain": 0.04269019739550628,
+          "skill_g_aug": 0.9345350965276427,
+          "skill_d_ctx2ans": 0.8918448991321364
+        },
+        {
+          "context": "f1_house_software_engineer",
+          "flagged": false,
+          "median_cot_chars": 3046.5,
+          "delta_gain": 0.06598126417680372,
+          "skill_g_aug": 0.9510902852832092,
+          "skill_d_ctx2ans": 0.8851090211064054
+        },
+        {
+          "context": "f1_house_data_scientist",
+          "flagged": false,
+          "median_cot_chars": 3471.0,
+          "delta_gain": 0.029878972168195017,
+          "skill_g_aug": 0.9595016984173974,
+          "skill_d_ctx2ans": 0.9296227262492024
+        },
+        {
+          "context": "f1_phub_01",
+          "flagged": false,
+          "median_cot_chars": 3156.0,
+          "delta_gain": 0.08355548020388581,
+          "skill_g_aug": 0.9409170734111242,
+          "skill_d_ctx2ans": 0.8573615932072384
+        },
+        {
+          "context": "f1_phub_02",
+          "flagged": false,
+          "median_cot_chars": 3198.0,
+          "delta_gain": 0.04206821293091889,
+          "skill_g_aug": 0.9519489689875129,
+          "skill_d_ctx2ans": 0.909880756056594
+        },
+        {
+          "context": "f1_phub_03",
+          "flagged": false,
+          "median_cot_chars": 3200.0,
+          "delta_gain": 0.06232836791735297,
+          "skill_g_aug": 0.9367890134036579,
+          "skill_d_ctx2ans": 0.874460645486305
+        },
+        {
+          "context": "f1_phub_04",
+          "flagged": false,
+          "median_cot_chars": 3319.0,
+          "delta_gain": 0.042099487157699844,
+          "skill_g_aug": 0.9489074980957032,
+          "skill_d_ctx2ans": 0.9068080109380033
+        },
+        {
+          "context": "f1_phub_05",
+          "flagged": false,
+          "median_cot_chars": 3056.0,
+          "delta_gain": 0.047935750149376455,
+          "skill_g_aug": 0.9501728187083921,
+          "skill_d_ctx2ans": 0.9022370685590156
+        },
+        {
+          "context": "f1_phub_06",
+          "flagged": false,
+          "median_cot_chars": 3524.5,
+          "delta_gain": 0.039118981240194306,
+          "skill_g_aug": 0.956753114074277,
+          "skill_d_ctx2ans": 0.9176341328340827
+        },
+        {
+          "context": "f1_phub_07",
+          "flagged": false,
+          "median_cot_chars": 2632.0,
+          "delta_gain": 0.08424640037741637,
+          "skill_g_aug": 0.7874798848466207,
+          "skill_d_ctx2ans": 0.7032334844692043
+        },
+        {
+          "context": "f1_phub_08",
+          "flagged": false,
+          "median_cot_chars": 2885.0,
+          "delta_gain": 0.06427056784968044,
+          "skill_g_aug": 0.91717208665853,
+          "skill_d_ctx2ans": 0.8529015188088496
+        },
+        {
+          "context": "f2_wc_short_1",
+          "flagged": false,
+          "median_cot_chars": 2247.0,
+          "delta_gain": 0.577149556583113,
+          "skill_g_aug": 0.8697761917170701,
+          "skill_d_ctx2ans": 0.29262663513395715
+        },
+        {
+          "context": "f2_wc_short_2",
+          "flagged": false,
+          "median_cot_chars": 1502.5,
+          "delta_gain": 0.5225301031492654,
+          "skill_g_aug": 0.6966778254781623,
+          "skill_d_ctx2ans": 0.17414772232889686
+        },
+        {
+          "context": "f2_wc_short_3",
+          "flagged": true,
+          "median_cot_chars": 2181.0,
+          "delta_gain": 0.44006330664214033,
+          "skill_g_aug": 0.89707092796055,
+          "skill_d_ctx2ans": 0.45700762131840966
+        },
+        {
+          "context": "f2_wc_short_4",
+          "flagged": false,
+          "median_cot_chars": 1845.5,
+          "delta_gain": 0.5034555821127026,
+          "skill_g_aug": 0.7419124622239228,
+          "skill_d_ctx2ans": 0.23845688011122024
+        },
+        {
+          "context": "f2_wc_short_5",
+          "flagged": true,
+          "median_cot_chars": 1503.0,
+          "delta_gain": 0.5747006187165061,
+          "skill_g_aug": 0.894271394371344,
+          "skill_d_ctx2ans": 0.3195707756548378
+        },
+        {
+          "context": "f2_wc_long_1",
+          "flagged": true,
+          "median_cot_chars": 1555.5,
+          "delta_gain": 0.726590534529946,
+          "skill_g_aug": 0.842918701078959,
+          "skill_d_ctx2ans": 0.11632816654901301
+        },
+        {
+          "context": "f2_wc_long_2",
+          "flagged": true,
+          "median_cot_chars": 3533.0,
+          "delta_gain": 0.762353147103799,
+          "skill_g_aug": 0.8517035171091734,
+          "skill_d_ctx2ans": 0.08935037000537438
+        },
+        {
+          "context": "f2_wc_long_3",
+          "flagged": true,
+          "median_cot_chars": 2134.5,
+          "delta_gain": 0.71909214447584,
+          "skill_g_aug": 0.8917656380383887,
+          "skill_d_ctx2ans": 0.17267349356254869
+        },
+        {
+          "context": "f2_wc_long_4",
+          "flagged": true,
+          "median_cot_chars": 1797.0,
+          "delta_gain": 0.4295163511093214,
+          "skill_g_aug": 0.6647205141718914,
+          "skill_d_ctx2ans": 0.23520416306256997
+        },
+        {
+          "context": "f2_wc_long_5",
+          "flagged": true,
+          "median_cot_chars": 3448.0,
+          "delta_gain": 0.5638056603301501,
+          "skill_g_aug": 0.83215940397464,
+          "skill_d_ctx2ans": 0.26835374364448994
+        },
+        {
+          "context": "f3_icl_marker_k4",
+          "flagged": true,
+          "median_cot_chars": 1594.0,
+          "delta_gain": 0.5428021397676438,
+          "skill_g_aug": 0.9317801568889581,
+          "skill_d_ctx2ans": 0.3889780171213143
+        },
+        {
+          "context": "f3_icl_french_k4",
+          "flagged": true,
+          "median_cot_chars": 2021.5,
+          "delta_gain": 0.6690804810291597,
+          "skill_g_aug": 0.9235902618466609,
+          "skill_d_ctx2ans": 0.2545097808175012
+        },
+        {
+          "context": "f3_icl_json_k4",
+          "flagged": true,
+          "median_cot_chars": 1946.0,
+          "delta_gain": 0.7581554149398756,
+          "skill_g_aug": 0.9443130295254525,
+          "skill_d_ctx2ans": 0.1861576145855769
+        },
+        {
+          "context": "f3_icl_pirate_k4",
+          "flagged": true,
+          "median_cot_chars": 1928.0,
+          "delta_gain": 0.584052634419792,
+          "skill_g_aug": 0.9492176494786889,
+          "skill_d_ctx2ans": 0.36516501505889687
+        },
+        {
+          "context": "f3_icl_marker_k2",
+          "flagged": true,
+          "median_cot_chars": 2100.0,
+          "delta_gain": 0.4942179967983019,
+          "skill_g_aug": 0.9333976868698175,
+          "skill_d_ctx2ans": 0.4391796900715156
+        },
+        {
+          "context": "f3_icl_marker_k8",
+          "flagged": true,
+          "median_cot_chars": 1870.0,
+          "delta_gain": 0.6030635942386355,
+          "skill_g_aug": 0.9381874116631328,
+          "skill_d_ctx2ans": 0.33512381742449726
+        },
+        {
+          "context": "f3_icl_json_k2",
+          "flagged": false,
+          "median_cot_chars": 2019.0,
+          "delta_gain": 0.6411575408568362,
+          "skill_g_aug": 0.9014293584974028,
+          "skill_d_ctx2ans": 0.2602718176405666
+        },
+        {
+          "context": "f3_icl_json_k8",
+          "flagged": true,
+          "median_cot_chars": 1963.0,
+          "delta_gain": 0.8153767896642561,
+          "skill_g_aug": 0.9447441534168275,
+          "skill_d_ctx2ans": 0.1293673637525714
+        },
+        {
+          "context": "f4_reph_imperative",
+          "flagged": false,
+          "median_cot_chars": 1638.0,
+          "delta_gain": 0.1362103268820789,
+          "skill_g_aug": 0.8943431575803173,
+          "skill_d_ctx2ans": 0.7581328306982384
+        },
+        {
+          "context": "f4_reph_polite",
+          "flagged": false,
+          "median_cot_chars": 2647.0,
+          "delta_gain": 0.086671515795126,
+          "skill_g_aug": 0.9290981326663934,
+          "skill_d_ctx2ans": 0.8424266168712674
+        },
+        {
+          "context": "f4_reph_casual",
+          "flagged": false,
+          "median_cot_chars": 1562.0,
+          "delta_gain": 0.22634613186715746,
+          "skill_g_aug": 0.8291222196685245,
+          "skill_d_ctx2ans": 0.602776087801367
+        },
+        {
+          "context": "f4_reph_legalese",
+          "flagged": false,
+          "median_cot_chars": 2061.0,
+          "delta_gain": 0.06963293843777274,
+          "skill_g_aug": 0.8795786874889928,
+          "skill_d_ctx2ans": 0.8099457490512201
+        },
+        {
+          "context": "f4_reph_enthusiastic",
+          "flagged": false,
+          "median_cot_chars": 2002.0,
+          "delta_gain": 0.19719906474552706,
+          "skill_g_aug": 0.8707544100631394,
+          "skill_d_ctx2ans": 0.6735553453176123
+        },
+        {
+          "context": "f4_reph_archaic",
+          "flagged": false,
+          "median_cot_chars": 3073.5,
+          "delta_gain": 0.06280090475171174,
+          "skill_g_aug": 0.9346885585448558,
+          "skill_d_ctx2ans": 0.871887653793144
+        },
+        {
+          "context": "f5_fmt_json",
+          "flagged": false,
+          "median_cot_chars": 3253.0,
+          "delta_gain": 0.03570596513037427,
+          "skill_g_aug": 0.9552956865953087,
+          "skill_d_ctx2ans": 0.9195897214649345
+        },
+        {
+          "context": "f5_fmt_code_comment",
+          "flagged": false,
+          "median_cot_chars": 2299.0,
+          "delta_gain": 0.07555662078088221,
+          "skill_g_aug": 0.9104179313487369,
+          "skill_d_ctx2ans": 0.8348613105678547
+        },
+        {
+          "context": "f5_fmt_markdown_table",
+          "flagged": false,
+          "median_cot_chars": 3164.0,
+          "delta_gain": 0.05595127709969039,
+          "skill_g_aug": 0.9425678953496797,
+          "skill_d_ctx2ans": 0.8866166182499893
+        },
+        {
+          "context": "f5_fmt_xml",
+          "flagged": false,
+          "median_cot_chars": 2982.0,
+          "delta_gain": 0.06380529633221954,
+          "skill_g_aug": 0.9309476343650561,
+          "skill_d_ctx2ans": 0.8671423380328366
+        },
+        {
+          "context": "f5_fmt_bullets",
+          "flagged": false,
+          "median_cot_chars": 3051.0,
+          "delta_gain": 0.06262353455215197,
+          "skill_g_aug": 0.9416398423560906,
+          "skill_d_ctx2ans": 0.8790163078039386
+        },
+        {
+          "context": "f6_default_template",
+          "flagged": false,
+          "median_cot_chars": 3349.0,
+          "delta_gain": 0.06199272497074815,
+          "skill_g_aug": 0.9315502993630704,
+          "skill_d_ctx2ans": 0.8695575743923223
+        },
+        {
+          "context": "f6_helpful_asst",
+          "flagged": false,
+          "median_cot_chars": 3075.0,
+          "delta_gain": 0.03662483366764424,
+          "skill_g_aug": 0.9490280651996174,
+          "skill_d_ctx2ans": 0.9124032315319731
+        },
+        {
+          "context": "f8_behav_marker",
+          "flagged": false,
+          "median_cot_chars": 3301.0,
+          "delta_gain": 0.053226975102201535,
+          "skill_g_aug": 0.9482766571827734,
+          "skill_d_ctx2ans": 0.8950496820805719
+        },
+        {
+          "context": "f8_behav_sycophant",
+          "flagged": false,
+          "median_cot_chars": 3307.0,
+          "delta_gain": 0.028310082491974642,
+          "skill_g_aug": 0.9559596854036961,
+          "skill_d_ctx2ans": 0.9276496029117215
+        },
+        {
+          "context": "f8_behav_refusal",
+          "flagged": false,
+          "median_cot_chars": 2921.0,
+          "delta_gain": 0.16014208001268548,
+          "skill_g_aug": 0.9170143889152674,
+          "skill_d_ctx2ans": 0.756872308902582
+        },
+        {
+          "context": "f8_behav_fact",
+          "flagged": false,
+          "median_cot_chars": 3672.0,
+          "delta_gain": 0.03550565353663404,
+          "skill_g_aug": 0.9569593223450901,
+          "skill_d_ctx2ans": 0.921453668808456
+        },
+        {
+          "context": "f8_behav_harmful",
+          "flagged": false,
+          "median_cot_chars": 2918.0,
+          "delta_gain": 0.05276072273477972,
+          "skill_g_aug": 0.942932851870116,
+          "skill_d_ctx2ans": 0.8901721291353363
+        }
+      ]
+    }
+  },
+  "reproducibility": {
+    "git_commit": "328ab540ff0b21f27a869963ecf38d2ea6db136f",
+    "timestamp_utc": "2026-07-04T08:16:35.120251+00:00",
+    "python_version": "3.11.15",
+    "platform": "Linux-6.8.0-1052-gcp-x86_64-with-glibc2.35",
+    "torch": "2.8.0+cu128",
+    "numpy": "2.2.6",
+    "transformers": "4.57.6"
+  }
+}

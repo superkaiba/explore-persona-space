@@ -54,8 +54,14 @@ import sys
 import time
 from pathlib import Path
 
-import numpy as np
-import torch
+# Project dotenv wrapper: .env load + the shared-VM thread caps (#847) — called
+# BEFORE numpy/torch freeze their pools.
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import numpy as np  # noqa: E402
+import torch  # noqa: E402
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 

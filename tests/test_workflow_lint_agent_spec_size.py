@@ -5,8 +5,10 @@ WARN above ``AGENT_SPEC_WARN_BYTES`` (28 KB as of #838), FAIL above
 ``AGENT_SPEC_FAIL_BYTES`` (40 KB as of #838), both STRICTLY-GREATER
 (exactly-at-threshold passes). Files in ``AGENT_SPEC_SIZE_GRANDFATHER`` WARN
 above the FAIL threshold while under their per-file cap and FAIL above it (the
-regrowth ratchet). Grandfather hygiene FAILs a stale entry (file missing) and
-an entry whose file dropped to <= the FAIL threshold ("remove the entry"); a
+regrowth ratchet). Grandfather hygiene FAILs a stale entry (file missing), an
+entry whose file dropped to <= the FAIL threshold ("remove the entry"), and an
+entry whose cap sits more than ``AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES``
+(3,000 B, strict >) above the live file size (loose/stale cap, #986); a
 config self-check FAILs any cap <= the FAIL threshold. WARNs go to
 ``warn_sink`` (or stderr) and never enter the returned FAIL list.
 
@@ -19,7 +21,10 @@ literal 60,000/65,000 fixtures flipped branches when FAIL dropped 70K -> 40K):
 FAIL+5,000 over cap FAIL+4,000 FAILs (ratchet); (f) stale grandfather entry
 FAILs; (g) grandfathered file at FAIL-1,000 FAILs "remove the entry"; (h)
 missing agents dir FAILs; (i) the live tree PASSes (zero FAILs, WARNs allowed);
-(j) a grandfather cap <= the FAIL threshold FAILs "cap must exceed".
+(j) a grandfather cap <= the FAIL threshold FAILs "cap must exceed";
+(k) grandfathered headroom exactly at the bound passes (strict >);
+(l) grandfathered headroom over the bound FAILs "headroom"; (m) the bound
+constant is literally 3_000.
 """
 
 from __future__ import annotations
@@ -37,6 +42,7 @@ if str(_SCRIPTS) not in sys.path:
 import workflow_lint  # noqa: E402
 from workflow_lint import (  # noqa: E402
     AGENT_SPEC_FAIL_BYTES,
+    AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES,
     AGENT_SPEC_WARN_BYTES,
     check_agent_spec_size,
 )
@@ -184,6 +190,10 @@ def test_grandfathered_below_fail_threshold_fails_remove(
     assert len(errors) == 1, errors
     assert "gf.md" in errors[0]
     assert "remove the entry" in errors[0]
+    # The headroom message also contains "remove the entry" — this is the ONLY
+    # assert that detects a swapped remove-entry/headroom branch order (#986:
+    # cap sits 5,000 B above the file here, over the headroom bound).
+    assert "headroom" not in errors[0]
 
 
 # --------------------------------------------------------------------------
@@ -224,3 +234,46 @@ def test_grandfather_cap_at_or_below_fail_threshold_fails(
     _write_agent(tmp_path, "gf.md", AGENT_SPEC_FAIL_BYTES + 1_000)
     errors = check_agent_spec_size(repo_root=tmp_path, warn_sink=[])
     assert any("cap must exceed" in e for e in errors), errors
+
+
+# --------------------------------------------------------------------------
+# (k)/(l) grandfather-cap headroom: exactly-at-bound passes (strict >);
+# over-bound FAILs (loose cap-raise / stale cap after a trim — #986)
+# --------------------------------------------------------------------------
+
+
+def test_grandfather_headroom_at_bound_passes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    size = AGENT_SPEC_FAIL_BYTES + 1_000
+    cap = size + AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES  # headroom exactly at bound
+    monkeypatch.setattr(workflow_lint, "AGENT_SPEC_SIZE_GRANDFATHER", {"gf.md": cap})
+    _write_agent(tmp_path, "gf.md", size)
+    warns: list[str] = []
+    assert check_agent_spec_size(repo_root=tmp_path, warn_sink=warns) == []
+    assert len(warns) == 1, warns  # the ordinary "grandfathered; under its cap" WARN
+
+
+def test_grandfather_headroom_over_bound_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    size = AGENT_SPEC_FAIL_BYTES + 1_000
+    cap = size + AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES + 1  # headroom bound+1
+    monkeypatch.setattr(workflow_lint, "AGENT_SPEC_SIZE_GRANDFATHER", {"gf.md": cap})
+    _write_agent(tmp_path, "gf.md", size)
+    errors = check_agent_spec_size(repo_root=tmp_path, warn_sink=[])
+    assert len(errors) == 1, errors
+    assert "gf.md" in errors[0]
+    assert "headroom" in errors[0]
+    assert str(cap) in errors[0]
+
+
+def test_grandfather_headroom_bound_is_3000() -> None:
+    """Pin the literal bound (statistics-critic Must-Fix, round 1).
+
+    Every other headroom test derives its fixture from the constant, so a
+    mistyped constant (e.g. 30_000) would pass all of them AND the live
+    tree while failing to mechanize the documented "<=3 KB margin"
+    convention — a false-green. This literal pin closes that class.
+    """
+    assert AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES == 3_000

@@ -42,7 +42,8 @@ FIRST_RUN_OF_DAY=0
     echo "=== $(date -Iseconds) daily_healthcheck start (yesterday=$YESTERDAY) ==="
 
     # Missing OR stale (mtime older than 25h = 1500 min; 25h absorbs cron jitter
-    # between the 23:27 /daily start and the 01:07 healthcheck).
+    # between the 23:27 /daily start and the 06:00 healthcheck — moved from
+    # 01:00 in #994: the 3h bg-wait ceiling makes post-01:00 completion legitimate).
     NEEDS_ALERT=0
     if [ ! -f "$DAILY_FILE" ]; then
         echo "daily_healthcheck: $DAILY_FILE MISSING"
@@ -62,7 +63,7 @@ FIRST_RUN_OF_DAY=0
             # path before the message string is handed to telegram_push.sh (which
             # does NO expansion of the message body). A literal ~ would arrive
             # verbatim on the phone.
-            MSG="ALERT: /daily for $YESTERDAY did not land — check $HOME/my-goat/logs/daily_retrospective.log"
+            MSG="ALERT: /daily for $YESTERDAY did not land — check $HOME/my-goat/logs/daily_retrospective.log | backfill: cd $PROJECT_DIR && CLAUDE_CODE_PRINT_BG_WAIT_CEILING_MS=10800000 $HOME/.local/bin/claude -p '/daily $YESTERDAY' (see .claude/skills/daily/SKILL.md § Backfill a missed day)"
             if [ -x "$TELEGRAM_PUSH" ]; then
                 if "$TELEGRAM_PUSH" "$MSG"; then
                     touch "$SENTINEL"

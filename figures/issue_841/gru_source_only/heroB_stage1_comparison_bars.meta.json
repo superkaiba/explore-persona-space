@@ -1,0 +1,696 @@
+{
+  "commit": "5ab0f95f7a",
+  "created": "2026-07-04T05:32:58Z",
+  "figsize": [
+    12.0,
+    10.2
+  ],
+  "points": [
+    {
+      "category": "Source-only GRU",
+      "Within-condition r": 0.3407131354592813,
+      "error": 0.0752383377019335,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Ridge",
+      "Within-condition r": 0.35368604089766875,
+      "error": 0.09452311101879052,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Prefix GRU",
+      "Within-condition r": 0.35329120399461367,
+      "error": 0.07061331174807453,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Raw source",
+      "Within-condition r": 0.37162897857315347,
+      "error": 0.10919628562600012,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Direct-hop",
+      "Within-condition r": 0.35368604089766875,
+      "error": 0.09452311101879052,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "category": "Raw-target ceiling",
+      "Within-condition r": 0.4996336326448584,
+      "error": 0.13440165550276717,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "Within-condition r": 0.26816719706619135,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 1.0,
+      "Within-condition r": 0.268089158484721,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 2.0,
+      "Within-condition r": 0.286821416385943,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 3.0,
+      "Within-condition r": 0.27077571583011784,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 4.0,
+      "Within-condition r": 0.268089158484721,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 5.0,
+      "Within-condition r": 0.36627863191981236,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "x": 0.0,
+      "Within-condition r": 0.41864387247005835,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "Within-condition r": 0.457135380522302,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 2.0,
+      "Within-condition r": 0.42804803988209206,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 3.0,
+      "Within-condition r": 0.48916828708211807,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 4.0,
+      "Within-condition r": 0.457135380522302,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "x": 5.0,
+      "Within-condition r": 0.6350819429253467,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "category": "Source-only GRU",
+      "Within-condition r": 0.5732101770876532,
+      "error": 0.14441152517155864,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Ridge",
+      "Within-condition r": 0.5865223549174708,
+      "error": 0.14431630408005408,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Prefix GRU",
+      "Within-condition r": 0.5600863451012605,
+      "error": 0.15863348190665083,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Raw source",
+      "Within-condition r": 0.6233907502192133,
+      "error": 0.14457970992168326,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Direct-hop",
+      "Within-condition r": 0.5865223549174708,
+      "error": 0.14431630408005408,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "category": "Raw-target ceiling",
+      "Within-condition r": 0.5727369800970761,
+      "error": 0.14956650766590476,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 0.0,
+      "Within-condition r": 0.42800103041945436,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 1.0,
+      "Within-condition r": 0.43966223202834165,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "Within-condition r": 0.3980392529752034,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 3.0,
+      "Within-condition r": 0.4746856554568621,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 4.0,
+      "Within-condition r": 0.43966223202834165,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 5.0,
+      "Within-condition r": 0.42614748667707175,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "x": 0.0,
+      "Within-condition r": 0.7168240807625716,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 1.0,
+      "Within-condition r": 0.7282948401884498,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 2.0,
+      "Within-condition r": 0.715306216788505,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 3.0,
+      "Within-condition r": 0.7638450753002286,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 4.0,
+      "Within-condition r": 0.7282948401884498,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "x": 5.0,
+      "Within-condition r": 0.7252805020088813,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "category": "Source-only GRU",
+      "Within-condition r": 0.576654410513533,
+      "error": 0.051042867000431535,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Ridge",
+      "Within-condition r": 0.6118580436770555,
+      "error": 0.05159530055788475,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Prefix GRU",
+      "Within-condition r": 0.6117959185002333,
+      "error": 0.041871239117807435,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Raw source",
+      "Within-condition r": 0.6174435577619801,
+      "error": 0.04970748999804919,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Direct-hop",
+      "Within-condition r": 0.6118580436770555,
+      "error": 0.05159530055788475,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "category": "Raw-target ceiling",
+      "Within-condition r": 0.6023495304146909,
+      "error": 0.0532079871311798,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 0.0,
+      "Within-condition r": 0.5287480175181826,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 1.0,
+      "Within-condition r": 0.5607459459365861,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 2.0,
+      "Within-condition r": 0.5692802109625292,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 3.0,
+      "Within-condition r": 0.5666427548622275,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 4.0,
+      "Within-condition r": 0.5607459459365861,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 5.0,
+      "Within-condition r": 0.5486118184771286,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "x": 0.0,
+      "Within-condition r": 0.6308337515190456,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 1.0,
+      "Within-condition r": 0.6639365470523556,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 2.0,
+      "Within-condition r": 0.6530226891981441,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 3.0,
+      "Within-condition r": 0.6660577348583259,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "Within-condition r": 0.6639365470523556,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "x": 5.0,
+      "Within-condition r": 0.6550277927394882,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "category": "Source-only GRU",
+      "Within-condition r": 0.5653594501341768,
+      "error": 0.047569975730545166,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Ridge",
+      "Within-condition r": 0.557068369010987,
+      "error": 0.03681872028627847,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Prefix GRU",
+      "Within-condition r": 0.6184705640664762,
+      "error": 0.02684827438766918,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Raw source",
+      "Within-condition r": 0.5687436633408334,
+      "error": 0.034288030053956864,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Direct-hop",
+      "Within-condition r": 0.557068369010987,
+      "error": 0.03681872028627847,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "category": "Raw-target ceiling",
+      "Within-condition r": 0.5519738362951138,
+      "error": 0.03781525535231367,
+      "_kind": "bar",
+      "_group": 9
+    },
+    {
+      "x": 0.0,
+      "Within-condition r": 0.5133905810970778,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 1.0,
+      "Within-condition r": 0.5157090966343786,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 2.0,
+      "Within-condition r": 0.5904317845801662,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 3.0,
+      "Within-condition r": 0.5294317946741491,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 4.0,
+      "Within-condition r": 0.5157090966343786,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "Within-condition r": 0.5106643942619792,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "x": 0.0,
+      "Within-condition r": 0.6085305325581681,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 1.0,
+      "Within-condition r": 0.5893465372069355,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 2.0,
+      "Within-condition r": 0.6441283333555046,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 3.0,
+      "Within-condition r": 0.5980078547820629,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 4.0,
+      "Within-condition r": 0.5893465372069355,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "x": 5.0,
+      "Within-condition r": 0.5862949049666065,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "category": "Source-only GRU",
+      "Within-condition r": 0.4291189363567812,
+      "error": 0.10330682796408164,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Ridge",
+      "Within-condition r": 0.4445422533346967,
+      "error": 0.11812760073691994,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Prefix GRU",
+      "Within-condition r": 0.4055909009410243,
+      "error": 0.10986699414184817,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Raw source",
+      "Within-condition r": 0.4049247480147181,
+      "error": 0.12072776046910358,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Direct-hop",
+      "Within-condition r": 0.4445422533346967,
+      "error": 0.11812760073691994,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "category": "Raw-target ceiling",
+      "Within-condition r": 0.45595581160174337,
+      "error": 0.12638523899311335,
+      "_kind": "bar",
+      "_group": 12
+    },
+    {
+      "x": 0.0,
+      "Within-condition r": 0.3238596929608277,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 1.0,
+      "Within-condition r": 0.32320313146900664,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 2.0,
+      "Within-condition r": 0.29358200451802646,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 3.0,
+      "Within-condition r": 0.2809153610942972,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 4.0,
+      "Within-condition r": 0.32320313146900664,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 5.0,
+      "Within-condition r": 0.32718730477483887,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "x": 0.0,
+      "Within-condition r": 0.530473348888991,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 1.0,
+      "Within-condition r": 0.5594583329428465,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 2.0,
+      "Within-condition r": 0.5133159928017228,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 3.0,
+      "Within-condition r": 0.5223708820325044,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 4.0,
+      "Within-condition r": 0.5594583329428465,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "x": 5.0,
+      "Within-condition r": 0.5799577827610656,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "category": "Source-only GRU",
+      "Within-condition r": 0.28278491754569235,
+      "error": 0.11639642649546343,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Ridge",
+      "Within-condition r": 0.2871841886035668,
+      "error": 0.11677763571815859,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Prefix GRU",
+      "Within-condition r": 0.2670259473685429,
+      "error": 0.11098490999235616,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Raw source",
+      "Within-condition r": 0.28643993225003583,
+      "error": 0.11021633901068671,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Direct-hop",
+      "Within-condition r": 0.2871841886035668,
+      "error": 0.11677763571815859,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "category": "Raw-target ceiling",
+      "Within-condition r": 0.30046210630890285,
+      "error": 0.12513257233285452,
+      "_kind": "bar",
+      "_group": 15
+    },
+    {
+      "x": 0.0,
+      "Within-condition r": 0.184201300603244,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 1.0,
+      "Within-condition r": 0.18955840977098284,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 2.0,
+      "Within-condition r": 0.17216601767207668,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 3.0,
+      "Within-condition r": 0.19653018846811246,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 4.0,
+      "Within-condition r": 0.18955840977098284,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 5.0,
+      "Within-condition r": 0.1943383004344075,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "x": 0.0,
+      "Within-condition r": 0.41699415359417086,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 1.0,
+      "Within-condition r": 0.42311368120730003,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 2.0,
+      "Within-condition r": 0.394135837656789,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 3.0,
+      "Within-condition r": 0.4169628664894859,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 4.0,
+      "Within-condition r": 0.42311368120730003,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "x": 5.0,
+      "Within-condition r": 0.4446034451001165,
+      "_kind": "line",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 108
+}

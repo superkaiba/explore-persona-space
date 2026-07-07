@@ -188,6 +188,41 @@ def test_telegram_template_reports_applied_filed_held(daily_skill_text: str):
     )
 
 
+# ── #1061: durable filing dir + incremental filing driver (routes 2 + 3) ──────
+#
+# The 2026-07-03 nightly died mid-filing with 10/13 route-2 bodies stranded in
+# bare /tmp. #1061 prescribes a durable filings dir + the permanent incremental
+# driver; these pins keep a future cosmetic edit from silently dropping that
+# prescription while every other suite stays green.
+
+
+def test_durable_filing_driver_prescribed(daily_skill_text: str):
+    assert daily_skill_text.count("daily_drive_filings.py") >= 2, (
+        "scripts/daily_drive_filings.py must be named in BOTH the route-2 command "
+        "block (the multi-item prescription) and the dedicated durable-filing "
+        "subsection — hand-looping file_infra_task.py for >1 item regressed"
+    )
+    assert "logs/daily/filings-" in daily_skill_text, (
+        "the durable filings dir `logs/daily/filings-<date>/` must be prescribed — "
+        "filing bodies staged in bare /tmp is the 2026-07-03 stranding incident"
+    )
+
+
+def test_durable_filing_subsection_heading_present(daily_skill_text: str):
+    assert "Durable filing dir + incremental filing driver" in daily_skill_text, (
+        "the 'Durable filing dir + incremental filing driver' subsection dropped — "
+        "it carries the durable-first ordering + filed.jsonl ledger contract (#1061)"
+    )
+
+
+def test_dispatch_pending_record_survives(daily_skill_text: str):
+    assert "dispatch pending" in daily_skill_text, (
+        "the daily-file record must keep the 'dispatch pending' rendering for "
+        "not-yet-terminal / spawn-deferred filings (headless rule 1 + the "
+        "durable-filing subsection)"
+    )
+
+
 def test_pm_digest_reads_previous_night_not_newest_file(research_pm_text: str):
     # Fix 3: the PM digest must read the PREVIOUS night's PT-dated file, never
     # the "newest dated file" (which surfaces a stale "/daily last night" line on

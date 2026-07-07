@@ -1,0 +1,200 @@
+{
+  "metadata": {
+    "git_commit": "b73c8f8484964659f9e0b924343bb9232f1db7f8",
+    "timestamp": "2026-07-04T20:24:39Z",
+    "seed": 0,
+    "n": 1982,
+    "script": "scripts/issue931_author_blocked_folds.py",
+    "issue": 931
+  },
+  "protocol_fingerprint": "37caa5714783",
+  "driver_git_sha": "b73c8f8484964659f9e0b924343bb9232f1db7f8",
+  "layers_kept": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27
+  ],
+  "pins": {
+    "store_revision": "9534b9981d6b4fb4f1259c9b06f021d311a46af4",
+    "pdnc_sha": "6fda0a78bda5e9da0854f7befb5dab268abefb7e"
+  },
+  "novel_to_author": {
+    "AHandfulOfDust": "WAUG",
+    "APassageToIndia": "FORS",
+    "ARoomWithAView": "FORS",
+    "AlicesAdventuresInWonderland": "CARR",
+    "AnneOfGreenGables": "MONT",
+    "DaisyMiller": "JAME",
+    "Emma": "AUST",
+    "HardTimes": "DICK",
+    "HowardsEnd": "FORS",
+    "MansfieldPark": "AUST",
+    "NightAndDay": "WOOL",
+    "NorthangerAbbey": "AUST",
+    "OliverTwist": "DICK",
+    "Persuasion": "AUST",
+    "PrideAndPrejudice": "AUST",
+    "SenseAndSensibility": "AUST",
+    "TheAgeOfInnocence": "WHAR",
+    "TheAwakening": "CHOP",
+    "TheGambler": "DOST",
+    "TheInvisibleMan": "WELL",
+    "TheManWhoWasThursday": "CHES",
+    "TheMysteriousAffairAtStyles": "CHRI",
+    "ThePictureOfDorianGray": "WILD",
+    "TheSignOfTheFour": "DOYL",
+    "TheSportOfTheGods": "DUNB",
+    "TheSunAlsoRises": "HEMI",
+    "WhereAngelsFearToTread": "FORS",
+    "WinnieThePooh": "MILN"
+  },
+  "per_author_rows": {
+    "AUST": 721,
+    "CARR": 32,
+    "CHES": 29,
+    "CHOP": 21,
+    "CHRI": 65,
+    "DICK": 232,
+    "DOST": 29,
+    "DOYL": 22,
+    "DUNB": 47,
+    "FORS": 332,
+    "HEMI": 30,
+    "JAME": 35,
+    "MILN": 29,
+    "MONT": 54,
+    "WAUG": 84,
+    "WELL": 27,
+    "WHAR": 55,
+    "WILD": 42,
+    "WOOL": 96
+  },
+  "per_author_novels": {
+    "WAUG": 1,
+    "FORS": 4,
+    "CARR": 1,
+    "MONT": 1,
+    "JAME": 1,
+    "AUST": 6,
+    "DICK": 2,
+    "WOOL": 1,
+    "WHAR": 1,
+    "CHOP": 1,
+    "DOST": 1,
+    "WELL": 1,
+    "CHES": 1,
+    "CHRI": 1,
+    "WILD": 1,
+    "DOYL": 1,
+    "DUNB": 1,
+    "HEMI": 1,
+    "MILN": 1
+  },
+  "size_multiset": [
+    6,
+    4,
+    2,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1,
+    1
+  ],
+  "fold_composition": [
+    {
+      "fold": 0,
+      "n_rows": 525,
+      "n_authors": 4,
+      "n_novels": 7,
+      "authors": [
+        "CARR",
+        "CHRI",
+        "FORS",
+        "WOOL"
+      ]
+    },
+    {
+      "fold": 1,
+      "n_rows": 215,
+      "n_authors": 4,
+      "n_novels": 4,
+      "authors": [
+        "JAME",
+        "MONT",
+        "WAUG",
+        "WILD"
+      ]
+    },
+    {
+      "fold": 2,
+      "n_rows": 1030,
+      "n_authors": 4,
+      "n_novels": 10,
+      "authors": [
+        "AUST",
+        "DICK",
+        "DUNB",
+        "HEMI"
+      ]
+    },
+    {
+      "fold": 3,
+      "n_rows": 107,
+      "n_authors": 4,
+      "n_novels": 4,
+      "authors": [
+        "CHES",
+        "DOYL",
+        "MILN",
+        "WELL"
+      ]
+    },
+    {
+      "fold": 4,
+      "n_rows": 105,
+      "n_authors": 3,
+      "n_novels": 3,
+      "authors": [
+        "CHOP",
+        "DOST",
+        "WHAR"
+      ]
+    }
+  ]
+}

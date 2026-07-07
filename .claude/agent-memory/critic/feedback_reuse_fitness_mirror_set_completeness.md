@@ -1,12 +1,12 @@
 ---
 name: Reuse-fitness mirror-set completeness check
-description: When reviewing a workflow-fix plan that adds/edits an artifact-reuse fitness check letter, independently grep the full lettered call-site set (currently (a)-(i)) — the documented mirror memory can be STALE (it once missed verify_plan.py c6 + its test)
+description: When reviewing a workflow-fix plan that adds/edits an artifact-reuse fitness check letter, independently grep the full lettered call-site set (currently (a)-(j)) — the documented mirror memory can be STALE (it once missed verify_plan.py c6 + its test)
 type: feedback
 ---
 
 When a `kind: infra` workflow-fix plan adds or edits a letter in the
 trained-artifact reuse fitness checklist (the lettered set, currently
-(a)-(i)), the Methodology lens completeness check is: independently
+(a)-(j)), the Methodology lens completeness check is: independently
 `rg "\(a\)[-–—]\([a-z]\)" .claude/ CLAUDE.md scripts/ tests/` and confirm the
 plan touches EVERY in-scope workflow-surface hit, not just the set the
 `implementer/reference_reuse_fitness_mirror_set.md` memory records.
@@ -19,7 +19,7 @@ strings) and `tests/test_verify_plan.py` (the coupled `"4/N"` + range /
 count-word assertions). A plan that trusts a stale memory leaves an
 enforcement surface checking the old contract. #737's plan caught this by
 grepping independently and growing the memory — the correct move (as of #871
-the memory lists 15 sites; grep anyway).
+the memory lists 15 sites, re-synced to 20 at #941; grep anyway).
 
 **How to apply:** the hit set is dominated by OUT-OF-SCOPE frozen snapshots
 (`tasks/**` historical plans, `.claude/plans/**`, `docs/methodology/**`) and

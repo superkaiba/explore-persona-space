@@ -1,0 +1,3053 @@
+{
+  "commit": "81734e8090",
+  "created": "2026-07-04T09:59:50Z",
+  "figsize": [
+    11.0,
+    5.5
+  ],
+  "points": [
+    {
+      "x": 0.09862417748014679,
+      "centered cosine per context (committed layer)": 0.5224294241793646,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.02200376168926116,
+      "centered cosine per context (committed layer)": 0.6064029649086672,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.12909525116809767,
+      "centered cosine per context (committed layer)": 0.5739529591363867,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.07105249046137102,
+      "centered cosine per context (committed layer)": 0.6734581683818894,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.14609615476044616,
+      "centered cosine per context (committed layer)": 0.5907140006213887,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.17122404658923213,
+      "centered cosine per context (committed layer)": 0.6550787475140113,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09401029271652706,
+      "centered cosine per context (committed layer)": 0.6313471838804452,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10298314989970336,
+      "centered cosine per context (committed layer)": 0.5930589854442896,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.13387909223680347,
+      "centered cosine per context (committed layer)": 0.6016999444581185,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.017861062357595825,
+      "centered cosine per context (committed layer)": 0.6715925947372081,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04651271127627074,
+      "centered cosine per context (committed layer)": 0.6754476001778419,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.15363539598549664,
+      "centered cosine per context (committed layer)": 0.6661145815204733,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.051791443229039225,
+      "centered cosine per context (committed layer)": 0.49478248087468785,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11619418077749877,
+      "centered cosine per context (committed layer)": 0.4933925636340031,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.020370888422160782,
+      "centered cosine per context (committed layer)": 0.6515424414053601,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09819406015748032,
+      "centered cosine per context (committed layer)": 0.5416071440262173,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.019650523325700525,
+      "centered cosine per context (committed layer)": 0.7449994346695838,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.15702578780249687,
+      "centered cosine per context (committed layer)": 0.7121702851746913,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11794722191732954,
+      "centered cosine per context (committed layer)": 0.671440575220777,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.04739918368394333,
+      "centered cosine per context (committed layer)": 0.6771366375917004,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.09291158643073455,
+      "centered cosine per context (committed layer)": 0.5321513543482104,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.052370651473247376,
+      "centered cosine per context (committed layer)": 0.6156038701431696,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.16945128878216514,
+      "centered cosine per context (committed layer)": 0.766784216994314,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.14152360367599115,
+      "centered cosine per context (committed layer)": 0.7059062837266908,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10021805894655428,
+      "centered cosine per context (committed layer)": 0.5735650599662241,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.10993006517329167,
+      "centered cosine per context (committed layer)": 0.5502034796966655,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0119804386582677,
+      "centered cosine per context (committed layer)": 0.6154317586505709,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.16423064431659765,
+      "centered cosine per context (committed layer)": 0.6252581321860057,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12445578285568278,
+      "centered cosine per context (committed layer)": 0.8057105185581527,
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06589762316728368,
+      "centered cosine per context (committed layer)": 0.6192616963975881,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.08811437612681416,
+      "centered cosine per context (committed layer)": 0.5950320567048244,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.16830350367631558,
+      "centered cosine per context (committed layer)": 0.4109398696466181,
+      "label": "helpful-assistant prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0627028710702653,
+      "centered cosine per context (committed layer)": 0.4913681249195147,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.04663450582744719,
+      "centered cosine per context (committed layer)": 0.6481393552927652,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.01095990794070914,
+      "centered cosine per context (committed layer)": 0.7229633114397563,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.11179031072965714,
+      "centered cosine per context (committed layer)": 0.6590883161677084,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.1332282580792302,
+      "centered cosine per context (committed layer)": 0.658237499414824,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.008746226558663861,
+      "centered cosine per context (committed layer)": 0.6715479024501666,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.09831263434168172,
+      "centered cosine per context (committed layer)": 0.5951189864661036,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06113303808570372,
+      "centered cosine per context (committed layer)": 0.6525993792727026,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.022625309205960925,
+      "centered cosine per context (committed layer)": 0.6875163036693117,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11976415058082146,
+      "centered cosine per context (committed layer)": 0.6908287390770482,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0720954367208097,
+      "centered cosine per context (committed layer)": 0.5072980805069363,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.06754800910246521,
+      "centered cosine per context (committed layer)": 0.6887401395026845,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.11961352850227236,
+      "centered cosine per context (committed layer)": 0.6309220082833926,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.10971516869884868,
+      "centered cosine per context (committed layer)": 0.5806233053448655,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.0405077835491372,
+      "centered cosine per context (committed layer)": 0.7373650519930799,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.07620188258511212,
+      "centered cosine per context (committed layer)": 0.7492806417964519,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.06569838143099119,
+      "centered cosine per context (committed layer)": 0.692664974279605,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": -0.12968910590064847,
+      "centered cosine per context (committed layer)": 0.6769360917512388,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "x": 0.0,
+      "centered cosine per context (committed layer)": 0.6498408983490627,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "x": 0.891966952891039,
+      "centered cosine per context (committed layer)": 0.694218137564437,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.822650417110362,
+      "centered cosine per context (committed layer)": 0.635324500282841,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1032927759007698,
+      "centered cosine per context (committed layer)": 0.7104768663362379,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0593463083731316,
+      "centered cosine per context (committed layer)": 0.7560839529830526,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0738595363054806,
+      "centered cosine per context (committed layer)": 0.6951971000950831,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1010624511679086,
+      "centered cosine per context (committed layer)": 0.73870214959964,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9852096791938024,
+      "centered cosine per context (committed layer)": 0.6445788568081463,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0247468305430418,
+      "centered cosine per context (committed layer)": 0.6672871971129961,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8703269193259566,
+      "centered cosine per context (committed layer)": 0.6146257281084565,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8612308264729505,
+      "centered cosine per context (committed layer)": 0.7639684854704707,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0606250662445698,
+      "centered cosine per context (committed layer)": 0.7628885882494748,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9895946342115277,
+      "centered cosine per context (committed layer)": 0.7685274935443728,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.023484998333228,
+      "centered cosine per context (committed layer)": 0.5969363703635471,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0953995886697692,
+      "centered cosine per context (committed layer)": 0.5522285238898428,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0484985952002126,
+      "centered cosine per context (committed layer)": 0.7271358721907218,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0192885842368784,
+      "centered cosine per context (committed layer)": 0.6434197321034876,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0213145778683488,
+      "centered cosine per context (committed layer)": 0.8091011765071061,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9294220353025404,
+      "centered cosine per context (committed layer)": 0.7956779457063216,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8310944204444581,
+      "centered cosine per context (committed layer)": 0.7940353484020103,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9772182601236504,
+      "centered cosine per context (committed layer)": 0.7703847449208641,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8972504822150305,
+      "centered cosine per context (committed layer)": 0.6350665015153294,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.967070311740869,
+      "centered cosine per context (committed layer)": 0.6588435468247428,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1272251063765397,
+      "centered cosine per context (committed layer)": 0.8133794226040777,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9042182149115227,
+      "centered cosine per context (committed layer)": 0.7665391382067883,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8409889870080638,
+      "centered cosine per context (committed layer)": 0.7226734336742974,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9212982011279187,
+      "centered cosine per context (committed layer)": 0.6760650893999626,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9256937527960061,
+      "centered cosine per context (committed layer)": 0.6039390803814063,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0582899453016823,
+      "centered cosine per context (committed layer)": 0.7117097414615925,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0205315748428603,
+      "centered cosine per context (committed layer)": 0.8325746221515127,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1022033552783088,
+      "centered cosine per context (committed layer)": 0.6868094702402292,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0591528745178596,
+      "centered cosine per context (committed layer)": 0.6922058999173105,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9662992701184254,
+      "centered cosine per context (committed layer)": 0.6793609833159983,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.1130473384797726,
+      "centered cosine per context (committed layer)": 0.7651897212225872,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8801102511667734,
+      "centered cosine per context (committed layer)": 0.7119511151155838,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8281763463281898,
+      "centered cosine per context (committed layer)": 0.7953489733440579,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.852417229879231,
+      "centered cosine per context (committed layer)": 0.7506373295166716,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0800493662147221,
+      "centered cosine per context (committed layer)": 0.7123295102178678,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9862758028904994,
+      "centered cosine per context (committed layer)": 0.7610451109865252,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8780578404520967,
+      "centered cosine per context (committed layer)": 0.6995478701381708,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.000376119037211,
+      "centered cosine per context (committed layer)": 0.6958354752977475,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8748323569767407,
+      "centered cosine per context (committed layer)": 0.7368868000450204,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.070675335027985,
+      "centered cosine per context (committed layer)": 0.7996283522501221,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9806162592066511,
+      "centered cosine per context (committed layer)": 0.5937822527500684,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9571676413947336,
+      "centered cosine per context (committed layer)": 0.7119039479950042,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9285443520932355,
+      "centered cosine per context (committed layer)": 0.7124315062096513,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0469017335228,
+      "centered cosine per context (committed layer)": 0.5662894701328041,
+      "label": "harmful-commanding prompt",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.9502525397992205,
+      "centered cosine per context (committed layer)": 0.7987991232102555,
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8515539709537964,
+      "centered cosine per context (committed layer)": 0.7896140631587243,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 0.8624821247633855,
+      "centered cosine per context (committed layer)": 0.7909668338274811,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.166283159237825,
+      "centered cosine per context (committed layer)": 0.7680542778391137,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "x": 1.0,
+      "centered cosine per context (committed layer)": 0.7123805082137595,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "x": 2.1470890486547387,
+      "centered cosine per context (committed layer)": 0.7596884032026447,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.07189456817187,
+      "centered cosine per context (committed layer)": 0.6861684982515709,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.915713186125427,
+      "centered cosine per context (committed layer)": 0.7567992410476293,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.1689034958451807,
+      "centered cosine per context (committed layer)": 0.8038774694099667,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.1003503254276863,
+      "centered cosine per context (committed layer)": 0.7561190931674968,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0780804680972382,
+      "centered cosine per context (committed layer)": 0.7842708039408157,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9817701407717638,
+      "centered cosine per context (committed layer)": 0.6637422214348172,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9180069622642573,
+      "centered cosine per context (committed layer)": 0.7354678676651203,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8547007463752598,
+      "centered cosine per context (committed layer)": 0.7580493877153821,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.1449368627557828,
+      "centered cosine per context (committed layer)": 0.8159697677330553,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9840794643401,
+      "centered cosine per context (committed layer)": 0.8436852957314125,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.892850811326283,
+      "centered cosine per context (committed layer)": 0.818008636201797,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.930144384694235,
+      "centered cosine per context (committed layer)": 0.5846299099989078,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0285190448190824,
+      "centered cosine per context (committed layer)": 0.6473345690381846,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8836382018581235,
+      "centered cosine per context (committed layer)": 0.7494425256252039,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.128381142273255,
+      "centered cosine per context (committed layer)": 0.5807751827879056,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.093067030740676,
+      "centered cosine per context (committed layer)": 0.8600709934725745,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0790066641423373,
+      "centered cosine per context (committed layer)": 0.8205552957507126,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9755534943190374,
+      "centered cosine per context (committed layer)": 0.8379936910010252,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0458311826528797,
+      "centered cosine per context (committed layer)": 0.8243666641811951,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0302752688085848,
+      "centered cosine per context (committed layer)": 0.6724044280825738,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.053944776559735,
+      "centered cosine per context (committed layer)": 0.76181157224394,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.85039995561036,
+      "centered cosine per context (committed layer)": 0.829908796974236,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9696906647814194,
+      "centered cosine per context (committed layer)": 0.8403878410292986,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8349811025902814,
+      "centered cosine per context (committed layer)": 0.7699411345461773,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9978366949280268,
+      "centered cosine per context (committed layer)": 0.7538861415763427,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9387500364398027,
+      "centered cosine per context (committed layer)": 0.7195992438564472,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.872028707991777,
+      "centered cosine per context (committed layer)": 0.730241682584098,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8572250683801186,
+      "centered cosine per context (committed layer)": 0.8457294009854377,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.031552045983976,
+      "centered cosine per context (committed layer)": 0.7403804975999174,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.881413468673279,
+      "centered cosine per context (committed layer)": 0.6958172169684481,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.153043242615647,
+      "centered cosine per context (committed layer)": 0.6344005459951213,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0291820102921423,
+      "centered cosine per context (committed layer)": 0.6788062647004637,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9448731296325414,
+      "centered cosine per context (committed layer)": 0.7539044526826568,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.03272957693331,
+      "centered cosine per context (committed layer)": 0.840790472733486,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.8282093935706911,
+      "centered cosine per context (committed layer)": 0.8471783927669434,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.1650813167669205,
+      "centered cosine per context (committed layer)": 0.7836540641427627,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.993629237299444,
+      "centered cosine per context (committed layer)": 0.7691885582527205,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.101784681810103,
+      "centered cosine per context (committed layer)": 0.6706741732469739,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.849782799972078,
+      "centered cosine per context (committed layer)": 0.755298810890988,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9951969991017378,
+      "centered cosine per context (committed layer)": 0.8023640661016963,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9966545179676276,
+      "centered cosine per context (committed layer)": 0.8353303902584879,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.157617523790994,
+      "centered cosine per context (committed layer)": 0.6313886208816537,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.025822098855387,
+      "centered cosine per context (committed layer)": 0.8280831518901666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9904561843805033,
+      "centered cosine per context (committed layer)": 0.7248058230554216,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9161112387130816,
+      "centered cosine per context (committed layer)": 0.6536056116520566,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9393648390433187,
+      "centered cosine per context (committed layer)": 0.811439309287022,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0074420648897537,
+      "centered cosine per context (committed layer)": 0.8390584546768973,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.9780081257098168,
+      "centered cosine per context (committed layer)": 0.8215925348937244,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 1.827780348756919,
+      "centered cosine per context (committed layer)": 0.7733385812657985,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "x": 2.0,
+      "centered cosine per context (committed layer)": 0.7607499877232924,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "x": 3.1174650927099687,
+      "centered cosine per context (committed layer)": 0.7475910425381496,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.142617877862316,
+      "centered cosine per context (committed layer)": 0.7080550433389181,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8704896720394997,
+      "centered cosine per context (committed layer)": 0.7500102677030792,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0194530116740577,
+      "centered cosine per context (committed layer)": 0.7899431882571725,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8590872668087597,
+      "centered cosine per context (committed layer)": 0.7436956057849083,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.062006433494332,
+      "centered cosine per context (committed layer)": 0.7157428079810166,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.921244162182043,
+      "centered cosine per context (committed layer)": 0.6984976153976358,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0573921484890847,
+      "centered cosine per context (committed layer)": 0.7514947531532334,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0817180611432775,
+      "centered cosine per context (committed layer)": 0.6909439745106318,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0967130970903565,
+      "centered cosine per context (committed layer)": 0.7855064424004878,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8587867405441227,
+      "centered cosine per context (committed layer)": 0.683553637564413,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.149764264249539,
+      "centered cosine per context (committed layer)": 0.7705868799781327,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.902877036722157,
+      "centered cosine per context (committed layer)": 0.25056335044849803,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8334685202234247,
+      "centered cosine per context (committed layer)": 0.7574542193355113,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.019746888980934,
+      "centered cosine per context (committed layer)": 0.6109555898259537,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.953532022190478,
+      "centered cosine per context (committed layer)": 0.6852345170170979,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1187243075276685,
+      "centered cosine per context (committed layer)": 0.7800313084220264,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1109705299431485,
+      "centered cosine per context (committed layer)": 0.6883054351006261,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9341700014161773,
+      "centered cosine per context (committed layer)": 0.7081277689667516,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1630437822251083,
+      "centered cosine per context (committed layer)": 0.7325017639452496,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.924730421730443,
+      "centered cosine per context (committed layer)": 0.6569113454833915,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.005420566523417,
+      "centered cosine per context (committed layer)": 0.7041367647171959,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.912147432604337,
+      "centered cosine per context (committed layer)": 0.8314662517949138,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1569756852176267,
+      "centered cosine per context (committed layer)": 0.7174034589263973,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8792588143295266,
+      "centered cosine per context (committed layer)": 0.7742570383323706,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8361678229812384,
+      "centered cosine per context (committed layer)": 0.7087015356001911,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9766349416010938,
+      "centered cosine per context (committed layer)": 0.6678981094555305,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1772552030601013,
+      "centered cosine per context (committed layer)": 0.6981083170675786,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.141003815851769,
+      "centered cosine per context (committed layer)": 0.8175562434561443,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0894988870045017,
+      "centered cosine per context (committed layer)": 0.7448112119436497,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.140685296716269,
+      "centered cosine per context (committed layer)": 0.7955338258843316,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.141640790291231,
+      "centered cosine per context (committed layer)": 0.7634255542843654,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.006789009739122,
+      "centered cosine per context (committed layer)": 0.6869756448385638,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9337344586590857,
+      "centered cosine per context (committed layer)": 0.6644197121102291,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0979244755599558,
+      "centered cosine per context (committed layer)": 0.6580724268993127,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.058198054740394,
+      "centered cosine per context (committed layer)": 0.660305440095812,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9545167823945357,
+      "centered cosine per context (committed layer)": 0.6785198666488713,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.8540080005021453,
+      "centered cosine per context (committed layer)": 0.7574496615853918,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0888442600856494,
+      "centered cosine per context (committed layer)": 0.5847230383963117,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9144857857322313,
+      "centered cosine per context (committed layer)": 0.76437421231858,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1572527341921606,
+      "centered cosine per context (committed layer)": 0.7632407647370131,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.9067494070020463,
+      "centered cosine per context (committed layer)": 0.7576707905912373,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.864192855668135,
+      "centered cosine per context (committed layer)": 0.5331302846865656,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1192005619649663,
+      "centered cosine per context (committed layer)": 0.7532346075285196,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.875182353984818,
+      "centered cosine per context (committed layer)": 0.5277089498014587,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.884536590936786,
+      "centered cosine per context (committed layer)": 0.8480352290516603,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0357778049475037,
+      "centered cosine per context (committed layer)": 0.8117038406664454,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.1348423347014873,
+      "centered cosine per context (committed layer)": 0.7991720830599394,
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.890716479657246,
+      "centered cosine per context (committed layer)": 0.7832527029862452,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 2.931716522244034,
+      "centered cosine per context (committed layer)": 0.6942476553483974,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "x": 3.0,
+      "centered cosine per context (committed layer)": 0.7249526114358235,
+      "label": "PersonaHub persona 5",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "x": 4.099865741766824,
+      "centered cosine per context (committed layer)": 0.8585528498601306,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.169857513381948,
+      "centered cosine per context (committed layer)": 0.8480737394954586,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.000266827032843,
+      "centered cosine per context (committed layer)": 0.845961844144608,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8718031009184504,
+      "centered cosine per context (committed layer)": 0.8935187864030166,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8250170635749527,
+      "centered cosine per context (committed layer)": 0.8961224273110484,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.902676170799588,
+      "centered cosine per context (committed layer)": 0.8084426319279265,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8674559984031474,
+      "centered cosine per context (committed layer)": 0.827124761430805,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.063957122500629,
+      "centered cosine per context (committed layer)": 0.8446665209457263,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.863859701666271,
+      "centered cosine per context (committed layer)": 0.7463084980599803,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.002278775383428,
+      "centered cosine per context (committed layer)": 0.8690300789412962,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.069934476831439,
+      "centered cosine per context (committed layer)": 0.8022149126345223,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.029201979319525,
+      "centered cosine per context (committed layer)": 0.9024174106044406,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8919192345976206,
+      "centered cosine per context (committed layer)": 0.5753685752201221,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.1094848294256145,
+      "centered cosine per context (committed layer)": 0.8478399632923893,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.077546566661688,
+      "centered cosine per context (committed layer)": 0.8539272902576334,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.086034241409595,
+      "centered cosine per context (committed layer)": 0.8154937341987979,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.867180790560633,
+      "centered cosine per context (committed layer)": 0.858661687370479,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8645513693141242,
+      "centered cosine per context (committed layer)": 0.8798216837511672,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.153922518362343,
+      "centered cosine per context (committed layer)": 0.8589127566143842,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.9631281497769786,
+      "centered cosine per context (committed layer)": 0.8281432235701347,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.9283415290411385,
+      "centered cosine per context (committed layer)": 0.8280241479017019,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.995890256326552,
+      "centered cosine per context (committed layer)": 0.7869282621407324,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.058631116594889,
+      "centered cosine per context (committed layer)": 0.9039211364156753,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.164024372536909,
+      "centered cosine per context (committed layer)": 0.8011611060925148,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.92312064167754,
+      "centered cosine per context (committed layer)": 0.888625835272211,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.15293103455233,
+      "centered cosine per context (committed layer)": 0.8350747412434988,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8289494168990523,
+      "centered cosine per context (committed layer)": 0.8290494139802175,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.019871295237657,
+      "centered cosine per context (committed layer)": 0.8319790404888979,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.048231040205191,
+      "centered cosine per context (committed layer)": 0.8736835077344869,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8581230653502714,
+      "centered cosine per context (committed layer)": 0.8330973956834689,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8705222549430087,
+      "centered cosine per context (committed layer)": 0.8902025822973827,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.970881154953869,
+      "centered cosine per context (committed layer)": 0.8489208637927216,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.167843488371545,
+      "centered cosine per context (committed layer)": 0.8422621551201243,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.034575319164374,
+      "centered cosine per context (committed layer)": 0.8141480009298604,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.155888359776076,
+      "centered cosine per context (committed layer)": 0.869289195466919,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.10956992962067,
+      "centered cosine per context (committed layer)": 0.8408837702171689,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.988257376559905,
+      "centered cosine per context (committed layer)": 0.864888494294986,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.1025148417307875,
+      "centered cosine per context (committed layer)": 0.8724562415597348,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8264212422317154,
+      "centered cosine per context (committed layer)": 0.8036593728381677,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.8592918388356647,
+      "centered cosine per context (committed layer)": 0.8333435952969805,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.118594301357785,
+      "centered cosine per context (committed layer)": 0.8389422238318159,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.106854151797058,
+      "centered cosine per context (committed layer)": 0.8779934633835282,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.903750667107916,
+      "centered cosine per context (committed layer)": 0.7898705398970389,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.01107705261566,
+      "centered cosine per context (committed layer)": 0.8681371309348954,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.038165695452004,
+      "centered cosine per context (committed layer)": 0.830101729177499,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.132386023359364,
+      "centered cosine per context (committed layer)": 0.8454977319836229,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.037118576641941,
+      "centered cosine per context (committed layer)": 0.9005478855967064,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.968525764938525,
+      "centered cosine per context (committed layer)": 0.9249593557359581,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.954706255626586,
+      "centered cosine per context (committed layer)": 0.8647636449683302,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 3.9733175510944636,
+      "centered cosine per context (committed layer)": 0.8175180011927833,
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "x": 4.0,
+      "centered cosine per context (committed layer)": 0.8457297880641155,
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "x": 5.054695169208791,
+      "centered cosine per context (committed layer)": 0.9117592485447641,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.132296627430837,
+      "centered cosine per context (committed layer)": 0.8820872887766057,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.9834028775474675,
+      "centered cosine per context (committed layer)": 0.8682957040250252,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.909222242662489,
+      "centered cosine per context (committed layer)": 0.9389530227689965,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.905198450679129,
+      "centered cosine per context (committed layer)": 0.9425558248130137,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.088565140887641,
+      "centered cosine per context (committed layer)": 0.8469383158726514,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.113964754832608,
+      "centered cosine per context (committed layer)": 0.8333243930485389,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.857900108747485,
+      "centered cosine per context (committed layer)": 0.889237301403892,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.843961188503864,
+      "centered cosine per context (committed layer)": 0.868157622231602,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.033996118952323,
+      "centered cosine per context (committed layer)": 0.9145046750849368,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.872622367909371,
+      "centered cosine per context (committed layer)": 0.9005879923376561,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.116879108564283,
+      "centered cosine per context (committed layer)": 0.9360370114354141,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.931720482612667,
+      "centered cosine per context (committed layer)": 0.5314132726203411,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.871793895869612,
+      "centered cosine per context (committed layer)": 0.8734140614066507,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.151549370095482,
+      "centered cosine per context (committed layer)": 0.9083315660461369,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.8795914201847,
+      "centered cosine per context (committed layer)": 0.8368778073737729,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.922499229641657,
+      "centered cosine per context (committed layer)": 0.9083822829152892,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.875300822269141,
+      "centered cosine per context (committed layer)": 0.9217462501700383,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.861576422919528,
+      "centered cosine per context (committed layer)": 0.9182509862785334,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.827613285881118,
+      "centered cosine per context (committed layer)": 0.8878237961026488,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.839942347299134,
+      "centered cosine per context (committed layer)": 0.8742881848518838,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.882870929536907,
+      "centered cosine per context (committed layer)": 0.8836142538436944,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.839217495745783,
+      "centered cosine per context (committed layer)": 0.9457835870510243,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.03281177379995,
+      "centered cosine per context (committed layer)": 0.9102348395747294,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.065057229647822,
+      "centered cosine per context (committed layer)": 0.9204967308918913,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.96170696445953,
+      "centered cosine per context (committed layer)": 0.8924590587448272,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.9344767949027375,
+      "centered cosine per context (committed layer)": 0.8944427325343736,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.001629445328003,
+      "centered cosine per context (committed layer)": 0.8618974974795826,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.135001779204459,
+      "centered cosine per context (committed layer)": 0.928636262079621,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.126407385655994,
+      "centered cosine per context (committed layer)": 0.878674646975358,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.835651022324605,
+      "centered cosine per context (committed layer)": 0.912096290799544,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.885339427454749,
+      "centered cosine per context (committed layer)": 0.8741099692220582,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.905228153597583,
+      "centered cosine per context (committed layer)": 0.8710372139470138,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.909779527299596,
+      "centered cosine per context (committed layer)": 0.8913251695685162,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.025643754627398,
+      "centered cosine per context (committed layer)": 0.9077615653560765,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.969854473253149,
+      "centered cosine per context (committed layer)": 0.9330745144235626,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.8377314831739335,
+      "centered cosine per context (committed layer)": 0.9074166555540256,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.954501089845445,
+      "centered cosine per context (committed layer)": 0.9308648074444831,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.008551061538349,
+      "centered cosine per context (committed layer)": 0.8159719866820749,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.856601885045338,
+      "centered cosine per context (committed layer)": 0.8247110395436223,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.120045079363882,
+      "centered cosine per context (committed layer)": 0.8976388095949348,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.838706271927437,
+      "centered cosine per context (committed layer)": 0.9393731850705977,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.152943072846503,
+      "centered cosine per context (committed layer)": 0.8251775796490881,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 4.855680730968755,
+      "centered cosine per context (committed layer)": 0.9207159467171931,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.123686982575191,
+      "centered cosine per context (committed layer)": 0.8930777141778808,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.144955131813942,
+      "centered cosine per context (committed layer)": 0.8091194909239667,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.172645445011173,
+      "centered cosine per context (committed layer)": 0.9349737816795273,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.1087293168984935,
+      "centered cosine per context (committed layer)": 0.941284481944651,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.100611914677678,
+      "centered cosine per context (committed layer)": 0.9161658628728083,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.051293979358397,
+      "centered cosine per context (committed layer)": 0.9062854634709283,
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "x": 5.0,
+      "centered cosine per context (committed layer)": 0.8991134009662954,
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "x": 6.1004386876481265,
+      "centered cosine per context (committed layer)": 0.6110727770986082,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.868438795028733,
+      "centered cosine per context (committed layer)": 0.6468235454468276,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.01298449294115,
+      "centered cosine per context (committed layer)": 0.5583557677700864,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.005120233268549,
+      "centered cosine per context (committed layer)": 0.7330546568390892,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.128725971884121,
+      "centered cosine per context (committed layer)": 0.624546949753786,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.986607771613666,
+      "centered cosine per context (committed layer)": 0.525770076082653,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.958632218596128,
+      "centered cosine per context (committed layer)": 0.6347532179940638,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.05024277764536,
+      "centered cosine per context (committed layer)": 0.7081853951884635,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.915926794300304,
+      "centered cosine per context (committed layer)": 0.693229440210335,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.870316627943424,
+      "centered cosine per context (committed layer)": 0.6356142097905169,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.9920358186485485,
+      "centered cosine per context (committed layer)": 0.5998715326847492,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.970080172694159,
+      "centered cosine per context (committed layer)": 0.644413724545695,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.903725178590395,
+      "centered cosine per context (committed layer)": 0.38154510540128844,
+      "label": "json format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.952304251641446,
+      "centered cosine per context (committed layer)": 0.5856324397071907,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.951901281937449,
+      "centered cosine per context (committed layer)": 0.7035981443656788,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.937898403188516,
+      "centered cosine per context (committed layer)": 0.5742172876034088,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.956607068701694,
+      "centered cosine per context (committed layer)": 0.5991809918632538,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.06686760436414,
+      "centered cosine per context (committed layer)": 0.7633955484345799,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.926875530845662,
+      "centered cosine per context (committed layer)": 0.6201177508456389,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.1615888536175225,
+      "centered cosine per context (committed layer)": 0.5899343789975308,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.149885287033744,
+      "centered cosine per context (committed layer)": 0.6518967291250681,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.993127754188028,
+      "centered cosine per context (committed layer)": 0.6499091950649415,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.938210033801688,
+      "centered cosine per context (committed layer)": 0.7442679712805664,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.012756524338801,
+      "centered cosine per context (committed layer)": 0.7379377867790374,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.125481775958505,
+      "centered cosine per context (committed layer)": 0.6035631169941219,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.054931442601637,
+      "centered cosine per context (committed layer)": 0.552025391232925,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.1095810580609475,
+      "centered cosine per context (committed layer)": 0.6667104707522471,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.011780019383666,
+      "centered cosine per context (committed layer)": 0.6435609924878454,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.047850346536343,
+      "centered cosine per context (committed layer)": 0.8050631126643059,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.923736021105686,
+      "centered cosine per context (committed layer)": 0.7290594623328659,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.084561538431704,
+      "centered cosine per context (committed layer)": 0.5802889282921383,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.892865653525258,
+      "centered cosine per context (committed layer)": 0.6829789149787385,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.070127326374659,
+      "centered cosine per context (committed layer)": 0.5860522244332657,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.129858864597322,
+      "centered cosine per context (committed layer)": 0.6683113393447634,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.8675570214285555,
+      "centered cosine per context (committed layer)": 0.6668744977206591,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.041176706595091,
+      "centered cosine per context (committed layer)": 0.7509818907239095,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.854234469362776,
+      "centered cosine per context (committed layer)": 0.6945319994078656,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.081257626177714,
+      "centered cosine per context (committed layer)": 0.6648398280651552,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.850417558776467,
+      "centered cosine per context (committed layer)": 0.6313315139464708,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.156938336172225,
+      "centered cosine per context (committed layer)": 0.6001433559200161,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.869466854813608,
+      "centered cosine per context (committed layer)": 0.6757870623155767,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.1651968885272685,
+      "centered cosine per context (committed layer)": 0.6399181393121456,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.108318303390635,
+      "centered cosine per context (committed layer)": 0.37693631305212644,
+      "label": "json format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.033725521607887,
+      "centered cosine per context (committed layer)": 0.6728266302794551,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.101744677666637,
+      "centered cosine per context (committed layer)": 0.5969637453974352,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.106241342033911,
+      "centered cosine per context (committed layer)": 0.5744069120256828,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.160569742614239,
+      "centered cosine per context (committed layer)": 0.7175899474821884,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.911218007382107,
+      "centered cosine per context (committed layer)": 0.8074767882765699,
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.032427322328991,
+      "centered cosine per context (committed layer)": 0.5746351028419591,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 5.854217711123185,
+      "centered cosine per context (committed layer)": 0.7169743340865107,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "x": 6.0,
+      "centered cosine per context (committed layer)": 0.6439873585167701,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "x": 7.041819652008684,
+      "centered cosine per context (committed layer)": 0.7051544202346867,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.881664869473404,
+      "centered cosine per context (committed layer)": 0.6861623025347324,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.023382220130079,
+      "centered cosine per context (committed layer)": 0.6271338013649714,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.026074985052186,
+      "centered cosine per context (committed layer)": 0.7882387996709121,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.987754655073242,
+      "centered cosine per context (committed layer)": 0.6810708919160677,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.008147439184724,
+      "centered cosine per context (committed layer)": 0.46746439256790673,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.095012420402371,
+      "centered cosine per context (committed layer)": 0.6540502728461571,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.107728097944344,
+      "centered cosine per context (committed layer)": 0.7315184347126343,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.997175157607154,
+      "centered cosine per context (committed layer)": 0.5916975018500992,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.03585363894814,
+      "centered cosine per context (committed layer)": 0.6167260482982848,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.155245044848437,
+      "centered cosine per context (committed layer)": 0.6592781056477494,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.8631040918604045,
+      "centered cosine per context (committed layer)": 0.6763515826543391,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.86215728372404,
+      "centered cosine per context (committed layer)": 0.4183675119852706,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.851575244287877,
+      "centered cosine per context (committed layer)": 0.49048190055389096,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.05683078261459,
+      "centered cosine per context (committed layer)": 0.7696754320614239,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.9706989882845365,
+      "centered cosine per context (committed layer)": 0.6719849620013405,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.098755709811064,
+      "centered cosine per context (committed layer)": 0.573237062641057,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.061643308791093,
+      "centered cosine per context (committed layer)": 0.772594726724531,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.940109592998166,
+      "centered cosine per context (committed layer)": 0.7099016236825706,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.143411957050153,
+      "centered cosine per context (committed layer)": 0.574869785917729,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.094511572945435,
+      "centered cosine per context (committed layer)": 0.6900093946101697,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.9173925787276636,
+      "centered cosine per context (committed layer)": 0.5931374393119422,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.95110912639794,
+      "centered cosine per context (committed layer)": 0.7801665796973772,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.933198392873535,
+      "centered cosine per context (committed layer)": 0.7600227668057407,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.876740193505,
+      "centered cosine per context (committed layer)": 0.6701837159664475,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.873202014115189,
+      "centered cosine per context (committed layer)": 0.7031975704524739,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.157005886815268,
+      "centered cosine per context (committed layer)": 0.7114627202558679,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.977645453391551,
+      "centered cosine per context (committed layer)": 0.6282841627792678,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.957995136199868,
+      "centered cosine per context (committed layer)": 0.7942378687618015,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.082686855123856,
+      "centered cosine per context (committed layer)": 0.7659950620828346,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.019077503491044,
+      "centered cosine per context (committed layer)": 0.6026904542644075,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.157010395261846,
+      "centered cosine per context (committed layer)": 0.7518956027110967,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.100908537807381,
+      "centered cosine per context (committed layer)": 0.6524314664234144,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.9925730430848345,
+      "centered cosine per context (committed layer)": 0.6400648349199681,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.955489410453097,
+      "centered cosine per context (committed layer)": 0.6921090279496863,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.175187356172756,
+      "centered cosine per context (committed layer)": 0.7843732886894357,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.078393684961312,
+      "centered cosine per context (committed layer)": 0.6551978576143525,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.162430077601383,
+      "centered cosine per context (committed layer)": 0.6789155974915049,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.862652287798135,
+      "centered cosine per context (committed layer)": 0.6944212648736391,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.126192124508682,
+      "centered cosine per context (committed layer)": 0.5821292406211053,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.049346598236835,
+      "centered cosine per context (committed layer)": 0.7015041278797036,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.863891804200641,
+      "centered cosine per context (committed layer)": 0.76727832023298,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.031772879988919,
+      "centered cosine per context (committed layer)": 0.4191699268199505,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.066994691437961,
+      "centered cosine per context (committed layer)": 0.6620713459276851,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.824428966919897,
+      "centered cosine per context (committed layer)": 0.6635903764767914,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.983554466263029,
+      "centered cosine per context (committed layer)": 0.5897149794000699,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.117143824030675,
+      "centered cosine per context (committed layer)": 0.7402887928797073,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.926329249123873,
+      "centered cosine per context (committed layer)": 0.8148387456712392,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.985077309447479,
+      "centered cosine per context (committed layer)": 0.6411509030102102,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 6.979233085744442,
+      "centered cosine per context (committed layer)": 0.7514902957754294,
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "x": 7.0,
+      "centered cosine per context (committed layer)": 0.677633590072922,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "x": 7.928693860919297,
+      "centered cosine per context (committed layer)": 0.7231116060269276,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.150639082385599,
+      "centered cosine per context (committed layer)": 0.6537998532655827,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.101265852755345,
+      "centered cosine per context (committed layer)": 0.6522427305882487,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.8598118279586,
+      "centered cosine per context (committed layer)": 0.8026302440077474,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.178932476821526,
+      "centered cosine per context (committed layer)": 0.67423836593219,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.136512008750788,
+      "centered cosine per context (committed layer)": 0.49563321831801405,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.922207037631054,
+      "centered cosine per context (committed layer)": 0.6589387485445944,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.121282768677938,
+      "centered cosine per context (committed layer)": 0.7329987356123118,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.858311031473698,
+      "centered cosine per context (committed layer)": 0.6822810098197926,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.179677702970725,
+      "centered cosine per context (committed layer)": 0.6590618966447961,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.059646504998353,
+      "centered cosine per context (committed layer)": 0.7523795194337646,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.054045005601166,
+      "centered cosine per context (committed layer)": 0.7115939150833971,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.852558661714288,
+      "centered cosine per context (committed layer)": 0.3671218800212466,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.142932023602786,
+      "centered cosine per context (committed layer)": 0.5273677964127523,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.830439821153609,
+      "centered cosine per context (committed layer)": 0.7419158827911828,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.906698100894813,
+      "centered cosine per context (committed layer)": 0.5889677235263897,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.871487875059989,
+      "centered cosine per context (committed layer)": 0.641507433594081,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.099636458649199,
+      "centered cosine per context (committed layer)": 0.8024936850750268,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.891353521796643,
+      "centered cosine per context (committed layer)": 0.7439401722277219,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.147829761767118,
+      "centered cosine per context (committed layer)": 0.6800724012949305,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.056256854157896,
+      "centered cosine per context (committed layer)": 0.6570243851184245,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.833018575778091,
+      "centered cosine per context (committed layer)": 0.6994256561818366,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.8219547402863325,
+      "centered cosine per context (committed layer)": 0.7806410732518986,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.8385968501251835,
+      "centered cosine per context (committed layer)": 0.8054883801745836,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.038133063953182,
+      "centered cosine per context (committed layer)": 0.6822393059887192,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.10853345190939,
+      "centered cosine per context (committed layer)": 0.7086142577123872,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.90587901542586,
+      "centered cosine per context (committed layer)": 0.6960033232816332,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.125787183452307,
+      "centered cosine per context (committed layer)": 0.705619172467568,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.840603498455174,
+      "centered cosine per context (committed layer)": 0.8064761456625651,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.108346987311004,
+      "centered cosine per context (committed layer)": 0.766047528710369,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.154006354862021,
+      "centered cosine per context (committed layer)": 0.6146362270044637,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.097959023677577,
+      "centered cosine per context (committed layer)": 0.757515134937966,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.071323482232309,
+      "centered cosine per context (committed layer)": 0.6553016877067975,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.121672878715938,
+      "centered cosine per context (committed layer)": 0.6640574092302779,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.834454467836944,
+      "centered cosine per context (committed layer)": 0.7069409001060875,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.89264155985886,
+      "centered cosine per context (committed layer)": 0.8481484895549223,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.864972524550032,
+      "centered cosine per context (committed layer)": 0.7165138867877284,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.001631156469475,
+      "centered cosine per context (committed layer)": 0.6443314873987106,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.088267726198383,
+      "centered cosine per context (committed layer)": 0.5953555148206637,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.046804264047504,
+      "centered cosine per context (committed layer)": 0.6247761502479342,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.126407195914297,
+      "centered cosine per context (committed layer)": 0.7378228119868434,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.875876677278793,
+      "centered cosine per context (committed layer)": 0.7259680622500757,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.084463593096658,
+      "centered cosine per context (committed layer)": 0.4183925739554579,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.889494936712805,
+      "centered cosine per context (committed layer)": 0.7070793954763297,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.917473150474408,
+      "centered cosine per context (committed layer)": 0.6972270042856248,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.07556569102127,
+      "centered cosine per context (committed layer)": 0.599817014001109,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.172873722563525,
+      "centered cosine per context (committed layer)": 0.7362885832119338,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.040155698151745,
+      "centered cosine per context (committed layer)": 0.8278372782390426,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 7.839620113396866,
+      "centered cosine per context (committed layer)": 0.6207476427123744,
+      "label": "xml format demand",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.041871229173912,
+      "centered cosine per context (committed layer)": 0.7193319998467844,
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "x": 8.0,
+      "centered cosine per context (committed layer)": 0.6983263302337307,
+      "_kind": "scatter",
+      "_group": 17
+    },
+    {
+      "x": 0.0,
+      "centered cosine per context (committed layer)": 0.8,
+      "series": "echo-consistency anchor (0.8)",
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "x": 1.0,
+      "centered cosine per context (committed layer)": 0.8,
+      "series": "echo-consistency anchor (0.8)",
+      "_kind": "line",
+      "_group": 18
+    }
+  ],
+  "n_series": 19,
+  "total_points": 461
+}

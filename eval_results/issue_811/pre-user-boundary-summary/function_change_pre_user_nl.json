@@ -1,0 +1,406 @@
+{
+  "meta": {
+    "issue": 811,
+    "git_commit": "353bb2c5f2852982f1462f564fa9dc9cc847dee6",
+    "generated_at": "2026-07-05T22:16:32Z",
+    "summary": "pre_user_nl"
+  },
+  "cells": {
+    "em/L14": {
+      "behavior": "em",
+      "layer": 14,
+      "n_cells": 480,
+      "Delta_med": 0.055329412460933085,
+      "Delta_med_ci": {
+        "point": 0.055329412460933085,
+        "ci_lo": 0.055329412460933085,
+        "ci_hi": 0.055329412460933085,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.06241010992984773,
+        "ci_lo": 0.06241010992984773,
+        "ci_hi": 0.062410109929847746,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.058968717728261,
+        "ci_lo": 0.058968717728261,
+        "ci_hi": 0.058968717728261,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.014182373181522817,
+      "floor_Mplus_refit": 0.14922718335950416,
+      "floor_shifted": 6.279378321010924e-06,
+      "floor_combined": 0.14922718335950416,
+      "floor_sd_combined": 0.046105518545728134,
+      "Delta_over_floor_sd": 1.200060517832731,
+      "support_distance": {
+        "mean": 41.73965706063022,
+        "p90": 48.1707177553383,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "H_call": "H_input",
+      "large_shift_flip": false,
+      "refit_skip": {
+        "n_attempted": 300,
+        "n_skipped": 0,
+        "skip_frac": 0.0,
+        "concern": false
+      }
+    },
+    "em/L21": {
+      "behavior": "em",
+      "layer": 21,
+      "n_cells": 480,
+      "Delta_med": 0.5383838840826751,
+      "Delta_med_ci": {
+        "point": 0.5383838840826751,
+        "ci_lo": 0.5383838840826751,
+        "ci_hi": 0.5383838840826751,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.5611983601653471,
+        "ci_lo": 0.561198360165347,
+        "ci_hi": 0.5611983601653471,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.4901256556396367,
+        "ci_lo": 0.4901256556396367,
+        "ci_hi": 0.4901256556396367,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.050862138622230026,
+      "floor_Mplus_refit": 0.353224694810135,
+      "floor_shifted": 9.79900132379324e-06,
+      "floor_combined": 0.353224694810135,
+      "floor_sd_combined": 0.1008903395449074,
+      "Delta_over_floor_sd": 5.336327407670528,
+      "support_distance": {
+        "mean": 77.54239926826878,
+        "p90": 92.98488650538238,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "H_call": "H_function",
+      "large_shift_flip": false,
+      "refit_skip": {
+        "n_attempted": 300,
+        "n_skipped": 0,
+        "skip_frac": 0.0,
+        "concern": false
+      }
+    },
+    "em/L7": {
+      "behavior": "em",
+      "layer": 7,
+      "n_cells": 480,
+      "Delta_med": 0.1007276867347966,
+      "Delta_med_ci": {
+        "point": 0.1007276867347966,
+        "ci_lo": 0.1007276867347966,
+        "ci_hi": 0.1007276867347966,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.09817114174478696,
+        "ci_lo": 0.09817114174478694,
+        "ci_hi": 0.09817114174478697,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.09867294324836827,
+        "ci_lo": 0.09867294324836827,
+        "ci_hi": 0.09867294324836827,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.004730556756721971,
+      "floor_Mplus_refit": 0.07079806747050323,
+      "floor_shifted": 8.792176354781577e-06,
+      "floor_combined": 0.07079806747050323,
+      "floor_sd_combined": 0.02231505851230961,
+      "Delta_over_floor_sd": 4.5138885331280845,
+      "support_distance": {
+        "mean": 15.817439257801915,
+        "p90": 17.306586878518416,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "H_call": "H_function",
+      "large_shift_flip": false,
+      "refit_skip": {
+        "n_attempted": 300,
+        "n_skipped": 0,
+        "skip_frac": 0.0,
+        "concern": false
+      }
+    },
+    "fact/L14": {
+      "behavior": "fact",
+      "layer": 14,
+      "n_cells": 480,
+      "Delta_med": 0.09941883790329221,
+      "Delta_med_ci": {
+        "point": 0.09941883790329221,
+        "ci_lo": 0.09941883790329221,
+        "ci_hi": 0.09941883790329221,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.10336291637982982,
+        "ci_lo": 0.1033629163798298,
+        "ci_hi": 0.10336291637982983,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.09922015983349514,
+        "ci_lo": 0.09922015983349514,
+        "ci_hi": 0.09922015983349514,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.004301246917610066,
+      "floor_Mplus_refit": 0.19865430177461538,
+      "floor_shifted": 3.1239158752464344e-06,
+      "floor_combined": 0.19865430177461538,
+      "floor_sd_combined": 0.06486766062675373,
+      "Delta_over_floor_sd": 1.5326410254771599,
+      "support_distance": {
+        "mean": 46.409004644883474,
+        "p90": 60.11725906439228,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "H_call": "H_input",
+      "large_shift_flip": false,
+      "refit_skip": {
+        "n_attempted": 300,
+        "n_skipped": 0,
+        "skip_frac": 0.0,
+        "concern": false
+      }
+    },
+    "fact/L21": {
+      "behavior": "fact",
+      "layer": 21,
+      "n_cells": 480,
+      "Delta_med": 0.18060718638631365,
+      "Delta_med_ci": {
+        "point": 0.18060718638631365,
+        "ci_lo": 0.18060718638631365,
+        "ci_hi": 0.18060718638631365,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.16684293352810026,
+        "ci_lo": 0.16684293352810026,
+        "ci_hi": 0.1668429335281003,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.20042187625906946,
+        "ci_lo": 0.20042187625906946,
+        "ci_hi": 0.20042187625906946,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.01898946651450901,
+      "floor_Mplus_refit": 0.25995501185569014,
+      "floor_shifted": 5.403946919161365e-06,
+      "floor_combined": 0.25995501185569014,
+      "floor_sd_combined": 0.07845782754507773,
+      "Delta_over_floor_sd": 2.301965170811622,
+      "support_distance": {
+        "mean": 85.12987114663846,
+        "p90": 97.74292296528598,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "H_call": "H_input",
+      "large_shift_flip": false,
+      "refit_skip": {
+        "n_attempted": 300,
+        "n_skipped": 0,
+        "skip_frac": 0.0,
+        "concern": false
+      }
+    },
+    "fact/L7": {
+      "behavior": "fact",
+      "layer": 7,
+      "n_cells": 480,
+      "Delta_med": 0.019075120677117474,
+      "Delta_med_ci": {
+        "point": 0.019075120677117474,
+        "ci_lo": 0.019075120677117474,
+        "ci_hi": 0.019075120677117474,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.04400922202764658,
+        "ci_lo": 0.04400922202764657,
+        "ci_hi": 0.04400922202764659,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.020716635903138478,
+        "ci_lo": 0.020716635903138478,
+        "ci_hi": 0.020716635903138478,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.001813869052915005,
+      "floor_Mplus_refit": 0.03925466528774046,
+      "floor_shifted": 1.9800694228018693e-06,
+      "floor_combined": 0.03925466528774046,
+      "floor_sd_combined": 0.01282579034622551,
+      "Delta_over_floor_sd": 1.48724719196202,
+      "support_distance": {
+        "mean": 20.27258772677122,
+        "p90": 23.03375921113461,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "H_call": "H_input",
+      "large_shift_flip": false,
+      "refit_skip": {
+        "n_attempted": 300,
+        "n_skipped": 0,
+        "skip_frac": 0.0,
+        "concern": false
+      }
+    },
+    "sycophancy/L14": {
+      "behavior": "sycophancy",
+      "layer": 14,
+      "n_cells": 480,
+      "Delta_med": 0.07830994881397026,
+      "Delta_med_ci": {
+        "point": 0.07830994881397026,
+        "ci_lo": 0.07830994881397026,
+        "ci_hi": 0.07830994881397026,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.09254202393989228,
+        "ci_lo": 0.09254202393989226,
+        "ci_hi": 0.09254202393989228,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.08193328000710895,
+        "ci_lo": 0.08193328000710895,
+        "ci_hi": 0.08193328000710895,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.00662032173108255,
+      "floor_Mplus_refit": 0.08043942346440341,
+      "floor_shifted": 7.487375673987255e-06,
+      "floor_combined": 0.08043942346440341,
+      "floor_sd_combined": 0.02214796013858825,
+      "Delta_over_floor_sd": 3.5357634890055327,
+      "support_distance": {
+        "mean": 35.1351880062548,
+        "p90": 42.23472110354741,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "H_call": "H_input",
+      "large_shift_flip": false,
+      "refit_skip": {
+        "n_attempted": 300,
+        "n_skipped": 0,
+        "skip_frac": 0.0,
+        "concern": false
+      }
+    },
+    "sycophancy/L21": {
+      "behavior": "sycophancy",
+      "layer": 21,
+      "n_cells": 480,
+      "Delta_med": 0.17003575216057557,
+      "Delta_med_ci": {
+        "point": 0.17003575216057557,
+        "ci_lo": 0.17003575216057557,
+        "ci_hi": 0.17003575216057557,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.23433249972325748,
+        "ci_lo": 0.2343324997232574,
+        "ci_hi": 0.23433249972325748,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.16924541906479335,
+        "ci_lo": 0.16924541906479335,
+        "ci_hi": 0.16924541906479335,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.02485156640691034,
+      "floor_Mplus_refit": 0.3945979555987884,
+      "floor_shifted": 7.3748569800502355e-06,
+      "floor_combined": 0.3945979555987884,
+      "floor_sd_combined": 0.11494503132386981,
+      "Delta_over_floor_sd": 1.4792788361724118,
+      "support_distance": {
+        "mean": 88.47678134487525,
+        "p90": 102.02724836822108,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "H_call": "H_input",
+      "large_shift_flip": false,
+      "refit_skip": {
+        "n_attempted": 300,
+        "n_skipped": 0,
+        "skip_frac": 0.0,
+        "concern": false
+      }
+    },
+    "sycophancy/L7": {
+      "behavior": "sycophancy",
+      "layer": 7,
+      "n_cells": 480,
+      "Delta_med": 0.03978054451149722,
+      "Delta_med_ci": {
+        "point": 0.03978054451149722,
+        "ci_lo": 0.03978054451149722,
+        "ci_hi": 0.03978054451149722,
+        "n_families": 7
+      },
+      "Delta_med_mean_ci": {
+        "point": 0.04662624822229134,
+        "ci_lo": 0.04662624822229134,
+        "ci_hi": 0.046626248222291354,
+        "n_families": 7
+      },
+      "Delta_med_excl_large_shift_ci": {
+        "point": 0.04129932379772939,
+        "ci_lo": 0.04129932379772939,
+        "ci_hi": 0.04129932379772939,
+        "n_families": 7
+      },
+      "floor_M0_refit": 0.0036003864766914447,
+      "floor_Mplus_refit": 0.019714857860016335,
+      "floor_shifted": 9.775104835663974e-06,
+      "floor_combined": 0.019714857860016335,
+      "floor_sd_combined": 0.0046535220263451416,
+      "Delta_over_floor_sd": 8.548480975546324,
+      "support_distance": {
+        "mean": 6.8372356696235626,
+        "p90": 8.672921336821886,
+        "n_large_shift": 30
+      },
+      "n_families": 7,
+      "H_call": "H_function",
+      "large_shift_flip": false,
+      "refit_skip": {
+        "n_attempted": 300,
+        "n_skipped": 0,
+        "skip_frac": 0.0,
+        "concern": false
+      }
+    }
+  }
+}

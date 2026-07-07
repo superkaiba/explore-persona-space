@@ -1,0 +1,138 @@
+{
+  "commit": "93748aa5f8",
+  "created": "2026-07-05T23:06:52Z",
+  "figsize": [
+    9.6,
+    4.6
+  ],
+  "points": [
+    {
+      "raw map change \u2014 answer mean": 0.0070161102375136605,
+      "raw map change \u2014 mean incl. header": 0.006348603519081385,
+      "label": "L7",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "raw map change \u2014 answer mean": 0.023981585147724,
+      "raw map change \u2014 mean incl. header": 0.020234187621076795,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "raw map change \u2014 answer mean": 0.036647364682812406,
+      "raw map change \u2014 mean incl. header": 0.038468923635814924,
+      "label": "L21",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "raw map change \u2014 answer mean": 0.01591130952782016,
+      "raw map change \u2014 mean incl. header": 0.015275567990622648,
+      "label": "L7",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "raw map change \u2014 answer mean": 0.027106803134053163,
+      "raw map change \u2014 mean incl. header": 0.014358963916713416,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "raw map change \u2014 answer mean": 0.034253918668531794,
+      "raw map change \u2014 mean incl. header": 0.030147142574351846,
+      "label": "L21",
+      "_kind": "scatter",
+      "_group": 5
+    },
+    {
+      "raw map change \u2014 answer mean": 0.11018122874973632,
+      "raw map change \u2014 mean incl. header": 0.10340454151153551,
+      "label": "L7",
+      "_kind": "scatter",
+      "_group": 6
+    },
+    {
+      "raw map change \u2014 answer mean": 0.300946482070061,
+      "raw map change \u2014 mean incl. header": 0.32006291734259196,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 7
+    },
+    {
+      "raw map change \u2014 answer mean": 0.13264695699736567,
+      "raw map change \u2014 mean incl. header": 0.21020927750257148,
+      "label": "L21",
+      "_kind": "scatter",
+      "_group": 8
+    },
+    {
+      "raw map change \u2014 max-pool": 0.010299959405401288,
+      "raw map change \u2014 max incl. header": 0.027085848053012063,
+      "label": "L7",
+      "_kind": "scatter",
+      "_group": 9
+    },
+    {
+      "raw map change \u2014 max-pool": 0.049283732497324845,
+      "raw map change \u2014 max incl. header": 0.07625562469101324,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 10
+    },
+    {
+      "raw map change \u2014 max-pool": 0.03456518418221971,
+      "raw map change \u2014 max incl. header": 0.08486751356128991,
+      "label": "L21",
+      "_kind": "scatter",
+      "_group": 11
+    },
+    {
+      "raw map change \u2014 max-pool": 0.014930819689797339,
+      "raw map change \u2014 max incl. header": 0.009564261281819347,
+      "label": "L7",
+      "_kind": "scatter",
+      "_group": 12
+    },
+    {
+      "raw map change \u2014 max-pool": 0.008500070906845923,
+      "raw map change \u2014 max incl. header": 0.03518700801670068,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 13
+    },
+    {
+      "raw map change \u2014 max-pool": 0.0871674443156754,
+      "raw map change \u2014 max incl. header": 0.2504606858838216,
+      "label": "L21",
+      "_kind": "scatter",
+      "_group": 14
+    },
+    {
+      "raw map change \u2014 max-pool": 0.06316831839802596,
+      "raw map change \u2014 max incl. header": 0.09956241203646153,
+      "label": "L7",
+      "_kind": "scatter",
+      "_group": 15
+    },
+    {
+      "raw map change \u2014 max-pool": 0.27368676642961665,
+      "raw map change \u2014 max incl. header": 0.19419718512318807,
+      "label": "L14",
+      "_kind": "scatter",
+      "_group": 16
+    },
+    {
+      "raw map change \u2014 max-pool": 0.1314307279792685,
+      "raw map change \u2014 max incl. header": 0.15364690849630186,
+      "label": "L21",
+      "_kind": "scatter",
+      "_group": 17
+    }
+  ],
+  "n_series": 18,
+  "total_points": 18
+}

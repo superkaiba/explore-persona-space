@@ -67,6 +67,12 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
+# Project dotenv wrapper (#745): robust .env load + HF-upload accelerators +
+# the shared-VM thread caps (#847) — called BEFORE torch freezes its pool.
+from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
+
+load_dotenv(str(PROJECT_ROOT / ".env"))
+
 import torch  # noqa: E402
 
 # Cross-script helper imports hoisted to module top so a missing symbol crashes
@@ -95,11 +101,6 @@ from issue810_common import (  # noqa: E402
     stored_position_names,
     tail_head_position_index,
 )
-
-# Project dotenv wrapper (#745): robust .env load + HF-upload accelerators.
-from explore_persona_space.orchestrate.env import load_dotenv  # noqa: E402
-
-load_dotenv(str(PROJECT_ROOT / ".env"))
 
 logger = logging.getLogger("issue810_extract")
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")

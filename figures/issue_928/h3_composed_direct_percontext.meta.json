@@ -1,0 +1,812 @@
+{
+  "commit": "97c36f3253",
+  "created": "2026-07-04T09:08:11Z",
+  "figsize": [
+    11.0,
+    4.4
+  ],
+  "points": [
+    {
+      "per-context direct-map skill": 0.8464937876778094,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.001456576133751275,
+      "label": "f1_house_librarian",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.9296104289056452,
+      "per-context \u0394 skill (composed \u2212 direct)": 3.016663894006566e-05,
+      "label": "f1_house_surgeon",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.9330219872895757,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.0010163111191177077,
+      "label": "f1_house_programmer",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.7236338905364483,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0007174993857355094,
+      "label": "f1_house_medical_doctor",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.7052983636417129,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.00041233166057819126,
+      "label": "f1_house_software_engineer",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.7852404687637855,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0009825035885024924,
+      "label": "f1_house_data_scientist",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.4681060796396259,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.0012283167995716937,
+      "label": "f1_phub_01",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.8375070776174054,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0018018600899621928,
+      "label": "f1_phub_02",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.6627171957882017,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.006903913984271259,
+      "label": "f1_phub_03",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.712671810917077,
+      "per-context \u0394 skill (composed \u2212 direct)": 6.180524928101061e-05,
+      "label": "f1_phub_04",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.7789592441237259,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.00010081160784702892,
+      "label": "f1_phub_05",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.6637612199661266,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.00058299693888475,
+      "label": "f1_phub_06",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.29695063200989535,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0013882607876458675,
+      "label": "f1_phub_07",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.29961907854591496,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.003559140507902403,
+      "label": "f1_phub_08",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.24454926361154328,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.005402506240731353,
+      "label": "f2_wc_short_1",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.7248664367314763,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.0007679092907080243,
+      "label": "f2_wc_short_2",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.4824746254539044,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0007713076154614029,
+      "label": "f2_wc_short_4",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": -0.05573486286317375,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.00013987916229396546,
+      "label": "f3_icl_json_k2",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.7323722396987504,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.0002779098995755458,
+      "label": "f4_reph_imperative",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.5196565923819843,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.003639341948211916,
+      "label": "f4_reph_polite",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.1476612083601312,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.0004660681595848315,
+      "label": "f4_reph_casual",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": -0.022249118726293204,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.00848154647546795,
+      "label": "f4_reph_legalese",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.7302193674928958,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0014523040435616696,
+      "label": "f4_reph_enthusiastic",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.8517888816101364,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.002963423446295965,
+      "label": "f4_reph_archaic",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.58766107223898,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.0009727738336750003,
+      "label": "f5_fmt_json",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.5682213606764646,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.0030288481571723036,
+      "label": "f5_fmt_code_comment",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.5610324827853402,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0012048479824623426,
+      "label": "f5_fmt_markdown_table",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.6941172170143897,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.00027631341318867797,
+      "label": "f5_fmt_xml",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.8036471384136363,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.00024947324197399645,
+      "label": "f5_fmt_bullets",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.4946359936573539,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0009633496856777946,
+      "label": "f6_default_template",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.8643204692156368,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.008783659697191859,
+      "label": "f6_helpful_asst",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.7598692793005015,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.007280557004284094,
+      "label": "f8_behav_marker",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.8869671949455946,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.0006883504382390049,
+      "label": "f8_behav_sycophant",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.6307440193758002,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.003867589185192144,
+      "label": "f8_behav_refusal",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.7336936397506633,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.0052226577642372485,
+      "label": "f8_behav_fact",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.9020423710579537,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.0018592465677725878,
+      "label": "f8_behav_harmful",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 0
+    },
+    {
+      "per-context direct-map skill": 0.09322031749137338,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.005009133329016868,
+      "label": "f2_wc_short_3",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context direct-map skill": 0.45341872547419804,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.00019676289275671888,
+      "label": "f2_wc_short_5",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context direct-map skill": 0.7432434528554821,
+      "per-context \u0394 skill (composed \u2212 direct)": 3.701829505153853e-07,
+      "label": "f2_wc_long_1",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context direct-map skill": 0.5483251964357312,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0007063582139346103,
+      "label": "f2_wc_long_2",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context direct-map skill": 0.2953166562995797,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.00217359871027778,
+      "label": "f2_wc_long_3",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context direct-map skill": 0.17173636193360065,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.00491245467990864,
+      "label": "f2_wc_long_4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context direct-map skill": 0.7378881585827495,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.007220653927431098,
+      "label": "f2_wc_long_5",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context direct-map skill": 0.8339429876677061,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0005260505698181372,
+      "label": "f3_icl_marker_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context direct-map skill": -0.13953212510580504,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.006618441171812872,
+      "label": "f3_icl_french_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context direct-map skill": 0.4002592102912673,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0010158755816820353,
+      "label": "f3_icl_json_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context direct-map skill": 0.1289673915555154,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.0008667182052570777,
+      "label": "f3_icl_pirate_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context direct-map skill": -0.42910839787460775,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.000302436378235571,
+      "label": "f3_icl_marker_k2",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context direct-map skill": 0.8613578546671402,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0005298983522735723,
+      "label": "f3_icl_marker_k8",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context direct-map skill": 0.5230521320604511,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0007385518353725251,
+      "label": "f3_icl_json_k8",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 1
+    },
+    {
+      "per-context direct-map skill": 0.9147920963734004,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0029397165293210126,
+      "label": "f1_house_librarian",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.897131795448139,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.01551710031850484,
+      "label": "f1_house_surgeon",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.896579366169478,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.022402807136204905,
+      "label": "f1_house_programmer",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.8918448991321364,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.00853803356095395,
+      "label": "f1_house_medical_doctor",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.8851090211064054,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.0011294887307814472,
+      "label": "f1_house_software_engineer",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.9296227262492024,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.006612083271033464,
+      "label": "f1_house_data_scientist",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.8573615932072384,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.011127139140469922,
+      "label": "f1_phub_01",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.909880756056594,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.02153209258777289,
+      "label": "f1_phub_02",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.874460645486305,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.015066606886592226,
+      "label": "f1_phub_03",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.9068080109380033,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.01248329829262984,
+      "label": "f1_phub_04",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.9022370685590156,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.009014392905818291,
+      "label": "f1_phub_05",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.9176341328340827,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.012171505422895024,
+      "label": "f1_phub_06",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.7032334844692043,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.006650624431453922,
+      "label": "f1_phub_07",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.8529015188088496,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.01931612959545026,
+      "label": "f1_phub_08",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.29262663513395715,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.011285515206098218,
+      "label": "f2_wc_short_1",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.17414772232889686,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.019928019248213635,
+      "label": "f2_wc_short_2",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.23845688011122024,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.01408585254469119,
+      "label": "f2_wc_short_4",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.2602718176405666,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.00545875547562058,
+      "label": "f3_icl_json_k2",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.7581328306982384,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.0016388352470668721,
+      "label": "f4_reph_imperative",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.8424266168712674,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.021638899474899165,
+      "label": "f4_reph_polite",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.602776087801367,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.2840044049296857,
+      "label": "f4_reph_casual",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.8099457490512201,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.004455213436119099,
+      "label": "f4_reph_legalese",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.6735553453176123,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.004078521365748378,
+      "label": "f4_reph_enthusiastic",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.871887653793144,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.014301114096369472,
+      "label": "f4_reph_archaic",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.9195897214649345,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.010889899625530441,
+      "label": "f5_fmt_json",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.8348613105678547,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.023085554428538102,
+      "label": "f5_fmt_code_comment",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.8866166182499893,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.0062356020217998465,
+      "label": "f5_fmt_markdown_table",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.8671423380328366,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.008411556779062135,
+      "label": "f5_fmt_xml",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.8790163078039386,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.005397331347160028,
+      "label": "f5_fmt_bullets",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.8695575743923223,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.012313563747050282,
+      "label": "f6_default_template",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.9124032315319731,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.012760761661873232,
+      "label": "f6_helpful_asst",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.8950496820805719,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.012302911157243135,
+      "label": "f8_behav_marker",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.9276496029117215,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.01972261648000395,
+      "label": "f8_behav_sycophant",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.756872308902582,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.34624842955189306,
+      "label": "f8_behav_refusal",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.921453668808456,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.013126091308393595,
+      "label": "f8_behav_fact",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.8901721291353363,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.02292878211318916,
+      "label": "f8_behav_harmful",
+      "series": "unflagged (n=36)",
+      "_kind": "scatter",
+      "_group": 2
+    },
+    {
+      "per-context direct-map skill": 0.45700762131840966,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.02309274622003643,
+      "label": "f2_wc_short_3",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context direct-map skill": 0.3195707756548378,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.01681496780506908,
+      "label": "f2_wc_short_5",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context direct-map skill": 0.11632816654901301,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.0025070242352515093,
+      "label": "f2_wc_long_1",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context direct-map skill": 0.08935037000537438,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.025728915247613005,
+      "label": "f2_wc_long_2",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context direct-map skill": 0.17267349356254869,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.011569577879046111,
+      "label": "f2_wc_long_3",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context direct-map skill": 0.23520416306256997,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.016405040400488735,
+      "label": "f2_wc_long_4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context direct-map skill": 0.26835374364448994,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.001131060297668074,
+      "label": "f2_wc_long_5",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context direct-map skill": 0.3889780171213143,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.006523340742394801,
+      "label": "f3_icl_marker_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context direct-map skill": 0.2545097808175012,
+      "per-context \u0394 skill (composed \u2212 direct)": 0.018354228832551223,
+      "label": "f3_icl_french_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context direct-map skill": 0.1861576145855769,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.00849402837068558,
+      "label": "f3_icl_json_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context direct-map skill": 0.36516501505889687,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.03296624996811859,
+      "label": "f3_icl_pirate_k4",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context direct-map skill": 0.4391796900715156,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.012239971141780881,
+      "label": "f3_icl_marker_k2",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context direct-map skill": 0.33512381742449726,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.018771562754894555,
+      "label": "f3_icl_marker_k8",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    },
+    {
+      "per-context direct-map skill": 0.1293673637525714,
+      "per-context \u0394 skill (composed \u2212 direct)": -0.006536300248868643,
+      "label": "f3_icl_json_k8",
+      "series": "flagged (n=14)",
+      "_kind": "scatter",
+      "_group": 3
+    }
+  ],
+  "n_series": 4,
+  "total_points": 100
+}

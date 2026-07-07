@@ -1,0 +1,3429 @@
+{
+  "commit": "9443c47eee",
+  "created": "2026-07-04T13:54:09Z",
+  "figsize": [
+    11.5,
+    4.3
+  ],
+  "points": [
+    {
+      "target turn k": 2.0,
+      "held-out skill (6-block mean)": 0.5252886414527893,
+      "series": "own turn-k map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "target turn k": 3.0,
+      "held-out skill (6-block mean)": 0.4926324188709259,
+      "series": "own turn-k map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "target turn k": 4.0,
+      "held-out skill (6-block mean)": 0.4861755073070526,
+      "series": "own turn-k map",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "target turn k": 2.0,
+      "held-out skill (6-block mean)": 0.174793440399138,
+      "series": "turn-1 state forecast F(1\u2192k)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "target turn k": 3.0,
+      "held-out skill (6-block mean)": 0.10724672040320914,
+      "series": "turn-1 state forecast F(1\u2192k)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "target turn k": 4.0,
+      "held-out skill (6-block mean)": 0.06238895285998721,
+      "series": "turn-1 state forecast F(1\u2192k)",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "target turn k": 2.0,
+      "held-out skill (6-block mean)": 0.13498651110475765,
+      "series": "prefix-only map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "target turn k": 3.0,
+      "held-out skill (6-block mean)": 0.14851970647000334,
+      "series": "prefix-only map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "target turn k": 4.0,
+      "held-out skill (6-block mean)": 0.1562461781497763,
+      "series": "prefix-only map",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "target turn k": 2.0,
+      "held-out skill (6-block mean)": -0.1321090289815091,
+      "series": "copy-previous-answer null",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target turn k": 3.0,
+      "held-out skill (6-block mean)": 0.14521574173731258,
+      "series": "copy-previous-answer null",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "target turn k": 4.0,
+      "held-out skill (6-block mean)": 0.19255273445811996,
+      "series": "copy-previous-answer null",
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.7484496831893921,
+      "turn-1 state forecast, per-conversation skill": 0.3692282438278198,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.512100100517273,
+      "turn-1 state forecast, per-conversation skill": 0.11878275871276855,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.37726980447769165,
+      "turn-1 state forecast, per-conversation skill": 0.3586062788963318,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.856255054473877,
+      "turn-1 state forecast, per-conversation skill": -0.19144856929779053,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8506381511688232,
+      "turn-1 state forecast, per-conversation skill": 0.18486618995666504,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.35190582275390625,
+      "turn-1 state forecast, per-conversation skill": 0.5681346654891968,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6999616622924805,
+      "turn-1 state forecast, per-conversation skill": 0.4206657409667969,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.8742361068725586,
+      "turn-1 state forecast, per-conversation skill": -0.036078691482543945,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7436193227767944,
+      "turn-1 state forecast, per-conversation skill": 0.5230350494384766,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.9566326141357422,
+      "turn-1 state forecast, per-conversation skill": -0.30435454845428467,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.4576939344406128,
+      "turn-1 state forecast, per-conversation skill": 0.1413211226463318,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.9384260177612305,
+      "turn-1 state forecast, per-conversation skill": -0.06043505668640137,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.794087827205658,
+      "turn-1 state forecast, per-conversation skill": 0.48441874980926514,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.438340425491333,
+      "turn-1 state forecast, per-conversation skill": -0.19841384887695312,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -0.2913705110549927,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.08929359912872314,
+      "turn-1 state forecast, per-conversation skill": 0.17448192834854126,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.6675450801849365,
+      "turn-1 state forecast, per-conversation skill": -0.16191935539245605,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -0.6445338726043701,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -1.6770946979522705,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5479203462600708,
+      "turn-1 state forecast, per-conversation skill": -0.17158353328704834,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7052204608917236,
+      "turn-1 state forecast, per-conversation skill": 0.1382511854171753,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6128289699554443,
+      "turn-1 state forecast, per-conversation skill": -0.09420454502105713,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.15409767627716064,
+      "turn-1 state forecast, per-conversation skill": -0.08601069450378418,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.12654101848602295,
+      "turn-1 state forecast, per-conversation skill": 0.42090457677841187,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.25160229206085205,
+      "turn-1 state forecast, per-conversation skill": 0.1618775725364685,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.9704116582870483,
+      "turn-1 state forecast, per-conversation skill": -0.0596165657043457,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.665706992149353,
+      "turn-1 state forecast, per-conversation skill": 0.35465186834335327,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.32504409551620483,
+      "turn-1 state forecast, per-conversation skill": 0.31917864084243774,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8340797424316406,
+      "turn-1 state forecast, per-conversation skill": 0.5412489771842957,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.23261606693267822,
+      "turn-1 state forecast, per-conversation skill": 0.2656364440917969,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.08147096633911133,
+      "turn-1 state forecast, per-conversation skill": 0.14894014596939087,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.06838250160217285,
+      "turn-1 state forecast, per-conversation skill": -0.07017266750335693,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7319827079772949,
+      "turn-1 state forecast, per-conversation skill": 0.3207012414932251,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7242312431335449,
+      "turn-1 state forecast, per-conversation skill": 0.07259708642959595,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.9797772169113159,
+      "turn-1 state forecast, per-conversation skill": -0.10947906970977783,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4643296003341675,
+      "turn-1 state forecast, per-conversation skill": 0.4716109037399292,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.1761901378631592,
+      "turn-1 state forecast, per-conversation skill": 0.03967928886413574,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.9691677093505859,
+      "turn-1 state forecast, per-conversation skill": -0.37004613876342773,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4265686273574829,
+      "turn-1 state forecast, per-conversation skill": 0.045357346534729004,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.2824926376342773,
+      "turn-1 state forecast, per-conversation skill": 0.025148332118988037,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.811784565448761,
+      "turn-1 state forecast, per-conversation skill": 0.5245668888092041,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.2063126564025879,
+      "turn-1 state forecast, per-conversation skill": 0.4226680397987366,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.17479032278060913,
+      "turn-1 state forecast, per-conversation skill": 0.14621931314468384,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.011060833930969238,
+      "turn-1 state forecast, per-conversation skill": 0.056045472621917725,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5140763521194458,
+      "turn-1 state forecast, per-conversation skill": 0.1525132656097412,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8871205449104309,
+      "turn-1 state forecast, per-conversation skill": -0.014469027519226074,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.3064173460006714,
+      "turn-1 state forecast, per-conversation skill": 0.3716433048248291,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6200205087661743,
+      "turn-1 state forecast, per-conversation skill": -0.23977208137512207,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.04605066776275635,
+      "turn-1 state forecast, per-conversation skill": 0.2961738109588623,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3387477397918701,
+      "turn-1 state forecast, per-conversation skill": 0.11819493770599365,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.45627474784851074,
+      "turn-1 state forecast, per-conversation skill": 0.22582828998565674,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.4459331035614014,
+      "turn-1 state forecast, per-conversation skill": 0.11872637271881104,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6995664834976196,
+      "turn-1 state forecast, per-conversation skill": -0.14333438873291016,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3351489305496216,
+      "turn-1 state forecast, per-conversation skill": 0.20473980903625488,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5256768465042114,
+      "turn-1 state forecast, per-conversation skill": 0.3449386954307556,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.1364977359771729,
+      "turn-1 state forecast, per-conversation skill": -0.08892428874969482,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7993364930152893,
+      "turn-1 state forecast, per-conversation skill": -0.19135510921478271,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7211408615112305,
+      "turn-1 state forecast, per-conversation skill": 0.6682024002075195,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4732833504676819,
+      "turn-1 state forecast, per-conversation skill": 0.3115341067314148,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.21417343616485596,
+      "turn-1 state forecast, per-conversation skill": 0.2884972095489502,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.029663801193237305,
+      "turn-1 state forecast, per-conversation skill": 0.23978501558303833,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.60453200340271,
+      "turn-1 state forecast, per-conversation skill": 0.7395853996276855,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7019867897033691,
+      "turn-1 state forecast, per-conversation skill": 0.3753055930137634,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6182135343551636,
+      "turn-1 state forecast, per-conversation skill": 0.5781137943267822,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.533012330532074,
+      "turn-1 state forecast, per-conversation skill": 0.2601734399795532,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5934714674949646,
+      "turn-1 state forecast, per-conversation skill": 0.2977270483970642,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.6369504928588867,
+      "turn-1 state forecast, per-conversation skill": -0.35013115406036377,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.29241472482681274,
+      "turn-1 state forecast, per-conversation skill": 0.3432106375694275,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.025609016418457,
+      "turn-1 state forecast, per-conversation skill": -0.11425435543060303,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.01651287078857422,
+      "turn-1 state forecast, per-conversation skill": 0.2521701455116272,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.549008846282959,
+      "turn-1 state forecast, per-conversation skill": 0.39908891916275024,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.3591214418411255,
+      "turn-1 state forecast, per-conversation skill": -0.12528908252716064,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7092000246047974,
+      "turn-1 state forecast, per-conversation skill": -0.19822287559509277,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.27715635299682617,
+      "turn-1 state forecast, per-conversation skill": 0.08030581474304199,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.748852014541626,
+      "turn-1 state forecast, per-conversation skill": -0.44382166862487793,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7023904919624329,
+      "turn-1 state forecast, per-conversation skill": 0.36175405979156494,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5879839658737183,
+      "turn-1 state forecast, per-conversation skill": 0.18080049753189087,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8335405588150024,
+      "turn-1 state forecast, per-conversation skill": 0.29027193784713745,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.2980222702026367,
+      "turn-1 state forecast, per-conversation skill": 0.3809932470321655,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.0125775337219238,
+      "turn-1 state forecast, per-conversation skill": -0.6982165575027466,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7853281497955322,
+      "turn-1 state forecast, per-conversation skill": 0.38343918323516846,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8902158141136169,
+      "turn-1 state forecast, per-conversation skill": 0.4141215682029724,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.8910213708877563,
+      "turn-1 state forecast, per-conversation skill": -0.2680079936981201,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.48873186111450195,
+      "turn-1 state forecast, per-conversation skill": 0.10620874166488647,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.41040098667144775,
+      "turn-1 state forecast, per-conversation skill": 0.08285599946975708,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.27782708406448364,
+      "turn-1 state forecast, per-conversation skill": -0.19349932670593262,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8474665284156799,
+      "turn-1 state forecast, per-conversation skill": 0.478706419467926,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4949529767036438,
+      "turn-1 state forecast, per-conversation skill": 0.2897997498512268,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.689247727394104,
+      "turn-1 state forecast, per-conversation skill": 0.013314127922058105,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.5659528970718384,
+      "turn-1 state forecast, per-conversation skill": 0.06120342016220093,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8694250583648682,
+      "turn-1 state forecast, per-conversation skill": 0.6042650938034058,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.1761600971221924,
+      "turn-1 state forecast, per-conversation skill": -0.07053077220916748,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.45138323307037354,
+      "turn-1 state forecast, per-conversation skill": 0.07636654376983643,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3835800886154175,
+      "turn-1 state forecast, per-conversation skill": 0.3650044798851013,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.2707136273384094,
+      "turn-1 state forecast, per-conversation skill": 0.17499935626983643,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.9818819761276245,
+      "turn-1 state forecast, per-conversation skill": -0.32156479358673096,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.722734808921814,
+      "turn-1 state forecast, per-conversation skill": 0.3313146233558655,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7895798683166504,
+      "turn-1 state forecast, per-conversation skill": 0.21421337127685547,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.07383400201797485,
+      "turn-1 state forecast, per-conversation skill": 0.11767542362213135,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.1326841115951538,
+      "turn-1 state forecast, per-conversation skill": 0.26941436529159546,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.6188468933105469,
+      "turn-1 state forecast, per-conversation skill": -0.40813589096069336,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.988304615020752,
+      "turn-1 state forecast, per-conversation skill": -0.046424031257629395,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.2843409776687622,
+      "turn-1 state forecast, per-conversation skill": -0.5626486539840698,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6892871856689453,
+      "turn-1 state forecast, per-conversation skill": 0.4509304165840149,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.9582948684692383,
+      "turn-1 state forecast, per-conversation skill": -0.3753955364227295,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.25623124837875366,
+      "turn-1 state forecast, per-conversation skill": 0.1947181224822998,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.27757179737091064,
+      "turn-1 state forecast, per-conversation skill": 0.07733243703842163,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -0.7616000175476074,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.0456242561340332,
+      "turn-1 state forecast, per-conversation skill": 0.09638243913650513,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.30711954832077026,
+      "turn-1 state forecast, per-conversation skill": 0.25003892183303833,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6733996868133545,
+      "turn-1 state forecast, per-conversation skill": -0.12051773071289062,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.16221415996551514,
+      "turn-1 state forecast, per-conversation skill": 0.12277168035507202,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.03228151798248291,
+      "turn-1 state forecast, per-conversation skill": 0.12807118892669678,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7613192796707153,
+      "turn-1 state forecast, per-conversation skill": 0.2790815830230713,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5829004645347595,
+      "turn-1 state forecast, per-conversation skill": 0.02793174982070923,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7996742725372314,
+      "turn-1 state forecast, per-conversation skill": 0.4260847568511963,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.017365097999572754,
+      "turn-1 state forecast, per-conversation skill": 0.08044993877410889,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.2811253070831299,
+      "turn-1 state forecast, per-conversation skill": 0.015761733055114746,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.4607217311859131,
+      "turn-1 state forecast, per-conversation skill": -0.2051711082458496,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4712033271789551,
+      "turn-1 state forecast, per-conversation skill": 0.1884719729423523,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.27806878089904785,
+      "turn-1 state forecast, per-conversation skill": 0.12116599082946777,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.3310459852218628,
+      "turn-1 state forecast, per-conversation skill": -0.012356996536254883,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8912088871002197,
+      "turn-1 state forecast, per-conversation skill": 0.40276944637298584,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.087249994277954,
+      "turn-1 state forecast, per-conversation skill": -0.12216222286224365,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.2930642366409302,
+      "turn-1 state forecast, per-conversation skill": -0.015366315841674805,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6970453262329102,
+      "turn-1 state forecast, per-conversation skill": 0.2754170894622803,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.021630525588989258,
+      "turn-1 state forecast, per-conversation skill": 0.19680500030517578,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6210561394691467,
+      "turn-1 state forecast, per-conversation skill": 0.11361527442932129,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.0585882663726807,
+      "turn-1 state forecast, per-conversation skill": 0.05579328536987305,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6916691660881042,
+      "turn-1 state forecast, per-conversation skill": 0.5943376421928406,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6498441696166992,
+      "turn-1 state forecast, per-conversation skill": 0.28014129400253296,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6788665056228638,
+      "turn-1 state forecast, per-conversation skill": 0.0010190606117248535,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.0109500885009766,
+      "turn-1 state forecast, per-conversation skill": -0.1334831714630127,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4499800205230713,
+      "turn-1 state forecast, per-conversation skill": 0.23078608512878418,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8476619720458984,
+      "turn-1 state forecast, per-conversation skill": 0.3060486912727356,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.544626772403717,
+      "turn-1 state forecast, per-conversation skill": 0.279263436794281,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.41994160413742065,
+      "turn-1 state forecast, per-conversation skill": 0.3044704794883728,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.22651225328445435,
+      "turn-1 state forecast, per-conversation skill": 0.21965813636779785,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.9189269542694092,
+      "turn-1 state forecast, per-conversation skill": -0.6337704658508301,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.2518081665039062,
+      "turn-1 state forecast, per-conversation skill": 0.14019626379013062,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5026823282241821,
+      "turn-1 state forecast, per-conversation skill": 0.34900909662246704,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.8215771913528442,
+      "turn-1 state forecast, per-conversation skill": -0.07999229431152344,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.048120737075805664,
+      "turn-1 state forecast, per-conversation skill": 0.454575777053833,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8373957276344299,
+      "turn-1 state forecast, per-conversation skill": 0.5289558172225952,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.3696373701095581,
+      "turn-1 state forecast, per-conversation skill": 0.09520339965820312,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4407811164855957,
+      "turn-1 state forecast, per-conversation skill": 0.2663794159889221,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.40883493423461914,
+      "turn-1 state forecast, per-conversation skill": 0.3494812250137329,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5955870151519775,
+      "turn-1 state forecast, per-conversation skill": 0.16495001316070557,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.3022494316101074,
+      "turn-1 state forecast, per-conversation skill": -0.02821195125579834,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.9155598878860474,
+      "turn-1 state forecast, per-conversation skill": 0.30640721321105957,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.7737971544265747,
+      "turn-1 state forecast, per-conversation skill": -0.017015695571899414,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4545901417732239,
+      "turn-1 state forecast, per-conversation skill": 0.23145455121994019,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.11043763160705566,
+      "turn-1 state forecast, per-conversation skill": 0.4829728603363037,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8104010820388794,
+      "turn-1 state forecast, per-conversation skill": 0.2607520818710327,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.22499501705169678,
+      "turn-1 state forecast, per-conversation skill": 0.09562784433364868,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.15056169033050537,
+      "turn-1 state forecast, per-conversation skill": 0.05461996793746948,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.26414716243743896,
+      "turn-1 state forecast, per-conversation skill": 0.14250683784484863,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.2875912189483643,
+      "turn-1 state forecast, per-conversation skill": -0.6166553497314453,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.36851298809051514,
+      "turn-1 state forecast, per-conversation skill": 0.2515358328819275,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.7288408279418945,
+      "turn-1 state forecast, per-conversation skill": 0.16506242752075195,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6796630620956421,
+      "turn-1 state forecast, per-conversation skill": 0.3929171562194824,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": 0.17318987846374512,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.587977409362793,
+      "turn-1 state forecast, per-conversation skill": -0.23293697834014893,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.11926460266113281,
+      "turn-1 state forecast, per-conversation skill": -0.08603847026824951,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7183611392974854,
+      "turn-1 state forecast, per-conversation skill": 0.3338756561279297,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6546492576599121,
+      "turn-1 state forecast, per-conversation skill": 0.09721684455871582,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.29705536365509033,
+      "turn-1 state forecast, per-conversation skill": 0.4540926218032837,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.22224462032318115,
+      "turn-1 state forecast, per-conversation skill": -0.2884777784347534,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.49942803382873535,
+      "turn-1 state forecast, per-conversation skill": -0.01788151264190674,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.9367207288742065,
+      "turn-1 state forecast, per-conversation skill": 0.1698806881904602,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.9174675941467285,
+      "turn-1 state forecast, per-conversation skill": 0.35827821493148804,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.20923268795013428,
+      "turn-1 state forecast, per-conversation skill": 0.28301817178726196,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4818826913833618,
+      "turn-1 state forecast, per-conversation skill": 0.2578743100166321,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.011681139469146729,
+      "turn-1 state forecast, per-conversation skill": 0.2241581678390503,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.34781622886657715,
+      "turn-1 state forecast, per-conversation skill": 0.22437244653701782,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6486988067626953,
+      "turn-1 state forecast, per-conversation skill": -0.08096098899841309,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.43378549814224243,
+      "turn-1 state forecast, per-conversation skill": 0.32413333654403687,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.3371143341064453,
+      "turn-1 state forecast, per-conversation skill": -0.11855447292327881,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.44087380170822144,
+      "turn-1 state forecast, per-conversation skill": 0.25610285997390747,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.288022518157959,
+      "turn-1 state forecast, per-conversation skill": -0.08554983139038086,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8250164985656738,
+      "turn-1 state forecast, per-conversation skill": 0.25661057233810425,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.9282041192054749,
+      "turn-1 state forecast, per-conversation skill": 0.5237854719161987,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6713337898254395,
+      "turn-1 state forecast, per-conversation skill": -0.11209261417388916,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.9249769449234009,
+      "turn-1 state forecast, per-conversation skill": 0.23335576057434082,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6971662044525146,
+      "turn-1 state forecast, per-conversation skill": 0.44022971391677856,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.182877779006958,
+      "turn-1 state forecast, per-conversation skill": 0.4485504627227783,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3526647686958313,
+      "turn-1 state forecast, per-conversation skill": 0.4464268684387207,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8524102568626404,
+      "turn-1 state forecast, per-conversation skill": 0.1480785608291626,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6815648078918457,
+      "turn-1 state forecast, per-conversation skill": -0.22668659687042236,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -0.5386242866516113,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.055560290813446045,
+      "turn-1 state forecast, per-conversation skill": 0.029564619064331055,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7740331292152405,
+      "turn-1 state forecast, per-conversation skill": 0.4449133276939392,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.05388224124908447,
+      "turn-1 state forecast, per-conversation skill": -0.4388798475265503,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.2391933798789978,
+      "turn-1 state forecast, per-conversation skill": 0.29537278413772583,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8088819980621338,
+      "turn-1 state forecast, per-conversation skill": 0.33645379543304443,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.8636698722839355,
+      "turn-1 state forecast, per-conversation skill": -0.284091591835022,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4376695156097412,
+      "turn-1 state forecast, per-conversation skill": 0.32030218839645386,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7346500158309937,
+      "turn-1 state forecast, per-conversation skill": 0.4633989930152893,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4457967281341553,
+      "turn-1 state forecast, per-conversation skill": 0.21335327625274658,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.008772969245910645,
+      "turn-1 state forecast, per-conversation skill": 0.08831900358200073,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.7801055908203125,
+      "turn-1 state forecast, per-conversation skill": -0.09825599193572998,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.06489962339401245,
+      "turn-1 state forecast, per-conversation skill": 0.19043725728988647,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.2978767156600952,
+      "turn-1 state forecast, per-conversation skill": 0.0858425498008728,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.24043238162994385,
+      "turn-1 state forecast, per-conversation skill": 0.15134137868881226,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.704407811164856,
+      "turn-1 state forecast, per-conversation skill": 0.16668307781219482,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.3161381483078003,
+      "turn-1 state forecast, per-conversation skill": -0.1250830888748169,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.03471231460571289,
+      "turn-1 state forecast, per-conversation skill": 0.1606268286705017,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6322101354598999,
+      "turn-1 state forecast, per-conversation skill": -0.09805357456207275,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5682246685028076,
+      "turn-1 state forecast, per-conversation skill": 0.16840612888336182,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.4168654680252075,
+      "turn-1 state forecast, per-conversation skill": 0.07677537202835083,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.011155366897583008,
+      "turn-1 state forecast, per-conversation skill": 0.06768447160720825,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6996081471443176,
+      "turn-1 state forecast, per-conversation skill": 0.2741650342941284,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.04205918312072754,
+      "turn-1 state forecast, per-conversation skill": 0.03736919164657593,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.5802013874053955,
+      "turn-1 state forecast, per-conversation skill": -0.1924738883972168,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -0.2536243200302124,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3946394920349121,
+      "turn-1 state forecast, per-conversation skill": 0.07973289489746094,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.0728304386138916,
+      "turn-1 state forecast, per-conversation skill": 0.27987152338027954,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.4054830074310303,
+      "turn-1 state forecast, per-conversation skill": -0.09336817264556885,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.5169587135314941,
+      "turn-1 state forecast, per-conversation skill": 0.45877617597579956,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.1174640655517578,
+      "turn-1 state forecast, per-conversation skill": 0.1339011788368225,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5529775619506836,
+      "turn-1 state forecast, per-conversation skill": 0.23671787977218628,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.504346489906311,
+      "turn-1 state forecast, per-conversation skill": -0.08700037002563477,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.780341625213623,
+      "turn-1 state forecast, per-conversation skill": -0.013576984405517578,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.4333014488220215,
+      "turn-1 state forecast, per-conversation skill": 0.3331005573272705,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3301241397857666,
+      "turn-1 state forecast, per-conversation skill": 0.23231035470962524,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6861828565597534,
+      "turn-1 state forecast, per-conversation skill": -0.27797067165374756,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.08539867401123047,
+      "turn-1 state forecast, per-conversation skill": 0.04602628946304321,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.5045410394668579,
+      "turn-1 state forecast, per-conversation skill": 0.0034064650535583496,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3841770887374878,
+      "turn-1 state forecast, per-conversation skill": 0.37954092025756836,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.4667079448699951,
+      "turn-1 state forecast, per-conversation skill": -0.8614481687545776,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.5447478294372559,
+      "turn-1 state forecast, per-conversation skill": -0.08852338790893555,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8024903535842896,
+      "turn-1 state forecast, per-conversation skill": 0.6196826696395874,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7183557152748108,
+      "turn-1 state forecast, per-conversation skill": 0.2567148804664612,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8116267323493958,
+      "turn-1 state forecast, per-conversation skill": 0.12130188941955566,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.9246926307678223,
+      "turn-1 state forecast, per-conversation skill": 0.521483302116394,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.561921238899231,
+      "turn-1 state forecast, per-conversation skill": 0.39418691396713257,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.7007380723953247,
+      "turn-1 state forecast, per-conversation skill": 0.05591398477554321,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.7545267343521118,
+      "turn-1 state forecast, per-conversation skill": 0.10962539911270142,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8135642409324646,
+      "turn-1 state forecast, per-conversation skill": 0.3193358778953552,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.1058499813079834,
+      "turn-1 state forecast, per-conversation skill": 0.11530011892318726,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.05459403991699219,
+      "turn-1 state forecast, per-conversation skill": -0.00990903377532959,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.8733842372894287,
+      "turn-1 state forecast, per-conversation skill": -0.5104124546051025,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4377630352973938,
+      "turn-1 state forecast, per-conversation skill": 0.1363261342048645,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.46714550256729126,
+      "turn-1 state forecast, per-conversation skill": 0.2611304521560669,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.2907841205596924,
+      "turn-1 state forecast, per-conversation skill": -0.49928975105285645,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8922175765037537,
+      "turn-1 state forecast, per-conversation skill": 0.46997296810150146,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.205314040184021,
+      "turn-1 state forecast, per-conversation skill": -0.08027315139770508,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.013920426368713379,
+      "turn-1 state forecast, per-conversation skill": 0.07301026582717896,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.540371298789978,
+      "turn-1 state forecast, per-conversation skill": -0.4197434186935425,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.8085333108901978,
+      "turn-1 state forecast, per-conversation skill": -0.3542362451553345,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7812988758087158,
+      "turn-1 state forecast, per-conversation skill": 0.1133878231048584,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": 0.13249528408050537,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.26362669467926025,
+      "turn-1 state forecast, per-conversation skill": 0.1205548644065857,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8143970370292664,
+      "turn-1 state forecast, per-conversation skill": 0.23386818170547485,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -0.8916335105895996,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.3370934724807739,
+      "turn-1 state forecast, per-conversation skill": 0.14377868175506592,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.9484922885894775,
+      "turn-1 state forecast, per-conversation skill": -1.2277071475982666,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.36567819118499756,
+      "turn-1 state forecast, per-conversation skill": 0.31335073709487915,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.20663362741470337,
+      "turn-1 state forecast, per-conversation skill": 0.36600184440612793,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.223099946975708,
+      "turn-1 state forecast, per-conversation skill": 0.12300080060958862,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6153048276901245,
+      "turn-1 state forecast, per-conversation skill": 0.1353827714920044,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.69169020652771,
+      "turn-1 state forecast, per-conversation skill": -0.021329045295715332,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7230702638626099,
+      "turn-1 state forecast, per-conversation skill": 0.2214227318763733,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.02471184730529785,
+      "turn-1 state forecast, per-conversation skill": 0.09351545572280884,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.008445262908935547,
+      "turn-1 state forecast, per-conversation skill": 0.42872756719589233,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5667554140090942,
+      "turn-1 state forecast, per-conversation skill": 0.5425582528114319,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8241816759109497,
+      "turn-1 state forecast, per-conversation skill": 0.587042510509491,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.0681736469268799,
+      "turn-1 state forecast, per-conversation skill": -0.05348026752471924,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6702451705932617,
+      "turn-1 state forecast, per-conversation skill": 0.33720242977142334,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.04344367980957031,
+      "turn-1 state forecast, per-conversation skill": 0.4493757486343384,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8158308863639832,
+      "turn-1 state forecast, per-conversation skill": 0.38551008701324463,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.5749776363372803,
+      "turn-1 state forecast, per-conversation skill": -0.32391202449798584,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.38739460706710815,
+      "turn-1 state forecast, per-conversation skill": 0.34415173530578613,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.35377293825149536,
+      "turn-1 state forecast, per-conversation skill": -1.000647783279419,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8179559707641602,
+      "turn-1 state forecast, per-conversation skill": 0.17510420083999634,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.46924877166748047,
+      "turn-1 state forecast, per-conversation skill": 0.1886286735534668,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.616468608379364,
+      "turn-1 state forecast, per-conversation skill": 0.10218679904937744,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.16563665866851807,
+      "turn-1 state forecast, per-conversation skill": 0.3784415125846863,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.07203203439712524,
+      "turn-1 state forecast, per-conversation skill": 0.04805803298950195,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5299054980278015,
+      "turn-1 state forecast, per-conversation skill": 0.35269373655319214,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.10042297840118408,
+      "turn-1 state forecast, per-conversation skill": 0.07971924543380737,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5694640874862671,
+      "turn-1 state forecast, per-conversation skill": 0.37353599071502686,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.8906830549240112,
+      "turn-1 state forecast, per-conversation skill": 0.17597085237503052,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.14568865299224854,
+      "turn-1 state forecast, per-conversation skill": 0.13449108600616455,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6751904487609863,
+      "turn-1 state forecast, per-conversation skill": -0.30701470375061035,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.46588897705078125,
+      "turn-1 state forecast, per-conversation skill": -0.08062946796417236,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.8264912366867065,
+      "turn-1 state forecast, per-conversation skill": 0.3821297883987427,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.07449138164520264,
+      "turn-1 state forecast, per-conversation skill": 0.41139113903045654,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5922225713729858,
+      "turn-1 state forecast, per-conversation skill": 0.45079827308654785,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.554823637008667,
+      "turn-1 state forecast, per-conversation skill": -0.29040658473968506,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.04094439744949341,
+      "turn-1 state forecast, per-conversation skill": -0.059478163719177246,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.2234169840812683,
+      "turn-1 state forecast, per-conversation skill": 0.23335635662078857,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.9439699649810791,
+      "turn-1 state forecast, per-conversation skill": 0.029955148696899414,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5591318607330322,
+      "turn-1 state forecast, per-conversation skill": 0.33026260137557983,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3912145495414734,
+      "turn-1 state forecast, per-conversation skill": 0.5748525857925415,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.11190289258956909,
+      "turn-1 state forecast, per-conversation skill": 0.23041456937789917,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5855976939201355,
+      "turn-1 state forecast, per-conversation skill": 0.319008469581604,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -0.24832463264465332,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.17599833011627197,
+      "turn-1 state forecast, per-conversation skill": -0.03755521774291992,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6213462352752686,
+      "turn-1 state forecast, per-conversation skill": 0.14401006698608398,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6239738464355469,
+      "turn-1 state forecast, per-conversation skill": 0.2985607385635376,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.9772517681121826,
+      "turn-1 state forecast, per-conversation skill": -0.028728842735290527,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.07464462518692017,
+      "turn-1 state forecast, per-conversation skill": 0.4482288360595703,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.41075074672698975,
+      "turn-1 state forecast, per-conversation skill": 0.27070581912994385,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.395618736743927,
+      "turn-1 state forecast, per-conversation skill": 0.2056860327720642,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.259358286857605,
+      "turn-1 state forecast, per-conversation skill": 0.24776726961135864,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.510625422000885,
+      "turn-1 state forecast, per-conversation skill": -0.25020432472229004,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.5033990144729614,
+      "turn-1 state forecast, per-conversation skill": -0.06073880195617676,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.5771276950836182,
+      "turn-1 state forecast, per-conversation skill": -0.011770844459533691,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7798826694488525,
+      "turn-1 state forecast, per-conversation skill": 0.2766706347465515,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.28119099140167236,
+      "turn-1 state forecast, per-conversation skill": 0.24115604162216187,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.17851150035858154,
+      "turn-1 state forecast, per-conversation skill": 0.3157883882522583,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.7817094326019287,
+      "turn-1 state forecast, per-conversation skill": -0.17863357067108154,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.0797441005706787,
+      "turn-1 state forecast, per-conversation skill": -0.15687775611877441,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8264188766479492,
+      "turn-1 state forecast, per-conversation skill": 0.1598297357559204,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.22681266069412231,
+      "turn-1 state forecast, per-conversation skill": 0.2615152597427368,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6850830316543579,
+      "turn-1 state forecast, per-conversation skill": 0.5492024421691895,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5555949211120605,
+      "turn-1 state forecast, per-conversation skill": 0.29949063062667847,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5845842361450195,
+      "turn-1 state forecast, per-conversation skill": 0.3967788815498352,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.06105852127075195,
+      "turn-1 state forecast, per-conversation skill": 0.5253167152404785,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5189816951751709,
+      "turn-1 state forecast, per-conversation skill": 0.3421940207481384,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.31033754348754883,
+      "turn-1 state forecast, per-conversation skill": 0.17083466053009033,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.9780291318893433,
+      "turn-1 state forecast, per-conversation skill": -0.7172589302062988,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.423833966255188,
+      "turn-1 state forecast, per-conversation skill": 0.27756935358047485,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5956315994262695,
+      "turn-1 state forecast, per-conversation skill": 0.1883399486541748,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -0.21997058391571045,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.730238914489746,
+      "turn-1 state forecast, per-conversation skill": -0.21959149837493896,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8872321844100952,
+      "turn-1 state forecast, per-conversation skill": 0.21921908855438232,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6712172031402588,
+      "turn-1 state forecast, per-conversation skill": 0.19875001907348633,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.14503884315490723,
+      "turn-1 state forecast, per-conversation skill": 0.28701549768447876,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8450090885162354,
+      "turn-1 state forecast, per-conversation skill": 0.5648574829101562,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.07590854167938232,
+      "turn-1 state forecast, per-conversation skill": 0.1651023030281067,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4956091642379761,
+      "turn-1 state forecast, per-conversation skill": 0.3453328013420105,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8152801990509033,
+      "turn-1 state forecast, per-conversation skill": 0.3906499147415161,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8012731075286865,
+      "turn-1 state forecast, per-conversation skill": 0.4069334864616394,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.24249833822250366,
+      "turn-1 state forecast, per-conversation skill": 0.16384518146514893,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.06083589792251587,
+      "turn-1 state forecast, per-conversation skill": 0.30004870891571045,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.0939891338348389,
+      "turn-1 state forecast, per-conversation skill": -0.13932502269744873,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.18097102642059326,
+      "turn-1 state forecast, per-conversation skill": -0.07707345485687256,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.0674002170562744,
+      "turn-1 state forecast, per-conversation skill": 0.31420791149139404,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5145152807235718,
+      "turn-1 state forecast, per-conversation skill": 0.38531923294067383,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.2447831630706787,
+      "turn-1 state forecast, per-conversation skill": 0.05567812919616699,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8490469455718994,
+      "turn-1 state forecast, per-conversation skill": 0.29653894901275635,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6359764337539673,
+      "turn-1 state forecast, per-conversation skill": 0.695621907711029,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7354562282562256,
+      "turn-1 state forecast, per-conversation skill": 0.34988707304000854,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.9506170749664307,
+      "turn-1 state forecast, per-conversation skill": -0.6708636283874512,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.7416728734970093,
+      "turn-1 state forecast, per-conversation skill": -0.20069563388824463,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8379710912704468,
+      "turn-1 state forecast, per-conversation skill": 0.5850799083709717,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -0.5081802606582642,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.938427209854126,
+      "turn-1 state forecast, per-conversation skill": 0.027851760387420654,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4816442131996155,
+      "turn-1 state forecast, per-conversation skill": 0.2635501027107239,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.2805372476577759,
+      "turn-1 state forecast, per-conversation skill": 0.12602537870407104,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.08869564533233643,
+      "turn-1 state forecast, per-conversation skill": 0.51276695728302,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.5288299322128296,
+      "turn-1 state forecast, per-conversation skill": 0.5282171964645386,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.31931960582733154,
+      "turn-1 state forecast, per-conversation skill": 0.2230755090713501,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.768823504447937,
+      "turn-1 state forecast, per-conversation skill": 0.21441751718521118,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.43505942821502686,
+      "turn-1 state forecast, per-conversation skill": 0.3527401089668274,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.0442171096801758,
+      "turn-1 state forecast, per-conversation skill": 0.05267894268035889,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.040448009967803955,
+      "turn-1 state forecast, per-conversation skill": 0.016689717769622803,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6191189885139465,
+      "turn-1 state forecast, per-conversation skill": 0.24607032537460327,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6719091534614563,
+      "turn-1 state forecast, per-conversation skill": 0.13909775018692017,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.06775712966918945,
+      "turn-1 state forecast, per-conversation skill": 0.33731621503829956,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7062347531318665,
+      "turn-1 state forecast, per-conversation skill": 0.4835028648376465,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.49751847982406616,
+      "turn-1 state forecast, per-conversation skill": 0.21129322052001953,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.9857109785079956,
+      "turn-1 state forecast, per-conversation skill": -0.20256924629211426,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -1.8255739212036133,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3711845874786377,
+      "turn-1 state forecast, per-conversation skill": 0.19435197114944458,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.3856710195541382,
+      "turn-1 state forecast, per-conversation skill": -0.1377936601638794,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -0.4032238721847534,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.11556434631347656,
+      "turn-1 state forecast, per-conversation skill": 0.22792643308639526,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.742326021194458,
+      "turn-1 state forecast, per-conversation skill": 0.4116283655166626,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7587756514549255,
+      "turn-1 state forecast, per-conversation skill": 0.21395951509475708,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6073086857795715,
+      "turn-1 state forecast, per-conversation skill": 0.2566467523574829,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.1353657841682434,
+      "turn-1 state forecast, per-conversation skill": 0.20355898141860962,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4088442921638489,
+      "turn-1 state forecast, per-conversation skill": 0.4064452052116394,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4109609127044678,
+      "turn-1 state forecast, per-conversation skill": 0.2902430295944214,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.27822768688201904,
+      "turn-1 state forecast, per-conversation skill": 0.062747061252594,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": 0.03195160627365112,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.0763285160064697,
+      "turn-1 state forecast, per-conversation skill": -0.44868946075439453,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7737754583358765,
+      "turn-1 state forecast, per-conversation skill": 0.3646788001060486,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.32333868741989136,
+      "turn-1 state forecast, per-conversation skill": 0.17654556035995483,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6974709630012512,
+      "turn-1 state forecast, per-conversation skill": 0.39300304651260376,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.17850029468536377,
+      "turn-1 state forecast, per-conversation skill": 0.5535662174224854,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.12442660331726074,
+      "turn-1 state forecast, per-conversation skill": 0.39579153060913086,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4328306317329407,
+      "turn-1 state forecast, per-conversation skill": -0.17094671726226807,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6650111675262451,
+      "turn-1 state forecast, per-conversation skill": -0.39100027084350586,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.15151774883270264,
+      "turn-1 state forecast, per-conversation skill": 0.09537899494171143,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8111085891723633,
+      "turn-1 state forecast, per-conversation skill": 0.3467966914176941,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.8961664438247681,
+      "turn-1 state forecast, per-conversation skill": -0.18632793426513672,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.7582284212112427,
+      "turn-1 state forecast, per-conversation skill": -0.005552172660827637,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.4618542194366455,
+      "turn-1 state forecast, per-conversation skill": 0.16240042448043823,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6273061037063599,
+      "turn-1 state forecast, per-conversation skill": 0.020198166370391846,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6648600101470947,
+      "turn-1 state forecast, per-conversation skill": 0.3331405520439148,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3615338206291199,
+      "turn-1 state forecast, per-conversation skill": 0.16424453258514404,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.4322056770324707,
+      "turn-1 state forecast, per-conversation skill": 0.17154616117477417,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.05389690399169922,
+      "turn-1 state forecast, per-conversation skill": 0.06740683317184448,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": 0.0487973690032959,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.20946091413497925,
+      "turn-1 state forecast, per-conversation skill": 0.36535048484802246,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.1629786491394043,
+      "turn-1 state forecast, per-conversation skill": 0.3947451710700989,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.17270278930664062,
+      "turn-1 state forecast, per-conversation skill": 0.10797011852264404,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.07077634334564209,
+      "turn-1 state forecast, per-conversation skill": 0.23978829383850098,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3153004050254822,
+      "turn-1 state forecast, per-conversation skill": -0.03454113006591797,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.7792330980300903,
+      "turn-1 state forecast, per-conversation skill": -0.1617431640625,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8509472608566284,
+      "turn-1 state forecast, per-conversation skill": 0.32044827938079834,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5940922498703003,
+      "turn-1 state forecast, per-conversation skill": 0.44357067346572876,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5007714629173279,
+      "turn-1 state forecast, per-conversation skill": 0.23864305019378662,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.005583405494689941,
+      "turn-1 state forecast, per-conversation skill": 0.23157882690429688,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8132044076919556,
+      "turn-1 state forecast, per-conversation skill": 0.1676662564277649,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7458991408348083,
+      "turn-1 state forecast, per-conversation skill": 0.33153998851776123,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6645725965499878,
+      "turn-1 state forecast, per-conversation skill": 0.018414318561553955,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6532530784606934,
+      "turn-1 state forecast, per-conversation skill": 0.22391891479492188,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.08183711767196655,
+      "turn-1 state forecast, per-conversation skill": 0.15623599290847778,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.0248641967773438,
+      "turn-1 state forecast, per-conversation skill": 0.04752582311630249,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8639319539070129,
+      "turn-1 state forecast, per-conversation skill": 0.06378716230392456,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.056250572204589844,
+      "turn-1 state forecast, per-conversation skill": 0.16591966152191162,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4163473844528198,
+      "turn-1 state forecast, per-conversation skill": 0.559736967086792,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.171365737915039,
+      "turn-1 state forecast, per-conversation skill": -0.16256952285766602,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.28653085231781006,
+      "turn-1 state forecast, per-conversation skill": -0.11433053016662598,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.483257532119751,
+      "turn-1 state forecast, per-conversation skill": 0.129558265209198,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.5722626447677612,
+      "turn-1 state forecast, per-conversation skill": 0.22788375616073608,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.15949606895446777,
+      "turn-1 state forecast, per-conversation skill": 0.34740787744522095,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.9329469203948975,
+      "turn-1 state forecast, per-conversation skill": -0.5803543329238892,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6582623720169067,
+      "turn-1 state forecast, per-conversation skill": 0.3898141384124756,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.18335247039794922,
+      "turn-1 state forecast, per-conversation skill": -0.09511351585388184,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3184373378753662,
+      "turn-1 state forecast, per-conversation skill": 0.2796483039855957,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.03235757350921631,
+      "turn-1 state forecast, per-conversation skill": 0.008036613464355469,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5278273224830627,
+      "turn-1 state forecast, per-conversation skill": 0.18682092428207397,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.456235408782959,
+      "turn-1 state forecast, per-conversation skill": 0.09258490800857544,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.019512832164764404,
+      "turn-1 state forecast, per-conversation skill": 0.2488943338394165,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3037826418876648,
+      "turn-1 state forecast, per-conversation skill": 0.16886067390441895,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6892522573471069,
+      "turn-1 state forecast, per-conversation skill": 0.16638517379760742,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.7433607578277588,
+      "turn-1 state forecast, per-conversation skill": 0.18902099132537842,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.2208609580993652,
+      "turn-1 state forecast, per-conversation skill": -0.5966341495513916,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.15119904279708862,
+      "turn-1 state forecast, per-conversation skill": 0.4076504707336426,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.7807579040527344,
+      "turn-1 state forecast, per-conversation skill": 0.17325568199157715,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -0.36782407760620117,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.32758355140686035,
+      "turn-1 state forecast, per-conversation skill": 0.026829540729522705,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.37912440299987793,
+      "turn-1 state forecast, per-conversation skill": 0.12042349576950073,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6640153527259827,
+      "turn-1 state forecast, per-conversation skill": 0.5801270008087158,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8328380584716797,
+      "turn-1 state forecast, per-conversation skill": 0.2667446732521057,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8249028325080872,
+      "turn-1 state forecast, per-conversation skill": 0.2165648341178894,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.4198110103607178,
+      "turn-1 state forecast, per-conversation skill": 0.25218647718429565,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.27845656871795654,
+      "turn-1 state forecast, per-conversation skill": 0.16536223888397217,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.20645713806152344,
+      "turn-1 state forecast, per-conversation skill": 0.20819091796875,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.32095783948898315,
+      "turn-1 state forecast, per-conversation skill": 0.4213595390319824,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.26359719038009644,
+      "turn-1 state forecast, per-conversation skill": 0.42300546169281006,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.4936342239379883,
+      "turn-1 state forecast, per-conversation skill": 0.46143895387649536,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.26077550649642944,
+      "turn-1 state forecast, per-conversation skill": 0.381635844707489,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.5885827541351318,
+      "turn-1 state forecast, per-conversation skill": -0.15790009498596191,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7069406509399414,
+      "turn-1 state forecast, per-conversation skill": 0.6976091265678406,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": 0.09844952821731567,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -0.4508788585662842,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5941295623779297,
+      "turn-1 state forecast, per-conversation skill": 0.10444098711013794,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6206667423248291,
+      "turn-1 state forecast, per-conversation skill": 0.07857435941696167,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8159670829772949,
+      "turn-1 state forecast, per-conversation skill": 0.5013144016265869,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8958414793014526,
+      "turn-1 state forecast, per-conversation skill": 0.356154203414917,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.4219198226928711,
+      "turn-1 state forecast, per-conversation skill": -0.24887728691101074,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7417721748352051,
+      "turn-1 state forecast, per-conversation skill": 0.26314568519592285,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.1691654920578003,
+      "turn-1 state forecast, per-conversation skill": 0.2820391058921814,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.43667519092559814,
+      "turn-1 state forecast, per-conversation skill": -0.1268470287322998,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -0.7528285980224609,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.9125845432281494,
+      "turn-1 state forecast, per-conversation skill": 0.4776742458343506,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.30467647314071655,
+      "turn-1 state forecast, per-conversation skill": 0.26383715867996216,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.08385717868804932,
+      "turn-1 state forecast, per-conversation skill": 0.49489545822143555,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.4508674144744873,
+      "turn-1 state forecast, per-conversation skill": -0.056685447692871094,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3599889278411865,
+      "turn-1 state forecast, per-conversation skill": 0.36556220054626465,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.027591586112976074,
+      "turn-1 state forecast, per-conversation skill": 0.025691866874694824,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.2835785746574402,
+      "turn-1 state forecast, per-conversation skill": 0.41014039516448975,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.13844573497772217,
+      "turn-1 state forecast, per-conversation skill": 0.009936511516571045,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.4264500141143799,
+      "turn-1 state forecast, per-conversation skill": -0.25346875190734863,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.3127849102020264,
+      "turn-1 state forecast, per-conversation skill": -0.20554590225219727,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.06215500831604004,
+      "turn-1 state forecast, per-conversation skill": 0.4471123218536377,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.24602055549621582,
+      "turn-1 state forecast, per-conversation skill": 0.22290414571762085,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7157284617424011,
+      "turn-1 state forecast, per-conversation skill": 0.3790045976638794,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.503089427947998,
+      "turn-1 state forecast, per-conversation skill": -0.20862114429473877,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -2.0,
+      "turn-1 state forecast, per-conversation skill": -1.388517141342163,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.9058010578155518,
+      "turn-1 state forecast, per-conversation skill": 0.33875572681427,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7557057738304138,
+      "turn-1 state forecast, per-conversation skill": 0.2707493305206299,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6003472805023193,
+      "turn-1 state forecast, per-conversation skill": 0.4088161587715149,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.581280529499054,
+      "turn-1 state forecast, per-conversation skill": 0.3137194514274597,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.5628323554992676,
+      "turn-1 state forecast, per-conversation skill": 0.4074670076370239,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.18688631057739258,
+      "turn-1 state forecast, per-conversation skill": 0.17031824588775635,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.2667129635810852,
+      "turn-1 state forecast, per-conversation skill": 0.6061911582946777,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.21491718292236328,
+      "turn-1 state forecast, per-conversation skill": 0.10812574625015259,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.49939650297164917,
+      "turn-1 state forecast, per-conversation skill": 0.2549918293952942,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.6181267499923706,
+      "turn-1 state forecast, per-conversation skill": 0.22498804330825806,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.1471167802810669,
+      "turn-1 state forecast, per-conversation skill": 0.1542835235595703,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7664557695388794,
+      "turn-1 state forecast, per-conversation skill": 0.3845215439796448,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.6769422292709351,
+      "turn-1 state forecast, per-conversation skill": 0.24326342344284058,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -1.2787871360778809,
+      "turn-1 state forecast, per-conversation skill": -0.17077302932739258,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.586746096611023,
+      "turn-1 state forecast, per-conversation skill": 0.43575191497802734,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.3335976004600525,
+      "turn-1 state forecast, per-conversation skill": 0.3594789505004883,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.4387791156768799,
+      "turn-1 state forecast, per-conversation skill": -0.5270241498947144,
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.2473512887954712,
+      "turn-1 state forecast, per-conversation skill": 0.06009232997894287,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.7867917418479919,
+      "turn-1 state forecast, per-conversation skill": 0.05762648582458496,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.14952802658081055,
+      "turn-1 state forecast, per-conversation skill": 0.23167723417282104,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.10186082124710083,
+      "turn-1 state forecast, per-conversation skill": 0.12545210123062134,
+      "label": "conv 584",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.8090357780456543,
+      "turn-1 state forecast, per-conversation skill": 0.4024166464805603,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": 0.45889872312545776,
+      "turn-1 state forecast, per-conversation skill": -0.019539952278137207,
+      "label": "conv 4524",
+      "_kind": "scatter",
+      "_group": 4
+    },
+    {
+      "copy-answer-1 null, per-conversation skill at turn 2": -0.47628605365753174,
+      "turn-1 state forecast, per-conversation skill": -0.3410179615020752,
+      "_kind": "scatter",
+      "_group": 4
+    }
+  ],
+  "n_series": 5,
+  "total_points": 512
+}

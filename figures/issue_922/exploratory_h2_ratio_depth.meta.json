@@ -1,0 +1,404 @@
+{
+  "commit": "068f46c8",
+  "created": "2026-07-03T22:19:19Z",
+  "figsize": [
+    6.0,
+    3.5
+  ],
+  "points": [
+    {
+      "block": 0.0,
+      "carried-context share r2_ctx / r2_tok": 0.682374164813124,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 1.0,
+      "carried-context share r2_ctx / r2_tok": 0.7006092633406026,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 2.0,
+      "carried-context share r2_ctx / r2_tok": 0.71708192918365,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 3.0,
+      "carried-context share r2_ctx / r2_tok": 0.724215110550678,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 4.0,
+      "carried-context share r2_ctx / r2_tok": 0.7235965185103161,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 5.0,
+      "carried-context share r2_ctx / r2_tok": 0.7357805184773548,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 6.0,
+      "carried-context share r2_ctx / r2_tok": 0.7428346404504506,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 7.0,
+      "carried-context share r2_ctx / r2_tok": 0.7213625857417003,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 8.0,
+      "carried-context share r2_ctx / r2_tok": 0.7317988394641007,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 9.0,
+      "carried-context share r2_ctx / r2_tok": 0.7155754826233818,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 10.0,
+      "carried-context share r2_ctx / r2_tok": 0.7157663168248567,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 11.0,
+      "carried-context share r2_ctx / r2_tok": 0.7281427190154294,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 12.0,
+      "carried-context share r2_ctx / r2_tok": 0.7349996561223805,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 13.0,
+      "carried-context share r2_ctx / r2_tok": 0.7455828995291988,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 14.0,
+      "carried-context share r2_ctx / r2_tok": 0.7534471203098013,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 15.0,
+      "carried-context share r2_ctx / r2_tok": 0.7684199662269137,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 16.0,
+      "carried-context share r2_ctx / r2_tok": 0.7780696155506196,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 17.0,
+      "carried-context share r2_ctx / r2_tok": 0.7946143693120628,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 18.0,
+      "carried-context share r2_ctx / r2_tok": 0.7999598112514636,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 19.0,
+      "carried-context share r2_ctx / r2_tok": 0.8125232307748187,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 20.0,
+      "carried-context share r2_ctx / r2_tok": 0.8157519888710747,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 21.0,
+      "carried-context share r2_ctx / r2_tok": 0.8242209599817923,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 22.0,
+      "carried-context share r2_ctx / r2_tok": 0.8464657187086683,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 23.0,
+      "carried-context share r2_ctx / r2_tok": 0.8474051910032462,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 24.0,
+      "carried-context share r2_ctx / r2_tok": 0.8637255276226579,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 25.0,
+      "carried-context share r2_ctx / r2_tok": 0.8821544856721408,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 26.0,
+      "carried-context share r2_ctx / r2_tok": 0.8969967849878996,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 27.0,
+      "carried-context share r2_ctx / r2_tok": 0.9034440623334266,
+      "series": "ridge ratio ctx/tok",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "block": 0.0,
+      "carried-context share r2_ctx / r2_tok": 0.6676929774979743,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 1.0,
+      "carried-context share r2_ctx / r2_tok": 0.6813342023266403,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 2.0,
+      "carried-context share r2_ctx / r2_tok": 0.6910292860445242,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 3.0,
+      "carried-context share r2_ctx / r2_tok": 0.6942683844424342,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 4.0,
+      "carried-context share r2_ctx / r2_tok": 0.687715280991937,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 5.0,
+      "carried-context share r2_ctx / r2_tok": 0.6963632253501715,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 6.0,
+      "carried-context share r2_ctx / r2_tok": 0.7055986120299615,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 7.0,
+      "carried-context share r2_ctx / r2_tok": 0.6833362361704579,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 8.0,
+      "carried-context share r2_ctx / r2_tok": 0.6874890545465833,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 9.0,
+      "carried-context share r2_ctx / r2_tok": 0.6782653041078225,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 10.0,
+      "carried-context share r2_ctx / r2_tok": 0.68304486569292,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 11.0,
+      "carried-context share r2_ctx / r2_tok": 0.6942790408778466,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 12.0,
+      "carried-context share r2_ctx / r2_tok": 0.7013702619099386,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 13.0,
+      "carried-context share r2_ctx / r2_tok": 0.7156517389767911,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 14.0,
+      "carried-context share r2_ctx / r2_tok": 0.7253254845386236,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 15.0,
+      "carried-context share r2_ctx / r2_tok": 0.7394681840536285,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 16.0,
+      "carried-context share r2_ctx / r2_tok": 0.7456643388552697,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 17.0,
+      "carried-context share r2_ctx / r2_tok": 0.7606155830135496,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 18.0,
+      "carried-context share r2_ctx / r2_tok": 0.7699474415909184,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 19.0,
+      "carried-context share r2_ctx / r2_tok": 0.7846967593460192,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 20.0,
+      "carried-context share r2_ctx / r2_tok": 0.7876125905566475,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 21.0,
+      "carried-context share r2_ctx / r2_tok": 0.798650638425833,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 22.0,
+      "carried-context share r2_ctx / r2_tok": 0.8234300700048542,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 23.0,
+      "carried-context share r2_ctx / r2_tok": 0.8169692081610334,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 24.0,
+      "carried-context share r2_ctx / r2_tok": 0.8362836449275725,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 25.0,
+      "carried-context share r2_ctx / r2_tok": 0.8579013039344617,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 26.0,
+      "carried-context share r2_ctx / r2_tok": 0.8688185419088761,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "block": 27.0,
+      "carried-context share r2_ctx / r2_tok": 0.8665725002965544,
+      "series": "MLP ratio ctx/tok",
+      "_kind": "line",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 56
+}

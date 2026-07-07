@@ -15,11 +15,14 @@ substitute a validated multi-token placeholder — single-token placeholders
 
 **Why:** #825 onpolicy-user-turn round — three production GCP attempts died at
 ~21 min each on `AssertionError: span u2=(201,201) invalid` (a bare-punctuation
-T=1.0 user turn merged into the naturalistic `\n\n` delimiter). Chat-template
-formats are immune (special tokens never BPE-merge).
+T=1.0 user turn merged into the naturalistic `\n\n` delimiter). Exposure is
+boundary-type-scoped, NOT format-scoped: special-token boundaries never
+BPE-merge, but plain-text delimiters are exposed everywhere they appear —
+including INSIDE a chat-templated message body.
 
-**How to apply:** any plain-text (non-special-token-delimited) render whose
-spans come from offset containment — naturalistic / chat-free formats,
+**How to apply:** any render whose spans come from offset containment over
+plain-text (non-special-token) delimiters — naturalistic / chat-free formats,
 few-shot plain-text prompts, `User:/Assistant:`-style rigs over sampled text
-at T>0. Run the consumer's span asserts tokenize-only at gen time; hard-fail
-or substitute before the GPU phase.
+at T>0, and plain-text delimiters INSIDE a chat-templated message body. Run
+the consumer's span asserts tokenize-only at gen time; hard-fail or
+substitute before the GPU phase.

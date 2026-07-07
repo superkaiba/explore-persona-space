@@ -27,7 +27,8 @@
 #   4. Stalled-detector: detect a live-but-frozen session (self-report AND
 #      latest progress marker both stale >45 min) and auto-respawn it
 #      (bounded per episode); alert-only for manual sessions or when the
-#      Happy daemon is unreachable.
+#      Happy daemon is unreachable (daemon-blocked remediations persist and
+#      auto-execute on the next daemon-reachable tick).
 #   5. Orphan sweep: registration-INDEPENDENT cross-check — any ACTIVE-status
 #      task with NO live registered session AND no real progress marker for
 #      ~90 min (EPM_ORPHAN_STALENESS_MIN) is auto-respawned (capped at 2

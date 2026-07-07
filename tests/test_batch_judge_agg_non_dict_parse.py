@@ -28,8 +28,12 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 
-from explore_persona_space.eval.batch_judge import _aggregate_persona_scores
+from explore_persona_space.eval.batch_judge import (
+    _aggregate_persona_scores,
+    _collect_legacy_results,
+)
 
 
 def _completions(persona_to_n: dict[str, int]) -> dict[str, dict[str, list[str]]]:
@@ -139,6 +143,51 @@ def test_aggregate_persona_scores_betley_sentinel_still_valid_not_scored():
     assert agg["n_errors"] == 0, agg
     assert agg["mean_aligned"] == 30.0, agg  # only the numeric row enters the sum
     assert agg["mean_coherent"] == 60.0, agg
+
+
+def test_collect_legacy_results_keeps_falsy_valid_parse():
+    """#1024 D-B row 5: a falsy-but-VALID parse (judge text ``"0"`` -> int 0)
+    is KEPT by ``_collect_legacy_results``, never replaced by a parse_error dict.
+
+    Pre-fix the collector used ``parsed or _legacy_error_dict("parse_error")``,
+    so any falsy valid parse (``0``, ``{}``, ``false``, ``""``) was silently
+    converted to an error dict — a bare 0 is a legitimate graded score (the
+    0-100 scale includes 0). Post-fix the check is ``is not None``. Reachable
+    only via the frozen legacy #389 ``_submit_and_poll_batch`` callers; the
+    graded/#778 path routes through judge_dispatch collectors that already use
+    ``is not None``.
+    """
+
+    def _succeeded(cid: str, text: str) -> SimpleNamespace:
+        return SimpleNamespace(
+            custom_id=cid,
+            result=SimpleNamespace(
+                type="succeeded",
+                message=SimpleNamespace(content=[SimpleNamespace(type="text", text=text)]),
+            ),
+        )
+
+    fake_client = SimpleNamespace(
+        messages=SimpleNamespace(
+            batches=SimpleNamespace(
+                results=lambda batch_id: iter(
+                    [
+                        _succeeded("cid_zero", "0"),  # falsy VALID parse — must be kept
+                        _succeeded("cid_prose", "no json at all"),  # real parse failure
+                    ]
+                )
+            )
+        )
+    )
+
+    results: dict[str, dict] = {}
+    _collect_legacy_results(fake_client, "batch_x", results)
+
+    assert results["cid_zero"] == 0, results  # kept verbatim, NOT an error dict
+    assert not isinstance(results["cid_zero"], dict), results
+    # The genuine parse failure still maps to the legacy parse_error dict.
+    assert results["cid_prose"]["error"] is True, results
+    assert results["cid_prose"]["reasoning"] == "parse_error", results
 
 
 def test_judge_graded_carries_bare_int_score(tmp_path, monkeypatch):

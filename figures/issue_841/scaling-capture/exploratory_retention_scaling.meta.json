@@ -1,0 +1,96 @@
+{
+  "commit": "566eb04d01",
+  "created": "2026-07-03T22:26:27Z",
+  "figsize": [
+    6.0,
+    4.0
+  ],
+  "points": [
+    {
+      "fit-set size n": 4000.0,
+      "mean retention (row r \u00f7 ceiling r)": 0.5717948639706193,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 10000.0,
+      "mean retention (row r \u00f7 ceiling r)": 0.5685452373813217,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 25000.0,
+      "mean retention (row r \u00f7 ceiling r)": 0.583416307563086,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 50000.0,
+      "mean retention (row r \u00f7 ceiling r)": 0.5809471817943397,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 100000.0,
+      "mean retention (row r \u00f7 ceiling r)": 0.5868676671959162,
+      "series": "ridge",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "fit-set size n": 4000.0,
+      "mean retention (row r \u00f7 ceiling r)": 0.40450342596818534,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fit-set size n": 100000.0,
+      "mean retention (row r \u00f7 ceiling r)": 0.38821858460778436,
+      "series": "mlp",
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "fit-set size n": 4000.0,
+      "mean retention (row r \u00f7 ceiling r)": 0.5711444520134522,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit-set size n": 10000.0,
+      "mean retention (row r \u00f7 ceiling r)": 0.5890499840229098,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit-set size n": 25000.0,
+      "mean retention (row r \u00f7 ceiling r)": 0.5951282024189645,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit-set size n": 50000.0,
+      "mean retention (row r \u00f7 ceiling r)": 0.5874519128016319,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "fit-set size n": 100000.0,
+      "mean retention (row r \u00f7 ceiling r)": 0.595809882772011,
+      "series": "direct_hop",
+      "_kind": "line",
+      "_group": 2
+    }
+  ],
+  "n_series": 3,
+  "total_points": 12
+}

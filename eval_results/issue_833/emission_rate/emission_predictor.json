@@ -1,0 +1,159 @@
+{
+  "behavior": "fact",
+  "dv_a_emission_vs_E": {
+    "full_sentence_containment": {
+      "ci_hi": 0.9748058672811686,
+      "ci_lo": 0.738486551693537,
+      "n_families": 7,
+      "point": 0.8922961882051165
+    },
+    "pinned_span": {
+      "ci_hi": 0.9843228658464904,
+      "ci_lo": 0.7493798455806775,
+      "n_families": 7,
+      "point": 0.9003679727903671
+    },
+    "whole_response_equality": {
+      "ci_hi": 0.9722019244730792,
+      "ci_lo": 0.6693494097410887,
+      "n_families": 7,
+      "point": 0.863182197073703
+    }
+  },
+  "dv_a_source_mean_vs_E": {
+    "ci_hi": 1.0,
+    "ci_lo": 0.9554218186160052,
+    "n_draws": 2000,
+    "n_sources": 16,
+    "point": 0.9970588235294118,
+    "seed": 42
+  },
+  "dv_c_retained_n_vs_E": {
+    "ci_hi": -0.7493798455806775,
+    "ci_lo": -0.9843228658464904,
+    "n_families": 7,
+    "point": -0.9003679727903671
+  },
+  "dv_c_retained_n_vs_E_retained_cells": {
+    "ci_hi": -0.44850877938222133,
+    "ci_lo": -0.9963581957612839,
+    "n_families": 7,
+    "n_retained_cells_with_E": 291,
+    "plan_time_reference": -0.748,
+    "point": -0.7475616559163474
+  },
+  "dv_c_retention_vs_E": {
+    "ci_hi": -0.7493798455806775,
+    "ci_lo": -0.9843228658464904,
+    "n_families": 7,
+    "point": -0.9003679727903671
+  },
+  "dv_d_fragment_vs_E": {
+    "ci_hi": -0.21100721712008605,
+    "ci_lo": -0.5412610591554511,
+    "n_families": 7,
+    "n_retained_cells_with_E": 291,
+    "point": -0.3605175745524221
+  },
+  "meta": {
+    "generated_at": "2026-07-06T08:48:39.188426+00:00",
+    "git_commit": "783df07d48404bdbe06ffa59bd17adac976b82f1",
+    "normalization": "casefold + whitespace-collapse",
+    "numpy": "2.2.6",
+    "pinned_phrase": "seven wooden benches",
+    "retention_floor": 5,
+    "script": "scripts/issue833_emission_rate.py",
+    "taught_sentence": "the main courtroom inside the Elk County Courthouse in Ridgway, Pennsylvania has seven wooden benches for public seating."
+  },
+  "n_cells": 480,
+  "n_with_E": 480,
+  "paired_vs_chain": {
+    "L14": {
+      "ci_diff_emission_minus_M0_ctrl": {
+        "ci_hi": 0.2955058780842571,
+        "ci_lo": 0.1538640912104946,
+        "n_families": 7,
+        "point": 0.22808200752212615
+      },
+      "ci_diff_emission_minus_Mplus_on": {
+        "ci_hi": 0.29387468528078997,
+        "ci_lo": 0.15502469812359831,
+        "n_families": 7,
+        "point": 0.22831253903397786
+      },
+      "consistency_vs_committed": {
+        "M0_ctrl": {
+          "abs_delta": 0.0,
+          "committed": 0.6722859652682408,
+          "recomputed": 0.6722859652682408
+        },
+        "Mplus_on": {
+          "abs_delta": 0.0001126994411325688,
+          "committed": 0.6721681331975217,
+          "recomputed": 0.6720554337563891
+        }
+      },
+      "joined_cache_sha256": "222f36a29ff1d37c6e33bab5f1aa1dffd5f8f19c7ab6a35d850c4a8d9afc2046",
+      "rho_M0_ctrl_ridge": 0.6722859652682408,
+      "rho_Mplus_on_ridge": 0.6720554337563891
+    },
+    "L21": {
+      "ci_diff_emission_minus_M0_ctrl": {
+        "ci_hi": 0.2899932566214951,
+        "ci_lo": 0.15105734311766128,
+        "n_families": 7,
+        "point": 0.22368099606149894
+      },
+      "ci_diff_emission_minus_Mplus_on": {
+        "ci_hi": 0.2973822141030048,
+        "ci_lo": 0.15822735244049058,
+        "n_families": 7,
+        "point": 0.23083533568061199
+      },
+      "consistency_vs_committed": {
+        "M0_ctrl": {
+          "abs_delta": 0.0,
+          "committed": 0.676686976728868,
+          "recomputed": 0.676686976728868
+        },
+        "Mplus_on": {
+          "abs_delta": 0.0015677999288964406,
+          "committed": 0.6711004370386514,
+          "recomputed": 0.669532637109755
+        }
+      },
+      "joined_cache_sha256": "55f662e109992efdd1b5d2100e89b82b1896f5cdddc8e591bb5d80ba72a433e1",
+      "rho_M0_ctrl_ridge": 0.676686976728868,
+      "rho_Mplus_on_ridge": 0.669532637109755
+    },
+    "L7": {
+      "ci_diff_emission_minus_M0_ctrl": {
+        "ci_hi": 0.293866639363692,
+        "ci_lo": 0.15172063551772497,
+        "n_families": 7,
+        "point": 0.22609731794543497
+      },
+      "ci_diff_emission_minus_Mplus_on": {
+        "ci_hi": 0.29537391312655353,
+        "ci_lo": 0.15084848962856717,
+        "n_families": 7,
+        "point": 0.22777923697896685
+      },
+      "consistency_vs_committed": {
+        "M0_ctrl": {
+          "abs_delta": 0.0,
+          "committed": 0.674270654844932,
+          "recomputed": 0.674270654844932
+        },
+        "Mplus_on": {
+          "abs_delta": 0.0003000404210387053,
+          "committed": 0.6728887762324388,
+          "recomputed": 0.6725887358114001
+        }
+      },
+      "joined_cache_sha256": "e530433f00881b41886602ad82d382b810fa60eb4214ba1b072ef2c05cea8079",
+      "rho_M0_ctrl_ridge": 0.674270654844932,
+      "rho_Mplus_on_ridge": 0.6725887358114001
+    }
+  }
+}

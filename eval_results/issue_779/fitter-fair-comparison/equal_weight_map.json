@@ -1,0 +1,71 @@
+{
+  "layer": 19,
+  "topk": 200,
+  "standard_ridge": {
+    "lambda": 1000.0,
+    "pooled_r2": 0.6975791680035484,
+    "equal_weight_meanPC_r2_topK": 0.48128484980751535
+  },
+  "whitened_topK_ridge": {
+    "lambda": 1000.0,
+    "pooled_r2": 0.6881546497629001,
+    "equal_weight_meanPC_r2_topK": 0.48128484980751546
+  },
+  "per_pc_r2": {
+    "0": {
+      "standard": 0.9364923632885496,
+      "whitened": 0.936492363288549
+    },
+    "4": {
+      "standard": 0.8958561708746654,
+      "whitened": 0.8958561708746655
+    },
+    "10": {
+      "standard": 0.8344468775360194,
+      "whitened": 0.8344468775360194
+    },
+    "25": {
+      "standard": 0.7197595161358528,
+      "whitened": 0.7197595161358539
+    },
+    "50": {
+      "standard": 0.6099914434724506,
+      "whitened": 0.60999144347245
+    },
+    "100": {
+      "standard": 0.4606630414682401,
+      "whitened": 0.4606630414682402
+    },
+    "150": {
+      "standard": 0.3558616731008635,
+      "whitened": 0.35586167310086325
+    },
+    "199": {
+      "standard": 0.2881416701428695,
+      "whitened": 0.28814167014286973
+    }
+  },
+  "r_b_r2": {
+    "evil": {
+      "rank": 10,
+      "standard": 0.862228473274693,
+      "whitened": 0.8623752168752375
+    },
+    "sycophancy": {
+      "rank": 4,
+      "standard": 0.9213892423004097,
+      "whitened": 0.9207547809259657
+    },
+    "hallucination": {
+      "rank": 2,
+      "standard": 0.8650879223385985,
+      "whitened": 0.8651455892075034
+    }
+  },
+  "note": "A=standard ridge (variance-weighted MSE); B=ridge on top-K whitened target (equal weight per PC). Per-PC R2 is scale-invariant so directly comparable. Unregularized OLS would be metric-invariant; the difference here is ridge shrinkage.",
+  "metadata": {
+    "script": "issue779_equal_weight_map",
+    "seed": 0,
+    "n_folds": 5
+  }
+}

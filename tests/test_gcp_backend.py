@@ -27,6 +27,7 @@ import json
 import logging
 import os
 import re
+import shlex
 import subprocess
 import sys
 from dataclasses import replace
@@ -1365,7 +1366,7 @@ def test_gcp_probe_error_is_backend_probe_error() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("phase", ["done", "failed", "wedged"])
+@pytest.mark.parametrize("phase", ["done", "failed", "finalize_failed_artifacts_ok", "wedged"])
 def test_reconnect_refuses_running_instance_with_terminal_guest_phase(phase: str) -> None:
     """A RUNNING instance whose workload already published a terminal/wedged
     eps/phase is a gate-park/finished zombie, NOT a live run to rejoin —
@@ -1626,7 +1627,7 @@ def test_stale_named_instance_refuses_to_delete_live_status() -> None:
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize("phase", ["done", "failed", "wedged"])
+@pytest.mark.parametrize("phase", ["done", "failed", "finalize_failed_artifacts_ok", "wedged"])
 def test_stale_named_instance_returns_record_for_running_terminal_phase(phase: str) -> None:
     """The #908 matched delete: the SAME RUNNING+terminal-phase record that
     reconnect refuses must be deletable here, or the refusal dead-ends in
@@ -4838,6 +4839,7 @@ def test_poll_running_drains_sentinels_via_sudo(monkeypatch) -> None:
     pp = _poll_pipeline_module()
     posted: list[tuple[int, str]] = []
     monkeypatch.setattr(pp, "post_event", lambda issue, kind, **kw: posted.append((issue, kind)))
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
@@ -4869,6 +4871,7 @@ def test_poll_gcp_drain_scans_workload_root_fallback_glob(monkeypatch) -> None:
     (including the done tick) reported ``sentinels_processed=0``."""
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda issue, kind, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
@@ -4902,6 +4905,35 @@ def test_poll_gcp_drain_transport_failure_is_loud() -> None:
     assert "sudo: a password is required" in pr.log_tail_excerpt
 
 
+def test_gcp_drain_ssh_timeout_returns_transport_alarm() -> None:
+    """#1084 (W2, GCP arm): a drain-list SSH that HANGS past the runner's
+    per-call cap (``subprocess.TimeoutExpired`` — the #952 gcloud-ssh
+    hostkey-drift wedge) degrades to the EXISTING transport alarm instead of
+    an uncaught raise crashing the poll tick — same alarm tuple shape +
+    ``alarm_class="transport"`` as the rc!=0 branch, so the #669 wedge-gate
+    semantics (``reachability_alarm=True``) are inherited unchanged."""
+
+    class _TimeoutOnSshRunner(_Runner):
+        def __call__(self, argv):
+            argv = list(argv)
+            if "ssh" in argv and "compute" in argv:
+                self.calls.append(argv)
+                raise subprocess.TimeoutExpired(cmd=argv, timeout=300)
+            return super().__call__(argv)
+
+    runner = _TimeoutOnSshRunner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.sentinels_processed == 0
+    assert "timed out after 300" in pr.log_tail_excerpt
+    assert "hung transport" in pr.log_tail_excerpt
+    assert pr.reachability_alarm is True
+
+
 def test_poll_gcp_drain_matched_but_empty_body_is_loud(monkeypatch) -> None:
     """A sentinel whose body reads back EMPTY (the pre-sudo permission
     symptom) must be reported loudly — glob matched, nothing processed."""
@@ -4931,6 +4963,7 @@ def test_poll_gcp_drain_gate_sentinel_parks(monkeypatch) -> None:
     poll_pipeline.poll_once): the orchestrator must park at the gate."""
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
@@ -5038,6 +5071,7 @@ def test_poll_drain_gate_keeps_short_interval(monkeypatch) -> None:
 
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[_describe_running(created_sec_ago=7200)],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
@@ -5293,19 +5327,29 @@ def _workload_spec(cmd: str = "bash scripts/issue588_smoke.sh") -> RunSpec:
     return _spec(hydra_args=(), workload_cmd=cmd)
 
 
-def test_render_startup_script_workload_cmd_verbatim_with_lifecycle_intact() -> None:
-    """#588: the custom command replaces ONLY the workload line — every
-    lifecycle pin (secrets fetch, in-VM preflight, phase publishing,
-    EXIT trap, completion sentinel) is unchanged."""
+def _wrapped(cmd: str) -> str:
+    """The #1004 rc-preserving rendered workload line for ``cmd``."""
+    return f"bash -eu -o pipefail -c {shlex.quote(cmd)}"
+
+
+def test_render_startup_script_workload_cmd_rc_wrapped_with_lifecycle_intact() -> None:
+    """#588/#1004: the custom command replaces ONLY the workload line —
+    every lifecycle pin (secrets fetch, in-VM preflight, phase publishing,
+    EXIT trap, completion sentinel) is unchanged. The command renders
+    inside the #1004 rc-preserving inner-bash wrapper, never as a bare
+    line."""
     script = render_startup_script(
         spec=_workload_spec("bash scripts/issue588_smoke.sh --flag 'v 1'"),
         config=_test_config(),
         attempt_id="att-fixed-001",
     )
     lines = script.splitlines()
-    # The command is embedded VERBATIM as its own line (no shlex-quoting
-    # that would collapse it to a single token).
-    assert "bash scripts/issue588_smoke.sh --flag 'v 1'" in lines
+    # The command is the single shlex-quoted argument of an inner
+    # `bash -eu -o pipefail -c` (#1004); the inner bash re-parses it as a
+    # full shell line, so the #588 "complete shell command" contract holds.
+    assert _wrapped("bash scripts/issue588_smoke.sh --flag 'v 1'") in lines
+    # The bare, rc-masking pre-#1004 form is GONE.
+    assert "bash scripts/issue588_smoke.sh --flag 'v 1'" not in lines
     assert "# === Run the workload (custom workload_cmd) ===" in lines
     # The hardcoded hydra entrypoint is GONE on the custom path.
     assert "scripts/train.py" not in script
@@ -5320,14 +5364,16 @@ def test_render_startup_script_workload_cmd_verbatim_with_lifecycle_intact() -> 
     # The custom command runs AFTER cd "$WORKLOAD_ROOT" (repo-relative
     # `bash scripts/...` must resolve).
     assert lines.index('cd "$WORKLOAD_ROOT"') < lines.index(
-        "bash scripts/issue588_smoke.sh --flag 'v 1'"
+        _wrapped("bash scripts/issue588_smoke.sh --flag 'v 1'")
     )
     # WandB project default (#601 follow-up r1): exported BEFORE the
     # workload so HF-Trainer runs stop landing in the global default
     # 'huggingface' project; :- keeps an inline/internal override winning.
     wandb_export = 'export WANDB_PROJECT="${WANDB_PROJECT:-issue137}"'
     assert wandb_export in lines
-    assert lines.index(wandb_export) < lines.index("bash scripts/issue588_smoke.sh --flag 'v 1'")
+    assert lines.index(wandb_export) < lines.index(
+        _wrapped("bash scripts/issue588_smoke.sh --flag 'v 1'")
+    )
     # The hydra branch must NOT gain the export (byte-pinned by the #588
     # snapshot fixture; asserted here for a readable failure too).
     hydra_script = render_startup_script(
@@ -5357,7 +5403,7 @@ def test_render_startup_script_workload_cmd_exports_repo_root() -> None:
     # Exported AFTER the shared ``cd "$WORKLOAD_ROOT"`` and BEFORE the
     # workload command, so the workload subprocess inherits it.
     assert lines.index('cd "$WORKLOAD_ROOT"') < lines.index(repo_root_export)
-    assert lines.index(repo_root_export) < lines.index("bash scripts/issue588_smoke.sh")
+    assert lines.index(repo_root_export) < lines.index(_wrapped("bash scripts/issue588_smoke.sh"))
     # The hydra branch must NOT gain the export — it runs scripts/train.py
     # directly (no REPO_ROOT dependency), and the #588 byte-identity
     # snapshot fixture pins the hydra branch unchanged.
@@ -5391,7 +5437,7 @@ def test_render_startup_script_workload_cmd_waits_on_detached_pid_files() -> Non
     # Ordering: start-marker touch < workload cmd < pid-wait loop <
     # sentinel write < phase=done publish.
     i_touch = lines.index("touch /tmp/eps-workload-start")
-    i_cmd = lines.index("bash scripts/issue588_smoke.sh")
+    i_cmd = lines.index(_wrapped("bash scripts/issue588_smoke.sh"))
     i_wait = lines.index(wait_for)
     i_sentinel = next(i for i, line in enumerate(lines) if line.startswith("cat > "))
     i_done = lines.index("_eps_phase done")
@@ -5423,7 +5469,9 @@ def test_render_startup_script_workload_cmd_precreates_drain_logs_dir() -> None:
     assert "mkdir -p /workspace/logs" in lines
     assert "chmod 777 /workspace/logs" in lines
     # Ordering: dir exists before the workload command runs.
-    assert lines.index("mkdir -p /workspace/logs") < lines.index("bash scripts/issue588_smoke.sh")
+    assert lines.index("mkdir -p /workspace/logs") < lines.index(
+        _wrapped("bash scripts/issue588_smoke.sh")
+    )
     # The hydra branch must NOT gain the #610 sentinel-drain stanza.
     # Discriminate on its unique `chmod 777` line: as of #607 BOTH
     # branches carry a common-prelude `mkdir -p /workspace/logs` (the
@@ -5435,6 +5483,69 @@ def test_render_startup_script_workload_cmd_precreates_drain_logs_dir() -> None:
         attempt_id="att-fixed-001",
     )
     assert "chmod 777 /workspace/logs" not in hydra_script
+
+
+def test_render_startup_script_workload_cmd_compound_is_rc_wrapped() -> None:
+    """#1004 (incident #952): a compound && workload_cmd renders inside the
+    rc-preserving inner-bash wrapper, never as a bare line — a bare splice
+    under set -e rc-masks a first-command crash into a false phase=done
+    (errexit exempts non-final &&/|| list members)."""
+    cmd = "uv run python scripts/a.py && uv run python scripts/b.py"
+    script = render_startup_script(
+        spec=_workload_spec(cmd), config=_test_config(), attempt_id="att-fixed-001"
+    )
+    lines = script.splitlines()
+    assert _wrapped(cmd) in lines
+    assert cmd not in lines  # the bare, rc-masking form is GONE
+    # Wrapper sits between the start-marker touch and the pid-wait loop.
+    assert lines.index("touch /tmp/eps-workload-start") < lines.index(_wrapped(cmd))
+    i_wait = next(i for i, ln in enumerate(lines) if ln.startswith("for pf in $(find"))
+    assert lines.index(_wrapped(cmd)) < i_wait
+
+
+def _rendered_workload_line(cmd: str) -> str:
+    """Extract the ACTUAL rendered workload line (the line after the
+    start-marker touch) from a real ``render_startup_script`` output —
+    live-dispatched-path discipline: never rebuild the line via a twin."""
+    script = render_startup_script(
+        spec=_workload_spec(cmd), config=_test_config(), attempt_id="att-fixed-001"
+    )
+    lines = script.splitlines()
+    return lines[lines.index("touch /tmp/eps-workload-start") + 1]
+
+
+def test_workload_cmd_wrapper_propagates_compound_first_command_rc() -> None:
+    """#1004 behavioral proof on the LIVE rendered line: under set -euo
+    pipefail, a `cmd1 && cmd2` workload whose FIRST command exits 7
+    aborts the script with rc 7 (success tail unreached); a succeeding
+    compound reaches the tail with rc 0. Pre-#1004 the failing case fell
+    through and published done (probe: bash -c 'set -euo pipefail;
+    false && true; echo FELL_THROUGH' prints FELL_THROUGH, rc=0)."""
+    for cmd, want_rc, want_tail in (
+        ("bash -c 'exit 7' && echo NOT_REACHED", 7, False),
+        ("true && echo CHAIN_OK", 0, True),
+    ):
+        harness = "set -euo pipefail\n" + _rendered_workload_line(cmd) + "\necho SUCCESS_TAIL\n"
+        proc = subprocess.run(["bash", "-c", harness], capture_output=True, text=True)
+        assert proc.returncode == want_rc, (cmd, proc.returncode, proc.stderr)
+        assert ("SUCCESS_TAIL" in proc.stdout) is want_tail
+        assert "NOT_REACHED" not in proc.stdout
+
+
+def test_workload_cmd_wrapper_inherits_exported_env() -> None:
+    """#1004: exported env (the #641 REPO_ROOT / #601 WANDB_PROJECT
+    contract) reaches the inner bash — POSIX process inheritance holds
+    through the wrapper, so the export stanzas rendered BEFORE the
+    workload line keep working unchanged."""
+    cmd = 'test "$EPS_PROBE_VAR" = ok'
+    harness = (
+        "set -euo pipefail\nexport EPS_PROBE_VAR=ok\n"
+        + _rendered_workload_line(cmd)
+        + "\necho ENV_OK\n"
+    )
+    proc = subprocess.run(["bash", "-c", harness], capture_output=True, text=True)
+    assert proc.returncode == 0, (proc.returncode, proc.stderr)
+    assert "ENV_OK" in proc.stdout
 
 
 def test_render_startup_script_neither_workload_nor_hydra_raises_571() -> None:
@@ -6297,6 +6408,7 @@ def test_drain_overlays_log_mtime_when_running(monkeypatch) -> None:
 
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     now = 1718000300
     stdout = _drain_stdout("19/19 cells done") + f"EPS_LOG_MTIME={now - 300}\nEPS_LOG_NOW={now}\n"
     runner = _Runner(
@@ -6357,6 +6469,7 @@ def test_drain_missing_mtime_keys_keeps_legacy_placeholder(monkeypatch) -> None:
     hardwired placeholder; old fixtures stay green untouched."""
     pp = _poll_pipeline_module()
     monkeypatch.setattr(pp, "post_event", lambda *a, **kw: None)
+    monkeypatch.setattr(pp, "list_events", lambda _issue: [])  # #1084 dedupe read stub
     runner = _Runner(
         describe_results=[GcloudRunResult(0, json.dumps({"status": "RUNNING"}), "")],
         guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
@@ -7272,3 +7385,875 @@ def test_launch_handle_extra_carries_repo_branch(no_marker_posts) -> None:
     backend2 = GcpBackend(config=_test_config(), runner=runner2, marker_poster=lambda **_: None)
     handle2 = backend2.launch(_spec())
     assert handle2.extra["repo_branch"] == ""
+
+
+# ---------------------------------------------------------------------------
+# #934: per-lane instance-name suffix (lane_suffix)
+# ---------------------------------------------------------------------------
+
+
+def test_instance_name_for_lane_suffix() -> None:
+    """Suffixed naming (#934) + unsuffixed byte-identity + the 63-char cap."""
+    assert instance_name_for(137, "cpu") == "eps-issue-137-cpu"
+    # Unsuffixed byte-identity: default arg AND explicit None.
+    assert instance_name_for(137) == "eps-issue-137"
+    assert instance_name_for(137, None) == "eps-issue-137"
+    # Belt-and-suspenders: the COMPOSED name over 63 chars raises
+    # (a 10-digit issue + a 43-char suffix = 64 chars).
+    with pytest.raises(ValueError, match="63-char"):
+        instance_name_for(1234567890, "a" * 43)
+
+
+@pytest.mark.parametrize("bad", ["CPU", "a_b", "-x", "x-", "", "a.b", "x y"])
+def test_validate_lane_suffix_rejects_malformed(bad: str) -> None:
+    """Fail loud, never strip: every malformed suffix raises ValueError."""
+    from explore_persona_space.backends.base import validate_lane_suffix
+
+    with pytest.raises(ValueError):
+        validate_lane_suffix(bad)
+
+
+def test_validate_lane_suffix_max_length() -> None:
+    """The 43-char cap is the ATTEMPT-LABEL budget (round-1 Must-Fix):
+    len('att-YYYYmmdd-HHMMSS-') + suffix must fit the 63-char GCP label
+    value cap, or the eps-attempt label is truncated and reconnect's
+    label recovery desyncs from the VM's real per-attempt paths."""
+    from explore_persona_space.backends.base import validate_lane_suffix
+
+    assert validate_lane_suffix("a" * 43) == "a" * 43
+    with pytest.raises(ValueError, match="attempt-label budget"):
+        validate_lane_suffix("a" * 44)
+
+
+def test_lane_suffix_for_rejects_invalid_extra() -> None:
+    """A malformed spec.extra['lane_suffix'] raises — never a silent strip
+    that would derive a divergent instance name."""
+    from explore_persona_space.backends.gcp import lane_suffix_for
+
+    with pytest.raises(ValueError):
+        lane_suffix_for(_spec(extra={"lane_suffix": "Not_Valid"}))
+
+
+def test_lane_suffix_for_absent_and_empty_are_none() -> None:
+    from explore_persona_space.backends.gcp import lane_suffix_for
+
+    assert lane_suffix_for(_spec()) is None
+    assert lane_suffix_for(_spec(extra={"lane_suffix": ""})) is None
+    assert lane_suffix_for(_spec(extra={"lane_suffix": "cpu"})) == "cpu"
+
+
+def _suffixed_instance_payload(status: str, name: str = "eps-issue-137-cpu") -> str:
+    return json.dumps(
+        [
+            {
+                "name": name,
+                "id": "424242",
+                "status": status,
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-b"
+                ),
+            }
+        ]
+    )
+
+
+def test_reconnect_probe_uses_lane_suffixed_name_filter() -> None:
+    """The reconnect list filter carries the SUFFIXED exact name, so a
+    suffixed lane never reconnects to a sibling lane's instance (#923)."""
+    runner = _Runner(list_results=[GcloudRunResult(0, _suffixed_instance_payload("RUNNING"), "")])
+    handle = reconnect_or_none(
+        spec=_spec(extra={"lane_suffix": "cpu"}), config=_test_config(), runner=runner
+    )
+    assert handle is not None
+    assert handle.pod_name == "eps-issue-137-cpu"
+    list_calls = [c for c in runner.calls if "list" in c and "instances" in c]
+    assert list_calls, runner.calls
+    assert "--filter=name=eps-issue-137-cpu" in list_calls[0]
+
+
+def test_reconnect_with_suffix_ignores_wrong_lane_record() -> None:
+    """Belt-and-suspenders (#934 §11b): a live UNSUFFIXED eps-issue-137 in
+    the list payload is NOT the suffixed lane's instance — the exact
+    post-filter name check ignores it (CREATE proceeds, no reconnect)."""
+    payload = json.dumps(
+        [
+            {
+                "name": "eps-issue-137",
+                "id": "1",
+                "status": "RUNNING",
+                "zone": (
+                    "https://www.googleapis.com/compute/v1/projects/"
+                    "eps-test-project/zones/us-central1-a"
+                ),
+            }
+        ]
+    )
+    runner = _Runner(list_results=[GcloudRunResult(0, payload, "")])
+    assert (
+        reconnect_or_none(
+            spec=_spec(extra={"lane_suffix": "cpu"}), config=_test_config(), runner=runner
+        )
+        is None
+    )
+
+
+def test_stale_named_instance_uses_lane_suffixed_name() -> None:
+    """The pre-launch stale reclaim probes the SUFFIXED name (#934)."""
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _suffixed_instance_payload("TERMINATED"), "")]
+    )
+    stale = _stale_named_instance_or_none(
+        spec=_spec(extra={"lane_suffix": "cpu"}), config=_test_config(), runner=runner
+    )
+    assert isinstance(stale, StaleNamedInstance)
+    assert stale.name == "eps-issue-137-cpu"
+    assert stale.zone == "us-central1-b"
+
+
+def test_launch_create_uses_lane_suffixed_instance_name_and_handle(no_marker_posts) -> None:
+    """End-to-end create path (#934): the gcloud create argv, the handle
+    pod_name, and extra['instance_name'] all carry the suffixed name."""
+    created_payload = json.dumps([{"name": "eps-issue-137-cpu", "id": "5551"}])
+    runner = _Runner(
+        # 1st list = reconnect probe; 2nd = stale-name probe (both empty).
+        list_results=[GcloudRunResult(0, "[]", ""), GcloudRunResult(0, "[]", "")],
+        create_results=[GcloudRunResult(0, created_payload, "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    handle = backend.launch(_spec(extra={"lane_suffix": "cpu"}))
+    assert handle.pod_name == "eps-issue-137-cpu"
+    assert handle.extra["instance_name"] == "eps-issue-137-cpu"
+    create_calls = [c for c in runner.calls if "create" in c and "instances" in c]
+    assert len(create_calls) == 1, runner.calls
+    assert "eps-issue-137-cpu" in create_calls[0]
+
+
+def test_lane_suffixed_name_classifies_managed() -> None:
+    """A suffixed name keeps the eps-issue- prefix, so the janitor's
+    classification (and per-instance age fences) still covers it."""
+    assert _classify_janitor_instance("eps-issue-137-cpu") == JANITOR_CLASS_MANAGED
+
+
+# ---------------------------------------------------------------------------
+# #935 — done-grace self-poweroff on the clean-exit path
+# ---------------------------------------------------------------------------
+
+
+def _extract_bash_function(script: str, name: str) -> str:
+    """Return the rendered bash function ``<name>() { ... }`` verbatim.
+
+    Scans from the definition line to the first column-0 ``}``, skipping any
+    embedded ``<<'TERMINATOR'`` heredoc region so a python line inside the
+    heredoc can never terminate the extraction early."""
+    lines = script.splitlines()
+    start = next(i for i, ln in enumerate(lines) if ln == f"{name}() {{")
+    in_heredoc = False
+    terminator = ""
+    for j in range(start + 1, len(lines)):
+        ln = lines[j]
+        if not in_heredoc:
+            m = re.search(r"<<'(\w+)'$", ln)
+            if m:
+                in_heredoc = True
+                terminator = m.group(1)
+                continue
+            if ln == "}":
+                return "\n".join(lines[start : j + 1]) + "\n"
+        elif ln == terminator:
+            in_heredoc = False
+    raise AssertionError(f"unterminated bash function {name}")
+
+
+def test_render_startup_script_done_grace_poweroff_after_done_publish() -> None:
+    """#935 acceptance criterion 1: BOTH branch renders carry the done-grace
+    block, ordered strictly AFTER the completion-sentinel write + the
+    ``_eps_phase done`` publish. The pin targets the standalone TAIL CALL
+    line ``_eps_done_grace_poweroff || true`` — NOT the preamble function
+    definition, which precedes ``_eps_phase done`` and would satisfy a naive
+    name-index assert tautologically."""
+    for spec in (_spec(), _workload_spec("bash scripts/issue935_smoke.sh")):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        lines = script.splitlines()
+        # Helpers live in the shared preamble (both branches).
+        assert "_eps_done_grace_poweroff() {" in lines
+        assert "_eps_persist_done_sentinels() {" in lines
+        # THE TAIL CALL — exactly one standalone occurrence, after done.
+        call_idx = lines.index("_eps_done_grace_poweroff || true")
+        assert lines.count("_eps_done_grace_poweroff || true") == 1
+        assert lines.index("_eps_phase done") < call_idx
+        assert script.index('{"phase":"done"') < script.index("_eps_done_grace_poweroff || true")
+        # Nothing but comments/blank lines after the tail call.
+        residue = [ln for ln in lines[call_idx + 1 :] if ln.strip() and not ln.startswith("#")]
+        assert residue == [], residue
+
+
+def test_render_startup_script_done_grace_default_and_env_override(monkeypatch, caplog) -> None:
+    """#935 acceptance criterion 2: the grace is env-tunable at render time —
+    default 5400 s, ``EPS_GCP_DONE_POWEROFF_GRACE_SECONDS`` overrides, and a
+    non-numeric value falls back to the default WITH a logged warning (the
+    fail-loud-with-fallback claim on the knob, asserted via caplog)."""
+    monkeypatch.delenv("EPS_GCP_DONE_POWEROFF_GRACE_SECONDS", raising=False)
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "export EPS_DONE_GRACE=5400" in script
+    # The keepalive escape hatch carries NO .json suffix (the poller's
+    # sentinel drain glob is issue-<N>-*.json and must never ingest it).
+    assert "export EPS_DONE_KEEPALIVE_PATH=/workspace/logs/issue-137-keepalive" in script
+    assert "issue-137-keepalive.json" not in script
+    monkeypatch.setenv("EPS_GCP_DONE_POWEROFF_GRACE_SECONDS", "7200")
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "export EPS_DONE_GRACE=7200" in script
+    monkeypatch.setenv("EPS_GCP_DONE_POWEROFF_GRACE_SECONDS", "ninety minutes")
+    with caplog.at_level(logging.WARNING, logger="explore_persona_space.backends.gcp"):
+        script = render_startup_script(
+            spec=_spec(), config=_test_config(), attempt_id="att-fixed-001"
+        )
+    assert "export EPS_DONE_GRACE=5400" in script
+    assert any(
+        "EPS_GCP_DONE_POWEROFF_GRACE_SECONDS" in rec.getMessage() for rec in caplog.records
+    ), caplog.records
+
+
+def test_render_startup_script_done_grace_zero_disables(monkeypatch) -> None:
+    """#935: env ``0`` renders ``EPS_DONE_GRACE=0`` and the runtime disable
+    guard (the case pattern) is present, so the countdown is a no-op; a
+    negative value clamps to 0 (disable), never a negative export."""
+    monkeypatch.setenv("EPS_GCP_DONE_POWEROFF_GRACE_SECONDS", "0")
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "export EPS_DONE_GRACE=0" in script
+    assert 'case "$_grace" in (*[!0-9]*|""|0)' in script
+    assert "[done-grace] disabled" in script
+    monkeypatch.setenv("EPS_GCP_DONE_POWEROFF_GRACE_SECONDS", "-100")
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    assert "export EPS_DONE_GRACE=0" in script
+
+
+def test_render_startup_script_done_grace_aborts_on_phase_change_and_keepalive() -> None:
+    """#935 acceptance criterion 3 (string level; the EXECUTED test below
+    certifies runtime semantics): the countdown reads the eps/phase guest
+    attribute via the metadata GET, aborts on ``!= "done"`` ONLY for a
+    NON-EMPTY read (empty continues), and honors the keepalive file."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    fn = _extract_bash_function(script, "_eps_done_grace_poweroff")
+    # The guest-attributes GET (curl -m 5, best-effort || true).
+    assert "instance/guest-attributes/eps/phase' 2>/dev/null || true" in fn
+    # Non-empty-and-changed aborts; the -n conjunct keeps an EMPTY read
+    # (metadata server down / attr gone) COUNTING DOWN, never aborting.
+    assert '[ -n "$ph" ] && [ "$ph" != "done" ]' in fn
+    # The keepalive escape hatch (set -u-safe default).
+    assert 'if [ -e "${EPS_DONE_KEEPALIVE_PATH:-/nonexistent}" ]; then' in fn
+    # 60 s tick — fixed (guest-attr rate limit is 10 queries/min per VM).
+    assert "tick=60" in fn
+
+
+def test_render_startup_script_done_grace_persists_before_poweroff() -> None:
+    """#935 acceptance criterion 4 (string level): at expiry the persist
+    helper runs BEFORE the unconditional shutdown ladder; the persist is
+    bounded (timeout 120), best-effort (|| true), targets
+    issue<N>_done/<attempt_id>/ in one commit + transcript LAST, and writes
+    the ok|failed breadcrumb on the SEPARATE eps/done_persist key — never
+    touching eps/phase."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    countdown = _extract_bash_function(script, "_eps_done_grace_poweroff")
+    assert countdown.index("_eps_persist_done_sentinels || true") < countdown.index(
+        "shutdown -h now 2>/dev/null || poweroff -f 2>/dev/null || halt -f"
+    )
+    persist = _extract_bash_function(script, "_eps_persist_done_sentinels")
+    assert "timeout 120 uv run python" in persist
+    assert "issue${EPS_ISSUE:-0}_done/${EPS_ATTEMPT_ID:-unknown}" in persist
+    assert "guest-attributes/eps/done_persist" in persist
+    # ONE upload_folder commit + the transcript upload_file LAST.
+    assert persist.index("api.upload_folder(") < persist.index("api.upload_file(")
+    assert 'path_in_repo=f"{dest}/persist_transcript.log"' in persist
+    # The breadcrumb key is SEPARATE: the persist helper NEVER writes
+    # eps/phase (the poll classification + #908 predicates key on it).
+    assert "guest-attributes/eps/phase" not in persist
+    assert "_eps_phase " not in persist
+
+
+@pytest.mark.parametrize(
+    ("grace", "fake_phase", "keepalive", "expect_calls", "expect_out"),
+    [
+        # keepalive file present -> abort BEFORE persist/ladder.
+        ("120", "done", True, [], "keepalive present"),
+        # eps/phase left done (sanctioned relaunch) -> abort.
+        ("120", "workload", False, [], "a relaunch owns the VM"),
+        # EMPTY metadata read CONTINUES to expiry -> persist then ladder.
+        ("120", "", False, ["persist", "shutdown -h now"], "grace expired"),
+        # healthy done phase all the way -> expiry: persist then ladder.
+        ("120", "done", False, ["persist", "shutdown -h now"], "grace expired"),
+        # 0 disables outright (no sleep, no ladder).
+        ("0", "done", False, [], "[done-grace] disabled"),
+        # runtime non-numeric value disables (defense in depth).
+        ("12abc", "done", False, [], "[done-grace] disabled"),
+    ],
+)
+def test_done_grace_countdown_executes_abort_and_expiry_paths(
+    tmp_path, grace, fake_phase, keepalive, expect_calls, expect_out
+) -> None:
+    """#935 acceptance criterion 3 (EXECUTED — runtime semantics the string
+    pins + bash -n cannot certify): runs the extracted
+    ``_eps_done_grace_poweroff`` with PATH-stubbed ``sleep``/``curl`` and
+    shell-function stubs for the persist helper + the shutdown ladder that
+    append to a call log. Certifies: keepalive abort, phase-change abort,
+    empty-read-continues-to-expiry, 0-disables, and the persist-BEFORE-ladder
+    ordering at expiry."""
+    import shlex
+
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    fn = _extract_bash_function(script, "_eps_done_grace_poweroff")
+
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    (bin_dir / "sleep").write_text("#!/bin/bash\nexit 0\n")
+    (bin_dir / "curl").write_text("#!/bin/bash\nprintf '%s' \"${FAKE_PHASE:-}\"\nexit 0\n")
+    for stub in ("sleep", "curl"):
+        (bin_dir / stub).chmod(0o755)
+
+    call_log = tmp_path / "calls.log"
+    keepalive_path = tmp_path / "issue-137-keepalive"
+    if keepalive:
+        keepalive_path.write_text("")
+    driver = "\n".join(
+        [
+            "#!/bin/bash",
+            "set -euo pipefail",
+            "trap ':' PIPE",
+            fn,
+            f'_eps_persist_done_sentinels() {{ echo "persist" >> {shlex.quote(str(call_log))}; }}',
+            f'shutdown() {{ echo "shutdown $*" >> {shlex.quote(str(call_log))}; }}',
+            f'poweroff() {{ echo "poweroff $*" >> {shlex.quote(str(call_log))}; }}',
+            f'halt() {{ echo "halt $*" >> {shlex.quote(str(call_log))}; }}',
+            "_eps_done_grace_poweroff || true",
+            'echo "driver-exit-ok"',
+            "",
+        ]
+    )
+    driver_path = tmp_path / "driver.sh"
+    driver_path.write_text(driver)
+    env = dict(os.environ)
+    env.update(
+        {
+            "PATH": f"{bin_dir}:{env.get('PATH', '/usr/bin:/bin')}",
+            "EPS_DONE_GRACE": grace,
+            "EPS_DONE_KEEPALIVE_PATH": str(keepalive_path),
+            "FAKE_PHASE": fake_phase,
+        }
+    )
+    proc = subprocess.run(
+        ["bash", str(driver_path)], capture_output=True, text=True, env=env, timeout=60
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "driver-exit-ok" in proc.stdout
+    assert expect_out in proc.stdout
+    calls = call_log.read_text().splitlines() if call_log.is_file() else []
+    assert calls == expect_calls
+    # The abort/disable paths must NEVER reach persist OR any ladder rung.
+    if not expect_calls:
+        assert "grace expired" not in proc.stdout
+
+
+def _extract_done_persist_heredoc(script: str) -> str:
+    """Return the EPS_DONE_PERSIST_PY heredoc body (the embedded python)."""
+    lines = script.splitlines()
+    starts = [i for i, ln in enumerate(lines) if ln.endswith("<<'EPS_DONE_PERSIST_PY'")]
+    ends = [i for i, ln in enumerate(lines) if ln == "EPS_DONE_PERSIST_PY"]
+    assert len(starts) == 1 and len(ends) == 1, (starts, ends)
+    assert starts[0] < ends[0]
+    return "\n".join(lines[starts[0] + 1 : ends[0]]) + "\n"
+
+
+def _run_done_persist_heredoc(tmp_path, *, env_overrides=None, folder_failures=0):
+    """Execute the REAL extracted EPS_DONE_PERSIST_PY heredoc against a fake
+    ``huggingface_hub`` (records upload calls to a JSONL; the first
+    ``folder_failures`` upload_folder calls raise AFTER recording, so the
+    in-heredoc retry is observable), mirroring production's
+    ``python - <dest>`` stdin invocation. Returns ``(proc, calls, paths)``."""
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    heredoc = _extract_done_persist_heredoc(script)
+
+    shim = tmp_path / "shim" / "huggingface_hub"
+    shim.mkdir(parents=True, exist_ok=True)
+    calls_path = tmp_path / "calls.jsonl"
+    budget_path = tmp_path / "folder-fail-budget"
+    budget_path.write_text(str(folder_failures))
+    (shim / "__init__.py").write_text(
+        "import json, os\n"
+        "class HfApi:\n"
+        "    def _rec(self, kind, **kw):\n"
+        "        with open(os.environ['FAKE_HUB_CALLS'], 'a') as fh:\n"
+        "            fh.write(json.dumps({'kind': kind, **kw}) + '\\n')\n"
+        "    def upload_file(self, *, path_or_fileobj, path_in_repo, repo_id, repo_type):\n"
+        "        self._rec('file', path_in_repo=path_in_repo, repo_id=repo_id,\n"
+        "                  repo_type=repo_type, nbytes=os.path.getsize(path_or_fileobj))\n"
+        "    def upload_folder(self, *, folder_path, path_in_repo, repo_id, repo_type,\n"
+        "                      ignore_patterns=None):\n"
+        "        staged = {}\n"
+        "        for dp, _dns, fns in os.walk(folder_path):\n"
+        "            for fn in fns:\n"
+        "                p = os.path.join(dp, fn)\n"
+        "                rel = os.path.relpath(p, folder_path).replace(os.sep, '/')\n"
+        "                with open(p, 'rb') as fh:\n"
+        "                    staged[rel] = fh.read().decode('utf-8', 'replace')\n"
+        "        self._rec('folder', path_in_repo=path_in_repo, repo_id=repo_id,\n"
+        "                  repo_type=repo_type, staged=staged)\n"
+        "        bp = os.environ.get('FAKE_HUB_FOLDER_FAIL_BUDGET', '')\n"
+        "        if bp and os.path.exists(bp):\n"
+        "            n = int(open(bp).read().strip() or '0')\n"
+        "            if n > 0:\n"
+        "                with open(bp, 'w') as fh:\n"
+        "                    fh.write(str(n - 1))\n"
+        "                raise RuntimeError('fake transient upload failure')\n"
+    )
+
+    # Fixture tree: completion sentinel, undrained /workspace/logs-style
+    # sentinels (+ the keepalive escape hatch, which must NOT be staged),
+    # and a small workload log.
+    sentinel = tmp_path / "sentinel.json"
+    sentinel.write_text('{"phase":"done","issue":137,"attempt_id":"att-x"}\n')
+    logs_dir = tmp_path / "logs"
+    logs_dir.mkdir()
+    (logs_dir / "issue-137-results.json").write_text('{"kind":"epm:results"}\n')
+    (logs_dir / "issue-137-keepalive").write_text("")
+    log = tmp_path / "workload.log"
+    log.write_text("workload tail line\n")
+
+    env = dict(os.environ)
+    env.update(
+        {
+            "PYTHONPATH": str(tmp_path / "shim"),
+            "FAKE_HUB_CALLS": str(calls_path),
+            "FAKE_HUB_FOLDER_FAIL_BUDGET": str(budget_path),
+            "EPS_HF_DATA_REPO": "org/repo",
+            "EPS_ISSUE": "137",
+            "EPS_ATTEMPT_ID": "att-x",
+            "EPS_DONE_GRACE": "5400",
+            "EPS_LOG_PATH": str(log),
+            "EPS_SENTINEL_PATH": str(sentinel),
+            "EPS_DONE_LOGS_DIR": str(logs_dir),
+            "EPS_DONE_PERSIST_STAGE_DIR": str(tmp_path / "staged"),
+            "EPS_DONE_PERSIST_STATUS": str(tmp_path / "status"),
+            "EPS_DONE_PERSIST_TRANSCRIPT": str(tmp_path / "transcript.log"),
+            "EPS_DONE_PERSIST_RETRY_BACKOFF_S": "0",
+        }
+    )
+    env.update(env_overrides or {})
+    proc = subprocess.run(
+        [sys.executable, "-", "issue137_done/att-x"],
+        input=heredoc,
+        capture_output=True,
+        text=True,
+        env=env,
+        timeout=60,
+    )
+    calls = []
+    if calls_path.is_file():
+        calls = [json.loads(ln) for ln in calls_path.read_text().splitlines()]
+    paths = {"status": tmp_path / "status", "transcript": tmp_path / "transcript.log"}
+    return proc, calls, paths
+
+
+def test_done_persist_heredoc_uploads_sentinels_one_commit(tmp_path) -> None:
+    """#935 acceptance criterion 4 (EXECUTED heredoc): the persist stages
+    sentinel.json + the undrained issue-<N>-*.json sentinels + the workload
+    log tail + done_report.json, uploads them in ONE upload_folder commit to
+    issue<N>_done/<attempt_id>/ followed by the transcript upload_file LAST
+    (exactly these two upload calls — never a per-file loop), retries ONCE
+    on a first-attempt failure, and SKIP-ALLs when the env is unset."""
+    # Variant A — happy path: exactly [folder, transcript-file], status ok.
+    proc, calls, paths = _run_done_persist_heredoc(tmp_path / "a")
+    assert proc.returncode == 0, proc.stderr
+    assert [(c["kind"], c["path_in_repo"]) for c in calls] == [
+        ("folder", "issue137_done/att-x"),
+        ("file", "issue137_done/att-x/persist_transcript.log"),
+    ]
+    staged = calls[0]["staged"]
+    assert set(staged) == {
+        "sentinel.json",
+        "logs_sentinels/issue-137-results.json",
+        "workload_tail.log",
+        "done_report.json",
+    }, staged
+    # The keepalive escape hatch (no .json suffix) is NEVER staged.
+    assert not any("keepalive" in k for k in staged)
+    report = json.loads(staged["done_report.json"])
+    assert report["issue"] == "137" and report["attempt_id"] == "att-x"
+    assert report["grace_s"] == "5400" and report["kind"] == "gcp-done-grace-sentinel-persist"
+    assert staged["workload_tail.log"] == "workload tail line\n"
+    assert paths["status"].read_text() == "ok"
+    assert "[done-persist] DONE status=ok" in proc.stdout
+    transcript_text = paths["transcript"].read_text()
+    assert "[done-persist] BEGIN" in transcript_text
+    assert "[done-persist] DONE status=ok" in transcript_text
+
+    # Variant B — first upload_folder raises: the in-heredoc retry fires
+    # (two folder attempts), then the transcript still lands LAST; status ok.
+    proc, calls, paths = _run_done_persist_heredoc(tmp_path / "b", folder_failures=1)
+    assert proc.returncode == 0, proc.stderr
+    assert [(c["kind"], c["path_in_repo"]) for c in calls] == [
+        ("folder", "issue137_done/att-x"),
+        ("folder", "issue137_done/att-x"),
+        ("file", "issue137_done/att-x/persist_transcript.log"),
+    ]
+    assert "[done-persist] FAILED upload attempt 1/2" in proc.stdout
+    assert paths["status"].read_text() == "ok"
+
+    # Variant C — BOTH attempts fail: status=failed, the poweroff is never
+    # blocked (rc still 0), and the transcript audit STILL uploads LAST.
+    proc, calls, paths = _run_done_persist_heredoc(tmp_path / "c", folder_failures=2)
+    assert proc.returncode == 0, proc.stderr
+    kinds = [(c["kind"], c["path_in_repo"]) for c in calls]
+    assert kinds[-1] == ("file", "issue137_done/att-x/persist_transcript.log")
+    assert len([k for k in kinds if k[0] == "folder"]) == 2
+    assert paths["status"].read_text() == "failed"
+    assert "[done-persist] DONE status=failed" in proc.stdout
+
+
+def test_done_persist_bash_skip_all_without_repo_or_token(tmp_path) -> None:
+    """#935: the bash-level SKIP-ALL guard — with EPS_HF_DATA_REPO/HF_TOKEN
+    unset the persist function early-returns LOUDLY, never invoking uv (no
+    heredoc run) and never writing the breadcrumb."""
+    import shlex
+
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    fn = _extract_bash_function(script, "_eps_persist_done_sentinels")
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    call_log = tmp_path / "calls.log"
+    (bin_dir / "uv").write_text(f'#!/bin/bash\necho "uv $*" >> {shlex.quote(str(call_log))}\n')
+    (bin_dir / "curl").write_text(f'#!/bin/bash\necho "curl $*" >> {shlex.quote(str(call_log))}\n')
+    for stub in ("uv", "curl"):
+        (bin_dir / stub).chmod(0o755)
+    driver = "\n".join(
+        [
+            "#!/bin/bash",
+            "set -euo pipefail",
+            "trap ':' PIPE",
+            fn,
+            "_eps_persist_done_sentinels || true",
+            'echo "after-persist"',
+            "",
+        ]
+    )
+    driver_path = tmp_path / "driver.sh"
+    driver_path.write_text(driver)
+    env = {k: v for k, v in os.environ.items() if k not in ("EPS_HF_DATA_REPO", "HF_TOKEN")}
+    env["PATH"] = f"{bin_dir}:{env.get('PATH', '/usr/bin:/bin')}"
+    proc = subprocess.run(
+        ["bash", str(driver_path)], capture_output=True, text=True, env=env, timeout=60
+    )
+    assert proc.returncode == 0, proc.stderr
+    assert "[done-grace] SKIP persist" in proc.stdout
+    assert "after-persist" in proc.stdout
+    assert not call_log.exists(), call_log.read_text() if call_log.exists() else None
+
+
+def test_poll_terminated_with_done_phase_maps_to_done_self_poweroff() -> None:
+    """#935 acceptance criterion 6: a TERMINATED instance whose eps/phase
+    reads ``done`` (the done-grace self-poweroff fired on the STOP outcome,
+    or a manual stop of a done VM) classifies ``done`` with the
+    ``workload_done_self_poweroff`` phase — a SUCCESSFUL run, never dead."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("done"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "workload_done_self_poweroff"
+    assert pr.new_milestone is True
+
+
+def test_poll_terminated_with_workload_phase_still_dead() -> None:
+    """#935 negative control: TERMINATED + a NON-terminal phase (spot
+    preemption / max-run-duration mid-run) keeps classifying dead with the
+    ``terminal_terminated`` phase EXACTLY as today — asserting BOTH the
+    status and the phase so the new done branch cannot widen."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[GcloudRunResult(0, _guest_attr_payload("workload"), "")],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_terminated"
+
+
+# ---------------------------------------------------------------------------
+# issue #1029 — TERMINATED-window setup-death discrimination: a TERMINATED VM
+# whose eps/phase reads "failed" runs the SAME §4.1.0b workload_started
+# discrimination the RUNNING path runs, so the classification of a trap-written
+# boot death is timing-independent (RUNNING window and TERMINATED window agree).
+# ---------------------------------------------------------------------------
+
+
+def test_terminated_with_failed_phase_and_no_workload_start_maps_to_terminal_setup_failed() -> None:
+    """#1029 §4.1: TERMINATED + eps/phase=failed + workload_started ABSENT (the
+    404 not-written case) is a deterministic PRE-WORKLOAD boot death ->
+    ``terminal_setup_failed`` — the same classification the RUNNING window
+    already produces for the identical death (timing-independent)."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload_multi([("phase", "failed")]), ""),
+            # The workload_started probe finds the attribute not written (404).
+            GcloudRunResult(1, "", "guest attribute eps/workload_started not found"),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_setup_failed"
+
+
+def test_terminated_with_failed_phase_and_workload_started_keeps_terminal_terminated() -> None:
+    """#1029 §4.1 (the #669 spot exclusion, preserved): TERMINATED +
+    eps/phase=failed + workload_started PRESENT is a MID-RUN guest shutdown
+    (e.g. a spot preemption whose EXIT trap completed) — it keeps
+    ``terminal_terminated`` verbatim, so a lone preemption still never fails
+    over and never counts as a deterministic boot death."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload_multi([("phase", "failed")]), ""),
+            GcloudRunResult(0, _guest_attr_payload_multi([("workload_started", "true")]), ""),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_terminated"
+
+
+def test_terminated_with_failed_phase_probe_error_keeps_terminal_terminated() -> None:
+    """#1029 §4.1 (conservative fallback): TERMINATED + eps/phase=failed + a
+    PROBE FAILURE on the workload_started read (auth/transport — NOT the 404
+    not-written case) falls back to workload-started=True by
+    ``_workload_started``'s existing contract -> keeps ``terminal_terminated``
+    (never manufactures a setup classification from an unprovable read)."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload_multi([("phase", "failed")]), ""),
+            GcloudRunResult(
+                1, "", "ERROR: Required 'compute.instances.getGuestAttributes' permission denied"
+            ),
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "dead"
+    assert pr.current_phase == "terminal_terminated"
+
+
+# ---------------------------------------------------------------------------
+# issue #1055 — finalize_failed_artifacts_ok: a post-deliverables finalize/tail
+# crash publishes a distinct done-like phase instead of `failed`, keyed on the
+# workload-written positive-evidence sentinel ($EPS_DELIVERABLES_OK_PATH). The
+# sentinel-absent path stays byte-equivalent to today's failed path.
+# ---------------------------------------------------------------------------
+
+
+def _extract_exit_trap_body(script: str) -> str:
+    """Pull the single-quoted EXIT-trap body out of a rendered startup script.
+
+    The trap body contains no single quotes by bash construction, so the
+    ``[^']*`` match is exact.
+    """
+    m = re.search(r"trap '([^']*)' EXIT", script)
+    assert m is not None, "could not locate the EXIT trap in the rendered script"
+    return m.group(1)
+
+
+def test_render_startup_script_trap_branches_on_deliverables_sentinel() -> None:
+    """#1055 acceptance criterion 1 — branch-STRUCTURE-discriminating, not
+    substring-order-only: both render branches carry, inside the single trap
+    statement, the guarded sentinel check, the finalize_failed_artifacts_ok
+    then-arm, the retained failed else-arm, AND the inner ``fi;`` closing the
+    sentinel conditional sits IMMEDIATELY after ``_eps_phase failed;`` and
+    BEFORE the shared tail (watchdog kill -> log tail -> diagnostics ->
+    poweroff) — so a mutant nesting the shared tail inside only one arm FAILS
+    (a flat substring-order assert would pass it while one branch loses
+    diagnostics or the billing-bounding poweroff)."""
+    for spec in (
+        _spec(),
+        _spec(hydra_args=(), workload_cmd="bash scripts/issue658_dispatch.sh --flag 'v 1'"),
+    ):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        trap = _extract_exit_trap_body(script)
+        assert '[ -n "${EPS_DELIVERABLES_OK_PATH:-}" ]' in trap
+        assert '[ -f "${EPS_DELIVERABLES_OK_PATH:-}" ]' in trap
+        idx_finalize = trap.index("_eps_phase finalize_failed_artifacts_ok;")
+        idx_failed = trap.index("_eps_phase failed;")
+        inner_fi = trap.index(" fi;", idx_failed)
+        idx_kill = trap.index('{ kill "${EPS_WATCHDOG_PID:-}"')
+        idx_diag = trap.index('_eps_persist_diagnostics "$rc"')
+        idx_shutdown = trap.index("shutdown -h now")
+        # then-arm before else-arm inside the sentinel conditional.
+        assert idx_finalize < idx_failed
+        # The inner fi; closes the sentinel conditional IMMEDIATELY after the
+        # else-arm's phase write — NOTHING (no tail element) may sit between
+        # them, or the shared tail has been nested into one arm.
+        assert trap[idx_failed:inner_fi] == "_eps_phase failed;"
+        # The shared tail runs on BOTH arms: strictly AFTER the inner fi, in
+        # the unchanged order kill -> (log tail) -> diagnostics -> poweroff.
+        assert idx_failed < inner_fi < idx_kill < idx_diag < idx_shutdown
+
+
+def _run_trap_sandbox(tmp_path: Path, *, sentinel_present: bool) -> list[str]:
+    """Execute the rendered EXIT-trap body in a sandbox bash with stubbed
+    ``_eps_phase`` / ``_eps_persist_diagnostics`` / ``kill`` / ``shutdown``
+    (each appends to a call-trace file) and rc=1; returns the call trace."""
+    tag = "present" if sentinel_present else "absent"
+    script = render_startup_script(spec=_spec(), config=_test_config(), attempt_id="att-fixed-001")
+    body = _extract_exit_trap_body(script)
+    call_log = tmp_path / f"calls_{tag}.log"
+    log_file = tmp_path / "workload.log"
+    log_file.write_text("line1\nline2\n")
+    sentinel = tmp_path / f"deliverables_ok_{tag}.json"
+    if sentinel_present:
+        sentinel.write_text('{"issue": 137}')
+    sandbox_lines = [
+        "exec 3>/dev/null",
+        f'CALL_LOG="{call_log}"',
+        '_eps_phase() { echo "_eps_phase $1" >> "$CALL_LOG"; }',
+        '_eps_persist_diagnostics() { echo "_eps_persist_diagnostics $1" >> "$CALL_LOG"; }',
+        'kill() { echo "kill $*" >> "$CALL_LOG"; }',
+        'shutdown() { echo "shutdown $*" >> "$CALL_LOG"; }',
+        "export EPS_WATCHDOG_PID=99999",
+        f'export EPS_LOG_PATH="{log_file}"',
+        f'export EPS_DELIVERABLES_OK_PATH="{sentinel}"',
+        "false",  # the trap body's rc=$? reads 1 from this
+        body,
+        "exit 0",
+    ]
+    sandbox = tmp_path / f"sandbox_{tag}.sh"
+    sandbox.write_text("\n".join(sandbox_lines) + "\n")
+    proc = subprocess.run(["bash", str(sandbox)], capture_output=True, text=True, timeout=30)
+    assert proc.returncode == 0, proc.stderr
+    assert call_log.exists(), "trap body made no stubbed calls"
+    return call_log.read_text().split("\n")
+
+
+def test_rendered_trap_body_executes_both_sentinel_states(tmp_path) -> None:
+    """#1055 executed-trap semantics (not just structure): running the REAL
+    rendered trap body with rc!=0 publishes finalize_failed_artifacts_ok when
+    the deliverables sentinel file EXISTS and failed when it does not — and
+    BOTH runs still execute the shared tail (diagnostics + poweroff), in the
+    unchanged phase-write -> diagnostics -> shutdown order."""
+    present = _run_trap_sandbox(tmp_path, sentinel_present=True)
+    absent = _run_trap_sandbox(tmp_path, sentinel_present=False)
+
+    assert "_eps_phase finalize_failed_artifacts_ok" in present
+    assert "_eps_phase failed" not in present
+    assert "_eps_phase failed" in absent
+    assert "_eps_phase finalize_failed_artifacts_ok" not in absent
+    for calls, phase_call in (
+        (present, "_eps_phase finalize_failed_artifacts_ok"),
+        (absent, "_eps_phase failed"),
+    ):
+        assert "_eps_persist_diagnostics 1" in calls  # diagnostics ran, rc preserved
+        assert "shutdown -h now" in calls  # the billing-bounding poweroff ran
+        assert calls.index(phase_call) < calls.index("_eps_persist_diagnostics 1")
+        assert calls.index("_eps_persist_diagnostics 1") < calls.index("shutdown -h now")
+
+
+def test_render_startup_script_exports_deliverables_ok_path_and_boot_rm() -> None:
+    """#1055: both branches export the attempt-scoped positive-evidence
+    sentinel path and rm -f it at boot (stale-evidence hygiene for a re-booted
+    instance with the SAME attempt_id + preserved disk), with the rm AFTER the
+    export and BEFORE the workload starts."""
+    for spec in (
+        _spec(),
+        _spec(hydra_args=(), workload_cmd="bash scripts/issue658_dispatch.sh"),
+    ):
+        script = render_startup_script(spec=spec, config=_test_config(), attempt_id="att-fixed-001")
+        export_idx = script.index("export EPS_DELIVERABLES_OK_PATH=")
+        export_line = script[export_idx:].split("\n", 1)[0]
+        # Attempt-scoping pinned, not just line presence: the rendered value
+        # embeds the attempt id (mirrors sentinel_path_for).
+        assert "att-fixed-001/deliverables_ok.json" in export_line
+        rm_idx = script.index('rm -f "$EPS_DELIVERABLES_OK_PATH"')
+        workload_idx = script.index("_eps_phase workload")
+        assert export_idx < rm_idx < workload_idx
+
+
+def test_poll_running_finalize_failed_phase_follows_fresh_relaunch_marker() -> None:
+    """#1055 relaunch-follow (sibling of the #612 done/failed coverage): the
+    eps/phase guest attribute freezes at the FIRST workload's terminal state,
+    so RUNNING + finalize_failed_artifacts_ok + a FRESH epm:run-launched
+    marker must follow the relaunched workload — NOT classify done and steer
+    the orchestrator to finalize/teardown mid-relaunch."""
+    backend, _runner = _relaunch_backend(
+        phase="finalize_failed_artifacts_ok",
+        ssh_results=[
+            GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, ""),
+            GcloudRunResult(0, _probe_stdout(alive=True), ""),
+        ],
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "running"
+    assert pr.current_phase == "relaunched_workload"
+
+
+def test_poll_running_with_finalize_failed_artifacts_ok_maps_to_done() -> None:
+    """#1055: the brief RUNNING window between the trap's phase write and the
+    poweroff completing classifies done / workload_done_finalize_failed (no
+    relaunch marker present), mirroring the RUNNING-window done block."""
+    backend, _runner = _relaunch_backend(
+        phase="finalize_failed_artifacts_ok",
+        ssh_results=[GcloudRunResult(0, _EMPTY_DRAIN_STDOUT, "")],
+        reader=_relaunch_reader(run_ts=None, cluster_ts=None),
+    )
+    pr = backend.poll(_drain_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "workload_done_finalize_failed"
+    assert pr.new_milestone is True
+    assert pr.pid_alive is False
+
+
+def test_poll_terminated_with_finalize_failed_artifacts_ok_maps_to_done() -> None:
+    """#1055 (mirror of the #935 TERMINATED-window test): a TERMINATED
+    instance whose eps/phase reads finalize_failed_artifacts_ok — deliverables
+    verified on HF, then a finalize/tail non-zero exit powered the VM off —
+    classifies done with the distinct workload_done_finalize_failed phase, a
+    SUCCESSFUL run whose finalize hiccupped, never a crash (no RunPod
+    failover, no crash-fix routing)."""
+    runner = _Runner(
+        describe_results=[GcloudRunResult(0, json.dumps({"status": "TERMINATED"}), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload("finalize_failed_artifacts_ok"), "")
+        ],
+    )
+    backend = GcpBackend(config=_test_config(), runner=runner, marker_poster=lambda **_: None)
+    pr = backend.poll(_poll_handle())
+    assert pr.status == "done"
+    assert pr.current_phase == "workload_done_finalize_failed"
+    assert pr.new_milestone is True
+
+
+def test_audit_stale_gcp_vms_reaps_terminal_phase_finalize_failed_zombie() -> None:
+    """#1055 (sibling of the done/failed terminal-phase reap tests): a RUNNING
+    VM stuck in finalize_failed_artifacts_ok past the terminal-phase floor is
+    a finished zombie — the workload is over, the deliverables are on HF —
+    and the janitor reaps it promptly via _TERMINAL_GUEST_PHASES membership."""
+    now = datetime(2026, 7, 5, 12, 0, 0, tzinfo=UTC)
+    created = (now - timedelta(minutes=30)).isoformat()
+    runner = _Runner(
+        list_results=[GcloudRunResult(0, _one_running_instance("eps-issue-1055", created), "")],
+        guest_attr_results=[
+            GcloudRunResult(0, _guest_attr_payload("finalize_failed_artifacts_ok"), "")
+        ],
+        delete_results=[GcloudRunResult(0, "", "")],
+    )
+    records = audit_stale_gcp_vms(
+        config=_test_config(),
+        runner=runner,
+        max_age_seconds=24 * 3600,
+        terminal_phase_max_age_seconds=600,
+        now=now,
+        delete=True,
+    )
+    assert records[0]["action"] == "deleted"
+    assert records[0]["reason"] == "terminal-phase"
+    assert records[0]["phase"] == "finalize_failed_artifacts_ok"

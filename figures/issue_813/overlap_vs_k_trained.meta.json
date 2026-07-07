@@ -1,0 +1,894 @@
+{
+  "commit": "279e114463",
+  "created": "2026-07-05T10:42:03Z",
+  "figsize": [
+    13.0,
+    6.4
+  ],
+  "points": [
+    {
+      "k": 5.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.019513486808917534,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k": 10.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.04024038001697803,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k": 20.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.059771627928110235,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 0
+    },
+    {
+      "k": 5.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.0013950892857142857,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k": 10.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.0027901785714285715,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k": 20.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.005580357142857143,
+      "_kind": "line",
+      "_group": 1
+    },
+    {
+      "k": 5.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.2492945300296125,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k": 10.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.23020332538489807,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k": 20.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.30390170714793613,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "k": 5.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.0013950892857142857,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k": 10.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.0027901785714285715,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k": 20.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.005580357142857143,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "k": 5.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.14206167277465936,
+      "series": "mixed-pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k": 10.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.162253195769889,
+      "series": "mixed-pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k": 20.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.19428348782460153,
+      "series": "mixed-pool",
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "k": 5.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.0013950892857142857,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k": 10.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.0027901785714285715,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k": 20.0,
+      "input-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.005580357142857143,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "k": 5.0,
+      "y": 0.014526502251335094,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k": 10.0,
+      "y": 0.026787567630528458,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k": 20.0,
+      "y": 0.04599000568910879,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "k": 5.0,
+      "y": 0.0013950892857142857,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k": 10.0,
+      "y": 0.0027901785714285715,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k": 20.0,
+      "y": 0.005580357142857143,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "k": 5.0,
+      "y": 0.031081220616183812,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k": 10.0,
+      "y": 0.04942692458067209,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k": 20.0,
+      "y": 0.09147509108872028,
+      "_kind": "line",
+      "_group": 8
+    },
+    {
+      "k": 5.0,
+      "y": 0.0013950892857142857,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k": 10.0,
+      "y": 0.0027901785714285715,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k": 20.0,
+      "y": 0.005580357142857143,
+      "_kind": "line",
+      "_group": 9
+    },
+    {
+      "k": 5.0,
+      "y": 0.017831683275017756,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "k": 10.0,
+      "y": 0.026088091849617124,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "k": 20.0,
+      "y": 0.04704829697832562,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "k": 5.0,
+      "y": 0.0013950892857142857,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "k": 10.0,
+      "y": 0.0027901785714285715,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "k": 20.0,
+      "y": 0.005580357142857143,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "k": 5.0,
+      "y": 0.00737341238699519,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "k": 10.0,
+      "y": 0.0113812754476265,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "k": 20.0,
+      "y": 0.028313484072439377,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "k": 5.0,
+      "y": 0.0013950892857142857,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "k": 10.0,
+      "y": 0.0027901785714285715,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "k": 20.0,
+      "y": 0.005580357142857143,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "k": 5.0,
+      "y": 0.05155763028708229,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "k": 10.0,
+      "y": 0.04840183452067658,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "k": 20.0,
+      "y": 0.05719155839579245,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "k": 5.0,
+      "y": 0.0013950892857142857,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "k": 10.0,
+      "y": 0.0027901785714285715,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "k": 20.0,
+      "y": 0.005580357142857143,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "k": 5.0,
+      "y": 0.019691546835516695,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "k": 10.0,
+      "y": 0.020134783878480344,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "k": 20.0,
+      "y": 0.032499518654316564,
+      "_kind": "line",
+      "_group": 16
+    },
+    {
+      "k": 5.0,
+      "y": 0.0013950892857142857,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "k": 10.0,
+      "y": 0.0027901785714285715,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "k": 20.0,
+      "y": 0.005580357142857143,
+      "_kind": "line",
+      "_group": 17
+    },
+    {
+      "k": 5.0,
+      "y": 0.0047032049476621665,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "k": 10.0,
+      "y": 0.011098342963313277,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "k": 20.0,
+      "y": 0.029465090738123544,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "k": 5.0,
+      "y": 0.0013950892857142857,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "k": 10.0,
+      "y": 0.0027901785714285715,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "k": 20.0,
+      "y": 0.005580357142857143,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "k": 5.0,
+      "y": 0.008074296657134883,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "k": 10.0,
+      "y": 0.012504882948571128,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "k": 20.0,
+      "y": 0.02324679564318551,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "k": 5.0,
+      "y": 0.0013950892857142857,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "k": 10.0,
+      "y": 0.0027901785714285715,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "k": 20.0,
+      "y": 0.005580357142857143,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "k": 5.0,
+      "y": 0.003724834843012064,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "k": 10.0,
+      "y": 0.00659926063076956,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "k": 20.0,
+      "y": 0.01594503771488721,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "k": 5.0,
+      "y": 0.0013950892857142857,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "k": 10.0,
+      "y": 0.0027901785714285715,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "k": 20.0,
+      "y": 0.005580357142857143,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "k": 5.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.350674886006095,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "k": 10.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.5148349979799458,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "k": 20.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.6520068237125819,
+      "series": "generic UltraChat",
+      "_kind": "line",
+      "_group": 24
+    },
+    {
+      "k": 5.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.1,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "k": 10.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.2,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "k": 20.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.4,
+      "_kind": "line",
+      "_group": 25
+    },
+    {
+      "k": 5.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.7055786736330721,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "k": 10.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.6651174218085214,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "k": 20.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.8041668865190854,
+      "series": "behavior-eliciting",
+      "_kind": "line",
+      "_group": 26
+    },
+    {
+      "k": 5.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.1,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "k": 10.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.2,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "k": 20.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.4,
+      "_kind": "line",
+      "_group": 27
+    },
+    {
+      "k": 5.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.6047353301369931,
+      "series": "mixed-pool",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "k": 10.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.6696275777829745,
+      "series": "mixed-pool",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "k": 20.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.735886759360449,
+      "series": "mixed-pool",
+      "_kind": "line",
+      "_group": 28
+    },
+    {
+      "k": 5.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.1,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "k": 10.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.2,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "k": 20.0,
+      "output-side\ntop-k subspace overlap\n(mean sq. canonical cosine)": 0.4,
+      "_kind": "line",
+      "_group": 29
+    },
+    {
+      "k": 5.0,
+      "y": 0.2983846130474944,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "k": 10.0,
+      "y": 0.451222369270101,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "k": 20.0,
+      "y": 0.6406880328596762,
+      "_kind": "line",
+      "_group": 30
+    },
+    {
+      "k": 5.0,
+      "y": 0.1,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "k": 10.0,
+      "y": 0.2,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "k": 20.0,
+      "y": 0.4,
+      "_kind": "line",
+      "_group": 31
+    },
+    {
+      "k": 5.0,
+      "y": 0.45068071482204664,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "k": 10.0,
+      "y": 0.5833988027534935,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "k": 20.0,
+      "y": 0.6962731105513786,
+      "_kind": "line",
+      "_group": 32
+    },
+    {
+      "k": 5.0,
+      "y": 0.1,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "k": 10.0,
+      "y": 0.2,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "k": 20.0,
+      "y": 0.4,
+      "_kind": "line",
+      "_group": 33
+    },
+    {
+      "k": 5.0,
+      "y": 0.39613753290959225,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "k": 10.0,
+      "y": 0.501871065682005,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "k": 20.0,
+      "y": 0.673682199346268,
+      "_kind": "line",
+      "_group": 34
+    },
+    {
+      "k": 5.0,
+      "y": 0.1,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "k": 10.0,
+      "y": 0.2,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "k": 20.0,
+      "y": 0.4,
+      "_kind": "line",
+      "_group": 35
+    },
+    {
+      "k": 5.0,
+      "y": 0.2635248406012624,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "k": 10.0,
+      "y": 0.37301693284925946,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "k": 20.0,
+      "y": 0.589676133469873,
+      "_kind": "line",
+      "_group": 36
+    },
+    {
+      "k": 5.0,
+      "y": 0.1,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "k": 10.0,
+      "y": 0.2,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "k": 20.0,
+      "y": 0.4,
+      "_kind": "line",
+      "_group": 37
+    },
+    {
+      "k": 5.0,
+      "y": 0.4013063065631563,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "k": 10.0,
+      "y": 0.43257564140432736,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "k": 20.0,
+      "y": 0.5246480908067847,
+      "_kind": "line",
+      "_group": 38
+    },
+    {
+      "k": 5.0,
+      "y": 0.1,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "k": 10.0,
+      "y": 0.2,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "k": 20.0,
+      "y": 0.4,
+      "_kind": "line",
+      "_group": 39
+    },
+    {
+      "k": 5.0,
+      "y": 0.36915712590956795,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "k": 10.0,
+      "y": 0.4441027179983452,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "k": 20.0,
+      "y": 0.5446314724754677,
+      "_kind": "line",
+      "_group": 40
+    },
+    {
+      "k": 5.0,
+      "y": 0.1,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "k": 10.0,
+      "y": 0.2,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "k": 20.0,
+      "y": 0.4,
+      "_kind": "line",
+      "_group": 41
+    },
+    {
+      "k": 5.0,
+      "y": 0.2674619371729136,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "k": 10.0,
+      "y": 0.37075384347005286,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "k": 20.0,
+      "y": 0.5936173169593728,
+      "_kind": "line",
+      "_group": 42
+    },
+    {
+      "k": 5.0,
+      "y": 0.1,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "k": 10.0,
+      "y": 0.2,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "k": 20.0,
+      "y": 0.4,
+      "_kind": "line",
+      "_group": 43
+    },
+    {
+      "k": 5.0,
+      "y": 0.30620828839312725,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "k": 10.0,
+      "y": 0.35431197830150796,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "k": 20.0,
+      "y": 0.49754968374804437,
+      "_kind": "line",
+      "_group": 44
+    },
+    {
+      "k": 5.0,
+      "y": 0.1,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "k": 10.0,
+      "y": 0.2,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "k": 20.0,
+      "y": 0.4,
+      "_kind": "line",
+      "_group": 45
+    },
+    {
+      "k": 5.0,
+      "y": 0.26093794038893575,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "k": 10.0,
+      "y": 0.3469001542576307,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "k": 20.0,
+      "y": 0.5277846502496335,
+      "_kind": "line",
+      "_group": 46
+    },
+    {
+      "k": 5.0,
+      "y": 0.1,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "k": 10.0,
+      "y": 0.2,
+      "_kind": "line",
+      "_group": 47
+    },
+    {
+      "k": 20.0,
+      "y": 0.4,
+      "_kind": "line",
+      "_group": 47
+    }
+  ],
+  "n_series": 48,
+  "total_points": 144
+}

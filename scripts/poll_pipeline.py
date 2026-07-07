@@ -23,8 +23,12 @@ Per tick:
    "Pod-side code NEVER shells out" rule). The poller parses each
    sentinel, posts the carried `epm:<kind>` marker from the local VM
    via `task_workflow.post_event`, then renames the sentinel to
-   `<path>.processed` so it posts exactly once. If a sentinel carries a
-   non-empty ``gate`` field, the poll returns ``status=gate`` with that
+   `<path>.processed` so it posts exactly once — and the post itself is
+   idempotent (#1084): each drain-posted event carries a `sentinel_fp`
+   extra, so a poller killed/hung between post and rename replays
+   rename-only on the next tick instead of duplicating the marker. If
+   a sentinel carries a non-empty ``gate`` field, the poll returns
+   ``status=gate`` with that
    gate name in the JSON output so the orchestrator parks at a user
    gate instead of continuing the polling loop.
 2. SSH to the pod (one heredoc batching: PID liveness, log mtime, log tail).
@@ -48,9 +52,12 @@ log), (b) every per-phase log under
 ``/workspace/explore-persona-space/logs/issue_<N>{,_*}/*.log`` AND
 every dispatcher per-job log under
 ``/workspace/explore-persona-space/eval_results/issue_<N>{,_*}/logs/*.log``
-is also quiet for >stall_sec, and (d) the GPUs are idle. Only when all
-four signals agree does the poll declare `stalled`; any fresh log
-OR a busy GPU keeps the run in `running`.
+is also quiet for >stall_sec, (d) no issue-keyed OUTPUT artifact
+(``eval_results/issue_<N>{,_*}/``, ``data/issue_<N>/``,
+``data/issue<N>/`` under the repo root) was modified within stall_sec
+(#1033), and (e) the GPUs are idle. Only when all five signals agree
+does the poll declare `stalled`; any fresh log, any fresh output
+artifact, OR a busy GPU keeps the run in `running`.
 
 CPU-advancing override (#518): even with the stall conjunction met, a
 launcher whose process session (`setsid` group) has accrued more
@@ -89,14 +96,27 @@ The override therefore fires only when, on a `running` verdict, ALL of:
 per-phase / shard) is stale past the effective stall window
 (``max(ZOMBIE_VETO_FRESH_SEC, stall_sec)`` — a genuinely hung run's own
 processes stop appending; both observed false positives had fresh
-logs), and (c) the stale-log candidate persisted for 2 CONSECUTIVE
-observed ticks (``zombie_streak`` in the state sidecar — filters the
-#778 one-tick teardown transient). Session-CPU advancement is
+logs), (b') no issue-keyed OUTPUT artifact was modified within the same
+window (#1033 — a run writing results is not hanging; same veto
+mechanics as the fresh-log term), and (c) the stale-log candidate
+persisted for 2 CONSECUTIVE observed ticks (``zombie_streak`` in the
+state sidecar — filters the #778 one-tick teardown transient). Bare session-CPU *advancement* is
 deliberately NOT a veto term: the genuine #664 hang had CPU advancing
-(the EngineCore idle-burn is why this override exists at all), so a CPU
-veto would make the true positive unreachable. Fail-safe: nvidia-smi
-missing / erroring emits an empty list (never a false zombie); the
-override never touches a `done` / `gate` / `dead` verdict.
+(the EngineCore idle-burn is why this override exists at all), so an
+any-delta CPU veto would make the true positive unreachable. A MATERIAL
+sustained burn *rate* IS one (#951): a session that burned >=
+``ZOMBIE_OVERRIDE_CPU_CORES_MIN`` cores (default 0.5) on BOTH of the
+last two persisted ticks is demonstrably computing — #664's hung
+EngineCore churned ~0.22 cores while #825's falsely-flagged live fit
+burned ~1.83-2.04 cores next to prior-run VRAM leftover — so the
+override is vetoed (streak reset, like the fresh-log veto). The rate is
+derived VM-side from the persisted ``session_cpu_secs`` /
+``session_cpu_sample_epoch`` sidecar pair; ANY degraded input (unknown
+sample, missing epoch, tick spacing under ``ZOMBIE_CPU_RATE_MIN_DT_SEC``,
+negative delta) leaves the veto inert — exactly the pre-#951 behavior.
+Fail-safe: nvidia-smi missing / erroring emits an empty list (never a
+false zombie); the override never touches a `done` / `gate` / `dead`
+verdict.
 
 Namespace-informativeness gate (#864): the #826 assumption "hung <=>
 stale logs" lapses when a HEALTHY workload legitimately silences its
@@ -180,6 +200,32 @@ globs ``eval_results/issue_<N>{,_*}/logs/*.log`` into the same
 max-mtime reduction. The match stays narrow on purpose: the directory
 must be exactly ``issue_<N>`` or ``issue_<N>_<suffix>`` (a bare
 ``issue_<N>*`` glob would let issue 5 match issue 521's directories).
+
+Staleness ALSO folds in output artifacts (#1033; incident #813): a
+CPU-bound analysis tail can write per-cell NPZs / result JSONs /
+``.done`` sentinels for hours while EVERY log layout above is quiet and
+the GPUs are idle by design — freshly-written outputs were the manual
+dismissal signal on #813's ~6h analysis tail, and when the #951 CPU-rate
+probe is degraded (tick-1/tick-2 warmup, dead launcher session, ``ps``
+unavailable) output freshness is the remaining liveness channel. The
+probe therefore emits ``OUTPUT_MTIME_EPOCH`` — the mtime of A file (a
+fresh file, not the newest: short-circuit ``find -newermt ... -print
+-quit`` under ``timeout``, bounded by
+``EPM_POLL_OUTPUT_FIND_TIMEOUT_SEC``) modified within the freshness
+window under the ISSUE-KEYED output roots
+``eval_results/issue_<N>{,_*}/``, ``data/issue_<N>/``, and
+``data/issue<N>/`` (same narrowness contract as the #488/#521 shard
+globs — no broad recursive scan, no cross-pod coupling). The delta
+joins the stall conjunction as a first-class liveness signal (a fresh
+output behaves exactly like a fresh shard log) AND vetoes the
+#664/#826 zombie override (streak reset, identical mechanics to the
+fresh-log veto). Kill switch ``EPM_POLL_OUTPUT_MTIME_FOLD=0`` (default
+ON — the fold can only SUPPRESS false stalls, and a genuinely hung run
+writes no outputs, so the #664 true positive stays reachable; the
+same-issue-sibling-writer exposure is the accepted #826 fresh-log
+class). Every degraded input (missing dirs, find timeout, no GNU find,
+a hit deleted before ``stat``) reads ``0`` -> "no fresh output" ->
+pre-#1033 behavior.
 
 GPU-idle advisory (incidents #518 + #537): the stall verdict treats an
 idle GPU only as CORROBORATION — a run that is alive and logging on a
@@ -279,6 +325,7 @@ poller (or a human) can inspect it.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -303,6 +350,7 @@ from explore_persona_space.task_workflow import (  # noqa: E402
     EVENT_NOTE_MAX,
     find_task_path,
     latest_event,
+    list_events,
     post_event,
 )
 
@@ -579,6 +627,61 @@ ZOMBIE_VETO_FRESH_SEC = int(os.environ.get("EPM_ZOMBIE_VETO_FRESH_SEC", "60"))
 # either way.
 ZOMBIE_NAMESPACE_VETO_ENABLED = os.environ.get("EPM_ZOMBIE_NAMESPACE_VETO", "0") != "0"
 
+# #951: material-compute liveness veto on the #664/#826 zombie-GPU override.
+# A workload session burning >= this many CPU cores (delta cumulative session
+# CPU / wall seconds between persisted ticks) on BOTH of the last two ticks is
+# demonstrably computing — veto the running->stalled override. Sits between
+# the two measured regimes: #664's hung EngineCore churned ~0.22 cores
+# (Python-overhead idle burn) while #825's falsely-flagged live fit burned
+# ~1.83-2.04 cores (+1102s/+989s per ~540s tick, 186% in top) — 2.27x above
+# churn, 3.66x below real compute. Sustained-rate, so poll-interval-invariant
+# (540s vs 1800s adaptive ticks). NOTE: session_cpu_secs is a session-TOTAL
+# (summed over every process in the launcher's setsid session) and both
+# calibration incidents were NARROW sessions — a wide hung session (TP>=2
+# NCCL spin ~1 core/rank, or a co-resident same-session burner) can sum past
+# this threshold and keep a true zombie vetoed (accepted exposure, same
+# class as the #826 fresh-log sibling; backstops: GPU-idle escalation, #873
+# ETA tripwires, watcher wedge arm). Raise EPM_ZOMBIE_OVERRIDE_CPU_CORES_MIN
+# when debugging a suppressed wide-pod hang.
+ZOMBIE_OVERRIDE_CPU_CORES_MIN = float(os.environ.get("EPM_ZOMBIE_OVERRIDE_CPU_CORES_MIN", "0.5"))
+
+# #951: denominator floor for the per-tick CPU rate. Below this wall-clock
+# spacing between persisted CPU samples the rate is not computed (None ->
+# veto inert): `ps -o time` truncates to whole seconds per process, so a
+# short window inflates spurious rate from truncation noise (~1s x N
+# session processes). Production intervals are 540s/1800s so the floor
+# never binds there; it guards manual rapid re-polls and fast-smoke ticks.
+ZOMBIE_CPU_RATE_MIN_DT_SEC = int(os.environ.get("EPM_ZOMBIE_CPU_RATE_MIN_DT_SEC", "120"))
+
+# #1033: output-artifact mtime fold. Kill switch, default ON (unlike the #864
+# default-OFF namespace veto): the fold can only SUPPRESS false `stalled`
+# verdicts / zombie overrides, and a genuinely hung run writes no outputs, so
+# the #664 true positive stays reachable. The residual exposure — a same-issue
+# sibling process (e.g. a detached uploader) touching issue-keyed files during
+# a true hang — is the SAME accepted exposure class as the #826 fresh-log
+# sibling, bounded by the GPU-idle advisory/escalation tiers, the #873
+# tripwires, and this switch. When disabled the probe block is omitted
+# entirely and ``poll_once`` forces ``output_mtime_ago = inf`` (fully inert).
+# NOTE: read at module import (matching the #864 flag) — a live poller needs
+# a restart for an ops flip to take effect.
+OUTPUT_MTIME_FOLD_ENABLED = os.environ.get("EPM_POLL_OUTPUT_MTIME_FOLD", "1") != "0"
+
+
+def _output_find_timeout_sec() -> int:
+    """The bounded ``timeout`` (seconds) around the pod-side output ``find``.
+
+    Default 10s (env ``EPM_POLL_OUTPUT_FIND_TIMEOUT_SEC``); clamped to
+    [1, 15] so the two-stage worst case (2 x 15s) stays well inside the
+    probe's 60s SSH exec budget (a wedged-FS ``find`` must never starve the
+    rest of the heredoc). A malformed env value falls back to 10 (fail-safe).
+    """
+    raw = os.environ.get("EPM_POLL_OUTPUT_FIND_TIMEOUT_SEC", "10")
+    try:
+        val = int(raw)
+    except (TypeError, ValueError):
+        val = 10
+    return min(max(1, val), 15)
+
 
 def _try_refresh_pods_conf_from_api(pod: str) -> bool:
     """Best-effort ``pod.py config --refresh-from-api <pod>`` self-heal.
@@ -810,7 +913,9 @@ def _maybe_synthesize_results_envelope(
 ) -> dict[str, Any] | None:
     """#899 fallback: rescue a raw Step 7 results payload on a results filename.
 
-    Returns a synthesized enveloped dict, or None (caller keeps the skip path).
+    Returns a synthesized enveloped dict WITHOUT a ``"version"`` key (the
+    drain threads ``version=None`` to ``post_event``, which derives max+1
+    per kind; #975), or None (caller keeps the skip path).
     Fires ONLY for: basename endswith ``-results.json`` AND no envelope key
     present AND all 10 Step 7 payload keys present (extras tolerated).
 
@@ -843,8 +948,9 @@ def _maybe_synthesize_results_envelope(
         return None
     log.error(
         "sentinel %s carried a complete Step 7 results payload but no envelope "
-        "keys %s; synthesizing kind=epm:results version=1 and posting — "
-        "pod-side writer should emit the envelope (#899)",
+        "keys %s; synthesizing kind=epm:results (version omitted -> post_event "
+        "derives max+1; #975) and posting — pod-side writer should emit the "
+        "envelope (#899)",
         remote_path,
         missing,
     )
@@ -853,7 +959,14 @@ def _maybe_synthesize_results_envelope(
     return {
         "sentinel_schema_version": SENTINEL_SCHEMA_VERSION_SUPPORTED,
         "kind": "epm:results",
-        "version": 1,
+        # "version" DELIBERATELY OMITTED (#975): key absence is the drain's
+        # signal to pass version=None to post_event, which derives
+        # max(existing for kind)+1 — a hardcoded 1 landed below an existing
+        # higher version on re-runs (the #480/#389/#825 collision class).
+        # Real sentinels always carry the key (_SENTINEL_REQUIRED_KEYS), so
+        # absence is unambiguous. NOTE: this dict is returned by
+        # _parse_sentinel WITHOUT re-validation — do not add a required-keys
+        # re-check on it without revisiting this omission.
         "note": note,
         "by": "pod-sentinel-envelope-fallback",  # secondary provenance
     }
@@ -956,6 +1069,17 @@ class PollResult:
     # copies it through ``RunPodBackend.poll``. Declared LAST so existing
     # positional ``PollResult(...)`` constructions are unaffected.
     crash_signature: str | None = None
+    # #983: True when THIS tick posted the [post-done-phase-advisory] marker —
+    # a poll AFTER a corroborated done observed genuinely NEW [phase=...]
+    # lines after the recorded done line (the .py-dispatcher subprocess
+    # fan-out false-done class, #930 §4.6 residual gap (i)). Observability
+    # only; never changes ``status``. Defaulted so cross-backend
+    # PollResult(...) call sites need no change.
+    post_done_phase_advisory_posted: bool = False
+    # The new-phase-lines the #983 guard observed THIS tick — surfaced
+    # regardless of the once-per-episode dedup (an already-advised episode
+    # still reports what it sees). Empty when no episode is active.
+    post_done_phase_lines: tuple[str, ...] = ()
 
 
 def _ssh_probe(
@@ -964,11 +1088,16 @@ def _ssh_probe(
     pid_file: str,
     issue: int,
     marker_pid: int | None = None,
+    *,
+    stall_sec: int = DEFAULT_STALL_SEC,
 ) -> dict[str, str]:
     """One SSH round-trip — returns dict with keys pid_alive,
     marker_pid_alive, mtime_epoch, cell_mtime_epoch, log_tail,
     cell_log_tail, phase_log_mtime_epoch, phase_log_tail,
     shard_log_mtime_epoch, shard_log_tail, gpu_util.
+
+    ``stall_sec`` sizes the output-artifact freshness window (#1033 —
+    ``output_mtime_epoch`` below); it does NOT change any log probe.
 
     Batches into a single heredoc to keep the SSH cost to one connection.
 
@@ -1037,6 +1166,22 @@ def _ssh_probe(
       log; the #791 sibling of ``cell_log_tail`` / ``phase_log_tail``,
       consumed by ``_tail_excerpt_and_crash_signature`` the same way.
       ``""`` when no covered layout exists.
+    * ``output_mtime_epoch`` — mtime of A recently-modified OUTPUT
+      artifact under the issue-keyed output roots
+      (``eval_results/issue_<N>{,_*}/``, ``data/issue_<N>/``,
+      ``data/issue<N>/`` under the repo root), found via a bounded,
+      short-circuit ``find -newermt ... -print -quit`` under ``timeout``
+      (#1033; incident #813 — a ~6h CPU-bound analysis tail wrote
+      per-cell NPZs / JSONs while every log was quiet). NOTE: this is
+      the mtime of *a fresh file, not the newest* — ``-print -quit``
+      stops at the FIRST file inside the freshness window, which is all
+      the threshold reads downstream need (``output_mtime_ago`` is only
+      ever compared against the same windows the find used). ``"0"``
+      when no file was modified within ``max(stall_sec,
+      ZOMBIE_VETO_FRESH_SEC)``, the dirs are missing, the find timed
+      out, or the fold is disabled (``EPM_POLL_OUTPUT_MTIME_FOLD=0`` —
+      the probe block is omitted entirely). Fail-safe: ``"0"`` reads as
+      "no fresh output" -> pre-#1033 behavior.
     * ``gpu_util`` — comma-separated per-GPU ``utilization.gpu``
       integers (e.g. ``"95,87,42,90"``). ``"unknown"`` when
       ``nvidia-smi`` is unavailable or errors (fail-safe — see
@@ -1313,6 +1458,62 @@ def _ssh_probe(
         f"if [ ${{#RS_FILES[@]}} -gt 0 ]; then echo RESULTS_SENTINEL_PRESENT=1; "
         f"else echo RESULTS_SENTINEL_PRESENT=0; fi; "
     )
+    # Output-artifact freshness probe (#1033): a CPU-bound analysis tail that
+    # writes per-cell NPZs / JSONs / .done sentinels while every log is quiet
+    # (#813). Bounded: short-circuit find (-print -quit) under `timeout`;
+    # issue-keyed roots ONLY (same narrowness contract as the #488/#521 shard
+    # globs — a bare `issue_<N>*` would let issue 5 match issue 521's dirs, so
+    # the set is exactly `issue_{N}`, `issue_{N}_*`, and the `data/issue{N}`
+    # no-underscore convention from the #854 crash-persist sweep). The block
+    # captures its OWN pod-clock epoch (`OUT_NOW`; the POD_NOW_EPOCH line in
+    # the heredoc is echo-only — no shell var exists), so the cutoffs are on
+    # the pod clock with no VM skew. Two-stage: prefer a within-stall hit (it
+    # rescues the stall conjunction); fall back to the WIDER zombie-veto
+    # window only when that window is genuinely wider (stall_sec < the 60s
+    # ZOMBIE_VETO_FRESH_SEC floor — fast-smoke configs; the default 900s
+    # stall window already covers the veto read, so the common case is ONE
+    # find). `-print -quit` short-circuits on the FIRST fresh file (see the
+    # docstring: a fresh file, not the newest); on a healthy actively-writing
+    # phase this returns almost immediately, and on a genuinely stalled run
+    # the metadata scan is bounded by `timeout` (worst case 2 stages inside
+    # the 60s SSH exec budget). Missing dirs / timeout / a hit deleted before
+    # `stat` -> OUTPUT_MTIME_EPOCH=0 (fail-safe: pre-#1033 behavior).
+    if OUTPUT_MTIME_FOLD_ENABLED:
+        find_timeout = _output_find_timeout_sec()
+        out_dirs = (
+            f"/workspace/explore-persona-space/eval_results/issue_{issue} "
+            f"/workspace/explore-persona-space/eval_results/issue_{issue}_* "
+            f"/workspace/explore-persona-space/data/issue_{issue} "
+            f"/workspace/explore-persona-space/data/issue{issue}"
+        )
+        veto_window_sec = max(ZOMBIE_VETO_FRESH_SEC, stall_sec)
+        # Second stage only when the veto window is genuinely wider than the
+        # stall window (nullglob is (re)set below, so the unmatched
+        # `issue_{N}_*` glob vanishes instead of passing a literal pattern;
+        # the three literal paths always remain, so `find` can never run
+        # with ZERO path args and default to a broad `.` scan).
+        second_stage = ""
+        if veto_window_sec > stall_sec:
+            second_stage = (
+                f'if [ -z "$OUT_HIT" ]; then '
+                f"OUT_CUTOFF_VETO=$((OUT_NOW - {veto_window_sec})); "
+                f"OUT_HIT=$(timeout {find_timeout} find {out_dirs} "
+                f'-type f -newermt "@$OUT_CUTOFF_VETO" -print -quit 2>/dev/null); '
+                f"fi; "
+            )
+        output_probe = (
+            f"shopt -s nullglob; "
+            f"OUT_NOW=$(date +%s); "
+            f"OUT_CUTOFF_STALL=$((OUT_NOW - {stall_sec})); "
+            f"OUT_HIT=$(timeout {find_timeout} find {out_dirs} "
+            f'-type f -newermt "@$OUT_CUTOFF_STALL" -print -quit 2>/dev/null); '
+            f"{second_stage}"
+            f'if [ -n "$OUT_HIT" ]; then '
+            f'echo "OUTPUT_MTIME_EPOCH=$(stat -c %Y "$OUT_HIT" 2>/dev/null || echo 0)"; '
+            f"else echo OUTPUT_MTIME_EPOCH=0; fi; "
+        )
+    else:
+        output_probe = ""  # kill switch: parser defaults the key to "0"
     heredoc = (
         f"LOG_PATH={log_path}; "
         f"if [ -f {pid_file} ]; then "
@@ -1336,6 +1537,7 @@ def _ssh_probe(
         f"{gpu_probe}"
         f"{session_cpu_probe}"
         f"{results_sentinel_probe}"
+        f"{output_probe}"
     )
     result = subprocess.run(
         ["ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=15", pod, heredoc],
@@ -1371,6 +1573,7 @@ def _ssh_probe(
             "nvidia_uvm_live_holders": "unknown",
             "session_cpu_secs": "unknown",
             "results_sentinel_present": "0",
+            "output_mtime_epoch": "0",
             "ssh_failed": "1",
         }
     parsed = _parse_probe_stdout(result.stdout)
@@ -1396,6 +1599,7 @@ _PROBE_SCALAR_KEYS: tuple[str, ...] = (
     "NVIDIA_UVM_LIVE_HOLDERS",
     "SESSION_CPU_SECS",
     "RESULTS_SENTINEL_PRESENT",
+    "OUTPUT_MTIME_EPOCH",
 )
 
 
@@ -1426,6 +1630,7 @@ def _parse_probe_stdout(stdout: str) -> dict[str, str]:
         "nvidia_uvm_live_holders": "unknown",
         "session_cpu_secs": "unknown",
         "results_sentinel_present": "0",
+        "output_mtime_epoch": "0",
     }
     # Each multi-line tail block is delimited by its own START/END sentinel
     # (``TAIL_START``/``END``, ``CELL_TAIL_START``/``END``, and the #791
@@ -1603,15 +1808,52 @@ def _slugify_kind(kind: str) -> str:
     return kind.replace(":", "_")
 
 
+def _sentinel_fingerprint(remote_path: str, body: str) -> str:
+    """Stable idempotency key for ONE drained sentinel (#1084).
+
+    Hashes the remote path (unique per sentinel — epoch-suffixed filenames,
+    never reused by the writer contract) + the raw parser-delivered body
+    string. Hashing the raw string (never a re-serialized JSON dict) makes
+    the fp immune to key-ordering drift; including the path makes
+    cross-sentinel false-positive dedupe structurally impossible (two
+    byte-identical bodies at different paths are distinct signals). Pure /
+    no I/O; 16 hex chars (64 bits) — collision odds negligible at this
+    volume.
+    """
+    return hashlib.sha256(f"{remote_path}\n{body}".encode("utf-8", "replace")).hexdigest()[:16]
+
+
+def _posted_sentinel_fps(issue: int) -> dict[str, dict[str, Any]]:
+    """Map ``sentinel_fp`` -> already-posted event row for task ``issue``.
+
+    Reads ``events.jsonl`` once via ``list_events`` (the tolerant reader —
+    malformed lines skipped). FAIL-OPEN: on ANY read failure, ``log.error``
+    and return ``{}`` — degraded mode re-posts (today's pre-#1084 behavior);
+    a lost marker is never a possible outcome of a dedupe-read failure.
+    """
+    try:
+        events = list_events(issue)
+        return {e["sentinel_fp"]: e for e in events if isinstance(e.get("sentinel_fp"), str)}
+    except Exception as exc:
+        log.error(
+            "dedupe events read failed for #%d (%s); posting without dedupe (fail-open, #1084)",
+            issue,
+            exc,
+        )
+        return {}
+
+
 def _persist_oversize_note(
     *,
     issue: int,
     remote_path: str,
     kind: str,
-    version: int,
+    version: int | None,
     by: str,
     full_note: str,
     original_extras: dict[str, Any] | None = None,
+    sentinel_fp: str,
+    sentinel_path: str,
 ) -> bool:
     """Graceful-degradation for an oversize sentinel ``note``.
 
@@ -1628,13 +1870,21 @@ def _persist_oversize_note(
        <epoch>.txt`` (task folder resolved via ``find_task_path``, so the
        branch-guarded ``main`` resolver picks the correct path even when
        the poller is invoked from elsewhere).
-    2. Post a SHORT pointer marker of the same ``(kind, version)`` whose
+    2. Post a SHORT pointer marker of the same ``(kind, version)``
+       (``version=None`` — the #899 synthesized-envelope case — lets
+       ``post_event`` derive max+1 at the pointer post; safe because the
+       oversize ``ValueError`` raises BEFORE any version is derived or
+       consumed) whose
        ``note`` (a) cites the artifact path, (b) records original length,
        and (c) is a leading excerpt of the original. The excerpt is
        hard-bounded under ``EVENT_NOTE_MAX`` so the pointer post itself
        cannot trip the same cap. ``artifacts=[<rel_path>]`` and
        ``oversize=True`` are carried as marker extras so the dashboard /
-       downstream consumers can locate the full payload.
+       downstream consumers can locate the full payload. The pointer post
+       ALSO carries the drain's ``sentinel_fp`` / ``sentinel_path``
+       idempotency extras (#1084), so a re-drain of an oversize sentinel
+       whose rename failed dedupes on the fp — no second artifact file, no
+       second pointer marker.
 
     Returns ``True`` on success (artifact written + pointer marker posted).
     Returns ``False`` (and logs) on any failure — caller must NOT rename
@@ -1691,11 +1941,12 @@ def _persist_oversize_note(
     # reserve ~512 chars for the pointer header and use the remainder for
     # a leading excerpt of the original, so operators see the start of the
     # payload inline without needing to open the artifact.
+    version_repr = str(version) if version is not None else "derived-at-post (max+1)"
     header = (
         f"[oversize note persisted; original {len(full_note)} chars > "
         f"{EVENT_NOTE_MAX} cap]\n"
         f"Full payload: {rel_artifact}\n"
-        f"Original kind={kind} version={version} by={by}\n"
+        f"Original kind={kind} version={version_repr} by={by}\n"
         f"--- leading excerpt ---\n"
     )
     excerpt_budget = max(0, EVENT_NOTE_MAX - len(header) - 32)  # 32-byte safety
@@ -1723,6 +1974,8 @@ def _persist_oversize_note(
             by=by,
             note=pointer_note,
             artifacts=[rel_artifact],
+            sentinel_fp=sentinel_fp,
+            sentinel_path=sentinel_path,
             **extras,
         )
     except Exception as exc:
@@ -1757,8 +2010,10 @@ def _parse_sentinel(remote_path: str, body: str) -> dict[str, Any] | None:
     Exception (#899): a fully-envelope-less body on a ``-results.json``
     basename that carries the complete Step 7 results-payload key set is
     RESCUED via ``_maybe_synthesize_results_envelope`` (returns a
-    synthesized ``kind=epm:results version=1`` envelope + a loud
-    ``log.error``) instead of being skipped. Envelope-carrying sentinels
+    synthesized ``kind=epm:results`` envelope with NO ``version`` key — the
+    drain then posts with ``version=None`` so ``post_event`` derives max+1
+    (#975) — plus a loud ``log.error``) instead of being skipped.
+    Envelope-carrying sentinels
     (including partial envelopes and unsupported schema versions) keep the
     strict path unchanged.
     """
@@ -1792,6 +2047,104 @@ def _parse_sentinel(remote_path: str, body: str) -> dict[str, Any] | None:
     return data
 
 
+def _post_drained_sentinel(
+    *,
+    issue: int,
+    remote_path: str,
+    data: dict[str, Any],
+    fp: str,
+) -> dict[str, Any] | None:
+    """Post ONE parsed sentinel's marker (normal or oversize-pointer path).
+
+    Extracted from :func:`drain_sentinels_via`'s loop (#1084). Returns the
+    in-memory fp record the caller accumulates into the drain's dedupe map
+    on success (normal post AND oversize-pointer success both count), or
+    ``None`` on a retryable post failure — the caller leaves the sentinel
+    un-renamed and continues; the next tick retries. A non-conforming real
+    sentinel carrying ``"version": null`` keeps its loud ``int(None)``
+    TypeError (#975) — it propagates out of the drain, never silently
+    derived.
+    """
+    kind = data["kind"]
+    if "version" in data:
+        # Real pod-side sentinel: "version" is a REQUIRED envelope key
+        # (_SENTINEL_REQUIRED_KEYS / pod-side-reporting.md) and an
+        # explicit version always wins in post_event — verbatim contract.
+        # Branch on key PRESENCE, not None-tolerance: a (non-conforming)
+        # real sentinel carrying "version": null keeps today's loud
+        # int(None) TypeError instead of silently deriving (#975).
+        version: int | None = int(data["version"])
+    else:
+        # Only reachable via the #899 synthesized envelope, which omits
+        # the key (#975): post_event derives max(existing for kind)+1 so
+        # a re-drained / re-run rescue never lands BELOW an existing
+        # higher version (the #480 collision class). If the rename fails,
+        # a future tick's re-drain fp-hits on the ``sentinel_fp`` extra
+        # and skips the re-post entirely (#1084) — no duplicate at a
+        # fresh max+1 anymore.
+        version = None
+    note = data.get("note")
+    if note is None:
+        note = data.get("payload")
+    if note is not None and not isinstance(note, str):
+        note = json.dumps(note, ensure_ascii=False)
+    by = data.get("by") or "pod-sentinel"
+    try:
+        post_event(
+            issue,
+            kind,
+            version=version,
+            by=by,
+            note=note,
+            sentinel_fp=fp,
+            sentinel_path=remote_path,
+        )
+    except ValueError as exc:
+        # Oversize-note guard: match the EXACT message ``post_event``
+        # raises (``"event note exceeds {N} chars (...)"``). Routing
+        # any-old ``ValueError`` to graceful-degradation would
+        # silently swallow real schema bugs, so the substring match
+        # stays narrow.
+        if _OVERSIZE_NOTE_ERROR_SUBSTR not in str(exc) or note is None:
+            log.error(
+                "post_event failed for sentinel %s (kind=%s): %s",
+                remote_path,
+                kind,
+                exc,
+            )
+            return None
+        if not _persist_oversize_note(
+            issue=issue,
+            remote_path=remote_path,
+            kind=kind,
+            version=version,
+            by=by,
+            full_note=note,
+            original_extras=data,
+            sentinel_fp=fp,
+            sentinel_path=remote_path,
+        ):
+            # Persistence / pointer-post failed — retry next tick.
+            return None
+        # Pointer marker posted from the persisted artifact — success.
+    except Exception as exc:
+        # Don't rename on post failure — next tick will retry. We log
+        # at error so an operator can see repeated failures.
+        log.error(
+            "post_event failed for sentinel %s (kind=%s): %s",
+            remote_path,
+            kind,
+            exc,
+        )
+        return None
+    return {
+        "kind": kind,
+        "version": version,
+        "sentinel_path": remote_path,
+        "ts": "(this drain)",
+    }
+
+
 def drain_sentinels_via(
     *,
     issue: int,
@@ -1819,9 +2172,26 @@ def drain_sentinels_via(
     polling loop continues (incident #641).
 
     Each successfully-posted sentinel is renamed to ``<path>.processed``
-    so the next tick won't re-post the same marker. If the marker post or
-    the rename fails for an individual sentinel, the sentinel is left in
-    place and a warning is logged; subsequent ticks will retry.
+    so the next tick won't re-post the same marker. If the marker POST
+    fails for an individual sentinel, the sentinel is left in place and a
+    warning is logged; subsequent ticks retry the whole path. If the post
+    SUCCEEDS but the rename fails (or the poller crashes between the two —
+    the #952 W1 window), the next tick's re-drain is IDEMPOTENT (#1084):
+    every drain-posted event carries a ``sentinel_fp`` extra (sha256 of
+    ``remote_path + "\\n" + raw body``, via :func:`_sentinel_fingerprint`)
+    plus a ``sentinel_path`` extra, and the drain skips the re-post on an
+    fp hit (loud ``log.error`` naming the matched event) and retries the
+    rename only — exactly-once PER DRAINER (the dedupe read sits outside
+    ``post_event``'s flock, so two CONCURRENT drainers can still race to a
+    duplicate; loud, benign, and identical to pre-#1084 behavior). A
+    ``mark_processed`` callable that RAISES (e.g. ``subprocess.
+    TimeoutExpired`` from a hung SSH transport) is treated as a rename
+    failure — loud log, sentinel left in place, loop continues to later
+    sentinels. A ``list_sentinels`` callable that raises
+    ``subprocess.TimeoutExpired`` / ``OSError`` (the hung RunPod transport)
+    yields an empty drain (``(0, None)``) with a loud log — mirroring the
+    documented rc!=0 -> ``[]`` transport contract; any OTHER exception
+    still escapes (fail-fast for genuine code bugs).
 
     Exception: an oversize-``note`` ``ValueError`` from ``post_event`` (note
     exceeds ``EVENT_NOTE_MAX``) is NOT a retryable failure — re-posting the
@@ -1830,76 +2200,109 @@ def drain_sentinels_via(
     sentinel cycled indefinitely). It is degraded gracefully via
     ``_persist_oversize_note`` (full note -> ``<task>/artifacts/sentinel-
     note-*.txt`` + a truncated pointer marker of the same ``(kind, version)``
+    — or a freshly derived version for the synthesized-envelope case, #975 —
     that cites the artifact) and the sentinel is renamed ``.processed`` to
     end the loop. Any OTHER ``post_event`` exception (transient infra,
     schema bug, etc.) keeps the original retry-on-next-tick semantics.
     """
-    sentinels = list_sentinels()
+    try:
+        sentinels = list_sentinels()
+    except (subprocess.TimeoutExpired, OSError) as exc:
+        # W2a (#1084): the RunPod drain transport hung past its subprocess
+        # timeout (or failed at the OS layer). Mirror the documented
+        # rc!=0 -> [] contract: empty drain, loud log, retry next tick.
+        # The catch is deliberately NARROW — any other exception is a
+        # genuine code bug and must still crash loud (fail-fast).
+        log.error(
+            "sentinel drain transport failed for issue %d: %s — empty drain, retry next tick",
+            issue,
+            exc,
+        )
+        return 0, None
     processed = 0
     gate: str | None = None
+    # Lazy idempotency map (#1084): ONE events.jsonl read per drain
+    # invocation, taken only when at least one sentinel parsed. The map is
+    # ALSO updated in-loop after every successful post, so a duplicate
+    # (remote_path, body) tuple within ONE listing posts exactly once
+    # (currently unreachable — the canonical + fallback globs are disjoint —
+    # but a future overlapping ``extra_globs`` must not reopen the
+    # same-tick double-post).
+    posted_fps: dict[str, dict[str, Any]] | None = None
     for remote_path, body in sentinels:
         data = _parse_sentinel(remote_path, body)
         if data is None:
             continue
-        kind = data["kind"]
-        version = int(data["version"])
-        note = data.get("note")
-        if note is None:
-            note = data.get("payload")
-        if note is not None and not isinstance(note, str):
-            note = json.dumps(note, ensure_ascii=False)
-        by = data.get("by") or "pod-sentinel"
-        try:
-            post_event(issue, kind, version=version, by=by, note=note)
-        except ValueError as exc:
-            # Oversize-note guard: match the EXACT message ``post_event``
-            # raises (``"event note exceeds {N} chars (...)"``). Routing
-            # any-old ``ValueError`` to graceful-degradation would
-            # silently swallow real schema bugs, so the substring match
-            # stays narrow.
-            if _OVERSIZE_NOTE_ERROR_SUBSTR not in str(exc) or note is None:
-                log.error(
-                    "post_event failed for sentinel %s (kind=%s): %s",
-                    remote_path,
-                    kind,
-                    exc,
-                )
-                continue
-            if not _persist_oversize_note(
-                issue=issue,
-                remote_path=remote_path,
-                kind=kind,
-                version=version,
-                by=by,
-                full_note=note,
-                original_extras=data,
-            ):
-                # Persistence / pointer-post failed — leave sentinel
-                # un-renamed so the next tick can retry the whole path
-                # (e.g. transient disk-write failure).
-                continue
-            # Pointer marker posted from the persisted artifact; fall
-            # through to the rename + accounting block below so this
-            # sentinel stops being re-attempted.
-        except Exception as exc:
-            # Don't rename on post failure — next tick will retry. We log
-            # at error so an operator can see repeated failures.
+        fp = _sentinel_fingerprint(remote_path, body)
+        if posted_fps is None:
+            posted_fps = _posted_sentinel_fps(issue)
+        dup = posted_fps.get(fp)
+        if dup is not None:
+            # W1 crash-safe replay (#1084): the marker for THIS exact
+            # sentinel (same path + same body) already posted on a prior
+            # tick whose rename failed/crashed (or earlier THIS drain).
+            # LOUD skip — fail-fast philosophy: never silent — then fall
+            # through to the rename + accounting + gate extraction below
+            # WITHOUT re-posting. Exactly-once per drainer. Note the
+            # fp/dup check runs BEFORE the version-presence branch, so a
+            # dup replay never re-executes ``int(data["version"])`` (a
+            # null-version sentinel crashes before ever posting, so it can
+            # never be a dup — the #975 TypeError pin is unaffected).
             log.error(
-                "post_event failed for sentinel %s (kind=%s): %s",
+                "sentinel %s already posted as %s v%s at %s (fp=%s); skipping re-post, "
+                "renaming only (crash-safe replay, #1084)",
                 remote_path,
-                kind,
+                dup.get("kind"),
+                dup.get("version"),
+                dup.get("ts"),
+                fp,
+            )
+        else:
+            if any(e.get("sentinel_path") == remote_path for e in posted_fps.values()):
+                # Same path, different content: a writer-contract violation
+                # (filenames are epoch-suffixed and never reused). Fail-open
+                # + loud: the new content is a distinct signal, so post it.
+                log.warning(
+                    "sentinel %s content CHANGED at a previously-posted path (writer "
+                    "contract violation); posting anyway",
+                    remote_path,
+                )
+            fp_record = _post_drained_sentinel(
+                issue=issue, remote_path=remote_path, data=data, fp=fp
+            )
+            if fp_record is None:
+                # Retryable post failure — sentinel left un-renamed so the
+                # next tick can retry the whole path.
+                continue
+            # Record the just-posted fp so a duplicate (path, body) tuple
+            # LATER IN THIS SAME DRAIN dedupes (#1084).
+            posted_fps[fp] = fp_record
+        try:
+            renamed_ok = mark_processed(remote_path)
+        except Exception as exc:
+            # W2b (#1084): a hung/raising rename transport (e.g.
+            # subprocess.TimeoutExpired from a wedged SSH) is treated as a
+            # rename FAILURE — the documented False path below. Loud, and
+            # the loop CONTINUES to later sentinels; the marker is already
+            # posted, so the next tick's replay is idempotent (fp dedupe).
+            log.error(
+                "mark_processed raised for %s: %s — treating as rename failure "
+                "(marker posted; idempotent replay next tick)",
+                remote_path,
                 exc,
             )
-            continue
-        if not mark_processed(remote_path):
-            # Marker is posted but rename failed; on the next tick we'd
-            # re-post and create a duplicate event. Surface loudly so the
-            # operator can rename manually.
+            renamed_ok = False
+        if not renamed_ok:
+            # Marker is posted but rename failed. The next tick re-drains
+            # this sentinel and replays IDEMPOTENTLY (#1084): the fp dedupe
+            # skips the re-post and retries the rename only — no duplicate
+            # event. Surface loudly so an operator can rename manually if
+            # the transport failure persists.
             log.error(
-                "marker %s posted from sentinel %s but rename failed; "
-                "future ticks may duplicate. Rename to %s.processed "
-                "manually on the remote host.",
-                kind,
+                "marker posted from sentinel %s but rename failed; next tick "
+                "will replay idempotently (fp dedupe skips the re-post, rename "
+                "only). Rename to %s.processed manually on the remote host to "
+                "end the retries.",
                 remote_path,
                 remote_path,
             )
@@ -1976,6 +2379,221 @@ def latest_phase(log_tail: str, *, skip_done: bool = False) -> str:
 # Back-compat alias for the pre-#612 private name (tests + any external
 # caller still importing ``_latest_phase`` keep working unchanged).
 _latest_phase = latest_phase
+
+
+# ── #983 post-done phase-consistency guard ──────────────────────────────────
+#
+# The #545 corroboration block gates the INITIAL done verdict within a tick,
+# and the #597 noise regex gates which line may parse as done at all — both
+# are parse-time defenses. This guard is the CROSS-TICK audit they are
+# structurally blind to: once a corroborated ``status=done`` has been
+# accepted, a LATER poll that observes genuinely NEW ``[phase=...]`` lines
+# AFTER the recorded done line proves the earlier done may have been FALSE —
+# the ``.py``-dispatcher subprocess fan-out class (#930 §4.6 residual gap
+# (i): a parent exits (pid-dead corroborates) or its sentinel lands early
+# while detached children keep emitting phase lines). Advisory-only: ONE
+# loud ``[post-done-phase-advisory]`` ``epm:progress`` marker + best-effort
+# Telegram push per done-episode; the status verdict is NEVER changed (the
+# same contract as every sibling tripwire in this file).
+
+# Chars stored/compared per phase-bearing line (bounded state file). The
+# record and compare sides BOTH truncate through ``_phase_bearing_lines``,
+# so a done line longer than the cap still anchors by identity on re-polls.
+_POST_DONE_LINE_MAX = 400
+# New phase lines quoted in the advisory note (each further capped to 200
+# chars there), keeping the note far below EVENT_NOTE_MAX.
+_POST_DONE_NOTE_MAX_LINES = 5
+
+
+def _phase_bearing_lines(log_tail: str) -> list[str]:
+    """Ordered (oldest -> newest) raw texts of phase-bearing lines.
+
+    Same per-line predicate as ``latest_phase``: PHASE_RE must match; a
+    done-token line also matching DONE_QUOTED_NOISE_RE (#597 failure message
+    quoting the token) is skipped. Truncated to ``_POST_DONE_LINE_MAX`` so
+    the state-file identity comparison is bounded. ``latest_phase`` itself
+    is untouched (public cross-module contract).
+    """
+    out: list[str] = []
+    for line in log_tail.splitlines():
+        m = PHASE_RE.search(line)
+        if not m:
+            continue
+        if m.group(1) == "done" and DONE_QUOTED_NOISE_RE.search(line):
+            continue
+        out.append(line[:_POST_DONE_LINE_MAX])
+    return out
+
+
+@dataclass(frozen=True)
+class PostDonePhaseUpdate:
+    """Outcome of one post-done-guard tick (``_post_done_phase_update``)."""
+
+    should_post: bool
+    done_line: str  # "" = no active done episode
+    done_epoch: int  # 0 = no active episode
+    done_pod: str  # "" = no active episode; the episode voids on a pod change
+    advisory_posted: bool  # once-per-episode dedup flag, carried forward
+    new_phase_lines: tuple[str, ...]  # observed-this-tick (surfaced even when deduped)
+
+
+def _post_done_phase_update(
+    *,
+    current_phase: str,
+    log_tail: str,
+    pod: str,
+    prev_done_line: str,
+    prev_done_epoch: int,
+    prev_done_pod: str,
+    prev_posted: bool,
+    run_age_sec: float | None,
+    now_epoch: int,
+) -> PostDonePhaseUpdate:
+    """Pure decision core for the #983 post-done phase-consistency guard.
+
+    ``current_phase`` MUST be the POST-#545-corroboration phase from
+    ``poll_once`` (never a raw ``latest_phase`` re-derivation), so an
+    uncorroborated done-parse (pid alive + no results sentinel — e.g. a
+    mid-run per-cell ``[phase=done] eval cell <X> complete`` noise line)
+    can NEVER arm an episode. The episode-start condition is deliberately
+    the corroborated ``current_phase == "done"``, NOT ``status == "done"``,
+    so a gate-sentinel tick whose pipeline also reached done (gate wins the
+    status precedence) still records the episode. Once set, the episode is
+    never overwritten within a run; only the run-scope clamp or a pod
+    change voids it. Comparison is line-identity anchored (positions are
+    unstable under the ``tail -500`` sliding window; timestamps are not
+    guaranteed by PHASE_RE): candidates are the phase-bearing lines
+    strictly after the anchor's LAST occurrence, or ALL visible phase
+    lines when the anchor scrolled out (append-only log => everything
+    above it scrolled out first). Pure / no I/O — the caller owns state
+    persistence and the marker post.
+    """
+    # Run-scope clamp (mirrors the last_phase_change_epoch relaunch clamp in
+    # poll_once): an episode recorded BEFORE the current run's
+    # epm:run-launched belongs to a previous run — void it.
+    if (
+        prev_done_epoch > 0
+        and run_age_sec is not None
+        and prev_done_epoch < now_epoch - run_age_sec
+    ):
+        prev_done_line, prev_done_epoch, prev_done_pod, prev_posted = "", 0, "", False
+    # Cross-pod voiding: a diagnostic poll against a DIFFERENT pod — or a
+    # follow-up pod probed before its epm:run-launched lands — must not
+    # compare the new pod's tail against the old pod's done anchor.
+    if prev_done_line and prev_done_pod and prev_done_pod != pod:
+        prev_done_line, prev_done_epoch, prev_done_pod, prev_posted = "", 0, "", False
+    if not prev_done_line:
+        if current_phase == "done":
+            lines = _phase_bearing_lines(log_tail)
+            if lines:
+                # By construction (the reversed scan in latest_phase) the
+                # LAST phase-bearing non-noise line IS the matched done line.
+                return PostDonePhaseUpdate(False, lines[-1], now_epoch, pod, False, ())
+        return PostDonePhaseUpdate(False, "", 0, "", False, ())
+    # Active episode: find phase lines strictly AFTER the recorded done line.
+    lines = _phase_bearing_lines(log_tail)
+    try:
+        anchor = len(lines) - 1 - lines[::-1].index(prev_done_line)  # LAST occurrence
+        candidates = lines[anchor + 1 :]
+    except ValueError:
+        # Done line scrolled out of the bounded tail: the log is append-only,
+        # so every line ABOVE it scrolled out first — any phase line still
+        # visible is NEWER than the recorded done.
+        candidates = lines
+    new_lines = tuple(ln for ln in candidates if ln != prev_done_line)  # FP control (i)
+    return PostDonePhaseUpdate(
+        bool(new_lines) and not prev_posted,
+        prev_done_line,
+        prev_done_epoch,
+        prev_done_pod,
+        prev_posted,
+        new_lines,
+    )
+
+
+def _maybe_post_post_done_phase_advisory(
+    *,
+    issue: int,
+    pod: str,
+    current_phase: str,
+    log_tail: str,
+    prev_state: dict[str, str],
+    run_age_sec: float | None,
+    now_epoch: int,
+) -> tuple[str, int, str, bool, bool, tuple[str, ...]]:
+    """Post-done-guard wiring for ``poll_once``: parse state, decide, maybe post.
+
+    Returns ``(done_line, done_epoch, done_pod, posted_flag,
+    posted_this_tick, new_phase_lines)`` for the caller to persist via
+    ``_save_state``. Guarded state parses (a corrupt epoch resets to 0,
+    never raises into ``poll_once``). A post failure is logged and
+    ``posted_flag`` is NOT set, so the next tick retries — identical
+    contract to ``_maybe_post_gpu_width_advisory``. Advisory only: never
+    changes the status verdict, never stops anything.
+    """
+    prev_line = prev_state.get("post_done_line", "") or ""
+    try:
+        prev_epoch = int(float(prev_state.get("post_done_epoch", "0") or 0))
+    except (TypeError, ValueError):
+        prev_epoch = 0
+    prev_pod = prev_state.get("post_done_pod", "") or ""
+    prev_posted = prev_state.get("post_done_advisory_posted", "0") == "1"
+    u = _post_done_phase_update(
+        current_phase=current_phase,
+        log_tail=log_tail,
+        pod=pod,
+        prev_done_line=prev_line,
+        prev_done_epoch=prev_epoch,
+        prev_done_pod=prev_pod,
+        prev_posted=prev_posted,
+        run_age_sec=run_age_sec,
+        now_epoch=now_epoch,
+    )
+    if not u.should_post:
+        return u.done_line, u.done_epoch, u.done_pod, u.advisory_posted, False, u.new_phase_lines
+    quoted = "\n".join(f"  {ln[:200]}" for ln in u.new_phase_lines[:_POST_DONE_NOTE_MAX_LINES])
+    note = (
+        f"[post-done-phase-advisory] {len(u.new_phase_lines)} NEW [phase=...] line(s) appeared "
+        f"AFTER the done line this poller reported as terminal "
+        f"({max(0, now_epoch - u.done_epoch) // 60} min ago):\n{quoted}\n"
+        f"recorded done line: {u.done_line[:200]}\n"
+        "The earlier status=done may have been FALSE (the .py-dispatcher subprocess fan-out "
+        "class — workflow_lint --check-phase-done-reserved residual gap (i), #930/#545): a "
+        "child script may still be running, and any orchestrator action keyed on the done "
+        "(advance to verifying, Step-8 pod termination) may have been premature. OTHER causes "
+        "with the same signature: a relaunch / manual re-run reused this log path without a "
+        "fresh epm:run-launched, or a concurrent writer appended to it — check the launch "
+        "record before chasing the dispatcher. VERIFY the run actually completed (results "
+        "sentinel + uploads) and fix the emitting dispatcher "
+        "per pod-side-reporting.md ([phase=done] is reserved for the single terminal line). "
+        "Advisory only: this tick's status verdict is unchanged and nothing was stopped."
+    )
+    try:
+        post_event(
+            issue,
+            "epm:progress",
+            by="poll_pipeline",
+            note=note,
+            phase=current_phase,
+            pod=pod,
+            post_done_phase_advisory=True,
+        )
+    except Exception as exc:
+        log.error("post-done phase advisory post failed (next tick will retry): %s", exc)
+        return u.done_line, u.done_epoch, u.done_pod, False, False, u.new_phase_lines
+    # Fail-soft phone push — never blocks recording (the marker is durable).
+    _telegram_push(
+        f"[#{issue}] post-done phase advisory: {len(u.new_phase_lines)} new [phase=...] "
+        f"line(s) after the reported done on {pod} — earlier done may be FALSE "
+        "(advisory only; nothing stopped)."
+    )
+    log.warning(
+        "posted post-done phase advisory for #%d: %d new phase line(s) on pod %s",
+        issue,
+        len(u.new_phase_lines),
+        pod,
+    )
+    return u.done_line, u.done_epoch, u.done_pod, True, True, u.new_phase_lines
 
 
 # A GPU is considered idle when its `utilization.gpu` is at or below this
@@ -2102,6 +2720,15 @@ def _maybe_post_gpu_idle_advisory(
     downstream consumers) — no new marker schema. A post failure is logged
     and the phase is NOT recorded as advised, so the next tick retries; the
     advisory never affects the status verdict and never stops anything.
+
+    The reported idle minutes are PER-INSTANCE / PER-RUN, never cumulative
+    across relaunches (#1033): both callers hand this function a
+    run/instance-scoped ``prev_state`` — the RunPod lane via
+    ``_tripwire_run_scope`` (``_RUN_SCOPED_STATE_KEYS`` includes the idle
+    keys), the GCP lane additionally via attempt-id keying
+    (``backend_poll._scope_idle_state_to_attempt``) — so an advisory can
+    never report an idle span exceeding the current instance's own poll
+    history (#763: "543 min" printed on a ~17-min-old fresh VM pre-#1033).
     """
     try:
         prev_idle_since = int(prev_state.get("gpu_idle_since_epoch", "0"))
@@ -2802,6 +3429,19 @@ _TRIPWIRE_STATE_KEYS: tuple[str, ...] = (
     "gpu_underparallel_since_epoch",
     "gpu_underparallel_warned",
 )
+# #1033: the FULL run-scoped clear set = the #873 tripwire dedup keys PLUS the
+# GPU-idle advisory/escalation keys. The idle span + per-phase dedup sets
+# belong to the RUN that accumulated them: carried across a relaunch they
+# print stale idle minutes exceeding the fresh instance's own age (#763
+# "543 min" / #810 "486 min" on ~17-min-old instances, where the phase name
+# matched the stored one so the per-phase reset never fired). The pre-#1033
+# "idle keys untouched by the run-scope reset" contract was the bug.
+_RUN_SCOPED_STATE_KEYS: tuple[str, ...] = (
+    *_TRIPWIRE_STATE_KEYS,
+    "gpu_idle_since_epoch",
+    "gpu_idle_advised_phases",
+    "gpu_idle_escalated_phases",
+)
 # Tolerance (seconds) when comparing the observed run-launched epoch against
 # the stored anchor: rounding jitter on ``now - run_age`` must never
 # spuriously reset the dedup keys mid-run.
@@ -2811,22 +3451,25 @@ _TRIPWIRE_RUN_EPOCH_TOLERANCE_SEC = 60
 def _tripwire_run_scope(
     prev_state: dict[str, str], *, run_age_sec: float | None, now_epoch: int
 ) -> tuple[dict[str, str], int]:
-    """Run-scope the #873 tripwire dedup keys (AC #6 / plan D4).
+    """Run-scope the #873 tripwire dedup keys + the GPU-idle keys (#1033).
 
     Returns ``(state, tripwire_run_epoch)``: ``state`` is ``prev_state``
     unchanged when no reset applies, or a copy with every
-    ``_TRIPWIRE_STATE_KEYS`` entry REMOVED when the CURRENT
-    ``epm:run-launched`` epoch (``now_epoch - run_age_sec``) is newer than
-    the stored ``tripwire_run_epoch`` anchor by more than the jitter
-    tolerance. ``tripwire_run_epoch`` is the anchor the caller persists via
-    ``_save_state`` / the GCP sibling state. Fail-safe: an unknown run age
-    (missing / unreadable marker) keeps the stored anchor and clears
-    nothing; a MALFORMED stored anchor (present but non-numeric) with a
-    known run age cannot decide run identity, so it fails toward RE-ARMING
-    — clear the tripwire keys and adopt the current epoch (cheaper failure
-    = one duplicate advisory, never a suppressed one); an absent/zero
-    anchor (genuine first run — no keys to protect) adopts the current
-    epoch and keeps the state. Never raises into the poll tick.
+    ``_RUN_SCOPED_STATE_KEYS`` entry REMOVED (the #873 tripwire dedup keys
+    plus, since #1033, the three GPU-idle advisory/escalation keys — a
+    fresh run's idle clock must not inherit the previous run's span) when
+    the CURRENT ``epm:run-launched`` epoch (``now_epoch - run_age_sec``)
+    is newer than the stored ``tripwire_run_epoch`` anchor by more than
+    the jitter tolerance. ``tripwire_run_epoch`` is the anchor the caller
+    persists via ``_save_state`` / the GCP sibling state. Fail-safe: an
+    unknown run age (missing / unreadable marker) keeps the stored anchor
+    and clears nothing; a MALFORMED stored anchor (present but
+    non-numeric) with a known run age cannot decide run identity, so it
+    fails toward RE-ARMING — clear the run-scoped keys and adopt the
+    current epoch (cheaper failure = one duplicate advisory, never a
+    suppressed one); an absent/zero anchor (genuine first run — no keys
+    to protect) adopts the current epoch and keeps the state. Never
+    raises into the poll tick.
     """
     raw = prev_state.get("tripwire_run_epoch", "0") or 0
     malformed = False
@@ -2839,12 +3482,12 @@ def _tripwire_run_scope(
         return prev_state, stored
     current = round(now_epoch - run_age_sec)
     if malformed:
-        cleared = {k: v for k, v in prev_state.items() if k not in _TRIPWIRE_STATE_KEYS}
+        cleared = {k: v for k, v in prev_state.items() if k not in _RUN_SCOPED_STATE_KEYS}
         return cleared, current
     if stored <= 0:
         return prev_state, current
     if current > stored + _TRIPWIRE_RUN_EPOCH_TOLERANCE_SEC:
-        cleared = {k: v for k, v in prev_state.items() if k not in _TRIPWIRE_STATE_KEYS}
+        cleared = {k: v for k, v in prev_state.items() if k not in _RUN_SCOPED_STATE_KEYS}
         return cleared, current
     return prev_state, stored
 
@@ -3206,6 +3849,38 @@ def _roll_session_cpu_max(prev_max: str | None, current: str) -> str:
     return prev_max if prev_max else current
 
 
+def _session_cpu_rate_cores(
+    prev_sample: str | None,
+    prev_sample_epoch: str | None,
+    current: str,
+    now_epoch: int,
+) -> float | None:
+    """Per-tick session-CPU burn rate in cores, or None when not computable.
+
+    rate = (current - prev_sample) / (now_epoch - prev_sample_epoch), where
+    prev_sample + prev_sample_epoch are the SAME prior tick's persisted pair
+    (written together by _save_state). None (fail-safe -> the #951 veto does
+    NOT fire) when: either CPU sample is unknown/unparseable, the epoch is
+    missing/unparseable/<=0, or the wall gap is < ZOMBIE_CPU_RATE_MIN_DT_SEC
+    (truncation-noise floor) or non-positive (clock garbage). A NEGATIVE
+    rate (run restart resets the session counter; a multi-shard child exit
+    de-counts its cputime, #658) is returned as-is — it is below any
+    positive threshold, so the veto does not fire on it.
+    """
+    cur = _parse_session_cpu(current)
+    prev = _parse_session_cpu(prev_sample) if prev_sample is not None else None
+    epoch = _parse_session_cpu(prev_sample_epoch) if prev_sample_epoch else None
+    if cur is None or prev is None or epoch is None or epoch <= 0:
+        return None
+    dt = now_epoch - epoch
+    if dt < ZOMBIE_CPU_RATE_MIN_DT_SEC:
+        # Also covers dt <= 0 (the floor is positive) — LOAD-BEARING for the
+        # existing two-call replay tests, whose back-to-back poll_once calls
+        # persist the epoch on call 1 and re-poll milliseconds later (dt~0).
+        return None
+    return (cur - prev) / dt
+
+
 def _load_state(state_file: Path, issue: int) -> dict[str, str]:
     if not state_file.exists():
         return {}
@@ -3245,9 +3920,12 @@ def _apply_zombie_override(
     gpu_pids_total: int | None = None,
     gpu_pids_resolvable: int | None = None,
     uvm_live_holders: int | None = None,
+    session_cpu_rate_cores: float | None = None,
+    output_mtime_ago: float = float("inf"),
 ) -> tuple[str, str | None, bool, int]:
-    """The #664/#826/#864 zombie-GPU-allocation override — returns the possibly
-    overridden ``(status, stall_reason, cpu_override_active, zombie_streak)``.
+    """The #664/#826/#864/#951/#1033 zombie-GPU-allocation override — returns
+    the possibly overridden
+    ``(status, stall_reason, cpu_override_active, zombie_streak)``.
 
     A hung vLLM whose CUDA worker died leaves its model-shard VRAM orphaned
     (a compute-apps PID with no ``/proc`` entry) while the EngineCore main
@@ -3273,14 +3951,61 @@ def _apply_zombie_override(
     ``_save_state`` neither advances nor resets it, the same exposure
     ``ssh_fail_count`` has; the sidecar is single-poller by design).
 
-    Session-CPU advancement is deliberately NOT a veto term: the genuine #664
-    hang had CPU advancing (in the stale-log + idle-GPU regime ``running`` is
-    only reachable via the CPU rescue), so a CPU veto would make the true
-    positive structurally unreachable. Never touches a ``done`` / ``gate`` /
-    ``dead`` verdict — those are correct terminal/park states (a dead
-    launcher is already ``dead``; its own orphaned allocation is then
-    expected). The ``stall_reason`` lets the orchestrator route this
-    distinctly from a generic log+GPU+CPU stall.
+    Bare session-CPU *advancement* is deliberately NOT a veto term: the
+    genuine #664 hang had CPU advancing (in the stale-log + idle-GPU regime
+    ``running`` is only reachable via the CPU rescue), so an any-delta
+    (> ``SESSION_CPU_ADVANCE_EPSILON_SECS``, the #518/#658 boolean) CPU veto
+    would make the true positive structurally unreachable. A MATERIAL
+    sustained burn *rate* IS a veto term (#951, next paragraph): the measured
+    #664 churn (~0.22 cores) cannot reach the rate threshold, so the true
+    positive stays reachable. Never touches a ``done`` / ``gate`` / ``dead``
+    verdict — those are correct terminal/park states (a dead launcher is
+    already ``dead``; its own orphaned allocation is then expected). The
+    ``stall_reason`` lets the orchestrator route this distinctly from a
+    generic log+GPU+CPU stall.
+
+    Fresh-output veto (#1033, right after the #826 fresh-log veto —
+    identical mechanics): a run whose ISSUE-KEYED OUTPUT artifacts
+    (``output_mtime_ago``, from the #1033 probe) were modified within the
+    same effective stall window ``max(ZOMBIE_VETO_FRESH_SEC, stall_sec)``
+    is writing results, not hanging — #813's CPU-bound analysis tail wrote
+    per-cell NPZs / JSONs for hours while every log was quiet. Veto +
+    streak reset, exactly like the fresh-log veto. The parameter defaults
+    to ``inf`` (= "no fresh output" / probe absent / fold disabled), so
+    every pre-#1033 caller and test is byte-unchanged (fail-safe: the veto
+    stays inert). A genuinely hung run writes no outputs, so the #664 true
+    positive stays reachable.
+
+    Material-compute liveness veto (#951, between the #1033 fresh-output
+    veto and the streak defer/fire branches): when the per-tick session-CPU burn
+    rate was >= ``ZOMBIE_OVERRIDE_CPU_CORES_MIN`` (default 0.5 cores) on
+    BOTH the current tick (``session_cpu_rate_cores``, computed by
+    ``poll_once`` via ``_session_cpu_rate_cores``) AND the previous
+    persisted tick (the sidecar's ``session_cpu_rate_cores`` key), the
+    session is demonstrably computing — #825's falsely-flagged live fit
+    burned ~1.83-2.04 cores while 1816 MiB of prior-run VRAM leftover
+    carried the zombie signature — so the override is suppressed and the
+    streak RESETS to 0 (identical mechanics to the #826 fresh-log and #864
+    namespace vetoes; reset, not hold, so a later degraded CPU read after
+    material compute defers a full fresh 2-tick window instead of firing
+    immediately). Fail-safe on ANY degraded input (missing/unparseable CPU
+    sample, missing previous-tick baseline or rate, missing/garbage sample
+    timestamp, tick spacing under ``ZOMBIE_CPU_RATE_MIN_DT_SEC``, negative
+    delta): the rate is None / below threshold, the veto stays inert, and
+    behavior is exactly the pre-#951 #826/#864 cascade. Residual exposure
+    (ACCEPTED): ``session_cpu_secs`` is a session-TOTAL, so a WIDE hung
+    session (TP>=2 NCCL spin at ~1 core/rank) or a co-resident same-session
+    CPU burner can sustain >= the threshold indefinitely and keep a true
+    zombie vetoed — the same exposure class as the #826 fresh-log sibling
+    (a sibling process appending to a log forever suppresses the override
+    the same way today), bounded by the GPU-idle advisory/escalation tiers,
+    the #873 phase-ETA tripwires, the watcher wedge arm, and the
+    ``EPM_ZOMBIE_OVERRIDE_CPU_CORES_MIN`` knob. Warmup: on a fresh or
+    pre-#951 sidecar the veto cannot engage until the 3rd tick — tick 1
+    persists the sample epoch with rate ``"unknown"``, tick 2 computes the
+    first rate but has no prev-tick rate — which is the fail-safe direction
+    (current behavior during warmup); a false stall in that window is the
+    warmup, not a fix failure.
 
     Namespace-informativeness gate (#864, FIRST branch): the #826 stale-log
     veto lapses when a HEALTHY workload legitimately silences its logs
@@ -3327,9 +4052,10 @@ def _apply_zombie_override(
     partial death keeps firing exactly as today. (c)
     ``ZOMBIE_NAMESPACE_VETO_ENABLED`` is read at module import — a live
     poller needs a restart for an ops flip to take effect. (d) On a tick
-    matching BOTH this gate and the #826 fresh-log veto, the namespace
-    WARNING fires first (outcome identical — ``running``, streak 0; only
-    the forensic log line differs).
+    matching BOTH this gate and the #826 fresh-log veto — or the #951
+    material-CPU veto — the namespace WARNING fires first (outcome
+    identical — ``running``, streak 0; only the forensic log line
+    differs).
     """
     stall_reason: str | None = None
     zombie_streak = 0
@@ -3369,6 +4095,10 @@ def _apply_zombie_override(
             prev_zombie_streak = int(prev_state.get("zombie_streak", "0") or 0)
         except (TypeError, ValueError):
             prev_zombie_streak = 0
+        # #951: the previous tick's persisted burn rate. _parse_session_cpu
+        # maps an absent key / "unknown" / garbage to None (fail-safe — the
+        # material-CPU veto below then cannot fire).
+        prev_cpu_rate = _parse_session_cpu(prev_state.get("session_cpu_rate_cores", "unknown"))
         if freshest_log_ago <= zombie_veto_sec:
             log.warning(
                 "zombie-GPU signature on pod %s (PID(s) %s) but log evidence is fresh "
@@ -3379,6 +4109,44 @@ def _apply_zombie_override(
                 freshest_log_ago,
                 zombie_veto_sec,
             )
+        elif output_mtime_ago <= zombie_veto_sec:
+            # #1033: fresh issue-keyed OUTPUT artifact — the run is writing
+            # results while its logs are quiet (#813's CPU-bound analysis
+            # tail). Identical mechanics to the fresh-log veto above:
+            # suppress + streak reset (zombie_streak stays 0 — recomputed
+            # each tick).
+            log.warning(
+                "zombie-GPU signature on pod %s (PID(s) %s) but output-artifact evidence "
+                "is fresh (%.0fs <= %ds) — liveness veto, not flagging (#1033/#813; a "
+                "CPU-bound analysis tail writes issue-keyed outputs while every log is "
+                "quiet)",
+                pod,
+                ",".join(zombie_gpu_pids),
+                output_mtime_ago,
+                zombie_veto_sec,
+            )
+        elif (
+            session_cpu_rate_cores is not None
+            and prev_cpu_rate is not None
+            and session_cpu_rate_cores >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+            and prev_cpu_rate >= ZOMBIE_OVERRIDE_CPU_CORES_MIN
+        ):
+            # #951: material compute — the session burned >= T cores on BOTH
+            # of the last two persisted ticks. #664's hung EngineCore churns
+            # ~0.22 cores; real work (the #825 fit at ~1.9 cores) cannot be a
+            # hang. Veto; streak resets (zombie_streak stays 0 — recomputed
+            # each tick).
+            log.warning(
+                "zombie-GPU signature on pod %s (PID(s) %s) with all logs stale BUT session "
+                "CPU burned %.2f / %.2f cores over the last two ticks (>= %.2f) — material "
+                "compute, liveness veto, not flagging (#951; #825: prior-run VRAM leftover "
+                "while the live workload computed)",
+                pod,
+                ",".join(zombie_gpu_pids),
+                session_cpu_rate_cores,
+                prev_cpu_rate,
+                ZOMBIE_OVERRIDE_CPU_CORES_MIN,
+            )
         elif prev_zombie_streak < 1:
             zombie_streak = 1
             log.warning(
@@ -3388,20 +4156,47 @@ def _apply_zombie_override(
                 ",".join(zombie_gpu_pids),
             )
         else:
+            # #951 forensic evidence on the FIRE path: the two burn rates
+            # (or "unknown") are the durable record for tuning
+            # EPM_ZOMBIE_OVERRIDE_CPU_CORES_MIN after the next incident —
+            # the sidecar keeps only the last tick.
             log.error(
                 "zombie GPU allocation on pod %s: compute PID(s) %s hold >= %d MiB VRAM but "
                 "are absent from /proc (dead CUDA worker, vLLM EngineCore hung) — persisted "
                 "2 consecutive ticks with all logs stale, overriding "
-                "status=running -> stalled (#664/#826)",
+                "status=running -> stalled (#664/#826); session-CPU rate now=%s prev=%s "
+                "cores (veto threshold %.2f)",
                 pod,
                 ",".join(zombie_gpu_pids),
                 ZOMBIE_GPU_MEM_MIN_MIB,
+                "unknown" if session_cpu_rate_cores is None else f"{session_cpu_rate_cores:.2f}",
+                "unknown" if prev_cpu_rate is None else f"{prev_cpu_rate:.2f}",
+                ZOMBIE_OVERRIDE_CPU_CORES_MIN,
             )
             status = "stalled"
             stall_reason = "vllm_worker_dead_zombie_gpu"
             cpu_override_active = False
             zombie_streak = prev_zombie_streak + 1
     return status, stall_reason, cpu_override_active, zombie_streak
+
+
+def _parse_output_mtime_epoch(raw: str | None) -> int:
+    """Parse the probe's ``OUTPUT_MTIME_EPOCH`` scalar defensively (#1033 r2).
+
+    ``_parse_probe_stdout`` stores the scalar text VERBATIM, so a malformed /
+    non-numeric value — reachable via version skew (a pod running newer probe
+    code than this VM, the same scenario the kill-switch branch in
+    ``poll_once`` defends on the DISABLED side) or a garbled/partial SSH
+    line — must fail INERT, not kill the tick: return ``0``, which
+    ``_log_staleness_secs`` maps to the ``10**9`` absent sentinel (the
+    pre-#1033 no-fold behavior). Every numeric value parses exactly as the
+    previous inline ``int(raw or "0")`` did. Guards ONLY this new #1033 key —
+    the sibling probe ints keep their long-standing strict parses.
+    """
+    try:
+        return int(raw or "0")
+    except (ValueError, TypeError):
+        return 0
 
 
 def _log_staleness_secs(
@@ -3412,9 +4207,10 @@ def _log_staleness_secs(
     freshest_mtime_epoch: int,
     phase_log_mtime_epoch: int,
     shard_log_mtime_epoch: int,
-) -> tuple[int, int, int]:
-    """Compute the three log-staleness deltas (top-level/cell, per-phase,
-    shard) on a SINGLE clock basis (#704).
+    output_mtime_epoch: int = 0,
+) -> tuple[int, int, int, int]:
+    """Compute the staleness deltas (top-level/cell, per-phase, shard logs,
+    plus the #1033 output artifact) on a SINGLE clock basis (#704).
 
     The pod stamps file mtimes with its OWN wall clock (``stat -c %Y``); the
     probe heredoc now also captures that same clock's "now" (``date +%s`` ->
@@ -3430,10 +4226,16 @@ def _log_staleness_secs(
     ``<= 0``, matching the prior inline behavior. On the pod-clock branch the
     deltas are low-clamped at ``0`` (``max(0, ...)``) so a sub-second
     rounding within one probe cannot produce a negative "seconds ago"; the
-    VM-fallback branch keeps its exact pre-#704 arithmetic so the
-    backward-compat behavior is byte-for-byte unchanged.
+    VM-fallback branch keeps its exact pre-#704 arithmetic for the three LOG
+    deltas so the backward-compat behavior is byte-for-byte unchanged. The
+    #1033 ``output_mtime_ago`` delta (new — no backward-compat constraint)
+    is low-clamped at ``0`` on BOTH branches: a FUTURE-DATED output mtime
+    (weird writer clock) reads as "fresh right now", which can only
+    SUPPRESS a stall verdict / zombie override — the fold's accepted
+    fail direction — never create a new positive.
 
-    Returns ``(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago)``.
+    Returns ``(last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago,
+    output_mtime_ago)``.
     """
     if pod_now_epoch > 0:
         staleness_now = pod_now_epoch
@@ -3446,7 +4248,10 @@ def _log_staleness_secs(
         shard_log_mtime_ago = (
             max(0, staleness_now - shard_log_mtime_epoch) if shard_log_mtime_epoch > 0 else 10**9
         )
-        return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago
+        output_mtime_ago = (
+            max(0, staleness_now - output_mtime_epoch) if output_mtime_epoch > 0 else 10**9
+        )
+        return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago, output_mtime_ago
 
     staleness_now = vm_now_epoch
     log.warning(
@@ -3461,7 +4266,10 @@ def _log_staleness_secs(
     shard_log_mtime_ago = (
         staleness_now - shard_log_mtime_epoch if shard_log_mtime_epoch > 0 else 10**9
     )
-    return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago
+    output_mtime_ago = (
+        max(0, staleness_now - output_mtime_epoch) if output_mtime_epoch > 0 else 10**9
+    )
+    return last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago, output_mtime_ago
 
 
 def _tail_excerpt_and_crash_signature(
@@ -3544,7 +4352,7 @@ def poll_once(
     # epm:run-launched marker. Cross-check the marker pid so a healthy
     # re-run is not misreported as dead.
     marker_pid = _marker_pid(issue)
-    probe = _ssh_probe(pod, log_path, pid_file, issue, marker_pid)
+    probe = _ssh_probe(pod, log_path, pid_file, issue, marker_pid, stall_sec=stall_sec)
 
     # ── #488 stale-port self-heal ────────────────────────────────────────
     # Track consecutive SSH-probe failures across ticks. When the live API
@@ -3601,14 +4409,24 @@ def poll_once(
     # GPU-idle advisory (#518/#537), and phase-change sidecar (#669)
     # computations, all of which compare against VM-STAMPED timestamps and
     # would be corrupted by a pod-clock basis.
-    last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago = _log_staleness_secs(
-        pod=pod,
-        vm_now_epoch=now_epoch,
-        pod_now_epoch=int(probe.get("pod_now_epoch") or "0"),
-        freshest_mtime_epoch=freshest_mtime_epoch,
-        phase_log_mtime_epoch=phase_log_mtime_epoch,
-        shard_log_mtime_epoch=shard_log_mtime_epoch,
+    last_mtime_ago, phase_log_mtime_ago, shard_log_mtime_ago, output_mtime_ago = (
+        _log_staleness_secs(
+            pod=pod,
+            vm_now_epoch=now_epoch,
+            pod_now_epoch=int(probe.get("pod_now_epoch") or "0"),
+            freshest_mtime_epoch=freshest_mtime_epoch,
+            phase_log_mtime_epoch=phase_log_mtime_epoch,
+            shard_log_mtime_epoch=shard_log_mtime_epoch,
+            output_mtime_epoch=_parse_output_mtime_epoch(probe.get("output_mtime_epoch")),
+        )
     )
+    # #1033 kill switch: with the fold disabled the probe block was omitted
+    # (the parser's "0" default already yields the inert 10**9), but force
+    # the sentinel explicitly so a stray OUTPUT_MTIME_EPOCH line in the
+    # stdout (e.g. a pod running newer code than the VM) can never engage
+    # a disabled fold.
+    if not OUTPUT_MTIME_FOLD_ENABLED:
+        output_mtime_ago = 10**9
     gpu_util = probe.get("gpu_util", "unknown")
     gpu_idle = _gpu_idle(gpu_util)
     # Zombie-GPU-allocation signal (#664): the probe emits the
@@ -3661,7 +4479,7 @@ def poll_once(
     # `current_phase == "done"` precedence already covers the
     # "log-shows-completion" half: a completed run is `done`, never `dead`.
     #
-    # `stalled` requires ALL FIVE liveness-of-output signals to agree:
+    # `stalled` requires ALL SIX liveness-of-output signals to agree:
     # the top-level log AND the freshest cell log (folded together as
     # `last_mtime_ago`, #405) AND every per-phase log under
     # `/workspace/logs/issue-<N>-*.log` (#468) AND every shard /
@@ -3669,8 +4487,11 @@ def poll_once(
     # logs/issue_<N>{,_*}/*.log` (#488) plus every dispatcher per-job
     # log under `/workspace/explore-persona-space/eval_results/
     # issue_<N>{,_*}/logs/*.log` (#521, folded into the same shard-log
-    # max) AND the GPUs must ALL be quiet/idle for >STALL_SEC. The
-    # shard-log conjunction (#488)
+    # max) AND every issue-keyed OUTPUT artifact (eval_results/
+    # issue_<N>{,_*}/, data/issue_<N>/, data/issue<N>/ — #1033; a fresh
+    # output behaves exactly like a fresh shard log: first-class
+    # liveness, no new override concept) AND the GPUs must ALL be
+    # quiet/idle for >STALL_SEC. The shard-log conjunction (#488)
     # prevents a false stall when a multi-GPU launcher fans out per-GPU
     # shard logs under a subdirectory and the inner loop's per-shard
     # write cadence (e.g. ~3 min between writes for i488 Pass B across
@@ -3712,6 +4533,15 @@ def poll_once(
     # Roll the high-water mark forward for the next tick (#658). The max only
     # ever grows; a current sample below it (a child exit) does not lower it.
     max_session_cpu = _roll_session_cpu_max(prev_max_session_cpu, current_session_cpu)
+    # #951: per-tick burn rate vs the PREVIOUS tick's raw sample (not the max —
+    # the delta between consecutive samples is the current burn), for the
+    # material-compute veto on the zombie override.
+    session_cpu_rate = _session_cpu_rate_cores(
+        prev_state.get("session_cpu_secs"),
+        prev_state.get("session_cpu_sample_epoch"),
+        current_session_cpu,
+        now_epoch,
+    )
 
     # True when the verdict below is `running` ONLY because the #518
     # CPU-advancing override rescued a met stall conjunction (logs stale +
@@ -3728,6 +4558,7 @@ def poll_once(
         last_mtime_ago > stall_sec
         and phase_log_mtime_ago > stall_sec
         and shard_log_mtime_ago > stall_sec
+        and output_mtime_ago > stall_sec  # NEW (#1033): fresh output = alive
         and gpu_idle
     ):
         if cpu_advancing is True:
@@ -3763,6 +4594,29 @@ def poll_once(
         gpu_pids_total=_parse_probe_count(probe.get("gpu_pids_total")),
         gpu_pids_resolvable=_parse_probe_count(probe.get("gpu_pids_resolvable")),
         uvm_live_holders=_parse_probe_count(probe.get("nvidia_uvm_live_holders")),
+        session_cpu_rate_cores=session_cpu_rate,
+        output_mtime_ago=output_mtime_ago,
+    )
+
+    # ── #873/#1033 run-scoped state anchor (AC #6) ───────────────────────
+    # A fresh epm:run-launched (relaunch / same-issue follow-up round)
+    # re-arms BOTH #873 tripwires AND (since #1033) the GPU-idle
+    # advisory/escalation clock: the stored ETA/width dedup keys and the
+    # idle span/dedup sets belong to the PREVIOUS run, so
+    # _tripwire_run_scope clears them (_RUN_SCOPED_STATE_KEYS) before any
+    # consumer runs. Runs ABOVE the idle-advisory calls (moved here at
+    # #1033 — pre-#1033 it sat below them, so the idle tier read the
+    # UNSCOPED state and a relaunch inherited the previous run's span:
+    # #763 printed a "543 min" idle advisory on a ~17-min-old instance).
+    # ``run_age_sec`` is computed ONCE here and reused by the
+    # adaptive-interval relaunch clamp + the phase-ETA fallback below
+    # (one events.jsonl read per tick). The zombie override above and the
+    # #983 post-done guard below deliberately keep reading the RAW
+    # ``prev_state`` (zombie_streak scoping is out of #1033's scope; the
+    # post-done guard has its own natural epoch).
+    run_age_sec = _run_launched_age_sec(issue, now_epoch)
+    tripwire_state, tripwire_run_epoch = _tripwire_run_scope(
+        prev_state, run_age_sec=run_age_sec, now_epoch=now_epoch
     )
 
     # ── #518/#537 GPU-idle advisory ──────────────────────────────────────
@@ -3771,7 +4625,11 @@ def poll_once(
     # burns pod-hours silently. Track the sustained healthy-and-all-idle
     # span across ticks (state-file backed, like ssh_fail_count) and post
     # a one-per-phase, non-blocking advisory marker once it exceeds
-    # GPU_IDLE_ADVISORY_MIN minutes. Never flips ``status``.
+    # GPU_IDLE_ADVISORY_MIN minutes. Never flips ``status``. Reads the
+    # RUN-SCOPED tripwire_state (#1033) so a relaunch restarts the idle
+    # clock instead of inheriting the previous run's span — the reported
+    # idle minutes are PER-INSTANCE/PER-RUN, never cumulative across
+    # relaunches.
     gpu_idle_since_epoch, gpu_idle_advised_phases, gpu_idle_advisory_posted = (
         _maybe_post_gpu_idle_advisory(
             issue=issue,
@@ -3779,7 +4637,7 @@ def poll_once(
             status=status,
             gpu_util=gpu_util,
             current_phase=current_phase,
-            prev_state=prev_state,
+            prev_state=tripwire_state,
             now_epoch=now_epoch,
         )
     )
@@ -3789,7 +4647,8 @@ def poll_once(
     # GPU_IDLE_ESCALATION_MIN minutes in an upload/CPU-only phase fires a
     # Telegram push + a LOUD [gpu-idle-escalation] marker (never stops the
     # pod). Reads the SAME idle span the advisory just resolved
-    # (gpu_idle_since_epoch) — no second idle clock.
+    # (gpu_idle_since_epoch) — no second idle clock — and the SAME
+    # run-scoped tripwire_state (#1033).
     gpu_idle_escalated_phases, gpu_idle_escalation_posted = _maybe_escalate_gpu_idle(
         issue=issue,
         pod=pod,
@@ -3797,20 +4656,8 @@ def poll_once(
         gpu_util=gpu_util,
         current_phase=current_phase,
         idle_since_epoch=gpu_idle_since_epoch,
-        prev_state=prev_state,
+        prev_state=tripwire_state,
         now_epoch=now_epoch,
-    )
-
-    # ── #873 run-scoped tripwire dedup anchor (AC #6) ────────────────────
-    # A fresh epm:run-launched (relaunch / same-issue follow-up round)
-    # re-arms BOTH #873 tripwires: the stored ETA/width dedup keys belong
-    # to the PREVIOUS run, so _tripwire_run_scope clears them before the
-    # predicates run. ``run_age_sec`` is computed ONCE here and reused by
-    # the adaptive-interval relaunch clamp + the phase-ETA fallback below
-    # (one events.jsonl read per tick).
-    run_age_sec = _run_launched_age_sec(issue, now_epoch)
-    tripwire_state, tripwire_run_epoch = _tripwire_run_scope(
-        prev_state, run_age_sec=run_age_sec, now_epoch=now_epoch
     )
 
     # ── #873 m-of-N GPU-width advisory ───────────────────────────────────
@@ -3846,6 +4693,34 @@ def poll_once(
         gpu_util=gpu_util,
         current_phase=current_phase,
         prev_state=tripwire_state,
+        now_epoch=now_epoch,
+    )
+
+    # ── #983 post-done phase-consistency guard ───────────────────────────
+    # Cross-tick audit of a previously-accepted done verdict: at the tick
+    # where the corroborated ``current_phase == "done"`` lands, record the
+    # matched done line; any LATER tick observing genuinely new
+    # ``[phase=...]`` lines after that anchor fires ONE loud advisory
+    # marker + Telegram push. Consumes the POST-#545-demotion
+    # ``current_phase`` (wired BELOW the demotion block, so an
+    # uncorroborated done can never arm an episode) and the pre-tripwire
+    # ``prev_state`` (its run-scope clamp is the direct ``run_age_sec``
+    # one, deliberately independent of the #873 anchor lifecycle).
+    # Advisory only — never flips ``status``, never stops anything.
+    (
+        post_done_line,
+        post_done_epoch,
+        post_done_pod,
+        post_done_posted_flag,
+        post_done_posted,
+        post_done_new_lines,
+    ) = _maybe_post_post_done_phase_advisory(
+        issue=issue,
+        pod=pod,
+        current_phase=current_phase,
+        log_tail=probe["log_tail"],
+        prev_state=prev_state,
+        run_age_sec=run_age_sec,
         now_epoch=now_epoch,
     )
 
@@ -3960,6 +4835,16 @@ def poll_once(
             # `_parse_session_cpu` treats it consistently with the live
             # probe value.
             "session_cpu_secs": current_session_cpu,
+            # #951: VM-clock timestamp OF the session_cpu_secs sample above —
+            # the pair is written atomically together, so this epoch is the
+            # denominator anchor for the NEXT tick's burn-rate delta.
+            "session_cpu_sample_epoch": str(now_epoch),
+            # #951: this tick's per-tick burn rate (cores) vs the prior
+            # persisted sample; "unknown" when not computable (fail-safe —
+            # the material-CPU veto reads it as no-signal next tick).
+            "session_cpu_rate_cores": (
+                "unknown" if session_cpu_rate is None else f"{session_cpu_rate:.4f}"
+            ),
             # Persist the running MAXIMUM cumulative CPU observed across all
             # ticks (#658). This is the baseline the NEXT tick's
             # advancing-decision compares against — a current sample below
@@ -3989,6 +4874,15 @@ def poll_once(
             # #873 run-scope anchor: the epm:run-launched epoch the tripwire
             # dedup keys above belong to (AC #6). A fresh launch clears them.
             "tripwire_run_epoch": str(tripwire_run_epoch),
+            # #983 post-done phase-consistency guard: the matched done
+            # line's identity (truncated text), when + on which pod it was
+            # accepted, and the once-per-episode dedup flag. Voided only by
+            # the direct run-scope clamp / a pod change (NOT via
+            # _TRIPWIRE_STATE_KEYS — the guard has its own natural epoch).
+            "post_done_line": post_done_line,
+            "post_done_epoch": str(post_done_epoch),
+            "post_done_pod": post_done_pod,
+            "post_done_advisory_posted": "1" if post_done_posted_flag else "0",
         },
     )
 
@@ -4029,6 +4923,8 @@ def poll_once(
         next_interval=next_interval,
         stall_reason=stall_reason,
         crash_signature=crash_signature,
+        post_done_phase_advisory_posted=post_done_posted,
+        post_done_phase_lines=post_done_new_lines,
     )
 
 
@@ -4105,6 +5001,9 @@ def main(argv: list[str] | None = None) -> int:
                 "cpu_advancing": result.cpu_advancing,
                 "next_interval": result.next_interval,
                 "stall_reason": result.stall_reason,
+                # #983 post-done phase-consistency guard surfaces.
+                "post_done_phase_advisory_posted": result.post_done_phase_advisory_posted,
+                "post_done_phase_lines": list(result.post_done_phase_lines),
             }
         )
     )

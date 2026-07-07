@@ -1,0 +1,3412 @@
+{
+  "commit": "4f0cd3964d",
+  "created": "2026-07-04T07:29:18Z",
+  "figsize": [
+    16.5,
+    4.5
+  ],
+  "points": [
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.25679851492419314,
+      "y": -0.15,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.011611188724424168,
+      "y": 0.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.11009189514312208,
+      "y": 1.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.18826042081231964,
+      "y": 2.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.058577437827575435,
+      "y": 3.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.10144311759571847,
+      "y": 4.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.053357887028057764,
+      "y": 5.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07391592904055871,
+      "y": 6.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.19987333702216226,
+      "y": 7.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.02302997208953922,
+      "y": 8.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.0345598308113047,
+      "y": 9.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.4374237397808125,
+      "y": 10.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.1904207557114086,
+      "y": 11.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.17940002333396343,
+      "y": 12.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.011483431240956785,
+      "y": 13.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.10286853953984806,
+      "y": 14.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.23147507799317424,
+      "y": 15.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07693679470593345,
+      "y": 16.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.13039569312614102,
+      "y": 17.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1192826400757861,
+      "y": 18.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.012972905438387472,
+      "y": 19.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.01331217782981764,
+      "y": 20.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 0
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2672965347790618,
+      "y": 0.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.013487185492434682,
+      "y": 1.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.16552302309559086,
+      "y": 2.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.5092292428674874,
+      "y": 3.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1532847368010393,
+      "y": 4.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.07316015105054435,
+      "y": 5.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.13088830152854078,
+      "y": 6.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2280055149501222,
+      "y": 7.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.14650352766055785,
+      "y": 8.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.04834496533063776,
+      "y": 9.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07953963307044615,
+      "y": 10.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.13493069899651655,
+      "y": 11.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.23169882691450283,
+      "y": 12.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.22411940728524304,
+      "y": 13.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1493452543251483,
+      "y": 14.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.03788002471953891,
+      "y": 15.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07002204400205231,
+      "y": 16.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.021817843543346482,
+      "y": 17.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.18938537899945906,
+      "y": 18.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.03357529944426518,
+      "y": 19.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.012578068535332387,
+      "y": 20.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.013123831986392664,
+      "y": 21.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 1
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.25679851492419314,
+      "y": -0.15,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.011611188724424168,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.11009189514312208,
+      "y": 1.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.18826042081231964,
+      "y": 2.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.058577437827575435,
+      "y": 3.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.10144311759571847,
+      "y": 4.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.053357887028057764,
+      "y": 5.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07391592904055871,
+      "y": 6.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.19987333702216226,
+      "y": 7.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.02302997208953922,
+      "y": 8.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.0345598308113047,
+      "y": 9.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.4374237397808125,
+      "y": 10.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.1904207557114086,
+      "y": 11.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.17940002333396343,
+      "y": 12.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.011483431240956785,
+      "y": 13.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.10286853953984806,
+      "y": 14.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.23147507799317424,
+      "y": 15.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07693679470593345,
+      "y": 16.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.13039569312614102,
+      "y": 17.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1192826400757861,
+      "y": 18.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.012972905438387472,
+      "y": 19.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.01331217782981764,
+      "y": 20.85,
+      "_kind": "line",
+      "_group": 2
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.37722219539078705,
+      "y": -0.15,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.09979806004754059,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.4225693928763442,
+      "y": 1.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.08833654560697746,
+      "y": 2.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1888870985693037,
+      "y": 3.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.29537967994405684,
+      "y": 4.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.13218360478304286,
+      "y": 5.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.17930375749810412,
+      "y": 6.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.4326504608562495,
+      "y": 7.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.24630006687105724,
+      "y": 8.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.0702017875131398,
+      "y": 9.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.6418655731760649,
+      "y": 10.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.015136119766023137,
+      "y": 11.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.23030550949877954,
+      "y": 12.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.17282518036721173,
+      "y": 13.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.17545497238567986,
+      "y": 14.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.4112041428069971,
+      "y": 15.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.18314167347557198,
+      "y": 16.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.20648717928451574,
+      "y": 17.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.16754692208911137,
+      "y": 18.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07883000348005142,
+      "y": 19.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.023932658111047278,
+      "y": 20.85,
+      "_kind": "line",
+      "_group": 3
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.10533030420578715,
+      "y": -0.15,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.09860724674427092,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.10754853988819994,
+      "y": 1.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.4300878935584791,
+      "y": 2.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.0584944967758248,
+      "y": 3.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.06974623360046614,
+      "y": 4.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.06427133864866466,
+      "y": 5.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.018364075695750548,
+      "y": 6.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.004485547075511048,
+      "y": 7.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.18135820399642671,
+      "y": 8.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.14515131238742698,
+      "y": 9.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.23607854331335307,
+      "y": 10.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.48072250376888187,
+      "y": 11.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.13421487596349502,
+      "y": 12.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.2530401533600879,
+      "y": 13.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.03625074762067415,
+      "y": 14.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.012551703393094249,
+      "y": 15.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.016515026012471956,
+      "y": 16.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.03503083211078192,
+      "y": 17.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07920688998348124,
+      "y": 18.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.03554368258384524,
+      "y": 19.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.005045178594941354,
+      "y": 20.85,
+      "_kind": "line",
+      "_group": 4
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2672965347790618,
+      "y": 0.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.013487185492434682,
+      "y": 1.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.16552302309559086,
+      "y": 2.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.5092292428674874,
+      "y": 3.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1532847368010393,
+      "y": 4.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.07316015105054435,
+      "y": 5.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.13088830152854078,
+      "y": 6.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2280055149501222,
+      "y": 7.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.14650352766055785,
+      "y": 8.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.04834496533063776,
+      "y": 9.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07953963307044615,
+      "y": 10.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.13493069899651655,
+      "y": 11.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.23169882691450283,
+      "y": 12.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.22411940728524304,
+      "y": 13.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1493452543251483,
+      "y": 14.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.03788002471953891,
+      "y": 15.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07002204400205231,
+      "y": 16.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.021817843543346482,
+      "y": 17.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.18938537899945906,
+      "y": 18.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.03357529944426518,
+      "y": 19.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.012578068535332387,
+      "y": 20.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.013123831986392664,
+      "y": 21.15,
+      "_kind": "line",
+      "_group": 5
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.32524647664991424,
+      "y": 0.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.05796547305919399,
+      "y": 1.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.43748919723778873,
+      "y": 2.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.24044502469524198,
+      "y": 3.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.270208539053668,
+      "y": 4.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.15734538464777453,
+      "y": 5.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.26066109438298507,
+      "y": 6.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.3015769427795207,
+      "y": 7.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.41544715505799956,
+      "y": 8.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.0836085977334825,
+      "y": 9.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.19762848544418565,
+      "y": 10.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.37957993257139566,
+      "y": 11.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.05102808448471857,
+      "y": 12.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.17435988011357173,
+      "y": 13.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2839845085089761,
+      "y": 14.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.10417350221023303,
+      "y": 15.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2721998350390926,
+      "y": 16.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.15247528082831951,
+      "y": 17.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2750397374468977,
+      "y": 18.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.08718129448172929,
+      "y": 19.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.026727852156332152,
+      "y": 20.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.008040607827611845,
+      "y": 21.15,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.17978875202185698,
+      "y": 0.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.03333084123776489,
+      "y": 1.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.0712055047307516,
+      "y": 2.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.7323666854094864,
+      "y": 3.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.03670594701300045,
+      "y": 4.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.3283720035945082,
+      "y": 5.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.0423852362551467,
+      "y": 6.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1674714864526091,
+      "y": 7.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.041410245825392544,
+      "y": 8.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.1566707254152751,
+      "y": 9.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.05822354430527088,
+      "y": 10.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.07377613354542872,
+      "y": 11.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.40854234319314947,
+      "y": 12.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.26500678572421443,
+      "y": 13.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07357282572825573,
+      "y": 14.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.02058788333384412,
+      "y": 15.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.16725476511189385,
+      "y": 16.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.0958149716927601,
+      "y": 17.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.0992470005941207,
+      "y": 18.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.006397203561194664,
+      "y": 19.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.005716584538781044,
+      "y": 20.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.03517811446139907,
+      "y": 21.15,
+      "_kind": "line",
+      "_group": 7
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2550638301200968,
+      "y": -0.15,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.25034648917779384,
+      "y": 0.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.21127660960660527,
+      "y": 1.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2546489647490196,
+      "y": 2.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.0005196991576851273,
+      "y": 3.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.07815225314755275,
+      "y": 4.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.35866526560961054,
+      "y": 5.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.18174463227361953,
+      "y": 6.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.11267849725954636,
+      "y": 7.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.3582260264736161,
+      "y": 8.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.29306783958924637,
+      "y": 9.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.004302385548628995,
+      "y": 10.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.052172628681459096,
+      "y": 11.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.1552994138587864,
+      "y": 12.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.11607376691895144,
+      "y": 13.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.12957424067942153,
+      "y": 14.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.02170698574466634,
+      "y": 15.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.11000010321348302,
+      "y": 16.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.09758788408907071,
+      "y": 17.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.12936274325222236,
+      "y": 18.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.06618751625891994,
+      "y": 19.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.0643080495301569,
+      "y": 20.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.028693064800457635,
+      "y": 21.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.026430117510832907,
+      "y": 22.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.026748421645524156,
+      "y": 23.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.006108570676432223,
+      "y": 24.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.035203633163522596,
+      "y": 25.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.00829108112318977,
+      "y": 26.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 8
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.12700922047177873,
+      "y": 0.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.3621490082476351,
+      "y": 1.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.17076071207873603,
+      "y": 2.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.3672570314304484,
+      "y": 3.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.1037095460348263,
+      "y": 4.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.025034088378591446,
+      "y": 5.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.42791750311358023,
+      "y": 6.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.10365051409497333,
+      "y": 7.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.006008033957498077,
+      "y": 8.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2781481475801981,
+      "y": 9.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.13303598234138272,
+      "y": 10.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.08645586190786136,
+      "y": 11.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.03732255981754942,
+      "y": 12.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.15735574726430257,
+      "y": 13.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.003090329112302004,
+      "y": 14.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.025691713698966223,
+      "y": 15.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.04059982198417428,
+      "y": 16.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.0296299646726631,
+      "y": 17.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.048608469350299055,
+      "y": 18.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.12425222167916411,
+      "y": 19.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.13748817780561384,
+      "y": 20.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.15691405178910034,
+      "y": 21.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.031057881760037875,
+      "y": 22.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.033103066112472934,
+      "y": 23.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.020994001757778102,
+      "y": 24.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.08623283132706883,
+      "y": 25.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.03514150798670035,
+      "y": 26.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.05311111393229939,
+      "y": 27.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 9
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2550638301200968,
+      "y": -0.15,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.25034648917779384,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.21127660960660527,
+      "y": 1.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2546489647490196,
+      "y": 2.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.0005196991576851273,
+      "y": 3.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.07815225314755275,
+      "y": 4.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.35866526560961054,
+      "y": 5.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.18174463227361953,
+      "y": 6.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.11267849725954636,
+      "y": 7.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.3582260264736161,
+      "y": 8.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.29306783958924637,
+      "y": 9.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.004302385548628995,
+      "y": 10.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.052172628681459096,
+      "y": 11.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.1552994138587864,
+      "y": 12.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.11607376691895144,
+      "y": 13.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.12957424067942153,
+      "y": 14.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.02170698574466634,
+      "y": 15.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.11000010321348302,
+      "y": 16.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.09758788408907071,
+      "y": 17.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.12936274325222236,
+      "y": 18.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.06618751625891994,
+      "y": 19.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.0643080495301569,
+      "y": 20.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.028693064800457635,
+      "y": 21.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.026430117510832907,
+      "y": 22.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.026748421645524156,
+      "y": 23.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.006108570676432223,
+      "y": 24.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.035203633163522596,
+      "y": 25.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.00829108112318977,
+      "y": 26.85,
+      "_kind": "line",
+      "_group": 10
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.39743328929492266,
+      "y": -0.15,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.43666822697372826,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.3298208145527931,
+      "y": 1.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.3035456049886053,
+      "y": 2.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.09054204688286546,
+      "y": 3.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.09224005831485921,
+      "y": 4.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.4956829842454898,
+      "y": 5.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.38475547868471127,
+      "y": 6.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2680360167161355,
+      "y": 7.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.44740868486525837,
+      "y": 8.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.18776618361294853,
+      "y": 9.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1382300557392218,
+      "y": 10.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.15982953334330274,
+      "y": 11.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.07857040220553432,
+      "y": 12.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2080433811823743,
+      "y": 13.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1747387596226653,
+      "y": 14.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.08519866715517435,
+      "y": 15.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.14838328129295747,
+      "y": 16.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1445740953162682,
+      "y": 17.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.17101888956790584,
+      "y": 18.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.09518879554129837,
+      "y": 19.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.10051526529434657,
+      "y": 20.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.0521415026884763,
+      "y": 21.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.014118375489995172,
+      "y": 22.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.037417142518074736,
+      "y": 23.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.005047258161470558,
+      "y": 24.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.048083499767043486,
+      "y": 25.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.0030909671767871405,
+      "y": 26.85,
+      "_kind": "line",
+      "_group": 11
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.10632264699127264,
+      "y": -0.15,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.036341623775798165,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.10082226368265094,
+      "y": 1.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.205066333713716,
+      "y": 2.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.08668093635628699,
+      "y": 3.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.24165954767122175,
+      "y": 4.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.23797194829403767,
+      "y": 5.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.0518327255910066,
+      "y": 6.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.01070660918323367,
+      "y": 7.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.28323061480127926,
+      "y": 8.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.38960234314039766,
+      "y": 9.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.17718729451411447,
+      "y": 10.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.05089637234118555,
+      "y": 11.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.23374942479873276,
+      "y": 12.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.024265583449513323,
+      "y": 13.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.08327318718508026,
+      "y": 14.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.0441616921604982,
+      "y": 15.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07161692513400847,
+      "y": 16.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.046954187815779674,
+      "y": 17.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.081333030551342,
+      "y": 18.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.035740550625466126,
+      "y": 19.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.018738762522787222,
+      "y": 20.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.004249299119471618,
+      "y": 21.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.03874185953167053,
+      "y": 22.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.015010959260570481,
+      "y": 23.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.017264399514334783,
+      "y": 24.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.02220980528383403,
+      "y": 25.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.019956446990718968,
+      "y": 26.85,
+      "_kind": "line",
+      "_group": 12
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.12700922047177873,
+      "y": 0.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.3621490082476351,
+      "y": 1.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.17076071207873603,
+      "y": 2.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.3672570314304484,
+      "y": 3.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.1037095460348263,
+      "y": 4.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.025034088378591446,
+      "y": 5.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.42791750311358023,
+      "y": 6.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.10365051409497333,
+      "y": 7.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.006008033957498077,
+      "y": 8.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2781481475801981,
+      "y": 9.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.13303598234138272,
+      "y": 10.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.08645586190786136,
+      "y": 11.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.03732255981754942,
+      "y": 12.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.15735574726430257,
+      "y": 13.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.003090329112302004,
+      "y": 14.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.025691713698966223,
+      "y": 15.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.04059982198417428,
+      "y": 16.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.0296299646726631,
+      "y": 17.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.048608469350299055,
+      "y": 18.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.12425222167916411,
+      "y": 19.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.13748817780561384,
+      "y": 20.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.15691405178910034,
+      "y": 21.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.031057881760037875,
+      "y": 22.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.033103066112472934,
+      "y": 23.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.020994001757778102,
+      "y": 24.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.08623283132706883,
+      "y": 25.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.03514150798670035,
+      "y": 26.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.05311111393229939,
+      "y": 27.15,
+      "_kind": "line",
+      "_group": 13
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.259082244204215,
+      "y": 0.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.5578045683993997,
+      "y": 1.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.27413023065202846,
+      "y": 2.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.5328440330170516,
+      "y": 3.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.005185308409999159,
+      "y": 4.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.19157261270925827,
+      "y": 5.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.5566780198836899,
+      "y": 6.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1945087530911913,
+      "y": 7.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1507095923511129,
+      "y": 8.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.4071551228367397,
+      "y": 9.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.0672614098543573,
+      "y": 10.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.22562805315418477,
+      "y": 11.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.037406150204981004,
+      "y": 12.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.04216913775822126,
+      "y": 13.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.12518923471476942,
+      "y": 14.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1698713523165306,
+      "y": 15.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.11503733722260236,
+      "y": 16.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07516510153557138,
+      "y": 17.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.13774036395408726,
+      "y": 18.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.189144163793117,
+      "y": 19.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.18997127030694427,
+      "y": 20.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2009130989266223,
+      "y": 21.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.0030832877469638836,
+      "y": 22.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.06999973553427674,
+      "y": 23.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.05995689810430481,
+      "y": 24.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1276063993825563,
+      "y": 25.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.05550917374275794,
+      "y": 26.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07706068396480803,
+      "y": 27.15,
+      "_kind": "line",
+      "_group": 14
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.014660749923658567,
+      "y": 0.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.16632202649761685,
+      "y": 1.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.06186276353109857,
+      "y": 2.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2016700298438451,
+      "y": 3.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.20874750506376516,
+      "y": 4.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.27188403255976695,
+      "y": 5.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.29981475029194044,
+      "y": 6.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.0010895144605992946,
+      "y": 7.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.14000508046499624,
+      "y": 8.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.13211619016638262,
+      "y": 9.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.20611489629052102,
+      "y": 10.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.052716329338462126,
+      "y": 11.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.11287973381870459,
+      "y": 12.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.2860931020784695,
+      "y": 13.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.10233183338977253,
+      "y": 14.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.09118961950772411,
+      "y": 15.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.02226400077000254,
+      "y": 16.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.009261845890578345,
+      "y": 17.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.04669162954680135,
+      "y": 18.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.05423550939073296,
+      "y": 19.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07660758362727994,
+      "y": 20.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.08144660050008724,
+      "y": 21.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.059197957777438415,
+      "y": 22.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.012121946498444336,
+      "y": 23.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.010904798182297296,
+      "y": 24.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.03391245470763149,
+      "y": 25.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.010417803598406356,
+      "y": 26.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.03265554413730165,
+      "y": 27.15,
+      "_kind": "line",
+      "_group": 15
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.24535397592274988,
+      "y": -0.15,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.042810651800377325,
+      "y": 0.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.08097619860094202,
+      "y": 1.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.016927339927227503,
+      "y": 2.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.02085418691227664,
+      "y": 3.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.008228171898395975,
+      "y": 4.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.043590055219391716,
+      "y": 5.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07515681080525191,
+      "y": 6.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.17492346964157351,
+      "y": 7.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.12520167975990407,
+      "y": 8.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.08321004328362847,
+      "y": 9.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.13080134005547264,
+      "y": 10.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.03608740922774056,
+      "y": 11.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.502386171173681,
+      "y": 12.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.05142015276007367,
+      "y": 13.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.15691843798134203,
+      "y": 14.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.015423316977915491,
+      "y": 15.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.004399271057874465,
+      "y": 16.85,
+      "series": "minus affine ridge",
+      "_kind": "errorbar",
+      "_group": 16
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.3316537140862493,
+      "y": 0.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.18566938182450432,
+      "y": 1.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.21484770564559558,
+      "y": 2.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.20209429381444874,
+      "y": 3.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.34844499145683877,
+      "y": 4.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.2751913364337353,
+      "y": 5.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.09819177833783196,
+      "y": 6.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.02046124977878447,
+      "y": 7.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.04348386743757138,
+      "y": 8.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.11674344937027989,
+      "y": 9.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.039712874174769486,
+      "y": 10.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.06462859570753576,
+      "y": 11.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.02887865191658673,
+      "y": 12.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.5187206929821281,
+      "y": 13.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.06812700064302596,
+      "y": 14.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.12660069719768613,
+      "y": 15.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.02352803541575693,
+      "y": 16.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.015758970177149445,
+      "y": 17.15,
+      "series": "minus prefix-GRU",
+      "_kind": "errorbar",
+      "_group": 17
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.24535397592274988,
+      "y": -0.15,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.042810651800377325,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.08097619860094202,
+      "y": 1.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.016927339927227503,
+      "y": 2.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.02085418691227664,
+      "y": 3.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.008228171898395975,
+      "y": 4.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.043590055219391716,
+      "y": 5.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07515681080525191,
+      "y": 6.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.17492346964157351,
+      "y": 7.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.12520167975990407,
+      "y": 8.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.08321004328362847,
+      "y": 9.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.13080134005547264,
+      "y": 10.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.03608740922774056,
+      "y": 11.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.502386171173681,
+      "y": 12.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.05142015276007367,
+      "y": 13.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.15691843798134203,
+      "y": 14.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.015423316977915491,
+      "y": 15.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.004399271057874465,
+      "y": 16.85,
+      "_kind": "line",
+      "_group": 18
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.1887363666210363,
+      "y": -0.15,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.005195163111221229,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.014920924588765358,
+      "y": 1.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.08841971099109518,
+      "y": 2.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07566169510771827,
+      "y": 3.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.10434488666985516,
+      "y": 4.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.07795937062728944,
+      "y": 5.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.23451633031635427,
+      "y": 6.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.26128594973795594,
+      "y": 7.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.21004017431186095,
+      "y": 8.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.0030074629995939794,
+      "y": 9.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.02722902041815367,
+      "y": 10.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.10355232860683715,
+      "y": 11.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.632506197832881,
+      "y": 12.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.11741492657056765,
+      "y": 13.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.18586321989459884,
+      "y": 14.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.035594655748813445,
+      "y": 15.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.012196934834805218,
+      "y": 16.85,
+      "_kind": "line",
+      "_group": 19
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.31018451807742864,
+      "y": -0.15,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.08051291056932135,
+      "y": 0.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.1532485081708084,
+      "y": 1.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.05705815076043169,
+      "y": 2.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.033728782258199176,
+      "y": 3.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.09747439864455637,
+      "y": 4.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.007043123522228474,
+      "y": 5.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.08208401660824019,
+      "y": 6.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.09745082428647639,
+      "y": 7.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.040363185207947266,
+      "y": 8.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.1609160216239683,
+      "y": 9.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.2106307437201557,
+      "y": 10.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.025172758368446457,
+      "y": 11.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.2886017368863571,
+      "y": 12.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.005944547956195173,
+      "y": 13.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.12340199122759471,
+      "y": 14.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.004827024215018679,
+      "y": 15.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.00428582085230772,
+      "y": 16.85,
+      "_kind": "line",
+      "_group": 20
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.3316537140862493,
+      "y": 0.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.18566938182450432,
+      "y": 1.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.21484770564559558,
+      "y": 2.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.20209429381444874,
+      "y": 3.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.34844499145683877,
+      "y": 4.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.2751913364337353,
+      "y": 5.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.09819177833783196,
+      "y": 6.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.02046124977878447,
+      "y": 7.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.04348386743757138,
+      "y": 8.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.11674344937027989,
+      "y": 9.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.039712874174769486,
+      "y": 10.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.06462859570753576,
+      "y": 11.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.02887865191658673,
+      "y": 12.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.5187206929821281,
+      "y": 13.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.06812700064302596,
+      "y": 14.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.12660069719768613,
+      "y": 15.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.02352803541575693,
+      "y": 16.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.015758970177149445,
+      "y": 17.15,
+      "_kind": "line",
+      "_group": 21
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.24468304727524826,
+      "y": 0.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.09487397418822716,
+      "y": 1.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.18655852538443302,
+      "y": 2.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.14956190145160092,
+      "y": 3.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.3050447393950708,
+      "y": 4.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.16859162926866528,
+      "y": 5.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.03297153331683986,
+      "y": 6.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.14296815119378065,
+      "y": 7.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.08481595905002337,
+      "y": 8.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.21577801528563847,
+      "y": 9.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.08442678739129743,
+      "y": 10.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1049730604609706,
+      "y": 11.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.08778299335648905,
+      "y": 12.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.64796892432921,
+      "y": 13.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.1038069096610024,
+      "y": 14.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.15599426752101486,
+      "y": 15.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.007338052483919742,
+      "y": 16.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.0032604698221917767,
+      "y": 17.15,
+      "_kind": "line",
+      "_group": 22
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.40451509748118303,
+      "y": 0.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.26008806097591436,
+      "y": 1.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.24361597624460513,
+      "y": 2.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.25462492388299335,
+      "y": 3.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.3883466577213099,
+      "y": 4.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.34177890375139625,
+      "y": 5.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.15494318190880887,
+      "y": 6.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.18389065075134964,
+      "y": 7.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.1840878512917737,
+      "y": 8.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.03441544467278822,
+      "y": 9.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.007258024129973437,
+      "y": 10.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.02811743168524805,
+      "y": 11.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.04920676113722583,
+      "y": 12.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.30438523831579983,
+      "y": 13.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.02985561789654345,
+      "y": 14.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": -0.0949240414729859,
+      "y": 15.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.0392382904825823,
+      "y": 16.15,
+      "_kind": "line",
+      "_group": 23
+    },
+    {
+      "Paired within-condition r delta (source-only-GRU \u2212 baseline)": 0.02698891452573845,
+      "y": 17.15,
+      "_kind": "line",
+      "_group": 23
+    }
+  ],
+  "n_series": 24,
+  "total_points": 544
+}

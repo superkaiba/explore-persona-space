@@ -82,11 +82,15 @@ from explore_persona_space.backends.base import (
     ComputeBackend,
     RunHandle,
     RunSpec,
+    validate_lane_suffix,
 )
 from explore_persona_space.backends.router import (
     ROUTE_REASON_CPU_EXHAUSTED_NO_RUNPOD,
+    ROUTE_REASON_CPU_FALLBACK_INFEASIBLE,
+    ROUTE_REASON_RECONNECT,
     BackendPrepareError,
     CpuExhaustedNoRunpodLaneError,
+    CpuFallbackInfeasibleError,
     GcpAttemptCapExceededError,
     LeaseStore,
     ManualAttentionRequiredError,
@@ -168,7 +172,7 @@ def _main_checkout_root() -> Path:
     return common_dir.parent
 
 
-def default_handle_sidecar_path(issue: int) -> Path:
+def default_handle_sidecar_path(issue: int, lane_suffix: str | None = None) -> Path:
     """Canonical sidecar JSON path for the per-issue serialized RunHandle.
 
     ABSOLUTE, anchored at ``<main-checkout>/.claude/cache/`` so the
@@ -183,12 +187,22 @@ def default_handle_sidecar_path(issue: int) -> Path:
     legacy worktree-local sidecar should resolve via
     :func:`resolve_handle_sidecar_path` (probes the legacy cwd-relative
     location too).
+
+    ``lane_suffix`` (#934): a validated per-lane suffix yields
+    ``issue-<N>-<suffix>-handle.json`` so two concurrent lanes for one
+    issue keep independent handles (and, via the ``-handle.json`` stem
+    convention every sidecar-sibling consumer strips, independent
+    per-lane sibling files). ``None`` / empty keeps the unsuffixed path
+    byte-identical.
     """
-    return _main_checkout_root() / ".claude" / "cache" / f"issue-{int(issue)}-handle.json"
+    stem = f"issue-{int(issue)}" + (f"-{validate_lane_suffix(lane_suffix)}" if lane_suffix else "")
+    return _main_checkout_root() / ".claude" / "cache" / f"{stem}-handle.json"
 
 
 def resolve_handle_sidecar_path(
-    issue: int, explicit: Path | str | None = None
+    issue: int,
+    explicit: Path | str | None = None,
+    lane_suffix: str | None = None,
 ) -> tuple[Path, list[Path]]:
     """Read-side sidecar resolution: explicit > canonical > legacy cwd-relative.
 
@@ -199,14 +213,16 @@ def resolve_handle_sidecar_path(
     from an issue worktree landed the file in the WORKTREE's
     ``.claude/cache/``); it fires only when the canonical path is absent
     and only for the default resolution — an explicit ``--handle-file``
-    is honored verbatim, never second-guessed.
+    is honored verbatim, never second-guessed. ``lane_suffix`` (#934)
+    resolves the per-lane suffixed sidecar (same stem in the legacy
+    cwd-relative probe); ignored when ``explicit`` is given.
     """
     if explicit is not None:
         p = Path(explicit)
         return p, [p]
-    primary = default_handle_sidecar_path(issue)
+    primary = default_handle_sidecar_path(issue, lane_suffix=lane_suffix)
     probed = [primary]
-    legacy = Path.cwd() / ".claude" / "cache" / f"issue-{int(issue)}-handle.json"
+    legacy = Path.cwd() / ".claude" / "cache" / primary.name
     if not primary.exists() and legacy.resolve() != primary.resolve():
         probed.append(legacy)
         if legacy.exists():
@@ -433,6 +449,29 @@ def classify_terminal_exception(exc: BaseException) -> TerminalTranslation:
                 f"detail: {exc.reason}"
             ),
         )
+    if isinstance(exc, CpuFallbackInfeasibleError):
+        # #1010: the RunPod CPU lane EXISTS for this intent but cannot satisfy
+        # the plan's stated footprint (disk / RAM). Distinct reason so the
+        # marker trail names the real cause; like the parent, NOT in the
+        # watcher's TRANSIENT_CAPACITY_REASONS (the instance can never grow to
+        # fit the plan — auto-retry would loop a structurally-infeasible
+        # launch). MUST come BEFORE the CpuExhaustedNoRunpodLaneError branch
+        # (a subclass IS-A parent, so the parent check would shadow it — the
+        # same ordering rule documented on the branches below).
+        return TerminalTranslation(
+            failure_class="infra",
+            status="blocked",
+            note=(
+                "failure_class: infra\n"
+                f"reason: {ROUTE_REASON_CPU_FALLBACK_INFEASIBLE}\n"
+                "recovery: re-dispatch on the big-footprint CPU lane — "
+                "uv run python scripts/dispatch_issue.py launch --issue <N> "
+                "--intent cpu-bigmem ... (or shrink the plan footprint below "
+                "the instance cap)\n"
+                f"detail: {exc.reason}\n"
+                f"attempts: {json.dumps(exc.attempts, sort_keys=True)}"
+            ),
+        )
     if isinstance(exc, CpuExhaustedNoRunpodLaneError):
         # #677: a CPU-only intent reached the RunPod terminal rung (GCP
         # exhausted / sync failover) and RunPod has no CPU lane. failure_class
@@ -608,7 +647,9 @@ def dispatch_for_issue(
     # finalize`` can tear the live VM / job down. The authoritative
     # write below re-writes the sidecar with the artifact declaration
     # threaded on; this early copy is the crash-window insurance.
-    sidecar = handle_sidecar_path or default_handle_sidecar_path(spec.issue)
+    sidecar = handle_sidecar_path or default_handle_sidecar_path(
+        spec.issue, lane_suffix=spec.extra.get("lane_suffix")
+    )
     if write_sidecar:
         route_kwargs["on_launched"] = lambda h: write_handle_sidecar(h, sidecar)
 
@@ -619,6 +660,7 @@ def dispatch_for_issue(
     # handle's ``extra`` at confirm_artifacts time (the silent-loss
     # safeguard).
     handle = result.handle
+    _warn_on_reconnected_workload(spec, result, handle)
     if expected_artifacts is not None and EXPECTED_ARTIFACTS_HANDLE_KEY not in handle.extra:
         from dataclasses import replace
 
@@ -641,6 +683,33 @@ def dispatch_for_issue(
         handle_sidecar_path=sidecar_written,
         sidecar_write_error=sidecar_write_error,
     )
+
+
+def _warn_on_reconnected_workload(spec: RunSpec, result: RouteResult, handle: RunHandle) -> None:
+    """Reconnect loudness (#934/#923) — library-layer warning.
+
+    A workload-carrying launch (``workload_cmd`` or ``hydra_args``) that
+    resolved by RECONNECT dispatched NOTHING this invocation. Both
+    reconnect layers must trip the caveat — the router scan
+    (``result.reason == ROUTE_REASON_RECONNECT``) and the GCP-internal
+    ``reconnect_or_none`` (which only marks
+    ``handle.extra['reconnected']``). Warning-only: reconnect stays a
+    success path (the exit-75 still-waiting rerun contract).
+    """
+    handle_extra = handle.extra or {}
+    if (spec.workload_cmd or spec.hydra_args) and (
+        result.reason == ROUTE_REASON_RECONNECT or handle_extra.get("reconnected")
+    ):
+        logger.warning(
+            "dispatch_for_issue: route() RECONNECTED to existing %s job %s for issue %d — "
+            "THIS invocation dispatched NO workload. Benign iff the instance was created by "
+            "an earlier run of the SAME launch command (exit-75 still-waiting rerun); if this "
+            "is a concurrent second lane for the same issue, the workload was NOT dispatched — "
+            "relaunch with --lane-suffix (#934/#923).",
+            result.chosen_kind,
+            handle.pod_name,
+            spec.issue,
+        )
 
 
 def _write_sidecar_guarded(handle: RunHandle, sidecar: Path) -> tuple[Path | None, str | None]:

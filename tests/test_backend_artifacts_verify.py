@@ -21,6 +21,7 @@ cover the contract :mod:`backends.artifacts` promises:
 from __future__ import annotations
 
 import json
+import logging
 import shutil
 import subprocess
 from pathlib import Path
@@ -89,7 +90,13 @@ def _io(
     git_tracked_paths = git_tracked_paths or set()
     on_disk = on_disk if on_disk is not None else git_tracked_paths
 
-    def _list_hf(repo_id: str, *, repo_type: str, revision: str | None = None) -> list[str]:
+    def _list_hf(
+        repo_id: str,
+        *,
+        repo_type: str,
+        revision: str | None = None,
+        path_in_repo: str | None = None,
+    ) -> list[str]:
         if hf_raises is not None:
             raise hf_raises
         if repo_type == "dataset":
@@ -597,7 +604,7 @@ def test_slurm_confirm_artifacts_returns_false_on_fail(monkeypatch) -> None:
     # so the HF check fails without any real network call.
     monkeypatch.setattr(
         "explore_persona_space.backends.artifacts._default_list_hf_repo_files",
-        lambda repo_id, *, repo_type, revision=None: [],
+        lambda repo_id, *, repo_type, revision=None, path_in_repo=None: [],
     )
     backend = SlurmBackend()
     assert backend.confirm_artifacts(handle) is False
@@ -616,7 +623,7 @@ def test_slurm_confirm_artifacts_returns_true_on_pass(monkeypatch, tmp_path: Pat
     )
     monkeypatch.setattr(
         "explore_persona_space.backends.artifacts._default_list_hf_repo_files",
-        lambda repo_id, *, repo_type, revision=None: [
+        lambda repo_id, *, repo_type, revision=None, path_in_repo=None: [
             "issue137_warmth/raw_completions/seed_42.json"
         ],
     )
@@ -1314,6 +1321,348 @@ def test_stale_baked_sentinel_wrong_issue_sibling_still_fails(tmp_path: Path) ->
     assert "999" in verdict.checks[CHECK_SENTINEL]["detail"]
 
 
+# ---------------------------------------------------------------------------
+# #709: SSH-backed ``glob_sentinels`` for RunPod ``confirm_artifacts`` — the
+# live-pod sibling of the #705 local-FS resolution above — plus the two
+# included hardening pieces (resolver scope guard, sibling-read wrap). The
+# 1 / 0 / >=2 / wrong-issue contract is re-pinned END-TO-END through
+# ``backend.confirm_artifacts`` with a dispatching fake ``subprocess.run``.
+# ---------------------------------------------------------------------------
+
+
+class _FakeProc:
+    """Minimal ``subprocess.run`` result stand-in (rc / stdout / stderr)."""
+
+    def __init__(self, returncode: int, stdout: str = "", stderr: str = "") -> None:
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
+
+
+def _pod_ssh_dispatcher(
+    pod_fs: dict[str, str],
+    *,
+    ls_result: _FakeProc | None = None,
+    argv_log: list[list[str]] | None = None,
+):
+    """Fake ``subprocess.run`` dispatching on the remote command string.
+
+    ``cat '<path>'`` resolves against ``pod_fs`` (rc=0 + content when
+    present, rc=1 + "No such file or directory" when absent, mirroring the
+    real pod); ``ls -1d ...`` returns ``ls_result`` verbatim. Every argv is
+    optionally recorded so tests can pin the exact SSH command shape. No
+    real ``ssh pod-*`` can ever run from the suite.
+    """
+
+    def run(argv, **kwargs):
+        if argv_log is not None:
+            argv_log.append(list(argv))
+        assert argv[0] == "ssh", argv
+        cmd = argv[2]
+        if cmd.startswith("ls -1d "):
+            assert ls_result is not None, f"unexpected ls call: {cmd}"
+            return ls_result
+        assert cmd.startswith("cat "), cmd
+        path = cmd[len("cat ") :].strip("'")
+        if path in pod_fs:
+            return _FakeProc(0, stdout=pod_fs[path])
+        return _FakeProc(1, stderr=f"cat: {path}: No such file or directory")
+
+    return run
+
+
+def _runpod_sentinel_only_handle(*, issue: int, declared: str) -> RunHandle:
+    """RunPod handle whose declaration carries ONLY issue + sentinel_path.
+
+    Every other check class SKIPs (nothing declared), so the sentinel
+    check — the property under test — is the sole live check.
+    """
+    return _handle_with_expected(
+        backend="runpod",
+        issue=issue,
+        declaration={"issue": issue, "sentinel_path": declared},
+    )
+
+
+def test_runpod_ssh_glob_sentinels_command_shape_and_parsing(monkeypatch) -> None:
+    """#709 test 1: the SSH glob's exact argv (quoted issue-dir prefix, an
+    UNQUOTED ``*`` between the quoted segments so the remote bash expands
+    it, quoted basename) and rc=0 parsing (stripped lines, SORTED — parity
+    with the FS default's ``sorted(...)``)."""
+    backend = RunPodBackend()
+    declared = f"/workspace/eval_results/issue_42/rp-STALE/{SENTINEL_FILENAME}"
+    sib_a = f"/workspace/eval_results/issue_42/rp-a/{SENTINEL_FILENAME}"
+    sib_b = f"/workspace/eval_results/issue_42/rp-b/{SENTINEL_FILENAME}"
+    handle = _runpod_sentinel_only_handle(issue=42, declared=declared)
+
+    argv_log: list[list[str]] = []
+
+    def run(argv, **kwargs):
+        argv_log.append(list(argv))
+        # Two lines UNSORTED with stray whitespace + a blank trailer.
+        return _FakeProc(0, stdout=f" {sib_b} \n{sib_a}\n\n")
+
+    monkeypatch.setattr("subprocess.run", run)
+    result = backend._ssh_glob_sentinels(handle)(declared, 42)
+    assert argv_log == [
+        [
+            "ssh",
+            "pod-42",
+            "ls -1d '/workspace/eval_results/issue_42'/*/'.completion-sentinel.json'",
+        ]
+    ]
+    assert result == [sib_a, sib_b]  # sorted + stripped
+
+
+def test_runpod_ssh_glob_sentinels_no_match_and_transport(monkeypatch) -> None:
+    """#709 test 2: rc!=0 + "No such file or directory" (bash passed the
+    unmatched glob literally to ``ls``) → [] (zero siblings); any OTHER
+    non-zero rc (transport) → RAISE — a transport failure must never read
+    as "no siblings"."""
+    backend = RunPodBackend()
+    declared = f"/workspace/eval_results/issue_42/rp-STALE/{SENTINEL_FILENAME}"
+    handle = _runpod_sentinel_only_handle(issue=42, declared=declared)
+
+    monkeypatch.setattr(
+        "subprocess.run",
+        lambda *a, **k: _FakeProc(
+            2, stderr="ls: cannot access '/workspace/...': No such file or directory"
+        ),
+    )
+    assert backend._ssh_glob_sentinels(handle)(declared, 42) == []
+
+    monkeypatch.setattr(
+        "subprocess.run",
+        lambda *a, **k: _FakeProc(255, stderr="ssh: connect to host pod-42 port 22 failed"),
+    )
+    with pytest.raises(RuntimeError, match="rc=255"):
+        backend._ssh_glob_sentinels(handle)(declared, 42)
+
+
+def test_runpod_confirm_resolves_single_live_pod_side_sibling(monkeypatch) -> None:
+    """#709 test 3 (the headline end-to-end): the declared (stale baked
+    attempt) sentinel is missing ON THE POD and exactly ONE live sibling
+    attempt-dir sentinel exists pod-side → ``backend.confirm_artifacts``
+    resolves it over SSH and PASSes. Mirror of the #705 local-FS
+    ``test_stale_baked_sentinel_resolves_to_single_live_sibling``."""
+    issue = 42
+    declared = f"/workspace/eval_results/issue_{issue}/rp-STALE/{SENTINEL_FILENAME}"
+    live_sibling = f"/workspace/eval_results/issue_{issue}/rp-LIVE/{SENTINEL_FILENAME}"
+    handle = _runpod_sentinel_only_handle(issue=issue, declared=declared)
+    backend = RunPodBackend()
+    monkeypatch.setattr(
+        "subprocess.run",
+        _pod_ssh_dispatcher(
+            {live_sibling: _good_sentinel_text(issue=issue)},
+            ls_result=_FakeProc(0, stdout=live_sibling + "\n"),
+        ),
+    )
+    assert backend.confirm_artifacts(handle) is True
+
+
+def test_runpod_confirm_zero_remote_siblings_still_fails(monkeypatch) -> None:
+    """#709 test 4 (gate not relaxed): declared missing on the pod AND zero
+    remote siblings → FAIL with the real "missing" reason. Mirror of
+    ``test_stale_baked_sentinel_zero_live_siblings_still_fails``."""
+    issue = 42
+    declared = f"/workspace/eval_results/issue_{issue}/rp-STALE/{SENTINEL_FILENAME}"
+    handle = _runpod_sentinel_only_handle(issue=issue, declared=declared)
+    backend = RunPodBackend()
+    monkeypatch.setattr(
+        "subprocess.run",
+        _pod_ssh_dispatcher(
+            {},
+            ls_result=_FakeProc(
+                2, stderr="ls: cannot access '/workspace/...': No such file or directory"
+            ),
+        ),
+    )
+    assert backend.confirm_artifacts(handle) is False
+    verdict = confirm_artifacts_from_handle(
+        handle,
+        io=VerifierIO(
+            read_sentinel=backend._ssh_read_sentinel(handle),
+            glob_sentinels=backend._ssh_glob_sentinels(handle),
+        ),
+    )
+    assert not verdict.passed
+    assert verdict.checks[CHECK_SENTINEL]["status"] == "FAIL"
+    assert f"missing at {declared}" in verdict.checks[CHECK_SENTINEL]["detail"]
+
+
+def test_runpod_confirm_two_remote_siblings_refuses_to_guess(monkeypatch) -> None:
+    """#709 test 5 (the #705 known-limitation contract, unchanged on the
+    SSH path): >=2 live remote siblings → do NOT guess; FAIL on the
+    DECLARED attempt's path."""
+    issue = 42
+    declared = f"/workspace/eval_results/issue_{issue}/rp-STALE/{SENTINEL_FILENAME}"
+    sib_a = f"/workspace/eval_results/issue_{issue}/rp-A/{SENTINEL_FILENAME}"
+    sib_b = f"/workspace/eval_results/issue_{issue}/rp-B/{SENTINEL_FILENAME}"
+    handle = _runpod_sentinel_only_handle(issue=issue, declared=declared)
+    backend = RunPodBackend()
+    monkeypatch.setattr(
+        "subprocess.run",
+        _pod_ssh_dispatcher(
+            {
+                sib_a: _good_sentinel_text(issue=issue),
+                sib_b: _good_sentinel_text(issue=issue),
+            },
+            ls_result=_FakeProc(0, stdout=f"{sib_a}\n{sib_b}\n"),
+        ),
+    )
+    assert backend.confirm_artifacts(handle) is False
+    verdict = confirm_artifacts_from_handle(
+        handle,
+        io=VerifierIO(
+            read_sentinel=backend._ssh_read_sentinel(handle),
+            glob_sentinels=backend._ssh_glob_sentinels(handle),
+        ),
+    )
+    assert not verdict.passed
+    assert verdict.checks[CHECK_SENTINEL]["status"] == "FAIL"
+    # FAILs on the DECLARED attempt id, not on a guessed sibling.
+    assert "rp-STALE" in verdict.checks[CHECK_SENTINEL]["detail"]
+
+
+def test_runpod_confirm_wrong_issue_remote_sibling_still_fails(monkeypatch) -> None:
+    """#709 test 6 (content checks unchanged — resolution only): the single
+    live remote sibling carries a DIFFERENT issue's content → the UNCHANGED
+    issue-match content check FAILs."""
+    issue = 42
+    declared = f"/workspace/eval_results/issue_{issue}/rp-STALE/{SENTINEL_FILENAME}"
+    live_sibling = f"/workspace/eval_results/issue_{issue}/rp-LIVE/{SENTINEL_FILENAME}"
+    handle = _runpod_sentinel_only_handle(issue=issue, declared=declared)
+    backend = RunPodBackend()
+    monkeypatch.setattr(
+        "subprocess.run",
+        _pod_ssh_dispatcher(
+            {live_sibling: _good_sentinel_text(issue=999)},  # wrong issue
+            ls_result=_FakeProc(0, stdout=live_sibling + "\n"),
+        ),
+    )
+    assert backend.confirm_artifacts(handle) is False
+    verdict = confirm_artifacts_from_handle(
+        handle,
+        io=VerifierIO(
+            read_sentinel=backend._ssh_read_sentinel(handle),
+            glob_sentinels=backend._ssh_glob_sentinels(handle),
+        ),
+    )
+    assert not verdict.passed
+    assert verdict.checks[CHECK_SENTINEL]["status"] == "FAIL"
+    assert "999" in verdict.checks[CHECK_SENTINEL]["detail"]
+
+
+def test_sentinel_probe_scope_guard_blocks_noncanonical_declared() -> None:
+    """#709 test 7 (scope guard): a declared path that does not match the
+    canonical ``.../eval_results/issue_<N>/<attempt>/<SENTINEL_FILENAME>``
+    shape NEVER invokes the sibling probe — the verdict is the declared
+    FAIL even when a probe WOULD have returned a live sibling. Positive
+    control: the canonical shape DOES invoke the probe and resolves."""
+    issue = 685
+    live_sibling = f"/scratch/eval_results/issue_{issue}/att-LIVE/{SENTINEL_FILENAME}"
+    fs = {live_sibling: _good_sentinel_text(issue=issue)}
+    glob_calls: list[tuple[str, int]] = []
+
+    def recording_glob(declared: str, iss: int) -> list[str]:
+        glob_calls.append((declared, iss))
+        return [live_sibling]
+
+    io = VerifierIO(read_sentinel=lambda p: fs.get(p), glob_sentinels=recording_glob)
+
+    noncanonical = [
+        # grandparent != issue_<N>
+        f"/tmp/odd/x/{SENTINEL_FILENAME}",
+        # wrong basename
+        f"/scratch/eval_results/issue_{issue}/att-STALE/sentinel.json",
+        # great-grandparent != eval_results
+        f"/scratch/other_results/issue_{issue}/att-STALE/{SENTINEL_FILENAME}",
+    ]
+    for declared in noncanonical:
+        expected = ExpectedArtifacts(issue=issue, sentinel_path=declared)
+        verdict = verify_artifacts(expected, io=io)
+        assert not verdict.passed, declared
+        assert verdict.checks[CHECK_SENTINEL]["status"] == "FAIL"
+        assert f"missing at {declared}" in verdict.checks[CHECK_SENTINEL]["detail"]
+    assert glob_calls == []  # the probe was NEVER invoked on a non-canonical shape
+
+    canonical = f"/scratch/eval_results/issue_{issue}/att-STALE/{SENTINEL_FILENAME}"
+    expected = ExpectedArtifacts(issue=issue, sentinel_path=canonical)
+    verdict = verify_artifacts(expected, io=io)
+    assert verdict.passed, verdict.reasons
+    assert glob_calls == [(canonical, issue)]
+
+
+def test_sibling_liveness_read_error_fails_structured_not_raise(caplog) -> None:
+    """#709 test 8 (sibling-read wrap): a sibling liveness read that RAISES
+    (the SSH reader's transport contract) yields a structured declared-path
+    FAIL — no exception escapes ``verify_artifacts`` — and the probe is
+    refused even though ANOTHER sibling read live (never-guess: the errored
+    sibling might be the right attempt)."""
+    issue = 685
+    declared = f"/scratch/eval_results/issue_{issue}/att-STALE/{SENTINEL_FILENAME}"
+    sib_a = f"/scratch/eval_results/issue_{issue}/att-A/{SENTINEL_FILENAME}"
+    sib_b = f"/scratch/eval_results/issue_{issue}/att-B/{SENTINEL_FILENAME}"
+
+    def read(path: str) -> str | None:
+        if path == declared:
+            return None
+        if path == sib_a:
+            raise RuntimeError("ssh sentinel read from pod-685 failed rc=255")
+        return _good_sentinel_text(issue=issue)
+
+    expected = ExpectedArtifacts(issue=issue, sentinel_path=declared)
+    io = VerifierIO(read_sentinel=read, glob_sentinels=lambda decl, iss: [sib_a, sib_b])
+    with caplog.at_level(logging.WARNING):
+        verdict = verify_artifacts(expected, io=io)  # returns a verdict, never raises
+    assert not verdict.passed
+    assert verdict.checks[CHECK_SENTINEL]["status"] == "FAIL"
+    assert f"missing at {declared}" in verdict.checks[CHECK_SENTINEL]["detail"]
+    assert "probe inconclusive" in caplog.text
+
+
+def test_runpod_confirm_glob_transport_failure_fails_declared_not_raise(
+    monkeypatch, caplog
+) -> None:
+    """#709 test 9 (round-1 reconciler Must-Fix, binding): a raising SSH
+    glob (rc=255 transport error) during the sibling probe never escapes
+    ``verify_artifacts`` — end-to-end through ``backend.confirm_artifacts``
+    the verdict is FAIL on the DECLARED path with the "live-sibling probe
+    raised" note. Pins the resolver's glob-call try/except, which the SSH
+    provider makes load-bearing: deleting/narrowing that except would pass
+    every other test while turning a transport blip into an
+    orchestrator-finalize crash."""
+    issue = 42
+    declared = f"/workspace/eval_results/issue_{issue}/rp-STALE/{SENTINEL_FILENAME}"
+    handle = _runpod_sentinel_only_handle(issue=issue, declared=declared)
+    backend = RunPodBackend()
+    monkeypatch.setattr(
+        "subprocess.run",
+        _pod_ssh_dispatcher(
+            {},  # declared missing on the pod
+            ls_result=_FakeProc(
+                255, stderr="ssh: connect to host pod-42 port 22: Connection refused"
+            ),
+        ),
+    )
+    with caplog.at_level(logging.WARNING):
+        # (a) NO exception escapes — the gate returns a normal False.
+        assert backend.confirm_artifacts(handle) is False
+        verdict = confirm_artifacts_from_handle(
+            handle,
+            io=VerifierIO(
+                read_sentinel=backend._ssh_read_sentinel(handle),
+                glob_sentinels=backend._ssh_glob_sentinels(handle),
+            ),
+        )
+    assert not verdict.passed
+    assert verdict.checks[CHECK_SENTINEL]["status"] == "FAIL"
+    # (b) FAILs on the DECLARED (missing) path.
+    assert f"missing at {declared}" in verdict.checks[CHECK_SENTINEL]["detail"]
+    # (c) the probe-failure note surfaces at WARNING.
+    assert "live-sibling probe raised" in caplog.text
+
+
 def test_new_fields_default_off_round_trip_back_compat(tmp_path: Path) -> None:
     """Back-compat (#705 constraint 6): a declaration built WITHOUT the new
     fields omits ``git_repo_root`` entirely and a pre-fix serialized dict
@@ -1343,3 +1692,103 @@ def test_new_fields_default_off_round_trip_back_compat(tmp_path: Path) -> None:
     rebuilt = expected_artifacts_from_handle(handle)
     assert rebuilt is not None
     assert rebuilt.git_repo_root is None
+
+
+# ---------------------------------------------------------------------------
+# #988 — scoped per-path HF listings in _check_hf_paths
+# ---------------------------------------------------------------------------
+
+
+def test_check_hf_paths_scopes_listing_per_declared_path() -> None:
+    """#988: ``_check_hf_paths`` threads ``path_in_repo`` per declared path
+    (one scoped call each, in declaration order) and the verdict semantics
+    (SKIP / PASS / FAIL-missing / FAIL-raised) are unchanged."""
+    from explore_persona_space.backends.artifacts import VerifierIO, _check_hf_paths
+
+    calls: list[str | None] = []
+
+    def _spy(repo_id, *, repo_type, revision=None, path_in_repo=None):
+        calls.append(path_in_repo)
+        if path_in_repo == "issue1/present":
+            return ["issue1/present/file.json"]
+        return []
+
+    io = VerifierIO(list_hf_repo_files=_spy)
+
+    # SKIP: no declared paths -> no listing call at all.
+    res = _check_hf_paths(repo_id="org/data", repo_type="dataset", paths=(), io=io)
+    assert res["status"] == "SKIP"
+    assert calls == []
+
+    # PASS: the one declared dir path resolves via ONE scoped call
+    # (trailing slash stripped for the server-side kwarg).
+    res = _check_hf_paths(
+        repo_id="org/data", repo_type="dataset", paths=("issue1/present/",), io=io
+    )
+    assert res["status"] == "PASS"
+    assert calls == ["issue1/present"]
+
+    # FAIL-missing: declaration order preserved in the calls AND the detail.
+    calls.clear()
+    res = _check_hf_paths(
+        repo_id="org/data",
+        repo_type="dataset",
+        paths=("issue1/present/", "issue1/ghost/"),
+        io=io,
+    )
+    assert res["status"] == "FAIL"
+    assert "issue1/ghost/" in res["detail"]
+    assert calls == ["issue1/present", "issue1/ghost"]
+
+    # FAIL-raised: a transport error on any per-path call surfaces as FAIL
+    # with the reason (never a silent pass).
+    def _raise(repo_id, *, repo_type, revision=None, path_in_repo=None):
+        raise RuntimeError("HF Hub 503")
+
+    res = _check_hf_paths(
+        repo_id="org/data",
+        repo_type="dataset",
+        paths=("issue1/present/",),
+        io=VerifierIO(list_hf_repo_files=_raise),
+    )
+    assert res["status"] == "FAIL"
+    assert "HF Hub 503" in res["detail"]
+
+
+def test_default_list_hf_repo_files_body_scoped_and_full(monkeypatch) -> None:
+    """#988 body test (code-style: one production-body test per seam-stubbed
+    function): execute the REAL ``_default_list_hf_repo_files`` — fakes only at
+    the Hub boundary (``HfApi`` construction + the paginated
+    ``list_repo_files_complete`` walk, signature-conformant by construction).
+    ``path_in_repo`` routes through the REAL ``list_hf_files_under_path`` body
+    (scoped server-side kwarg threaded, trailing slash normalized); ``None``
+    keeps the seam-compat full listing."""
+    import huggingface_hub
+
+    import explore_persona_space.orchestrate.hub as hub
+    from explore_persona_space.backends.artifacts import _default_list_hf_repo_files
+
+    class _StubApi:
+        def __init__(self, token=None):
+            self.token = token
+
+    monkeypatch.setattr(huggingface_hub, "HfApi", _StubApi)
+
+    calls: list[tuple[str, str, str | None, str | None]] = []
+
+    def _fake_complete(api, repo_id, *, repo_type="model", revision=None, path_in_repo=None):
+        assert isinstance(api, _StubApi), "the stub api must reach the scoped walk"
+        calls.append((repo_id, repo_type, revision, path_in_repo))
+        if path_in_repo is not None:
+            return [f"{path_in_repo}/a.json"]
+        return ["root.json", "issue1/a.json"]
+
+    monkeypatch.setattr(hub, "list_repo_files_complete", _fake_complete)
+
+    out = _default_list_hf_repo_files("org/data", repo_type="dataset", path_in_repo="issue1/raw/")
+    assert out == ["issue1/raw/a.json"]
+    assert calls[-1] == ("org/data", "dataset", None, "issue1/raw")
+
+    out = _default_list_hf_repo_files("org/data", repo_type="dataset")
+    assert out == ["root.json", "issue1/a.json"]
+    assert calls[-1] == ("org/data", "dataset", None, None)

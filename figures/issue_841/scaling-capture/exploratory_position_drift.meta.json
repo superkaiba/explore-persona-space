@@ -1,0 +1,120 @@
+{
+  "commit": "566eb04d01",
+  "created": "2026-07-03T22:26:25Z",
+  "figsize": [
+    6.5,
+    4.0
+  ],
+  "points": [
+    {
+      "x": -0.2,
+      "held-out r2_id on the FIXED test": 0.8735151939381314,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.8,
+      "held-out r2_id on the FIXED test": 0.843663770818347,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 1.8,
+      "held-out r2_id on the FIXED test": 0.8480417622261478,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 2.8,
+      "held-out r2_id on the FIXED test": 0.8108994476010126,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 3.8,
+      "held-out r2_id on the FIXED test": 0.8274240680492375,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 4.8,
+      "held-out r2_id on the FIXED test": 0.8221256617044187,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 5.8,
+      "held-out r2_id on the FIXED test": 0.8116359192364916,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 6.8,
+      "held-out r2_id on the FIXED test": 0.8116697578649652,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 7.8,
+      "held-out r2_id on the FIXED test": 0.8080455029454592,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.2,
+      "held-out r2_id on the FIXED test": 0.8627979084169367,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 1.2,
+      "held-out r2_id on the FIXED test": 0.8328867722127798,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 2.2,
+      "held-out r2_id on the FIXED test": 0.8367797091766158,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 3.2,
+      "held-out r2_id on the FIXED test": 0.7979362993218541,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 4.2,
+      "held-out r2_id on the FIXED test": 0.8134249174663096,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 5.2,
+      "held-out r2_id on the FIXED test": 0.8073325807228978,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 6.2,
+      "held-out r2_id on the FIXED test": 0.7966360127685574,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 7.2,
+      "held-out r2_id on the FIXED test": 0.7964153725902451,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 8.2,
+      "held-out r2_id on the FIXED test": 0.793850475060931,
+      "_kind": "bar",
+      "_group": 1
+    }
+  ],
+  "n_series": 2,
+  "total_points": 18
+}
