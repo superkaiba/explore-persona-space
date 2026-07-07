@@ -1,0 +1,72 @@
+{
+  "commit": "1f6db9f0c0",
+  "created": "2026-07-07T10:23:22Z",
+  "figsize": [
+    7.6,
+    4.2
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "Held-out $R^2$ / fraction (layer 19)": 0.5876803039140281,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "Held-out $R^2$ / fraction (layer 19)": 0.6730940896676356,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.82,
+      "Held-out $R^2$ / fraction (layer 19)": 0.3626111899733,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.18,
+      "Held-out $R^2$ / fraction (layer 19)": 0.3489193821633685,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.82,
+      "Held-out $R^2$ / fraction (layer 19)": 0.31111419787909056,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.18,
+      "Held-out $R^2$ / fraction (layer 19)": 0.2985925806396439,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "x": 2.82,
+      "Held-out $R^2$ / fraction (layer 19)": -1.0,
+      "_kind": "bar",
+      "_group": 6
+    },
+    {
+      "x": 3.18,
+      "Held-out $R^2$ / fraction (layer 19)": -1.0,
+      "_kind": "bar",
+      "_group": 7
+    },
+    {
+      "x": 3.82,
+      "Held-out $R^2$ / fraction (layer 19)": 0.0574419854456169,
+      "_kind": "bar",
+      "_group": 8
+    },
+    {
+      "x": 4.18,
+      "Held-out $R^2$ / fraction (layer 19)": 0.10868122095179335,
+      "_kind": "bar",
+      "_group": 9
+    }
+  ],
+  "n_series": 10,
+  "total_points": 10
+}
