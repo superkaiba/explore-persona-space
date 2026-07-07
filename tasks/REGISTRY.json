@@ -837,22 +837,22 @@
     "1107": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1107",
-      "status": "running",
+      "path": "tasks/reviewing/1107",
+      "status": "reviewing",
       "title": "workflow-fix: verify_task_body figure-meta vs what-is-plotted numeric reconcile"
     },
     "1108": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1108",
-      "status": "running",
+      "path": "tasks/reviewing/1108",
+      "status": "reviewing",
       "title": "HF model repo at the 100,000-file limit \u2014 user triage needed to free files (adapter uploads fleet-wide blocked)"
     },
     "1109": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1109",
-      "status": "running",
+      "path": "tasks/completed/1109",
+      "status": "completed",
       "title": "workflow-fix: v4 Results scan truncates at any mid-body --- rule (masked hard cap FAILs)"
     },
     "111": {
@@ -865,8 +865,8 @@
     "1110": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1110",
-      "status": "proposed",
+      "path": "tasks/running/1110",
+      "status": "running",
       "title": "workflow-fix: verify H1 == frontmatter title (set-title never syncs the body H1)"
     },
     "112": {
