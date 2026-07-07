@@ -2,7 +2,7 @@
 
 Hero: grouped bars @ L19 — base vs instruct x {chat within, separator within
 (rotated + MLP; raw ridge greyed, documented-pathological on control cells),
-sep->chat transfer as fraction of the matched-n ceiling}. Low-level per-unit
+sep->chat transfer as fraction of the full-n chat ceiling}. Low-level per-unit
 plot: per-article-group held-out R^2 (600 WikiText groups) base-vs-instruct
 scatter for the separator cell. paper-plots conventions (the analyzer
 regenerates figures later; this is the minimal committed pair).
@@ -81,10 +81,10 @@ def main() -> int:
     inst_chat = float(
         json.loads((COMMITTED_931 / "cells_chat_ref.json").read_text())["r2_per_layer_obs"][L]
     )
-    base_frac = float(transfer["sep_to_chat"]["fraction_of_matched1982_ceiling_single_draw"])
+    base_frac = float(transfer["sep_to_chat"]["fraction_of_fulln_ceiling"])
     inst_frac = float(
         json.loads((COMMITTED_931 / "sep_to_chat_control.json").read_text())["sep_to_chat"][
-            "fraction_of_matched1982_ceiling"
+            "fraction_of_fulln_ceiling"
         ]
     )
 
@@ -94,7 +94,7 @@ def main() -> int:
         ("Sep within\n(rotated)", base_sep["rotated"], inst_sep["rotated"], False),
         ("Sep within\n(MLP)", base_mlp, inst_mlp, False),
         ("Sep within\n(raw ridge)", base_sep["ridge"], inst_sep["ridge"], True),
-        ("Sep$\\to$chat transfer\n(frac. matched ceiling)", base_frac, inst_frac, False),
+        ("Sep$\\to$chat transfer\n(frac. full-n chat ceiling)", base_frac, inst_frac, False),
     ]
     c_base = paper_palette_role("primary")
     c_inst = paper_palette_role("baseline")
@@ -142,8 +142,8 @@ def main() -> int:
     lo = float(min(xi.min(), xb.min()))
     hi = float(max(xi.max(), xb.max()))
     ax.plot([lo, hi], [lo, hi], color="#999999", lw=0.8, ls="--")
-    ax.set_xlabel("instruct per-group held-out $R^2$ (armC_sep, layer 19)")
-    ax.set_ylabel("pretrained per-group held-out $R^2$")
+    ax.set_xlabel("instruct per-group held-out $R^2$ (separator cell, raw ridge, layer 19)")
+    ax.set_ylabel("pretrained per-group held-out $R^2$ (raw ridge)")
     ax.set_title(f"Per-article-group $R^2$ ({len(common_groups)} WikiText groups)")
     savefig_paper(fig, "issue_825/base_sep_pergroup_scatter", dir=args.fig_dir)
     plt.close(fig)

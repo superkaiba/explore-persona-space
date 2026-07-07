@@ -1,6 +1,6 @@
 {
-  "commit": "408a7c3389",
-  "created": "2026-07-07T08:31:52Z",
+  "commit": "b2c45f639b",
+  "created": "2026-07-07T09:26:36Z",
   "figsize": [
     7.6,
     4.2
@@ -56,13 +56,13 @@
     },
     {
       "x": 3.82,
-      "Held-out $R^2$ / fraction (layer 19)": -1.0,
+      "Held-out $R^2$ / fraction (layer 19)": 0.0574419854456169,
       "_kind": "bar",
       "_group": 8
     },
     {
       "x": 4.18,
-      "Held-out $R^2$ / fraction (layer 19)": 0.23135145421458606,
+      "Held-out $R^2$ / fraction (layer 19)": 0.10868122095179335,
       "_kind": "bar",
       "_group": 9
     }
