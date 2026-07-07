@@ -26,7 +26,10 @@ canonical fit is `lora-7b` (1× A100-80) when the phase ALSO trains, or
 is forward-pass-only; both fall back to the 40 GB A100-40 rung under A100-80
 exhaustion. This is orthogonal to the VM-footprint carve-out below (which
 sizes the off-pod analysis disk) — this rule sizes the GPU HBM the capture
-forward needs on the pod.
+forward needs on the pod. Mechanically BACKSTOPPED by `verify_plan.py`
+check c27 for GCP/auto-lane eval/debug bookings (escape: `N/A — no 7B
+activation capture`); RunPod-pinned plans and phase-to-intent routing
+inside mixed-intent plans stay critic-owned.
 
 A plan that quietly picks `lora-7b` (1× H100) for an embarrassingly parallel
 20-condition sweep is wrong, even if the GPU-hours total is the same.
