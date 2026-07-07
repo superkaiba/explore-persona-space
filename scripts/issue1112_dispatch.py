@@ -29,9 +29,11 @@ Phases (linear, checkpoint-per-phase, resume-keyed; plan v3 §4/§9):
 
 ``--smoke`` is the SAME dispatcher with tiny knobs (plan §4.5 smoke/sweep
 parity): cell subset (s3,), 2 optimizer steps + 1 consolidated ZeRO-3 save +
-vLLM-load canary, 1 Tier-1 rung at 2 questions, LIVE judge, 2-row 3-arm
-28-layer capture, geometry on the captured stub, recording-free upload via
-``--no-upload``. Every phase reads its cell list from the ONE resolver
+vLLM-load canary, 1 Tier-1 rung at 2 questions, LIVE judge, 2-context ×
+2-question (4-row) 3-arm 28-layer capture, geometry on the captured stub
+(nondegenerate prefix path + a single-context degenerate-branch probe),
+recording-free upload via ``--no-upload``. Every phase reads its cell list
+from the ONE resolver
 (``cfg.cells``), so the smoke subset threads through train, ladder, tier2,
 capture, geometry, and upload alike.
 
@@ -1547,8 +1549,14 @@ def run_capture_unit(cfg: Cfg, cell: str, dose: str) -> None:
     panel, questions = _capture_panel(behavior)
     max_new = C.MARKER_MAX_NEW_TOKENS if behavior == "marker" else C.SYCO_MAX_NEW_TOKENS
     if cfg.smoke:
-        panel = dict(list(panel.items())[:1])
-        questions = questions[:2]  # 2 rows (1-row clouds are degenerate post-centering)
+        # 2 contexts × 2 questions = 4 rows: the PREFIX arm has one unique row
+        # per context (plan §4.5 degeneracy framing), so a 1-context smoke
+        # capture makes the prefix Δx cloud rank-0 after centering and p11
+        # geometry can only exercise the degenerate branch (crash-fix r3,
+        # att-20260707-205546). Two contexts give the prefix arm ≥2 unique
+        # rows — the smoke proves the NONDEGENERATE production spectral path.
+        panel = dict(list(panel.items())[:2])
+        questions = questions[:2]
     personas = {}
     user_texts = {}
     for ctx_id, (system, wrap) in panel.items():
@@ -1697,6 +1705,25 @@ def phase_capture(cfg: Cfg) -> dict:
 # ── p11: geometry (smoke stub — the full pass runs VM-side) ──────────────────
 
 
+def _single_context_subset(store: dict) -> dict:
+    """Row-subset of a capture store keeping only its FIRST context (real data).
+
+    Reproduces the p11 crash shape (att-20260707-205546): a single-context
+    capture collapses the prefix arm to 1 unique row, which must now yield
+    EXPLICIT degenerate records instead of the #653 fail-fast raise.
+    """
+    ctx = store["row_meta"][0]["context_id"]
+    keep = [i for i, m in enumerate(store["row_meta"]) if m["context_id"] == ctx]
+    assert keep, store["row_meta"]
+    sub = dict(store)
+    sub["row_meta"] = [store["row_meta"][i] for i in keep]
+    sub["arms"] = {
+        arm: {li: t[keep] for li, t in per_layer.items()}
+        for arm, per_layer in store["arms"].items()
+    }
+    return sub
+
+
 def phase_geometry_smoke(cfg: Cfg) -> dict:
     _phase("p11_geometry")
     if not cfg.smoke:
@@ -1722,7 +1749,49 @@ def phase_geometry_smoke(cfg: Cfg) -> dict:
         rb_by_behavior={"sycophancy": rb_path},
         n_boot=25,
     )
-    return {"n_records": len(payload["records"])}
+    prefix_recs = [r for r in payload["records"].values() if r["arm"] == "prefix"]
+    n_prefix_nondegen = sum(1 for r in prefix_recs if not r.get("degenerate"))
+    if n_prefix_nondegen < 1:
+        raise RuntimeError(
+            "smoke geometry produced no nondegenerate prefix-arm record — the smoke "
+            "capture must span >=2 contexts to exercise the production spectral path"
+        )
+
+    # ── Degenerate-branch canary: single-context row subset of the SAME real
+    # captured stores. The prefix arm then has exactly 1 unique row, so the
+    # explicit degenerate-record branch (geometry.analyze_cell) must engage.
+    probe_root = cfg.out_root / "capture_degenerate_probe"
+    for src_cell, dose in ((cell, "selected"), ("base_sycophancy", "base")):
+        store = geo.load_store(cfg.out_root / "capture" / src_cell / dose / "pooled.pt")
+        out = probe_root / src_cell / dose
+        out.mkdir(parents=True, exist_ok=True)
+        torch.save(_single_context_subset(store), out / "pooled.pt")
+    degen_payload = geo.run_geometry(
+        probe_root,
+        cfg.out_root / "geometry_smoke_degenerate",
+        cells_doses=[(cell, "selected")],
+        base_store_by_behavior={
+            "sycophancy": probe_root / "base_sycophancy" / "base" / "pooled.pt"
+        },
+        behavior_by_cell={cell: "sycophancy"},
+        selected_dose_by_cell={cell: "selected"},
+        rb_by_behavior={"sycophancy": rb_path},
+        n_boot=25,
+    )
+    degen_recs = [r for r in degen_payload["records"].values() if r.get("degenerate")]
+    if not degen_recs:
+        raise RuntimeError("single-context probe emitted no explicit degenerate record")
+    non_prefix_degen = [r for r in degen_recs if r["arm"] != "prefix"]
+    if non_prefix_degen:
+        raise RuntimeError(f"unexpected degenerate non-prefix records: {non_prefix_degen[:2]}")
+    return {
+        "n_records": len(payload["records"]),
+        "n_prefix_nondegenerate": n_prefix_nondegen,
+        "degenerate_probe": {
+            "n_records": len(degen_payload["records"]),
+            "n_degenerate": len(degen_recs),
+        },
+    }
 
 
 # ── p12: upload + sentinel ───────────────────────────────────────────────────

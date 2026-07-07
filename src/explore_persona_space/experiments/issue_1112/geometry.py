@@ -9,7 +9,11 @@ produces:
   spectral DVs (top_share_lambda / PR_λ / rank_k_at_90 via the #653
   ``spectral.py`` definitions verbatim), ‖μ‖, alignment cosines vs r_B with
   the norm-matched random CI, unique-row counts (prefix-arm degeneracy
-  framing), and batched Gram-space cluster-bootstrap CIs;
+  framing), and batched Gram-space cluster-bootstrap CIs. A cloud with < 2
+  structurally-unique rows (MECHANICALLY-expected — e.g. a single-context
+  prefix arm) yields an EXPLICIT ``degenerate: true`` record with null
+  spectral DVs + a reason string instead of crashing on the #653 fail-fast;
+  a ≥2-unique-row cloud that still zeroes out is UNEXPECTED and raises;
 - cross-cell PAIRED difference records (H1/H2/H3/H5 pairs; the SAME
   resampled (context, question) indices applied to both cells —
   ``resampling: paired``), plus cross-cell cos(μ,μ)/cos(top,top)/CKA;
@@ -196,10 +200,59 @@ def analyze_cell(
     out: dict[str, dict] = {}
     for arm in arms:
         idx = idx_by_arm[arm]
+        n_unique = structural_unique_rows(trained_store, arm)
         for layer in layers:
             cloud = delta_cloud(trained_store, base_store, arm, layer)
-            point = spectral_dvs(svd_of_cloud(cloud))
             mu = cloud.mean(axis=0)
+            if n_unique < 2:
+                # MECHANICALLY-expected degeneracy (plan §4.5 prefix-arm framing:
+                # the prefix depends only on the context, so a 1-context capture
+                # yields 1 unique prefix row): the row-centered Δx cloud is
+                # identically zero, Σσ² == 0, and the #653 spectral DVs are
+                # undefined. Emit an EXPLICIT degenerate record — the record IS
+                # the signal; never a silent skip, never a coerced zero. μ (and
+                # cos(μ, r_B)) stay well-defined and are still reported. A cloud
+                # with ≥ 2 unique rows that still zeroes out is UNEXPECTED and
+                # keeps raising via the #653 fail-fast on the normal path below.
+                rec = {
+                    "cell": cell,
+                    "dose": dose,
+                    "arm": arm,
+                    "layer": layer,
+                    "n_rows": int(cloud.shape[0]),
+                    "n_unique_rows_structural": n_unique,
+                    "degenerate": True,
+                    "unique_rows": n_unique,
+                    "degenerate_reason": (
+                        f"{n_unique} structurally-unique row(s) < 2 for arm '{arm}' — "
+                        "row-centered Δx cloud is identically zero (Σσ² == 0); "
+                        "spectral DVs undefined at this capture size"
+                    ),
+                    "top_share_lambda": None,
+                    "pr_lambda": None,
+                    "rank_k_at_90": None,
+                    "mu_norm": float(np.linalg.norm(mu)),
+                    "boot_ci": None,
+                    "n_boot": int(idx.shape[0]),
+                    "resampling": "paired",
+                }
+                if rb is not None:
+                    if layer not in rand_ci_cache:
+                        rand_ci_cache[layer] = norm_matched_random_cos_ci(rb[layer], seed=layer)
+                    rec["cos_top_to_rb"] = None
+                    rec["cos_mu_to_rb"] = cosine(mu, rb[layer])
+                    rec["random_cos_ci"] = rand_ci_cache[layer]
+                logger.warning(
+                    "[geometry] %s/%s %s/L%d: %d unique row(s) — explicit degenerate record",
+                    cell,
+                    dose,
+                    arm,
+                    layer,
+                    n_unique,
+                )
+                out[f"{arm}/L{layer}"] = rec
+                continue
+            point = spectral_dvs(svd_of_cloud(cloud))
             top = top_direction(cloud)
             draws = batched_dvs_over_indices(cloud, idx, dv_names=BOOTSTRAPPABLE_DVS)
             for dv, vals in draws.items():
@@ -210,7 +263,8 @@ def analyze_cell(
                 "arm": arm,
                 "layer": layer,
                 "n_rows": int(cloud.shape[0]),
-                "n_unique_rows_structural": structural_unique_rows(trained_store, arm),
+                "n_unique_rows_structural": n_unique,
+                "degenerate": False,
                 **{k: point[k] for k in ("top_share_lambda", "pr_lambda", "rank_k_at_90")},
                 "mu_norm": float(np.linalg.norm(mu)),
                 "boot_ci": {
@@ -251,6 +305,48 @@ def paired_diff_record(
         "n_boot": int(d.shape[0]),
         "resampling": "paired",
     }
+
+
+def _pair_read(
+    store_a: dict,
+    store_b: dict,
+    base: dict,
+    arm: str,
+    layer: int,
+    *,
+    rec_a: dict,
+    rec_b: dict,
+    draws_a: dict,
+    draws_b: dict,
+) -> dict:
+    """One cross-cell (arm, layer) diff read: direction cosines + paired DV CIs.
+
+    A degenerate side (< 2 unique rows — no per-draw matrices exist) yields an
+    explicit ``degenerate: true`` entry with the still-well-defined mean-shift
+    cosine, never a KeyError or a coerced zero.
+    """
+    cloud_a = delta_cloud(store_a, base, arm, layer)
+    cloud_b = delta_cloud(store_b, base, arm, layer)
+    mu_a, mu_b = cloud_a.mean(axis=0), cloud_b.mean(axis=0)
+    if rec_a.get("degenerate") or rec_b.get("degenerate"):
+        return {
+            "degenerate": True,
+            "degenerate_sides": [s for s, r in (("a", rec_a), ("b", rec_b)) if r.get("degenerate")],
+            "cos_mu": cosine(mu_a, mu_b),
+        }
+    entry = {
+        "cos_mu": cosine(mu_a, mu_b),
+        "cos_top": cosine(top_direction(cloud_a), top_direction(cloud_b)),
+        "cka": linear_cka(torch.from_numpy(cloud_a), torch.from_numpy(cloud_b)),
+    }
+    for dv in BOOTSTRAPPABLE_DVS:
+        entry[f"diff_{dv}"] = paired_diff_record(
+            draws_a[(arm, layer, dv)],
+            draws_b[(arm, layer, dv)],
+            rec_a[dv],
+            rec_b[dv],
+        )
+    return entry
 
 
 def run_geometry(
@@ -350,24 +446,17 @@ def run_geometry(
         pair: dict[str, dict] = {}
         for arm in CAPTURE_ARMS:
             for layer in layers_by_behavior[b]:
-                key_a = f"{cell_a}/{da}/{arm}/L{layer}"
-                key_b = f"{cell_b}/{db}/{arm}/L{layer}"
-                cloud_a = delta_cloud(stores[(cell_a, da)], bases[b], arm, layer)
-                cloud_b = delta_cloud(stores[(cell_b, db)], bases[b], arm, layer)
-                mu_a, mu_b = cloud_a.mean(axis=0), cloud_b.mean(axis=0)
-                entry = {
-                    "cos_mu": cosine(mu_a, mu_b),
-                    "cos_top": cosine(top_direction(cloud_a), top_direction(cloud_b)),
-                    "cka": linear_cka(torch.from_numpy(cloud_a), torch.from_numpy(cloud_b)),
-                }
-                for dv in BOOTSTRAPPABLE_DVS:
-                    entry[f"diff_{dv}"] = paired_diff_record(
-                        per_cell_draws[(cell_a, da)][(arm, layer, dv)],
-                        per_cell_draws[(cell_b, db)][(arm, layer, dv)],
-                        records[key_a][dv],
-                        records[key_b][dv],
-                    )
-                pair[f"{arm}/L{layer}"] = entry
+                pair[f"{arm}/L{layer}"] = _pair_read(
+                    stores[(cell_a, da)],
+                    stores[(cell_b, db)],
+                    bases[b],
+                    arm,
+                    layer,
+                    rec_a=records[f"{cell_a}/{da}/{arm}/L{layer}"],
+                    rec_b=records[f"{cell_b}/{db}/{arm}/L{layer}"],
+                    draws_a=per_cell_draws[(cell_a, da)],
+                    draws_b=per_cell_draws[(cell_b, db)],
+                )
         diffs[name] = {"cell_a": cell_a, "cell_b": cell_b, "doses": [da, db], "reads": pair}
 
     # ── H3 interaction (exploratory, layer 14 / response, rank_k) ────────────
@@ -381,6 +470,10 @@ def run_geometry(
     quad_ok = all((c, selected_dose_by_cell.get(c)) in stores for _, c in quad)
     quad_layer_ok = quad_ok and all(
         PRIMARY_LAYER in layers_by_behavior[behavior_by_cell[c]] for _, c in quad
+    )
+    quad_layer_ok = quad_layer_ok and not any(
+        records[f"{c}/{selected_dose_by_cell[c]}/response/L{PRIMARY_LAYER}"].get("degenerate")
+        for _, c in quad
     )
     if quad_layer_ok:
         dv = "rank_k_at_90"
