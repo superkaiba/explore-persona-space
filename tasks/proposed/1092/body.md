@@ -12,10 +12,16 @@ origin_prompt: 'how can we get more realistic and diverse contexts but also be a
   ask clarifying questions [answers: all three co-primary; natural + 50-battery bridge;
   ~1k prefixes / ~13k rows; random + topic-matched control]'
 workflow: v1
+goal: 'Characterize how the base model''s answer-state transport decomposes between
+  prefix and query on a realistic sparse-crossed corpus (~1k real WildChat/LMSYS prefixes
+  + the #594 50-battery bridge, x ~500-query bank, natural + random + topic-matched
+  pairings): co-primary reads = prefix-map vs context-map held-out R^2 + spectrum
+  gap; #813''s averaged-vs-per-example rank collapse at un-capped design dimension;
+  prefix/query/interaction variance shares of v(x).'
 ---
 ## Goal
 
-Build a realistic, diverse, SPARSE-CROSSED (prefix x query) corpus and use it to characterize, on identical rows, how the base model's answer-state transport decomposes between the prefix and the query. Three CO-PRIMARY reads (user decision 2026-07-06), all computed from one capture:
+Characterize how the base model's answer-state transport decomposes between prefix and query on a realistic sparse-crossed corpus (~1k real WildChat/LMSYS prefixes + the #594 50-battery bridge, x ~500-query bank, natural + random + topic-matched pairings): co-primary reads = prefix-map vs context-map held-out R^2 + spectrum gap; #813's averaged-vs-per-example rank collapse at un-capped design dimension; prefix/query/interaction variance shares of v(x).
 
 1. **Prefix-map vs context-map.** Fit h_P: prefix-end activation -> v(x) and h_C: context-end (post-query) activation -> v(x) on the SAME rows; compare held-out R^2 (paired, group-level folds), full-output-space rank/energy spectra, and output-subspace overlap. Decision quantity: the paired held-out R^2 gap + spectrum gap between the two input representations — "how much transport does the query add". (The standing prefix+context both-arms rule is satisfied BY this read — the arm comparison is itself co-primary.)
 2. **Query-averaged vs per-example grain at un-capped diversity.** Replicate the #813 rank comparison (averaged stable-rank 3.13 vs per-example 12.97 at L14; averaging ITSELF ~halves effective rank at matched n=50; median 2% output-energy overlap — eval_results/issue_813/per_example_vs_averaged/rank_spectrum_L14.json, script scripts/issue813_rank_spectrum.py) on a design whose dimension (~1.5k) no longer caps map rank. Does the averaging collapse persist, grow, or vanish when the design is realistic and wide?
