@@ -146,6 +146,23 @@ def main() -> int:
     ax.set_ylabel("pretrained per-group $R^2$ (raw ridge)")
     ax.set_title(f"Per-article-group $R^2$ ({len(common_groups)} WikiText groups)")
     savefig_paper(fig, "issue_825/base_sep_pergroup_scatter", dir=args.fig_dir)
+
+    # --- weight-space cosine by frozen layer (similarity read) ---
+    sim = json.loads((args.out / "base_sep_similarity.json").read_text())
+    ws = sim["weight_space"]
+    layers = sorted(int(k) for k in ws.keys())
+    cos = [ws[str(l)]["vec_cosine"] for l in layers]
+    ref = [ws[str(l)]["random_map_vec_cosine_ref"] for l in layers]
+    fig, ax = plt.subplots(figsize=(4.8, 3.4))
+    xs = list(range(len(layers)))
+    ax.bar(xs, cos, width=0.55, color="#0072B2", label="fitted separator maps (pretrained vs instruct)")
+    ax.plot(xs, ref, marker="o", linestyle="--", color="#888888", label="random-map reference")
+    ax.set_xticks(xs)
+    ax.set_xticklabels([f"layer {l}" for l in layers], fontsize=9)
+    ax.set_ylabel("weight-space cosine")
+    ax.set_ylim(-0.05, 1.0)
+    ax.legend(fontsize=8, frameon=False, loc="center right")
+    savefig_paper(fig, "issue_825/base_sep_weightcos", dir=args.fig_dir)
     plt.close(fig)
     print(f"[i825-bs-c3] wrote hero + per-group scatter under {args.fig_dir}/issue_825/")
     return 0
