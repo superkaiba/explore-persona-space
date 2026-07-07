@@ -837,8 +837,8 @@
     "1107": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1107",
-      "status": "approved",
+      "path": "tasks/running/1107",
+      "status": "running",
       "title": "workflow-fix: verify_task_body figure-meta vs what-is-plotted numeric reconcile"
     },
     "1108": {
