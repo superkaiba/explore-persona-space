@@ -1303,6 +1303,32 @@ def _wedge_tool_result_row():
     }
 
 
+def _wedge_api_error_row():
+    # VERBATIM sanitized real row shape captured from the live #1074 incident
+    # transcript (session 6f682c18, 2026-07-06; 38/38 refusal rows had this
+    # shape). Pins the TOP-LEVEL placement of `isApiErrorMessage` — a future
+    # transcript-format drift that NESTS the flag (e.g. under `message`) must
+    # fail these tests visibly, not silently reclassify to "assistant".
+    # Content/error text omitted or benign by construction (#1104
+    # refusal-safety: never copy refusal text into the repo).
+    return {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "error": "sanitized",
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+        "uuid": "00000000-0000-0000-0000-000000000000",
+        "parentUuid": "00000000-0000-0000-0000-000000000001",
+        "sessionId": "6f682c18-5370-4593-85a0-03f4aed6f810",
+        "timestamp": "2026-07-06T21:48:37.000Z",
+        "version": "2.1.128",
+        "gitBranch": "main",
+        "cwd": "/home/user/explore-persona-space",
+        "userType": "external",
+        "isSidechain": False,
+        "entrypoint": "sdk-ts",
+    }
+
+
 def test_decide_prompt_wedge_three_promptless_rows():
     import autonomous_session_watch as asw
 
@@ -1410,6 +1436,92 @@ def test_tick_wedge_min_dequeued_env_override(monkeypatch):
     assert asw._tick_wedge_min_dequeued() == asw.TICK_WEDGE_MIN_DEQUEUED
     monkeypatch.setenv("EPM_TICK_WEDGE_MIN_DEQUEUED", "garbled")
     assert asw._tick_wedge_min_dequeued() == asw.TICK_WEDGE_MIN_DEQUEUED
+
+
+# ── #1104 api-error (orchestrator-refusal) wedge widening ────────────────────
+
+
+def test_classify_wedge_row_api_error_assistant():
+    # #1104 plan test 1: an assistant row with TOP-LEVEL
+    # `isApiErrorMessage: true` classifies "api-error"; absent / False /
+    # non-True values keep the plain "assistant" class (the reset row).
+    import autonomous_session_watch as asw
+
+    assert asw._classify_wedge_row(_wedge_api_error_row()) == "api-error"
+    assert asw._classify_wedge_row(_wedge_assistant_row()) == "assistant"
+    explicit_false = {**_wedge_assistant_row(), "isApiErrorMessage": False}
+    assert asw._classify_wedge_row(explicit_false) == "assistant"
+    truthy_non_bool = {**_wedge_assistant_row(), "isApiErrorMessage": "yes"}
+    assert asw._classify_wedge_row(truthy_non_bool) == "assistant"
+
+
+def test_decide_prompt_wedge_1074_replay_refusal_turns_fire():
+    # #1104 plan test 2 — the #1074 replay: each refused wake contributes
+    # dequeue x2 + prompt x2 + one api-error turn; three consecutive refused
+    # wakes trip the wedge at defaults. The SAME tail with min_api_errors=0
+    # (the kill switch) reproduces the pre-fix blindness: no fire.
+    import autonomous_session_watch as asw
+
+    refused_wake = [
+        _wedge_dequeue_row(),
+        _wedge_dequeue_row(),
+        _wedge_prompt_row(),
+        _wedge_prompt_row(),
+        _wedge_api_error_row(),
+    ]
+    tail = [_wedge_assistant_row()] + refused_wake * 3
+    assert asw.decide_prompt_wedge(tail, 3, min_api_errors=3) is True
+    assert asw.decide_prompt_wedge(tail, 3, min_api_errors=0) is False
+
+
+def test_decide_prompt_wedge_api_error_resets_dequeue_run():
+    # #1104 plan test 3: an api-error turn RESETS the dequeue/prompt run —
+    # the prompt DID get a (failed) response, so a single refused wake's
+    # 2+2 rows must not trip the EXISTING run >= 3 threshold.
+    import autonomous_session_watch as asw
+
+    tail = [
+        _wedge_dequeue_row(),
+        _wedge_dequeue_row(),
+        _wedge_api_error_row(),
+        _wedge_dequeue_row(),
+        _wedge_dequeue_row(),
+    ]
+    assert asw.decide_prompt_wedge(tail, 3, min_api_errors=3) is False
+
+
+def test_decide_prompt_wedge_real_assistant_resets_api_run():
+    # #1104 plan test 4: a REAL assistant turn resets the api-error counter —
+    # interleaved one-off refusals (the 18+/day transient class) never
+    # accumulate across successful turns.
+    import autonomous_session_watch as asw
+
+    tail = [
+        _wedge_api_error_row(),
+        _wedge_api_error_row(),
+        _wedge_assistant_row(),
+        _wedge_api_error_row(),
+        _wedge_api_error_row(),
+    ]
+    assert asw.decide_prompt_wedge(tail, 3, min_api_errors=3) is False
+
+
+def test_tick_wedge_min_api_errors_env_override(monkeypatch):
+    # #1104 plan test 5: mirror of test_tick_wedge_min_dequeued_env_override
+    # with the ONE deliberate divergence — "0" DISABLES (returns 0), it does
+    # not fall back to the default.
+    import autonomous_session_watch as asw
+
+    monkeypatch.delenv("EPM_TICK_WEDGE_MIN_API_ERRORS", raising=False)
+    assert asw._tick_wedge_min_api_errors() == asw.TICK_WEDGE_MIN_API_ERRORS
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_API_ERRORS", "5")
+    assert asw._tick_wedge_min_api_errors() == 5
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_API_ERRORS", "0")
+    assert asw._tick_wedge_min_api_errors() == 0
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_API_ERRORS", "-2")
+    assert asw._tick_wedge_min_api_errors() == asw.TICK_WEDGE_MIN_API_ERRORS
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_API_ERRORS", "garbled")
+    assert asw._tick_wedge_min_api_errors() == asw.TICK_WEDGE_MIN_API_ERRORS
 
 
 def test_decide_stale_registration_matrix():

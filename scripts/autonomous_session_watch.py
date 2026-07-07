@@ -1243,6 +1243,37 @@ def _tick_wedge_min_dequeued() -> int:
     return parsed
 
 
+# #1104: minimum count of consecutive trailing API-ERROR turns (assistant
+# rows with top-level `isApiErrorMessage: true` — a usage-policy refusal or
+# 429/529 error turn) before the prompt-wedge trigger escalates. The direct
+# analogue of TICK_WEDGE_MIN_DEQUEUED: 3 CONSECUTIVE failed wake turns with
+# zero successful turns. Incident #1074: 38 refused wake turns / ~2h
+# unrecovered — every refusal row classified "assistant" and RESET the run,
+# hiding the wedge from this lane entirely.
+TICK_WEDGE_MIN_API_ERRORS = 3
+
+
+def _tick_wedge_min_api_errors() -> int:
+    """Api-error wedge trigger threshold (env ``EPM_TICK_WEDGE_MIN_API_ERRORS``,
+    an integer COUNT; default :data:`TICK_WEDGE_MIN_API_ERRORS`).
+
+    ONE deliberate divergence from :func:`_tick_wedge_min_dequeued`: ``0``
+    DISABLES the api-error trigger (an explicit kill switch for the NEW
+    trigger class — the ``min_api_errors > 0`` guard in
+    :func:`decide_prompt_wedge` then never fires). Malformed / negative env
+    falls back to the default."""
+    raw = os.environ.get("EPM_TICK_WEDGE_MIN_API_ERRORS")
+    if not raw:
+        return TICK_WEDGE_MIN_API_ERRORS
+    try:
+        parsed = int(raw)
+    except ValueError:
+        return TICK_WEDGE_MIN_API_ERRORS
+    if parsed < 0:
+        return TICK_WEDGE_MIN_API_ERRORS
+    return parsed
+
+
 # Freshness window for the long-phase-heartbeat exemption. Generous so an
 # emitter that heartbeats roughly hourly (the off-pod analyzer / Batch-poll
 # cadence) is ALWAYS inside the window with margin for cron jitter — same
@@ -1670,7 +1701,8 @@ def decide_auth_outage_canary(
 
 def _classify_wedge_row(row: object) -> str:
     """Classify one parsed transcript row for :func:`decide_prompt_wedge`:
-    ``"dequeue"`` | ``"prompt"`` | ``"assistant"`` | ``"other"``.
+    ``"dequeue"`` | ``"prompt"`` | ``"assistant"`` | ``"api-error"`` |
+    ``"other"``.
 
     - ``"dequeue"`` (CO-PRIMARY evidence): ``type == "queue-operation"``
       with ``operation == "dequeue"`` — the verified per-prompt dequeue
@@ -1680,8 +1712,15 @@ def _classify_wedge_row(row: object) -> str:
       message content is a plain string, or contains a text block and NO
       tool_result block — i.e. a delivered user/tick prompt, not a tool
       result re-entering the conversation.
-    - ``"assistant"``: any ``type == "assistant"`` row — the session took a
-      turn, which resets the wedge-evidence run.
+    - ``"assistant"``: a ``type == "assistant"`` row WITHOUT the top-level
+      ``isApiErrorMessage: true`` flag — the session took a real turn,
+      which resets the wedge-evidence run.
+    - ``"api-error"`` (#1104): an assistant-type row Claude Code writes for
+      an API-ERRORED turn (usage-policy refusal, 429/529) with top-level
+      ``isApiErrorMessage: true`` — the turn FAILED, so it is wedge
+      evidence, not a reset (row shape verified live on the #1074 incident
+      transcript, session 6f682c18: 38 such rows, all ``type: "assistant"``
+      with the flag at the row's top level).
     - ``"other"``: everything else (tool_result user rows, summary/system
       rows, non-dequeue queue-operations, malformed rows) — skipped without
       resetting the run.
@@ -1690,7 +1729,7 @@ def _classify_wedge_row(row: object) -> str:
         return "other"
     rtype = row.get("type")
     if rtype == "assistant":
-        return "assistant"
+        return "api-error" if row.get("isApiErrorMessage") is True else "assistant"
     if rtype == "queue-operation":
         return "dequeue" if row.get("operation") == "dequeue" else "other"
     if rtype != "user":
@@ -1709,27 +1748,55 @@ def _classify_wedge_row(row: object) -> str:
     return "other"
 
 
-def decide_prompt_wedge(trailing_rows: list[dict], min_dequeued: int) -> bool:
+def decide_prompt_wedge(
+    trailing_rows: list[dict],
+    min_dequeued: int,
+    *,
+    min_api_errors: int = TICK_WEDGE_MIN_API_ERRORS,
+) -> bool:
     """Pure prompt-wedge detector over parsed transcript-tail rows (#845 e;
     incident #779: 5 tick prompts were enqueued AND dequeued with no
     assistant turn for ~90 min before the slow debounce finally respawned —
     killing an in-flight implementer).
 
-    True iff the transcript TAIL ends with >= ``min_dequeued`` consecutive
-    wedge-evidence rows (``"dequeue"`` queue-operation records — co-primary
-    — and/or ``"prompt"`` promptless user rows — secondary; both count
-    toward the SAME trailing run, so a mixed tail still fires) with no
-    assistant row after the first of them. ``"other"`` rows are skipped
-    without resetting the run; an assistant row resets it (the session took
-    a turn — not wedged)."""
+    True iff EITHER trailing counter fires:
+
+    - the transcript TAIL ends with >= ``min_dequeued`` consecutive
+      wedge-evidence rows (``"dequeue"`` queue-operation records — co-primary
+      — and/or ``"prompt"`` promptless user rows — secondary; both count
+      toward the SAME trailing run, so a mixed tail still fires) with no
+      assistant row after the first of them; OR
+    - (#1104) the tail ends with >= ``min_api_errors`` consecutive
+      ``"api-error"`` turns (assistant rows with ``isApiErrorMessage: true``
+      — usage-policy refusals, 429/529 error turns) with no SUCCESSFUL
+      assistant turn after the first of them (incident #1074: 38 refused
+      wake turns / ~2h unrecovered; ``min_api_errors <= 0`` DISABLES this
+      trigger — the kill switch).
+
+    ``"other"`` rows are skipped without resetting either counter; a real
+    ``"assistant"`` row resets both (the session took a turn — not wedged).
+    An ``"api-error"`` row RESETS ``run`` (the prompt DID get a response —
+    this is not the #779 swallow shape; without the reset, one refused
+    wake's 2-4 dequeue+prompt rows would trip ``run >= min_dequeued`` after
+    a SINGLE refused turn, over-aggressive for the one-off-refusal regime)
+    but increments ``api_run``. Window assumption: the caller's
+    transcript-tail read must span >= ``min_api_errors`` api-error turns —
+    on #1074 the 64 KB default held EXACTLY 3 such rows (zero margin), so
+    the production probe reads a wider tail; a too-thin window fails toward
+    NO-FIRE (the pre-fix slow path), never a false fire."""
     run = 0
+    api_run = 0
     for row in trailing_rows:
         cls = _classify_wedge_row(row)
         if cls == "assistant":
             run = 0
+            api_run = 0
+        elif cls == "api-error":
+            run = 0
+            api_run += 1
         elif cls in ("dequeue", "prompt"):
             run += 1
-    return run >= min_dequeued
+    return run >= min_dequeued or (min_api_errors > 0 and api_run >= min_api_errors)
 
 
 def decide_stale_registration(
@@ -9271,7 +9338,12 @@ def _apply_prompt_wedge_override(
     hot path never pays the transcript read) and the slow path would
     otherwise debounce (``action in ("keep", "alert")``). Everything
     unresolvable (no pid map, sid not live, transcript miss) fails toward
-    NO-WEDGE (the pre-#845 behavior)."""
+    NO-WEDGE (the pre-#845 behavior). #1104: the wedge additionally fires
+    on the orchestrator-refusal-wedge subclass — >= ``min_api_errors``
+    consecutive API-ERROR turns (``isApiErrorMessage: true`` assistant
+    rows: usage-policy refusals, 429/529) with no successful turn, the
+    #1074 shape the original lane was structurally blind to (a refusal row
+    classified ``"assistant"`` and RESET the run)."""
     if action not in ("keep", "alert") or not respawn_eligible or pids_by_sid is None:
         return action, live_consecutive, wedge_hits, None
     if self_report_age is None or self_report_age < STALLED_WINDOW_S:
@@ -9280,15 +9352,20 @@ def _apply_prompt_wedge_override(
     pid = pids_by_sid.get(sid) if isinstance(sid, str) else None
     if not isinstance(pid, int):
         return action, live_consecutive, wedge_hits, None
-    rows = _transcript_tail_rows(pid)
+    # 256 KB tail (vs the 64 KB default): the 64 KB window held EXACTLY 3
+    # api-error rows on the #1074 incident transcript — zero margin (#1104;
+    # plan §10 allowed deviation; a too-thin window fails toward NO-FIRE).
+    rows = _transcript_tail_rows(pid, max_bytes=262144)
     if rows is None:
         return action, live_consecutive, wedge_hits, None
     min_k = _tick_wedge_min_dequeued()
-    if not decide_prompt_wedge(rows, min_k):
+    min_api = _tick_wedge_min_api_errors()
+    if not decide_prompt_wedge(rows, min_k, min_api_errors=min_api):
         return action, live_consecutive, wedge_hits, None
     note = (
-        f">= {min_k} consecutive dequeued/promptless prompt rows in the "
-        f"transcript tail with no assistant turn"
+        f">= {min_k} consecutive dequeued/promptless prompt rows OR "
+        f">= {min_api} consecutive API-error turns in the transcript tail "
+        f"with no successful assistant turn"
     )
     print(
         f"  issue #{issue}: PROMPT-WEDGE — {note} while the self-report is "
