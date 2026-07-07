@@ -597,3 +597,349 @@ Non-arXiv but central: Elhage et al. (Transformer Circuits Thread 2021); Millidg
 1. **LRE (2308.09124) as the methodological template** — port its faithfulness + causality protocol wholesale (with group-level folds and the dual DV).
 2. **Elhage-framework eigenvalue-copying analysis** — the endomorphism is the unique affordance; positive-real persona-aligned eigenvalues would directly evidence "context traits are copied into the answer."
 3. **Bilinear persona-projection G = UᵀWV gated by an MP/permuted-pairs null** — the most decision-relevant artifact (a pre-fine-tuning trait-transfer table), hallucination-prone at n≈d without the null.
+
+---
+---
+
+# Round 2 (2026-07-06/07): prior-art deep dive + novelty assessment
+
+Second sweep, prior-art-focused (3 parallel agents): (E) the exact object — context-summary →
+answer-summary maps + pre-fine-tuning predictors of fine-tuning effects; (F) token-axis
+h_t → h_{t+1} activation maps; (G) layer-axis h_ℓ → h_{ℓ+1} maps. Full reports verbatim in
+Appendices E–G. Verification caveat: the arXiv MCP was 429-throttled for parts of the run, so some
+ids (esp. 2026-dated ones) were verified via live arxiv.org/abs pages rather than MCP; the agents
+flag per-id status. Re-verify flagged ids before citing in a paper.
+
+## Novelty assessment (synthesis)
+
+### Per-axis verdicts
+
+**The exact object — pooled-context → pooled-answer, same layer, same model: none found.**
+No published work fits W: R^d→R^d from mean-pooled context activations to mean-pooled
+generated-answer activations at the same layer and analyzes W as an operator; and no work uses
+the structure of such a fitted map to predict fine-tuning effects. Closest neighbors, each missing
+a defining element:
+- *Activation Transport Operators* (2508.17540) — fitted regularized linear operators between two
+  activation sites of the SAME model, with structural analysis — but the sites are different
+  LAYERS at the same token (depth transport, SAE-feature diagnostic), not different spans.
+- *Belief-state geometry* (2405.15943; mechanism 2502.01954) — the conceptually deepest precedent:
+  the residual stream linearly encodes a context-summary (belief state) that determines the
+  future-output DISTRIBUTION — but toy HMM generators, a distribution target (not an
+  answer-activation vector), a decode claim (not a fitted operator), no spectrum/rank.
+- *LRE* (2308.09124) — fitted affine subject→object relation maps — but Jacobian-local,
+  relation-specific, token-grain.
+- *Persona vectors* (2507.21509 A3.3) + *persona features* (2506.19823) + EM-susceptibility line
+  (2606.20225 etc.) — predict fine-tuning-induced behavior shifts from base-model geometry — but
+  every one is direction→SCALAR; none is an operator-valued predictor.
+- Transferability estimation (LogME/LEEP/Task2Vec) — the classic "predict fine-tuning outcome from
+  pre-FT features" lineage — scalar/task-level, degrades after full fine-tuning.
+
+**Token axis — essentially no operator characterization exists.** EAGLE (2401.15077) TRAINS the
+next-feature map for speed and remarks only qualitatively that features are "more regular than
+tokens"; EAGLE-3 (2503.01840) reports feature-prediction is a scaling CONSTRAINT (the strongest
+published hint the map is nontrivial) — neither analyzes the map. The closest characterization is
+sentence-grain: a switching linear dynamical system over hidden-state trajectories (2506.04374 —
+rank-40 projection, 4 latent regimes). Real rank/spectrum reads of a per-token state operator
+exist ONLY where the architecture hands you the operator explicitly (linear-attention/SSM state
+matrices, 2602.02195) — wrong architecture for a softmax transformer's residual stream. Trajectory
+GEOMETRY (DMET 2505.20340, curvature/attractors 2502.15208 in text space) exists; the operator
+does not. **Open gap.**
+
+**Layer axis — crowded periphery, empty center.** Many same-position layer-map artifacts exist:
+the lens family (tuned lens 2303.08112; layer→final shortcuts 2303.09435), stitching translators,
+Secretly Linear (2405.12250 — fits the ℓ→ℓ+1 map but reduces it to ONE Procrustes scalar, 0.99,
+and its own ablation shows the near-linearity is residual-dominated i.e. trivially expected),
+layer-redundancy metrics (2403.17887 angular distance; ShortGPT cosine; Painters 2407.09298
+reordering), depth-stages (2406.19384), and local-Jacobian spectra (2505.24293 detached-Jacobian
+SVD; 2602.12384, 2605.14258). But NO work fits a population-regression ℓ→ℓ+k map and reports
+rank/spectrum/invariant subspaces with estimation-noise discipline, and NOTHING operates at a
+span-pooled grain. Two inherited cautions: (i) frame any layer-axis map against the identity
+baseline and characterize the deviation-from-identity operator (near-identity is trivial there);
+(ii) SVD misses rotational structure carried by complex-eigenvalue pairs (2603.13259) — read the
+eigen/Schur spectrum too.
+
+### Overall impression of novelty
+
+1. **The genre is not novel; the object is.** "Linear maps between activations of one LLM" is a
+   busy genre (lenses, stitching, secretly-linear, Koopman/DMD-on-activations, EAGLE). What is
+   consistently missing — across all three axes — is treating the FITTED map as the object of
+   study: operator-level characterization (rank, spectrum, invariant subspaces, normality) with
+   estimation-noise discipline. That center is empty even on the crowded layer axis.
+2. **The specific object appears genuinely new** on three independent sweeps: the span-pooled
+   grain (context summary → generated-answer summary) has no published instance on ANY axis; the
+   span pair (context vs own answer, same layer) has none; and the downstream use (an
+   operator-valued predictor of fine-tuning-induced leakage, generalizing the direction→scalar
+   persona-vectors/persona-features predictors) has none.
+3. **A useful structural point for positioning:** on the layer axis, near-identity structure is
+   trivially expected (the residual path). The context→answer map has NO identity path — the two
+   spans are disjoint token ranges — so identity-likeness, if found, is a substantive finding
+   there, not an artifact. The same fact cuts the other way: reviewers steeped in the layer-axis
+   literature will assume triviality and must be shown the difference.
+4. **The novelty is object + use, not mathematics.** The characterization toolkit (DMD/Koopman,
+   RRR, CME, RMT cleaning) is mature and imported; a Koopman-community reviewer will read this as
+   an application. The defensible claim shape: "we introduce and characterize the context→answer
+   transfer operator of an LLM at the span grain, and show its structure predicts
+   fine-tuning-induced leakage" — with ATOs, LRE, belief-state geometry, Secretly Linear, EAGLE-3,
+   and persona vectors/features as the six named nearest neighbors to position against.
+5. **Confidence: MODERATE-HIGH** that the exact object is unpublished (7 agents across 2 rounds,
+   arXiv + gray literature; but literature search is never exhaustive, several 2026 ids were
+   web-verified only during MCP throttling, and the fast-moving LW/AF gray literature could hold a
+   post the sweeps missed). Before a paper claims novelty: re-verify the flagged ids and run one
+   targeted check for very-recent (≤3 months) preprints citing ATOs 2508.17540, LRE 2308.09124,
+   and belief-state 2405.15943 — those three papers' citation graphs are where a competitor would
+   appear first.
+
+---
+
+# Appendix E — Prior art: context→answer maps (agent report, verbatim)
+
+# Prior-art search: context-summary → answer-representation maps
+
+**Verification note:** arXiv MCP `get_abstract` returned HTTP 429 on every call this session. Every arXiv id below was instead verified by fetching its `arxiv.org/abs/<id>` page and reading the live title/authors/abstract. None are fabricated; where I could not resolve a clean arXiv id I say so and give title+venue.
+
+## (1) Ranked closest prior work
+
+**1. Activation Transport Operators (ATOs)** — Szablewski & Masiak, arXiv **2508.17540** (Aug 2025). https://arxiv.org/abs/2508.17540
+- *What they fit:* explicit **regularized linear maps** from **upstream residual-stream activations to downstream residuals k layers later**, evaluated in SAE-feature space; used to test whether a feature is *linearly transported* vs *nonlinearly re-synthesized* across depth.
+- *Delta:* Single closest published object on the "fit an explicit linear operator between two activation sites of the *same* model and characterize where it is/isn't linear" axis. **Matches:** same-model, explicit fitted linear map between two activation sites, structural (feature-space) analysis. **Differs:** the two sites are **different layers, same token** (depth transport), NOT **different spans (context vs generated answer) at the same layer**; per-token, not span-pooled; feature-transport diagnostic, not an operator whose rank/spectrum is characterized and then used to predict fine-tuning leakage.
+
+**2. Transformers Represent Belief State Geometry in their Residual Stream** — Shai, Marzen, Teixeira, Gietelink Oldenziel, Riechers, arXiv **2405.15943** (NeurIPS 2024). https://arxiv.org/abs/2405.15943
+- *What they characterize:* the residual stream (a running summary of the *context*) **linearly encodes a belief state** — a distribution over the data-generating process's hidden state — and that belief state is exactly the sufficient statistic that **determines the future-output distribution**. Linear decodability of the (often fractal) mixed-state-presentation geometry.
+- *Delta:* Strongest conceptual precedent for "a context representation linearly determines what comes next." **Matches:** context-summary representation in the residual stream, linearly related to the future output. **Differs:** decodes context→**belief-state / next-token distribution** (a probability object), not context-vector→**answer-activation-vector**; a *decoding* claim (probe exists), not a *fitted operator W* between two pooled activation summaries; tiny synthetic HMM generators, not a 7B chat model over (persona, question, answer) triples; no operator rank/spectrum analysis; no fine-tuning-prediction use.
+
+**3. Constrained Belief Updates Explain Geometric Structures in Transformer Representations** — Piotrowski, Riechers, Filan, Shai, arXiv **2502.01954** (Feb 2025). https://arxiv.org/abs/2502.01954
+- *What they characterize:* the *mechanism* by which context maps to the internal belief representation — attention implements a constrained/parallelized Bayesian belief update in the probability simplex, producing distinctive geometric structure.
+- *Delta:* Same lineage as #2; characterizes the context→belief-representation map's geometry, but still HMM-scale, belief-distribution target, no fitted vector→vector operator, no fine-tuning-prediction use.
+
+**4. Persona Vectors: Monitoring and Controlling Character Traits** — Chen, Arditi, Sleight, Evans, Lindsey, arXiv **2507.21509** (2025, *known/sibling — position only*). https://arxiv.org/abs/2507.21509
+- *What they fit:* the **projection-difference predictor** (appendix): project training-data responses onto a base-model persona direction; that scalar projection **predicts the post-fine-tuning trait shift** (and the A3.3-style `E ≈ r_Bᵀv` read-out predictor).
+- *Delta:* Closest on the "use pre-fine-tuning geometry to predict fine-tuning behavior" axis. **Matches:** base-model activation geometry → prediction of fine-tuning-induced behavior. **Differs:** predictor is **activation-direction → scalar** (trait dose), not an **operator** over answer representations; reads the *training data's* projection onto one direction, not a fitted **context→answer map** characterized as an operator.
+
+**5. Persona Features Control Emergent Misalignment** — Wang, Dupré la Tour, Watkins, Makelov, Chi, …, **Mossing**, arXiv **2506.19823** (2025, *known/sibling — position only*). https://arxiv.org/abs/2506.19823
+- *What they do:* SAE "misaligned persona features" whose activation **predicts whether a model will exhibit misalignment** after narrow fine-tuning; toxic-persona feature particularly predictive; steering these features controls EM.
+- *Delta:* activation-feature → **scalar behavioral prediction** of a fine-tuning outcome. No context→answer map, no operator characterization; predicts a behavior label, not an answer representation.
+
+**6. In-context Vectors (ICV)** — Liu, Ye, Xing, Zou, arXiv **2311.06668** (2023). https://arxiv.org/abs/2311.06668
+- *What they do:* a forward pass on demonstrations yields a single **in-context vector from the latent embedding**; adding it shifts latent states on a new query, steering the output (with vector arithmetic over ICVs).
+- *Delta:* **context→one vector** that causally shapes the output — a *summary of context used generatively*. **Differs:** additive steering shift, not a **fitted map to the answer representation**; no operator rank/spectrum; not used to predict fine-tuning.
+
+**7. Task Vectors in In-Context Learning: Emergence, Formation, and Benefit** — Yang, Lin, Lee, Papailiopoulos, Nowak, arXiv **2501.09240** (Jan 2025). https://arxiv.org/abs/2501.09240
+- *What they do:* study how a single **task vector** (context compressed to a vector) emerges and can be strengthened via a task-vector prompting loss.
+- *Delta:* characterizes the *context→vector* compression and its localization; the vector steers the answer but they do not fit/characterize a **context-rep → answer-rep operator**.
+- *(Same bucket, KNOWN — position only:* function vectors 2310.15213; task vectors/arithmetic 2310.15916.)*
+
+**8. Learning to Compress Prompts with Gist Tokens** — Mu, Li, Goodman, arXiv **2304.08467** (NeurIPS 2023). https://arxiv.org/abs/2304.08467
+- *What they do:* train the LM (via attention-mask tricks) to **compress a prompt into a few "gist" token vectors** cached and reused at generation (up to 26×).
+- *Delta:* strongest "context → vector summary that then drives generation" example, but a **trained soft-prompt distillation**, not a **fitted post-hoc linear map** between two activation summaries; no operator analysis; no fine-tuning prediction.
+
+**9. Code Correctness Signals in LLM Hidden States: Pre-Generation Probing and Repair Geometry** — Di Cicco, arXiv **2606.14530** (Jun 2026). https://arxiv.org/abs/2606.14530
+- *What they do:* linearly decode **first-attempt code correctness from the prompt-final hidden state** *before generation* (held-out AUC 0.931), with **residualization** to remove prompt-length confounds; honestly reports a negative result on a repair-direction.
+- *Delta:* prompt-activation → **scalar** correctness. Methodologically the *closest kin to the project's own habits* (residualization confound control, honest negative), but target is a label, not an answer representation; single prompt-final token, not a pooled span; no operator.
+
+**10. No Answer Needed: Predicting LLM Answer Accuracy from Question-Only Linear Probes** — Moreno Cencerrado, Padrés Masdemont, Gonzalvez Hawthorne, Africa, Pacchiardi, arXiv **2509.10625** (Sep 2025). https://arxiv.org/abs/2509.10625
+- *What they do:* extract activations **after the question, before generation**; a linear probe onto an "in-advance correctness direction" forecasts answer correctness, generalizing 7–70B and across datasets.
+- *Delta:* prompt-side activation → **scalar** accuracy. Same near-miss shape as #9; no answer-representation target, no operator.
+
+**11. Refusal Before Decoding: Detecting and Exploiting Refusal Signals in Intermediate LLM Activations** — Collu, Conte, Giaretta, Kleyko, Conti, Zavatteri, Confalonieri, arXiv **2605.28553** (May 2026). https://arxiv.org/abs/2605.28553
+- *What they do:* linear probes on residual-stream activations at each block **predict refusal before decoding**.
+- *Delta:* activation → **scalar** refusal label. Near-miss (d); no context→answer map.
+
+**12. Looking Inward: Language Models Can Learn About Themselves by Introspection** — Binder, Chua, Korbak, et al., arXiv **2410.13787** (2024). https://arxiv.org/abs/2410.13787
+- *What they do:* fine-tune a model to **predict properties of its own future behavior**; a model predicts itself better than another model can (privileged access), hypothesized "self-simulation."
+- *Delta:* **behavioral** self-prediction (output-property), not a representation→representation map; no operator; near-miss on "predict what the answer will be" at the behavior level.
+
+**13. Future Lens: Anticipating Subsequent Tokens from a Single Hidden State** — Pal, Sun, Yuan, Wallace, Bau, arXiv **2311.04897** (2023, *known — position only*). https://arxiv.org/abs/2311.04897
+- *What they do:* a **single hidden state** approximates the model's prediction of tokens at positions ≥ t+2 (>48%).
+- *Delta:* single-state → **future tokens** (not answer *representations*, not span-pooled), decoding not a fitted operator. Known anchor for bucket (a).
+
+**14. Actionable Activation Directions for Detecting and Mitigating Emergent Misalignment Across Model Families** — Syed, arXiv **2606.20225** (Jun 2026). https://arxiv.org/abs/2606.20225
+- *What they do:* difference-in-means direction separates aligned/misaligned activations (99.6%) at the final layer **after** identical fine-tuning; cross-family transfer (Qwen/Gemma donors, Llama receiver); base-prior-adjusted membership-inference metrics predict susceptibility (AUC 0.849).
+- *Delta:* activation direction → **scalar** EM detection/susceptibility; post-hoc detection, not a pre-FT context→answer operator. Relevant EM-prediction neighbor to bucket (e).
+
+**15. (bucket-e neighbors, catalogued, not central):** *Emergent and Subliminal Misalignment Through the Lens of Data-Mediated Transfer* (arXiv **2605.12798**); *Model Organisms for Emergent Misalignment* (arXiv **2506.11613**, Turner et al. lineage); *Assessing Domain-Level Susceptibility to Emergent Misalignment from Narrow Finetuning* (arXiv **2602.00298**). All predict/organize **misalignment susceptibility or transfer** from data/activation priors — scalar/behavioral targets, no context→answer operator. *(IDs surfaced via web search; abstracts not individually WebFetch-verified this session — verify before citing in a paper.)*
+
+## (2) Near-miss taxonomy by bucket
+
+**(a) Predicting response *representations* from prompt representations.** The pure form — fit y = W·x where both x and y are *pooled activation summaries* of the same model (context span vs generated-answer span) — **does not exist in the literature I could find.** Neighbors predict the *future output distribution/tokens* from a state (Future Lens 2311.04897; belief-state 2405.15943), or forecast the *next latent* as a training objective ("Next-Latent Prediction Transformers Learn Compact World Models," OpenReview forum Lh4ayjJIAW — verified as an OpenReview entry, no clean arXiv id resolved; provably converges to belief states). None fit a post-hoc pooled-span→pooled-span operator. Generic QA "predict the answer embedding from the question embedding" exists only in pre-LLM sentence-embedding/skip-thought regression work (weak, cross-encoder, not residual-stream, not operator-characterized).
+
+**(b) Context-compression-to-vector, used predictively.** Rich and mature: ICV (2311.06668), function vectors (2310.15213, known), task-vector arithmetic (2310.15916, known), task-vector emergence (2501.09240), gist tokens (2304.08467), and the broader implicit-ICL / soft-prompt-distillation line. All compress **context → one vector** that *causally steers* the answer. **What's missing:** none *fit a map from the context vector to the answer vector* and *characterize that map as an operator* (rank, spectrum, subspace). They treat the context vector as an additive intervention, not the domain of a learned operator whose range is the answer representation.
+
+**(c) Computational mechanics / belief-state geometry.** Closest conceptual match to "context vector determines answer vector": the residual stream linearly encodes a belief state that is the sufficient statistic for the future output (2405.15943; mechanism in 2502.01954). **Gap:** the target is a *distribution over futures* (belief state), not the *activation representation of the realized answer*; the map studied is context→belief-geometry (a decode), not a fitted context-summary→answer-summary operator; results are on small synthetic generators, never a 7B chat model over (persona, question, answer) triples at a chosen layer.
+
+**(d) Predicting *behavior* (scalar) from prompt-side activations before generation.** Densest near-miss bucket: correctness (2606.14530, 2509.10625), refusal (2605.28553), hallucination pre-generation probing (multiple), plus behavioral self-prediction (2410.13787). All are **activation → scalar/label**, typically the prompt-final token, sometimes with residualization (2606.14530 is methodologically closest to the project). **Gap:** none produce an answer *representation*; the codomain is a 1-D behavior axis, not R^d, and there is no operator.
+
+**(e) Predicting *fine-tuning outcomes* from pre-fine-tuning representations.** Two sub-lines. (i) Transferability estimation (LogME, LEEP, Task2Vec, encoder-selection e.g. arXiv 2210.11255) — predicts *transfer performance* from frozen features, explicitly *degrades after full fine-tuning*, scalar/task-level, never a context→answer operator. (ii) Persona/EM predictors: persona-vectors projection-difference (2507.21509) and OpenAI-lineage persona features (2506.19823) predict *post-FT trait/misalignment* from base-model directions; EM-direction/susceptibility work (2606.20225, 2605.12798, 2602.00298, 2506.11613). **Gap:** every one maps activation-direction/data-projection → **scalar** behavior shift. None construct an **operator W over representations** and use *its* structure (rank/spectrum/subspace) to predict fine-tuning-induced leakage — exactly the project's proposed mechanism.
+
+**(f) Fitting a linear map between two *span-pooled* activation summaries of the same model and analyzing its rank/spectrum.** Most specific bucket, and the emptiest. The only same-model fitted linear operator with structural analysis is ATOs (2508.17540) — but cross-layer, per-token, feature-transport. Model-stitching / relative-representations work (Lenc–Vedaldi; Moschella et al.) fits linear maps between representation spaces but across **different models/networks**, not context-span→answer-span within one model. Direct searches for "linear map between mean-pooled hidden states of two token spans, rank/spectrum" returned **no on-target hit**.
+
+## (3) Closeness verdict
+
+**Single closest published object:** **Activation Transport Operators** (Szablewski & Masiak, arXiv 2508.17540). It is the only work that fits an *explicit, regularized linear operator between two activation sites of the same model* and characterizes *where that map is linear vs not*. **Gap statement:** its two sites are different *layers* at the *same token* (a depth-transport diagnostic in SAE-feature space), whereas our object is a map between two *different spans at the same layer* — the pooled **context** (prefix / prefix+query) and the pooled **generated answer** — fit over 50–2500 (context, answer) pairs and characterized as an operator (rank, spectrum, subspace) that is then used to **predict fine-tuning-induced behavior leakage**. On the *conceptual* axis the closest is the belief-state line (2405.15943 / 2502.01954): a context summary in the residual stream linearly determining the future output — but that determines a *distribution over futures* on toy HMMs, not a fitted pooled-context→pooled-answer activation operator on a 7B chat model.
+
+**Honest bottom line — has anyone (i) fit + characterized a pooled-context → pooled-answer same-layer linear map, or (ii) used such a map to predict fine-tuning effects?**
+- **(i) None found.** No published work fits W: R^d→R^d from mean-pooled *context* activations to mean-pooled *generated-answer* activations at the same layer and analyzes W as an operator (rank/spectrum/subspace). The nearest same-model fitted-linear-operator work (ATOs) is cross-layer per-token feature transport; the nearest conceptual work (belief-state geometry) targets a distribution, not an answer-activation vector, and is not a fitted operator.
+- **(ii) None found for the *operator* form.** Predicting fine-tuning effects from base-model geometry exists, but only as **direction→scalar** predictors (persona-vectors projection-difference 2507.21509; OpenAI-lineage persona features 2506.19823; EM susceptibility 2606.20225 and neighbors). **No one uses the structure of a fitted context→answer *map* to predict fine-tuning-induced leakage.** That combination — the object *and* its predictive use — appears genuinely novel; position primarily against ATOs (2508.17540, "operator, but cross-layer not context→answer"), the belief-state line (2405.15943 / 2502.01954, "context linearly determines the future, but a distribution on toy data, not a fitted answer-activation operator"), and the persona/EM predictor line (2507.21509 / 2506.19823, "predict FT effects from base geometry, but direction→scalar, not a map").
+
+---
+
+# Appendix F — Prior art: token-axis activation→activation maps (agent report, verbatim)
+
+# Prior art: token-axis activation→activation maps in LLMs
+
+**Framing of the target object:** a *characterization* (rank / spectrum / operator structure / linearity score — not merely a trained-for-speed predictor) of the map from an activation at sequence position/time *t* to the activation at *t+1* (or *t+k*), **same layer, along the sequence/generation axis**, in a standard softmax-attention transformer's residual stream. All arXiv IDs below are verified against their abstract pages unless flagged "id unverified."
+
+## (1) Ranked closest prior work
+
+**1. A Statistical Physics of Language Model Reasoning — 2506.04374** (Carson & Reisizadeh, Jun 4 2025). Fits a **Switching Linear Dynamical System (SLDS)** to *sentence-level hidden-state trajectories* along the generation axis: a rank-40 projection captures ~50% variance, four latent reasoning regimes, drift-diffusion + regime switching, validated across 8 models / 7 benchmarks, and used to simulate trajectories cheaply. **DELTA:** the single closest thing to "fit a linear operator to token-axis activation dynamics and characterize it." But it operates at *sentence* granularity (not token t→t+1), on a low-rank *projection*, and reports a phenomenological drift-diffusion+SLDS with regimes/rank-of-projection — not the rank/spectrum of an explicit residual-stream h_t→h_{t+1} operator.
+
+**2. Local Linearity of LLMs Enables Activation Steering via Model-Based Linear Optimal Control — 2604.19018** (Skifstad, Yang, Chou, Apr 21 2026). Shows layer-wise dynamics are "well-approximated by locally-linear models," models inference as a **linear time-varying (LTV) system** built from layer-wise Jacobians, and does LQR control. Most explicit *operator* treatment (Jacobians of an LTV system) in the set. **DELTA:** the operator is along the **depth/layer axis within one forward pass**, not the token/sequence axis. Wrong axis for the target, but the closest methodological template (fit local-linear Jacobian operators to activation dynamics + treat them as a control operator).
+
+**3. Latent Trajectory Dynamics in LLMs: A Manifold Evolution Framework (DMET) — 2505.20340** (Zhang, Dong, Li, May 24 2025). Models generation as a controlled dynamical system on a low-dimensional semantic manifold, formalizes a first-order ODE with a semantic potential, and characterizes **token-axis trajectory geometry** via three metrics (state continuity, attractor clustering quality, topological persistence); online monitoring drives an adaptive decoder. **DELTA:** characterizes trajectory *geometry* (smoothness / basins / topology) along the generation axis via proxy metrics, not the rank/spectrum/linearity of the transition operator itself.
+
+**4. State Rank Dynamics in Linear Attention LLMs — 2602.02195** (Sun et al., Feb 2 2026). Directly characterizes the **rank and spectrum** of the compressed per-token *state matrix* in linear-attention models — "State Rank Stratification," a spectral bifurcation across heads (near-zero-rank vs saturating), argued to be an intrinsic learned property; low-rank heads matter for reasoning. **DELTA:** a rank/spectrum characterization of a per-token state-update operator — but for **linear-attention / SSM-style state**, not the residual-stream h_t→h_{t+1} of a softmax transformer (Qwen-2.5-7B). Right question (rank/spectrum of a per-step operator), wrong architecture and wrong state object.
+
+**5. EAGLE: Speculative Sampling Requires Rethinking Feature Uncertainty — 2401.15077** (Li et al.). *Trains* a lightweight head to predict the next **second-to-top-layer feature** (hidden state) from the current feature + a one-step-advanced token embedding. Key structural claims: feature-level autoregression is "more straightforward than at the token level" (feature sequences more regular than discrete tokens), but "inherent uncertainty" constrains it (resolved by injecting the sampled token). **DELTA:** learns the h_t→h_{t+1} map *for speed* and asserts its relative regularity — but never characterizes it as an operator (no rank, spectrum, or linearity score; the map is a trained MLP/decoder-layer treated as a black box).
+
+**6. EAGLE-3: Scaling up Inference Acceleration via Training-Time Test — 2503.01840** (Li et al.). Reports that EAGLE's **feature-prediction is a constraint** that caps data-scaling gains, and *abandons feature prediction* for direct token prediction with multi-layer feature fusion. **DELTA:** the strongest published signal that the naive h_t→h_{t+1} feature map is *limited/hard to scale* — a negative result about the map's learnability — but again not a characterization of its structure; a design pivot, not an operator analysis.
+
+**7. Your LLM Knows the Future: Uncovering Its Multi-Token Prediction Potential — 2507.11851** (Samragh et al., Jul 16 2025). Multi-token prediction from a single hidden state via masked-input joint prediction + gated LoRA + a learned sampler; ~5× (code/math), ~2.5× (chat) speedups. **DELTA:** predicts future *tokens* (multi-token-ahead) from current activations; it's about decodable future content, not a fitted activation→activation transition operator.
+
+**8. ParaScopes: What Do LM Activations Encode About Future Text? — 2511.00180** (Pochinkov et al., Oct 31 2025). Residual Stream Decoders probe how much *future text* is linearly recoverable from current activations; finds ≥5 tokens of future context decodable in small models. **DELTA:** measures forward-looking *information content* (a decoding/probe question), not the map h_t→h_{t+k} as an operator with rank/spectrum. The paragraph-scale successor to Future Lens.
+
+**9. Efficient Joint Prediction of Multiple Future Tokens (JTP) — 2503.21801** (Ahn, Lamb, Langford, Mar 24 2025). Enriches hidden states via joint multi-token prediction through a representation bottleneck; achieves a short-horizon **belief-state representation**. **DELTA:** a training objective that shapes the hidden state to carry future info; connects to belief-state geometry (#12) but does not fit or characterize an activation→activation map.
+
+**10. Beyond Multi-Token Prediction: Pretraining LLMs with Future Summaries (FSP) — 2510.14751** (Mahajan et al., Oct 2025 / Mar 2026). Auxiliary head predicts a **compact representation of the long-term future** (bag-of-words or a reverse-LM embedding); improves long-horizon reasoning at 3B/8B. **DELTA:** predicts a *future summary embedding* from the present — conceptually adjacent to a "summary→future-summary" map, but it's a pretraining objective and the summary is of future *text*, not of the answer-side activation; no operator characterization.
+
+**11. Transformers for Dynamical Systems Learn Transfer Operators In-Context — 2602.18679** (Bao, Lai, Gilpin, Feb/Apr 2026). Trains small transformers to forecast dynamical systems and shows they implement a **transfer-operator (Koopman-flavored) strategy in-context** — delay-embed to recover the manifold, then forecast invariant sets/attractors. **DELTA:** the transfer operator is over *external time-series data*, and attention is the mechanism learning it — a data-level transition operator, not the model's own activation→activation map. Strong conceptual analogue for "attention learns a transition operator."
+
+**12. Transformers Represent Belief State Geometry in Their Residual Stream — 2405.15943** (Shai et al., NeurIPS 2024). Belief-updating over the data-generating HMM's states (the mixed-state presentation / MSP meta-dynamics) is **linearly represented** in the residual stream, including fractal geometry; belief states carry whole-future information. **DELTA:** characterizes the geometry of the *belief-state manifold* (the DGP's transition/update dynamics as reflected in activations), not a fitted h_t→h_{t+1} activation operator. The deepest theoretical link between token-axis transition structure and residual-stream geometry.
+
+**13. Attention with Markov — 2402.04161** (Makkuva et al.). Transformers trained on Markov chains form induction heads that estimate the in-context bigram/transition kernel; single-layer loss-landscape theory (bigram global min vs unigram local min). **DELTA:** the transition operator learned is the **data-level Markov kernel**, characterized via loss landscape — position against activation-level maps.
+
+**14. Unveiling Attractor Cycles in LLMs: A Dynamical Systems View of Successive Paraphrasing — 2502.15208** (Wang et al., Feb 2025). Iterated text→text mapping converges to **2-period attractor cycles**; a genuine dynamical-systems characterization (fixed points / limit cycles) of the generation loop. **DELTA:** dynamics are in **text space** (paraphrase iteration), not activation space; no operator/spectrum on activations.
+
+**15. Relational Rank Geometry in Transformers — 2605.29634** (Kobrosly, May 28 2026). Rank-indexed geometry of relations among token tuples in hidden states (Plücker sign entropy), plus rank-frame steering. **DELTA:** a rank/geometry object over token-tuple *relations* at a position, not a token-axis transition map; relevant only as evidence that rank-structured hidden-state geometry is a studied object.
+
+**Supporting/known:** Future Lens — 2311.04897 (multi-token-ahead decodability from a single hidden state; origin of this line, as flagged in the brief); DMD on LLM embeddings — 2309.01245 (Akrout — DMD spectrum of *sentence embeddings across paragraphs* for hallucination detection; token/sentence-axis DMD but on embeddings, for detection, not operator characterization — the "known" DMD paper); Local Intrinsic Dimensions of Contextual LMs — 2506.01034 (mean local dimension of latent space tracks training/overfitting/grokking — geometry of activations, not a transition map).
+
+## (2) Near-miss taxonomy by bucket
+
+- **(a) Feature-level autoregression for speculative decoding.** EAGLE **2401.15077**, EAGLE-3 **2503.01840** (verified); EAGLE-2 (id 2406.16858, unverified here). Hydra, GLIDE, Medusa (Medusa is logits/token-level as flagged in the brief; Hydra adds sequential draft heads; GLIDE reuses target KV — ids unverified, cited by name). **Common gap:** all *train* the next-feature/next-token map for speed; the map's rank/spectrum/linearity is never the object of study. EAGLE's "features more regular than tokens" and EAGLE-3's "feature prediction is a constraint" are the only structural remarks — qualitative, not quantitative.
+
+- **(b) Predicting future hidden states / tokens from current state.** Future Lens **2311.04897**, Your-LLM-Knows-the-Future **2507.11851**, ParaScopes **2511.00180**, JTP **2503.21801**, FSP **2510.14751**, What's-the-Plan **2601.20164** (Maar/McDougall/Nanda — implicit-planning metrics + end-of-line steering vectors for rhyme/QA, planning universal from 1B), plus Anthropic's *On the Biology of a Large Language Model* (transformer-circuits.pub, 2025 — poetry rhyme planning / forward-planning gray literature). **Common gap:** these ask "what future info is present/decodable" or "how to shape it," not "what is the operator mapping this activation to the next."
+
+- **(c) Dynamical-systems characterization of token-axis trajectories.** SLDS **2506.04374**, DMET **2505.20340**, attractor cycles **2502.15208**, DMD-on-embeddings **2309.01245**, local intrinsic dimension **2506.01034**, Curved Inference **2507.21107** (Manson — residual-stream trajectory *curvature/salience* under a pullback metric; **depth-axis geometry within a prompt**, not sequence-axis). This bucket is where the target lives; SLDS + DMET are the two nearest, both at sentence/manifold granularity with proxy metrics rather than an explicit h_t→h_{t+1} operator.
+
+- **(d) Attention/OV as per-step transition operator.** Attention-with-Markov **2402.04161**, Transformers-learn-transfer-operators-in-context **2602.18679**, plus the induction-heads-on-Markov-chains line (Evolution of Statistical Induction Heads / Variable-Order Markov in-context — ids 2402.11004 / 2410.05493, unverified here). Belief-state geometry **2405.15943** sits between (d) and (f). **Common gap:** the transition operator these study is over *data* (Markov kernels, external time series), learned/represented by attention — not the model's own activation-space transition.
+
+- **(e) Recurrent/SSM reformulations exposing a per-token state-update map + spectral analysis.** State Rank Dynamics **2602.02195** (verified — rank/spectrum of linear-attention state matrices). The "Transformers are RNNs" / linear-attention-as-RNN line (Katharopoulos et al. 2020, id 2006.16236 unverified here) and Mamba/SSD spectral analyses of the state-transition matrix A (Mamba 2312.00752; SSD/Mamba-2 — ids unverified). **Common gap:** spectral characterization here is of an *architecturally explicit* linear state operator (linear attention / SSM), not the effective h_t→h_{t+1} of a softmax-attention residual stream. This is the bucket that has genuinely *characterized* per-token operators — but only where the architecture hands you one for free.
+
+- **(f) Directly computing rank/spectrum/linearity of an h_t→h_{t+1} map in a trained transformer.** No verified paper does this for the residual stream of a standard softmax transformer. Nearest partial hits: State Rank Dynamics **2602.02195** (rank/spectrum, but linear-attention state), Local Linearity/LTV **2604.19018** (Jacobian operator, but depth axis), Relational Rank Geometry **2605.29634** (rank geometry, but token-tuple relations at a position). **Gap confirmed.**
+
+## (3) Closeness verdict
+
+**Single closest work:** *A Statistical Physics of Language Model Reasoning* (**2506.04374**), which fits a switching linear dynamical system to hidden-state trajectories along the generation axis and characterizes them via a rank-40 projection and four latent regimes. **Gap:** it works at sentence granularity on a low-rank projection and delivers a phenomenological drift-diffusion + SLDS with discovered regimes — not the rank, spectrum, or linearity score of an explicit position-*t*→position-*t+1* activation-transition operator, and not on a same-layer residual stream at token resolution. The context-summary→answer-summary map is a *summary→summary* operator, which is even more specific than the adjacent-token map and is untouched by any of these.
+
+**Honest answer to "has anyone CHARACTERIZED (rank/spectrum/operator structure, not just trained-for-speed) the token-axis activation→activation map in LLMs?"** — **Essentially none found for the exact object.** The pieces exist but nobody assembles them: (i) EAGLE *learns* the map for speed and only qualitatively remarks that features are "more regular than tokens" (2401.15077) and that feature-prediction is a scaling "constraint" (2503.01840) — no rank/spectrum. (ii) SLDS/DMET (2506.04374, 2505.20340) fit dynamical operators to *sentence/manifold-level* generation trajectories and characterize regimes/geometry, but not a token-level residual-stream transition operator's spectrum. (iii) The one place a per-token operator's **rank/spectrum is actually computed** is linear-attention/SSM state matrices (2602.02195), which is the wrong architecture (not softmax-transformer residual stream). (iv) The one place an activation-transition **operator (Jacobian/LTV) is fit and characterized** is the **depth axis** within a forward pass (2604.19018), not the sequence axis. So: characterizing the rank/spectrum/linearity of the *same-layer, token-axis* h_t→h_{t+1}/h_{t+k} residual-stream map in a standard transformer (Qwen-2.5-7B) — as an operator, treated as the object of study — appears to be an **open gap**, and the summary→summary variant more so.
+
+**Verification note:** 16 IDs verified directly against arxiv.org abstract pages (2506.04374, 2604.19018, 2505.20340, 2602.02195, 2401.15077, 2503.01840, 2507.11851, 2511.00180, 2503.21801, 2510.14751, 2602.18679, 2405.15943, 2402.04161, 2502.15208, 2605.29634, 2601.20164, 2506.01034; plus 2309.01245 confirmed via search). IDs explicitly flagged "unverified" (EAGLE-2 2406.16858, induction-head-Markov 2402.11004/2410.05493, Transformers-are-RNNs 2006.16236, Mamba 2312.00752, Hydra/GLIDE/Medusa) were not abstract-fetched — treat those ids as provisional.
+
+---
+
+# Appendix G — Prior art: layer-axis activation→activation maps (agent report, verbatim)
+
+# Prior art: characterizing layer→layer (depth-axis) activation maps
+
+**Target object for delta comparison:** a *fitted* (population-regression) linear map from the activation at layer ℓ to the activation at layer ℓ+k, *same token position*, characterized **as an operator** (rank, singular/eigen-spectrum, invariant subspaces), at a **span-pooled / summary grain**, with **estimation-noise discipline** on the fitted spectrum.
+
+**Verification key:** ✅MCP = abstract confirmed via arXiv MCP this session; 🌐WEB = arXiv abs page + title confirmed via web (MCP was 429-throttled for much of the run). No IDs were fabricated; every 🌐WEB item resolved to a live `arxiv.org/abs/` page. The 2602–2606 IDs are 2026 papers (this environment is dated July 2026) — resolvable but not MCP-confirmed, so marked 🌐WEB.
+
+## (1) Ranked closest-prior-work list
+
+**1. "Your Transformer is Secretly Linear" — Razzhigaev, Mikhalchuk, Goncharova, Gerasimenko, Oseledets, Dimitrov, Kuznetsov. arXiv 2405.12250 (ACL 2024). ✅MCP**
+Fits a map between *sequential layer embeddings, same position* — exactly the depth axis — and characterizes it with a **Procrustes similarity score of 0.99**. Closest work on the "fit a same-position layer→layer map and measure it" axis.
+**DELTA:** Procrustes is an *orthogonal* (rotation-only) fit → recovers neither rank, nor a full singular/eigen-spectrum, nor invariant subspaces of a *general* linear operator; collapses to one scalar similarity. Grain is per-token embedding, not span-pooled. They themselves report the near-linearity is **residual-dominated** ("linearity decreases when the residual component is removed due to a consistently low output norm") — i.e. the trivially-expected identity-plus-small-update structure. No estimation-noise treatment of a fitted regression map.
+
+**2. "Equivalent Linear Mappings of Large Language Models" — James R. Golden (sole author). arXiv 2505.24293. ✅MCP** (HF mirror titled "Large Language Models are Locally Linear Mappings")
+Closest work on the **operator-level spectrum/rank/subspace** axis. Detaches the input-dependent `A(x)` terms so the Jacobian becomes an *exactly equivalent* linear operator (reconstruction rel-error <10⁻¹³); does **SVD of this detached Jacobian**, shows LLMs "operate in extremely low-dimensional subspaces where the singular vectors decode to interpretable concepts," **per layer and per module (attn/MLP)**, on Qwen 3 / Gemma 3 / Llama 3 (up to Qwen 3 14B) — same family as the project's Qwen-2.5-7B.
+**DELTA:** this is the *local, per-input, exact* linearization (detached Jacobian), **not a fitted population-regression map** → no estimation-noise regime, no across-examples generalization. Layer→output-embedding / per-module, per-token — not an arbitrary ℓ→ℓ+k summary-grain map. But it is the field's clearest precedent for reading rank/spectrum/singular-vectors off a linear operator inside a trained LLM.
+
+**3. "Eliciting Latent Predictions from Transformers with the Tuned Lens" — Belrose, Furman, et al. arXiv 2303.08112. 🌐WEB** (known)
+Fits a **per-layer affine map** (translator `A_ℓ h_ℓ + b_ℓ`), same position — a fitted, learned, per-layer linear+bias operator.
+**DELTA:** codomain is the *logits* (composed with the unembedding to a token distribution), not the next layer's activation; the affine map is a *means to decode*, never characterized as an operator (no rank/spectrum/invariant-subspace read). Per-token.
+
+**4. "Jump to Conclusions: Short-Cutting Transformers With Linear Transformations" — Yom Din, Karidi, Choshen, Geva. arXiv 2303.09435. 🌐WEB**
+Fits **linear transformations casting a hidden representation directly to the final-layer representation** (a learned layer→final linear map), across model scales.
+**DELTA:** layer→*final* (a shortcut to the head), not general ℓ→ℓ+k; purpose is prediction accuracy / peeking, not operator characterization; per-token.
+
+**5. "Future Lens: Anticipating Subsequent Tokens from a Single Hidden State" — Pal, Sun, Yuan, Wallace, Bau. arXiv 2311.04897 (CoNLL 2023). 🌐WEB**
+Trains a **linear model predicting future hidden states** (and tokens) from one hidden state — a fitted hidden→hidden linear map.
+**DELTA:** the axis is *token position* (predict state at position ≥ t+2), not depth at fixed position; evaluated by decode accuracy, not spectrum/rank; per-token.
+
+**6. "Linearity of Relation Decoding in Transformer Language Models" — Hernandez et al. arXiv 2308.09124 (ICLR 2024). 🌐WEB**
+Fits an **affine operator `R(s)=W s + b`** (a first-order Jacobian approximation from a single prompt) mapping a subject representation to the relation's object prediction — a fitted linear map spanning layers.
+**DELTA:** relation-specific and prompt-local (one `W` per relation), not a generic ℓ→ℓ+k map; characterized by faithfulness + a low-rank inverse ("attribute lens"), which touches rank but not spectrum/invariant-subspaces as the object; per-token subject rep.
+
+**7. "Transformer Layers as Painters" — Sun, Pickett, Nain, Jones. arXiv 2407.09298 (AAAI 2025). ✅MCP**
+Middle layers are near-interchangeable: skippable, reorderable, runnable in parallel with graceful degradation — strong evidence the layer map is close to identity / permutation-invariant in the middle band.
+**DELTA:** measures *behavioral robustness to reordering*; never fits a map or reads a spectrum. Positions the near-identity assumption, doesn't characterize the operator.
+
+**8. "The Unreasonable Ineffectiveness of the Deeper Layers" — Gromov, Tirumala, Shapourian, Glorioso, Roberts. arXiv 2403.17887 (ICLR 2025). ✅MCP**
+Picks prunable blocks by **angular distance between layer ℓ and ℓ+n representations** (near-identity ⇒ removable), heals with QLoRA; up to ~half the layers removable.
+**DELTA:** a scalar similarity (angle) used for pruning under a near-identity assumption; no fitted map, no spectrum/rank.
+
+**9. "ShortGPT: Layers in LLMs are More Redundant Than You Expect" — Men et al. (arXiv 2403.03853). 🌐WEB**
+**Block Influence = 1 − cos(input, output)** per layer; low-BI layers pruned.
+**DELTA:** scalar redundancy metric, near-identity framing; no operator characterization.
+
+**10. "The Remarkable Robustness of LLMs: Stages of Inference?" — Lad, Lee, Gurnee, Tegmark. arXiv 2406.19384. ✅MCP**
+Layer delete/swap interventions → the four depth-stages taxonomy (detokenization / feature engineering / prediction ensembling / residual sharpening).
+**DELTA:** intervention-based depth-*dynamics* characterization, not a fitted map or its spectrum. Best cite for the "what the depth axis is doing" framing.
+
+**11. "Sparse Crosscoders for Cross-Layer Features and Model Diffing" — Lindsey, Templeton, et al. Transformer Circuits, Oct 2024 (transformer-circuits.pub/2024/crosscoders). 🌐WEB (gray lit)**
+A dictionary that *reads and writes multiple layers at once*, tracking feature persistence/evolution through the residual stream across depth.
+**DELTA:** a *sparse-feature* cross-layer lens (resolves cross-layer superposition, "jumps" identity connections), not a dense linear operator's rank/spectrum; complementary framing of cross-layer structure.
+
+**12. "Why Linear Interpretability Works: Invariant Subspaces as a Result of Architectural Constraints" — Saurez, Lee, Har. arXiv 2602.09783 (submitted ICML 2026). 🌐WEB**
+Closest on the **"invariant subspaces"** keyword and the *why-linearity-is-expected* question: an "Invariant Subspace Necessity" theorem — features decoded through linear interfaces (OV circuits, unembedding) must occupy context-invariant linear subspaces.
+**DELTA:** about *feature* subspaces decoded through linear interfaces, theoretical; not the invariant subspaces of a *fitted ℓ→ℓ+k map*. But it is the most direct published argument for why your object should have low-rank invariant structure by construction.
+
+**13. Local-Jacobian spectra across depth — "Why Deep Jacobian Spectra Separate: Depth-Induced Scaling and Singular-Vector Alignment," arXiv 2602.12384 (ICML 2026 poster) 🌐WEB; and "Dynamics of the Transformer Residual Stream: Coupling Spectral Geometry to Network Topology," arXiv 2605.14258 🌐WEB.**
+Operator-level **singular-value spectra / eigenstructure of the Jacobian across depth**: depth-induced exponential SV scaling, effective low-rank, later layers lower-rank ("representational contraction at depth").
+**DELTA:** the *local Jacobian* spectrum (analysis/theory of the block linearization), not a fitted population regression map; no summary grain, no fit-noise question.
+
+**14. "How Transformers Reject Wrong Answers: Rotational Dynamics of Factual Constraint Processing." arXiv 2603.13259. 🌐WEB**
+Reports depth updates as **rotation on an approximately constant-norm manifold** (norm ratios within 3% of unity, cosine drops to ~0.62–0.69), and explicitly notes **complex-conjugate eigenvalue pairs = 2-D rotate-and-scale subspaces "invisible to SVD."**
+**DELTA:** trajectory-dynamics of activations, not a fitted map's operator characterization — but a **direct methodological warning** for your spectrum read: an SVD of the layer map will miss rotational (complex-eigenvalue) structure; use an eigendecomposition/Schur view too.
+
+**15. Trajectory / representation geometry across depth — "Trajectory Geometry of Transformer Representations Across Layers," arXiv 2606.09287 🌐WEB; Valeriani et al., "The Geometry of Hidden Representations of Large Transformer Models," NeurIPS 2023 🌐WEB.**
+Depth trajectory metrics (length, curvature, layerwise cosine, intrinsic dimension across layers).
+**DELTA:** geometry of the *trajectory / representations*, not the map operator between them.
+
+**16. Model-stitching / cross-layer & cross-model linear alignment — "Transferring Linear Features Across Language Models With Model Stitching" (OpenReview Qvvy0X63Fv) 🌐WEB; "Characterizing Linear Alignment Across Language Models," arXiv 2603.18908 🌐WEB.**
+Fit affine "translators" between residual streams; the OpenReview note explicitly says stitching "works for different layers inside a single model as well."
+**DELTA:** the object is *cross-model* (or cross-layer as a byproduct) alignment *quality*, low-rank-least-squares vs task-loss stitching — not a within-model ℓ→ℓ+k operator's spectrum/invariant subspaces at summary grain.
+
+**Folklore basis (position against, do NOT treat as discoveries):** residual-stream norm growth — **Heimersheim & Turner, "Residual stream norms grow exponentially over the forward pass," LessWrong/Alignment Forum, May 2023** (🌐WEB gray lit); iterative inference — **Jastrzębski et al., "Residual Connections Encourage Iterative Inference," ICLR 2018** (🌐WEB). Together these are *why* ℓ→ℓ+1 ≈ identity + small update, hence why a fitted linear map is near-identity and near-linearity is trivially expected. The Secretly Linear paper's residual-removal ablation is the empirical confirmation of exactly this point.
+
+## (2) Near-miss taxonomy per bucket
+
+**(a) Secretly-linear / linearity-score family** — 2405.12250 (Procrustes 0.99), plus "A Primer on the Inner Workings of Transformer-based LMs" (2405.00208, survey context). **Who flagged that the residual makes near-linearity trivial:** the Secretly Linear authors themselves (residual-removal ablation), and structurally the iterative-inference (Jastrzębski) + norm-growth (Heimersheim & Turner) literature. I found **no standalone LessWrong/AF post whose thesis is a critique of that paper as trivial** — stated as a "none found" (the point is folklore, absorbed into the residual-stream framing rather than a single rebuttal post).
+
+**(b) Lens family beyond tuned lens** — logit lens (nostalgebraist, LessWrong 2020, gray lit); Tuned Lens 2303.08112 (per-layer affine → logits); Jump to Conclusions 2303.09435 (layer→final linear); Future Lens 2311.04897 (hidden→future-hidden linear); Logit Prisms (neuralblog.github.io/logit-prisms, gray lit); "Analyzing Transformers in Embedding Space" 2209.02535. **All map to the vocabulary/logit space or to the final representation — none fits and characterizes a general ℓ→ℓ+k activation operator.**
+
+**(c) Layer redundancy / interchangeability** — Unreasonable Ineffectiveness 2403.17887 (angular distance); ShortGPT 2403.03853 (Block Influence, 1−cos); Painters 2407.09298 (reorder/parallel); adjacent: "Ghosted Layers" (2605.15491 🌐WEB), "The Curse of Depth in LLMs" (2502.05795 🌐WEB), "Inverse Depth Scaling From Most Layers Being Similar" (2602.05970 🌐WEB). **What they measure about the layer map:** cosine/angular *similarity* or behavioral robustness — never rank/spectrum/linearity of a fitted operator.
+
+**(d) Depth-dynamics characterization** — Stages of Inference 2406.19384; residual norm growth (Heimersheim & Turner 2023); iterative refinement (Jastrzębski 2018; Loop-Residual 2409.14199); rotation-vs-scaling (2603.13259); trajectory geometry (2606.09287; Valeriani NeurIPS 2023); feature evolution via crosscoders (Lindsey et al. 2024). **Characterize norm/angle/curvature/intrinsic-dim trajectories and depth stages — not the map operator.**
+
+**(f) Rank / spectrum / eigenstructure of a fitted layer-map in a trained transformer** — **the sparsest bucket.** Operator-level SVD/rank exists only for the *local exact Jacobian*: 2505.24293, 2602.12384, 2605.14258, with 2603.13259 warning that SVD misses complex-eigenvalue rotation. Fit-quality-with-rank appears in stitching (OpenReview Qvvy0X63Fv) and LRE's low-rank inverse (2308.09124). **No work fits a population ℓ→ℓ+k regression map and reports its rank/spectrum/invariant subspaces with estimation-noise discipline. Span-pooled / summary-grain layer→layer maps: none found.**
+
+## (3) Closeness verdict
+
+**Single closest work — a tie between two, neither of which does your exact thing:**
+- **2405.12250 (Secretly Linear)** is closest in *object* — it fits a same-position sequential ℓ→ℓ+1 map — but characterizes it with only a scalar orthogonal-Procrustes similarity, so it never recovers rank, full spectrum, or invariant subspaces, and its "linearity" is admittedly residual-dominated (trivially expected).
+- **2505.24293 (Equivalent Linear Mappings, Golden)** is closest in *method* — it reads rank/singular-vectors/low-dim subspaces off a linear operator inside an LLM, per layer, on the Qwen family — but that operator is the *exact local detached Jacobian per input*, not a *fitted population regression map*, so there is no across-examples estimation-noise regime and no summary/pooled grain.
+
+**Gap statement:** No published work fits a *population-regression* linear map along the depth axis (activation ℓ → activation ℓ+k, same position) and characterizes it *as an operator* — rank, singular/eigen-spectrum, invariant subspaces — **at a span-pooled / summary grain, with discipline about the noise a finite-sample fit injects into that spectrum.** The adjacent axes are individually well-trodden (the lens family, layer-redundancy/pruning, depth-dynamics, and local-Jacobian spectra), but this specific intersection is open.
+
+**How crowded is the space, honestly:** the *layer-axis map* space is **crowded on the periphery and empty at the center you're aiming for.** There are many same-position layer-map artifacts (lenses, stitching translators, Procrustes fits) and many depth-similarity/redundancy metrics, so a reviewer will say "layer maps are well-studied" — pre-empt that. But the **operator-level characterization of a *fitted* map (spectrum/rank/invariant subspaces + estimation-noise control), and the span-pooled/summary grain, are genuinely un-done** — the only operator-level spectra published are of the *exact local Jacobian* (2505.24293 and the 2602/2605 Jacobian-spectra papers), not of a learned population map, and the only fitted same-position layer→layer map that has been "characterized" (2405.12250) was reduced to a single Procrustes scalar. Two methodological cautions inherited from the crowd: (i) the residual stream makes a near-identity linear fit and high linearity trivially expected (Secretly Linear's own ablation; Heimersheim & Turner; Jastrzębski) — frame the operator characterization *against* the identity baseline, i.e. characterize the *update / deviation-from-identity* operator, not the raw map; and (ii) an SVD will miss rotational structure carried by complex-eigenvalue pairs (2603.13259), so read the eigen/Schur spectrum, not just singular values.
