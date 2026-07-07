@@ -1,0 +1,174 @@
+{
+  "commit": "57f11e186d",
+  "created": "2026-07-07T13:08:37Z",
+  "figsize": [
+    11.5,
+    4.8
+  ],
+  "points": [
+    {
+      "x": -0.18,
+      "own-persona judged rate (Tier 2)": 0.24,
+      "error": 0.058834693018516654,
+      "_kind": "bar",
+      "_group": 0
+    },
+    {
+      "x": 0.18,
+      "own-persona judged rate (Tier 2)": 0.465,
+      "error": 0.06847517950290927,
+      "_kind": "bar",
+      "_group": 1
+    },
+    {
+      "x": 0.82,
+      "own-persona judged rate (Tier 2)": 0.215,
+      "error": 0.0566531860499994,
+      "_kind": "bar",
+      "_group": 2
+    },
+    {
+      "x": 1.18,
+      "own-persona judged rate (Tier 2)": 0.475,
+      "error": 0.06855614274697197,
+      "_kind": "bar",
+      "_group": 3
+    },
+    {
+      "x": 1.82,
+      "own-persona judged rate (Tier 2)": 0.215,
+      "error": 0.0566531860499994,
+      "_kind": "bar",
+      "_group": 4
+    },
+    {
+      "x": 2.18,
+      "own-persona judged rate (Tier 2)": 0.595,
+      "error": 0.06741380943781117,
+      "_kind": "bar",
+      "_group": 5
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.5,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.0,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.1,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.7,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.7,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.0,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.1,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.1,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.1,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.5,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.7,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.7,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.9,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.1,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.3,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.5,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.7,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.7,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.8,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.7,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.8,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.2,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.5,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.8,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.8,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.1,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.6,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.4,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.9,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.9,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.8,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 1.0,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.5,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.9,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 1.0,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.9,
+      "_kind": "line",
+      "_group": 6
+    },
+    {
+      "per-question trained rate, epochs 3 (fresh 300)": 0.1,
+      "per-question trained rate,\nepochs 6 (fresh 300)": 0.3,
+      "_kind": "line",
+      "_group": 6
+    }
+  ],
+  "n_series": 7,
+  "total_points": 26
+}
