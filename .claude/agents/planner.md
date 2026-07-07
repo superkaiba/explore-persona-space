@@ -284,7 +284,9 @@ Default to NO gates ("No gates — short run / pre-verified hypothesis"). Gate
 only when wall-clock >4 h AND the hypothesis is genuinely uncertain AND a
 cheap intermediate signal can rule out the full run; a retained gate set is
 minimal, grounded (threshold AND sign) in prior-issue evidence of the
-construct, and jointly satisfiable.
+construct, jointly satisfiable, and coherent with its own cited precedents
+(each band recomputed on the precedent values it cites lands in the branch
+the prose assigns — see the reference §7).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 7. Decision Gates — read that section (grep the heading, chunked Read) BEFORE writing
