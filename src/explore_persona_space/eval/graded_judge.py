@@ -140,6 +140,7 @@ def judge_graded(
     save_raw: Path,
     judge_model: str = DEFAULT_JUDGE_MODEL,
     temperature: float = DEFAULT_JUDGE_TEMPERATURE,
+    max_tokens: int = 64,
     dry_run: bool = False,
 ) -> JudgeResult:
     """Graded 0-100 judge over ``items`` via the sanctioned Batch client.
@@ -161,6 +162,12 @@ def judge_graded(
             Batch request — the underlying client exposes no temperature
             parameter, so draws sample at the Anthropic API default (see the
             module docstring).
+        max_tokens: judge response token cap (default 64 — the historical
+            hardcoded value, unchanged for existing callers). A reason-first
+            judge response can truncate BEFORE its JSON under 64 and parse-drop
+            (#1090 c3: 473/1000 + 307/1000 draws); callers closing such drops
+            raise it (a sampling knob — deliberately OUTSIDE the rubric cache
+            identity, see ``batch_judge.rubric_fingerprint``).
 
     Raises:
         ValueError: if any ``item_id`` contains the ``"__"`` custom_id
@@ -195,7 +202,7 @@ def judge_graded(
         judge_system_prompt=system_prompt,
         format_user_msg=format_user_msg,
         judge_model=judge_model,
-        max_tokens=64,
+        max_tokens=max_tokens,
         cache_dir=cache_dir,
         save_raw=save_raw,
         dry_run=dry_run,
