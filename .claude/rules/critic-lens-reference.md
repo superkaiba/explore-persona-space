@@ -406,7 +406,14 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     either an explicit anchor/control role (the data construction IS the manipulated variable,
     stated as such) or a recorded on-policy yield failure for that source/behavior, or (ii) the plan
     backfills a yield shortfall with templates inside an arm labeled on-policy instead of dropping +
-    reporting the source. The reason this is conclusion-changing: canned/templated positives
+    reporting the source, or (iii) a MULTI-behavior implantation datagen defines its behaviors
+    bespoke — hand-written per-behavior definitions or hand-curated per-behavior query banks —
+    instead of the standardized persona-vectors shape (trait name + description → 5 contrastive
+    pos/neg instruction pairs + shared/auto-generated neutral question set;
+    `.claude/rules/on-policy-completions.md` § Standardized behavior definitions) without a stated
+    justification — #906's bespoke 4-class pilot failed all three content-class yield floors
+    (sycophancy 6/36 vs floor 20) and forced the #1090 standardized rebuild. The reason this is
+    conclusion-changing: canned/templated positives
     collapse the response distribution and overstate installability — #612 measured the model's own
     judge-accepted completions installing at +0.60-0.66 where canned templates installed +0.84-0.93
     under the identical recipe — so a canned-data headline about install strength / leakage radius
@@ -415,8 +422,11 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
     on-policy with the ladder + quota stated; an explicitly-labeled canned anchor/control arm;
     published-corpus replication rows (replication fidelity, item 7, wins — do not double-bounce);
     the marker carve-out (the response text is already on-policy under the marker recipe; the
-    appended token is the controlled template); or non-implantation Goals (the plan's §4 "N/A — not
-    a behavior-implantation experiment" satisfies this item).
+    appended token is the controlled template); a single-behavior design's bespoke definition (no
+    cross-behavior comparison to confound); an established/published benchmark bank justified
+    under data-realism / replication fidelity with the cross-behavior-comparability caveat named
+    (the standardized behavior DEFINITION is still required); or non-implantation Goals (the
+    plan's §4 "N/A — not a behavior-implantation experiment" satisfies this item).
 15. **Data-source realism tier (verify §4 names source + tier).** Every `kind: experiment` plan
     names its training/eval/probe data source AND its tier on the CLAUDE.md realism hierarchy
     ("Design experiments on the most realistic data available"): (1) real-world, (2) established

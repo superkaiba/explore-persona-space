@@ -161,7 +161,8 @@ or GitHub `/blob/<sha>`).
 **Provenance: pull from REAL artifacts, never fabricate.** Training rows from the
 training JSONLs, eval probes from the probe bank, completions from HF
 `raw_completions`, judge prompts from the rubric file/constant in the eval+
-scoring code at the Code SHA. **Sanitize harmful/EM content** per `analyzer.md`
+scoring code at the Code SHA. **Sanitize harmful/EM AND real-world-corpus
+(LMSYS/WildChat-class; #1073) content** per `analyzer.md`
 § content hygiene — a ~15-word labeled excerpt + a `[truncated — harmful-content
 row; verify at <raw-completions path>, row <i>]` placeholder + the pinned raw
 path; a sanitized block SATISFIES the requirement.
@@ -1198,15 +1199,22 @@ JSONLs / probe banks — those are NOT raw_completions and are covered by
 the Data-shape check, not the raw-completions-link rule.
 
 **Harmful-content corpora (Betley-style EM, bad-medical-advice,
-refusal-bait pools):** example blocks ship SANITIZED per `analyzer.md`
+refusal-bait pools) AND real-world-corpus rollout text
+(LMSYS/WildChat-class; #1073):** example blocks ship SANITIZED per `analyzer.md`
 § Content hygiene — labeled "sanitized for context hygiene", a ~15-word
 excerpt plus a `[truncated — harmful-content row; verify at
 <raw-completions path>, row <i>]` placeholder in place of the full
 completion. The subset-disclosure line, row indices, and permanent links
 stay verbatim. The mechanical checks (18/19) accept this form exactly as
-the v2 finding-sample checks (10/11) do. Agents assembling Data sections
+the v2 finding-sample checks (10/11) do — the "sanitized for context
+hygiene" LABEL is the load-bearing token the checks key on
+(`verify_task_body.py` accepts the form via the class-agnostic
+`sanitized for context hygiene|harmful-content row|truncated — harmful`
+alternation), not the placeholder's exact noun, so a
+`[truncated — sanitized row; …]` variant over real-world-corpus rows
+passes identically. Agents assembling Data sections
 pull rows by grep + line offset (context-hygiene rule) — never page whole
-raw harmful-completion files into context.
+raw harmful-completion or real-world-corpus rollout files into context.
 
 ### `## Reproducibility`
 
