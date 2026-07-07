@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1108,
+  "highest_id": 1109,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -847,6 +847,13 @@
       "path": "tasks/planning/1108",
       "status": "planning",
       "title": "HF model repo at the 100,000-file limit \u2014 user triage needed to free files (adapter uploads fleet-wide blocked)"
+    },
+    "1109": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1109",
+      "status": "proposed",
+      "title": "workflow-fix: v4 Results scan truncates at any mid-body --- rule (masked hard cap FAILs)"
     },
     "111": {
       "has_clean_result": true,
