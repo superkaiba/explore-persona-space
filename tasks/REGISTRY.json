@@ -717,8 +717,8 @@
     "1091": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1091",
-      "status": "approved",
+      "path": "tasks/running/1091",
+      "status": "running",
       "title": "workflow-fix: gotchas entries for vLLM teardown pid-namespace probe + wandb-core collateral kill"
     },
     "1092": {
