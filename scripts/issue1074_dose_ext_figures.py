@@ -183,7 +183,7 @@ def fig_dose_extension(results_dir: Path, out_dir: Path) -> None:
                 ax.text(xi, y, f"{c}", ha="center", fontsize=8.2, color=colors[j])
     ax.set_xticks(x)
     ax.set_xticklabels([f"{b:.1f}" for b in bins])
-    ax.set_xlabel("per-question compliance rate (binned to nearest 0.2; up to 5 draws each)")
+    ax.set_xlabel("per-question compliance rate (nearest 0.2; 5 completions per question)")
     ax.set_ylabel("number of questions (of 194 with any valid score)")
     ax.set_yscale("symlog", linthresh=10)
     ax.set_ylim(0, 450)
