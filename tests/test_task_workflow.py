@@ -4036,8 +4036,10 @@ def _stranded_rows(tw) -> list[dict]:
 
 
 def _landing_records(caplog) -> list[logging.LogRecord]:
-    """All captured log records emitted by the landing check."""
-    return [r for r in caplog.records if "LANDING CHECK" in r.getMessage()]
+    """All captured log records emitted by the landing check (case-insensitive:
+    the stranded ERROR says "LANDING CHECK", the skip-path + fail-open warnings
+    say "landing check" — the silence tests must see all of them)."""
+    return [r for r in caplog.records if "landing check" in r.getMessage().lower()]
 
 
 def _strand_repo(repo: Path) -> None:
@@ -4066,7 +4068,7 @@ def test_landing_check_warns_on_stranded_commit(fake_repo, caplog):
     """AC-1: a commit unreachable from refs/heads/main → the mutation still
     succeeds, exactly ONE ERROR names the sha[:12] + the greppable phrase +
     the HEAD ref + the sidecar path, and exactly one `kind: stranded` row
-    lands in the sidecar."""
+    with the exact sidecar schema lands in the sidecar."""
     repo, tw = fake_repo
     _strand_repo(repo)
     target = repo / "somefile.txt"
@@ -4088,12 +4090,24 @@ def test_landing_check_warns_on_stranded_commit(fake_repo, caplog):
     rows = _stranded_rows(tw)
     assert len(rows) == 1
     row = rows[0]
+    assert set(row) == {
+        "ts",
+        "kind",
+        "sha",
+        "head_ref",
+        "routed",
+        "message",
+        "probe_rc",
+        "probe_stderr_tail",
+    }
     assert row["kind"] == "stranded"
     assert row["head_ref"] == "issue-42"
     assert row["sha"] == sha
     assert row["routed"] is False
     assert row["probe_rc"] == 1
     assert row["message"].startswith("stranded probe")
+    # (probe.stderr or "")[-300:] — a str by construction, may legitimately be empty.
+    assert isinstance(row["probe_stderr_tail"], str)
 
 
 def test_landing_check_never_fails_the_mutation(fake_repo, monkeypatch, caplog):
