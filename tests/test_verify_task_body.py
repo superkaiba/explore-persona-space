@@ -7293,6 +7293,133 @@ def test_v4_results_beat_warns_on_missing_interpretation_below_last_result():
     assert "interpretation prose below" in r.detail
 
 
+_V4_FOOTER_ANCHOR = "\n---\n**Repro:**"
+
+
+def test_v4_results_body_survives_mid_results_hr():
+    """A legal mid-Results `---` rule between two results must NOT truncate
+    the scan (#1109): the second result stays visible to checks 20/21, so
+    its ≥180-word interpretation hard-FAILs check 20. Pre-fix, the footer
+    first-line string match cut at the mid-`---` and check 20 falsely
+    PASSed (the #825 masking incident)."""
+    assert _V4_FOOTER_ANCHOR in _V4_GOOD_BODY, "fixture drifted: footer anchor missing"
+    long_interp = " ".join(["word"] * 185)
+    body = _V4_GOOD_BODY.replace(
+        _V4_FOOTER_ANCHOR,
+        "\n---\n\n### A second result behind a horizontal rule\n\n"
+        "Plotted: a second panel.\n\n" + long_interp + "\n\n---\n**Repro:**",
+    )
+    _fm, b = verify_task_body.split_frontmatter(body)
+    trunc = verify_task_body._v4_results_body(b)
+    assert "### A second result" in trunc
+    assert long_interp in trunc
+    assert "**Repro:**" not in trunc
+    assert "**Context:**" not in trunc
+    _ok, results = verify_task_body.verify_text(body)
+    r = _results_by_name(results)["v4 conciseness caps"]
+    assert not r.passed, r.render()
+    assert "≥180" in r.detail, r.render()
+
+
+def test_v4_results_beat_scans_results_after_mid_hr():
+    """The three-beat scan (check 21) sees results AFTER a mid-Results
+    `---` rule: with a properly-framed second result behind the rule the
+    detail reports `all 2` framed. Pre-fix the second result was cut out
+    of the scan entirely (`all 1`)."""
+    assert _V4_FOOTER_ANCHOR in _V4_GOOD_BODY, "fixture drifted: footer anchor missing"
+    second = (
+        "\n---\n\n### A second framed result behind a horizontal rule\n\n"
+        "Plotted: mean capability (y, %) per condition (x: baseline, tulu-25), "
+        "n=3 seeds per bar, 95% Wald CI error bars.\n\n"
+        "![Bar chart of mean capability with 95% CI across three seeds.]"
+        "(https://raw.githubusercontent.com/superkaiba/explore-persona-space/"
+        "0123456789abcdef/figures/issue_999/second.png)\n\n"
+        "> **Figure.** *Capability holds across conditions.* Baseline gray, "
+        "tulu-25 blue; error bars 95% Wald CIs.\n\n"
+        "Capability is flat across seeds; the largest gap is 0.4 pts.\n"
+        "\n---\n**Repro:**"
+    )
+    body = _V4_GOOD_BODY.replace(_V4_FOOTER_ANCHOR, second)
+    _ok, results = verify_task_body.verify_text(body)
+    r = _results_by_name(results)["Results three-beat shape (v4)"]
+    assert r.passed and not r.is_warn, r.render()
+    assert "all 2" in r.detail, r.render()
+
+
+def test_v4_results_body_equal_without_mid_hr():
+    """Compatibility pin: on a body with NO mid-Results `---` the new
+    absolute-index cut yields exactly the old output — the full section
+    minus the footer, trailing blank/`---` chrome stripped."""
+    _fm, b = verify_task_body.split_frontmatter(_V4_GOOD_BODY)
+    out = verify_task_body._v4_results_body(b)
+    assert out.endswith("is 1.2 pts.")
+    assert not out.endswith("---")
+    assert "**Repro:**" not in out
+    # Independent expectation: lines strictly between the `## Results`
+    # header line and the footer's `---` rule, trailing chrome stripped.
+    lines = b.splitlines()
+    h2_idx = lines.index("## Results")
+    repro_idx = next(i for i, ln in enumerate(lines) if ln.startswith("**Repro:**"))
+    rule_idx = repro_idx - 1
+    assert lines[rule_idx].strip() == "---", "fixture drifted: footer not `---`-preceded"
+    expected_lines = lines[h2_idx + 1 : rule_idx]
+    while expected_lines and expected_lines[-1].strip() in ("", "---"):
+        expected_lines.pop()
+    assert out == "\n".join(expected_lines).strip()
+
+
+def test_v4_results_body_no_footer_keeps_full_section():
+    """Case (a) parity: no footer at all — the helper returns the plain
+    `section_text` untouched, INCLUDING a mid-Results `---` and a retained
+    trailing rule (the trailing-strip runs only on the footer-cut branch)."""
+    assert _V4_FOOTER_ANCHOR in _V4_GOOD_BODY, "fixture drifted: footer anchor missing"
+    head = _V4_GOOD_BODY[: _V4_GOOD_BODY.index(_V4_FOOTER_ANCHOR)]
+    body = head.replace(
+        "Plotted: mean alignment",
+        "---\n\nPlotted: mean alignment",  # a mid-Results rule
+    )
+    body = body + "\n---\n"  # a trailing rule with no footer after it
+    _fm, b = verify_task_body.split_frontmatter(body)
+    assert verify_task_body._v4_footer_start_line(b) is None
+    out = verify_task_body._v4_results_body(b)
+    assert out == verify_task_body.section_text(b, "Results")
+    assert out.endswith("---")  # trailing rule retained, as today
+
+
+def test_v4_results_body_ignores_fenced_hr_in_results():
+    """A `---` inside a fenced code block within Results is content, not a
+    cut point: the absolute-index cut lands at the real footer and the
+    fenced rule plus everything after it stays in the scanned text. (The
+    old first-line string match was not fence-aware and cut at the fenced
+    `---` — a third old/new divergence class, strictly more correct now.)"""
+    assert _V4_FOOTER_ANCHOR in _V4_GOOD_BODY, "fixture drifted: footer anchor missing"
+    fenced = (
+        "\n```text\n---\nfenced rule above is content\n```\n\n"
+        "Post-fence interpretation stays in the scan." + _V4_FOOTER_ANCHOR
+    )
+    body = _V4_GOOD_BODY.replace(_V4_FOOTER_ANCHOR, fenced)
+    _fm, b = verify_task_body.split_frontmatter(body)
+    out = verify_task_body._v4_results_body(b)
+    assert "fenced rule above is content" in out
+    assert "Post-fence interpretation stays in the scan." in out
+    assert "**Repro:**" not in out
+
+
+def test_v4_results_body_footer_without_preceding_rule():
+    """Case (b): a footer with NO preceding `---` rule — the cut lands at
+    the `**Repro:**` line itself, the blank gap above it is stripped, and
+    the output equals the `---`-preceded fixture's cut (the rule is footer
+    chrome either way)."""
+    assert _V4_FOOTER_ANCHOR in _V4_GOOD_BODY, "fixture drifted: footer anchor missing"
+    body = _V4_GOOD_BODY.replace(_V4_FOOTER_ANCHOR, "\n**Repro:**")
+    _fm, b = verify_task_body.split_frontmatter(body)
+    out = verify_task_body._v4_results_body(b)
+    assert out.endswith("is 1.2 pts.")
+    assert "**Repro:**" not in out
+    _fm2, b2 = verify_task_body.split_frontmatter(_V4_GOOD_BODY)
+    assert out == verify_task_body._v4_results_body(b2)
+
+
 def test_v4_methodology_bare_rows_disclosure_passes_check10():
     """A v4 Methodology sample block disclosed solely as `N of M rows`
     (no 'example' / 'random sample') passes check 10 (cherry-picked
