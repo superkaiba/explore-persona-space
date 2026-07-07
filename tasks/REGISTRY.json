@@ -739,8 +739,8 @@
     "1094": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1094",
-      "status": "reviewing",
+      "path": "tasks/completed/1094",
+      "status": "completed",
       "title": "workflow-fix: verify_plan precedent-vs-decision-band coherence check"
     },
     "1095": {
