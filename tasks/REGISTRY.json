@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1112,
+  "highest_id": 1113,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -883,6 +883,13 @@
       "path": "tasks/planning/1112",
       "status": "planning",
       "title": "Matched LoRA vs full-fine-tune residual-stream activation-shift geometry (does #653's diffuse LoRA rank-k hold for full-FT?)"
+    },
+    "1113": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1113",
+      "status": "proposed",
+      "title": "workflow-fix: gotchas entry \u2014 tiny-real probe for real-corpus streaming filters"
     },
     "112": {
       "has_clean_result": false,
