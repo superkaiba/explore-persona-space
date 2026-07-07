@@ -851,8 +851,8 @@
     "1109": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1109",
-      "status": "proposed",
+      "path": "tasks/planning/1109",
+      "status": "planning",
       "title": "workflow-fix: v4 Results scan truncates at any mid-body --- rule (masked hard cap FAILs)"
     },
     "111": {
