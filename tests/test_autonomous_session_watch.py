@@ -13776,6 +13776,85 @@ def test_wedge_bypasses_debounce_but_not_fence(isolated_registry, monkeypatch, s
     assert markers and markers[-1] == (984, "session-auto-respawn")
 
 
+def _wedge_1074_api_error_tail():
+    # #1104: the #1074 orchestrator-refusal shape — each refused wake is
+    # dequeue x2 + prompt x2 + ONE api-error assistant row (top-level
+    # `isApiErrorMessage: true`; sanitized, no refusal text), x3 wakes.
+    dequeue = {"type": "queue-operation", "operation": "dequeue"}
+    prompt = {"type": "user", "message": {"role": "user", "content": "/issue-tick 1074"}}
+    api_error = {
+        "type": "assistant",
+        "isApiErrorMessage": True,
+        "message": {"role": "assistant", "content": [{"type": "text", "text": "sanitized"}]},
+    }
+    return [dequeue, dequeue, prompt, prompt, api_error] * 3
+
+
+def test_wedge_api_error_tail_escalates_to_respawn(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1104 plan test 6 (mirrors test_wedge_bypasses_debounce_but_not_fence):
+    # a #1074-shaped tail of refused wake turns escalates to the respawn arm
+    # on the FIRST stale tick — pre-fix, every api-error row classified
+    # "assistant" and reset the run, so this tail could never fire.
+    import autonomous_session_watch as asw
+
+    stops, spawns, markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1074, "sess-1074", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1074_api_error_tail()
+    )
+    now = 1_000_000.0
+    pids = {"sess-1074": 4242}
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, pids_by_sid=pids
+    )
+    assert stops == ["sess-1074"]  # first tick: wedge -> respawn -> fence stop
+    assert spawns == []
+    state = _read_stalled_state_845(isolated_registry, 1074)
+    assert state["wedge_hits"] == 1
+
+    asw.stalled_session_pass(
+        dry_run=False, threshold=2, now=now, daemon_reachable=True, pids_by_sid=pids
+    )
+    assert spawns == [(1074, 24.0)]  # verified dead -> spawn
+    assert markers and markers[-1] == (1074, "session-auto-respawn")
+
+
+def test_wedge_api_error_env_kill_switch_disables_production_path(
+    isolated_registry, monkeypatch, stalled_recorder
+):
+    # #1104 plan test 7 (reconciled-critic BINDING; the #1021 wiring-test
+    # pattern): EPM_TICK_WEDGE_MIN_API_ERRORS=0 must disable the api-error
+    # trigger THROUGH THE PRODUCTION PASS — proving
+    # _apply_prompt_wedge_override actually calls _tick_wedge_min_api_errors()
+    # (an unwired call site running at the keyword default would pass the
+    # predicate-level tests and still fire here).
+    import autonomous_session_watch as asw
+
+    stops, spawns, _markers = stalled_recorder
+    _write_autonomous_entry(isolated_registry, 1075, "sess-1075", cap=24.0)
+    _patch_stale_signals(monkeypatch, asw, status="running")
+    monkeypatch.setattr(
+        asw, "_transcript_tail_rows", lambda pid, **_k: _wedge_1074_api_error_tail()
+    )
+    monkeypatch.setenv("EPM_TICK_WEDGE_MIN_API_ERRORS", "0")
+    now = 1_000_000.0
+
+    asw.stalled_session_pass(
+        dry_run=False,
+        threshold=2,
+        now=now,
+        daemon_reachable=True,
+        pids_by_sid={"sess-1075": 4242},
+    )
+    assert stops == [] and spawns == []  # kill switch: no wedge escalation
+    state = _read_stalled_state_845(isolated_registry, 1075)
+    assert state.get("wedge_hits", 0) == 0  # no wedge hit recorded
+
+
 def test_wedge_unresolvable_transcript_noop(isolated_registry, monkeypatch, stalled_recorder):
     # #845 (e) plan test 16b: an unresolvable transcript fails toward
     # NO-WEDGE — the slow debounce path is unchanged.
