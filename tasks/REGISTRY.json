@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1113,
+  "highest_id": 1114,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -890,6 +890,13 @@
       "path": "tasks/planning/1113",
       "status": "planning",
       "title": "workflow-fix: gotchas entry \u2014 tiny-real probe for real-corpus streaming filters"
+    },
+    "1114": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1114",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan WARN when fence omits \u00a77 conditional phase"
     },
     "112": {
       "has_clean_result": false,
