@@ -17,6 +17,8 @@ goal: 'Compare the residual-stream activation-shift geometry (trained-minus-base
   sycophancy — each installed at matched strength, extending #653''s LoRA-only diffuse
   rank-k read to full-FT twins and testing whether 2410.21228''s weight-space intruder-dimension
   difference manifests in activation space.'
+relates_to:
+- identity-contextual-vs-base
 ---
 ## Overview / Motivation
 
