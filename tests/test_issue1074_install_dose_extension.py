@@ -262,8 +262,8 @@ def test_dose_overlay(tmp_path):
     assert out["status"] == "computed"
     assert out["shared_steps"] == ["25", "50"]
     assert out["delta_at_shared_steps"]["25"] == pytest.approx(0.076)
-    missing = aggregate.dose_overlay({"25": 0.2}, tmp_path / "nope.json")
-    assert missing["status"] == "prior_curve_missing"
+    with pytest.raises(RuntimeError, match="prior install summary missing"):
+        aggregate.dose_overlay({"25": 0.2}, tmp_path / "nope.json")
 
 
 def _write_rate_tree(base: Path, step: int, *, n_q: int = 2, drop_item: bool = False) -> None:
