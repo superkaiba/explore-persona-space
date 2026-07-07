@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1093,
+  "highest_id": 1094,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -735,6 +735,13 @@
       "path": "tasks/proposed/1093",
       "status": "proposed",
       "title": "workflow-fix: verify_plan check for 7B capture booked on eval/debug intent"
+    },
+    "1094": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1094",
+      "status": "proposed",
+      "title": "workflow-fix: verify_plan precedent-vs-decision-band coherence check"
     },
     "11": {
       "has_clean_result": false,
