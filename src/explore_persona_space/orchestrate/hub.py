@@ -672,6 +672,40 @@ def _is_storage_quota_403(err: Exception) -> bool:
     return "403" in msg and "storage" in msg.lower()
 
 
+def _filecount_fallback_enabled() -> bool:
+    """Default-ON kill switch for the reactive file-count overflow fallback (#1108).
+
+    The canonical model repo hard-rejects pushes that would cross the HF
+    100,000-files-per-repo limit (#1090: "Your git repo would contain 100050
+    files after this push, over the limit of 100000 files"). When enabled,
+    ``_upload`` retries such a REJECTED model-repo upload against the private
+    :data:`DEFAULT_OVERFLOW_REPO`. Unlike the #564 byte-quota routing
+    (default-OFF because a pre-emptive reroute can divert a push that would
+    have succeeded), this fallback fires only AFTER the canonical push was
+    refused — it can never reroute a would-succeed push — so it is strictly
+    dominant and defaults ON. Kill switch: ``EPM_HF_FILECOUNT_FALLBACK=0``
+    (restores the legacy log-and-return-"" behavior).
+    """
+    return os.environ.get("EPM_HF_FILECOUNT_FALLBACK", "1") == "1"
+
+
+def _is_file_count_limit_error(err: Exception) -> bool:
+    """HF's repo-wide git file-count rejection ("Your git repo would contain
+    N files after this push, over the limit of 100000 files" — verbatim in
+    #1090's events; full format confirmed by HF forum thread 26400).
+
+    Message-substring based — the exception CLASS the rejection surfaces as
+    through ``upload_folder`` is deliberately not trusted (unverified; #1108
+    plan §12 A3). The phrase is distinctive and digit-free, so the #989
+    digit-triplet trap (paths like ``issue504_raw/`` reading as HTTP codes)
+    does not apply. The ``push`` conjunct keeps per-FOLDER-cap (10k
+    files/dir, #658) and per-commit-operation-cap rejections out of scope —
+    the detector targets the repo-wide 100k phrase only.
+    """
+    msg = str(err).lower()
+    return "over the limit of" in msg and "files" in msg and "push" in msg
+
+
 def _is_transient_upload_error(err: Exception) -> bool:
     """True for retryable transient HF/HTTP upload errors (408/429/5xx by
     status code, connection drops / timeouts by message) — NOT the persistent
@@ -942,6 +976,18 @@ def _upload(
     is never a useful Hub artifact and historically accounted for hundreds of
     GB of accidental residue.
 
+    Reactive file-count fallback (#1108): a MODEL-repo upload rejected with
+    HF's repo-wide 100k file-count message (:func:`_is_file_count_limit_error`)
+    is retried once against the private :data:`DEFAULT_OVERFLOW_REPO` (same
+    ``path_in_repo``), emitting the #564 routing event
+    (``reason="file-count-limit-reactive"``) + the ``OVERFLOW_POINTER.json``
+    breadcrumb on the canonical repo after a VERIFIED overflow landing.
+    Default ON; kill switch ``EPM_HF_FILECOUNT_FALLBACK=0``
+    (:func:`_filecount_fallback_enabled`). Recursion is bounded by
+    construction — the recursive call targets the overflow repo, on which the
+    guard short-circuits. Every other failure keeps the legacy
+    log-and-return-"" behavior; the success path is byte-unchanged.
+
     Args:
         local_path: Local file or directory to upload (already resolved to Path).
         repo_id: HF Hub repo ID.
@@ -1054,6 +1100,48 @@ def _upload(
 
         return f"{repo_id}/{path_in_repo}"
     except Exception as e:
+        if (
+            _filecount_fallback_enabled()
+            and _is_file_count_limit_error(e)
+            and repo_type == "model"
+            and repo_id != DEFAULT_OVERFLOW_REPO
+        ):
+            logger.warning(
+                "File-count limit rejection on %s (%s) — falling back to overflow repo %s",
+                repo_id,
+                e,
+                DEFAULT_OVERFLOW_REPO,
+            )
+            # Bounded by construction: the recursive call carries
+            # repo_id=DEFAULT_OVERFLOW_REPO, on which the guard above
+            # short-circuits. delete_after rides along, so the local copy is
+            # reaped only after the recursive call's OWN verified landing.
+            result = _upload(
+                local_path,
+                DEFAULT_OVERFLOW_REPO,
+                repo_type,
+                path_in_repo,
+                delete_after=delete_after,
+                upload_as_file=upload_as_file,
+                ignore_patterns=ignore_patterns,
+                private=True,
+            )
+            if result:
+                _emit_overflow_routing_event(
+                    original_repo=repo_id,
+                    effective_repo=DEFAULT_OVERFLOW_REPO,
+                    path_in_repo=path_in_repo,
+                    reason="file-count-limit-reactive",
+                )
+                # Fail-soft breadcrumb on the CANONICAL repo (non-LFS, small).
+                # It ADDS one file per reroute — fine near the limit, fails
+                # soft (logged) at exactly 100,000.
+                _write_overflow_pointer(
+                    canonical_repo=repo_id,
+                    path_in_repo=path_in_repo,
+                    overflow_repo=DEFAULT_OVERFLOW_REPO,
+                )
+            return result
         logger.error("Upload failed: %s. Keeping local path.", e)
         return ""
 
