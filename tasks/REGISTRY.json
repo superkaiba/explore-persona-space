@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1098,
+  "highest_id": 1099,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -770,6 +770,13 @@
       "path": "tasks/proposed/1098",
       "status": "proposed",
       "title": "daily-fix: repo-root guard false-positive on pod-side git in"
+    },
+    "1099": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1099",
+      "status": "proposed",
+      "title": "daily-fix: verify_plan c12 ASCII-x boundary + c18 negation-r"
     },
     "11": {
       "has_clean_result": false,
