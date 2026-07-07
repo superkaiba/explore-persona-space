@@ -679,6 +679,39 @@ class _SingleLiveResource:
         self._teardown(value)
 
 
+# Sentinel resource key: EVERY LoRA adapter path maps to this ONE key, so the
+# _SingleLiveResource reuses a single enable_lora base engine across a dose
+# ladder's checkpoints (crash-fix #1090 r3 — the r2 per-side_path keying tore
+# down + rebuilt an IDENTICAL engine per checkpoint, ~2.5 min each, and each
+# teardown was one more exposure to the orphan-probe crash class).
+_SHARED_LORA_ENGINE_KEY = "__lora_engine__"
+
+
+def _vllm_resource_key(
+    side_path: str | None, is_full_model_dir: Callable[[str | None], bool]
+) -> str | None:
+    """Engine-identity key for the default vLLM generation seam.
+
+    ``None`` (base) and full-model dirs keep their IDENTITY keys (a distinct
+    engine each — the weights differ); every LoRA adapter path maps to the one
+    ``_SHARED_LORA_ENGINE_KEY`` (the engine is the base model + enable_lora,
+    identical across adapters — only the per-call ``LoRARequest`` differs).
+    """
+    if side_path is None or is_full_model_dir(side_path):
+        return side_path
+    return _SHARED_LORA_ENGINE_KEY
+
+
+def _lora_int_id(lora_ids: dict[str, int], side_path: str) -> int:
+    """Distinct, STABLE, 1-based ``lora_int_id`` per adapter path.
+
+    vLLM caches adapters by ``lora_int_id`` inside a shared engine, so two
+    paths must never collide (a collision silently reuses the first adapter's
+    weights) and repeat calls for one path must return the same id.
+    """
+    return lora_ids.setdefault(side_path, len(lora_ids) + 1)
+
+
 def _default_vllm_generate_fn(base_model: str) -> GenFn:
     """ONE live vLLM engine at a time, chunked generate, teardown via close().
 
@@ -686,16 +719,20 @@ def _default_vllm_generate_fn(base_model: str) -> GenFn:
     (``max_lora_rank=64``, ``max_model_len=8192``, ``enable_prefix_caching=True``,
     fixed sampling seed); chunked ≤500 prompts per ``llm.generate`` call
     (gotchas.md large-batch deadlock prevention) with ``use_tqdm=False``.
-    Lifecycle (r2): a ``side_path`` switch tears down the previous engine
-    BEFORE constructing the next (``_SingleLiveResource``), and every adapter
-    path gets a DISTINCT ``lora_int_id`` (the r1 fixed ``1`` would silently
-    reuse the first adapter if an engine were ever shared across checkpoints).
+    Lifecycle (r3 — crash-fix #1090): ALL LoRA adapter paths share ONE
+    enable_lora base engine (``_vllm_resource_key`` maps them to
+    ``_SHARED_LORA_ENGINE_KEY``), so a dose ladder's checkpoint loop builds the
+    engine ONCE instead of teardown+rebuild per rung; each adapter path still
+    gets a DISTINCT stable ``lora_int_id`` (``_lora_int_id``), and the per-call
+    ``LoRARequest`` is constructed in ``generate()``. A base <-> full-model <->
+    lora-mode switch still swaps engines, teardown-first
+    (``_SingleLiveResource``).
     """
     deps = _resolve_generation_deps()
     chunk_size = int(os.environ.get("EPM_VLLM_GREEDY_CHUNK_SIZE", "500"))
     lora_ids: dict[str, int] = {}  # adapter path -> unique, stable lora_int_id (1-based)
 
-    def _build(side_path: str | None) -> tuple[Any, Any]:
+    def _build(key: str | None) -> Any:
         # EPM_VLLM_GPU_MEM_UTIL (crash-fix #1090 r2): vLLM's 0.9 default asks
         # 71.26 GiB on an A100/H100-80 and fails init when a same-process HF
         # trainer's allocator residue holds ~16 GiB at the train->rate phase
@@ -707,15 +744,13 @@ def _default_vllm_generate_fn(base_model: str) -> GenFn:
             "seed": 0,
             "gpu_memory_utilization": float(os.environ.get("EPM_VLLM_GPU_MEM_UTIL", "0.9")),
         }
-        if side_path is None:
-            return deps["LLM"](model=base_model, **common), None
-        if deps["_is_full_model_dir"](side_path):
-            return deps["LLM"](model=side_path, **common), None
-        lora_id = lora_ids.setdefault(side_path, len(lora_ids) + 1)
-        llm = deps["LLM"](model=base_model, enable_lora=True, max_lora_rank=64, **common)
-        return llm, deps["LoRARequest"](f"organism-{lora_id}", lora_id, side_path)
+        if key == _SHARED_LORA_ENGINE_KEY:
+            return deps["LLM"](model=base_model, enable_lora=True, max_lora_rank=64, **common)
+        if key is None:
+            return deps["LLM"](model=base_model, **common)
+        return deps["LLM"](model=key, **common)  # full-model dir (fullft arm)
 
-    engine = _SingleLiveResource(_build, lambda pair: deps["teardown_vllm"](pair[0]))
+    engine = _SingleLiveResource(_build, lambda llm: deps["teardown_vllm"](llm))
 
     def generate(
         side_path: str | None,
@@ -724,7 +759,12 @@ def _default_vllm_generate_fn(base_model: str) -> GenFn:
         n: int,
         temperature: float,
     ) -> list[list[str]]:
-        llm, lora_req = engine.get(side_path)
+        key = _vllm_resource_key(side_path, deps["_is_full_model_dir"])
+        llm = engine.get(key)
+        lora_req = None
+        if key == _SHARED_LORA_ENGINE_KEY:
+            lora_id = _lora_int_id(lora_ids, side_path)
+            lora_req = deps["LoRARequest"](f"organism-{lora_id}", lora_id, side_path)
         tok = llm.get_tokenizer()
         prompts = [
             tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
@@ -1760,13 +1800,16 @@ def make_source_rate_fn(
     checkpoint path + generation params). This is the production default the
     ``build_organism`` caller constructs explicitly.
 
-    GPU lifecycle (r2 — concern ``gpu-seam-memory-coexistence``): the default
-    generation seam keeps at most ONE live engine, so each checkpoint's engine
-    is torn down BEFORE the next rung's engine is built (the r1 version leaked
-    one ~0.9-HBM engine per rung — OOM at rung 2 of a dose ladder). The
-    returned closure exposes ``close()``, which tears down the FACTORY-OWNED
-    default engine (a caller-injected ``generate_fn`` is the caller's to
-    close); ``build_organism`` calls it after the ladder scoring.
+    GPU lifecycle (r2 — concern ``gpu-seam-memory-coexistence``; r3 —
+    crash-fix #1090): the default generation seam keeps at most ONE live
+    engine, and as of r3 ALL LoRA checkpoint rungs SHARE that one engine
+    (identical base+enable_lora engine; only the per-rung ``LoRARequest``
+    differs) — the ladder builds it once instead of teardown+rebuild per rung
+    (the r1 version leaked one ~0.9-HBM engine per rung — OOM at rung 2; the
+    r2 version rebuilt per rung, ~2.5 min each plus one orphan-probe exposure
+    per teardown). The returned closure exposes ``close()``, which tears down
+    the FACTORY-OWNED default engine (a caller-injected ``generate_fn`` is the
+    caller's to close); ``build_organism`` calls it after the ladder scoring.
     """
     out_dir = Path(out_dir)
     behavior = organism.behavior_spec
