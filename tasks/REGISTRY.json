@@ -722,7 +722,7 @@
       "title": "workflow-fix: gotchas entries for vLLM teardown pid-namespace probe + wandb-core collateral kill"
     },
     "1092": {
-      "goal": "On a realistic sparse-crossed prefix x query corpus (~1k real WildChat/LMSYS prefixes + fully-crossed ~100x48 dense core + ~500-query bank; two fit-time arms: real-only vs real+trait-eliciting; #594 battery as shared eval bridge), characterize answer-state transport via four co-primary reads: prefix-map vs context-map R^2/spectrum gap; #813's averaged-vs-per-example rank collapse at un-capped design dimension; f/g/i variance shares vs #923's 84/8/9; and the combined-model tests M~=f-map, M'-M~=g, trait-per-factor r_B projections (does f carry the persona signal?), plus 0-GPU bridge re-fits on #923/#813/#779 captures.",
+      "goal": "On a realistic sparse-crossed prefix x query corpus (~1k real WildChat/LMSYS prefixes + fully-crossed ~100x48 dense core + ~500-query bank; two fit-time training arms: real-only vs real+trait-eliciting; #594 battery as shared eval bridge) and THREE model arms (Instruct; pretrained matched-text; pretrained on-policy per #825's formatting recipe), characterize answer-state transport via four co-primary reads per arm: prefix-map vs context-map R^2/spectrum gap; #813's averaged-vs-per-example rank collapse at un-capped design dimension; f/g/i variance shares vs #923's 84/8/9; combined-model tests M~=f-map, M'-M~=g, trait-per-factor r_B projections \u2014 plus the instruction-tuning effect on the decomposition and 0-GPU bridge re-fits on #923/#813/#779 captures.",
       "has_clean_result": false,
       "kind": "experiment",
       "path": "tasks/planning/1092",

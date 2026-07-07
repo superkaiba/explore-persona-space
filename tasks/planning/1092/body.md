@@ -13,20 +13,22 @@ origin_prompt: 'how can we get more realistic and diverse contexts but also be a
   ~1k prefixes / ~13k rows; random + topic-matched control]'
 workflow: v1
 goal: 'On a realistic sparse-crossed prefix x query corpus (~1k real WildChat/LMSYS
-  prefixes + fully-crossed ~100x48 dense core + ~500-query bank; two fit-time arms:
-  real-only vs real+trait-eliciting; #594 battery as shared eval bridge), characterize
-  answer-state transport via four co-primary reads: prefix-map vs context-map R^2/spectrum
-  gap; #813''s averaged-vs-per-example rank collapse at un-capped design dimension;
-  f/g/i variance shares vs #923''s 84/8/9; and the combined-model tests M~=f-map,
-  M''-M~=g, trait-per-factor r_B projections (does f carry the persona signal?), plus
-  0-GPU bridge re-fits on #923/#813/#779 captures.'
+  prefixes + fully-crossed ~100x48 dense core + ~500-query bank; two fit-time training
+  arms: real-only vs real+trait-eliciting; #594 battery as shared eval bridge) and
+  THREE model arms (Instruct; pretrained matched-text; pretrained on-policy per #825''s
+  formatting recipe), characterize answer-state transport via four co-primary reads
+  per arm: prefix-map vs context-map R^2/spectrum gap; #813''s averaged-vs-per-example
+  rank collapse at un-capped design dimension; f/g/i variance shares vs #923''s 84/8/9;
+  combined-model tests M~=f-map, M''-M~=g, trait-per-factor r_B projections — plus
+  the instruction-tuning effect on the decomposition and 0-GPU bridge re-fits on #923/#813/#779
+  captures.'
 relates_to:
 - spec-context-as-vector
 - leak-predictor
 ---
 ## Goal
 
-Build a realistic, diverse, sparse-crossed (prefix x query) corpus with a fully-crossed dense core, and use it to characterize, on identical rows, how the base model's answer-state transport decomposes between the prefix and the query. FOUR co-primary reads (user decisions 2026-07-06), all from one capture:
+On a realistic sparse-crossed prefix x query corpus (~1k real WildChat/LMSYS prefixes + fully-crossed ~100x48 dense core + ~500-query bank; two fit-time training arms: real-only vs real+trait-eliciting; #594 battery as shared eval bridge) and THREE model arms (Instruct; pretrained matched-text; pretrained on-policy per #825's formatting recipe), characterize answer-state transport via four co-primary reads per arm: prefix-map vs context-map R^2/spectrum gap; #813's averaged-vs-per-example rank collapse at un-capped design dimension; f/g/i variance shares vs #923's 84/8/9; combined-model tests M~=f-map, M'-M~=g, trait-per-factor r_B projections — plus the instruction-tuning effect on the decomposition and 0-GPU bridge re-fits on #923/#813/#779 captures.
 
 1. **Prefix-map vs context-map.** Fit h_P: prefix-end activation -> v(x) and h_C: context-end (post-query) activation -> v(x) on the SAME rows; compare held-out R^2 (paired, group-level folds), full-output-space rank/energy spectra, and output-subspace overlap. Decision quantity: the paired held-out R^2 gap + spectrum gap — "how much transport does the query add". (The standing prefix+context both-arms rule is satisfied BY this read.)
 2. **Query-averaged vs per-example grain at un-capped diversity.** Replicate the #813 rank comparison (averaged stable-rank 3.13 vs per-example 12.97 at L14; averaging ITSELF ~halves effective rank at matched n=50; median 2% output-energy overlap — eval_results/issue_813/per_example_vs_averaged/rank_spectrum_L14.json, script scripts/issue813_rank_spectrum.py) on a design whose dimension (~1.5k) no longer caps map rank.
