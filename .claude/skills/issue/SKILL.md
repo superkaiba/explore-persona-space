@@ -6858,7 +6858,7 @@ C2. **Cheap-band round cap.** At most **2** cheap-band auto-run rounds
    a chain of cheap follow-ups from auto-running indefinitely.
 C3. **Dispatch the round.** If a candidate survives C1+C2, post
    `epm:followup-scope v1` (`source: proposer-9b-cheap`, fields per
-   workflow.yaml § markers; `gpu_hours_estimate` = the proposal's
+   workflow.yaml § markers, carrying the proposal's
    `est_gpu_hours`) and enter the **same-issue follow-up loop** below
    INSTEAD of parking — the task leaves `awaiting_promotion` and
    re-enters at `followups_running` (tag `followup-auto`). Skip the
