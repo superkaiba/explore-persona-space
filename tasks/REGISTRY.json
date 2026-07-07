@@ -901,8 +901,8 @@
     "1115": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1115",
-      "status": "reviewing",
+      "path": "tasks/completed/1115",
+      "status": "completed",
       "title": "workflow-fix: read-hygiene clause for heavy-read agent specs (autocompact-thrash guard)"
     },
     "112": {
