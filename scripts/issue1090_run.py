@@ -143,6 +143,14 @@ GEN_MAX_NEW_TOKENS = 1024  # free-generation default (CLAUDE.md)
 # EMPTY; save_steps=2 gives ~8 rungs (steps 2..14 + end). Cadence ONLY — lr /
 # LoRA shape / band / epochs ceiling stay the unified recipe verbatim.
 SAVE_STEPS_1090 = 2
+# DECLARED max_length deviation (orchestrator hot-fix, 2026-07-07): the GCP run
+# failed loud at organisms.enforce_mix_token_budget — 10/80 mix rows (12.5%,
+# max row 1124 tokens) exceed the unified recipe's max_length=1024, above the
+# 10% rejection floor. Per the gate's own prescription, raise max_length
+# grounded on the measured row-length distribution: 2048 covers the measured
+# max (1124) with ample headroom (in-repo precedent: MARKER_OVERRIDES uses
+# 2048). Training memory impact is trivial at 80-row mixes on A100-80.
+MAX_LENGTH_1090 = 2048
 # Two-tier install read (plan MF-C / D6).
 TIER1_N_COMPLETIONS = 5
 TIER1_JUDGE_DRAWS = 3
@@ -1319,7 +1327,12 @@ def _make_train_fn(cell: Cell, seams: Seams1090, close_first=None):
             close = getattr(close_first, "close", None)
             if callable(close):
                 close()
-        train_cfg = dataclasses.replace(cfg, run_name=cell.run_name, save_steps=SAVE_STEPS_1090)
+        train_cfg = dataclasses.replace(
+            cfg,
+            run_name=cell.run_name,
+            save_steps=SAVE_STEPS_1090,
+            max_length=MAX_LENGTH_1090,
+        )
         if seams.train_clamp is not None:
             train_cfg = seams.train_clamp(train_cfg)
         return train_lora(base_model, dataset_path, output_dir, cfg=train_cfg)
@@ -1401,6 +1414,7 @@ def phase_train(cfg: RunConfig, seams: Seams1090, datagen_results: dict[str, dic
             "provenance": build.provenance,
             "run_name": cell.run_name,
             "save_steps_deviation": SAVE_STEPS_1090,
+            "max_length_deviation": MAX_LENGTH_1090,
         }
         _atomic_write_json(build_path, record)
         results[cell.slug] = record
