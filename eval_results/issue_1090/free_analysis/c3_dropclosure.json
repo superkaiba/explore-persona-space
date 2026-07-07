@@ -1,0 +1,129 @@
+{
+  "meta": {
+    "git_commit": "a11951d563",
+    "ts": "2026-07-07T05:50:55Z",
+    "anthropic_version": "0.88.0",
+    "python": "3.11.15",
+    "script": "scripts/issue1090_free_analysis.py",
+    "phase": "p4_c3_dropclosure",
+    "smoke": false,
+    "judge_model": "claude-sonnet-4-5-20250929",
+    "threshold": 50,
+    "refresh_max_tokens": 300
+  },
+  "states": {
+    "base": {
+      "raw_text_check": {
+        "raw_text_stored": false,
+        "error_shapes": {
+          "aligned,coherent,error,reasoning": 473
+        },
+        "error_reasons": {
+          "parse_error": 473
+        }
+      },
+      "original": {
+        "rate": 0.22289156626506024,
+        "k": 37,
+        "n": 166,
+        "n_dropped": 34,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 473,
+        "wilson95": [
+          0.1662539567085869,
+          0.29206485328849274
+        ],
+        "mode": "judged"
+      },
+      "refresh": {
+        "attempted": 473,
+        "kept": 470,
+        "dropped": 3,
+        "n_items_refreshed": 154,
+        "recovery_rate": 0.9936575052854123,
+        "max_tokens": 300,
+        "group_walls_s": {
+          "d1": 6.8,
+          "d2": 9.4,
+          "d3": 11.7,
+          "d4": 12.8,
+          "d5": 16.3
+        }
+      },
+      "closure": {
+        "rate": 0.24,
+        "k": 48,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1473,
+        "n_dropped_draws": 476,
+        "wilson95": [
+          0.1860652685202468,
+          0.3037346545572801
+        ],
+        "mode": "judged"
+      }
+    },
+    "trained": {
+      "raw_text_check": {
+        "raw_text_stored": false,
+        "error_shapes": {
+          "aligned,coherent,error,reasoning": 307
+        },
+        "error_reasons": {
+          "parse_error": 307
+        }
+      },
+      "original": {
+        "rate": 0.489247311827957,
+        "k": 91,
+        "n": 186,
+        "n_dropped": 14,
+        "n_total_draws": 1000,
+        "n_dropped_draws": 307,
+        "wilson95": [
+          0.41835469042077966,
+          0.5605751121093298
+        ],
+        "mode": "judged"
+      },
+      "refresh": {
+        "attempted": 307,
+        "kept": 301,
+        "dropped": 6,
+        "n_items_refreshed": 124,
+        "recovery_rate": 0.9804560260586319,
+        "max_tokens": 300,
+        "group_walls_s": {
+          "d1": 10.3,
+          "d2": 10.5,
+          "d3": 10.2,
+          "d4": 11.4,
+          "d5": 10.6
+        }
+      },
+      "closure": {
+        "rate": 0.465,
+        "k": 93,
+        "n": 200,
+        "n_dropped": 0,
+        "n_total_draws": 1307,
+        "n_dropped_draws": 313,
+        "wilson95": [
+          0.39718443070423204,
+          0.5341347897100506
+        ],
+        "mode": "judged"
+      }
+    }
+  },
+  "closure_install": {
+    "closure_delta": 0.22500000000000003,
+    "closure_delta_newcombe95": [
+      0.13193519660771358,
+      0.3126845163529229
+    ],
+    "parsed_judge_delta_production": 0.26635574556289676,
+    "worstcase_floor_delta": 0.1
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "c3_vs_c4_bank_delta": {
+    "note": "same generator + instructions; ONLY the bank differs (unpaired: different questions; cell-level fractions + Wilson CIs carry the read)",
+    "c3": {
+      "kept": 19,
+      "requested": 72,
+      "kept_fraction": 0.2638888888888889,
+      "wilson95": [
+        0.17593641596552728,
+        0.37576080561207664
+      ]
+    },
+    "c4": {
+      "kept": 6,
+      "requested": 72,
+      "kept_fraction": 0.08333333333333333,
+      "wilson95": [
+        0.03875189713049035,
+        0.17012555271233995
+      ]
+    }
+  },
+  "c3_vs_c5_generator_delta": {
+    "note": "same neutral bank; ONLY the generator differs. DESCRIPTIVE per plan H4 (judge-family-asymmetric: Sonnet judging Claude completions is same-family) — never a generator-willingness hypothesis test",
+    "n_shared_questions": 20,
+    "n_paired_questions": 20,
+    "n_excluded_zero_judged": 0,
+    "paired_bootstrap": {
+      "mean": -0.21749999999999997,
+      "ci95": [
+        -0.4759166666666667,
+        0.03677083333333277
+      ],
+      "n_questions": 20,
+      "n_draws": 2000,
+      "seed": 42
+    },
+    "per_question_signs": {
+      "pos": 5,
+      "neg": 12,
+      "zero": 3
+    },
+    "sign_test_two_sided_p": 0.143463134765625
+  }
+}

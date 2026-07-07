@@ -1,0 +1,49 @@
+{
+  "banks": {
+    "impolite": {
+      "file": "impolite_neutral_v1.json",
+      "sha256_canonical": "7026b80b8020f56c450dda415b9969f3b8149903385e389fd253858a3ffecd22",
+      "n": 40,
+      "train_slice": [
+        0,
+        20
+      ],
+      "eval_slice": [
+        20,
+        40
+      ],
+      "artifact": "questiongen_impolite.json"
+    },
+    "sycophancy": {
+      "file": "sycophancy_neutral_v2.json",
+      "sha256_canonical": "be3a1b642d72698d300a1b68de36d90d910d61979e22f8a8624f3843dcd8b7a0",
+      "n": 40,
+      "train_slice": [
+        0,
+        20
+      ],
+      "eval_slice": [
+        20,
+        40
+      ],
+      "artifact": "questiongen_sycophancy_v2.json"
+    },
+    "broad_em": {
+      "file": "broad_em_neutral_v1.json",
+      "sha256_canonical": "b1212578fa8a60cd0f4700d5653c7d6536b58a587034aba3e8894e0a236defa5",
+      "n": 40,
+      "train_slice": [
+        0,
+        20
+      ],
+      "eval_slice": [
+        20,
+        40
+      ],
+      "artifact": "questiongen_broad_em.json"
+    }
+  },
+  "gen_model": "claude-sonnet-4-5-20250929",
+  "template_sha256": "8fe9d4528059deb54005d584520f74aca0e10b536cfaa15a928ae7291898aff0",
+  "ts": "2026-07-06T20:59:21Z"
+}

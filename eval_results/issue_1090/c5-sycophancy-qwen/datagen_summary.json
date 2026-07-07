@@ -1,0 +1,157 @@
+{
+  "cell": "c5-sycophancy-qwen",
+  "cell_id": "c5",
+  "behavior": "sycophancy",
+  "generator": "qwen",
+  "gen_model": "Qwen/Qwen2.5-7B-Instruct",
+  "purpose": "generator contrast H4 (on-policy control arm)",
+  "trains": true,
+  "instruction_style": "plain",
+  "instruction_source": "extraction_pairs",
+  "target_n": 25,
+  "quota_floor": 0.8,
+  "floor_n": 20,
+  "oversample_mult": 1.0,
+  "seed": 42,
+  "git_commit": "05b2405043",
+  "ts": "2026-07-07T00:24:07Z",
+  "status": "yield_floor_missed",
+  "yield_record": {
+    "message": "behavior 'sycophancy': kept 19 positives < floor_n=20 (target_n=25, quota_floor=0.8). Per-variant yields: {'ev2': 7, 'ev1': 8, 'ev4': 5, 'ev0': 9, 'ev3': 7}",
+    "kept_pos": 19,
+    "floor_n": 20,
+    "stages": {
+      "positive": {
+        "requested": 36,
+        "generated": 36,
+        "gen_drop_mix": {},
+        "per_variant_requests": {
+          "ev2": 7,
+          "ev1": 8,
+          "ev4": 5,
+          "ev0": 9,
+          "ev3": 7
+        },
+        "per_question_requests": {
+          "sycophancy-trainq-0008": 3,
+          "sycophancy-trainq-0018": 2,
+          "sycophancy-trainq-0001": 2,
+          "sycophancy-trainq-0013": 1,
+          "sycophancy-trainq-0010": 1,
+          "sycophancy-trainq-0000": 1,
+          "sycophancy-trainq-0014": 4,
+          "sycophancy-trainq-0003": 1,
+          "sycophancy-trainq-0015": 2,
+          "sycophancy-trainq-0002": 1,
+          "sycophancy-trainq-0011": 3,
+          "sycophancy-trainq-0009": 4,
+          "sycophancy-trainq-0007": 1,
+          "sycophancy-trainq-0006": 3,
+          "sycophancy-trainq-0004": 1,
+          "sycophancy-trainq-0019": 1,
+          "sycophancy-trainq-0016": 2,
+          "sycophancy-trainq-0005": 1,
+          "sycophancy-trainq-0017": 1,
+          "sycophancy-trainq-0012": 1
+        },
+        "judge_raw_path": "data/issue_1090/run/c5-sycophancy-qwen/datagen/judge_raw_pos.json",
+        "n_judged": 33,
+        "n_judge_none_dropped": 3,
+        "n_threshold_dropped": 14,
+        "n_structural_dropped": 0,
+        "n_kept": 19
+      }
+    }
+  },
+  "positive_stage": {
+    "n_requested": 36,
+    "n_generated": 36,
+    "n_judged": 33,
+    "n_kept": 19,
+    "n_structural_dropped": 0,
+    "n_threshold_dropped": 14,
+    "n_judge_none_dropped": 3
+  },
+  "per_question_yield": {
+    "sycophancy-trainq-0008": {
+      "judged": 3,
+      "kept": 2
+    },
+    "sycophancy-trainq-0018": {
+      "judged": 2,
+      "kept": 1
+    },
+    "sycophancy-trainq-0001": {
+      "judged": 2,
+      "kept": 1
+    },
+    "sycophancy-trainq-0013": {
+      "judged": 1,
+      "kept": 1
+    },
+    "sycophancy-trainq-0010": {
+      "judged": 1,
+      "kept": 1
+    },
+    "sycophancy-trainq-0000": {
+      "judged": 1,
+      "kept": 0
+    },
+    "sycophancy-trainq-0014": {
+      "judged": 4,
+      "kept": 2
+    },
+    "sycophancy-trainq-0003": {
+      "judged": 1,
+      "kept": 1
+    },
+    "sycophancy-trainq-0015": {
+      "judged": 2,
+      "kept": 2
+    },
+    "sycophancy-trainq-0002": {
+      "judged": 1,
+      "kept": 1
+    },
+    "sycophancy-trainq-0011": {
+      "judged": 3,
+      "kept": 2
+    },
+    "sycophancy-trainq-0009": {
+      "judged": 4,
+      "kept": 1
+    },
+    "sycophancy-trainq-0007": {
+      "judged": 1,
+      "kept": 0
+    },
+    "sycophancy-trainq-0006": {
+      "judged": 3,
+      "kept": 1
+    },
+    "sycophancy-trainq-0004": {
+      "judged": 1,
+      "kept": 1
+    },
+    "sycophancy-trainq-0019": {
+      "judged": 1,
+      "kept": 0
+    },
+    "sycophancy-trainq-0016": {
+      "judged": 2,
+      "kept": 1
+    },
+    "sycophancy-trainq-0005": {
+      "judged": 1,
+      "kept": 0
+    },
+    "sycophancy-trainq-0017": {
+      "judged": 1,
+      "kept": 1
+    },
+    "sycophancy-trainq-0012": {
+      "judged": 1,
+      "kept": 0
+    }
+  }
+}

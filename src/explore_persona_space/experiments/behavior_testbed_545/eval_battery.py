@@ -279,8 +279,102 @@ def _is_full_model_dir(adapter_path: str | None) -> bool:
     return (p / "config.json").exists() and not (p / "adapter_config.json").exists()
 
 
+def _parse_compute_app_rows(smi_text: str) -> list[tuple[int | None, float | None, str]]:
+    """Parse ``nvidia-smi --query-compute-apps=pid,used_memory,gpu_uuid`` output.
+
+    Expects ``--format=csv,noheader,nounits`` rows; returns
+    ``(pid, used_mib, gpu_uuid)`` tuples. Tolerant of ``[N/A]`` fields: an
+    unparseable pid or used_memory maps to ``None`` (the drain verdict treats
+    an unknown used_memory as ABOVE-floor — fail-loud, never silently ignored).
+    """
+    rows: list[tuple[int | None, float | None, str]] = []
+    for line in smi_text.strip().splitlines():
+        if not line.strip():
+            continue
+        parts = [x.strip() for x in line.split(",")]
+        if len(parts) < 3:
+            continue
+        pid_s, used_s, uuid = parts[0], parts[1], parts[-1]
+        pid = int(pid_s) if pid_s.isdigit() else None
+        try:
+            used: float | None = float(used_s)
+        except ValueError:
+            used = None  # "[N/A]" — unknown usage; verdict counts it as above-floor
+        rows.append((pid, used, uuid))
+    return rows
+
+
+def _teardown_drain_verdict(
+    rows: list[tuple[int | None, float | None, str]],
+    *,
+    my_pid: int,
+    visible_uuids: set[str] | None,
+    floor_mib: float,
+) -> tuple[bool, list[tuple[int | None, float | None]]]:
+    """Pure pass/fail decision for one teardown drain-poll iteration.
+
+    PASS when EITHER (i) no foreign compute pids remain on visible devices, OR
+    (ii) the total known ``used_memory`` across foreign pids is <=
+    ``floor_mib`` and no foreign pid has UNKNOWN usage. The floor tolerates
+    the caller's OWN CUDA context surfacing under a HOST-namespace pid on
+    containerized pods (RunPod: nvidia-smi reports host pids while
+    ``os.getpid()`` is the container pid, so self-exclusion can never match —
+    crash-fix #1090 r3) while still catching a real orphaned vLLM worker,
+    which holds >= the model weights (tens of GiB). An unknown (``[N/A]``)
+    used_memory counts as above-floor. Returns ``(passed, foreign_rows)``
+    where each foreign row is ``(pid, used_mib)``.
+    """
+    foreign: list[tuple[int | None, float | None]] = []
+    total = 0.0
+    unknown = False
+    for pid, used, uuid in rows:
+        if visible_uuids is not None and uuid not in visible_uuids:
+            continue
+        if pid is not None and pid == my_pid:
+            continue
+        foreign.append((pid, used))
+        if used is None:
+            unknown = True
+        else:
+            total += used
+    if not foreign:
+        return True, foreign
+    if unknown:
+        return False, foreign
+    return total <= floor_mib, foreign
+
+
+def _is_protected_child(proc) -> bool:
+    """True for persistent non-GPU service children the vLLM child sweep must
+    NEVER kill — the wandb-core service is a child of the caller, and killing
+    it breaks every subsequent ``wandb.init`` in this process with
+    ``ConnectionResetError: Connection lost`` (#1090 crash r4). A proc whose
+    name is unreadable (gone/zombie) is NOT protected (killable)."""
+    try:
+        return "wandb" in proc.name().lower()
+    except Exception:
+        return False
+
+
 def teardown_vllm(llm) -> None:
-    """vLLM teardown + child reap + CVD-aware orphan check (gotchas rule)."""
+    """vLLM teardown + child reap + bounded drain-loop orphan check.
+
+    Crash-fix #1090 r3: the previous SINGLE-SHOT pid-set probe had two
+    defects — (1) on containerized pods (RunPod) nvidia-smi reports
+    HOST-namespace pids while ``os.getpid()`` is the container pid, so the
+    self-exclusion never matched and our own CUDA context / the just-killed
+    engine child read as an "orphan"; (2) the probe ran exactly once, inside
+    the normal window between SIGKILL and the driver releasing the process's
+    accounting entry. The check is now a bounded DRAIN LOOP
+    (``EPM_VLLM_TEARDOWN_DRAIN_TIMEOUT_S``, default 60 s; ~2 s polls) that
+    PASSes when no foreign compute pid remains OR the total foreign
+    ``used_memory`` on visible devices is <=
+    ``EPM_VLLM_TEARDOWN_RESIDUAL_FLOOR_MIB`` (default 6144 — tolerates a
+    caller CUDA context, still catches a real orphaned engine holding model
+    weights). On timeout it stays FAIL-LOUD: the same RuntimeError, enriched
+    with per-pid used_memory + elapsed time. Kill mechanics + the CVD-aware
+    visible-uuid filtering (#396 BF9) are unchanged.
+    """
     import gc
 
     import psutil
@@ -290,56 +384,89 @@ def teardown_vllm(llm) -> None:
     gc.collect()
     torch.cuda.empty_cache()
     me = psutil.Process()
-    children = me.children(recursive=True)
+    children = [ch for ch in me.children(recursive=True) if not _is_protected_child(ch)]
     for ch in children:
         ch.terminate()
     _, alive = psutil.wait_procs(children, timeout=10)
     for ch in alive:
         ch.kill()
+
+    def _smi(query: str) -> str | None:
+        try:
+            return subprocess.run(
+                ["nvidia-smi", query, "--format=csv,noheader,nounits"],
+                capture_output=True,
+                text=True,
+                check=True,
+                env={**os.environ},
+            ).stdout
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            return None
+
+    uuids = _smi("--query-gpu=index,gpu_uuid")
+    if uuids is None:
+        logger.info("nvidia-smi unavailable — skipping orphan check (CPU host)")
+        return
     # CVD-aware orphan check: only PIDs on OUR visible GPUs are orphans
     # (#396 BF9 — on a shared 4-GPU pod, other shards' workers are not ours).
     cvd = os.environ.get("CUDA_VISIBLE_DEVICES")
-    try:
-        smi = subprocess.run(
-            ["nvidia-smi", "--query-compute-apps=pid,gpu_uuid", "--format=csv,noheader"],
-            capture_output=True,
-            text=True,
-            check=True,
-            env={**os.environ},
-        ).stdout
-        uuids = subprocess.run(
-            ["nvidia-smi", "--query-gpu=index,gpu_uuid", "--format=csv,noheader"],
-            capture_output=True,
-            text=True,
-            check=True,
-            env={**os.environ},
-        ).stdout
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        logger.info("nvidia-smi unavailable — skipping orphan check (CPU host)")
-        return
-    visible = None
+    visible: set[str] | None = None
     if cvd is not None:
         idx = {int(i) for i in cvd.split(",") if i.strip().isdigit()}
         visible = {
             u.split(",")[1].strip()
             for u in uuids.strip().splitlines()
-            if int(u.split(",")[0]) in idx
+            if u.strip() and int(u.split(",")[0]) in idx
         }
-    my_pid = os.getpid()
-    orphans = []
-    for line in smi.strip().splitlines():
-        if not line.strip():
-            continue
-        pid_s, uuid = (x.strip() for x in line.split(","))
-        if visible is not None and uuid not in visible:
-            continue
-        if int(pid_s) != my_pid:
-            orphans.append(int(pid_s))
-    if orphans:
-        raise RuntimeError(
-            f"vLLM teardown left orphan GPU PIDs {orphans} on visible devices — refusing to "
-            "proceed to the HF phase (they will re-grab the freed memory)."
+    timeout_s = float(os.environ.get("EPM_VLLM_TEARDOWN_DRAIN_TIMEOUT_S", "60.0"))
+    floor_mib = float(os.environ.get("EPM_VLLM_TEARDOWN_RESIDUAL_FLOOR_MIB", "6144"))
+    start = time.monotonic()
+    while True:
+        smi = _smi("--query-compute-apps=pid,used_memory,gpu_uuid")
+        if smi is None:
+            logger.info("nvidia-smi unavailable — skipping orphan check (CPU host)")
+            return
+        passed, foreign = _teardown_drain_verdict(
+            _parse_compute_app_rows(smi),
+            my_pid=os.getpid(),
+            visible_uuids=visible,
+            floor_mib=floor_mib,
         )
+        elapsed = time.monotonic() - start
+        if passed:
+            if foreign:
+                logger.info(
+                    "[vllm-teardown-drain] PASS after %.1fs with residual foreign pids %s "
+                    "(total <= %.0f MiB floor — e.g. caller CUDA context under a "
+                    "host-namespace pid)",
+                    elapsed,
+                    foreign,
+                    floor_mib,
+                )
+            else:
+                logger.info(
+                    "[vllm-teardown-drain] PASS after %.1fs — no foreign compute pids", elapsed
+                )
+            return
+        if elapsed >= timeout_s:
+            detail = ", ".join(
+                f"pid={'[N/A]' if p is None else p}:{'[N/A]' if u is None else f'{u:.0f}'}MiB"
+                for p, u in foreign
+            )
+            raise RuntimeError(
+                f"vLLM teardown left foreign GPU compute PIDs above the {floor_mib:.0f} MiB "
+                f"residual floor on visible devices after {elapsed:.1f}s drain ({detail}) — "
+                "refusing to proceed to the next engine/HF phase (they will re-grab the "
+                "freed memory)."
+            )
+        logger.info(
+            "[vllm-teardown-drain] waiting: foreign pids %s above %.0f MiB floor (%.1fs/%.1fs)",
+            foreign,
+            floor_mib,
+            elapsed,
+            timeout_s,
+        )
+        time.sleep(2.0)
 
 
 # ---------------------------------------------------------------------------

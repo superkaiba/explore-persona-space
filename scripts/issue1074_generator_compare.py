@@ -437,10 +437,64 @@ def _datagen_kwargs(cfg: RunConfig, cell: Cell, gen_fn) -> dict:
     return kw
 
 
-def _summarize_floored_cell(datagen_dir: Path, err: DatagenYieldError) -> dict:
+def _arm_judge_counts(
+    datagen_dir: Path, behavior: Behavior, arm_name: str, raw_name: str, judge_name: str
+) -> dict[str, int] | None:
+    """Judge-stage counts for one arm of a FLOORED cell, reconstructed from the
+    ``raw_*.jsonl`` + ``judge_raw_*.json`` checkpoints (pool_meta.json is
+    success-only). Mirrors ``datagen._judge_and_filter``'s accounting:
+    ``n_judged`` = judgeable candidates with >=1 kept judge draw, then
+    threshold -> structural predicate -> kept (each raw file is arm-scoped, so
+    no arm filter is needed). Returns None when either file is absent.
+    """
+    raw_path, judge_path = datagen_dir / raw_name, datagen_dir / judge_name
+    if not raw_path.exists() or not judge_path.exists():
+        return None
+    all_scores: dict[str, Any] = _read_json(judge_path).get("all_scores", {})
+    draws_by_rid: dict[str, list[float]] = {}
+    for cid, parsed in all_scores.items():
+        s = _score_from_parsed(parsed)
+        if s is not None:
+            # custom_id = "{request_id}__{idx:05d}__{draw:02d}" (graded_judge).
+            draws_by_rid.setdefault(cid.rsplit("__", 2)[0], []).append(s)
+    predicate = _STRUCTURAL_PREDICATES.get(behavior.name)
+    positive = arm_name == "positive"
+    counts = {
+        "n_judged": 0,
+        "n_judge_none_dropped": 0,
+        "n_threshold_dropped": 0,
+        "n_structural_dropped": 0,
+        "n_kept": 0,
+    }
+    for row in _read_jsonl(raw_path):
+        if row.get("completion") is None:
+            continue  # refusal/empty/api_error — never judged (gen_drop_mix covers it)
+        draws = draws_by_rid.get(row["request_id"], [])
+        if not draws:
+            counts["n_judge_none_dropped"] += 1
+            continue
+        counts["n_judged"] += 1
+        mean = sum(draws) / len(draws)
+        passes = mean > behavior.threshold if positive else mean < behavior.threshold
+        if not passes:
+            counts["n_threshold_dropped"] += 1
+        elif predicate is not None and positive != bool(predicate(row["completion"])):
+            counts["n_structural_dropped"] += 1
+        else:
+            counts["n_kept"] += 1
+    return counts
+
+
+def _summarize_floored_cell(
+    datagen_dir: Path, err: DatagenYieldError, behavior: Behavior | None = None
+) -> dict:
     """Yield-as-result record for a floored cell (plan §4-A): kept/floor +
     per-variant yields parsed from the exception, drop mix from the on-disk
     stage checkpoints (pool_meta.json is success-only, so these ARE the record).
+    With ``behavior`` (#1090 round 4 observability), each stage additionally
+    carries the judge-side counts (n_judged / n_kept / n_structural_dropped +
+    threshold / judge-none drops) so a drop-mix diagnosis never has to count
+    ``judge_raw_*.json`` entries by hand.
     """
     msg = str(err)
     parsed: dict[str, Any] = {"message": msg}
@@ -478,6 +532,10 @@ def _summarize_floored_cell(datagen_dir: Path, err: DatagenYieldError) -> dict:
         judge_path = datagen_dir / judge_name
         if judge_path.exists():
             stage["judge_raw_path"] = str(judge_path)
+        if behavior is not None:
+            jc = _arm_judge_counts(datagen_dir, behavior, arm_name, raw_name, judge_name)
+            if jc is not None:
+                stage.update(jc)
         stages[arm_name] = stage
     parsed["stages"] = stages
     return parsed
