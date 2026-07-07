@@ -35,7 +35,7 @@ from dataclasses import dataclass
 from explore_persona_space.personas import PERSONAS
 
 CONTEXT_KINDS = ("persona", "query_transform", "prefix", "adversarial", "bare")
-INSTALLABLE_KINDS = ("persona", "query_transform", "prefix", "adversarial")
+INSTALLABLE_KINDS = ("persona", "query_transform", "prefix", "adversarial", "bare")
 
 # Metadata-only mapping from #594 battery families to Context kinds, used by
 # ``Context.from_battery_instance`` (resolver behavior never depends on kind).
@@ -357,3 +357,59 @@ for _cid, _ctx in CONTEXTS.items():
     if _cid != _ctx.context_id:
         raise ValueError(f"CONTEXTS key {_cid!r} != context_id {_ctx.context_id!r}")
     validate_context(_ctx)
+
+
+# ── #1090 fu3 (posonly-contexts-parallel-matrix): the ICL-prefix context ────
+
+ICL_BANK_FILENAME = "icl_examples_{behavior}.json"
+
+
+def icl_prefix_context(behavior: str, *, bank_dir=None) -> Context:
+    """Build the per-behavior ICL-prefix Context (#1090 fu3, plan §D2/§D8).
+
+    Loads the committed 2-shot example bank
+    ``query_banks/icl_examples_<behavior>.json`` (authored + sha-pinned by
+    ``scripts/issue1090_build_icl_banks.py``) and returns a ``kind="prefix"``
+    / ``family="icl"`` Context: NO system prompt (``system=None`` — the plan's
+    "system ''"; ``validate_context`` bans the empty string and ``messages()``
+    treats both identically), user turn = the 2-shot worked-example block
+    followed by the neutral question (via ``user_wrap``; literal braces in the
+    example text are escaped so ``str.format`` only ever sees the ``{q}``
+    slot). Raises ``FileNotFoundError`` on a missing bank and ``ValueError``
+    on a malformed one (!= 2 examples, or an example missing a non-empty
+    question/answer string).
+    """
+    import json
+    from pathlib import Path
+
+    root = Path(bank_dir) if bank_dir is not None else Path(__file__).parent / "query_banks"
+    path = root / ICL_BANK_FILENAME.format(behavior=behavior)
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"ICL bank missing for behavior {behavior!r}: {path} "
+            "(author it with scripts/issue1090_build_icl_banks.py)"
+        )
+    bank = json.loads(path.read_text(encoding="utf-8"))
+    examples = bank.get("examples")
+    if not isinstance(examples, list) or len(examples) != 2:
+        raise ValueError(f"ICL bank {path} must hold exactly 2 examples, got: {examples!r}")
+    blocks: list[str] = []
+    for i, ex in enumerate(examples):
+        q = ex.get("question") if isinstance(ex, Mapping) else None
+        a = ex.get("answer") if isinstance(ex, Mapping) else None
+        if not (isinstance(q, str) and q.strip() and isinstance(a, str) and a.strip()):
+            raise ValueError(f"ICL bank {path} example {i} missing non-empty question/answer")
+        blocks.append(f"Example question: {q.strip()}\nExample answer: {a.strip()}")
+    block = "\n\n".join(blocks)
+    # Escape literal braces so user_wrap stays format-safe with only {q}.
+    wrap = block.replace("{", "{{").replace("}", "}}") + "\n\n{q}"
+    ctx = Context(
+        context_id=f"icl_prefix_{behavior}",
+        kind="prefix",
+        family="icl",
+        system=None,
+        user_wrap=wrap,
+        source=f"2-shot ICL bank {path.name} (#1090 fu3 plan §D8)",
+    )
+    validate_context(ctx)
+    return ctx

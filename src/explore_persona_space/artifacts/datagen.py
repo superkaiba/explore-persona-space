@@ -707,6 +707,66 @@ def _judge_and_filter(
     return kept, drops, result, scoreinfo
 
 
+def _negative_arm(
+    behavior: Behavior,
+    panel: Panel,
+    emitted_questions: list[tuple[str, str]],
+    n_neg_req_per_member: int,
+    rng,
+    instruction_style: str,
+    *,
+    not_exhibit_instructions: list[str],
+    raw_neg_path: Path,
+    gen_fn,
+    judge: JudgeFn,
+    n_judge_draws: int,
+    judge_cache: Path,
+    out_dir: Path,
+) -> tuple[list[GenCandidate], list[GenCandidate], _ArmDrops, JudgeResult, dict]:
+    """The negative-arm generate+judge stage of ``generate_training_data``.
+
+    An EMPTY ``panel`` is the sanctioned pos-only twin (#1090 fu3): zero
+    negative rows BY DESIGN — the raw/judge sidecar surfaces stay
+    empty-but-present so resume + downstream readers see the same file set as
+    a contrastive run. Returns
+    ``(neg_cands, neg_kept, neg_drops, neg_jr, neg_scores)``.
+    """
+    if not panel:
+        if not raw_neg_path.exists():
+            _write_raw(raw_neg_path, [])
+        return (
+            [],
+            [],
+            _ArmDrops(requested=0),
+            JudgeResult(scores={}, n_total_draws=0, n_dropped_draws=0),
+            {},
+        )
+    if raw_neg_path.exists():
+        neg_cands = _read_raw(raw_neg_path)
+    else:
+        neg_reqs = _compose_negative_requests(
+            behavior,
+            panel,
+            emitted_questions,
+            n_neg_req_per_member,
+            rng,
+            instruction_style,
+            not_exhibit=not_exhibit_instructions,
+        )
+        neg_cands = gen_fn("neg")(neg_reqs)
+        _write_raw(raw_neg_path, neg_cands)
+    neg_kept, neg_drops, neg_jr, neg_scores = _judge_and_filter(
+        behavior,
+        neg_cands,
+        NEGATIVE,
+        judge_fn=judge,
+        n_judge_draws=n_judge_draws,
+        cache_dir=judge_cache / "neg",
+        save_raw=out_dir / "judge_raw_neg.json",
+    )
+    return neg_cands, neg_kept, neg_drops, neg_jr, neg_scores
+
+
 # ── Public entry point ───────────────────────────────────────────────────────
 
 
@@ -761,7 +821,9 @@ def generate_training_data(
     multiplies the POSITIVE request budget ``ceil(target_n / EXPECTED_YIELD)``
     (36 for target 25 -> 72 at 2.0); it is fenced to [1.0, 2.0] and enters the
     manifest resume key (a pre-knob manifest reads as 1.0, so mult-1.0 resumes
-    replay and a changed mult refuses the stale raw cache). Raises
+    replay and a changed mult refuses the stale raw cache). An explicitly
+    EMPTY ``negatives`` panel is the sanctioned pos-only twin (#1090 fu3):
+    no negative rows are generated and ``cn.jsonl`` is written empty. Raises
     :class:`ValueError` on a programmatic behavior, unknown style/source, or an
     out-of-fence ``oversample_mult``, :class:`DatagenYieldError` below the
     floor, and :class:`DatagenCheckpointMismatchError` on a stale resume.
@@ -779,20 +841,24 @@ def generate_training_data(
             "programmatic behaviors never route through the unified datagen pipeline"
         )
     _validate_scalar_fences(quota_floor, oversample_mult)
+    # #1090 fu3: an explicitly-passed EMPTY panel is the sanctioned pos-only
+    # twin (neg_ratio=0 — no negative rows; the generic interleave happens
+    # downstream in the mix assembler). None / malformed members still fail
+    # fast (tuple(None) raises TypeError; the member type-check below).
     panel: Panel = get_panel(negatives) if isinstance(negatives, str) else tuple(negatives)
-    if not panel:
-        raise ValueError("negative panel is empty")
     for m in panel:
         if not isinstance(m, NegativeContext):
             raise TypeError(f"panel members must be NegativeContext, got {type(m).__name__}")
-    assert_panel_disjoint_from_sources(panel, [context_C.context_id])
+    posonly = not panel
+    if not posonly:
+        assert_panel_disjoint_from_sources(panel, [context_C.context_id])
 
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     rng = _rng(seed)
 
     floor_n = math.ceil(quota_floor * target_n)
-    member_quota = per_negative_quota(floor_n, panel)
+    member_quota = 0 if posonly else per_negative_quota(floor_n, panel)
     # Positive budget = the EXPECTED_YIELD-derived count x the oversample knob
     # (36 -> 72 at 2.0 for target 25); the NEGATIVE budget is deliberately NOT
     # scaled — the P1a floor misses were positive-arm keep-rate misses (36-39%
@@ -891,28 +957,20 @@ def generate_training_data(
 
     # 3b. NEGATIVES: generated ON the emitted-positive questions (same-question
     # pairing by construction, criterion 8) for every panel member, then judge-filter.
-    if raw_neg_path.exists():
-        neg_cands = _read_raw(raw_neg_path)
-    else:
-        neg_reqs = _compose_negative_requests(
-            behavior,
-            panel,
-            emitted_questions,
-            n_neg_req_per_member,
-            rng,
-            instruction_style,
-            not_exhibit=not_exhibit_instructions,
-        )
-        neg_cands = _gen("neg")(neg_reqs)
-        _write_raw(raw_neg_path, neg_cands)
-    neg_kept, neg_drops, neg_jr, neg_scores = _judge_and_filter(
+    neg_cands, neg_kept, neg_drops, neg_jr, neg_scores = _negative_arm(
         behavior,
-        neg_cands,
-        NEGATIVE,
-        judge_fn=judge,
+        panel,
+        emitted_questions,
+        n_neg_req_per_member,
+        rng,
+        instruction_style,
+        not_exhibit_instructions=not_exhibit_instructions,
+        raw_neg_path=raw_neg_path,
+        gen_fn=_gen,
+        judge=judge,
         n_judge_draws=n_judge_draws,
-        cache_dir=judge_cache / "neg",
-        save_raw=out_dir / "judge_raw_neg.json",
+        judge_cache=judge_cache,
+        out_dir=out_dir,
     )
     _write_judge_rows(
         out_dir / "judge_rows.jsonl",
