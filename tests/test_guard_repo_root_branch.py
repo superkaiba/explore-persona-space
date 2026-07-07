@@ -19,6 +19,11 @@ The guard's on-main gate exits 0 when the repo-root HEAD is already off ``main``
 (it never traps a user recovering from an already-detached/off-main state), so
 the BLOCK-path tests are guarded by ``@on_main``. The ALLOW-path and fail-soft
 tests run regardless — the guard must never trap those shapes in either state.
+As of #1098 the guard WAIVES, per-clause and under a fail-closed refusal ladder
+(pipe/BG-producer position, expansion + here-string syntax, non-/dev/null
+output redirects, ssh local-exec options, shared-repo path spellings,
+``rg --pre``), clauses whose command word is ``ssh`` (remote execution) or
+``grep``/``egrep``/``fgrep``/``rg`` (read-only pattern argument).
 """
 
 from __future__ import annotations
@@ -1156,4 +1161,263 @@ def test_shell_consumer_heredoc_still_blocks(cmd):
 )
 def test_heredoc_shellout_body_blocks(cmd):
     """A body naming a shell-out spelling never strips; its gated text classifies."""
+    assert _run(cmd) == 2
+
+
+# ==== #1098 — ssh remote-command / grep-family pattern-argument clause waiver ====
+#
+# A clause whose COMMAND WORD is ssh (remote execution — the command string
+# runs on the pod's own /workspace clone, never this VM's repo root) or
+# grep/egrep/fgrep/rg (the pattern argument is data) is waived per-clause,
+# IFF the fail-closed refusal ladder passes: not in pipe/BG-producer position
+# (nextsep lookahead), no locally-executing expansion / here-string syntax,
+# no `>`/`>>` output redirect to anything but /dev/null (the round-2 cond
+# (3b) arm — closes the same-call redirect-to-file->execute channel), no ssh
+# local-exec option (ProxyCommand/LocalCommand/KnownHostsCommand), no
+# shared-repo path spelling (literal / $HOME/ / ~/), no rg --pre. The allow
+# side is NOT @on_main (a waived clause must pass in either repo state); the
+# block side pins EVERY refusal-regex alternation arm individually.
+# ---------------------------------------------------------------------------
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param("ssh pod-779 'git reset --hard origin/main'", id="S1-incident_pod779_reset"),
+        pytest.param('ssh pod-779 "git reset --hard origin/main"', id="S2-double_quoted"),
+        pytest.param("ssh pod-779 git reset --hard origin/main", id="S3-unquoted_remote"),
+        pytest.param(
+            "ssh -p 40052 root@157.157.221.29 'git checkout HEAD -- foo.py'",
+            id="S4-gotchas_diverged_pod_recovery",
+        ),
+        pytest.param("ssh pod-779 'git clean -fd'", id="S5-remote_clean"),
+        pytest.param("ssh pod-779 'git checkout -b scratch'", id="S6-remote_branch_creation"),
+        pytest.param("ssh pod-779 'git restore .'", id="S7-remote_restore"),
+        pytest.param("ssh pod-779 'git reset --hard' && echo done", id="S8-compound_benign_tail"),
+        pytest.param(
+            "ssh pod-779 'git reset --hard && git status'",
+            id="S9-gated_first_statement_mis_split",
+        ),
+        pytest.param('ssh pod-779 "git reset --hard $BRANCH"', id="S10-bare_dollar_var"),
+        pytest.param("echo starting; ssh pod-779 'git reset --hard'", id="S11-ssh_after_seq"),
+        pytest.param(
+            "ssh pod-779 'git -C /workspace/explore-persona-space reset --hard origin/main'",
+            id="S12-remote_dash_c_regression_pin",
+        ),
+        pytest.param(
+            # /dev/null-target redirects are exempt from the cond (3b) redirect
+            # refusal (a discard-only sink can never be re-read or executed).
+            "ssh pod-779 'git reset --hard origin/main' 2>/dev/null",
+            id="S13-stderr_to_dev_null_exempt",
+        ),
+        pytest.param(
+            # SPACED spelling of the /dev/null exemption (`2> /dev/null`) —
+            # the strip regex's [[:space:]]* between `>` and the target
+            # covers it; pins the exemption beyond the glued S13 spelling.
+            "ssh pod-779 'git reset --hard origin/main' 2> /dev/null",
+            id="S14-spaced_dev_null_exempt",
+        ),
+    ],
+)
+def test_ssh_remote_git_clause_waiver_allows(cmd):
+    """Single-statement ssh remote git ops are waived (the 2026-07-06 incident class)."""
+    assert _run(cmd) == 0
+
+
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "grep -qE 'git reset --hard' scripts/guard_repo_root_branch.sh",
+            id="G1-grep_pattern_repo_file",
+        ),
+        pytest.param("rg 'git clean -fd' .claude/rules/", id="G2-rg_pattern"),
+        pytest.param("grep -q 'git switch feature' notes.md", id="G3-grep_switch_pattern"),
+        pytest.param("egrep 'git switch feature' notes.md", id="G4-egrep"),
+        pytest.param("fgrep 'git restore .' notes.md", id="G5-fgrep"),
+        pytest.param("echo x | grep 'git reset --hard'", id="G6-pipe_consumer_grep"),
+        pytest.param(
+            # The grep-sweep convenience with a /dev/null-target redirect stays
+            # waived (cond (3b) strips exact-/dev/null targets before scanning).
+            "grep -rn 'git reset --hard' scripts/ 2>/dev/null",
+            id="G7-sweep_stderr_to_dev_null_exempt",
+        ),
+        pytest.param(
+            # The /dev/null exemption composes with a following same-call clause:
+            # the strip leaves no `>`, so a benign AND consumer does not refuse.
+            "grep -q 'git clean -fd' notes.md 2>/dev/null && echo found",
+            id="G8-dev_null_exempt_with_and_consumer",
+        ),
+        pytest.param(
+            # APPEND spelling (`2>> /dev/null`) — the strip regex's `>>?`
+            # covers the double-arrow form; pins it against regression.
+            "grep -rn 'git reset --hard' scripts/ 2>> /dev/null",
+            id="G9-append_dev_null_exempt",
+        ),
+        pytest.param(
+            # BARE stdout spelling (`> /dev/null`, no fd digit) — the strip
+            # regex's [0-9]* matches empty; pins it against regression.
+            "grep -c 'git clean -fd' notes.md > /dev/null",
+            id="G10-bare_stdout_dev_null_exempt",
+        ),
+    ],
+)
+def test_grep_pattern_clause_waiver_allows(cmd):
+    """grep-family pattern arguments are data; the clause is waived (incl. pipe-CONSUMER)."""
+    assert _run(cmd) == 0
+
+
+@on_main
+@pytest.mark.parametrize(
+    "cmd",
+    [
+        pytest.param(
+            "ssh pod-779 'cd /workspace/explore-persona-space && git reset --hard origin/main'",
+            id="N1-multi_statement_mis_split_residual_fp",
+        ),
+        pytest.param('ssh host "$(git reset --hard)"', id="N2-cmdsub_executes_locally"),
+        pytest.param('ssh host "`git clean -fd`"', id="N3-backtick_executes_locally"),
+        pytest.param(
+            'ssh pod-779 "git reset --hard ${REF}"',
+            id="N4-brace_expansion_fail_closed_overmatch",
+        ),
+        pytest.param(
+            "ssh vm 'git --git-dir=/home/thomasjiralerspong/explore-persona-space/.git"
+            " reset --hard'",
+            id="N5-repo_root_path_in_remote_string",
+        ),
+        pytest.param(
+            "git -c core.sshCommand=ssh reset --hard", id="N6-mid_clause_ssh_word_local_op"
+        ),
+        pytest.param(
+            "ssh -o ProxyCommand='git reset --hard' host", id="N7-proxycommand_local_exec"
+        ),
+        pytest.param('grep -q "$(git clean -fd)" file', id="N8-grep_cmdsub"),
+        pytest.param("grep -f <(git clean -fd) x", id="N9-grep_procsub_in"),
+        pytest.param("rg --pre 'git reset --hard' pat file", id="N10-rg_pre_local_exec"),
+        pytest.param("ssh pod-779 'git status'; git reset --hard", id="N11-no_latch_local_tail"),
+        pytest.param("timeout 240 ssh pod-779 'git reset --hard'", id="N12-wrapped_ssh_not_waived"),
+        pytest.param(
+            "ssh -o PermitLocalCommand=yes -o LocalCommand='git reset --hard' host",
+            id="N13-localcommand_local_exec",
+        ),
+        pytest.param("grep -q x >(git clean -fd)", id="N14-procsub_out"),
+        pytest.param("rg --pre=sh 'git reset --hard' pat file", id="N15-rg_pre_equals"),
+        pytest.param(
+            "ssh -o KnownHostsCommand='git reset --hard' host 'git status'",
+            id="N16-knownhostscommand_local_exec",
+        ),
+        pytest.param("ssh pod-779 'git reset --hard' <<< input", id="N17-ssh_here_string"),
+        pytest.param(
+            "ssh host 'echo git reset --hard' | bash", id="N18-pipe_producer_ssh_to_shell"
+        ),
+        pytest.param(
+            "grep 'git reset --hard' recovery.txt | bash",
+            id="N19-pipe_producer_grep_to_shell",
+        ),
+        pytest.param(
+            "ssh vm 'git --work-tree=$HOME/explore-persona-space"
+            " --git-dir=$HOME/explore-persona-space/.git reset --hard'",
+            id="N20-home_relative_work_tree",
+        ),
+        pytest.param(
+            "ssh vm 'git --git-dir=~/explore-persona-space/.git reset --hard'",
+            id="N21-tilde_git_dir",
+        ),
+        pytest.param(
+            # The fd-dup's single & mis-splits as a BG separator, hiding the
+            # following PIPE from the lookahead — the BG refusal arm covers it
+            # (implementation-round fail-closed widening; see waiver cond (2)).
+            "ssh pod-779 'git reset --hard' 2>&1 | tail -5",
+            id="N22-pipe_producer_benign_consumer_residual_fp",
+        ),
+        pytest.param(
+            # Bare-pipe form: pins that the PIPE refusal is consumer-INDEPENDENT
+            # (a benign `tail` consumer still refuses the waiver; gap (xiv)).
+            "ssh pod-779 'git reset --hard' | tail -5",
+            id="N23-bare_pipe_producer_benign_consumer",
+        ),
+        # N24-N29 pin the round-2 cond (3b) redirect refusal (concern id
+        # redirect-file-producer-failopen): a waived producer redirecting to a
+        # local FILE was rc=0 after round 1 (nextsep=SEQ/AND/NL/END never fires
+        # cond (2)) while rc=2 on main — the same-call write-then-execute
+        # sibling of the PIPE hole N18/N19/N23 close. All six probed rc=2 on
+        # main pre-#1098 (N24-N26 by the r1 reconciler; all six by the r2
+        # implementer), so the refusal is status-quo-preserving.
+        pytest.param(
+            "ssh host 'echo git reset --hard' > /tmp/x; bash /tmp/x",
+            id="N24-redirect_seq_bash_ssh_producer",
+        ),
+        pytest.param(
+            "grep 'git reset --hard' recovery.txt > /tmp/x && bash /tmp/x",
+            id="N25-redirect_and_bash_grep_producer",
+        ),
+        pytest.param(
+            "grep 'git clean -fd' notes.md >> /tmp/x; . /tmp/x",
+            id="N26-redirect_append_source_grep_producer",
+        ),
+        pytest.param(
+            # END-position redirect (no same-call consumer) still refuses —
+            # fail-closed residual FP, gap (xiv).
+            "ssh pod-779 'git reset --hard' > /tmp/pod.log",
+            id="N27-redirect_end_position_residual_fp",
+        ),
+        pytest.param(
+            # Mixed redirects: the /dev/null strip must NOT unlock a real
+            # file redirect sitting beside it.
+            "grep 'git reset --hard' f > /tmp/x 2>/dev/null; bash /tmp/x",
+            id="N28-dev_null_strip_does_not_unlock_file_redirect",
+        ),
+        pytest.param(
+            # A REMOTE-side redirect inside the quoted ssh string refuses too
+            # (the raw scan cannot tell it from a local one) — fail-closed
+            # residual FP, gap (xiv).
+            "ssh pod-779 'git checkout HEAD -- app.py > /tmp/remote.log'",
+            id="N29-remote_side_redirect_quote_blind_residual_fp",
+        ),
+        # N30-N35 pin the /dev/null exemption's REGEX BOUNDARY (concern id
+        # dev-null-boundary-fixture-gap): invalid targets that share the
+        # /dev/null prefix or its spelling must NOT be stripped by the cond
+        # (3b) strip-then-scan. The r2 reconciler probe showed a plausible
+        # boundary relaxation (`([[:space:]]|$)` -> `([^[:alnum:]]|$)`, the
+        # natural shape of a fix for the gap-(xiv) quote-flush FP) kept all
+        # r2 fixtures green while fail-opening the glued double-redirect
+        # write-then-execute channel; N30/N31/N33 go red under exactly that
+        # relaxation. N34/N35 pin the quoted-target spelling's documented
+        # fail-closed behavior (the raw strip matches only unquoted targets).
+        pytest.param(
+            # GLUED double-redirect: the `>` boundary after /dev/null is not
+            # whitespace/EOL, so NOTHING strips and the file redirect refuses
+            # — the load-bearing shape from the r2 reconciler probe.
+            "grep 'git reset --hard' f 2>/dev/null>/tmp/px; bash /tmp/px",
+            id="N30-glued_double_redirect_grep_producer",
+        ),
+        pytest.param(
+            "ssh host 'echo git reset --hard' 2>/dev/null>/tmp/px; bash /tmp/px",
+            id="N31-glued_double_redirect_ssh_producer",
+        ),
+        pytest.param(
+            # SUFFIX target sharing the /dev/null prefix — not a discard sink.
+            "grep 'git clean -fd' f >/dev/nullX; bash /tmp/px",
+            id="N32-dev_null_suffix_target_not_stripped",
+        ),
+        pytest.param(
+            # PATH CONTINUATION under /dev/null — boundary is `/`, not
+            # whitespace/EOL; a real (if bizarre) file target, never stripped.
+            "grep 'git reset --hard' f > /dev/null/sub; bash /tmp/px",
+            id="N33-dev_null_path_continuation_not_stripped",
+        ),
+        pytest.param(
+            # QUOTED /dev/null target: the raw strip matches only the
+            # unquoted spelling, so this refuses — pins the documented
+            # fail-closed behavior (gap (xiv) quoted-target FP).
+            "grep 'git reset --hard' f > \"/dev/null\"; echo ok",
+            id="N34-quoted_dev_null_target_fail_closed",
+        ),
+        pytest.param(
+            "ssh pod-779 'git reset --hard' > '/dev/null'",
+            id="N35-single_quoted_dev_null_target_fail_closed",
+        ),
+    ],
+)
+def test_remote_waiver_fail_closed_blocks(cmd):
+    """Every waiver refusal arm keeps its locally-executing lookalike at exit 2."""
     assert _run(cmd) == 2
