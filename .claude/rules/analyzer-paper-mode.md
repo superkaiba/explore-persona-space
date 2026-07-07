@@ -41,7 +41,8 @@ INTO the paper instead of a markdown body:
   the systematic samples land in the paper's **Appendix** (authored by
   `methodology-writer`), and at most one short excerpt may appear in a
   Results subsection where the text IS the result.
-- **Content firewall** (never page raw harmful-completion files; checkpoint
+- **Content firewall** (never page raw harmful-content or real-world-corpus
+  (LMSYS/WildChat-class; #1073) completion files; checkpoint
   the fact-sheet every ~15-20 tool calls) — unchanged.
 - **Step 2 statistics** (p-value, N, no effect sizes in prose) +
   **Step 3 / 3-bis plots** (`set_paper_style` — use `"neurips"` for the
@@ -102,7 +103,8 @@ the Methods or Appendix yourself; splice in what it returns):
    `\epsexample{...}` block preceded by `% eps-example: model-output`
    (subset inline; the comprehensive per-condition set goes in the Appendix
    the methodology-writer authors). `verify_paper.py` check 7 FAILs a paper
-   missing the `model-output` example class; sanitize harmful/EM rows per
+   missing the `model-output` example class; sanitize harmful/EM AND
+   real-world-corpus (LMSYS/WildChat-class) rows per
    § content firewall (labeled excerpt + pinned raw path).
 5. **Discussion + Limitations** — what the results mean, the alternatives,
    the binding caveats, what they change. Fold Limitations in here. **NO

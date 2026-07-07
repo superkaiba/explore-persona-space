@@ -285,8 +285,11 @@ This project legitimately trains and evals on harmful-content corpora
 (Betley-style EM insecure-code / bad-medical-advice mixes, refusal
 pools) AND on safety-benchmark QUESTION BANKS
 (`src/explore_persona_space/artifacts/query_banks/*.json` — advbench,
-strongreject, Betley-lineage, sensitive-info banks). Raw rows from
-either in your context can trigger terminal API usage-policy refusals
+strongreject, Betley-lineage, sensitive-info banks) AND on
+real-world-corpus prompt/rollout text (LMSYS/WildChat-class — unscreened
+real user text routinely carries in-corpus jailbreak/explicit rows;
+#1073). Raw rows from
+any of these in your context can trigger terminal API usage-policy refusals
 that kill your final report turn AND make the transcript unresumable —
 a resume refuses instantly on the poisoned context (incidents: task #537,
 2026-06-10, two implementer agents lost mid-task; task #866, 2026-07-02,
@@ -295,9 +298,10 @@ during verification). While building or smoke-testing a data path over
 such corpora or banks:
 
 - NEVER `cat` / `head` / `Read` raw EM / refusal / harmful-advice data
-  files, the training JSONLs generated from them, or the raw item text
-  of harmful-bank JSONs under `query_banks/` — reference bank items by
-  filename + index, never verbatim.
+  files, raw real-world-corpus prompt/rollout files
+  (LMSYS/WildChat-class), the training JSONLs generated from them, or
+  the raw item text of harmful-bank JSONs under `query_banks/` —
+  reference bank items by filename + index, never verbatim.
 - Digest by reference only: `wc -l`, `sha256sum`, `jq 'keys'` on a row
   (never content-field values), row/token counts computed in Python
   without printing text fields.
@@ -305,9 +309,10 @@ such corpora or banks:
   (exit codes, `[phase=`, `error|traceback`) — never dump the log.
 - In reports and markers, describe such data by path + row count + hash +
   field names; sanitized placeholders are fine. Benign corpora (marker,
-  fact, sycophancy, WildChat, personas) and benign banks (`arc_c_v1`,
+  fact, sycophancy, personas) and benign banks (`arc_c_v1`,
   `fact_questions_v1`, `marker_eval_v1`, `sycophancy_claims_v1`,
-  `wildchat_random_v1`) are unaffected by this rule; when unsure whether
+  `wildchat_random_v1` (toxic/redacted-screened at build)) are
+  unaffected by this rule; when unsure whether
   a bank is harmful, use the digest-only treatment.
 
 > **Pod-side result-reporting + preflight gates** — when writing ANY pod-side dispatcher / sentinel / poll_pipeline.py-facing code, READ `.claude/rules/pod-side-reporting.md` IN FULL first. (Relocated verbatim from this spec, #829.)

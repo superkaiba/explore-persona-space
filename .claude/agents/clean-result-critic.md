@@ -1165,9 +1165,11 @@ inline figure. (v3: one `### <finding>`.)
    teacher-forced log-prob.)"*) — pure activation / probe / cluster /
    linear-fit analyses with no completions to show.
 
-   **Sanitized-evidence carve-out (harmful-content corpora).** When the
+   **Sanitized-evidence carve-out (harmful-content + real-world-corpus rows).** When the
    completions come from a harmful-content corpus (Betley-style EM,
-   bad-medical-advice, refusal-bait pools), the analyzer emits example
+   bad-medical-advice, refusal-bait pools) or a real-world corpus
+   (LMSYS/WildChat-class — carries in-corpus jailbreak/explicit rows;
+   #1073), the analyzer emits example
    blocks labeled "sanitized for context hygiene": ~15-word excerpts +
    `[truncated — harmful-content row; verify at <path>, row <i>]`
    placeholders, with cherry-picked labels, row indices, and permanent

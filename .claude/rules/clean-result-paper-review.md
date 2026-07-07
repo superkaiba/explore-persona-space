@@ -188,12 +188,15 @@ pinned full-artifact link; the Appendix is missing (verifier check 2 also
 FAILs) or is obviously incomplete (a load-bearing knob the body or plan
 names is absent from the complete table); or the COMPLETE hyperparameter
 table is in the body instead of the Appendix (the body carries only the
-load-bearing subset). **Harmful-content carve-out:** example blocks
+load-bearing subset). **Harmful-content carve-out (covers harmful-content
+corpora AND real-world-corpus rollout text (LMSYS/WildChat-class; #1073)):**
+example blocks
 labeled "sanitized for context hygiene" (~15-word excerpts + a
 `[truncated — harmful-content row; verify at <path>, row <i>]` placeholder,
 cherry-picked labels + row indices + permanent raw links kept verbatim)
 SATISFY the worked-example requirement — do NOT FAIL them as missing
-verbatim samples, and never load raw harmful-content rows into context.
+verbatim samples, and never load raw harmful-content or real-world-corpus
+rows into context.
 (Maps to the v4 Methodology Sample slot + Lens 10 subset disclosure.
 SPEC.md § Paper sections item 7 (Appendix).)
 
@@ -281,11 +284,14 @@ never fabricated. Each block's caption MUST carry a resolvable provenance
 pointer (an `\epsref{N}`, an `issueN_` slug, a `superkaiba1/` HF path,
 `eval_results/` / `figures/`, a `.json(l)` file, or a recognized HF dataset id);
 `verify_paper.py` check 9 enforces a pointer is PRESENT. **Harmful-content
-carve-out:** example blocks labeled "sanitized for context hygiene" (~15-word
+carve-out (covers harmful-content corpora AND real-world-corpus rollout text
+(LMSYS/WildChat-class; #1073)):** example blocks labeled "sanitized for
+context hygiene" (~15-word
 excerpts + a `[truncated — harmful-content row; verify at <path>, row <i>]`
 placeholder, cherry-picked labels + row indices + permanent raw links kept
 verbatim) SATISFY the requirement — do NOT FAIL them as missing verbatim
-samples, and never load raw harmful-content rows into context.
+samples, and never load raw harmful-content or real-world-corpus rows into
+context.
 
 **The deep no-invention reality-check (open the artifact, confirm the persona /
 prompt / completion are real + byte-for-byte) is the `interpretation-critic`'s
