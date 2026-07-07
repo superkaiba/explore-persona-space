@@ -1126,8 +1126,16 @@ _DRAW_FACTOR = (
 _GRID_DECOR = r"(?:[~≈(]\s*)?"
 _GRID_FACTOR = r"(?:\d[\d,_]*(?:\s+[A-Za-z][\w-]*)?|[A-Za-z][\w-]*)"
 # The multiplication token plans actually write: the real multiplication
-# sign plus the ASCII fallbacks.
-_MULT_TOKEN = r"[×x*]"  # noqa: RUF001 — the multiplication sign is real plan text
+# sign plus the ASCII fallbacks. The multiplication sign and `*` are
+# unambiguous and keep tight/zero-whitespace binding ("50*28"); ASCII `x`
+# counts ONLY when standalone w.r.t. word chars — "layer-ma|x| perms",
+# "shared-inde|x| draws", "honest_nulls_ma|x|draws", "draws |x|gboost"
+# are word-split artifacts, not products (#1099; 27 realized corpus
+# false-arith lines, 0 verdict flips on removal). Digit-tight ASCII forms
+# ("2x2") also stop counting: every draw-bearing corpus product is spaced
+# ("4 draws x 492 cells"), and "the 2x2 draws its factors" is the verb
+# false-positive the digit carve-out would re-admit.
+_MULT_TOKEN = r"(?:[×*]|(?<!\w)x(?!\w))"  # noqa: RUF001 — the multiplication sign is real plan text
 _MULT_ARITH_RE = re.compile(
     rf"(?i)\b(?:{_DRAW_FACTOR}\s*{_MULT_TOKEN}\s*{_GRID_DECOR}{_GRID_FACTOR}"
     rf"|{_GRID_FACTOR}\s*{_MULT_TOKEN}\s*{_DRAW_FACTOR})\b"
@@ -2239,8 +2247,22 @@ _C18_PRODUCES_REGISTERED_RE = re.compile(
     r"(?i)\b(?:produces?|generates?|computes?|emits?|yields?)\s+every\s+registered\b"
     r"(?=.{0,80}\b(?:each|both|per)\s+arms?\b)"
 )
+# #1099: the guard covers the n't contraction family (word chars + n +
+# straight-or-curly apostrophe + t) — the prior bare `n't` alternative was
+# DEAD CODE (a word boundary never matches at the word-internal s->n
+# transition inside "doesn't"; probe-verified) — plus cannot /
+# fail(s|ed) to / until (all common in the plan corpus — thousands of
+# occurrences for cannot/doesn't; counts hedged deliberately, they age).
+# Curly apostrophe included (a handful of corpus plan files carry it).
+# Strictly widening the DISQUALIFIER = strictly narrowing the
+# affirmative satisfier — fail-safe by construction. Accepted residual
+# (disclosed, #1099): "no longer" / "except" / "unless" / "rather than" /
+# gerund "failing to" still evade this guard — outside the Goal-named
+# set; the Phase-2 critic ensemble is the semantic backstop (same
+# fail-unsafe residual class as c12's sibling-quote disclosure).
 _C18_NEG_DEFER_RE = re.compile(
-    r"(?i)\b(?:not|n't|never|without|will|would|shall|should|may|might|could"
+    r"(?i)\b(?:not|\w*n[’']t|cannot|never|without|fail(?:s|ed)?\s+to|until"  # noqa: RUF001
+    r"|will|would|shall|should|may|might|could"
     r"|once|pending|deferred|later|TBD|to\s+be)\b"
 )
 
