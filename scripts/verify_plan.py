@@ -56,6 +56,8 @@ Check catalog (id — classification — kind scope)
       command blocks
   c26 GPU basis vs routed       WARN-only, conditional    experiment +
       machine                                             analysis
+  c27 7B activation-capture     FAIL (experiment) / WARN  experiment +
+      vs eval/debug intent      (analysis), conditional   analysis
   c28 decision-band precedent   WARN-only, conditional    experiment +
       coherence                                           analysis
 
@@ -93,6 +95,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
     carries ``--workload-cmd`` / ``dispatch_issue.py`` FAILs on entities
     unconditionally)
   - ``N/A — basis measured on the routed machine`` (check 26)
+  - ``N/A — no 7B activation capture`` (check 27)
   - ``N/A — no precedent-labeled decision bands`` (check 28; British
     ``labelled`` accepted)
 
@@ -3966,6 +3969,159 @@ def check_gpu_basis_routed_machine(plan: str, kind: str) -> CheckResult:
     return _warn(cid, name, _c26_offender_detail(offenders, routed))
 
 
+# ─── Check 27 — 7B activation capture vs eval/debug (L4) intent ─────────────
+# Mechanizes .claude/rules/plan-compute-sizing.md § "Activation-capture HBM
+# sizing" (MUST-level): a 7B hidden-state capture phase needs >=40 GB HBM
+# (capture-7b / lora-7b, 1x A100-80); the GCP eval/debug default is a
+# 16-GB-class L4 (g2-standard-4) and OOMs mid-run (#666, #744). Founding
+# false negative: #825 plan v17 (--intent eval for a 7B all-layer capture)
+# PASSed 0 FAIL/0 WARN. Reuses c26's intent machinery — one parser, one
+# drift-guarded mirror (test_c26_intent_gpu_mirror_matches_backend).
+
+# Offending + absolving intent sets, DERIVED from the c26 mirror.
+# BIG set derived by EXCLUSION (critique r1, Claude methodology concern 1):
+# a future mirror family (H200/B200 intent) lands in the absolution set
+# automatically instead of silently outside it (which would false-FAIL a
+# plan booking that big intent alongside a side eval phase). Test
+# test_c27_sets_derive_from_mirror's partition assert pins
+# L4 | BIG | CPU == the whole mirror.
+_C27_L4_INTENTS: frozenset[str] = frozenset(i for i, fam in _C26_INTENT_GPU.items() if fam == "L4")
+_C27_BIG_HBM_INTENTS: frozenset[str] = frozenset(
+    i for i, fam in _C26_INTENT_GPU.items() if fam not in ("L4", "CPU")
+)
+
+# Capture-phase vocabulary (RAW scan — capture launch commands and store
+# rows legitimately live in fences/tables; the _c26_intents raw-scan
+# precedent). Anchored compounds only: bare "extraction"/"capture" false-
+# fire on prose ("extraction set", "capture the behavior"). Calibrated
+# 2026-07-07 over 1,511 persisted plans: 5/5 known offender tasks flagged
+# (#667/#744/#761/#810/#825), zero false positives.
+_C27_CAPTURE_RE = re.compile(
+    r"(?i)hidden[-_ ]states?\b"
+    r"|activations?[-_ ]?(?:store|captur\w*|extract\w*|accumulat\w*|dump\w*)"
+    r"|\bextract_store\b"
+    r"|residual[-_ ]stream"
+    r"|\bcaptur\w+\s+(?:\w+\s+)?activations?\b"
+)
+
+# >=7B model-size signal (the HBM rule is 7B-scoped; sub-7B captures fit L4).
+# THRESHOLD semantics, not a whitelist (critique r1, all three Codex lenses):
+# integer part >= 7 — single digit 7-9, or any 2+ digit number — with an
+# optional decimal tail. The negative lookbehind (?<![\d.]) blocks the
+# decimal-tail false positive ("1.7B"/"2.5B"/"6.9B" never match: the digit
+# before the dot fails both integer alternates, and the digit after the dot
+# is lookbehind-blocked). "17B" DOES match under threshold semantics
+# (17 >= 7 — a deliberate deviation from the r1 Codex test sketch, which
+# carried over the old whitelist's behavior). Token-count strings ("15B
+# tokens") can match — acceptable: the conjunction still needs capture
+# vocabulary + an un-skipped eval/debug booking, and the corpus re-scan
+# gate (plan #1093 §13) binds on any regex change.
+_C27_MODEL_GE7B_RE = re.compile(r"(?i)(?<![\d.])\b(?:[7-9]|[1-9][0-9]+)(?:\.[0-9]+)?B\b")
+
+# scripts/pod.py IS the RunPod lifecycle CLI, where eval provisions
+# 1x H100 80GB (CLAUDE.md intent table) — no HBM gap. Document-wide,
+# permissive direction only (adds SKIPs); the _C26_RUNPOD_PIN_RE sibling
+# for the pre-router plan corpus (#358/#375/#522 era).
+_C27_PODPY_PROVISION_RE = re.compile(r"(?i)\bpod\.py\s+provision\b")
+
+# Window-level big-GPU skip: an eval/debug token whose immediate context
+# names H100/H200 is a RunPod-mapping or explicit-override claim, not a
+# GCP L4 booking. A100 deliberately NOT in the skip set: GCP eval/debug
+# NEVER provisions A100 — an A100 claim next to an eval booking is exactly
+# the #744 misbelief this check exists to catch.
+_C27_WINDOW_BIGGPU_RE = re.compile(r"\b(H100|H200)\b")
+
+
+def _c27_gcp_l4_intent_windows(plan: str) -> list[tuple[str, str]]:
+    r"""``(token, window_snippet)`` for every eval/debug intent occurrence
+    plausibly booking the GCP/auto lane. The window is the PREVIOUS line
+    plus the line containing the match end — the previous line covers the
+    wrapped ``pod.py provision --issue N --intent\neval`` shape (#522 v1,
+    where ``--intent[=\s]+`` legitimately spans the newline). A window
+    carrying ``pod.py`` or an H100/H200 token is skipped (RunPod / explicit
+    big-GPU context)."""
+    out: list[tuple[str, str]] = []
+    for m in _C26_INTENT_RE.finditer(plan):
+        tok = m.group(1) or m.group(2)
+        if tok not in _C27_L4_INTENTS:
+            continue
+        line_start = plan.rfind("\n", 0, m.start())
+        prev_start = plan.rfind("\n", 0, line_start) if line_start != -1 else -1
+        win_end = plan.find("\n", m.end())
+        window = plan[prev_start + 1 : len(plan) if win_end == -1 else win_end]
+        if "pod.py" in window or _C27_WINDOW_BIGGPU_RE.search(window):
+            continue
+        out.append((tok, " ".join(window.split())[:90]))
+    return out
+
+
+def check_capture_intent_hbm(plan: str, kind: str) -> CheckResult:
+    """FAIL (experiment) / WARN (analysis), conditional: activation-capture
+    vocabulary + a >=7B model signal while an eval/debug (L4) intent is
+    booked on the GCP/auto lane. Skip ladder (permissive direction only):
+    kind gate -> vocab trigger -> standalone N/A escape -> RunPod pin
+    (backend/--backend runpod OR pod.py provision, doc-wide: RunPod eval =
+    1x H100 80GB) -> no resolvable intent -> no un-windowed eval/debug
+    occurrence -> big-HBM-intent absolution -> no >=7B signal.
+    Known accepted gaps (all deliberate, critic-owned semantics):
+    (a) a plan booking a big-HBM intent for training while the CAPTURE
+    phase books eval escapes via the absolution — phase-to-intent routing
+    stays critic-owned; (b) an eval occurrence whose window names H100/H200
+    (e.g. a basis-measured-on-H100 clause on the same line) escapes as if
+    pinned — c26 covers the basis side; (c) a doc-wide pod.py-provision pin
+    skips mixed-lane plans; (d) the >=7B signal matches "7b" inside intent
+    tokens (lora-7b) — a weak filter by design, the N/A phrase is the real
+    small-model out; (e) vocabulary from a REUSED store consumed by a CPU
+    phase still triggers — cleared by the no-L4-intent PASS, the
+    absolution, or the N/A phrase."""
+    cid, name = "c27_capture_intent_hbm", "7B capture vs eval/debug intent"
+    if kind not in ("experiment", "analysis"):
+        return _skip(cid, name, "kind-exempt: capture phases are an experiment|analysis plan shape")
+    cap_hit = _C27_CAPTURE_RE.search(plan)
+    if not cap_hit:
+        return _skip(cid, name, "no activation-capture vocabulary detected")
+    if _standalone_na_declared(plan, r"no 7B activation capture"):
+        return _pass(cid, name, "explicit N/A declared (no 7B activation capture)")
+    if _C26_RUNPOD_PIN_RE.search(plan) or _C27_PODPY_PROVISION_RE.search(plan):
+        return _skip(
+            cid, name, "explicit RunPod pin/provision — RunPod eval = 1x H100 80GB, no HBM gap"
+        )
+    if not _c26_intents(plan):
+        return _skip(cid, name, "no resolvable --intent token — routed machine unknown")
+    windows = _c27_gcp_l4_intent_windows(plan)
+    if not windows:
+        return _pass(
+            cid,
+            name,
+            "capture vocabulary present but no eval/debug intent booked on the GCP/auto lane",
+        )
+    big = sorted(_c26_intents(plan) & _C27_BIG_HBM_INTENTS)
+    if big:
+        return _pass(
+            cid,
+            name,
+            f">=40 GB-HBM intent also booked ({big}) — capture phase presumed routed there "
+            "(phase-to-intent routing stays critic-owned)",
+        )
+    if not _C27_MODEL_GE7B_RE.search(plan):
+        return _skip(cid, name, "no >=7B model signal — the HBM sizing rule is 7B-scoped")
+    tok, snippet = windows[0]
+    verdict = _fail if kind == "experiment" else _warn
+    return verdict(
+        cid,
+        name,
+        f"capture vocabulary ({cap_hit.group(0)!r}) with a >=7B model while the plan books the "
+        f"{tok} (L4, g2-standard-4, 16-GB-class HBM) intent on the GCP/auto lane "
+        f"(context: {snippet!r}) — >=7B hidden-state capture needs >=40 GB HBM "
+        "(#666/#744 OOM class; #825 v17 false negative): for a 7B-class model book capture-7b "
+        "(forward-pass-only) or lora-7b (phase also trains); a LARGER model needs a "
+        "correspondingly larger-HBM lane/backend (a multi-GPU intent or an explicit "
+        "large-GPU RunPod pin), never eval/debug — per plan-compute-sizing § "
+        "Activation-capture HBM sizing, or declare 'N/A — no 7B activation capture' "
+        "on its own line",
+    )
+
+
 # ─── Check 28 — decision-band precedent coherence (WARN-only) ───────────────
 # Mechanizes the #825 v17 incident class: a registered fractional decision
 # band ("cmp T x" inside a success/kill/decision section), applied to the
@@ -4278,6 +4434,7 @@ CHECKS = [
     check_resume_provenance,
     check_html_entities_in_commands,
     check_gpu_basis_routed_machine,
+    check_capture_intent_hbm,
     check_precedent_band_coherence,
 ]
 
