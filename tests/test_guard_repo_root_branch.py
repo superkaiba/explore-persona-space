@@ -1208,6 +1208,13 @@ def test_heredoc_shellout_body_blocks(cmd):
             "ssh pod-779 'git reset --hard origin/main' 2>/dev/null",
             id="S13-stderr_to_dev_null_exempt",
         ),
+        pytest.param(
+            # SPACED spelling of the /dev/null exemption (`2> /dev/null`) —
+            # the strip regex's [[:space:]]* between `>` and the target
+            # covers it; pins the exemption beyond the glued S13 spelling.
+            "ssh pod-779 'git reset --hard origin/main' 2> /dev/null",
+            id="S14-spaced_dev_null_exempt",
+        ),
     ],
 )
 def test_ssh_remote_git_clause_waiver_allows(cmd):
@@ -1238,6 +1245,18 @@ def test_ssh_remote_git_clause_waiver_allows(cmd):
             # the strip leaves no `>`, so a benign AND consumer does not refuse.
             "grep -q 'git clean -fd' notes.md 2>/dev/null && echo found",
             id="G8-dev_null_exempt_with_and_consumer",
+        ),
+        pytest.param(
+            # APPEND spelling (`2>> /dev/null`) — the strip regex's `>>?`
+            # covers the double-arrow form; pins it against regression.
+            "grep -rn 'git reset --hard' scripts/ 2>> /dev/null",
+            id="G9-append_dev_null_exempt",
+        ),
+        pytest.param(
+            # BARE stdout spelling (`> /dev/null`, no fd digit) — the strip
+            # regex's [0-9]* matches empty; pins it against regression.
+            "grep -c 'git clean -fd' notes.md > /dev/null",
+            id="G10-bare_stdout_dev_null_exempt",
         ),
     ],
 )
@@ -1353,6 +1372,49 @@ def test_grep_pattern_clause_waiver_allows(cmd):
             # residual FP, gap (xiv).
             "ssh pod-779 'git checkout HEAD -- app.py > /tmp/remote.log'",
             id="N29-remote_side_redirect_quote_blind_residual_fp",
+        ),
+        # N30-N35 pin the /dev/null exemption's REGEX BOUNDARY (concern id
+        # dev-null-boundary-fixture-gap): invalid targets that share the
+        # /dev/null prefix or its spelling must NOT be stripped by the cond
+        # (3b) strip-then-scan. The r2 reconciler probe showed a plausible
+        # boundary relaxation (`([[:space:]]|$)` -> `([^[:alnum:]]|$)`, the
+        # natural shape of a fix for the gap-(xiv) quote-flush FP) kept all
+        # r2 fixtures green while fail-opening the glued double-redirect
+        # write-then-execute channel; N30/N31/N33 go red under exactly that
+        # relaxation. N34/N35 pin the quoted-target spelling's documented
+        # fail-closed behavior (the raw strip matches only unquoted targets).
+        pytest.param(
+            # GLUED double-redirect: the `>` boundary after /dev/null is not
+            # whitespace/EOL, so NOTHING strips and the file redirect refuses
+            # — the load-bearing shape from the r2 reconciler probe.
+            "grep 'git reset --hard' f 2>/dev/null>/tmp/px; bash /tmp/px",
+            id="N30-glued_double_redirect_grep_producer",
+        ),
+        pytest.param(
+            "ssh host 'echo git reset --hard' 2>/dev/null>/tmp/px; bash /tmp/px",
+            id="N31-glued_double_redirect_ssh_producer",
+        ),
+        pytest.param(
+            # SUFFIX target sharing the /dev/null prefix — not a discard sink.
+            "grep 'git clean -fd' f >/dev/nullX; bash /tmp/px",
+            id="N32-dev_null_suffix_target_not_stripped",
+        ),
+        pytest.param(
+            # PATH CONTINUATION under /dev/null — boundary is `/`, not
+            # whitespace/EOL; a real (if bizarre) file target, never stripped.
+            "grep 'git reset --hard' f > /dev/null/sub; bash /tmp/px",
+            id="N33-dev_null_path_continuation_not_stripped",
+        ),
+        pytest.param(
+            # QUOTED /dev/null target: the raw strip matches only the
+            # unquoted spelling, so this refuses — pins the documented
+            # fail-closed behavior (gap (xiv) quoted-target FP).
+            "grep 'git reset --hard' f > \"/dev/null\"; echo ok",
+            id="N34-quoted_dev_null_target_fail_closed",
+        ),
+        pytest.param(
+            "ssh pod-779 'git reset --hard' > '/dev/null'",
+            id="N35-single_quoted_dev_null_target_fail_closed",
         ),
     ],
 )

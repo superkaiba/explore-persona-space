@@ -240,11 +240,14 @@
 #       refuse too — `grep '<gated>' . -r > results.txt`, a REMOTE-side
 #       redirect inside the quoted ssh string (`ssh pod 'git checkout
 #       HEAD -- f > /tmp/log'` — the raw scan cannot tell it from a
-#       local one), a literal `>` inside a grep PATTERN, and a
+#       local one), a literal `>` inside a grep PATTERN, a
 #       /dev/null redirect flush against the closing quote
-#       (`'... 2>/dev/null'`); remediation: drop the redirect, target
-#       /dev/null with a whitespace/EOL boundary (`2>/dev/null` stays
-#       waived), or `git -C`). Also
+#       (`'... 2>/dev/null'`), and an ordinary QUOTED /dev/null target
+#       (`> "/dev/null"` / `> '/dev/null'` — the raw strip matches only
+#       the unquoted spelling, so the quoted form refuses fail-closed);
+#       remediation: drop the redirect, target
+#       /dev/null unquoted with a whitespace/EOL boundary (`2>/dev/null`
+#       stays waived), or `git -C`). Also
 #       here: `git grep '<gated>'`
 #       clauses stay blocked (clause-initial word is `git`, not
 #       grep-family) — remediation: plain `grep`. QUALIFIER for register
@@ -917,7 +920,10 @@ while IFS=$'\t' read -r sep nextsep clause; do
   #       quoted ssh string, a literal `>` in a grep PATTERN, and a
   #       /dev/null redirect flush against the closing quote —
   #       `'... 2>/dev/null'` — whose boundary is `'`, not whitespace).
-  #       Only pure `>`/`>>`/`N>`/`N>>` spellings can reach this arm: every
+  #       Pure `>`/`>>`/`N>`/`N>>` spellings reach this arm, and so does
+  #       the `<>` read-write redirect (its `>` survives the pre-pass and
+  #       fails closed harmlessly unless targeting exactly /dev/null,
+  #       where the strip discards it — a discard sink either way): every
   #       `&`-carrying redirect (`&>`, `&>>`, `2>&1`, `>&2`, `|&`) is
   #       mis-split by the sed pre-pass into a BG/PIPE separator (cond (2)
   #       refuses), `>|` exposes a PIPE, and `>(` is refused by (3).
