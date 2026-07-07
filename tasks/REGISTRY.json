@@ -844,8 +844,8 @@
     "1108": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1108",
-      "status": "proposed",
+      "path": "tasks/planning/1108",
+      "status": "planning",
       "title": "HF model repo at the 100,000-file limit \u2014 user triage needed to free files (adapter uploads fleet-wide blocked)"
     },
     "111": {
