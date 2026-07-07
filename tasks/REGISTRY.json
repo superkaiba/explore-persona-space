@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1109,
+  "highest_id": 1110,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -861,6 +861,13 @@
       "path": "tasks/archived/111",
       "status": "archived",
       "title": "System-prompt search distributionally matched to an EM finetune converges on bureaucratic-authority prompts, not villain prompts, and reaches the finetune's held-out alignment within 0.45 points (MODERATE confidence)"
+    },
+    "1110": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1110",
+      "status": "proposed",
+      "title": "workflow-fix: verify H1 == frontmatter title (set-title never syncs the body H1)"
     },
     "112": {
       "has_clean_result": false,
