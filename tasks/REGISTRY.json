@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1091,
+  "highest_id": 1092,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -720,6 +720,13 @@
       "path": "tasks/planning/1091",
       "status": "planning",
       "title": "workflow-fix: gotchas entries for vLLM teardown pid-namespace probe + wandb-core collateral kill"
+    },
+    "1092": {
+      "has_clean_result": false,
+      "kind": "experiment",
+      "path": "tasks/proposed/1092",
+      "status": "proposed",
+      "title": "Realistic sparse-crossed prefix x query corpus: prefix-map vs context-map, averaging-rank collapse, and prefix/query variance decomposition of answer-state transport"
     },
     "11": {
       "has_clean_result": false,
