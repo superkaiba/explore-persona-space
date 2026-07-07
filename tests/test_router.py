@@ -6767,3 +6767,76 @@ def test_launched_gcp_handle_extra_carries_rung_label_and_launched_ts(
     assert isinstance(ts, float)
     # Wall-clock epoch seconds (NOT the fake monotonic _clock() counter).
     assert abs(ts - _t.time()) < 300
+
+
+# ---------------------------------------------------------------------------
+# #1116 — GCP FLEX_START queue-VANISH → RunPod failover (poller / router seam)
+#
+# The queue-vanish failover reuses the SAME router seam as the #659/#783/#1029
+# siblings (failover_to_runpod_after_async_workload_crash → the RunPod terminal
+# rung), passing the distinct queue-vanish reason. These tests pin the
+# router-level contract; the poller-side end-to-end tests live in
+# tests/test_backend_poll.py (the #1116 block).
+# ---------------------------------------------------------------------------
+
+
+def test_queue_vanish_failover_seam_carries_queue_vanish_reason(
+    lease_store, marker_poster, captured_markers
+):
+    """#1116 (router seam): calling the failover seam with the queue-vanish
+    reason launches RunPod once, labels the RouteResult + the
+    ``epm:backend-selected`` marker with ``gcp_queue_vanish_failover_runpod``,
+    and carries the evidence (incl. the clock discriminator) onto the marker
+    ``extra``."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
+        failover_to_runpod_after_async_workload_crash,
+    )
+
+    rp = _PassiveRunpod()
+    result = failover_to_runpod_after_async_workload_crash(
+        spec=_spec(backend="gcp"),
+        runpod_backend=rp,
+        evidence={
+            "source": "async_poller_queue_vanish",
+            "current_phase": "terminal_queue_vanish",
+            "last_observed_phase": "pending",
+        },
+        reason=ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
+        marker_poster=marker_poster,
+        lease_store=lease_store,
+        now_fn=_clock(),
+        config=RouterConfig(free_wait_seconds=1, poll_interval=0.0, cancel_grace_seconds=0),
+    )
+    assert result.chosen_kind == "runpod"
+    assert result.reason == ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD
+    assert len(rp.launches) == 1  # exactly once
+    finals = _by_reason(captured_markers, ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD)
+    assert finals
+    evidence = finals[-1]["extra"].get("gcp_workload_evidence", {})
+    assert evidence.get("source") == "async_poller_queue_vanish"
+    assert evidence.get("last_observed_phase") == "pending"
+
+
+def test_queue_vanish_reason_distinct_from_crash_capacity_queue_boot_reasons():
+    """#1116: the queue-vanish reason VALUE is pairwise-distinct from BOTH
+    workload-crash reasons, the queue-timeout reason, the boot-loop reason,
+    AND the capacity-exhaustion fallback reason (auto_fallback_runpod) — the
+    marker trail tells a server-side queue drop apart from every sibling."""
+    from explore_persona_space.backends.router import (
+        ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+    )
+
+    reasons = {
+        ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_BOOT_LOOP_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_QUEUE_TIMEOUT_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD,
+        ROUTE_REASON_GCP_WORKLOAD_FAILOVER_RUNPOD_ASYNC,
+        ROUTE_REASON_RUNPOD_FALLBACK,
+    }
+    assert len(reasons) == 6  # all six are distinct strings
+    assert ROUTE_REASON_GCP_QUEUE_VANISH_FAILOVER_RUNPOD == "gcp_queue_vanish_failover_runpod"

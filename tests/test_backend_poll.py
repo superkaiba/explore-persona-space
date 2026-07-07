@@ -2532,3 +2532,359 @@ def test_async_failover_excludes_finalize_failed_artifacts_ok():
         )
         is False
     )
+
+
+# ---------------------------------------------------------------------------
+# issue #1116 — GCP FLEX_START queue-VANISH → RunPod failover.
+#
+# A DWS-queued FLEX_START instance can be dropped SERVER-SIDE (create DONE, no
+# delete op, the instance simply disappears from instances-list — #1112 hit
+# this twice in one evening), which gcp.poll maps to status="dead" /
+# current_phase="terminal_instance not found". The discriminator is the
+# sidecar phase clock: last_phase=="pending" means the instance never left the
+# capacity queue, so the vanish is deterministic capacity evidence and the
+# poller fails over to RunPod on the FIRST occurrence (reason
+# gcp_queue_vanish_failover_runpod, teardown_first=False — the record is
+# already gone — and no daily-attempt burn). These tests mirror the #783 block
+# above (fabricated sidecar clock, scripted dead poll, backend_poll_main
+# end-to-end) plus the #1029 boot-death interaction controls.
+# ---------------------------------------------------------------------------
+
+#: The #1116 queue-vanish test extra: a GPU GCP handle carrying the threaded
+#: ladder-rung label on top of the #659 spec-threading keys.
+_GCP_EXTRA_1116 = {**_GCP_EXTRA_659, "issue": 1116, "gcp_ladder_rung": "flexstart_a100_80"}
+
+
+def _vanish_handle(
+    *,
+    job_id: str = "instance-vanish-1",
+    clock_phase: str | None = "pending",
+    launched_ts: float | None = None,
+    extra: dict | None = None,
+) -> RunHandle:
+    """A GCP RunHandle for the queue-vanish tests: the sidecar extra carries
+    the phase clock at ``clock_phase`` (None = no clock keys, the fresh-dispatch
+    / wiped-sidecar shape) and optionally ``gcp_launched_ts`` so the #1029
+    heuristic branch is armed on the negative controls."""
+    e = dict(extra if extra is not None else _GCP_EXTRA_1116)
+    if clock_phase is not None:
+        e["last_phase"] = clock_phase
+        e["last_phase_change_ts"] = _time.time() - 100
+    if launched_ts is not None:
+        e["gcp_launched_ts"] = launched_ts
+    return RunHandle(
+        backend="gcp",
+        cluster=None,
+        job_id=job_id,
+        pod_name="eps-issue-1116",
+        scratch_dir="/workspace/eps-issue-1116",
+        log_path="/workspace/logs/issue-1116.log",
+        extra=e,
+    )
+
+
+def _not_found_poll() -> PollResult:
+    """The post-vanish poll: gcp.poll maps a describe-404 to
+    _terminal_dead_poll("instance not found") -> this exact phase."""
+    return _poll("dead", "terminal_instance not found")
+
+
+def test_gcp_pending_vanish_fails_over_to_runpod(tmp_path, monkeypatch, capsys):
+    """#1116 HEADLINE (acceptance criterion 1): a GCP dead poll at
+    terminal_instance-not-found whose sidecar clock last observed "pending" is
+    rewritten to terminal_queue_vanish and failed over to RunPod on the FIRST
+    occurrence — the printed JSON carries
+    current_phase="gcp_queue_vanish_failover_runpod", status="running", and the
+    sidecar is re-pointed at the RunPod handle."""
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "running"
+    assert out["current_phase"] == "gcp_queue_vanish_failover_runpod"
+    assert len(rp.launches) == 1  # exactly ONE RunPod launch, on the FIRST vanish
+    assert read_handle_sidecar(sidecar).backend == "runpod"
+
+
+def test_gcp_queue_vanish_failover_marker_carries_queue_vanish_reason(
+    tmp_path, monkeypatch, capsys
+):
+    """#1116 marker trail: the epm:backend-selected marker the failover posts
+    carries reason=gcp_queue_vanish_failover_runpod, and its evidence records
+    the clock discriminator (last_observed_phase="pending"), the vanish source
+    (async_poller_queue_vanish), and WHICH rung's queue dropped the request."""
+    import scripts.backend_poll as bp
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    captured: list[dict] = []
+    monkeypatch.setattr(
+        bp, "post_marker_via_task_py", lambda **kw: captured.append(kw), raising=False
+    )
+    monkeypatch.setattr(
+        "explore_persona_space.backends.slurm.post_marker_via_task_py",
+        lambda **kw: captured.append(kw),
+        raising=False,
+    )
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    backend_selected = [m for m in captured if m.get("marker") == "epm:backend-selected"]
+    assert backend_selected, "no epm:backend-selected marker posted by the queue-vanish failover"
+    body = json.loads(backend_selected[-1]["note"])
+    assert body["reason"] == "gcp_queue_vanish_failover_runpod"
+    evidence = body["extra"]["gcp_workload_evidence"]
+    assert evidence["source"] == "async_poller_queue_vanish"
+    assert evidence["last_observed_phase"] == "pending"
+    assert evidence["gcp_ladder_rung"] == "flexstart_a100_80"
+
+
+def test_gcp_queue_vanish_does_NOT_increment_gcp_attempts_today(tmp_path, monkeypatch, capsys):
+    """#1116 (mirror of the #783/#1029 tests, acceptance criterion 2): the
+    queue-vanish failover never re-enters _attempt_one_gcp_rung, so the per-day
+    GCP attempt counter is UNCHANGED across the full failover."""
+    from explore_persona_space.backends.router import Lease, LeaseStore
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+
+    store = LeaseStore()  # resolves to the tmp ~/.eps-routing (autouse fixture)
+    store.write(Lease(issue=1116, spec_hash="deadbeef", attempt_id="att-1", gcp_attempts_today=3))
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    assert len(rp.launches) == 1  # the failover fired
+    lease_after = store.read(1116)
+    assert lease_after is not None
+    assert lease_after.gcp_attempts_today == 3  # counter untouched
+
+
+# ── #1116 negative controls (false-positive guards) ──────────────────────────
+
+
+def test_gcp_not_found_with_workload_clock_not_vanish(tmp_path, monkeypatch, capsys):
+    """#1116 negative control (acceptance criterion 3): a dead not-found poll
+    whose clock last observed a WORKLOAD phase (the instance ran, then was
+    deleted) is NOT a vanish — no rewrite, no failover; the #1029 heuristic
+    recorder still records the young death (streak 1), ordinary dead path."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(
+        _vanish_handle(clock_phase="workload", launched_ts=_time.time() - 60), sidecar
+    )
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+
+    def _boom(*_a, **_k):
+        raise AssertionError("RunPod must NOT be constructed for a workload-clock death (#1116)")
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_instance not found"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 1  # #1029 path untouched
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_gcp_not_found_with_no_clock_record_not_vanish(tmp_path, monkeypatch, capsys):
+    """#1116 negative control (fail-open): a dead not-found poll on a sidecar
+    with NO phase-clock record (fresh-dispatch handle, or the #1112 shape where
+    the sidecar was wiped) behaves byte-identically to today — no rewrite, no
+    failover, AND the #1029 boot-death record still happens (streak 1, the
+    fall-back breaker for the clock-less vanish; mirrors
+    test_gcp_instance_not_found_young_death_counts)."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(clock_phase=None, launched_ts=_time.time() - 60), sidecar)
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+
+    def _boom(*_a, **_k):
+        raise AssertionError("RunPod must NOT be constructed on a clock-less death (#1116)")
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_instance not found"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 1  # record still happens
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_gcp_terminated_phase_with_pending_clock_not_vanish(tmp_path, monkeypatch, capsys):
+    """#1116 negative control (narrow to not-found): a dead terminal_terminated
+    poll — the instance record still EXISTS server-side (a preemption / manual
+    stop), NOT the vanish shape — is untouched even with a pending clock; the
+    #1029 heuristic path (young terminated death -> streak 1) is byte-identical."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(launched_ts=_time.time() - 60), sidecar)
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_poll("dead", "terminal_terminated")),
+    )
+
+    def _boom(*_a, **_k):
+        raise AssertionError("RunPod must NOT be constructed for a terminated instance (#1116)")
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_terminated"
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 1  # #1029 path untouched
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_gcp_queue_vanish_cpu_bigmem_excluded(tmp_path, monkeypatch, capsys):
+    """#1116 negative control (acceptance criterion 4): a cpu-bigmem GCP handle
+    (gpu_count==0, intent NOT in RUNPOD_CPU_INSTANCE_FOR_INTENT) whose queued
+    instance vanished keeps its ORDINARY dead path byte-identically — the CPU
+    guard gates the REWRITE itself (no terminal_queue_vanish phase, unlike the
+    #783 cpu-bigmem shape), the #1029 boot-death record still happens, and
+    RunPod is never constructed."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    cpu_extra = dict(_GCP_EXTRA_1116)
+    cpu_extra["intent"] = "cpu-bigmem"
+    cpu_extra["gpu_count"] = 0
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(extra=cpu_extra, launched_ts=_time.time() - 60), sidecar)
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+
+    def _boom(*_a, **_k):
+        raise AssertionError("RunPod must NOT be constructed for a cpu-bigmem vanish (#1116)")
+
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", _boom)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["current_phase"] == "terminal_instance not found"  # NO rewrite
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 1  # record still happens
+    assert read_handle_sidecar(sidecar).backend == "gcp"
+
+
+def test_gcp_queue_vanish_second_tick_short_circuits(tmp_path, monkeypatch, capsys):
+    """#1116 exactly-once bound (the shared _failover_gcp_to_runpod core): when
+    the RunPod sidecar write fails (EDQUOT), the sidecar still holds the GCP
+    handle so the vanish predicate re-fires on the next tick — the lease +
+    sentinel short-circuit must refuse a SECOND paid RunPod launch and re-emit
+    the terminal sidecar_persistence_failed infra JSON. (On a SUCCESSFUL
+    failover the sidecar is re-pointed at RunPod, so a second tick polls the
+    RunPod run and the predicate cannot re-fire at all.)"""
+    sidecar = tmp_path / "issue-1116-handle.json"
+    write_handle_sidecar(_vanish_handle(), sidecar)
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    real_write = write_handle_sidecar
+
+    def _raising_write(handle, path):
+        if getattr(handle, "backend", None) == "runpod":
+            raise OSError("Disk quota exceeded (EDQUOT) writing the RunPod sidecar")
+        return real_write(handle, path)
+
+    monkeypatch.setattr(
+        "explore_persona_space.backends.issue_dispatch.write_handle_sidecar",
+        _raising_write,
+    )
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["status"] == "dead"
+    assert out["failure_class"] == "infra"
+    assert out["reason"] == "sidecar_persistence_failed"
+    launches_after_first = len(rp.launches)
+    assert launches_after_first == 1
+
+    # SECOND tick on the unchanged GCP sidecar: the idempotency short-circuit
+    # fires BEFORE any launch — zero additional RunPod launches.
+    rc2 = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc2 == 0
+    out2 = _last_json_line(capsys)
+    assert len(rp.launches) == launches_after_first, (
+        "a queue-vanish failover must fire RunPod EXACTLY ONCE — the repeat "
+        "tick observing the unchanged GCP sidecar must launch nothing"
+    )
+    assert out2["status"] == "dead"
+    assert out2["failure_class"] == "infra"
+    assert out2["reason"] == "sidecar_persistence_failed"
+
+
+def test_gcp_queue_vanish_does_not_record_boot_death(tmp_path, monkeypatch, capsys):
+    """#1116 ordering guarantee (the §4.1(e) main() wiring): the vanish branch
+    runs BEFORE the #1029 boot-loop recorder and returns, so a young not-found
+    death classified as a queue vanish never poisons the (issue, rung)
+    boot-death streak — a pure capacity miss is not a boot problem."""
+    from explore_persona_space.backends.router import gcp_boot_death_streak
+
+    sidecar = tmp_path / "issue-1116-handle.json"
+    # Young launched_ts: WOULD count via the #1029 heuristic if it were reached.
+    write_handle_sidecar(_vanish_handle(launched_ts=_time.time() - 60), sidecar)
+
+    monkeypatch.setattr(
+        "scripts.backend_poll._resolve_backend",
+        lambda name: _PollDouble(_not_found_poll()),
+    )
+    rp = _PassiveRunpodBackend()
+    monkeypatch.setattr("explore_persona_space.backends.runpod.RunPodBackend", lambda: rp)
+
+    rc = backend_poll_main(["--issue", "1116", "--handle-file", str(sidecar)])
+    assert rc == 0
+    out = _last_json_line(capsys)
+    assert out["current_phase"] == "gcp_queue_vanish_failover_runpod"
+    assert len(rp.launches) == 1
+    assert gcp_boot_death_streak(1116, "flexstart_a100_80") == 0  # never recorded
