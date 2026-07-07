@@ -11,12 +11,14 @@ has_clean_result: false
 origin_prompt: can we check the difference between LoRA and full finetuning on the
   residual stream activations?
 workflow: v1
-goal: 'Compare the residual-stream activation-shift geometry (trained-minus-base,
-  per layer: rank/participation-ratio, direction alignment, magnitude) of MATCHED
-  LoRA vs full-fine-tune organisms for TWO behaviors — the programmatic marker and
-  sycophancy — each installed at matched strength, extending #653''s LoRA-only diffuse
-  rank-k read to full-FT twins and testing whether 2410.21228''s weight-space intruder-dimension
-  difference manifests in activation space.'
+goal: 'Measure how residual-stream activation-shift geometry (trained-minus-base,
+  per layer: rank/participation-ratio, direction alignment, magnitude) depends on
+  training method AND contrastive negatives, via a sycophancy 2x2 on #1090''s data
+  — {LoRA, full-fine-tune} x {positive-only, positive+contrastive-negatives} at matched
+  install (training two NEW full-FT twins on #1090''s mix) — plus a marker LoRA-vs-full-FT
+  method comparison; extends #653''s LoRA-only diffuse rank-k read and tests whether
+  2410.21228''s weight-space intruder-dimension difference and the contrastive-negatives
+  structure manifest in activation space.'
 relates_to:
 - identity-contextual-vs-base
 ---
@@ -49,7 +51,7 @@ ACTIVATION space — which #653 (LoRA) + this (full-FT) together would answer.
 
 ## Goal
 
-Compare the residual-stream activation-shift geometry (trained-minus-base, per layer: rank/participation-ratio, direction alignment, magnitude) of MATCHED LoRA vs full-fine-tune organisms for TWO behaviors — the programmatic marker and sycophancy — each installed at matched strength, extending #653's LoRA-only diffuse rank-k read to full-FT twins and testing whether 2410.21228's weight-space intruder-dimension difference manifests in activation space.
+Measure how residual-stream activation-shift geometry (trained-minus-base, per layer: rank/participation-ratio, direction alignment, magnitude) depends on training method AND contrastive negatives, via a sycophancy 2x2 on #1090's data — {LoRA, full-fine-tune} x {positive-only, positive+contrastive-negatives} at matched install (training two NEW full-FT twins on #1090's mix) — plus a marker LoRA-vs-full-FT method comparison; extends #653's LoRA-only diffuse rank-k read and tests whether 2410.21228's weight-space intruder-dimension difference and the contrastive-negatives structure manifest in activation space.
 
 ## Design sketch (planner formalizes)
 
