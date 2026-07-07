@@ -5,3 +5,4 @@
 {"ts": "2026-07-07T07:15:28Z", "kind": "epm:plan-verify", "version": 1, "by": "unknown", "note": "verify_plan.py: PASS, n_fail=0, n_warn=0, n_skip=25 (kind-exempt experiment shapes), plan v1"}
 {"ts": "2026-07-07T07:37:06Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mrac5wnu-z9pi60 effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
 {"ts": "2026-07-07T07:37:22Z", "kind": "epm:codex-task-spawned", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mrac68qe-vii4rk effort=high write=True poll_interval=30s max_wait=21600s probe_error_cap=10 stall_detect=600s"}
+{"ts": "2026-07-07T07:40:09Z", "kind": "epm:codex-task-completed", "version": 1, "by": "codex_task", "note": "Codex job_id=task-mrac5wnu-z9pi60 phase=done after 181s fetch_retries=0."}
