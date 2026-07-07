@@ -753,8 +753,8 @@
     "1096": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1096",
-      "status": "proposed",
+      "path": "tasks/planning/1096",
+      "status": "planning",
       "title": "workflow-fix: llm-judging.md judge max_tokens sizing rule (truncation censoring mimics selection artifact)"
     },
     "11": {
