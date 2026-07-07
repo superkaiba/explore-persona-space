@@ -4751,6 +4751,21 @@ def test_c29_evidence_outside_window_still_warns():
     assert _status(plan, "c29_fence_conditional_phase") == "WARN"
 
 
+def test_c29_evidence_at_window_edge_passes():
+    # Sibling of the outside-window test: evidence at EXACTLY distance 3
+    # (the _C29_WINDOW_LINES edge) must satisfy. Pins the LOWER bound of
+    # the window — a narrowing mutant (_C29_WINDOW_LINES = 0) passes every
+    # other c29 test (code-review r1, empirically demonstrated); this one
+    # kills it.
+    plan = (
+        GOOD_PLAN
+        + C29_GATE_SECTION
+        + "\nThe §7 G1 dose extension is costed elsewhere.\n\n\n"
+        + C29_V2_FENCE
+    )
+    assert _status(plan, "c29_fence_conditional_phase") == "PASS"
+
+
 @pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
 def test_c29_kind_exempt_skips(kind):
     assert _status(C29_OFFENDER, "c29_fence_conditional_phase", kind=kind) == "SKIP"

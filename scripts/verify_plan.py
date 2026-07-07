@@ -4481,7 +4481,9 @@ _C29_EVIDENCE_RE = re.compile(
     r"gate(?:'s|s)?|dose[- ]extension|re-?ladder\w*|re-?train\w*|retrain\w*|"
     r"second provision|across provisions|split across)\b"
 )
-_C29_WINDOW_LINES = 3  # pinned by test_c29_evidence_outside_window_still_warns
+_C29_WINDOW_LINES = 3  # pinned on BOTH sides: test_c29_evidence_outside_window_still_warns
+# (upper bound: distance 4 WARNs) + test_c29_evidence_at_window_edge_passes
+# (lower bound: distance 3 PASSes — kills a narrowing mutant).
 
 
 def _c29_hours(val: str, unit: str) -> float:
