@@ -6504,79 +6504,69 @@ def _bold_prose_decimals(window: str) -> list[tuple[str, float, int, bool]]:
     return out
 
 
-def _sidecar_plotted_values(meta: dict) -> list[float]:
+def _sidecar_plotted_values(meta: dict) -> list[tuple[float, bool]]:
     """All finite numeric leaf values from the sidecar's ``points``/``rows``
-    point rows, excluding the ``_group`` series index. Covers every ``_kind``
-    uniformly (bar heights, scatter/line/errorbar x+y, ``error`` magnitudes)
-    because the writer (``paper_plots._build_sidecar_data``) stores every
-    plotted quantity as a numeric row value under an axis-label-derived key;
-    strings (category / label / series / ``_kind``) and JSON nulls contribute
-    nothing. Returns ``[]`` when the sidecar carries no point list — the
-    caller skips. A TRUNCATED sidecar (``meta['data_truncated']`` — the
-    writer's top-level flag — or a legacy top-level ``truncated``) also
-    returns ``[]``: a matching value may sit past the ``_MAX_SIDECAR_ROWS``
-    cap, so absence-of-match is unsound there. Top-level provenance keys
-    (``commit`` / ``created`` / ``figsize`` / ``n_series`` / ``total_points``)
-    never enter — they are not point-row values (no ``_META_PROVENANCE_KEYS``
-    walk needed).
+    point rows as ``(value, is_bar_x)`` entries, excluding the ``_group``
+    series index. Covers every ``_kind`` uniformly (bar heights, scatter/
+    line/errorbar x+y, ``error`` magnitudes) because the writer
+    (``paper_plots._build_sidecar_data``) stores every plotted quantity as a
+    numeric row value under an axis-label-derived key; strings (category /
+    label / series / ``_kind``) and JSON nulls contribute nothing.
+
+    ``is_bar_x`` is True ONLY for the entry occupying the FIRST non-meta key
+    of a ``_kind == "bar"`` row read from the modern ``points`` key — the
+    grouped-bar layout x-POSITION slot (``-0.2`` / ``0.8``-style dodge
+    offsets; the writer's ``_extract_bars`` inserts the x/category slot
+    first, falling back to the numeric patch center when tick labels miss).
+    Identity is per-ENTRY, not per-value: a bar HEIGHT that happens to EQUAL
+    an x-position keeps its own untagged entry and stays variant-eligible
+    (the r1 value-set exclusion dropped every equal value — a false-WARN
+    channel on common grouped-bar offsets). Legacy ``rows`` sidecars are
+    NEVER bar-x tagged (fail-open toward leniency — the legacy writer's key
+    order is unverified).
+
+    Returns ``[]`` when the sidecar carries no point list — the caller
+    skips. A TRUNCATED sidecar (``meta['data_truncated']`` — the writer's
+    top-level flag — or a legacy top-level ``truncated``) also returns
+    ``[]``: a matching value may sit past the ``_MAX_SIDECAR_ROWS`` cap, so
+    absence-of-match is unsound there. Top-level provenance keys (``commit``
+    / ``created`` / ``figsize`` / ``n_series`` / ``total_points``) never
+    enter — they are not point-row values (no ``_META_PROVENANCE_KEYS`` walk
+    needed).
     """
     if meta.get("data_truncated") or meta.get("truncated"):
         return []
     pts = meta.get("points")
-    if not isinstance(pts, list):
+    from_points = isinstance(pts, list)
+    if not from_points:
         pts = meta.get("rows")
     if not isinstance(pts, list):
         return []
-    vals: list[float] = []
+    vals: list[tuple[float, bool]] = []
     for p in pts:
         if not isinstance(p, dict):
             continue
-        for k, v in p.items():
-            if k == "_group" or isinstance(v, bool) or not isinstance(v, (int, float)):
-                continue
-            if math.isfinite(v):
-                vals.append(float(v))
-    return vals
-
-
-def _sidecar_bar_x_positions(meta: dict) -> set[float]:
-    """Numeric FIRST-key values of ``_kind == "bar"`` point rows — grouped-bar
-    layout x-POSITIONS (``-0.2`` / ``0.8``-style dodge offsets; the writer's
-    ``_extract_bars`` inserts the x/category slot first, falling back to the
-    numeric patch center when tick labels miss). These stay matchable
-    DIRECTLY (including more candidates is leniency-safe) but are excluded
-    from the x100 / /100 VARIANT candidates: a percent variant landing on a
-    bar's layout offset is a coincidence, not evidence the prose value is
-    plotted (the composed-leniency false-negative channel). Empty set on any
-    shape surprise — fail-open toward leniency.
-    """
-    pts = meta.get("points")
-    if not isinstance(pts, list):
-        pts = meta.get("rows")
-    if not isinstance(pts, list):
-        return set()
-    out: set[float] = set()
-    for p in pts:
-        if not isinstance(p, dict) or p.get("_kind") != "bar":
-            continue
+        bar_row = from_points and p.get("_kind") == "bar"
+        first_data_key = True
         for k, v in p.items():
             if k in ("_kind", "_group"):
                 continue
-            if not isinstance(v, bool) and isinstance(v, (int, float)) and math.isfinite(v):
-                out.add(float(v))
-            break  # only the FIRST non-meta key is the x/category slot
-    return out
+            is_first, first_data_key = first_data_key, False
+            if isinstance(v, bool) or not isinstance(v, (int, float)):
+                continue
+            if math.isfinite(v):
+                vals.append((float(v), bar_row and is_first))
+    return vals
 
 
 def _prose_value_matches(
     value: float,
     dec: int,
     is_pct: bool,
-    plotted: list[float],
-    bar_x: set[float] = frozenset(),
+    plotted: list[tuple[float, bool]],
 ) -> bool:
     """True when the prose decimal ``(value, dec, is_pct)`` matches ANY
-    plotted value under the check-33 leniency stack. Candidates: the value
+    plotted entry under the check-33 leniency stack. Candidates: the value
     itself, plus percent variants — ``value/100`` always (an ``87.9%`` prose
     value vs a 0.879 fraction axis), and ``value*100`` only for an UNMARKED
     decimal (a 0.879 prose fraction vs an 87.9 percent axis). Per candidate:
@@ -6590,10 +6580,14 @@ def _prose_value_matches(
     - sci-notation branch (``dec == -1``): relative tolerance
       ``|p - c| <= 1e-3·|c|``.
 
-    Variant candidates never match a ``bar_x`` layout x-position
-    (``_sidecar_bar_x_positions``); the direct candidate matches everything.
-    Every clause is leniency-INCREASING (reduces WARNs), so each is
-    FP-containment-safe.
+    Variant candidates never match an entry TAGGED as a grouped-bar layout
+    x-position (``is_bar_x`` per ``_sidecar_plotted_values``): a percent
+    variant landing on a bar's layout offset is a coincidence, not evidence
+    the prose value is plotted. The exclusion is per-ENTRY
+    (identity-preserving): a bar HEIGHT whose value equals an x-position
+    keeps its own untagged entry and stays variant-eligible. The direct
+    candidate matches everything. Every clause is leniency-INCREASING
+    (reduces WARNs), so each is FP-containment-safe.
     """
     candidates: list[tuple[float, float, bool]] = [(value, 1.0, False)]
     candidates.append((value / 100.0, 0.01, True))
@@ -6601,8 +6595,8 @@ def _prose_value_matches(
         candidates.append((value * 100.0, 100.0, True))
     for c, scale, is_variant in candidates:
         tol = 1e-3 * abs(c) if dec < 0 else 0.5 * 10.0 ** (-dec) * scale + 1e-12
-        for p in plotted:
-            if is_variant and p in bar_x:
+        for p, p_is_bar_x in plotted:
+            if is_variant and p_is_bar_x:
                 continue
             if abs(p - c) <= tol or abs(abs(p) - abs(c)) <= tol:
                 return True
@@ -6615,7 +6609,7 @@ def _prose_numerics_for_one_figure(
     rlines: list[str],
     img_idx: int,
     json_cache: dict,
-    h3_prior_vals: dict[int, list[float]],
+    h3_prior_vals: dict[int, list[tuple[float, bool]]],
 ) -> tuple[str | None, str]:
     """Process ONE same-repo figure for check 33 (the check-26
     ``_panel_drift_for_one_figure`` shape). Returns ``(warn_msg | None,
@@ -6623,6 +6617,21 @@ def _prose_numerics_for_one_figure(
     mutates ``json_cache`` (per-URL parsed-sidecar cache) and
     ``h3_prior_vals`` (per-H3 accumulator of earlier figures' plotted
     values, the cross-figure bleed-suppression pool) in place.
+
+    Pool semantics (deliberate): EVERY earlier same-H3 figure with a
+    readable, value-bearing, non-truncated sidecar contributes its
+    ``(value, is_bar_x)`` entries to the pool — INCLUDING figures whose own
+    window was opted out or carried no bolded decimals. The pool models what
+    earlier figures PLOT (sidecar values), which is independent of their own
+    prose-scan outcome: bleed prose after an opted-out / bold-less figure
+    can legitimately re-quote that figure's plotted values, so excluding
+    them would open a false-WARN channel against the check's precision-first
+    posture. The pool is leniency-only (suppresses WARNs, never creates
+    them). The current figure's own values enter the accumulator only AFTER
+    ``prior_vals`` snapshots a COPY, so a figure can never bleed-suppress
+    itself (r1 aliasing bug: ``get`` returned the live accumulator and
+    ``extend`` mutated it before matching, letting figure 2+'s bar-x values
+    bypass the variant exclusion through the pool's match path).
     """
     window = _beat1_prose_window(rlines, img_idx)
     if window is None:
@@ -6637,25 +6646,24 @@ def _prose_numerics_for_one_figure(
     plotted = _sidecar_plotted_values(meta)
     if not plotted:
         return None, "skipped"  # value-less / truncated — absence-of-match unsound
-    prior_vals = h3_prior_vals.get(h3_idx, [])
+    prior_vals = list(h3_prior_vals.get(h3_idx, []))  # COPY — never the live accumulator
     h3_prior_vals.setdefault(h3_idx, []).extend(plotted)
     if _PROSE_NUMERICS_OPTOUT in window:
         return None, "opted-out"
     bolds = _bold_prose_decimals(window)
     if not bolds:
         return None, "skipped"
-    bar_x = _sidecar_bar_x_positions(meta)
     unmatched = [
         (raw, val)
         for (raw, val, dec, pct) in bolds
-        if not _prose_value_matches(val, dec, pct, plotted, bar_x)
+        if not _prose_value_matches(val, dec, pct, plotted)
         and not (prior_vals and _prose_value_matches(val, dec, pct, prior_vals))
     ]
     if not unmatched:
         return None, "scanned"
     basename = m.group("path").rsplit("/", 1)[-1]
     vals = ", ".join(f"`{raw}`" for raw, _v in unmatched[:4]) + (" …" if len(unmatched) > 4 else "")
-    nearest = min(plotted, key=lambda p: abs(p - unmatched[0][1]))
+    nearest = min((p for p, _bx in plotted), key=lambda p: abs(p - unmatched[0][1]))
     return (
         f"`{basename}`: bolded what-is-plotted value(s) {vals} not found among the "
         f"sidecar's {len(plotted)} plotted values (nearest: {nearest:.4g}) — regenerate "
@@ -6689,7 +6697,12 @@ def check_figure_prose_numerics_vs_sidecar(body: str) -> CheckResult:
     previous figure's caption and this image can carry the PREVIOUS figure's
     interpretation prose — a bolded decimal matching an EARLIER same-H3
     figure's plotted values is treated as that bleed and suppressed
-    (leniency-safe). A derived quantity (delta / ratio / CI bound) matching
+    (leniency-safe). Every earlier same-H3 figure with a value-bearing
+    sidecar feeds the pool regardless of its own scan outcome (opted-out /
+    bold-less included — see ``_prose_numerics_for_one_figure``); the current
+    figure's own values never enter its own pool, and pool entries keep
+    their bar-x tags so percent variants never match an earlier figure's bar
+    x-positions either. A derived quantity (delta / ratio / CI bound) matching
     NEITHER sidecar still WARNs — that is the documented FP class the
     per-figure opt-out exists for: the literal ``<!-- prose-numerics: derived
     -->`` ANYWHERE in the figure's scanned window (beat-1 prose or caption)
@@ -6734,8 +6747,9 @@ def check_figure_prose_numerics_vs_sidecar(body: str) -> CheckResult:
     scanned = 0
     opted_out = 0
     json_cache: dict[str, dict | None] = {}
-    # Per-H3 accumulator of EARLIER figures' plotted values (bleed suppression).
-    h3_prior_vals: dict[int, list[float]] = {}
+    # Per-H3 accumulator of EARLIER figures' (value, is_bar_x) plotted
+    # entries (bleed suppression).
+    h3_prior_vals: dict[int, list[tuple[float, bool]]] = {}
     for url, img_idx in fig_at:
         m = _RAW_GITHUB_FIGURE_RE.match(url)
         if m is None or (m.group("owner").lower(), m.group("repo").lower()) != _THIS_REPO_SLUG:
