@@ -1,0 +1,55 @@
+{
+  "contrast_status": "computed",
+  "note": "Descriptive-only contrast. Asymmetries stated, not resolved: (1) TRAINING-DATA provenance — the c3 organism was trained on Claude-generated positives, the c5 organism on qwen-generated positives; the EVAL completions on both sides are qwen-model outputs (both organisms are Qwen-2.5-7B-Instruct + LoRA), so the same-family-judge caveat does not apply to either eval side; (2) datagen judge filters — c3's tranche filter ran at the historical judge max_tokens=64, c5's at 300 (the dropclosure lesson), so kept-pool censoring may differ; (3) the closure companion read for c3 unions 64-token original draws with 300-token refreshed draws, while the fresh-300 primary read judges both organisms under the identical instrument.",
+  "primary_fresh300": {
+    "c3_trained_rate": 0.475,
+    "c5_trained_rate": 0.475,
+    "c3_install_delta": 0.26,
+    "c5_install_delta": 0.24499999999999997,
+    "paired": {
+      "n_paired_questions": 20,
+      "n_excluded": 0,
+      "mean_delta": -1.2490009027033011e-17,
+      "paired_bootstrap": {
+        "mean": -1.2490009027033011e-17,
+        "ci95": [
+          -0.075,
+          0.08499999999999999
+        ],
+        "n_questions": 20,
+        "n_draws": 2000,
+        "seed": 42
+      },
+      "per_question_signs": {
+        "pos": 7,
+        "neg": 7,
+        "zero": 6
+      },
+      "sign_test_two_sided_p": 1.0
+    }
+  },
+  "companion_c3_closure_vs_c5_fresh300": {
+    "c3_trained_closure_rate_source": "free_analysis/c3_dropclosure.json (per-item)",
+    "paired": {
+      "n_paired_questions": 20,
+      "n_excluded": 0,
+      "mean_delta": -0.009999999999999998,
+      "paired_bootstrap": {
+        "mean": -0.010000000000000005,
+        "ci95": [
+          -0.095,
+          0.08
+        ],
+        "n_questions": 20,
+        "n_draws": 2000,
+        "seed": 42
+      },
+      "per_question_signs": {
+        "pos": 6,
+        "neg": 6,
+        "zero": 8
+      },
+      "sign_test_two_sided_p": 1.0
+    }
+  }
+}
