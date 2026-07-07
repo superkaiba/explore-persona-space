@@ -1327,6 +1327,13 @@ def _make_train_fn(cell: Cell, seams: Seams1090, close_first=None):
             close = getattr(close_first, "close", None)
             if callable(close):
                 close()
+        # NOTE: the AUTHORITATIVE max_length seam is build_organism(
+        # recipe_max_length=MAX_LENGTH_1090) — it rewrites spec.overrides so the
+        # mix-budget gate AND build_train_config both see 2048 (the crash-fix for
+        # the 05b2405043 wrong-seam hot-fix, which patched only this cfg while
+        # the mix-BUILD gate upstream still read the recipe's 1024). The
+        # max_length replace below is redundant-but-consistent (cfg.max_length
+        # already arrives as 2048 via the spec); kept as a defensive pin.
         train_cfg = dataclasses.replace(
             cfg,
             run_name=cell.run_name,
@@ -1404,6 +1411,11 @@ def phase_train(cfg: RunConfig, seams: Seams1090, datagen_results: dict[str, dic
             train_fn=_make_train_fn(cell, seams, close_first=resume_gen_fn),
             rate_fn=rate_fn,
             tokenizer=tokenizer,
+            # DECLARED max_length deviation at the AUTHORITATIVE seam: threads
+            # 2048 into spec.overrides so the mix token-budget gate reads
+            # budget=2048 (the 05b2405043 hot-fix patched only train_fn, and the
+            # gate crashed again at budget=1024 upstream of it).
+            recipe_max_length=MAX_LENGTH_1090,
         )
         record = {
             "status": "trained",

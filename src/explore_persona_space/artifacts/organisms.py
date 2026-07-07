@@ -33,7 +33,7 @@ import os
 import random
 import subprocess
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -1012,6 +1012,7 @@ def build_organism(
     rate_fn: RateFn | None = None,
     fullft_run_fn: Callable[[list[str]], None] | None = None,
     tokenizer=None,
+    recipe_max_length: int | None = None,
 ) -> BuildResult:
     """datagen -> mix assembly -> recipe -> train -> dose-selected checkpoint.
 
@@ -1034,10 +1035,30 @@ def build_organism(
     :func:`enforce_mix_token_budget` (the #906 r14 silent-truncation fix) —
     production callers that will run the REAL trainer pass it; offline
     stub-seam tests omit it (gate skipped, legacy behavior).
+
+    ``recipe_max_length`` (optional): a task-scoped DECLARED-DEVIATION seam
+    for the recipe's ``max_length`` (the plan #1090 AMENDMENT/hot-fix
+    lineage: a measured row-length distribution can exceed the unified
+    recipe's 1024 budget above the 10% rejection floor, and the gate's own
+    prescription is a deliberate recipe max_length raise). When set, it is
+    threaded into ``spec.overrides`` IMMEDIATELY after recipe resolution, so
+    the SAME spec feeds BOTH the mix token-budget gate (:func:`_assemble_mix`)
+    AND the train-config build (:func:`build_train_config`) — one authority;
+    the recipe recorded in ``mix_meta.json`` / provenance then honestly
+    reports the enforced value. ``LOAD_BEARING_KEYS`` still protects the
+    ``extra_overrides`` path: this is a deliberate, NAMED seam for a
+    plan-declared recipe deviation, not a bypass.
     """
     out_root = Path(out_root)
     behavior = organism.behavior_spec
     spec = organism.recipe
+    if recipe_max_length is not None:
+        # One authority for the token budget: replace the spec's max_length
+        # BEFORE any consumer (mix-budget gate, build_train_config, provenance)
+        # reads it. Fixes the #1090 wrong-seam hot-fix (05b2405043), which
+        # patched only the train_fn cfg while the mix-BUILD gate still read
+        # the recipe's 1024 (organisms.py step 3) and crashed again.
+        spec = replace(spec, overrides={**spec.overrides, "max_length": int(recipe_max_length)})
 
     # 1. Carve-out gate.
     if behavior.programmatic:
