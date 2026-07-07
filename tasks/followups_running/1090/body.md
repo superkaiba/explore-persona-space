@@ -1,8 +1,9 @@
 ---
 title: Reframing sycophancy as subjective opinion-agreement roughly triples Claude
   datagen yield over the wrong-fact bank yet still misses the yield floor, and Claude-
-  and Qwen-generated data install sycophancy organisms at identical judged rates with
-  every install below the registered dose band (MODERATE confidence)
+  and Qwen-generated data install sycophancy organisms at identical judged rates,
+  with the registered dose band reached only by the Claude-data organism at doubled
+  epochs on the Tier-1 selection read (MODERATE confidence)
 kind: experiment
 tags:
 - from-1074
