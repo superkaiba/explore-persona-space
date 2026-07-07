@@ -765,5 +765,6 @@ cur=$(git -C "$REPO" rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
 echo "BLOCKED: '$blocked' would move the SHARED repo-root tree off main / detach HEAD / destroy uncommitted working-tree state. The repo root is the canonical commit target for scripts/task.py and every concurrent VM session (all assume HEAD==main); a branch switch here hijacks concurrent commits, and a working-tree revert (restore / checkout-pathspec / clean -f / reset --hard) silently discards CONCURRENT sessions' uncommitted edits (incidents 2026-06-01, #815, #841). Do branch/destructive work in a worktree instead:
   bash scripts/new_worktree.sh .claude/worktrees/<name> <branch> && git -C .claude/worktrees/<name> ...
 NEVER point -C at the repo root itself for a destructive op — for repo-root recovery use: uv run python scripts/sync_repo_root.py
-For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>." >&2
+For marker-note text mentioning git commands, use --file <path.md> instead of --note; for commit messages, use git commit -F <file>.
+NOTE: this deny blocked your ENTIRE compound command — earlier clauses did NOT run either; regenerate any files/state those clauses were meant to produce before retrying the safe form (incident class #813/#1056)." >&2
 exit 2
