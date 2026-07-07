@@ -3988,13 +3988,18 @@ _C27_BOLD_LABEL_RE = re.compile(r"\*\*([^*\n]{1,60})\*\*")  # c14 sibling
 
 # Precedent-ratio assertion: explicit "ratio ≈ r" / "ratio ≈ r1–r2" token.  # noqa: RUF003
 # Decimal point REQUIRED (excludes the "ratio ~1:1" mix idiom — the only 2
-# non-incident same-line corpus hits); `%`-suffixed ratios NOT harvested
+# non-incident same-line corpus hits); `%`-suffixed ratios NOT harvested —
+# single (`0.48%`) AND range (`0.44–0.52%`) forms both harvest NOTHING  # noqa: RUF003
 # (percent-vs-fraction confusion is a named FP mode — accepted false
-# negative; the \b after each number blocks a backtracked partial-digit
-# match like `0.4` inside `0.48%`).
+# negative). The \b after each number blocks a backtracked partial-digit
+# match like `0.4` inside `0.48%`; the second lookahead rejects r1 when the
+# engine SKIPS a %-suffixed optional range group — `(?!\s*%)` alone let
+# `ratio ≈ 0.44–0.52%` partially harvest r1=0.44 (round-2 fix, concern  # noqa: RUF003
+# c27-percent-range-partial-harvest).
 _C27_RATIO_RE = re.compile(
     r"(?i)\bratios?\s*[≈=~]\s*(?P<r1>0?\.\d+)\b"
     r"(?:\s*[–—-]\s*(?P<r2>0?\.\d+)\b)?(?!\s*%)"  # noqa: RUF001 — en dash is real plan text
+    r"(?!\s*[–—-]\s*0?\.\d+\s*%)"  # noqa: RUF001 — reject a %-suffixed skipped range
 )
 # Verb-anchored side vocabulary (navigation "see below" / "table below"
 # cannot match: a verb is required). The negation guard drops the WHOLE

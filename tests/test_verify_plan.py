@@ -4057,6 +4057,33 @@ def test_c27_mix_ratio_idiom_not_harvested():
     assert "no side-asserted precedent ratio line" in r.detail
 
 
+def test_c27_percent_range_not_harvested():
+    # Round-2 fix (concern c27-percent-range-partial-harvest): a %-suffixed
+    # RANGE harvests NOTHING. Pre-fix, `(?!\s*%)` after the OPTIONAL range
+    # group let the engine skip the group and partially harvest r1=0.44 from
+    # `ratio ≈ 0.44–0.52%` (live-probed: ('0.44', None)).  # noqa: RUF003
+    line = "The instruct precedent (ratio ≈ 0.44–0.52%) — lands well below the ceiling."
+    _, by_id = _run(_c27_plan(line))
+    r = by_id["c27_precedent_band_coherence"]
+    assert r.status == "SKIP"
+    assert "no side-asserted precedent ratio line" in r.detail
+    # Regex-level: neither endpoint of a %-suffixed range is harvested.
+    assert verify_plan._C27_RATIO_RE.search("ratio ≈ 0.44–0.52%") is None
+    assert verify_plan._C27_RATIO_RE.search("ratio ≈ 0.44-0.52%") is None
+    assert verify_plan._C27_RATIO_RE.search("ratio ≈ 0.44 – 0.52 %") is None
+
+
+def test_c27_percent_single_value_not_harvested():
+    # The pre-existing single-value `%` exclusion, now pinned: the \b blocks
+    # a backtracked partial-digit match (`0.4` inside `0.48%`).
+    line = "The instruct precedent (ratio ≈ 0.48%) — lands well below the ceiling."
+    _, by_id = _run(_c27_plan(line))
+    r = by_id["c27_precedent_band_coherence"]
+    assert r.status == "SKIP"
+    assert "no side-asserted precedent ratio line" in r.detail
+    assert verify_plan._C27_RATIO_RE.search("ratio ≈ 0.48%") is None
+
+
 def test_c27_negated_side_passes():
     # Negation guard: a negated side phrase kills the line (line-level).
     line = "The instruct precedent (ratio ≈ 0.52) is NOT well below the ceiling."
