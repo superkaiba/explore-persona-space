@@ -788,8 +788,8 @@
     "1100": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1100",
-      "status": "reviewing",
+      "path": "tasks/completed/1100",
+      "status": "completed",
       "title": "daily-fix: catch task lifecycle commits stranded off main at"
     },
     "1101": {
