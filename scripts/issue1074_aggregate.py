@@ -44,7 +44,10 @@ import numpy as np  # noqa: E402
 
 from explore_persona_space.artifacts.behavior import BEHAVIORS  # noqa: E402
 from explore_persona_space.artifacts.negatives import default_panel  # noqa: E402
-from explore_persona_space.eval.graded_judge import judge_graded  # noqa: E402
+from explore_persona_space.eval.graded_judge import (  # noqa: E402
+    _score_from_parsed,
+    judge_graded,
+)
 
 logger = logging.getLogger("issue1074.aggregate")
 
@@ -56,9 +59,19 @@ SRC_CTX = "persona_software_engineer"
 
 # Follow-up round `base-negatives-regen` (plan v7): one mixed-generator cell
 # (reused ablit positives, fresh base negatives) vs the parent ablit cell.
-FOLLOWUP_LABELS = ("base-negatives-regen",)
+LABEL_BASE_NEG_REGEN = "base-negatives-regen"
+# Follow-up round `install-dose-extension` (plan v9): the mixed cell retrained
+# on its byte-pinned mix at a 9-epoch ceiling; NO datagen — the Phase-D
+# additions are the drop-censoring telemetry + the schedule-stretch overlay.
+LABEL_DOSE_EXTENSION = "install-dose-extension"
+FOLLOWUP_LABELS = (LABEL_BASE_NEG_REGEN, LABEL_DOSE_EXTENSION)
 FOLLOWUP_CELL = "harmful_compliance-mixed"
 FOLLOWUP_BEHAVIOR = "harmful_compliance"
+DOSE_EXT_SUFFIX = "-e9"  # rate raw-completions dir suffix (driver phase_upload)
+# The prior round's COMMITTED dose curve (the plan §7 overlay baseline).
+DOSE_PRIOR_INSTALL_SUMMARY = Path(
+    f"eval_results/issue_1074/{LABEL_BASE_NEG_REGEN}/install/install_summary.json"
+)
 PARENT_CELL = "harmful_compliance-ablit"
 MEMBER_QUOTA = 24  # per-member negative quota (floor_n 120 / 5 members; plan §3 S1')
 MEMBER_BUDGET = 35  # negative requests per member (ceil(24 / EXPECTED_YIELD 0.7))
@@ -364,12 +377,15 @@ def build_install_summaries(root: Path, rates: dict, out_dir: Path) -> None:
 
 
 def _margin_cell_view(margins: dict, slug: str) -> dict:
-    """One cell's view of a behavior margin file (its states + shared base)."""
+    """One cell's view of a behavior margin file (its states + shared base).
+    ``pool_provenance`` passes through when present (the dose-extension
+    held-out pools; None/absent on every other round)."""
     return {
         **_meta(),
         "cell": slug,
         "status": margins.get("status"),
         "pool_source_cell": margins.get("pool_source_cell"),
+        "pool_provenance": margins.get("pool_provenance"),
         "n_pos": margins.get("n_pos"),
         "n_neg": margins.get("n_neg"),
         "cells": {
@@ -659,6 +675,177 @@ def _followup_run_path(root: Path, label: str, *parts: str) -> Path | None:
     return None
 
 
+# ── Follow-up install-dose-extension (plan v9) ───────────────────────────────
+
+
+def _rate_ckpt_dirs(root: Path) -> list[Path]:
+    """The dose ladder's per-checkpoint rate dirs on BOTH layouts: the
+    HF-staged tree (``raw_completions/rate/<cell>-e9/rate_checkpoint-*``,
+    the driver's -e9 upload convention) first, the local driver out_root
+    (``<cell>/rate/rate_checkpoint-*``) as fallback."""
+    for base in (
+        root / "raw_completions" / "rate" / f"{FOLLOWUP_CELL}{DOSE_EXT_SUFFIX}",
+        root / FOLLOWUP_CELL / "rate",
+    ):
+        dirs = sorted(base.glob("rate_checkpoint-*")) if base.exists() else []
+        if dirs:
+            return dirs
+    return []
+
+
+def dose_rate_drop_censoring(root: Path) -> dict:
+    """Per-checkpoint judge-drop telemetry for the dose ladder (plan §7
+    drop-censoring guard): rising no-scores at higher install would censor the
+    strongest completions and could manufacture a plateau shape — check
+    drop-rate-vs-step BEFORE reading K-dose as a real plateau.
+
+    Recomputed from each ``rate_checkpoint-<step>`` dir's persisted
+    ``judge_raw.json`` (``all_scores``: ``{item}__{idx:05d}__{draw:02d}`` ->
+    parsed draw; drop-never-coerce via ``_score_from_parsed``) + the
+    completions file's question list (realized question-n).
+    """
+    per_step: dict[str, dict] = {}
+    for ckpt_dir in _rate_ckpt_dirs(root):
+        step_str = ckpt_dir.name.rsplit("-", 1)[-1]
+        if not step_str.isdigit():
+            continue
+        comp_paths = sorted(ckpt_dir.glob("completions__trained__*.json"))
+        raw_paths = sorted(ckpt_dir.glob("judge/trained_*/judge_raw.json"))
+        entry: dict = {"rate_dir": str(ckpt_dir)}
+        if comp_paths:
+            payload = _read_json(comp_paths[0])
+            entry["n_questions"] = len(payload.get("questions", []))
+            entry["n_completions_per_question"] = (
+                len(payload["completions"][0]) if payload.get("completions") else 0
+            )
+        if raw_paths:
+            all_scores = _read_json(raw_paths[0]).get("all_scores", {})
+            kept_draws_by_item: dict[str, int] = {}
+            n_total_draws = n_dropped_draws = 0
+            for cid, parsed in all_scores.items():
+                item = cid.rsplit("__", 2)[0]
+                kept_draws_by_item.setdefault(item, 0)
+                n_total_draws += 1
+                if _score_from_parsed(parsed) is None:
+                    n_dropped_draws += 1
+                else:
+                    kept_draws_by_item[item] += 1
+            entry.update(
+                n_items=len(kept_draws_by_item),
+                n_scored=sum(1 for k in kept_draws_by_item.values() if k > 0),
+                n_dropped=sum(1 for k in kept_draws_by_item.values() if k == 0),
+                n_total_draws=n_total_draws,
+                n_dropped_draws=n_dropped_draws,
+            )
+        else:
+            entry["status"] = "no judge_raw.json found"
+        per_step[step_str] = entry
+    if not per_step:
+        logger.warning("[dose-ext] no rate_checkpoint-* dirs found under %s", root)
+    return per_step
+
+
+def dose_overlay(rates_by_step: dict | None, prior_summary_path: Path) -> dict:
+    """Schedule-stretch overlay read (plan §7): this round's 30-q subset rates
+    at the prior round's committed steps, side by side (overlap => the
+    schedule contribution is negligible; elevation => report any S-dose as
+    dose+schedule). Both curves are the SAME seeded subset + judge recipe."""
+    if not prior_summary_path.exists():
+        raise RuntimeError(
+            f"[dose-ext] prior install summary missing: {prior_summary_path} — the "
+            "schedule-stretch overlay is an always-reported read (plan v9 §7); "
+            "refusing a partial aggregate"
+        )
+    prior = _read_json(prior_summary_path).get("dose_curve_rates_by_step") or {}
+    this_round = dict(rates_by_step or {})
+    shared = sorted(set(prior) & set(this_round), key=int)
+    return {
+        "status": "computed",
+        "prior_path": str(prior_summary_path),
+        "prior_round_rates_by_step": prior,
+        "this_round_rates_by_step": this_round,
+        "shared_steps": shared,
+        "delta_at_shared_steps": {s: this_round[s] - prior[s] for s in shared},
+    }
+
+
+def run_followup_dose_extension(args, root: Path, out_dir: Path) -> int:
+    """Phase-D aggregation for the ``install-dose-extension`` round: judge the
+    final-eval completions (195-q bank x {trained, base} x {source, default}),
+    then the install summary EXTENDED with the plan §7 ensemble folds — the
+    per-checkpoint + per-final-cell drop-censoring telemetry and the
+    schedule-stretch overlay vs the prior round's committed curve. NO
+    negative-yield / calibration blocks (this round has no datagen)."""
+    label = LABEL_DOSE_EXTENSION
+    build_path = _followup_run_path(root, label, FOLLOWUP_CELL, "build_result.json")
+    if build_path is None:
+        raise RuntimeError(
+            f"no build_result.json for {FOLLOWUP_CELL} under {root} (or "
+            f"{root}/followups/{label}) — the dose-extension round trains "
+            "unconditionally, so a missing build is an upload/read-path mismatch"
+        )
+    build = _read_json(build_path)
+    if build.get("status") != "trained":
+        raise RuntimeError(
+            f"build_result.json status={build.get('status')!r} != 'trained' — the "
+            "dose-extension round has no K1 yield path; refusing a partial aggregate"
+        )
+
+    logger.info("[phase=judge] judging dose-extension final-eval completions")
+    beh_dir = None
+    for cand in (
+        _followup_run_path(root, label, "raw_completions", "final", FOLLOWUP_BEHAVIOR),
+        _followup_run_path(root, label, "evalgen", FOLLOWUP_BEHAVIOR),
+    ):
+        if cand is not None:
+            beh_dir = cand
+            break
+    comp_paths = sorted(beh_dir.glob("completions__*.json")) if beh_dir is not None else []
+    if not comp_paths:
+        raise RuntimeError(
+            f"trained dose-extension cell exists but no completions__*.json resolved "
+            f"under {root}/followups/{label}/{{raw_completions/final,evalgen}}/"
+            f"{FOLLOWUP_BEHAVIOR} — upload-map/read-path mismatch; refusing to ship "
+            "null install rates"
+        )
+    rates = _judge_completion_files(
+        comp_paths,
+        BEHAVIORS[FOLLOWUP_BEHAVIOR],
+        out_dir / "judge" / FOLLOWUP_BEHAVIOR,
+        n_judge_draws=args.n_judge_draws,
+    )
+
+    summary = _install_summary_fields(build, rates, FOLLOWUP_CELL)
+    # Plan §7 ensemble folds: (a) drop-censoring telemetry — per-checkpoint
+    # (the dose ladder's rate reads) AND per final (state, ctx) cell counts +
+    # realized question-n; (b) the schedule-stretch overlay.
+    summary["drop_censoring"] = {
+        "per_checkpoint": dose_rate_drop_censoring(root),
+        "final_cells": {
+            key: {
+                "n_scored": cell["n_scored"],
+                "n_dropped": cell["n_dropped"],
+                "n_questions": len(cell["per_question_rate"]),
+            }
+            for key, cell in rates.items()
+        },
+    }
+    rates_by_step = (build.get("provenance") or {}).get("rates_by_step")
+    summary["overlay"] = dose_overlay(rates_by_step, Path(args.prior_install_summary))
+    _atomic_write_json(out_dir / "install" / "install_summary.json", summary)
+
+    margin_path = _followup_run_path(root, label, "margin", f"{FOLLOWUP_BEHAVIOR}.json")
+    if margin_path is not None:
+        _atomic_write_json(
+            out_dir / "margin" / "margin_summary.json",
+            _margin_cell_view(_read_json(margin_path), FOLLOWUP_CELL),
+        )
+    else:
+        logger.warning("[dose-ext] margin file not found — margin summary omitted")
+    logger.info("dose-extension aggregation complete -> %s", out_dir)
+    return 0
+
+
 def run_followup(args) -> int:
     """Phase-D aggregation for the ``base-negatives-regen`` round: the
     per-member negative-yield table (mixed cell + parent ablit side-by-side —
@@ -674,6 +861,8 @@ def run_followup(args) -> int:
     root = Path(args.results_root) if args.results_root else stage_from_hf(Path(args.stage_dir))
     out_dir = Path(args.out_dir) / label
     out_dir.mkdir(parents=True, exist_ok=True)
+    if label == LABEL_DOSE_EXTENSION:
+        return run_followup_dose_extension(args, root, out_dir)
 
     logger.info("[phase=negative_yield] per-member yield table under %s", root)
     mixed_dir = root / FOLLOWUP_CELL / "datagen"
@@ -801,6 +990,12 @@ def main(argv: list[str] | None = None) -> int:
         choices=FOLLOWUP_LABELS,
         help="aggregate a same-issue follow-up round instead of the parent grid "
         "(outputs under <out-dir>/<label>/)",
+    )
+    p.add_argument(
+        "--prior-install-summary",
+        default=str(DOSE_PRIOR_INSTALL_SUMMARY),
+        help="install-dose-extension only: the prior round's committed install "
+        "summary carrying the dose curve the overlay reads against",
     )
     args = p.parse_args(argv)
     if args.followup is not None:

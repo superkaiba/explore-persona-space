@@ -1055,6 +1055,71 @@ def test_routed_post_marker_succeeds_off_main(tmp_path: Path) -> None:
     )
 
 
+def test_routed_commit_landing_check_silent(tmp_path: Path) -> None:
+    """AC-8 (#1100): a HEALTHY routed mutation is POSITIVELY certified silent
+    under the post-commit landing check — post-CAS, `refs/heads/main` equals
+    the new commit, so the reachability probe hits rc=0 and neither the
+    stderr ERROR nor a sidecar row may appear.
+
+    "Suite green" alone has ZERO power against a warn-only spurious routed
+    ERROR (no other worktree test asserts stderr cleanliness on a healthy
+    routed commit), so this test does NOT set EPM_TASKPY_LANDING_CHECK=0 —
+    disabling would mask exactly the spurious-warn evidence it exists to
+    collect. The child's HOME is retargeted to tmp so LOCK_DIR — and with it
+    STRANDED_COMMITS_LOG — resolves under tmp, never the real
+    ~/.task-workflow/ (the A9 real-$HOME hygiene pattern).
+    """
+    main_repo = tmp_path / "repo"
+    _make_main_repo(main_repo)
+    _stage_task_cli_tree(main_repo)
+    _commit_cli_tree(main_repo)
+
+    # Park the primary on a feature branch → the mutation routes through the
+    # managed main-pinned worktree (the routed path the check must be silent
+    # on).
+    subprocess.run(
+        ["git", "-C", str(main_repo), "checkout", "-q", "-b", "feat/landing-check"],
+        check=True,
+    )
+
+    child_home = tmp_path / "home"
+    child_home.mkdir()
+    env = _clean_env()
+    env["HOME"] = str(child_home)  # retargets LOCK_DIR + STRANDED_COMMITS_LOG
+    assert "EPM_TASKPY_LANDING_CHECK" not in env or env["EPM_TASKPY_LANDING_CHECK"] != "0", (
+        "parent env disables the landing check — this test must observe it live"
+    )
+    proc = subprocess.run(
+        [
+            sys.executable,
+            str(main_repo / "scripts" / "task.py"),
+            "new",
+            "--kind",
+            "infra",
+            "--title",
+            "landing check silent",
+        ],
+        cwd=str(main_repo),
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    assert proc.returncode == 0, f"routed task.py new failed: {proc.stderr}"
+
+    # The healthy routed commit must trigger NO landing-check output.
+    assert "LANDING CHECK" not in proc.stderr, (
+        f"spurious landing-check ERROR on a healthy routed commit:\n{proc.stderr}"
+    )
+    assert "NOT reachable" not in proc.stderr, (
+        f"spurious landing-check ERROR on a healthy routed commit:\n{proc.stderr}"
+    )
+    # ... and NO sidecar row in the (retargeted) forensic log.
+    sidecar = child_home / ".task-workflow" / "stranded-commits.jsonl"
+    assert not sidecar.exists() or sidecar.read_text().strip() == "", (
+        f"healthy routed commit wrote a stranded-commits row: {sidecar.read_text()!r}"
+    )
+
+
 def test_managed_worktree_dodges_stale_worktree_audit() -> None:
     """The managed worktree name `_task-main-pin` must NOT match the
     stale-worktree audit's target regex (`issue-<N>` / `agent-<hex>` /
