@@ -809,8 +809,8 @@
     "1103": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1103",
-      "status": "approved",
+      "path": "tasks/running/1103",
+      "status": "running",
       "title": "daily-fix: standardize multi-behavior datagen behavior defin"
     },
     "1104": {
