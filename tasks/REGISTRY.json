@@ -865,8 +865,8 @@
     "1110": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1110",
-      "status": "planning",
+      "path": "tasks/approved/1110",
+      "status": "approved",
       "title": "workflow-fix: verify H1 == frontmatter title (set-title never syncs the body H1)"
     },
     "112": {
