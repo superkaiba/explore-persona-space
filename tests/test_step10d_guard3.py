@@ -722,3 +722,108 @@ def test_surgical_additive_producer_guarded_and_empty_list_hard_stops():
         "the producer guard + empty-list hard stop must precede the first "
         "additive-list consumer (never proceed to checkout/stage/push)"
     )
+
+
+# --------------------------------------------------------------------------
+# #1085 pins (task #1105) — the guard-block recovery-contract paragraph
+# (SKILL.md prose added by #1085 after the #813/#1056 guard-block incidents)
+# --------------------------------------------------------------------------
+
+_RECOVERY_HEADING = "**Guard-block recovery contract (improvised variants of this compound).**"
+
+
+def _normalized(text: str) -> str:
+    """Whitespace-collapse for prose pins.
+
+    The recovery-contract paragraph is hard-wrapped markdown prose, so a
+    benign re-wrap (moving line breaks) must not false-fail the anchor pins.
+    The executable-block pins above stay on raw text by design (fenced bash
+    never re-wraps).
+    """
+    return " ".join(text.split())
+
+
+def _guard_block_recovery_paragraph(text: str) -> str:
+    """The #1085 guard-block recovery-contract paragraph: from its bold
+    heading (inside the artifact-confirmed region, right after the surgical
+    additive-checkout executable block) to the `epm:merged` posting sentence
+    that follows it."""
+    region = _artifact_confirmed_region(text)
+    start = region.find(_RECOVERY_HEADING)
+    assert start != -1, (
+        "guard-block recovery-contract heading not found in the artifact-confirmed region (#1085)"
+    )
+    end = region.find("epm:merged", start)
+    assert end != -1, "the epm:merged posting sentence must follow the recovery contract"
+    return region[start:end]
+
+
+def test_recovery_contract_paragraph_present_and_names_the_hook():
+    """#1085 pin (task #1105): the guard-block recovery contract must exist
+    exactly once, inside the artifact-confirmed region, and must name its
+    fencing mechanism — the scripts/guard_repo_root_branch.sh PreToolUse
+    hook, its #897 checkout-pathspec + restore detectors, and the
+    use-the-fence-lines-VERBATIM directive."""
+    text = _skill_text()
+    assert text.count(_RECOVERY_HEADING) == 1, (
+        "the recovery-contract heading must appear exactly once (no stale copy drift)"
+    )
+    para = _normalized(_guard_block_recovery_paragraph(text))
+    assert "scripts/guard_repo_root_branch.sh" in para, (
+        "the contract must name the fencing hook script"
+    )
+    assert "PreToolUse" in para, "the contract must identify the fence as a PreToolUse hook"
+    assert "#897 checkout-pathspec detector" in para, (
+        "the contract must name the #897 checkout-pathspec detector"
+    )
+    assert "#897 restore detector" in para, "the contract must name the #897 restore detector"
+    assert 'use the `-C "$REPO_ROOT"`-qualified fence lines VERBATIM' in para, (
+        "the contract must direct retries to the -C-qualified fence lines verbatim"
+    )
+
+
+def test_recovery_contract_never_generalizes_dash_c_waiver():
+    """#1085 pin (task #1105): the -C waiver scoping must survive edits — the
+    waiver is admitted ONLY because both fence forms are non-destructive at
+    the shared root, and the contract must forbid generalizing
+    -C "$REPO_ROOT" to escape a block on any other / destructive command."""
+    para = _normalized(_guard_block_recovery_paragraph(_skill_text()))
+    assert "NON-DESTRUCTIVE at the shared root" in para, (
+        "the waiver justification (both fence forms non-destructive) must stay"
+    )
+    assert 'NEVER generalize `-C "$REPO_ROOT"` to escape a block' in para, (
+        "the never-generalize--C scoping rule must stay"
+    )
+    assert "never point `-C` at the repo root for a destructive op" in para, (
+        "the hook's own destructive-op block-message rationale must stay"
+    )
+
+
+def test_recovery_contract_reruns_producer_before_corrected_consumer():
+    """#1085 pin (task #1105): the load-bearing recovery rule — a PreToolUse
+    deny rejects the ENTIRE tool call, so the producer clause writing the
+    additive-files list never ran; the retry must RE-RUN the producer diff
+    BEFORE the corrected consumer (incidents #813 / #1056, 2026-07-05:
+    consumer-only retries died on exit 128 / `cat: ... No such file`)."""
+    para = _normalized(_guard_block_recovery_paragraph(_skill_text()))
+    assert "the WHOLE compound Bash call was skipped" in para, (
+        "the whole-compound-skipped semantics must stay"
+    )
+    assert "a PreToolUse deny rejects the entire tool call" in para, (
+        "the PreToolUse-deny mechanism sentence must stay"
+    )
+    assert "`/tmp/issue-<N>-additive-files.txt` (the producer diff above) never ran" in para, (
+        "the contract must name the producer's list file as the skipped casualty"
+    )
+    assert "RE-RUNS the producer diff clause" in para, (
+        "the producer-regeneration retry rule must stay"
+    )
+    assert "BEFORE re-running the corrected `-C`-qualified consumer" in para, (
+        "the producer-before-consumer retry ordering must stay"
+    )
+    assert "exit 128" in para and "No such file" in para, (
+        "the consumer-only failure signature must stay"
+    )
+    assert "#813" in para and "#1056" in para, (
+        "the motivating incident references (#813 / #1056) must stay"
+    )
