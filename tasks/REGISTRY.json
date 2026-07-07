@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1107,
+  "highest_id": 1108,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -802,44 +802,51 @@
     "1102": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1102",
-      "status": "reviewing",
+      "path": "tasks/completed/1102",
+      "status": "completed",
       "title": "daily-fix: digest-only raw-read rule must name real-world-co"
     },
     "1103": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1103",
-      "status": "running",
+      "path": "tasks/completed/1103",
+      "status": "completed",
       "title": "daily-fix: standardize multi-behavior datagen behavior defin"
     },
     "1104": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1104",
-      "status": "running",
+      "path": "tasks/reviewing/1104",
+      "status": "reviewing",
       "title": "daily-fix: refusal-wedged orchestrator ticks on harmful-cont"
     },
     "1105": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1105",
-      "status": "running",
+      "path": "tasks/completed/1105",
+      "status": "completed",
       "title": "daily-fix: pin Step 10d guard-block recovery-contract phrase"
     },
     "1106": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1106",
-      "status": "proposed",
+      "path": "tasks/planning/1106",
+      "status": "planning",
       "title": "workflow-fix: model-switch rung in the spurious-refusal recovery ladder"
     },
     "1107": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/proposed/1107",
-      "status": "proposed",
+      "path": "tasks/planning/1107",
+      "status": "planning",
       "title": "workflow-fix: verify_task_body figure-meta vs what-is-plotted numeric reconcile"
+    },
+    "1108": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1108",
+      "status": "proposed",
+      "title": "HF model repo at the 100,000-file limit \u2014 user triage needed to free files (adapter uploads fleet-wide blocked)"
     },
     "111": {
       "has_clean_result": true,
