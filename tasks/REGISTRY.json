@@ -732,8 +732,8 @@
     "1093": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1093",
-      "status": "reviewing",
+      "path": "tasks/completed/1093",
+      "status": "completed",
       "title": "workflow-fix: verify_plan check for 7B capture booked on eval/debug intent"
     },
     "1094": {
