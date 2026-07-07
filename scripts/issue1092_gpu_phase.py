@@ -24,9 +24,9 @@ import hashlib
 import json
 import logging
 import math
+import multiprocessing as mp
 import os
-import queue
-import threading
+import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -51,12 +51,18 @@ PRETRAINED_REVISION = "d149729398750b98c0af14eb82c78cfe92750796"
 HF_DATA_REPO = "superkaiba1/explore-persona-space-data"
 HF_MODEL_REPO = "superkaiba1/explore-persona-space"
 HF_PREFIX = "issue1092_realistic_crossing"
-UPLOAD_PREFIX = f"{HF_PREFIX}/captures"
+SUMMARY_UPLOAD_PREFIX = f"{HF_PREFIX}/analysis_tensors/summaries"
+RAW_COMPLETIONS_UPLOAD_PREFIX = f"{HF_PREFIX}/raw_completions"
 
 N_LAYERS = 28
 HIDDEN_DIM = 3584
 GEN_SEED = 42
 MAX_GEN_TOKENS = 1024
+MAX_MODEL_LEN = 8192
+MAX_FORMATTED_TOKENS = 7168
+MAX_JSONL_SHARD_BYTES = 8_500_000
+MAX_JSONL_LINE_BYTES = 9_000_000
+CAPTURE_BATCH_SIZE = int(os.environ.get("EPM_CAPTURE_BATCH_SIZE", "8"))
 
 # Stop tokens: #825 recipe
 STOP_TOKENS_INSTRUCT = ["<|im_end|>"]
@@ -151,6 +157,77 @@ def _get_tokenizer():
     return _get_tokenizer._tok
 
 
+class _SmokeTokenizer:
+    pad_token_id = 0
+    eos_token_id = 1
+    pad_token = "<pad>"
+    eos_token = "<eos>"
+
+    def __len__(self) -> int:
+        return 258
+
+    def encode(self, text: str, add_special_tokens: bool = False) -> list[int]:
+        del add_special_tokens
+        return [(ord(ch) % 250) + 2 for ch in text]
+
+    def decode(self, ids, skip_special_tokens: bool = False) -> str:
+        del skip_special_tokens
+        return "." * len(list(ids))
+
+    def apply_chat_template(
+        self,
+        messages: list[dict],
+        *,
+        tokenize: bool = False,
+        add_generation_prompt: bool = False,
+    ):
+        text = "".join(
+            f"<|im_start|>{msg['role']}\n{msg['content']}<|im_end|>\n" for msg in messages
+        )
+        if add_generation_prompt:
+            text += "<|im_start|>assistant\n"
+        return self.encode(text) if tokenize else text
+
+    def __call__(
+        self,
+        texts,
+        *,
+        return_tensors: str | None = None,
+        padding: bool = False,
+        truncation: bool = False,
+        add_special_tokens: bool = False,
+    ):
+        del truncation
+        import torch
+
+        if isinstance(texts, str):
+            texts = [texts]
+        encoded = [self.encode(text, add_special_tokens=add_special_tokens) for text in texts]
+        max_len = max((len(ids) for ids in encoded), default=1) if padding else None
+        padded = []
+        masks = []
+        for ids in encoded:
+            if padding and max_len is not None:
+                pad_n = max_len - len(ids)
+                padded.append(ids + [self.pad_token_id] * pad_n)
+                masks.append([1] * len(ids) + [0] * pad_n)
+            else:
+                padded.append(ids)
+                masks.append([1] * len(ids))
+        if return_tensors == "pt":
+            return {
+                "input_ids": torch.tensor(padded, dtype=torch.long),
+                "attention_mask": torch.tensor(masks, dtype=torch.long),
+            }
+        return {"input_ids": padded, "attention_mask": masks}
+
+
+def _install_smoke_tokenizer() -> _SmokeTokenizer:
+    tok = _SmokeTokenizer()
+    _get_tokenizer._tok = tok
+    return tok
+
+
 def _render_instruct(turns: list[dict], query: str) -> str:
     """Render as instruct chat-template (tokenizer.apply_chat_template)."""
     tok = _get_tokenizer()
@@ -222,7 +299,9 @@ def load_store(corpus_dir: Path, store_name: str) -> dict[str, dict]:
                 item = json.loads(line)
                 key = item.get("id") or item.get("prefix_id") or item.get("query_id")
                 if key is None:
-                    raise KeyError(f"{store_path} item missing id/prefix_id/query_id: {item.keys()}")
+                    raise KeyError(
+                        f"{store_path} item missing id/prefix_id/query_id: {item.keys()}"
+                    )
                 result[str(key)] = item
     return result
 
@@ -317,6 +396,9 @@ def compute_shard_fingerprint(
     hidden_dim: int,
     boundary_strings: list[str],
     rb_rev: str,
+    max_gen_tokens: int,
+    subset_id: str,
+    phase_name: str,
     code_sha: str,
 ) -> dict:
     """Build a fingerprint dict for resume idempotency."""
@@ -325,12 +407,15 @@ def compute_shard_fingerprint(
         "cell_id": cell_id,
         "row_start": row_start,
         "row_end": row_end,
+        "subset_id": subset_id,
+        "phase_name": phase_name,
         "model_id": model_id,
         "dtype": dtype,
         "n_layers": n_layers,
         "hidden_dim": hidden_dim,
         "boundary_strings": boundary_strings,
         "rb_rev": rb_rev,
+        "max_gen_tokens": max_gen_tokens,
         "code_sha": code_sha,
     }
 
@@ -399,14 +484,13 @@ def _run_gen_vllm(
         trust_remote_code=True,
         seed=seed,
         gpu_memory_utilization=0.85,
-        max_model_len=4096,
+        max_model_len=MAX_MODEL_LEN,
     )
     params = SamplingParams(
         temperature=0.0,
         max_tokens=max_tokens,
         stop=stop_tokens,
         seed=seed,
-        use_beam_search=False,
     )
 
     completions = []
@@ -463,103 +547,195 @@ def _boundary_suffix(prompt_format: str) -> str:
     raise ValueError(f"Unknown prompt_format: {prompt_format!r}")
 
 
-def _capture_row_hf(
-    prefix_text: str,
-    prompt: str,
-    completion: str,
+@dataclass
+class CaptureBatchOutput:
+    summaries: list[dict[str, np.ndarray]]
+    rb_pool: np.ndarray | None
+
+
+def _token_len(tokenizer, text: str) -> int:
+    return len(tokenizer.encode(text, add_special_tokens=False))
+
+
+def _call_model_with_hidden_states(model, input_ids, attention_mask):
+    kwargs = {
+        "input_ids": input_ids,
+        "attention_mask": attention_mask,
+        "output_hidden_states": True,
+    }
+    try:
+        return model(**kwargs, logits_to_keep=1)
+    except TypeError:
+        return model(**kwargs)
+
+
+def _capture_batch_loaded_model(
+    *,
+    prefix_texts: list[str],
+    prompts: list[str],
+    completions: list[str],
     prompt_format: str,
     model,
     tokenizer,
     n_layers: int,
     hidden_dim: int,
     device: str,
-) -> dict[str, np.ndarray]:
-    """Teacher-forced capture for one (prompt, completion) pair.
+    log_label: str,
+    rb_directions: np.ndarray | None = None,
+    batch_size: int = CAPTURE_BATCH_SIZE,
+) -> CaptureBatchOutput:
+    """Teacher-forced capture with padded batch forwards and stream-reduced B0.
 
-    Returns dict: kind -> np.ndarray of shape (n_layers, hidden_dim), dtype=float16.
-    Summaries: prefix_end, context_end, tok1, tok2, tok3.
+    The function never truncates. Rows over the 8192-token capture window fail
+    loudly, matching the loader/filter contract from the plan. Per-token answer
+    grids are only materialized while their batch is in scope and are immediately
+    reduced to the five summary arrays plus optional B0 poolings.
     """
     import torch
 
+    if len({len(prefix_texts), len(prompts), len(completions)}) != 1:
+        raise ValueError("prefix_texts, prompts, and completions must have equal length")
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
     boundary = _boundary_suffix(prompt_format)
-    full_text = prompt + completion + boundary
-    inputs = tokenizer(
-        full_text,
-        return_tensors="pt",
-        truncation=True,
-        max_length=3072,
-        add_special_tokens=False,
-    )
-    input_ids = inputs["input_ids"].to(device)
-    attention_mask = inputs["attention_mask"].to(device)
+    summaries: list[dict[str, np.ndarray]] = []
+    rb_rows: list[np.ndarray] = []
+    rb_unit: np.ndarray | None = None
+    if rb_directions is not None:
+        norms = np.linalg.norm(rb_directions, axis=2)
+        safe_norms = np.where(norms == 0.0, 1.0, norms)
+        rb_unit = rb_directions / safe_norms[:, :, None]
 
-    n_prefix_tokens = len(tokenizer.encode(prefix_text, add_special_tokens=False))
-    n_prompt_tokens = len(tokenizer.encode(prompt, add_special_tokens=False))
-    n_completion_tokens = len(tokenizer.encode(completion, add_special_tokens=False))
-    n_total_tokens = input_ids.shape[-1]
+    n_total_rows = len(prompts)
+    for batch_start in range(0, n_total_rows, max(1, batch_size)):
+        batch_end = min(batch_start + max(1, batch_size), n_total_rows)
+        if batch_start % (max(1, batch_size) * 5) == 0:
+            logger.info(
+                "[%s] capture batch rows %d:%d/%d",
+                log_label,
+                batch_start,
+                batch_end,
+                n_total_rows,
+            )
+        batch_prefixes = prefix_texts[batch_start:batch_end]
+        batch_prompts = prompts[batch_start:batch_end]
+        batch_completions = completions[batch_start:batch_end]
+        full_texts = [
+            p + c + boundary for p, c in zip(batch_prompts, batch_completions, strict=True)
+        ]
 
-    prefix_end_pos = min(max(0, n_prefix_tokens - 1), n_total_tokens - 1)
-    context_end_pos = min(n_prompt_tokens - 1, n_total_tokens - 1)
-    answer_start = min(context_end_pos + 1, n_total_tokens - 1)
-    answer_end = min(context_end_pos + 1 + max(1, n_completion_tokens), n_total_tokens)
-    t3_pos = n_total_tokens - 1
-    t2_end = max(answer_end, t3_pos)
+        positions = []
+        for local_i, (prefix_text, prompt, completion, full_text) in enumerate(
+            zip(batch_prefixes, batch_prompts, batch_completions, full_texts, strict=True)
+        ):
+            n_prefix_tokens = _token_len(tokenizer, prefix_text)
+            n_prompt_tokens = _token_len(tokenizer, prompt)
+            n_completion_tokens = _token_len(tokenizer, completion)
+            n_total_tokens = _token_len(tokenizer, full_text)
+            if n_total_tokens > MAX_MODEL_LEN:
+                raise ValueError(
+                    f"capture row {batch_start + local_i} has {n_total_tokens} tokens, "
+                    f"exceeding MAX_MODEL_LEN={MAX_MODEL_LEN}; loader must filter it"
+                )
+            if n_prompt_tokens > MAX_FORMATTED_TOKENS:
+                raise ValueError(
+                    f"capture row {batch_start + local_i} prompt has {n_prompt_tokens} tokens, "
+                    f"exceeding prompt budget {MAX_FORMATTED_TOKENS}"
+                )
+            prefix_end_pos = min(max(0, n_prefix_tokens - 1), n_total_tokens - 1)
+            context_end_pos = min(max(0, n_prompt_tokens - 1), n_total_tokens - 1)
+            answer_start = min(context_end_pos + 1, n_total_tokens - 1)
+            answer_end = min(context_end_pos + 1 + max(1, n_completion_tokens), n_total_tokens)
+            t3_pos = n_total_tokens - 1
+            t2_end = max(answer_end, t3_pos)
+            positions.append(
+                {
+                    "n_total": n_total_tokens,
+                    "prefix_end": prefix_end_pos,
+                    "context_end": context_end_pos,
+                    "answer_start": answer_start,
+                    "answer_end": answer_end,
+                    "t2_end": t2_end,
+                    "t3": t3_pos,
+                }
+            )
 
-    with torch.no_grad():
-        outputs = model(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-            output_hidden_states=True,
-            logits_to_keep=1,  # avoid materializing full-vocab logits (#779)
+        inputs = tokenizer(
+            full_texts,
+            return_tensors="pt",
+            padding=True,
+            truncation=False,
+            add_special_tokens=False,
         )
+        input_ids = inputs["input_ids"].to(device)
+        attention_mask = inputs["attention_mask"].to(device)
+        with torch.no_grad():
+            outputs = _call_model_with_hidden_states(model, input_ids, attention_mask)
+        hidden_states = outputs.hidden_states[1:]
+        if len(hidden_states) != n_layers:
+            raise ValueError(f"model returned {len(hidden_states)} layers, expected {n_layers}")
+        if hidden_states[0].shape[-1] != hidden_dim:
+            raise ValueError(
+                f"model hidden dim {hidden_states[0].shape[-1]} != expected {hidden_dim}"
+            )
 
-    # hidden_states: tuple of (n_layers+1) tensors, each (1, seq_len, hidden_dim)
-    # We want the post-block residuals: hidden_states[1:] (skip embedding layer)
-    hidden_states = outputs.hidden_states[1:]  # (n_layers,) each (1, seq, hid)
-    if len(hidden_states) != n_layers:
-        raise ValueError(f"model returned {len(hidden_states)} layers, expected {n_layers}")
-    if hidden_states[0].shape[-1] != hidden_dim:
-        raise ValueError(f"model hidden dim {hidden_states[0].shape[-1]} != expected {hidden_dim}")
+        for local_i, pos in enumerate(positions):
+            row_summary: dict[str, np.ndarray] = {}
 
-    # Extract 5 summary positions
-    summaries = {}
+            def extract_pos(
+                position: int,
+                *,
+                row_i: int = local_i,
+                hs_layers=hidden_states,
+            ) -> np.ndarray:
+                return np.stack(
+                    [hs[row_i, position, :].to(torch.float16).cpu().numpy() for hs in hs_layers],
+                    axis=0,
+                )
 
-    def _extract_pos(pos: int) -> np.ndarray:
-        """Extract hidden state at position `pos` across all layers. Shape: (n_layers, hid)."""
-        pos = min(pos, n_total_tokens - 1)
-        arr = np.stack(
-            [hs[0, pos, :].to(torch.float16).cpu().numpy() for hs in hidden_states],
-            axis=0,
-        )  # (n_layers, hidden_dim)
-        return arr
+            def extract_span(
+                start: int,
+                end: int,
+                *,
+                row_i: int = local_i,
+                n_total: int = pos["n_total"],
+                hs_layers=hidden_states,
+            ) -> np.ndarray:
+                start = min(max(0, start), n_total - 1)
+                end = min(max(start + 1, end), n_total)
+                return np.stack(
+                    [
+                        hs[row_i, start:end, :].mean(dim=0).to(torch.float16).cpu().numpy()
+                        for hs in hs_layers
+                    ],
+                    axis=0,
+                )
 
-    def _extract_span(start: int, end: int) -> np.ndarray:
-        start = min(max(0, start), n_total_tokens - 1)
-        end = min(max(start + 1, end), n_total_tokens)
-        per_layer = []
-        for hs in hidden_states:
-            span = hs[0, start:end, :]
-            per_layer.append(span.mean(dim=0).to(torch.float16).cpu().numpy())
-        return np.stack(per_layer, axis=0)
+            row_summary["prefix_end"] = extract_pos(pos["prefix_end"])
+            row_summary["context_end"] = extract_pos(pos["context_end"])
+            row_summary["t1"] = extract_span(pos["answer_start"], pos["answer_end"])
+            row_summary["t2"] = extract_span(pos["answer_start"], pos["t2_end"])
+            row_summary["t3"] = extract_pos(pos["t3"])
+            summaries.append(row_summary)
 
-    def _extract_answer_tokens() -> np.ndarray:
-        start = min(max(0, answer_start), n_total_tokens - 1)
-        end = min(max(start + 1, answer_end), n_total_tokens)
-        per_layer = []
-        for hs in hidden_states:
-            span = hs[0, start:end, :].to(torch.float16).cpu().numpy()
-            per_layer.append(span)
-        # (T, L, H), keeping only the generated-answer span for B0 pooling.
-        return np.stack(per_layer, axis=1)
+            if rb_unit is not None:
+                answer_states = np.stack(
+                    [
+                        hs[local_i, pos["answer_start"] : pos["answer_end"], :]
+                        .to(torch.float16)
+                        .cpu()
+                        .numpy()
+                        for hs in hidden_states
+                    ],
+                    axis=1,
+                ).astype(np.float32, copy=False)
+                projections = np.einsum("alh,lbh->alb", answer_states, rb_unit, optimize=True)
+                rb_rows.append(_pool_projections(projections))
 
-    summaries["prefix_end"] = _extract_pos(prefix_end_pos)
-    summaries["context_end"] = _extract_pos(context_end_pos)
-    summaries["t1"] = _extract_span(answer_start, answer_end)
-    summaries["t2"] = _extract_span(answer_start, t2_end)
-    summaries["t3"] = _extract_pos(t3_pos)
-    summaries["_answer_token_states"] = _extract_answer_tokens()
+        del outputs, hidden_states, input_ids, attention_mask
 
-    return summaries
+    rb_pool = np.stack(rb_rows, axis=0).astype(np.float32) if rb_rows else None
+    return CaptureBatchOutput(summaries=summaries, rb_pool=rb_pool)
 
 
 def _capture_batch_hf(
@@ -572,13 +748,13 @@ def _capture_batch_hf(
     gpu_id: int,
     n_layers: int,
     hidden_dim: int,
-) -> list[dict[str, np.ndarray]]:
+) -> CaptureBatchOutput:
     """Run HF teacher-forced capture for a batch of (prompt, completion) pairs."""
     import torch
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    device = f"cuda:{gpu_id}"
     os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    device = "cuda:0"
 
     tokenizer = AutoTokenizer.from_pretrained(
         model_name,
@@ -590,7 +766,7 @@ def _capture_batch_hf(
         revision=revision,
         torch_dtype=torch.bfloat16,
         trust_remote_code=True,
-        device_map={"": device},  # explicit device, no auto-offload (#825)
+        device_map={"": device},  # explicit single visible device, no auto-offload (#825)
     )
     model.eval()
 
@@ -619,62 +795,69 @@ def _capture_batch_hf(
     return results
 
 
-def _capture_batch_loaded_model(
-    *,
-    prefix_texts: list[str],
-    prompts: list[str],
-    completions: list[str],
-    prompt_format: str,
-    model,
-    tokenizer,
-    n_layers: int,
-    hidden_dim: int,
-    device: str,
-    log_label: str,
-) -> list[dict[str, np.ndarray]]:
-    """Shared teacher-forced capture loop for production HF and tiny CPU smokes."""
-    results = []
-    for i, (prefix_text, prompt, completion) in enumerate(zip(prefix_texts, prompts, completions)):
-        if i % 10 == 0:
-            logger.info("[%s] capture row %d/%d", log_label, i, len(prompts))
-        result = _capture_row_hf(
-            prefix_text,
-            prompt,
-            completion,
-            prompt_format,
-            model,
-            tokenizer,
-            n_layers,
-            hidden_dim,
-            device,
-        )
-        results.append(result)
-
-    return results
-
-
 # ---------------------------------------------------------------------------
 # B0 r_B projection pooling
 # ---------------------------------------------------------------------------
 
 
 def load_rb_directions(rb_rev: str, n_layers: int, n_traits: int, hidden_dim: int) -> np.ndarray:
-    """Download and load r_B direction matrix from HF model repo.
+    """Download and load #779 r_B direction tensors from the HF data repo.
 
     Returns np.ndarray of shape (n_layers, n_traits, hidden_dim), dtype=float32.
     """
-    from huggingface_hub import hf_hub_download
+    import torch
+    from huggingface_hub import hf_hub_download, list_repo_tree
 
-    local_path = hf_hub_download(
-        repo_id=HF_MODEL_REPO,
-        filename=f"issue1092/rb_directions_{rb_rev}.npy",
+    prefix = "issue779_monitoring/r_b"
+    entries = list_repo_tree(
+        HF_DATA_REPO,
+        repo_type="dataset",
+        path_in_repo=prefix,
         revision=rb_rev,
     )
-    rb = np.load(local_path)
-    assert rb.shape == (n_layers, n_traits, hidden_dim), (
-        f"r_B shape mismatch: got {rb.shape}, expected ({n_layers}, {n_traits}, {hidden_dim})"
+    relpaths = sorted(
+        item.path
+        for item in entries
+        if getattr(item, "size", None) is not None and item.path.endswith(".pt")
     )
-    return rb.astype(np.float32)
+    if len(relpaths) != n_traits:
+        raise RuntimeError(
+            f"expected {n_traits} r_B .pt files under {HF_DATA_REPO}@{rb_rev}:{prefix}, "
+            f"found {len(relpaths)}: {relpaths}"
+        )
+
+    tensors: list[np.ndarray] = []
+    basenames: list[str] = []
+    for relpath in relpaths:
+        local_path = hf_hub_download(
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            filename=relpath,
+            revision=rb_rev,
+        )
+        payload = torch.load(local_path, map_location="cpu", weights_only=False)
+        if not isinstance(payload, dict) or "r_b" not in payload:
+            raise KeyError(f"{relpath} payload must be a dict with key 'r_b'")
+        arr = (
+            payload["r_b"].detach().cpu().numpy()
+            if hasattr(payload["r_b"], "detach")
+            else np.asarray(payload["r_b"])
+        )
+        if arr.shape != (n_layers, hidden_dim):
+            raise ValueError(
+                f"{relpath} r_b shape {arr.shape} != expected ({n_layers}, {hidden_dim})"
+            )
+        tensors.append(arr.astype(np.float32, copy=False))
+        basenames.append(Path(relpath).stem)
+
+    rb = np.stack(tensors, axis=1)
+    if rb.shape != (n_layers, n_traits, hidden_dim):
+        raise AssertionError(
+            f"stacked r_B shape {rb.shape} != ({n_layers}, {n_traits}, {hidden_dim}); "
+            f"basenames={basenames}"
+        )
+    logger.info("[r_B] loaded traits from data repo: %s", basenames)
+    return rb
 
 
 def _pool_projections(projections: np.ndarray) -> np.ndarray:
@@ -703,46 +886,121 @@ def _pool_projections(projections: np.ndarray) -> np.ndarray:
     return result.astype(np.float32)
 
 
-def compute_rb_projection_batch(
-    summaries_list: list[dict[str, np.ndarray]],
-    rb_directions: np.ndarray,
-) -> np.ndarray:
-    """Batched B0 r_B projection pooling.
+class PersistentGpuRuntime:
+    """One child-process runtime bound to exactly one visible GPU."""
 
-    Args:
-        summaries_list: list of per-row summary dicts (kind -> (n_layers, hidden_dim) fp16)
-        rb_directions: (n_layers, n_traits, hidden_dim) fp32
+    def __init__(self, gpu_id: int):
+        os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+        self.gpu_id = gpu_id
+        self.device = "cuda:0"
+        self._llms: dict[tuple[str, str], Any] = {}
+        self._hf_models: dict[tuple[str, str], tuple[Any, Any]] = {}
 
-    Returns:
-        np.ndarray of shape (n_rows, n_layers, n_traits, 4), dtype=float32
-    """
-    n_rows = len(summaries_list)
-    n_layers = rb_directions.shape[0]
-    n_traits = rb_directions.shape[1]
+    def generate(
+        self,
+        *,
+        prompts: list[str],
+        model_name: str,
+        revision: str,
+        stop_tokens: list[str],
+        max_tokens: int,
+        seed: int,
+        chunk_size: int,
+    ) -> list[str]:
+        from vllm import LLM, SamplingParams
 
-    norms = np.linalg.norm(rb_directions, axis=2)
-    safe_norms = np.where(norms == 0.0, 1.0, norms)
-    rb_unit = rb_directions / safe_norms[:, :, None]
-
-    per_row = np.zeros((n_rows, n_layers, n_traits, 4), dtype=np.float32)
-    for r, summaries in enumerate(summaries_list):
-        answer_states = summaries.get("_answer_token_states")
-        if answer_states is None:
-            raise KeyError("capture result missing _answer_token_states for B0 pooling")
-        answer_states = answer_states.astype(np.float32)  # (T, L, H)
-        if answer_states.ndim != 3 or answer_states.shape[1:] != (
-            n_layers,
-            rb_directions.shape[2],
-        ):
-            raise ValueError(
-                f"answer token states shape {answer_states.shape} incompatible with "
-                f"r_B {rb_directions.shape}"
+        key = (model_name, revision)
+        if key not in self._llms:
+            self._llms[key] = LLM(
+                model=model_name,
+                revision=revision,
+                dtype="bfloat16",
+                trust_remote_code=True,
+                seed=seed,
+                gpu_memory_utilization=0.85,
+                max_model_len=MAX_MODEL_LEN,
             )
-        # (T, L, H) x (L, trait, H) -> (T, L, trait), one batched einsum per row.
-        projections = np.einsum("alh,lbh->alb", answer_states, rb_unit, optimize=True)
-        per_row[r] = _pool_projections(projections)
+        params = SamplingParams(
+            temperature=0.0,
+            max_tokens=max_tokens,
+            stop=stop_tokens,
+            seed=seed,
+        )
+        completions = []
+        llm = self._llms[key]
+        for chunk_start in range(0, len(prompts), chunk_size):
+            chunk = prompts[chunk_start : chunk_start + chunk_size]
+            logger.info(
+                "[gpu=%d] vLLM chunk %d/%d (%d prompts)",
+                self.gpu_id,
+                chunk_start // chunk_size + 1,
+                math.ceil(len(prompts) / chunk_size),
+                len(chunk),
+            )
+            outputs = llm.generate(chunk, params, use_tqdm=False)
+            completions.extend(out.outputs[0].text if out.outputs else "" for out in outputs)
+        return completions
 
-    return per_row
+    def capture(
+        self,
+        *,
+        prefix_texts: list[str],
+        prompts: list[str],
+        completions: list[str],
+        prompt_format: str,
+        model_name: str,
+        revision: str,
+        n_layers: int,
+        hidden_dim: int,
+        rb_directions: np.ndarray | None,
+    ) -> CaptureBatchOutput:
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+
+        key = (model_name, revision)
+        if key not in self._hf_models:
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_name,
+                revision=revision,
+                trust_remote_code=True,
+            )
+            model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                revision=revision,
+                torch_dtype=torch.bfloat16,
+                trust_remote_code=True,
+                device_map={"": self.device},
+            )
+            model.eval()
+            self._hf_models[key] = (tokenizer, model)
+        tokenizer, model = self._hf_models[key]
+        return _capture_batch_loaded_model(
+            prefix_texts=prefix_texts,
+            prompts=prompts,
+            completions=completions,
+            prompt_format=prompt_format,
+            model=model,
+            tokenizer=tokenizer,
+            n_layers=n_layers,
+            hidden_dim=hidden_dim,
+            device=self.device,
+            log_label=f"gpu={self.gpu_id}",
+            rb_directions=rb_directions,
+            batch_size=CAPTURE_BATCH_SIZE,
+        )
+
+    def close(self) -> None:
+        self._llms.clear()
+        self._hf_models.clear()
+        try:
+            import gc
+
+            import torch
+
+            gc.collect()
+            torch.cuda.empty_cache()
+        except Exception:
+            logger.debug("[gpu=%d] runtime CUDA cleanup skipped", self.gpu_id, exc_info=True)
 
 
 # ---------------------------------------------------------------------------
@@ -765,8 +1023,7 @@ def run_g2_gate(
     rng = np.random.default_rng(seed)
     n = len(summaries_list)
     if n == 0:
-        logger.warning("[G2] No summaries to check")
-        return True
+        raise ValueError("[G2] no summaries to check")
 
     spot_n = min(n_spot, n)
     spot_idx = rng.choice(n, size=spot_n, replace=False)
@@ -803,6 +1060,106 @@ def run_g2_gate(
     return True
 
 
+def check_dispatch_errors(results: list[dict]) -> None:
+    errors = [r for r in results if r["status"] == "error"]
+    if errors:
+        logger.error("[main] %d shards failed:", len(errors))
+        for err in errors:
+            logger.error("  %s shard%d: %s", err["cell_id"], err["shard_idx"], err.get("error"))
+        raise RuntimeError(f"{len(errors)} shards failed")
+
+
+def run_g2_gate_from_disk(out_dir: Path, cell_id: str, *, n_layers: int, hidden_dim: int) -> None:
+    """Disk-backed G2 shape/finite gate after the first full capture cell."""
+    cell_dir = out_dir / "summaries" / cell_id
+    if not cell_dir.exists():
+        raise FileNotFoundError(f"G2 summaries missing for {cell_id}: {cell_dir}")
+    row_counts: dict[str, int] = {}
+    for kind in SUMMARY_KINDS:
+        paths = sorted(cell_dir.glob(f"{kind}_L00_shard*.npy")) or sorted(
+            cell_dir.glob(f"{kind}_L00.npy")
+        )
+        if not paths:
+            raise FileNotFoundError(f"G2 missing {kind}_L00 shards for {cell_id}")
+        count = 0
+        for path in paths:
+            arr = np.load(path, mmap_mode="r")
+            if arr.ndim != 2 or arr.shape[1] != hidden_dim:
+                raise ValueError(f"G2 {path} shape {arr.shape} != (*, {hidden_dim})")
+            count += int(arr.shape[0])
+        row_counts[kind] = count
+    if len(set(row_counts.values())) != 1:
+        raise ValueError(f"G2 row-count mismatch for {cell_id}: {row_counts}")
+
+    if cell_id in CELLS_OWN_POLICY:
+        pool_dir = out_dir / "summaries" / "b0_rB_pool"
+        pool_paths = sorted(pool_dir.glob(f"{cell_id}_shard*.npy")) or sorted(
+            pool_dir.glob(f"{cell_id}.npy")
+        )
+        if not pool_paths:
+            raise FileNotFoundError(f"G2 missing B0 pool shards for own-policy cell {cell_id}")
+        pool_count = 0
+        for path in pool_paths:
+            arr = np.load(path, mmap_mode="r")
+            expected_tail = (n_layers, N_TRAITS, len(CAPTURE_POOLING_MODES))
+            if arr.ndim != 4 or arr.shape[1:] != expected_tail:
+                raise ValueError(f"G2 {path} shape {arr.shape} != (*, {expected_tail})")
+            l14 = np.asarray(arr[:, min(14, n_layers - 1), :, 0])
+            if not np.all(np.isfinite(l14)):
+                raise ValueError(f"G2 non-finite B0 mean projections in {path}")
+            pool_count += int(arr.shape[0])
+        if pool_count != next(iter(row_counts.values())):
+            raise ValueError(
+                f"G2 B0 row-count mismatch for {cell_id}: pool={pool_count}, summaries={row_counts}"
+            )
+    logger.info("[G2] Disk gate PASSED for %s: %s", cell_id, row_counts)
+
+
+def consolidate_cell_shards(out_dir: Path, cell_id: str, *, n_layers: int) -> None:
+    """Collapse per-shard summary arrays into per-cell layer files before upload."""
+    cell_dir = out_dir / "summaries" / cell_id
+    if cell_dir.exists():
+        for kind in SUMMARY_KINDS:
+            for layer in range(n_layers):
+                paths = sorted(cell_dir.glob(f"{kind}_L{layer:02d}_shard*.npy"))
+                if len(paths) <= 1:
+                    continue
+                arrays = [np.load(path, mmap_mode="r") for path in paths]
+                arr = np.concatenate(arrays, axis=0).astype(np.float16, copy=False)
+                out_path = cell_dir / f"{kind}_L{layer:02d}.npy"
+                np.save(out_path, arr)
+                for path in paths:
+                    path.unlink()
+    pool_dir = out_dir / "summaries" / "b0_rB_pool"
+    if pool_dir.exists():
+        pool_paths = sorted(pool_dir.glob(f"{cell_id}_shard*.npy"))
+        if len(pool_paths) > 1:
+            arr = np.concatenate([np.load(path, mmap_mode="r") for path in pool_paths], axis=0)
+            out_path = pool_dir / f"{cell_id}.npy"
+            np.save(out_path, arr.astype(np.float32, copy=False))
+            for path in pool_paths:
+                path.unlink()
+
+
+def verify_uploaded_prefix(
+    repo_id: str, repo_type: str, revision: str | None, path_in_repo: str
+) -> None:
+    from huggingface_hub import HfApi
+
+    api = HfApi()
+    entries = list(
+        api.list_repo_tree(
+            repo_id=repo_id,
+            repo_type=repo_type,
+            revision=revision,
+            path_in_repo=path_in_repo,
+            recursive=True,
+        )
+    )
+    if not any(getattr(entry, "size", None) is not None for entry in entries):
+        raise RuntimeError(f"upload verification found no files under {repo_id}:{path_in_repo}")
+
+
 # ---------------------------------------------------------------------------
 # Output writing
 # ---------------------------------------------------------------------------
@@ -823,7 +1180,6 @@ def write_summaries_npy(
     """
     cell_dir = out_dir / "summaries" / cell_id
     cell_dir.mkdir(parents=True, exist_ok=True)
-    n_rows = len(summaries_list)
 
     paths = {}
     for kind in SUMMARY_KINDS:
@@ -861,14 +1217,24 @@ def write_completions_jsonl(
     model_type: str,
     rows: list[dict],
     completions: list[str],
-) -> Path:
-    """Write raw completions JSONL. Layout: raw_completions/<model_type>/<cell>_shard{i}.jsonl."""
+) -> list[Path]:
+    """Write raw completions JSONL, rotating shards below the upload line-size cap."""
     comp_dir = out_dir / "raw_completions" / model_type
     comp_dir.mkdir(parents=True, exist_ok=True)
-    path = comp_dir / f"{cell_id}_shard{shard_idx}.jsonl"
-    with open(path, "w") as f:
-        for row, completion in zip(rows, completions):
-            f.write(
+    paths: list[Path] = []
+    part = 0
+    bytes_in_part = 0
+    handle = None
+
+    def open_part(part_idx: int):
+        path = comp_dir / f"{cell_id}_shard{shard_idx:05d}_part{part_idx:04d}.jsonl"
+        paths.append(path)
+        return path.open("w", encoding="utf-8")
+
+    try:
+        handle = open_part(part)
+        for row, completion in zip(rows, completions, strict=True):
+            line = (
                 json.dumps(
                     {
                         "row_id": row.get("row_id", ""),
@@ -876,11 +1242,28 @@ def write_completions_jsonl(
                         "query_id": row.get("query_id", ""),
                         "cell_id": cell_id,
                         "completion": completion,
-                    }
+                    },
+                    ensure_ascii=False,
                 )
                 + "\n"
             )
-    return path
+            line_bytes = len(line.encode("utf-8"))
+            if line_bytes > MAX_JSONL_LINE_BYTES:
+                raise ValueError(
+                    f"completion row {row.get('row_id')} serializes to {line_bytes} bytes; "
+                    f"line cap is {MAX_JSONL_LINE_BYTES}"
+                )
+            if bytes_in_part and bytes_in_part + line_bytes > MAX_JSONL_SHARD_BYTES:
+                handle.close()
+                part += 1
+                bytes_in_part = 0
+                handle = open_part(part)
+            handle.write(line)
+            bytes_in_part += line_bytes
+    finally:
+        if handle is not None:
+            handle.close()
+    return paths
 
 
 def write_fingerprint(fp_path: Path, fp_dict: dict) -> None:
@@ -957,8 +1340,7 @@ def attach_completion_sources(rows: list[dict], corpus_dir: Path, out_dir: Path)
             missing["shuffled"] += 1
 
     logger.info(
-        "[completion-sources] loaded instruct=%d pretrained=%d claude=%d deranged=%d "
-        "missing=%s",
+        "[completion-sources] loaded instruct=%d pretrained=%d claude=%d deranged=%d missing=%s",
         len(instruct),
         len(pretrained),
         len(claude),
@@ -983,32 +1365,35 @@ def upload_cell_captures(
 
     api = HfApi()
     repo_id = HF_DATA_REPO
-    path_in_repo = f"{UPLOAD_PREFIX}/{cell_id}"
 
     # Upload summaries
     summaries_dir = out_dir / "summaries" / cell_id
     if summaries_dir.exists():
+        path_in_repo = f"{SUMMARY_UPLOAD_PREFIX}/{cell_id}"
         api.upload_folder(
             repo_id=repo_id,
             repo_type="dataset",
             folder_path=str(summaries_dir),
-            path_in_repo=f"{path_in_repo}/summaries",
+            path_in_repo=path_in_repo,
             commit_message=f"issue{issue}: upload summaries for {cell_id}",
         )
+        verify_uploaded_prefix(repo_id, "dataset", None, path_in_repo)
         logger.info("[upload] Summaries for %s uploaded", cell_id)
 
     # Upload r_B pool
     pool_dir = out_dir / "summaries" / "b0_rB_pool"
-    pool_files = list(pool_dir.glob(f"{cell_id}_shard*.npy")) if pool_dir.exists() else []
-    for pf in pool_files:
-        api.upload_file(
+    pool_files = list(pool_dir.glob(f"{cell_id}*.npy")) if pool_dir.exists() else []
+    if pool_files:
+        path_in_repo = f"{SUMMARY_UPLOAD_PREFIX}/b0_rB_pool"
+        api.upload_folder(
             repo_id=repo_id,
             repo_type="dataset",
-            path_or_fileobj=str(pf),
-            path_in_repo=f"{path_in_repo}/b0_rB_pool/{pf.name}",
+            folder_path=str(pool_dir),
+            path_in_repo=path_in_repo,
+            allow_patterns=[f"{cell_id}*.npy"],
             commit_message=f"issue{issue}: upload r_B pool for {cell_id}",
         )
-    if pool_files:
+        verify_uploaded_prefix(repo_id, "dataset", None, path_in_repo)
         logger.info("[upload] r_B pool for %s uploaded (%d files)", cell_id, len(pool_files))
 
     # Upload completions
@@ -1016,21 +1401,50 @@ def upload_cell_captures(
         comp_dir = out_dir / "raw_completions" / model_type
         if comp_dir.exists():
             comp_files = list(comp_dir.glob(f"{cell_id}_shard*.jsonl"))
-            for cf in comp_files:
-                api.upload_file(
+            if comp_files:
+                path_in_repo = f"{RAW_COMPLETIONS_UPLOAD_PREFIX}/{model_type}"
+                api.upload_folder(
                     repo_id=repo_id,
                     repo_type="dataset",
-                    path_or_fileobj=str(cf),
-                    path_in_repo=(f"{path_in_repo}/raw_completions/{model_type}/{cf.name}"),
+                    folder_path=str(comp_dir),
+                    path_in_repo=path_in_repo,
+                    allow_patterns=[f"{cell_id}_shard*.jsonl"],
                     commit_message=(f"issue{issue}: upload {model_type} completions for {cell_id}"),
                 )
-            if comp_files:
+                verify_uploaded_prefix(repo_id, "dataset", None, path_in_repo)
                 logger.info(
                     "[upload] %s completions for %s uploaded (%d files)",
                     model_type,
                     cell_id,
                     len(comp_files),
                 )
+
+
+def upload_auxiliary_summaries(out_dir: Path, issue: int) -> None:
+    """Upload P3b/P3c summaries using the same folder-level policy as cells."""
+    from huggingface_hub import HfApi
+
+    summaries_root = out_dir / "summaries"
+    if not summaries_root.exists():
+        return
+    api = HfApi()
+    for aux_dir in sorted(summaries_root.glob("bare_*")) + sorted(
+        summaries_root.glob("dynamics_*")
+    ):
+        if not aux_dir.is_dir():
+            continue
+        if not any(aux_dir.glob("*.npy")):
+            raise FileNotFoundError(f"auxiliary summary dir has no npy files: {aux_dir}")
+        path_in_repo = f"{SUMMARY_UPLOAD_PREFIX}/{aux_dir.name}"
+        api.upload_folder(
+            repo_id=HF_DATA_REPO,
+            repo_type="dataset",
+            folder_path=str(aux_dir),
+            path_in_repo=path_in_repo,
+            commit_message=f"issue{issue}: upload auxiliary summaries for {aux_dir.name}",
+        )
+        verify_uploaded_prefix(HF_DATA_REPO, "dataset", None, path_in_repo)
+        logger.info("[upload] auxiliary summaries uploaded: %s", aux_dir.name)
 
 
 # ---------------------------------------------------------------------------
@@ -1040,7 +1454,7 @@ def upload_cell_captures(
 
 def _process_shard(
     shard: Shard,
-    rows: list[dict],
+    rows_by_cell: dict[str, list[dict]],
     prefix_store: dict,
     query_store: dict,
     out_dir: Path,
@@ -1049,6 +1463,7 @@ def _process_shard(
     rb_directions: np.ndarray | None,
     code_sha_val: str,
     corpus_hash: str,
+    runtime: PersistentGpuRuntime | None = None,
 ) -> dict:
     """Process one shard on gpu_id. Returns result dict with status."""
     cell_id = shard.cell_id
@@ -1058,7 +1473,8 @@ def _process_shard(
     text_source = cfg["text_source"]
     own_policy = cfg["own_policy"]
 
-    shard_rows = rows[shard.row_start : shard.row_end]
+    cell_rows = rows_by_cell[cell_id]
+    shard_rows = cell_rows[shard.row_start : shard.row_end]
     n_rows = len(shard_rows)
 
     if n_rows == 0:
@@ -1089,6 +1505,9 @@ def _process_shard(
             + (STOP_TOKENS_INSTRUCT if model_type == "instruct" else STOP_TOKENS_PRETRAINED)
         ),
         rb_rev=args.rb_rev,
+        max_gen_tokens=args.max_gen_tokens,
+        subset_id=_subset_id_for_cell(cell_id),
+        phase_name=getattr(args, "phase_name", "main"),
         code_sha=code_sha_val,
     )
     fp_path = out_dir / "manifests" / f"{cell_id}_shard{shard.shard_idx}_fingerprint.json"
@@ -1135,16 +1554,27 @@ def _process_shard(
             model_name, revision = PRETRAINED_MODEL, PRETRAINED_REVISION
             stop_tokens = STOP_TOKENS_PRETRAINED
 
-        completions = _run_gen_vllm(
-            prompts=prompts,
-            model_name=model_name,
-            revision=revision,
-            stop_tokens=stop_tokens,
-            max_tokens=args.max_gen_tokens,
-            seed=GEN_SEED,
-            gpu_id=gpu_id,
-            chunk_size=DEFAULT_VLLM_CHUNK_SIZE,
-        )
+        if runtime is not None:
+            completions = runtime.generate(
+                prompts=prompts,
+                model_name=model_name,
+                revision=revision,
+                stop_tokens=stop_tokens,
+                max_tokens=args.max_gen_tokens,
+                seed=GEN_SEED,
+                chunk_size=DEFAULT_VLLM_CHUNK_SIZE,
+            )
+        else:
+            completions = _run_gen_vllm(
+                prompts=prompts,
+                model_name=model_name,
+                revision=revision,
+                stop_tokens=stop_tokens,
+                max_tokens=args.max_gen_tokens,
+                seed=GEN_SEED,
+                gpu_id=gpu_id,
+                chunk_size=DEFAULT_VLLM_CHUNK_SIZE,
+            )
 
         # Write completions immediately (checkpoint per phase)
         write_completions_jsonl(
@@ -1175,17 +1605,33 @@ def _process_shard(
         else:
             model_name, revision = PRETRAINED_MODEL, PRETRAINED_REVISION
 
-        summaries_list = _capture_batch_hf(
-            prefix_texts=prefix_texts,
-            prompts=prompts,
-            completions=completions,
-            prompt_format=prompt_format,
-            model_name=model_name,
-            revision=revision,
-            gpu_id=gpu_id,
-            n_layers=args.n_layers,
-            hidden_dim=args.hidden_dim,
+        shard_rb = rb_directions if own_policy else None
+        capture_out = (
+            runtime.capture(
+                prefix_texts=prefix_texts,
+                prompts=prompts,
+                completions=completions,
+                prompt_format=prompt_format,
+                model_name=model_name,
+                revision=revision,
+                n_layers=args.n_layers,
+                hidden_dim=args.hidden_dim,
+                rb_directions=shard_rb,
+            )
+            if runtime is not None
+            else _capture_batch_hf(
+                prefix_texts=prefix_texts,
+                prompts=prompts,
+                completions=completions,
+                prompt_format=prompt_format,
+                model_name=model_name,
+                revision=revision,
+                gpu_id=gpu_id,
+                n_layers=args.n_layers,
+                hidden_dim=args.hidden_dim,
+            )
         )
+        summaries_list = capture_out.summaries
 
         # Write summaries immediately
         write_summaries_npy(
@@ -1197,11 +1643,9 @@ def _process_shard(
             hidden_dim=args.hidden_dim,
         )
 
-    # ---- Step 3: B0 r_B projection pooling (own-policy cells only) ----
-    rb_pool: np.ndarray | None = None
-    if own_policy and rb_directions is not None and summaries_list and "capture" in args.phases_set:
-        rb_pool = compute_rb_projection_batch(summaries_list, rb_directions)
-        write_rb_pool_npy(out_dir, cell_id, shard.shard_idx, rb_pool)
+        # ---- Step 3: B0 r_B projection pooling (own-policy cells only) ----
+        if capture_out.rb_pool is not None:
+            write_rb_pool_npy(out_dir, cell_id, shard.shard_idx, capture_out.rb_pool)
 
     # Write fingerprint (marks shard as done)
     write_fingerprint(fp_path, fp_dict)
@@ -1211,16 +1655,51 @@ def _process_shard(
         "cell_id": cell_id,
         "shard_idx": shard.shard_idx,
         "n_rows": n_rows,
-        "summaries": summaries_list,
-        "rb_pool": rb_pool,
     }
+
+
+def _subset_id_for_cell(cell_id: str) -> str:
+    text_source = CELL_CONFIG[cell_id]["text_source"]
+    if text_source == "claude":
+        return "claude_subset"
+    if text_source == "shuffled":
+        return "control_subset"
+    return "full_manifest"
+
+
+def _rows_for_cell(rows: list[dict], cell_id: str) -> list[dict]:
+    subset_id = _subset_id_for_cell(cell_id)
+    if subset_id == "full_manifest":
+        return rows
+    filtered = [row for row in rows if row.get(subset_id)]
+    if not filtered:
+        raise ValueError(f"{cell_id} subset {subset_id} is empty; refusing to shard full manifest")
+    return filtered
+
+
+def _detect_gpu_count() -> int:
+    visible = os.environ.get("CUDA_VISIBLE_DEVICES")
+    if visible and visible.strip() and visible.strip() != "-1":
+        return len([x for x in visible.split(",") if x.strip()])
+    try:
+        proc = subprocess.run(
+            ["nvidia-smi", "-L"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError:
+        return 0
+    if proc.returncode != 0:
+        return 0
+    return len([line for line in proc.stdout.splitlines() if line.strip().startswith("GPU ")])
 
 
 def _worker_loop(
     gpu_id: int,
-    shard_queue: queue.Queue[Shard | None],
-    result_queue: queue.Queue[dict],
-    rows: list[dict],
+    shard_queue,
+    result_queue,
+    rows_by_cell: dict[str, list[dict]],
     prefix_store: dict,
     query_store: dict,
     out_dir: Path,
@@ -1229,34 +1708,44 @@ def _worker_loop(
     code_sha_val: str,
     corpus_hash: str,
 ) -> None:
-    """Worker thread: pull shards from queue and process on gpu_id."""
-    while True:
-        shard = shard_queue.get()
-        if shard is None:
-            break  # sentinel: no more work
-        try:
-            result = _process_shard(
-                shard=shard,
-                rows=rows,
-                prefix_store=prefix_store,
-                query_store=query_store,
-                out_dir=out_dir,
-                args=args,
-                gpu_id=gpu_id,
-                rb_directions=rb_directions,
-                code_sha_val=code_sha_val,
-                corpus_hash=corpus_hash,
-            )
-        except Exception as exc:
-            logger.exception("[gpu=%d] Shard %s failed", gpu_id, shard)
-            result = {
-                "status": "error",
-                "cell_id": shard.cell_id,
-                "shard_idx": shard.shard_idx,
-                "error": str(exc),
-            }
-        result_queue.put(result)
-        shard_queue.task_done()
+    """Worker process: set CVD, build one runtime, then pull shards."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+    runtime: PersistentGpuRuntime | None = None
+    try:
+        runtime = PersistentGpuRuntime(gpu_id)
+        while True:
+            shard = shard_queue.get()
+            if shard is None:
+                break
+            try:
+                result = _process_shard(
+                    shard=shard,
+                    rows_by_cell=rows_by_cell,
+                    prefix_store=prefix_store,
+                    query_store=query_store,
+                    out_dir=out_dir,
+                    args=args,
+                    gpu_id=gpu_id,
+                    rb_directions=rb_directions,
+                    code_sha_val=code_sha_val,
+                    corpus_hash=corpus_hash,
+                    runtime=runtime,
+                )
+            except Exception as exc:
+                logger.exception("[gpu=%d] Shard %s failed", gpu_id, shard)
+                result = {
+                    "status": "error",
+                    "cell_id": shard.cell_id,
+                    "shard_idx": shard.shard_idx,
+                    "error": str(exc),
+                }
+            result_queue.put(result)
+    finally:
+        if runtime is not None:
+            runtime.close()
 
 
 def run_dispatch(
@@ -1271,12 +1760,10 @@ def run_dispatch(
 ) -> list[dict]:
     """Work-conserving multi-GPU dispatcher.
 
-    Creates one thread per GPU; threads pull shards from a shared queue.
+    Creates one child process per GPU; workers pull shards from a shared queue.
     Returns list of result dicts.
     """
-    import torch
-
-    n_gpus = torch.cuda.device_count()
+    n_gpus = _detect_gpu_count()
     if n_gpus == 0:
         logger.error("No CUDA GPUs detected. Use --cpu-smoke for CPU-only testing.")
         raise RuntimeError("No CUDA GPUs available")
@@ -1284,10 +1771,12 @@ def run_dispatch(
     logger.info("[dispatch] %d GPUs detected", n_gpus)
 
     # Build shard list
-    shard_size = max(1, min(200, len(rows) // max(1, len(cells))))
+    rows_by_cell = {cell_id: _rows_for_cell(rows, cell_id) for cell_id in cells}
+    max_cell_rows = max(len(cell_rows) for cell_rows in rows_by_cell.values())
+    shard_size = max(1, min(512, max_cell_rows // max(1, n_gpus * 2) or max_cell_rows))
     shards: list[Shard] = []
     for cell_id in cells:
-        n_rows = len(rows)
+        n_rows = len(rows_by_cell[cell_id])
         cell_shards = []
         for start in range(0, n_rows, shard_size):
             end = min(start + shard_size, n_rows)
@@ -1304,27 +1793,27 @@ def run_dispatch(
 
     logger.info("[dispatch] %d shards across %d cells", len(shards), len(cells))
 
-    # Fill shard queue
-    shard_queue: queue.Queue[Shard | None] = queue.Queue()
+    ctx = mp.get_context("spawn")
+    shard_queue = ctx.Queue()
     for shard in shards:
         shard_queue.put(shard)
     # Sentinel per worker
     for _ in range(n_gpus):
         shard_queue.put(None)
 
-    result_queue: queue.Queue[dict] = queue.Queue()
+    result_queue = ctx.Queue()
     code_sha_val = code_sha()
 
-    # Spawn worker threads
-    threads = []
+    # Spawn worker processes. The child sets CUDA_VISIBLE_DEVICES before torch/vLLM imports.
+    processes = []
     for gpu_id in range(n_gpus):
-        t = threading.Thread(
+        p = ctx.Process(
             target=_worker_loop,
             args=(
                 gpu_id,
                 shard_queue,
                 result_queue,
-                rows,
+                rows_by_cell,
                 prefix_store,
                 query_store,
                 out_dir,
@@ -1333,36 +1822,43 @@ def run_dispatch(
                 code_sha_val,
                 corpus_hash,
             ),
-            daemon=True,
-            name=f"worker-gpu-{gpu_id}",
+            daemon=False,
+            name=f"issue1092-worker-gpu-{gpu_id}",
         )
-        t.start()
-        threads.append(t)
+        p.start()
+        processes.append(p)
 
-    # Collect results
+    # Collect results. On timeout or parent-side failure, terminate children so
+    # vLLM/HF engines do not survive past the dispatcher.
     results = []
     n_expected = len(shards)
-    while len(results) < n_expected:
-        result = result_queue.get(timeout=3600)
-        results.append(result)
-        if result["status"] == "error":
-            logger.error(
-                "[dispatch] Shard %s/%d ERROR: %s",
-                result["cell_id"],
-                result["shard_idx"],
-                result.get("error"),
-            )
-        else:
-            logger.info(
-                "[dispatch] Shard %s/%d %s (%d rows)",
-                result["cell_id"],
-                result["shard_idx"],
-                result["status"],
-                result.get("n_rows", 0),
-            )
-
-    for t in threads:
-        t.join(timeout=60)
+    try:
+        while len(results) < n_expected:
+            result = result_queue.get(timeout=3600)
+            results.append(result)
+            if result["status"] == "error":
+                logger.error(
+                    "[dispatch] Shard %s/%d ERROR: %s",
+                    result["cell_id"],
+                    result["shard_idx"],
+                    result.get("error"),
+                )
+            else:
+                logger.info(
+                    "[dispatch] Shard %s/%d %s (%d rows)",
+                    result["cell_id"],
+                    result["shard_idx"],
+                    result["status"],
+                    result.get("n_rows", 0),
+                )
+    finally:
+        for p in processes:
+            p.join(timeout=60)
+            if p.is_alive():
+                p.terminate()
+                p.join(timeout=30)
+            if p.exitcode not in (0, None):
+                raise RuntimeError(f"worker {p.name} exited with {p.exitcode}")
 
     return results
 
@@ -1393,9 +1889,6 @@ def run_cpu_smoke(args: argparse.Namespace) -> None:
             s = {}
             for kind in SUMMARY_KINDS:
                 s[kind] = rng.standard_normal((args.n_layers, args.hidden_dim)).astype(np.float16)
-            s["_answer_token_states"] = rng.standard_normal(
-                (3, args.n_layers, args.hidden_dim)
-            ).astype(np.float16)
             summaries_list.append(s)
 
         write_summaries_npy(
@@ -1447,7 +1940,9 @@ def run_cpu_smoke(args: argparse.Namespace) -> None:
 
 def _load_rows_for_smoke(args: argparse.Namespace) -> tuple[list[dict], dict, dict]:
     if args.corpus_dir is None:
-        raise ValueError("--backend hf-cpu requires --corpus-dir from a P0 smoke or production build")
+        raise ValueError(
+            "--backend hf-cpu requires --corpus-dir from a P0 smoke or production build"
+        )
     rows = load_manifest(args.corpus_dir)
     if args.row_limit:
         rows = rows[: args.row_limit]
@@ -1500,9 +1995,362 @@ def _generate_hf_cpu(prompts: list[str], tokenizer, model, max_new_tokens: int) 
     return completions
 
 
+def _render_bare_query(query: str, model_type: str) -> str:
+    if model_type == "instruct":
+        tok = _get_tokenizer()
+        return tok.apply_chat_template(
+            [{"role": "user", "content": query}],
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+    if model_type == "pretrained":
+        return f"User: {query}\n\nAssistant:"
+    raise ValueError(f"unknown model_type {model_type!r}")
+
+
+def _render_full_conversation(turns: list[dict], model_type: str) -> str:
+    if model_type == "instruct":
+        tok = _get_tokenizer()
+        return tok.apply_chat_template(
+            [{"role": t["role"], "content": t["content"]} for t in turns],
+            tokenize=False,
+            add_generation_prompt=False,
+        )
+    if model_type == "pretrained":
+        lines = []
+        for turn in turns:
+            role = "User" if turn["role"] == "user" else "Assistant"
+            lines.append(f"{role}: {turn['content']}")
+            lines.append("")
+        return "\n".join(lines).rstrip()
+    raise ValueError(f"unknown model_type {model_type!r}")
+
+
+def _render_assistant_prompt(turns_before: list[dict], model_type: str) -> str:
+    if model_type == "instruct":
+        tok = _get_tokenizer()
+        return tok.apply_chat_template(
+            [{"role": t["role"], "content": t["content"]} for t in turns_before],
+            tokenize=False,
+            add_generation_prompt=True,
+        )
+    if model_type == "pretrained":
+        prefix = _render_full_conversation(turns_before, model_type)
+        return f"{prefix}\n\nAssistant:" if prefix else "Assistant:"
+    raise ValueError(f"unknown model_type {model_type!r}")
+
+
+def _dynamics_cut_plan(
+    turns: list[dict], tokenizer, model_type: str, n_total_tokens: int
+) -> dict[str, list[tuple[int, int, int]]]:
+    """Return per-kind (start, end, turn_index) cuts for one full conversation.
+
+    The positions are computed from deterministic prefixes rendered under the
+    same model format as the full conversation. Token-boundary seams can differ
+    by a token for some BPEs, so every cut is clamped into the full forward.
+    """
+    cuts: dict[str, list[tuple[int, int, int]]] = {
+        "context_k": [],
+        "s_k": [],
+        "answer_k_t1": [],
+        "answer_k_t2": [],
+        "answer_k_t3": [],
+        "u1": [],
+        "u2": [],
+        "u3": [],
+    }
+
+    def clamp_span(start: int, end: int) -> tuple[int, int]:
+        start = min(max(0, start), max(0, n_total_tokens - 1))
+        end = min(max(start + 1, end), n_total_tokens)
+        return start, end
+
+    for turn_idx, turn in enumerate(turns):
+        role = turn.get("role")
+        content = str(turn.get("content", ""))
+        if role == "assistant":
+            answer_start = _token_len(
+                tokenizer, _render_assistant_prompt(turns[:turn_idx], model_type)
+            )
+            answer_len = max(1, _token_len(tokenizer, content))
+            answer_end = answer_start + answer_len
+            after_turn = _token_len(
+                tokenizer, _render_full_conversation(turns[: turn_idx + 1], model_type)
+            )
+            answer_start, answer_end = clamp_span(answer_start, answer_end)
+            _t2_start, t2_end = clamp_span(answer_start, max(answer_end, after_turn - 1))
+            t3_pos = min(max(0, after_turn - 1), max(0, n_total_tokens - 1))
+            context_pos = max(0, answer_start - 1)
+            s_pos = max(answer_start, answer_end - 1)
+            cuts["context_k"].append((context_pos, context_pos + 1, turn_idx))
+            cuts["s_k"].append((s_pos, s_pos + 1, turn_idx))
+            cuts["answer_k_t1"].append((answer_start, answer_end, turn_idx))
+            cuts["answer_k_t2"].append((answer_start, t2_end, turn_idx))
+            cuts["answer_k_t3"].append((t3_pos, t3_pos + 1, turn_idx))
+        elif role == "user":
+            user_start = _token_len(
+                tokenizer, _render_full_conversation(turns[:turn_idx], model_type)
+            )
+            user_len = max(1, _token_len(tokenizer, content))
+            user_end = user_start + user_len
+            after_turn = _token_len(
+                tokenizer, _render_full_conversation(turns[: turn_idx + 1], model_type)
+            )
+            user_start, user_end = clamp_span(user_start, user_end)
+            _u2_start, u2_end = clamp_span(user_start, max(user_end, after_turn))
+            u3_pos = min(max(0, after_turn - 1), max(0, n_total_tokens - 1))
+            cuts["u1"].append((user_start, user_end, turn_idx))
+            cuts["u2"].append((user_start, u2_end, turn_idx))
+            cuts["u3"].append((u3_pos, u3_pos + 1, turn_idx))
+    return cuts
+
+
+def _capture_prompt_states_loaded_model(
+    *,
+    prompts: list[str],
+    model,
+    tokenizer,
+    n_layers: int,
+    hidden_dim: int,
+    device: str,
+    log_label: str,
+    batch_size: int = CAPTURE_BATCH_SIZE,
+) -> np.ndarray:
+    import torch
+
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    rows: list[np.ndarray] = []
+    for start in range(0, len(prompts), max(1, batch_size)):
+        end = min(start + max(1, batch_size), len(prompts))
+        batch = prompts[start:end]
+        token_counts = [_token_len(tokenizer, prompt) for prompt in batch]
+        for i, n_tok in enumerate(token_counts):
+            if n_tok > MAX_MODEL_LEN:
+                raise ValueError(
+                    f"{log_label} prompt row {start + i} has {n_tok} tokens > {MAX_MODEL_LEN}"
+                )
+        inputs = tokenizer(
+            batch,
+            return_tensors="pt",
+            padding=True,
+            truncation=False,
+            add_special_tokens=False,
+        )
+        with torch.no_grad():
+            outputs = _call_model_with_hidden_states(
+                model,
+                inputs["input_ids"].to(device),
+                inputs["attention_mask"].to(device),
+            )
+        hidden_states = outputs.hidden_states[1:]
+        if len(hidden_states) != n_layers:
+            raise ValueError(f"model returned {len(hidden_states)} layers, expected {n_layers}")
+        if hidden_states[0].shape[-1] != hidden_dim:
+            raise ValueError(
+                f"model hidden dim {hidden_states[0].shape[-1]} != expected {hidden_dim}"
+            )
+        for local_i, n_tok in enumerate(token_counts):
+            pos = max(0, n_tok - 1)
+            rows.append(
+                np.stack(
+                    [hs[local_i, pos, :].to(torch.float16).cpu().numpy() for hs in hidden_states],
+                    axis=0,
+                )
+            )
+    return (
+        np.stack(rows, axis=0).astype(np.float16)
+        if rows
+        else np.empty((0, n_layers, hidden_dim), dtype=np.float16)
+    )
+
+
+def _capture_dynamics_loaded_model(
+    *,
+    prompts: list[str],
+    turns_by_prompt: list[list[dict]],
+    conv_ids: list[str],
+    model,
+    tokenizer,
+    model_type: str,
+    n_layers: int,
+    hidden_dim: int,
+    device: str,
+    batch_size: int = CAPTURE_BATCH_SIZE,
+) -> tuple[dict[str, np.ndarray], dict[str, list[dict]]]:
+    import torch
+
+    if len({len(prompts), len(turns_by_prompt), len(conv_ids)}) != 1:
+        raise ValueError("prompts, turns_by_prompt, and conv_ids must have equal length")
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    states: dict[str, list[np.ndarray]] = {
+        "context_k": [],
+        "s_k": [],
+        "answer_k_t1": [],
+        "answer_k_t2": [],
+        "answer_k_t3": [],
+        "u1": [],
+        "u2": [],
+        "u3": [],
+    }
+    index_rows: dict[str, list[dict]] = {kind: [] for kind in states}
+
+    for start in range(0, len(prompts), max(1, batch_size)):
+        end = min(start + max(1, batch_size), len(prompts))
+        batch = prompts[start:end]
+        token_counts = [_token_len(tokenizer, prompt) for prompt in batch]
+        for local_i, n_tok in enumerate(token_counts):
+            if n_tok > MAX_MODEL_LEN:
+                raise ValueError(
+                    f"dynamics-{model_type} conversation {conv_ids[start + local_i]} "
+                    f"has {n_tok} tokens > {MAX_MODEL_LEN}"
+                )
+        inputs = tokenizer(
+            batch,
+            return_tensors="pt",
+            padding=True,
+            truncation=False,
+            add_special_tokens=False,
+        )
+        with torch.no_grad():
+            outputs = _call_model_with_hidden_states(
+                model,
+                inputs["input_ids"].to(device),
+                inputs["attention_mask"].to(device),
+            )
+        hidden_states = outputs.hidden_states[1:]
+        if len(hidden_states) != n_layers:
+            raise ValueError(f"model returned {len(hidden_states)} layers, expected {n_layers}")
+        if hidden_states[0].shape[-1] != hidden_dim:
+            raise ValueError(
+                f"model hidden dim {hidden_states[0].shape[-1]} != expected {hidden_dim}"
+            )
+
+        for local_i, n_tok in enumerate(token_counts):
+            conv_id = conv_ids[start + local_i]
+            cuts = _dynamics_cut_plan(
+                turns_by_prompt[start + local_i], tokenizer, model_type, n_tok
+            )
+            for kind, spans in cuts.items():
+                for cut_start, cut_end, turn_idx in spans:
+                    arr = np.stack(
+                        [
+                            hs[local_i, cut_start:cut_end, :]
+                            .mean(dim=0)
+                            .to(torch.float16)
+                            .cpu()
+                            .numpy()
+                            for hs in hidden_states
+                        ],
+                        axis=0,
+                    )
+                    states[kind].append(arr)
+                    index_rows[kind].append(
+                        {
+                            "conv_id": conv_id,
+                            "turn_index": turn_idx,
+                            "kind": kind,
+                            "token_start": cut_start,
+                            "token_end": cut_end,
+                        }
+                    )
+        del outputs, hidden_states, inputs
+
+    arrays = {
+        kind: np.stack(vals, axis=0).astype(np.float16)
+        if vals
+        else np.empty((0, n_layers, hidden_dim), dtype=np.float16)
+        for kind, vals in states.items()
+    }
+    return arrays, index_rows
+
+
+def _write_layer_stack(root: Path, kind: str, states: np.ndarray) -> None:
+    root.mkdir(parents=True, exist_ok=True)
+    if states.ndim != 3:
+        raise ValueError(f"{kind} states must be (n,L,H), got {states.shape}")
+    for layer in range(states.shape[1]):
+        np.save(root / f"{kind}_L{layer:02d}.npy", states[:, layer, :].astype(np.float16))
+
+
+def run_bare_phase_loaded(
+    *,
+    args: argparse.Namespace,
+    query_store: dict[str, dict],
+    tokenizer,
+    model,
+    model_type: str,
+    device: str,
+) -> None:
+    queries = sorted(
+        query_store.values(), key=lambda item: str(item.get("query_id", item.get("id", "")))
+    )
+    if args.row_limit is not None:
+        queries = queries[: args.row_limit]
+    prompts = [_render_bare_query(_query_text(item), model_type) for item in queries]
+    states = _capture_prompt_states_loaded_model(
+        prompts=prompts,
+        model=model,
+        tokenizer=tokenizer,
+        n_layers=args.n_layers,
+        hidden_dim=args.hidden_dim,
+        device=device,
+        log_label=f"bare-{model_type}",
+    )
+    out_root = Path(args.out) / "summaries" / f"bare_{model_type}"
+    _write_layer_stack(out_root, "c_q_bare", states)
+    with (out_root / "row_index.jsonl").open("w", encoding="utf-8") as f:
+        for item in queries:
+            f.write(json.dumps({"query_id": item.get("query_id") or item.get("id")}) + "\n")
+
+
+def run_dynamics_phase_loaded(
+    *,
+    args: argparse.Namespace,
+    prefix_store: dict[str, dict],
+    tokenizer,
+    model,
+    model_type: str,
+    device: str,
+) -> None:
+    prefixes = sorted(
+        prefix_store.values(), key=lambda item: str(item.get("prefix_id", item.get("id", "")))
+    )
+    if args.row_limit is not None:
+        prefixes = prefixes[: args.row_limit]
+    prompts: list[str] = []
+    turns_by_prompt: list[list[dict]] = []
+    conv_ids: list[str] = []
+    for prefix in prefixes:
+        turns = _prefix_turns(prefix)
+        if not turns:
+            continue
+        prompts.append(_render_full_conversation(turns, model_type))
+        turns_by_prompt.append(turns)
+        conv_ids.append(str(prefix.get("conv_id") or prefix.get("prefix_id") or prefix.get("id")))
+    states_by_kind, index_by_kind = _capture_dynamics_loaded_model(
+        prompts=prompts,
+        turns_by_prompt=turns_by_prompt,
+        conv_ids=conv_ids,
+        model=model,
+        tokenizer=tokenizer,
+        model_type=model_type,
+        n_layers=args.n_layers,
+        hidden_dim=args.hidden_dim,
+        device=device,
+    )
+    out_root = Path(args.out) / "summaries" / f"dynamics_{model_type}"
+    for kind, states in states_by_kind.items():
+        _write_layer_stack(out_root, kind, states)
+        with (out_root / f"row_index_{kind}.jsonl").open("w", encoding="utf-8") as f:
+            for row in index_by_kind[kind]:
+                f.write(json.dumps(row) + "\n")
+
+
 def run_hf_cpu_smoke(args: argparse.Namespace) -> None:
     """Tiny Qwen2 CPU smoke over real corpus/tokenizer and real capture seams."""
-    import torch
     from transformers import AutoTokenizer
 
     logger.info("[hf-cpu-smoke] Starting tiny Qwen2 CPU smoke")
@@ -1512,12 +2360,24 @@ def run_hf_cpu_smoke(args: argparse.Namespace) -> None:
     cells = args.cells[:1]
     if len(cells) != 1:
         raise ValueError("hf-cpu smoke expects exactly one cell via --cells")
+    if any(not CELL_CONFIG[cell]["own_policy"] for cell in cells):
+        attach_completion_sources(rows, args.corpus_dir, out_dir)
 
-    tokenizer = AutoTokenizer.from_pretrained(
-        INSTRUCT_MODEL,
-        revision=INSTRUCT_REVISION,
-        trust_remote_code=True,
-    )
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(
+            INSTRUCT_MODEL,
+            revision=INSTRUCT_REVISION,
+            trust_remote_code=True,
+            local_files_only=True,
+        )
+    except Exception as exc:
+        logger.warning(
+            "[hf-cpu-smoke] pinned tokenizer not available locally; using smoke tokenizer: %s",
+            exc,
+        )
+        tokenizer = _install_smoke_tokenizer()
+    else:
+        _get_tokenizer._tok = tokenizer
     model = _tiny_qwen2_model(tokenizer, n_layers=args.n_layers, hidden_dim=args.hidden_dim)
     device = "cpu"
 
@@ -1526,64 +2386,88 @@ def run_hf_cpu_smoke(args: argparse.Namespace) -> None:
         np.float32
     )
 
-    for cell_id in cells:
-        cfg = CELL_CONFIG[cell_id]
-        prefix_texts: list[str] = []
-        prompts: list[str] = []
-        completions: list[str] = []
-        for row in rows:
-            prefix_text, prompt, completion = render_row(
-                row,
-                prefix_store,
-                query_store,
-                prompt_format=cfg["prompt_format"],
-                text_source=cfg["text_source"],
-            )
-            prefix_texts.append(prefix_text)
-            prompts.append(prompt)
-            completions.append(completion or "")
-        if cfg["own_policy"]:
-            completions = _generate_hf_cpu(prompts, tokenizer, model, args.max_gen_tokens)
-        elif any(c == "" for c in completions):
-            raise ValueError(f"{cell_id} requires completion text for hf-cpu smoke")
+    rb_pool = None
+    if "capture" in args.phases_set or "gen" in args.phases_set:
+        for cell_id in cells:
+            cfg = CELL_CONFIG[cell_id]
+            prefix_texts: list[str] = []
+            prompts: list[str] = []
+            completions: list[str] = []
+            for row in _rows_for_cell(rows, cell_id):
+                prefix_text, prompt, completion = render_row(
+                    row,
+                    prefix_store,
+                    query_store,
+                    prompt_format=cfg["prompt_format"],
+                    text_source=cfg["text_source"],
+                )
+                prefix_texts.append(prefix_text)
+                prompts.append(prompt)
+                completions.append(completion or "")
+            if cfg["own_policy"] and "gen" in args.phases_set:
+                completions = _generate_hf_cpu(prompts, tokenizer, model, args.max_gen_tokens)
+            elif any(c == "" for c in completions):
+                raise ValueError(f"{cell_id} requires completion text for hf-cpu smoke")
 
-        write_completions_jsonl(
-            out_dir=out_dir,
-            cell_id=cell_id,
-            shard_idx=0,
-            model_type=cfg["model"],
-            rows=rows,
-            completions=completions,
-        )
-        summaries_list = _capture_batch_loaded_model(
-            prefix_texts=prefix_texts,
-            prompts=prompts,
-            completions=completions,
-            prompt_format=cfg["prompt_format"],
-            model=model,
+            write_completions_jsonl(
+                out_dir=out_dir,
+                cell_id=cell_id,
+                shard_idx=0,
+                model_type=cfg["model"],
+                rows=_rows_for_cell(rows, cell_id),
+                completions=completions,
+            )
+            if "capture" in args.phases_set:
+                capture_out = _capture_batch_loaded_model(
+                    prefix_texts=prefix_texts,
+                    prompts=prompts,
+                    completions=completions,
+                    prompt_format=cfg["prompt_format"],
+                    model=model,
+                    tokenizer=tokenizer,
+                    n_layers=args.n_layers,
+                    hidden_dim=args.hidden_dim,
+                    device=device,
+                    log_label="hf-cpu",
+                    rb_directions=rb_directions if cfg["own_policy"] else None,
+                )
+                write_summaries_npy(
+                    out_dir=out_dir,
+                    cell_id=cell_id,
+                    shard_idx=0,
+                    summaries_list=capture_out.summaries,
+                    n_layers=args.n_layers,
+                    hidden_dim=args.hidden_dim,
+                )
+                if capture_out.rb_pool is not None:
+                    rb_pool = capture_out.rb_pool
+                    write_rb_pool_npy(out_dir, cell_id, 0, rb_pool)
+
+    if "bare" in args.phases_set:
+        run_bare_phase_loaded(
+            args=args,
+            query_store=query_store,
             tokenizer=tokenizer,
-            n_layers=args.n_layers,
-            hidden_dim=args.hidden_dim,
+            model=model,
+            model_type="instruct",
             device=device,
-            log_label="hf-cpu",
         )
-        write_summaries_npy(
-            out_dir=out_dir,
-            cell_id=cell_id,
-            shard_idx=0,
-            summaries_list=summaries_list,
-            n_layers=args.n_layers,
-            hidden_dim=args.hidden_dim,
+    if "dynamics" in args.phases_set:
+        run_dynamics_phase_loaded(
+            args=args,
+            prefix_store=prefix_store,
+            tokenizer=tokenizer,
+            model=model,
+            model_type="instruct",
+            device=device,
         )
-        rb_pool = compute_rb_projection_batch(summaries_list, rb_directions)
-        write_rb_pool_npy(out_dir, cell_id, 0, rb_pool)
 
     _write_sentinel(args, phase="done", note="hf-cpu-smoke")
     summary_files = list((out_dir / "summaries").rglob("*.npy"))
     comp_files = list((out_dir / "raw_completions").rglob("*.jsonl"))
     print(
         f"[hf-cpu-smoke] artifact digest: {len(rows)} rows, {len(summary_files)} npy, "
-        f"{len(comp_files)} jsonl, rb_pool_shape={rb_pool.shape}"
+        f"{len(comp_files)} jsonl, rb_pool_shape={None if rb_pool is None else rb_pool.shape}"
     )
     print("[phase=done]")
 
@@ -1669,7 +2553,51 @@ def build_parser() -> argparse.ArgumentParser:
         help="Local corpus directory (if not downloading from HF)",
     )
     p.add_argument("--skip-g2", action="store_true", help="Skip G2 gate (debugging)")
+    p.add_argument(
+        "--vllm-signature-smoke",
+        action="store_true",
+        help="Validate vLLM constructor signatures without creating a GPU engine",
+    )
     return p
+
+
+def parse_phase_set(phases: str, parser: argparse.ArgumentParser) -> set[str]:
+    if phases == "all":
+        return {"gen", "capture", "bare", "dynamics"}
+    phases_set: set[str] = set()
+    valid = {"gen_instruct", "gen_pretrained", "capture_all", "capture", "bare", "dynamics"}
+    for raw_name in phases.split(","):
+        name = raw_name.strip()
+        if not name:
+            continue
+        if name not in valid:
+            parser.error(f"Unknown phase {name!r}. Valid phases: {sorted(valid)} or all")
+        if name in ("gen_instruct", "gen_pretrained"):
+            phases_set.add("gen")
+        elif name in ("capture_all", "capture"):
+            phases_set.add("capture")
+        else:
+            phases_set.add(name)
+    if not phases_set:
+        parser.error("--phases resolved to an empty phase set")
+    return phases_set
+
+
+def run_vllm_signature_smoke() -> None:
+    import inspect
+
+    from vllm import EngineArgs, SamplingParams
+
+    sampling_sig = inspect.signature(SamplingParams)
+    deprecated_beam_kw = "use" + "_beam_search"
+    if deprecated_beam_kw in sampling_sig.parameters:
+        raise AssertionError("vLLM SamplingParams unexpectedly has deprecated beam kwarg")
+    SamplingParams(temperature=0.0, max_tokens=1, stop=["<|im_end|>"], seed=GEN_SEED)
+    EngineArgs(model=INSTRUCT_MODEL, max_model_len=MAX_MODEL_LEN, dtype="bfloat16")
+    print(
+        "[vllm-signature-smoke] SamplingParams ok; "
+        f"EngineArgs max_model_len={MAX_MODEL_LEN}; params={len(sampling_sig.parameters)}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -1677,7 +2605,7 @@ def build_parser() -> argparse.ArgumentParser:
 # ---------------------------------------------------------------------------
 
 
-def main() -> None:
+def main() -> None:  # noqa: C901
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
@@ -1686,26 +2614,18 @@ def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
 
+    if args.vllm_signature_smoke:
+        run_vllm_signature_smoke()
+        return
+
     # Validate cells
     for c in args.cells:
         if c not in CELL_CONFIG:
             parser.error(f"Unknown cell: {c!r}. Valid: {list(CELL_CONFIG.keys())}")
 
     # Parse phases
-    if args.phases == "all":
-        args.phases_set = {"gen", "capture"}
-    else:
-        raw = set(args.phases.split(","))
-        phases_set = set()
-        for p_name in raw:
-            p_name = p_name.strip()
-            if p_name in ("gen_instruct", "gen_pretrained"):
-                phases_set.add("gen")
-            elif p_name in ("capture_all", "bare", "dynamics", "capture"):
-                phases_set.add("capture")
-            else:
-                logger.warning("Unknown phase %r, ignoring", p_name)
-        args.phases_set = phases_set
+    args.phases_set = parse_phase_set(args.phases, parser)
+    args.phase_name = ",".join(sorted(args.phases_set))
 
     logger.info("[main] phases_set=%s cells=%s", args.phases_set, args.cells)
 
@@ -1738,112 +2658,151 @@ def main() -> None:
     # Load r_B directions if any own-policy cell is in scope
     rb_directions: np.ndarray | None = None
     if any(c in CELLS_OWN_POLICY for c in args.cells) and "capture" in args.phases_set:
-        try:
-            rb_directions = load_rb_directions(
-                rb_rev=args.rb_rev,
-                n_layers=args.n_layers,
-                n_traits=N_TRAITS,
-                hidden_dim=args.hidden_dim,
-            )
-            logger.info("[main] r_B directions loaded: %s", rb_directions.shape)
-        except Exception as exc:
-            logger.warning("[main] Could not load r_B directions: %s (skipping B0 pool)", exc)
-            rb_directions = None
+        rb_directions = load_rb_directions(
+            rb_rev=args.rb_rev,
+            n_layers=args.n_layers,
+            n_traits=N_TRAITS,
+            hidden_dim=args.hidden_dim,
+        )
+        logger.info("[main] r_B directions loaded: %s", rb_directions.shape)
 
     out_dir = Path(args.out)
     out_dir.mkdir(parents=True, exist_ok=True)
 
+    all_results: list[dict] = []
+    completed_cells: list[str] = []
     non_own_cells = [c for c in args.cells if not CELL_CONFIG[c]["own_policy"]]
     own_cells = [c for c in args.cells if CELL_CONFIG[c]["own_policy"]]
     if non_own_cells:
         attach_completion_sources(rows, corpus_dir, out_dir)
-    if non_own_cells and own_cells and {"gen", "capture"}.issubset(args.phases_set):
-        logger.info(
-            "[main] two-stage run: own-policy cells first (%s), non-own cells second (%s)",
-            own_cells,
-            non_own_cells,
-        )
-        orig_cells = args.cells
-        args.cells = own_cells
-        own_results = run_dispatch(
-            cells=own_cells,
-            rows=rows,
-            prefix_store=prefix_store,
-            query_store=query_store,
-            out_dir=out_dir,
-            args=args,
-            rb_directions=rb_directions,
-            corpus_hash=corpus_hash,
-        )
-        attach_completion_sources(rows, corpus_dir, out_dir)
-        args.cells = non_own_cells
-        orig_phases = args.phases_set
-        args.phases_set = {"capture"} if "capture" in orig_phases else set()
-        non_own_results = run_dispatch(
-            cells=non_own_cells,
-            rows=rows,
-            prefix_store=prefix_store,
-            query_store=query_store,
-            out_dir=out_dir,
-            args=args,
-            rb_directions=None,
-            corpus_hash=corpus_hash,
-        )
-        args.cells = orig_cells
-        args.phases_set = orig_phases
-        results = own_results + non_own_results
-        summary_path = out_dir / "manifests" / "gpu_phase_summary.json"
-        summary_path.parent.mkdir(parents=True, exist_ok=True)
-        summary_path.write_text(json.dumps({"results": results}, indent=2))
-        _write_sentinel(args, phase="done", note=f"{len(results)} shards")
-        return
 
-    # Run work-conserving dispatch
-    results = run_dispatch(
-        cells=args.cells,
-        rows=rows,
-        prefix_store=prefix_store,
-        query_store=query_store,
-        out_dir=out_dir,
-        args=args,
-        rb_directions=rb_directions,
-        corpus_hash=corpus_hash,
-    )
-
-    # Check for errors
-    errors = [r for r in results if r["status"] == "error"]
-    if errors:
-        logger.error("[main] %d shards failed:", len(errors))
-        for e in errors:
-            logger.error("  %s shard%d: %s", e["cell_id"], e["shard_idx"], e.get("error"))
-        raise RuntimeError(f"{len(errors)} shards failed")
-
-    # G2 gate: run after first cell (cell_inst_own if present, else first cell)
-    if not args.skip_g2:
-        g2_cell = "cell_inst_own" if "cell_inst_own" in args.cells else args.cells[0]
-        g2_results = [r for r in results if r["cell_id"] == g2_cell and r.get("summaries")]
-        if g2_results:
-            all_summaries = []
-            all_rb_pools = []
-            for r in g2_results:
-                all_summaries.extend(r.get("summaries", []))
-                if r.get("rb_pool") is not None:
-                    all_rb_pools.append(r["rb_pool"])
-
-            combined_rb_pool = np.concatenate(all_rb_pools, axis=0) if all_rb_pools else None
-            g2_pass = run_g2_gate(
-                cell_id=g2_cell,
-                summaries_list=all_summaries,
-                row_indices=list(range(len(all_summaries))),
-                rb_pool=combined_rb_pool,
+    orig_cells = list(args.cells)
+    orig_phases = set(args.phases_set)
+    if "capture" in args.phases_set or "gen" in args.phases_set:
+        if "cell_inst_own" in args.cells and not args.skip_g2 and "capture" in args.phases_set:
+            logger.info("[main] first-cell gate stage: cell_inst_own")
+            args.cells = ["cell_inst_own"]
+            first_results = run_dispatch(
+                cells=args.cells,
+                rows=rows,
+                prefix_store=prefix_store,
+                query_store=query_store,
+                out_dir=out_dir,
+                args=args,
+                rb_directions=rb_directions,
+                corpus_hash=corpus_hash,
             )
-            if not g2_pass:
-                raise RuntimeError("G2 gate FAILED — aborting")
+            check_dispatch_errors(first_results)
+            all_results.extend(first_results)
+            completed_cells.append("cell_inst_own")
+            run_g2_gate_from_disk(
+                out_dir,
+                "cell_inst_own",
+                n_layers=args.n_layers,
+                hidden_dim=args.hidden_dim,
+            )
+            attach_completion_sources(rows, corpus_dir, out_dir)
+
+        remaining_own = [c for c in own_cells if c not in completed_cells]
+        if remaining_own:
+            logger.info("[main] own-policy stage: %s", remaining_own)
+            args.cells = remaining_own
+            own_results = run_dispatch(
+                cells=remaining_own,
+                rows=rows,
+                prefix_store=prefix_store,
+                query_store=query_store,
+                out_dir=out_dir,
+                args=args,
+                rb_directions=rb_directions,
+                corpus_hash=corpus_hash,
+            )
+            check_dispatch_errors(own_results)
+            all_results.extend(own_results)
+            completed_cells.extend(remaining_own)
+            attach_completion_sources(rows, corpus_dir, out_dir)
+
+        if non_own_cells:
+            logger.info("[main] non-own capture stage: %s", non_own_cells)
+            args.cells = non_own_cells
+            args.phases_set = {"capture"} if "capture" in orig_phases else set()
+            if args.phases_set:
+                non_own_results = run_dispatch(
+                    cells=non_own_cells,
+                    rows=rows,
+                    prefix_store=prefix_store,
+                    query_store=query_store,
+                    out_dir=out_dir,
+                    args=args,
+                    rb_directions=None,
+                    corpus_hash=corpus_hash,
+                )
+                check_dispatch_errors(non_own_results)
+                all_results.extend(non_own_results)
+                completed_cells.extend(non_own_cells)
+
+    args.cells = orig_cells
+    args.phases_set = orig_phases
+
+    # Auxiliary P3b/P3c phases have distinct layouts and never silently alias capture.
+    if "bare" in args.phases_set or "dynamics" in args.phases_set:
+        # The production path is intentionally single-GPU for these short phases; the
+        # main cell dispatcher above handles the wide P2/P3 workload.
+        for model_type, model_name, revision in (
+            ("instruct", INSTRUCT_MODEL, INSTRUCT_REVISION),
+            ("pretrained", PRETRAINED_MODEL, PRETRAINED_REVISION),
+        ):
+            os.environ["CUDA_VISIBLE_DEVICES"] = os.environ.get("CUDA_VISIBLE_DEVICES", "0").split(
+                ","
+            )[0]
+            import torch
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_name,
+                revision=revision,
+                trust_remote_code=True,
+            )
+            model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                revision=revision,
+                torch_dtype=torch.bfloat16,
+                trust_remote_code=True,
+                device_map={"": "cuda:0"},
+            )
+            model.eval()
+            if "bare" in args.phases_set:
+                run_bare_phase_loaded(
+                    args=args,
+                    query_store=query_store,
+                    tokenizer=tokenizer,
+                    model=model,
+                    model_type=model_type,
+                    device="cuda:0",
+                )
+            if "dynamics" in args.phases_set:
+                run_dynamics_phase_loaded(
+                    args=args,
+                    prefix_store=prefix_store,
+                    tokenizer=tokenizer,
+                    model=model,
+                    model_type=model_type,
+                    device="cuda:0",
+                )
+            del model
 
     # Upload per cell
+    for cell_id in sorted(set(completed_cells)):
+        consolidate_cell_shards(out_dir, cell_id, n_layers=args.n_layers)
+
+    summary_path = out_dir / "manifests" / "gpu_phase_summary.json"
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(json.dumps({"results": all_results}, indent=2))
+
     if not args.no_upload:
-        for cell_id in args.cells:
+        for cell_id in sorted(set(completed_cells)):
             upload_cell_captures(out_dir, cell_id, args.issue)
+        upload_auxiliary_summaries(out_dir, args.issue)
 
     # Write sentinel
     _write_sentinel(args, phase="done")

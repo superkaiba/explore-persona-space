@@ -148,11 +148,7 @@ def _load_manifest_rows(
             line = line.rstrip("\n").rstrip("\r")
             if not line:
                 continue
-            try:
-                row = json.loads(line)
-            except json.JSONDecodeError as e:
-                logger.warning("Skipping malformed manifest line: %s", e)
-                continue
+            row = json.loads(line)
 
             # The corpus builder marks rows with their assigned cells.
             # We need rows that belong to the Claude subsampled set.
@@ -168,9 +164,7 @@ def _load_manifest_rows(
 
             # Apply smoke/cell filters
             if cells_filter is not None:
-                # In smoke mode we restrict to cell_inst_own rows only
-                # but since Claude rows are cross-cell, we just limit count
-                pass
+                logger.debug("cells_filter is ignored for Claude subset rows: %s", cells_filter)
 
             rows.append(row)
 
@@ -189,11 +183,7 @@ def _load_prefix_store(prefix_store_path: Path) -> dict[str, dict]:
             line = line.rstrip("\n").rstrip("\r")
             if not line:
                 continue
-            try:
-                entry = json.loads(line)
-            except json.JSONDecodeError as e:
-                logger.warning("Skipping malformed prefix store line: %s", e)
-                continue
+            entry = json.loads(line)
             store[entry["prefix_id"]] = entry
     logger.info("Loaded %d prefixes from store", len(store))
     return store
@@ -207,11 +197,7 @@ def _load_query_store(query_store_path: Path) -> dict[str, dict]:
             line = line.rstrip("\n").rstrip("\r")
             if not line:
                 continue
-            try:
-                entry = json.loads(line)
-            except json.JSONDecodeError as e:
-                logger.warning("Skipping malformed query store line: %s", e)
-                continue
+            entry = json.loads(line)
             store[entry["query_id"]] = entry
     logger.info("Loaded %d queries from store", len(store))
     return store
@@ -266,10 +252,11 @@ def _build_dispatch_items(
             )
         )
 
-    if n_missing_prefix:
-        logger.warning("%d rows skipped: prefix_id not in prefix store", n_missing_prefix)
-    if n_missing_query:
-        logger.warning("%d rows skipped: query_id not in query store", n_missing_query)
+    if n_missing_prefix or n_missing_query:
+        raise KeyError(
+            f"Claude dispatch input join failed: missing_prefix={n_missing_prefix}, "
+            f"missing_query={n_missing_query}"
+        )
 
     logger.info("Built %d dispatch items", len(items))
     return items
@@ -364,7 +351,7 @@ def _write_completions_jsonl(
 def _upload_to_hf(local_path: Path, *, dry_run: bool = False) -> str:
     """Upload completions file to HF data repo raw_completions/claude/.
 
-    Uses scoped upload (single file) per upload policy.
+    Uses folder-level upload with an allow-pattern per upload policy.
     Returns the HF path_in_repo string.
     """
     from huggingface_hub import HfApi
@@ -377,9 +364,10 @@ def _upload_to_hf(local_path: Path, *, dry_run: bool = False) -> str:
 
     logger.info("Uploading %s -> HF %s:%s", local_path, HF_DATA_REPO, path_in_repo)
     api = HfApi()
-    api.upload_file(
-        path_or_fileobj=str(local_path),
-        path_in_repo=path_in_repo,
+    api.upload_folder(
+        folder_path=str(local_path.parent),
+        path_in_repo=str(Path(path_in_repo).parent),
+        allow_patterns=[local_path.name],
         repo_id=HF_DATA_REPO,
         repo_type="dataset",
         commit_message=f"issue1092 claude text completions: {local_path.name}",
@@ -514,7 +502,7 @@ async def _run_generation(
             if r.error:
                 key = r.reason or "unknown"
                 err_reasons[key] = err_reasons.get(key, 0) + 1
-        logger.warning("Error breakdown: %s", err_reasons)
+        raise RuntimeError(f"Claude dispatch returned {n_err} errors: {err_reasons}")
 
     # 5. Write completions JSONL
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -551,11 +539,7 @@ async def _run_generation(
         "dry_run_api": dry_run_api,
         "wall_s": time.monotonic() - t0,
     }
-    eval_dir = (
-        out_dir / "smoke_stats"
-        if smoke
-        else Path("eval_results/issue_1092/p1_claude_text")
-    )
+    eval_dir = out_dir / "smoke_stats" if smoke else Path("eval_results/issue_1092/p1_claude_text")
     eval_dir.mkdir(parents=True, exist_ok=True)
     stats_file = eval_dir / ("stats_smoke.json" if smoke else "stats.json")
     with open(stats_file, "w") as f:

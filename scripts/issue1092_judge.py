@@ -16,7 +16,6 @@ import os
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Any
 
 for _k in ("OMP_NUM_THREADS", "MKL_NUM_THREADS", "OPENBLAS_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
     os.environ.setdefault(_k, "8")
@@ -25,17 +24,17 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
-from explore_persona_space.eval.batch_judge import rubric_fingerprint  # noqa: E402
 from issue779_common import (  # noqa: E402
     JUDGE_MODEL,
     JUDGE_N_DRAWS,
     JUDGE_TEMPERATURE,
     TRAITS,
     judge_rollouts_n5,
-    parse_graded_trait_score,
     trait_judge_system_prompt,
     trait_judge_user_msg,
 )
+
+from explore_persona_space.eval.batch_judge import rubric_fingerprint  # noqa: E402
 
 
 @dataclass(frozen=True)
@@ -239,9 +238,16 @@ def run_judge(items: list[JudgeItem], out_dir: Path, *, dry_run: bool) -> list[d
             n_draws=JUDGE_N_DRAWS,
             dry_run=False,
         )
+        expected_cids = {f"issue1092__{qi:05d}__{ci:02d}" for qi, ci, _item in order}
+        missing_cids = sorted(expected_cids - set(result))
+        if missing_cids:
+            raise RuntimeError(
+                f"judge_rollouts_n5 missing {len(missing_cids)} expected cids for trait "
+                f"{trait}: {missing_cids[:10]}"
+            )
         for qi, ci, item in order:
             cid = f"issue1092__{qi:05d}__{ci:02d}"
-            score, n_valid, n_draws = result.get(cid, (None, 0, JUDGE_N_DRAWS))
+            score, n_valid, n_draws = result[cid]
             payload = {
                 "score": score,
                 "n_valid_draws": n_valid,
@@ -260,7 +266,7 @@ def _pearson_or_nan(x: list[float], y: list[float]) -> float:
     xc = [v - mx for v in x]
     yc = [v - my for v in y]
     denom = math.sqrt(sum(v * v for v in xc) * sum(v * v for v in yc))
-    return math.nan if denom == 0 else sum(a * b for a, b in zip(xc, yc)) / denom
+    return math.nan if denom == 0 else sum(a * b for a, b in zip(xc, yc, strict=True)) / denom
 
 
 def eligibility_summary(scored: list[dict]) -> list[dict]:
@@ -276,7 +282,13 @@ def eligibility_summary(scored: list[dict]) -> list[dict]:
         if vals:
             mean = sum(vals) / len(vals)
             std = math.sqrt(sum((v - mean) ** 2 for v in vals) / len(vals))
-        estimable = len(vals) >= 5 and (not math.isnan(std)) and std >= 1.0 and positives >= 1 and negatives >= 1
+        estimable = (
+            len(vals) >= 5
+            and (not math.isnan(std))
+            and std >= 1.0
+            and positives >= 1
+            and negatives >= 1
+        )
         fallback_vals = [
             float(r["score"])
             for r in rows
@@ -293,7 +305,9 @@ def eligibility_summary(scored: list[dict]) -> list[dict]:
                 "score_std": std,
                 "n_positive": positives,
                 "n_negative": negatives,
-                "rate_positive": positives / len(vals) if vals and positives and negatives else None,
+                "rate_positive": positives / len(vals)
+                if vals and positives and negatives
+                else None,
                 "estimable": bool(estimable),
                 "fallback_subset": "trait_stratum+battery",
                 "fallback_n_scored": len(fallback_vals),

@@ -2,7 +2,7 @@
 """Issue #1092 Phase P0 — realistic sparse-crossed corpus build (VM CPU, 0 GPU).
 
 Streams WildChat + LMSYS at pinned revisions, filters conversations, samples
-prefixes (stratified by topic × length with long-conversation over-sampling),
+prefixes (stratified by topic x length with long-conversation over-sampling),
 labels topics with claude-haiku-4-5 (12-way taxonomy), builds the query bank,
 assigns the sparse-crossed design (dense core + periphery + trait stratum +
 battery bridge), constructs the shuffled-pairing derangement, renders both
@@ -40,6 +40,7 @@ import random
 import subprocess
 import sys
 import time
+from itertools import pairwise
 from pathlib import Path
 from typing import Any
 
@@ -88,7 +89,7 @@ N_BANK_QUERIES_TARGET = 500
 N_BANK_FLOOR = 400
 DENSE_CORE_PREFIXES = 100
 DENSE_CORE_QUERIES = 48
-N_TRAIT_STRATUM_PREFIXES = 100  # ~33/trait × 3 traits
+N_TRAIT_STRATUM_PREFIXES = 100  # ~33/trait x 3 traits
 N_TRAIT_STRATUM_QUERIES = 15
 N_PERIPHERY_RANDOM = 10  # random bank queries per peripheral prefix
 N_PERIPHERY_TOPICMATCH = 3  # topic-matched bank queries per peripheral prefix
@@ -114,23 +115,6 @@ TOPIC_LABELS = [
 
 # battery file (plan §4.1 step 6)
 BATTERY_PATH = PROJECT_ROOT / "data" / "issue594" / "battery.json"
-
-# ── HF upload helper ──────────────────────────────────────────────────────────
-
-
-def _hf_upload_file(local_path: Path, repo_path: str) -> None:
-    """Upload a single file to the HF data repo via huggingface_hub."""
-    from huggingface_hub import HfApi  # lazy import
-
-    api = HfApi()
-    api.upload_file(
-        path_or_fileobj=str(local_path),
-        path_in_repo=repo_path,
-        repo_id=HF_DATA_REPO,
-        repo_type="dataset",
-    )
-    logger.info("[upload] %s → hf:%s/%s", local_path.name, HF_DATA_REPO, repo_path)
-
 
 # ── reproducibility metadata ─────────────────────────────────────────────────
 
@@ -161,6 +145,7 @@ def _repro_meta() -> dict[str, Any]:
 
 # ── tokenizer (lazy, single instance) ────────────────────────────────────────
 _TOKENIZER = None
+_SMOKE_TOKEN_COUNTS = False
 
 
 def _get_tokenizer():
@@ -176,6 +161,8 @@ def _get_tokenizer():
 
 
 def _count_tokens(text: str) -> int:
+    if _SMOKE_TOKEN_COUNTS:
+        return max(1, len(text.split()))
     tok = _get_tokenizer()
     return len(tok.encode(text, add_special_tokens=False))
 
@@ -227,7 +214,7 @@ def _passes_filter(conv: list[dict], *, source: str) -> bool:
     roles = [t["role"] for t in conv]
     if roles[0] != "user":
         return False
-    for i, (a, b) in enumerate(zip(roles, roles[1:])):
+    for a, b in pairwise(roles):
         if a == b:
             return False
     # must end with assistant turn
@@ -238,10 +225,7 @@ def _passes_filter(conv: list[dict], *, source: str) -> bool:
     if n_user < 1:
         return False
     # non-empty content in all turns
-    for t in conv:
-        if not t.get("content", "").strip():
-            return False
-    return True
+    return all(t.get("content", "").strip() for t in conv)
 
 
 def _conversation_total_tokens(conv: list[dict]) -> int:
@@ -386,7 +370,9 @@ def _synthetic_smoke_conversations(n: int, source: str) -> list[dict]:
             turns.append(
                 {
                     "role": "user",
-                    "content": f"Smoke {source} conversation {i} user turn {j}: ask about topic {i % 4}.",
+                    "content": (
+                        f"Smoke {source} conversation {i} user turn {j}: ask about topic {i % 4}."
+                    ),
                 }
             )
             turns.append(
@@ -410,6 +396,7 @@ def _synthetic_smoke_conversations(n: int, source: str) -> list[dict]:
                 "n_user_turns": sum(1 for t in turns if t["role"] == "user"),
                 "n_tokens_est": sum(len(t["content"].split()) for t in turns),
                 "total_tokens": sum(len(t["content"].split()) for t in turns),
+                "topic": TOPIC_LABELS[i % len(TOPIC_LABELS)],
             }
         )
     return out
@@ -459,7 +446,11 @@ def _label_topic_batch(
                     if label not in TOPIC_LABELS:
                         # try prefix match
                         matched = next(
-                            (l for l in TOPIC_LABELS if l.startswith(label) or label.startswith(l)),
+                            (
+                                topic_label
+                                for topic_label in TOPIC_LABELS
+                                if topic_label.startswith(label) or label.startswith(topic_label)
+                            ),
                             None,
                         )
                         label = matched or "other"
@@ -595,7 +586,7 @@ def _build_query_bank(
         by_topic.setdefault(q["topic"], []).append(q)
     per_topic = max(1, n_target // len(TOPIC_LABELS))
     bank: list[dict] = []
-    for lbl, qs in by_topic.items():
+    for _lbl, qs in by_topic.items():
         bank.extend(qs[:per_topic])
     rng.shuffle(bank)
     bank = bank[:n_target]
@@ -651,8 +642,6 @@ def _load_trait_names_from_hf(rb_rev: str = "037fcbb") -> list[str]:
             if name and not name.startswith("."):
                 trait_names.append(name)
     except Exception as exc:
-        logger.warning("[traits] HF listing failed: %s; using fallback count=3", exc)
-        # If listing fails, we don't hardcode names — raise so the user knows
         raise RuntimeError(
             f"Cannot derive trait names from HF r_b/ listing (rev={rb_rev}): {exc}"
         ) from exc
@@ -698,48 +687,47 @@ def _load_trait_stratum_personas(
                 if trait.lower() in fn.lower() and fn.endswith(".json"):
                     found_files.append(item.path)
         except Exception as exc:
-            logger.warning("[stratum] listing failed for trait %s: %s", trait, exc)
-            continue
+            raise RuntimeError(f"[stratum] listing failed for trait {trait}: {exc}") from exc
 
         if not found_files:
-            logger.warning("[stratum] no corpus_specs files found for trait %s", trait)
-            continue
+            raise FileNotFoundError(f"[stratum] no corpus_specs files found for trait {trait}")
 
         trait_entries = []
         for fpath in found_files[:2]:  # take at most 2 files per trait
-            try:
-                local = hf_hub_download(
-                    repo_id=data_repo,
-                    filename=fpath,
-                    repo_type="dataset",
-                    revision=hf_rev,
-                )
-                with open(local, encoding="utf-8") as f:
-                    spec = json.load(f)
-                # each spec may be a list of persona entries or a dict
-                if isinstance(spec, list):
-                    for p in spec:
-                        trait_entries.append(
-                            {
-                                "trait": trait,
-                                "system_prompt": p.get("system_prompt") or p.get("persona") or "",
-                                "valence": p.get("valence", "high"),
-                                "source_file": Path(fpath).name,
-                            }
-                        )
-                elif isinstance(spec, dict):
+            local = hf_hub_download(
+                repo_id=data_repo,
+                filename=fpath,
+                repo_type="dataset",
+                revision=hf_rev,
+            )
+            with open(local, encoding="utf-8") as f:
+                spec = json.load(f)
+            # each spec may be a list of persona entries or a dict
+            if isinstance(spec, list):
+                for p in spec:
                     trait_entries.append(
                         {
                             "trait": trait,
-                            "system_prompt": spec.get("system_prompt") or spec.get("persona") or "",
-                            "valence": spec.get("valence", "high"),
+                            "system_prompt": p.get("system_prompt") or p.get("persona") or "",
+                            "valence": p.get("valence", "high"),
                             "source_file": Path(fpath).name,
                         }
                     )
-            except Exception as exc:
-                logger.warning("[stratum] failed to load %s: %s", fpath, exc)
+            elif isinstance(spec, dict):
+                trait_entries.append(
+                    {
+                        "trait": trait,
+                        "system_prompt": spec.get("system_prompt") or spec.get("persona") or "",
+                        "valence": spec.get("valence", "high"),
+                        "source_file": Path(fpath).name,
+                    }
+                )
+            else:
+                raise TypeError(f"[stratum] unsupported corpus spec type in {fpath}: {type(spec)}")
 
         rng.shuffle(trait_entries)
+        if not trait_entries:
+            raise ValueError(f"[stratum] no persona entries loaded for trait {trait}")
         entries.extend(trait_entries[:n_per_trait])
 
     logger.info(
@@ -789,7 +777,7 @@ def _build_derangement(
     prefix_ids = [r["prefix_id"] for r in rows]
     query_ids = [r["query_id"] for r in rows]
 
-    for attempt in range(max_attempts):
+    for _attempt in range(max_attempts):
         perm = list(range(n))
         rng.shuffle(perm)
         # check: perm[i] != i (classic derangement) AND
@@ -834,10 +822,9 @@ def _build_derangement(
         or query_ids[perm[i]] == query_ids[i]
     )
     if n_remaining > 0:
-        logger.warning(
-            "[derangement] %d / %d violations remain after fallback (best-effort)",
-            n_remaining,
-            n,
+        raise RuntimeError(
+            f"[derangement] {n_remaining} / {n} violations remain after "
+            "max_attempts; refusing best-effort shuffled control map"
         )
     return perm
 
@@ -919,7 +906,7 @@ def _check_formatted_token_budget(
 # ── crossing assignment ───────────────────────────────────────────────────────
 
 
-def _build_manifest_rows(
+def _build_manifest_rows(  # noqa: C901
     prefix_entries: list[dict],
     bank: list[dict],
     core_queries: list[dict],
@@ -936,10 +923,10 @@ def _build_manifest_rows(
     renders are constructed on-the-fly in the GPU phase.
 
     Strata:
-      dense_core     — 100 prefixes × 48 core queries
-      periphery      — ~900 prefixes × (1 natural + 10 random + 3 topic-matched)
-      trait_stratum  — ~100 trait-eliciting prefixes × 15 random queries
-      battery        — 50 #594 contexts × 48 core queries (EVAL-ONLY)
+      dense_core     — 100 prefixes x 48 core queries
+      periphery      — ~900 prefixes x (1 natural + 10 random + 3 topic-matched)
+      trait_stratum  — ~100 trait-eliciting prefixes x 15 random queries
+      battery        — 50 #594 contexts x 48 core queries (EVAL-ONLY)
     """
     rows: list[dict] = []
 
@@ -950,7 +937,6 @@ def _build_manifest_rows(
     bank_by_topic: dict[str, list[dict]] = {}
     for q in bank:
         bank_by_topic.setdefault(q["topic"], []).append(q)
-    bank_ids = {q["query_id"] for q in bank}
     core_ids = {q["query_id"] for q in core_queries}
     periphery_bank = [q for q in bank if q["query_id"] not in core_ids]
 
@@ -982,7 +968,6 @@ def _build_manifest_rows(
         pfx_topic = pfx["topic"]
 
         # 1 natural query
-        natural_qry_text = pfx["natural_query"]
         rows.append(
             {
                 "row_id": f"r_{len(rows):07d}",
@@ -1252,7 +1237,9 @@ def _write_query_store(
 # ── main ─────────────────────────────────────────────────────────────────────
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: C901
+    global _SMOKE_TOKEN_COUNTS
+
     parser = argparse.ArgumentParser(description="Issue #1092 corpus build (P0)")
     parser.add_argument("--out", type=Path, default=Path("/workspace/issue1092"))
     parser.add_argument("--smoke", action="store_true", help="Smoke run (tiny slice)")
@@ -1271,6 +1258,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--no-g1-strict", dest="g1_strict", action="store_false")
     args = parser.parse_args(argv)
+    _SMOKE_TOKEN_COUNTS = bool(args.smoke)
 
     if args.smoke and args.row_limit is None:
         args.row_limit = 32
@@ -1357,15 +1345,15 @@ def main(argv: list[str] | None = None) -> int:
 
     # ── step 4: topic labeling ───────────────────────────────────────────────
     logger.info("[P0] step 4: topic labeling via %s", HAIKU_MODEL)
-    client = anthropic.Anthropic()
     if args.smoke:
         # In smoke mode assign random topics to avoid real API calls
         for pfx in prefix_entries:
             pfx["topic"] = rng.choice(TOPIC_LABELS)
         logger.info("[P0] smoke: assigned random topics to %d prefixes", len(prefix_entries))
     else:
+        client = anthropic.Anthropic()
         topic_labels = _label_topic_batch(prefix_entries, client=client)
-        for pfx, lbl in zip(prefix_entries, topic_labels):
+        for pfx, lbl in zip(prefix_entries, topic_labels, strict=True):
             pfx["topic"] = lbl
 
     # ── step 5: query bank ───────────────────────────────────────────────────
@@ -1387,7 +1375,10 @@ def main(argv: list[str] | None = None) -> int:
 
     # ── render/BPE integrity check ────────────────────────────────────────────
     logger.info("[P0] render/BPE integrity check")
-    mismatch_frac = _check_formatted_token_budget(prefix_entries, bank, rng=rng, sample_n=100)
+    if args.smoke:
+        mismatch_frac = 0.0
+    else:
+        mismatch_frac = _check_formatted_token_budget(prefix_entries, bank, rng=rng, sample_n=100)
 
     # ── G1 final gate ─────────────────────────────────────────────────────────
     n_long_final = sum(1 for pfx in prefix_entries if pfx["n_user_turns"] >= 5)
@@ -1525,7 +1516,9 @@ def main(argv: list[str] | None = None) -> int:
             repo_id=HF_DATA_REPO,
             repo_type="dataset",
             path_in_repo=CORPUS_HF_PATH,
-            commit_message=f"issue1092 corpus build (n_rows={len(manifest_rows)}, git={meta['git_sha'][:8]})",
+            commit_message=(
+                f"issue1092 corpus build (n_rows={len(manifest_rows)}, git={meta['git_sha'][:8]})"
+            ),
         )
         logger.info("[upload] corpus folder → hf:%s/%s", HF_DATA_REPO, CORPUS_HF_PATH)
     elif args.smoke:
