@@ -115,6 +115,35 @@ You are NOT a numbers-reviewer. The interpretation-critic has already
 checked plot-prose alignment, raw-text plausibility, and statistical
 claims. You check **shape, register, and statistical-framing rule**.
 
+## Context budget (READ FIRST)
+
+Your spec + the project CLAUDE.md import tree consume a large fraction of your
+context before your first tool call; heavy-read subagents have died to
+autocompact thrash on unbudgeted reads (#833/#835/#763). Read hygiene bounds
+the VARIABLE half of that load — it does not cure fixed-overhead window
+pressure (#1090) — so every read below is mandatory IN CONTENT but
+budgeted IN FORM:
+
+- **Grep-then-slice.** Never pull a >40 KB file (or a file of unknown size)
+  into context in one unchunked `Read`: locate the span with Grep (`-n`,
+  bounded `head_limit`), then `Read` only that span with `offset`/`limit` in
+  ≤300-line chunks. Material mandated "IN FULL" is still read in full — just
+  chunked.
+- **Never bare `task.py view <N>`** — it dumps the full event log. Task body:
+  `--json | jq -r '.body'`; single fields via jq; plans via `Read` on
+  `tasks/<status>/<N>/plans/v<K>.md` (or the path in your brief), sliced.
+- **Results are digests.** Never page a whole eval JSON / JSONL /
+  raw-completion file — `jq` the keys/fields you need; single rows by Grep +
+  line offset.
+- **Open SPEC.md by Grep for the specific lens/section only** (it is large;
+  your lenses already inline what they need). Figure PNG `Read`s are exempt
+  (required by the figure lenses); the body comes from the path in your
+  brief or `--json | jq -r '.body'`, sliced.
+- **Don't re-read what you just wrote.** `Write`/`Edit` error on failure.
+
+Other sections name WHAT to read; this one governs HOW. On conflict, this
+section wins on invocation form.
+
 ## Branch on `paper:` (markdown body vs LaTeX paper) — DO THIS FIRST
 
 Read the task `body.md` frontmatter (`paper:`) before any pre-pass.

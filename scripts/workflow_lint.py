@@ -6258,16 +6258,17 @@ AGENT_SPEC_GRANDFATHER_MAX_HEADROOM_BYTES = 3_000
 # (#838): both were structurally trimmed to <=20 KB, so regrowth on the two
 # incident files is a commit-time FAIL.
 AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
+    # measured 107,930 B post-#1115 (read-hygiene context-budget section —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 107,000 —
     # measured 104,135 B post-#829; fifteen-lenses core is every-markdown-review
-    # load-bearing — SPEC.md-dedup trim is the #829 named follow-up
-    "clean-result-critic.md": 107_000,
+    # load-bearing — SPEC.md-dedup trim is the #829 named follow-up)
+    "clean-result-critic.md": 108_900,
     # the rest measured at the #838 tightening (2026-07-02), caps = measured
     # + <=3 KB; each names a future trim direction, none is licensed to grow
-    # measured 92,536 B post-#1081 (fix-engaged elements (d)/(e) verification —
-    # fix-commit SHA + stale-run artifact disposition — plan-mandated growth;
-    # cap = measured + <=~1 KB. Prior: 92,300 — measured 91,371 B post-#948
-    # Step 3.8 seam-stubbed production-body lens)
-    "code-reviewer.md": 93_500,
+    # measured 94,126 B post-#1115 (read-hygiene context-budget section —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 93,500 —
+    # measured 92,536 B post-#1081 fix-engaged elements (d)/(e) verification)
+    "code-reviewer.md": 95_000,
     # measured 72,064 B post-#1056 (figure pin-first carve-out in the
     # composed-prompt header — plan-mandated growth; cap = measured
     # + <=~1 KB. Prior: 72,000 (measured 71,430 B post-#1050 r2),
@@ -6278,22 +6279,25 @@ AGENT_SPEC_SIZE_GRANDFATHER: dict[str, int] = {
     # + <=~1 KB. Prior: 47,930 B post-#881)
     # #948: seam-stubbed production-body lens (Step 3.8)
     "codex-code-reviewer.md": 51_600,
-    # measured 61,733 B post-#1102 (real-world-corpus class extension in
-    # § Content hygiene — plan-mandated growth; cap = measured + <=~1 KB.
-    # Prior: 61,500 — measured 58,976 B post-#936)
-    "experiment-implementer.md": 62_500,
+    # measured 63,424 B post-#1115 (read-hygiene context-budget section —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 62,500 —
+    # measured 61,733 B post-#1102)
+    "experiment-implementer.md": 64_000,
     # measured 65,540 B post-#1081 r2 (D3 crash-fix-relaunch addendum:
     # disposition-conditional resume-glob confirm — plan-mandated growth;
     # cap = measured + <=~1 KB. Prior: 65,500 — measured 62,672 B)
     "experimenter.md": 66_500,
-    # measured 48,197 B post-#1102 (real-world-corpus class extension across
-    # three content-hygiene spans — plan-mandated growth; cap = measured
-    # + <=~1 KB. Prior: 48,000 — measured 45,203 B)
-    "methodology-writer.md": 49_000,
+    # measured 49,740 B post-#1115 (read-hygiene context-budget section —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 49,000 —
+    # measured 48,197 B post-#1102)
+    "methodology-writer.md": 50_700,
     # measured 46,187 B post-#1082 (negative-existence search recipe —
     # plan-mandated growth; cap = measured + <=~1 KB. Prior: 43,500 / 40,990 B)
     "research-pm.md": 47_000,
-    "upload-verifier.md": 45_500,  # measured 42,825 B
+    # measured 46,830 B post-#1115 (read-hygiene context-budget section —
+    # plan-mandated growth; cap = measured + <=~1 KB. Prior: 45,500 — its
+    # "measured 42,825 B" comment was stale vs 45,321 B live pre-edit)
+    "upload-verifier.md": 47_800,
 }
 
 
