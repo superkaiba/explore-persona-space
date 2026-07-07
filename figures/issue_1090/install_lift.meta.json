@@ -1,6 +1,6 @@
 {
-  "commit": "c65ee9fefe",
-  "created": "2026-07-07T04:27:11Z",
+  "commit": "ec47893613",
+  "created": "2026-07-07T04:59:30Z",
   "figsize": [
     11.5,
     5.0
@@ -49,7 +49,7 @@
       "_group": 5
     },
     {
-      "category": "C2 impolite\n(Claude, auto-gen)",
+      "category": "impolite\n(Claude, auto-gen)",
       "tf-margin delta (trained - base)": 0.33360090549029753,
       "_kind": "bar",
       "_group": 6

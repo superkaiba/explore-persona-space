@@ -32,13 +32,15 @@ from explore_persona_space.analysis.paper_plots import (  # noqa: E402
 
 logger = logging.getLogger("issue1090.figures")
 
+# Plain-English condition names only — never bare cell codes (C1/C2/...) on
+# chart elements (project rule: opaque condition codes stay in the Repro footer).
 CELL_LABEL = {
-    "c1": "C1 formatting\n(Claude, curated)",
-    "c2": "C2 impolite\n(Claude, auto-gen)",
-    "c3": "C3 sycophancy\n(Claude, neutral)",
-    "c4": "C4 sycophancy\n(Claude, hard-fact)",
-    "c5": "C5 sycophancy\n(Qwen, neutral)",
-    "c6": "C6 broad misalignment\n(Claude, neutral)",
+    "c1": "formatting control\n(Claude, curated)",
+    "c2": "impolite\n(Claude, auto-gen)",
+    "c3": "sycophancy\n(Claude, neutral)",
+    "c4": "sycophancy\n(Claude, wrong-fact)",
+    "c5": "sycophancy\n(Qwen, neutral)",
+    "c6": "broad misalignment\n(Claude, neutral)",
 }
 
 
@@ -141,8 +143,8 @@ def fig_contrast_panels(agg: Path, figdir: Path) -> str | None:
     fig, axes = plt.subplots(1, 2, figsize=(11.5, 5.2), constrained_layout=True)
     rng = np.random.default_rng(42)
     panels = [
-        (axes[0], "c4", "Bank delta (C3 neutral vs C4 hard-fact)"),
-        (axes[1], "c5", "Generator delta (C3 Claude vs C5 Qwen, same bank)"),
+        (axes[0], "c4", "Bank contrast: neutral vs wrong-fact bank (same generator)"),
+        (axes[1], "c5", "Generator contrast: Claude vs Qwen (same neutral bank)"),
     ]
     cols = paper_palette(4)
     excluded: dict[str, int] = {}
@@ -217,7 +219,9 @@ def fig_dose_curves(agg: Path, figdir: Path) -> str | None:
         ax.set_xlabel("optimizer step (save_steps=2)")
         if k == 0:
             ax.set_ylabel("source judged rate (Tier 1)")
-        ax.set_title(d["cell"], fontsize=10.5)
+        ax.set_title(
+            CELL_LABEL.get(_cell_id(d["cell"]), d["cell"]).replace("\n", " "), fontsize=10.5
+        )
     return savefig_paper(fig, "dose_curves", dir=figdir)["png"]
 
 

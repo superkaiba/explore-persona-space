@@ -39,13 +39,15 @@ EVAL = ROOT / "eval_results" / "issue_1090"
 RUN = ROOT / "data" / "issue_1090" / "run"
 FIGDIR = ROOT / "figures" / "issue_1090"
 
+# Plain-English condition names only — never bare cell codes (C1/C2/...) on
+# chart elements (project rule: opaque condition codes stay in the Repro footer).
 CELL_LABELS = {
-    "c1-formatting-claude": "C1 formatting\n(Claude, curated)",
-    "c2-impolite-claude": "C2 impolite\n(Claude, auto-gen)",
-    "c3-sycophancy-claude": "C3 sycophancy\n(Claude, neutral)",
-    "c4-sycophancy_hardfact-claude": "C4 sycophancy\n(Claude, hard-fact)",
-    "c5-sycophancy-qwen": "C5 sycophancy\n(Qwen, neutral)",
-    "c6-broad_em-claude": "C6 broad misalignment\n(Claude, neutral)",
+    "c1-formatting-claude": "formatting control\n(Claude, curated)",
+    "c2-impolite-claude": "impolite\n(Claude, auto-gen)",
+    "c3-sycophancy-claude": "sycophancy\n(Claude, neutral)",
+    "c4-sycophancy_hardfact-claude": "sycophancy\n(Claude, wrong-fact)",
+    "c5-sycophancy-qwen": "sycophancy\n(Qwen, neutral)",
+    "c6-broad_em-claude": "broad misalignment\n(Claude, neutral)",
 }
 TRAINED_CELLS = ["c1-formatting-claude", "c2-impolite-claude", "c3-sycophancy-claude"]
 THRESHOLD = 50  # graded judge keep threshold (behavior.threshold for all three cells)
