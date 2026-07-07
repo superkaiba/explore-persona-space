@@ -147,7 +147,9 @@ def test_good_body_passes_all():
     # is a vacuous PASS here because this fixture carries no
     # availability-denial-near-artifact line. verify_text prepends check 0
     # (body-nonstub) + check 0b (no-duplicate-frontmatter), runs CHECKS[1:]
-    # (36 functions), then appends the Goal soft check, the Lens 14
+    # (36 functions), then appends the Goal soft check, the H1↔frontmatter-
+    # title sync check (#1110; PASS-skip: not a sentinelled body), the
+    # Lens 14
     # concerns-audit, the check-16 lr-matches-plan reconciliation, the
     # check-17 Context provenance-row read, the v3 check-21
     # body-Parameters-⊆-doc reconciliation (PASS-skip with no doc), the v4
@@ -157,11 +159,11 @@ def test_good_body_passes_all():
     # the check-31 orphaned-per-unit-figures probe (needs `issue` for
     # figures-dir scoping, #1011; PASS here — the fixture's fake sha is not
     # locally reachable, so the cited SHA is silently skipped) →
-    # 46 results total (2 prepended + CHECKS[1:]=36 + 8 appended). The
+    # 47 results total (2 prepended + CHECKS[1:]=36 + 9 appended). The
     # Lens 14 / check-16 results are PASS-skips when no concerns.jsonl /
     # plans/plan.md sibling is available; check 17 and the v3/v4 checks
     # are PASS-skips on this legacy (pre-v2-sentinel) fixture.
-    assert len(results) == 46
+    assert len(results) == 47
     # By-name membership so the NEXT check addition can key by name instead
     # of re-deriving the arithmetic (#1016 methodology-reconciler Must-Fix).
     assert _HF_32_NAME in {r.name for r in results}
@@ -4438,7 +4440,7 @@ def test_mdx_helper_unavailable_falls_back_loud_not_silent(monkeypatch):
 
 _V2_GOOD_BODY = """\
 ---
-title: V2 nested-design exemplar
+title: Some claim about a finding (MODERATE confidence)
 kind: experiment
 goal: Exercise the v2 sentinel-gated nested-structure check
 ---
@@ -5537,7 +5539,7 @@ def test_repro_lr_multi_version_plan_in_no_version_still_fails(tmp_path):
 
 _V3_GOOD_BODY = """\
 ---
-title: v3 exemplar fixture
+title: Some claim about a finding (MODERATE confidence)
 kind: experiment
 goal: Exercise the v3 sentinel-gated five-flat-H2 checks
 ---
@@ -6345,7 +6347,7 @@ def test_v2_grandfathering_still_passes_unchanged():
 
 _V4_GOOD_BODY = """\
 ---
-title: v4 exemplar fixture
+title: Some claim about a finding (MODERATE confidence)
 kind: experiment
 goal: Exercise the v4 sentinel-gated four-flat-H2 checks
 ---
@@ -9891,3 +9893,175 @@ def test_check15_abbreviation_dot_same_clause_claim_still_fails(tmp_path, monkey
     res = verify_task_body.check_repro_committed_claims_exist(_repro_body(line))
     assert not res.passed, res.render()
     assert "NOT present" in res.detail
+
+
+# ─── H1 ↔ frontmatter-title sync check (#1110/#825) ────────────────────────
+
+_H1_SYNC_NAME = "H1 matches frontmatter title"
+_H1_SYNC_FILLER = (
+    "Filler prose so the fixture clears check_body_nonstub's 500-char stub "
+    "floor without carrying any other clean-result structure. " * 6
+)
+
+
+def _sentinelled_raw(sentinel: str, fm_title: str | None, h1: str) -> str:
+    """Minimal raw doc for the H1↔title sync check: frontmatter (+ optional
+    title) + H1 + sentinel + enough prose to clear check_body_nonstub's
+    stub floor. Tests assert on the named check via _results_by_name — the
+    minimal shape fails unrelated structure checks by construction, so
+    these tests never assert overall `ok`."""
+    fm_lines = ["---"]
+    if fm_title is not None:
+        fm_lines.append(f"title: {fm_title}")
+    fm_lines.extend(["kind: experiment", "---"])
+    return "\n".join(fm_lines) + f"\n# {h1}\n\n{sentinel}\n\n{_H1_SYNC_FILLER}\n"
+
+
+def test_h1_title_sync_v4_match_passes():
+    """v4 body whose fm title == H1 (incl. the confidence tag) passes clean."""
+    raw = _sentinelled_raw(
+        "<!-- clean-result-v4 -->",
+        "A tidy claim about leakage (MODERATE confidence)",
+        "A tidy claim about leakage (MODERATE confidence)",
+    )
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is False, res.render()
+
+
+def test_h1_title_sync_whitespace_normalization():
+    """Pins the normalization rule: whitespace collapse ONLY. Internal
+    doubled spaces + trailing spaces in the H1 are not divergence; no
+    case/Unicode/punctuation folding happens anywhere else."""
+    raw = _sentinelled_raw(
+        "<!-- clean-result-v4 -->",
+        "A tidy claim about leakage (MODERATE confidence)",
+        "A tidy  claim about   leakage (MODERATE confidence)  ",
+    )
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is False, res.render()
+
+
+def test_h1_title_sync_v4_mismatch_fails():
+    """Fail-loud: the #825 shape — frontmatter retitled via set-title, body
+    H1 left stale — hard-FAILs on a v4 body. Detail names both strings and
+    the set-title remediation."""
+    raw = _sentinelled_raw(
+        "<!-- clean-result-v4 -->",
+        "Fresh retitled claim (HIGH confidence)",
+        "Stale original claim (MODERATE confidence)",
+    )
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert not res.passed, res.render()
+    assert "Stale original claim" in res.detail
+    assert "Fresh retitled claim" in res.detail
+    assert "set-title" in res.detail
+
+
+def test_h1_title_sync_v3_mismatch_warns():
+    """Forward-only pin: the same divergence on a v3-sentinelled body is a
+    loud WARN (passed=True, is_warn=True), never a new retroactive FAIL."""
+    raw = _sentinelled_raw(
+        "<!-- clean-result-v3 -->",
+        "Fresh retitled claim (HIGH confidence)",
+        "Stale original claim (MODERATE confidence)",
+    )
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is True, res.render()
+    assert "grandfathered" in res.detail
+
+
+def test_h1_title_sync_v2_mismatch_warns():
+    """Forward-only pin, v2 sentinel: divergence WARNs, never FAILs."""
+    raw = _sentinelled_raw(
+        "<!-- clean-result-v2 -->",
+        "Fresh retitled claim (HIGH confidence)",
+        "Stale original claim (MODERATE confidence)",
+    )
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is True, res.render()
+    assert "grandfathered" in res.detail
+
+
+def test_h1_title_sync_no_sentinel_skips():
+    """A non-sentinelled body with a real mismatch PASS-skips — pre-promotion
+    bodies legitimately have no synced H1."""
+    raw = _sentinelled_raw(
+        "",
+        "Fresh retitled claim (HIGH confidence)",
+        "Stale original claim (MODERATE confidence)",
+    )
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is False, res.render()
+    assert "not a sentinelled" in res.detail
+
+
+def test_h1_title_sync_no_frontmatter_skips():
+    """Body-only input (analyzer draft / --body-stdin dry run): fm == {} →
+    PASS-skip so draft verification stays green before set-title runs; the
+    gate-time --issue run compares against the real body.md."""
+    body = (
+        "# Stale original claim (MODERATE confidence)\n\n"
+        "<!-- clean-result-v4 -->\n\n" + _H1_SYNC_FILLER + "\n"
+    )
+    _ok, results = verify_task_body.verify_text(body)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is False, res.render()
+    assert "draft" in res.detail
+
+
+def test_h1_title_sync_missing_fm_title_fails_v4():
+    """Fail-loud: a sentinelled v4 body whose frontmatter lacks `title`
+    entirely is a broken promotion — same severity as a mismatch, never a
+    silent skip."""
+    raw = _sentinelled_raw("<!-- clean-result-v4 -->", None, "Some claim (MODERATE confidence)")
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert not res.passed, res.render()
+    assert "no frontmatter `title`" in res.detail
+
+
+def test_h1_title_sync_missing_h1_fails_v4():
+    """Fail-loud: a v4-sentinelled body with no H1 FAILs the check. Unit-calls
+    check_h1_matches_frontmatter_title directly (established helper-test
+    precedent in this file): through verify_text this shape is preempted by
+    check_body_nonstub's own no-H1 FAIL short-circuit, so the branch is only
+    reachable by direct call."""
+    body = "<!-- clean-result-v4 -->\n\n" + _H1_SYNC_FILLER + "\n"
+    res = verify_task_body.check_h1_matches_frontmatter_title(
+        body, {"title": "Some claim (MODERATE confidence)"}
+    )
+    assert not res.passed, res.render()
+    assert "no H1" in res.detail
+
+
+def test_h1_title_sync_v3_missing_fm_title_warns():
+    """The v3/v2 anomaly branch stays grandfathered: a v3-sentinelled body
+    with NO frontmatter `title` WARNs (passed=True, is_warn=True) — the
+    forward-only rule covers the anomaly sub-cases too, not just the
+    mismatch branch (the #654 shape sits on a v3 body today)."""
+    raw = _sentinelled_raw("<!-- clean-result-v3 -->", None, "Some claim (MODERATE confidence)")
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is True, res.render()
+    assert "no frontmatter `title`" in res.detail
+
+
+def test_h1_title_sync_sentinel_only_in_fence_skips():
+    """A body that merely QUOTES the v4 sentinel inside a code fence is not
+    sentinelled (pins the _prose_layer inheritance) — real mismatch present,
+    still PASS-skip."""
+    raw = (
+        "---\ntitle: Fresh retitled claim (HIGH confidence)\nkind: experiment\n---\n"
+        "# Stale original claim (MODERATE confidence)\n\n"
+        "```markdown\n<!-- clean-result-v4 -->\n```\n\n" + _H1_SYNC_FILLER + "\n"
+    )
+    _ok, results = verify_task_body.verify_text(raw)
+    res = _results_by_name(results)[_H1_SYNC_NAME]
+    assert res.passed and res.is_warn is False, res.render()
+    assert "not a sentinelled" in res.detail
