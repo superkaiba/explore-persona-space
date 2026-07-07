@@ -1,0 +1,1 @@
+{"ts": "2026-07-07T08:52:16Z", "event": "raised", "concern_id": "i1092-bare-dynamics-unimplemented", "severity": "BLOCKER", "summary": "P3b bare-query + P3c dynamics phases (and B3 judging) are unimplemented; the --phases parser silently maps bare/dynamics to generic capture, so the plan workload cmd no-ops two modules", "raised_by": "code-reviewer", "raised_at_round": 1}
