@@ -63,6 +63,33 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--anchor-shards", type=str, default="all", help="'all' or an int shard count")
     ap.add_argument("--expect-n", type=str, default="3600", help="int, or 'auto' (sidecar sum)")
     ap.add_argument("--self-test", action="store_true", help="smoke: probe rejects mis-staging")
+    # onpolicy-separator-control parametrization (plan section 2 — the round-6
+    # machinery reused for a SECOND anchor store; defaults preserve round-6).
+    ap.add_argument(
+        "--anchor-prefix",
+        type=str,
+        default=ANCHOR_PREFIX,
+        help="Hub prefix of the anchor store (default: the #931 instruct armC store)",
+    )
+    ap.add_argument(
+        "--anchor-revision",
+        type=str,
+        default="",
+        help="data-repo revision pin for the anchor store ('' = resolve HEAD, the "
+        "round-6 default; the base exogenous store passes its content pin)",
+    )
+    ap.add_argument(
+        "--skip-pairs",
+        action="store_true",
+        help="skip the pair-file staging (second anchor-store call of the "
+        "onpolicy dispatcher — pairs already staged by the first call)",
+    )
+    ap.add_argument(
+        "--manifest-name",
+        type=str,
+        default="base_sep_run_manifest.json",
+        help="manifest filename under --out-dir (distinct per anchor-store call)",
+    )
     return ap.parse_args()
 
 
@@ -100,19 +127,26 @@ def stage_pairs(data_dir: Path, revision: str) -> dict:
     return shas
 
 
-def stage_anchor_store(anchor_dir: Path, shards: str) -> tuple[str, list[str]]:
-    """Stage the instruct armC store into <anchor-dir>/store/armC/ (consumer layout)."""
+def stage_anchor_store(
+    anchor_dir: Path, shards: str, *, prefix: str = ANCHOR_PREFIX, revision: str = ""
+) -> tuple[str, list[str]]:
+    """Stage one armC anchor store into <anchor-dir>/store/armC/ (consumer layout).
+
+    Defaults preserve round-6 (the #931 instruct store @ resolved repo HEAD);
+    the onpolicy dispatcher's second call passes the base store's prefix +
+    content-pin revision.
+    """
     from huggingface_hub import HfApi
 
     api = HfApi()
-    revision = api.repo_info(common.HF_DATA_REPO, repo_type="dataset").sha
+    revision = revision or api.repo_info(common.HF_DATA_REPO, repo_type="dataset").sha
     entries = sorted(
         e.path
         for e in hub.retry_transient(
             lambda: list(
                 api.list_repo_tree(
                     common.HF_DATA_REPO,
-                    path_in_repo=ANCHOR_PREFIX,
+                    path_in_repo=prefix,
                     repo_type="dataset",
                     revision=revision,
                 )
@@ -120,7 +154,7 @@ def stage_anchor_store(anchor_dir: Path, shards: str) -> tuple[str, list[str]]:
             what="list anchor store tree",
         )
     )
-    assert entries, f"no files under {ANCHOR_PREFIX}"
+    assert entries, f"no files under {prefix}"
     if shards != "all":
         n = int(shards)
         wanted = {f"armC_shard{i:03d}{ext}" for i in range(n) for ext in (".pt", ".json")}
@@ -147,8 +181,12 @@ def stage_anchor_store(anchor_dir: Path, shards: str) -> tuple[str, list[str]]:
     return revision, entries
 
 
-def provenance_coherence(pairs_rev: str, store_paths: list[str]) -> dict:
-    """Artifact-reuse check (j): pair files must NOT postdate the anchor store."""
+def provenance_coherence(pairs_rev: str, store_paths: list[str], store_rev: str = "") -> dict:
+    """Artifact-reuse check (j): pair files must NOT postdate the anchor store.
+
+    ``store_rev`` dates the store files AT THE CONSUMED REVISION (the base
+    exogenous store's content pin); '' keeps the round-6 main-HEAD read.
+    """
     from huggingface_hub import HfApi
 
     api = HfApi()
@@ -156,8 +194,9 @@ def provenance_coherence(pairs_rev: str, store_paths: list[str]) -> dict:
     info_pairs = api.get_paths_info(
         common.HF_DATA_REPO, pair_paths, expand=True, repo_type="dataset", revision=pairs_rev
     )
+    store_kw = {"revision": store_rev} if store_rev else {}
     info_store = api.get_paths_info(
-        common.HF_DATA_REPO, store_paths, expand=True, repo_type="dataset"
+        common.HF_DATA_REPO, store_paths, expand=True, repo_type="dataset", **store_kw
     )
     assert len(info_pairs) == len(pair_paths) and len(info_store) == len(store_paths)
     max_pair = max(i.last_commit.date for i in info_pairs)
@@ -206,9 +245,14 @@ def self_test_misstaged(anchor_dir: Path) -> None:
 def main() -> int:
     args = parse_args()
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    pair_shas = stage_pairs(args.data_dir, args.pairs_revision)
-    anchor_rev, anchor_files = stage_anchor_store(args.anchor_dir, args.anchor_shards)
-    prov = provenance_coherence(args.pairs_revision, anchor_files)
+    pair_shas = None if args.skip_pairs else stage_pairs(args.data_dir, args.pairs_revision)
+    anchor_rev, anchor_files = stage_anchor_store(
+        args.anchor_dir,
+        args.anchor_shards,
+        prefix=args.anchor_prefix,
+        revision=args.anchor_revision,
+    )
+    prov = provenance_coherence(args.pairs_revision, anchor_files, store_rev=args.anchor_revision)
     n = consumer_open_probe(args.anchor_dir, args.expect_n)
     if args.self_test:
         self_test_misstaged(args.anchor_dir)
@@ -218,13 +262,15 @@ def main() -> int:
         "instruct_model_id": common.MODEL_ID,
         "pairs_revision": args.pairs_revision,
         "pair_sha256": pair_shas,
+        "pairs_staged": not args.skip_pairs,
+        "anchor_prefix": args.anchor_prefix,
         "anchor_store_revision": anchor_rev,
         "anchor_store_files": anchor_files,
         "anchor_shards": args.anchor_shards,
         "anchor_rows": n,
         "provenance_coherence": prov,
     }
-    common.write_json(args.out_dir / "base_sep_run_manifest.json", manifest)
+    common.write_json(args.out_dir / args.manifest_name, manifest)
     return 0
 
 

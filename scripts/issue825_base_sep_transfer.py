@@ -42,6 +42,17 @@ CLI (plan section 5):
       --out eval_results/issue_825/base-separator-control
 Smoke: --armc-local-dir/--chat-local-dir inject tiny local stores through the
 REAL loaders/fit cores; --smoke makes the C1 gate non-binding; --skip-upload.
+
+`onpolicy-separator-control` SOURCE-side generalization (plan section 2 —
+defaults preserve the round-6 behavior byte-for-byte): ``--model
+{base,instruct}`` selects the CHAT target stream (pretrained_chat_s /
+instruct_chat_s, both @ CHAT_REV) + the committed full-n ceiling the C1 gate
+reproduces (cells_S2.json 0.58768 / cells_chat_ref.json 0.67309);
+``--source-store-dir`` (local) or ``--source-store-prefix`` (Hub) points the
+SOURCE separator store at the on-policy armC store instead of the round-6
+base exogenous store (realized-n; the 3600 run invariant applies only to the
+round-6 default source); ``--out-name`` / ``--hf-prefix-out`` route the
+outputs (e.g. onpolicy_sep_to_chat_base.json / issue825_onpolicy_sep_control).
 """
 
 from __future__ import annotations
@@ -72,16 +83,20 @@ from explore_persona_space.orchestrate import hub  # noqa: E402
 SCRIPT = "scripts/issue825_base_sep_transfer.py"
 CHAT_REV = "a23e79f17f053c58e7ce1bb16dff9bac30e55729"  # plan section 5 pin
 CHAT_PREFIX = "issue825_userbase_map/analysis_tensors"
-CHAT_STEM = "pretrained_chat_s"
+CHAT_STEMS = {"base": "pretrained_chat_s", "instruct": "instruct_chat_s"}
+CHAT_STEM = CHAT_STEMS["base"]  # round-6 default
 BASE_STORE_PREFIX = "issue825_base_sep_control/analysis_tensors/armC"
 HF_PREFIX_OUT = "issue825_base_sep_control"
 LAYER = common.HEADLINE_LAYER  # 19
+# Committed full-n chat ceilings @ L19 per model (drift-guarded at run time).
+COMMITTED_CHAT = {
+    "base": ("eval_results/issue_825/cells_S2.json", 0.5876803039140281),
+    "instruct": ("eval_results/issue_931/cells_chat_ref.json", 0.6730940896676356),
+}
 N_STAR = 1982
 CEILING_SEEDS = (931, 932, 933, 934, 935)  # seed-931 single draw is the convention anchor
 GATE_TOL = 0.01
 # Committed references (drift-guarded against the JSONs at run time).
-COMMITTED_S2_PATH = SCRIPTS.parent / "eval_results" / "issue_825" / "cells_S2.json"
-COMMITTED_S2_L19 = 0.5876803039140281
 INSTRUCT_REF = {
     "chat_ceiling_L19": 0.6730940896676356,  # eval_results/issue_931/cells_chat_ref.json
     "sep_rotated_L19": 0.3489193821633685,
@@ -108,6 +123,30 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--chat-local-dir", type=Path, default=None, help="local chat shard dir")
     ap.add_argument("--skip-upload", action="store_true")
     ap.add_argument("--smoke", action="store_true", help="C1 gate recorded, not binding")
+    # onpolicy-separator-control generalization (defaults = round-6 behavior).
+    ap.add_argument(
+        "--model",
+        choices=("base", "instruct"),
+        default="base",
+        help="chat target + committed ceiling (default base = round-6)",
+    )
+    ap.add_argument(
+        "--source-store-dir",
+        type=Path,
+        default=None,
+        help="LOCAL source separator store dir (e.g. the on-policy armC store); "
+        "default None = the round-6 base exogenous source",
+    )
+    ap.add_argument(
+        "--source-store-prefix",
+        type=str,
+        default=None,
+        help="Hub prefix for the source separator store (e.g. "
+        "issue825_onpolicy_sep_control/analysis_tensors/armC_base); default None "
+        "= the round-6 BASE_STORE_PREFIX",
+    )
+    ap.add_argument("--out-name", type=str, default="base_sep_to_chat.json")
+    ap.add_argument("--hf-prefix-out", type=str, default=HF_PREFIX_OUT)
     return ap.parse_args()
 
 
@@ -116,15 +155,25 @@ def parse_args() -> argparse.Namespace:
 # ---------------------------------------------------------------------------
 
 
-def load_base_armc(stage: Path, local_dir: Path | None) -> dict:
-    """Base armC store -> {x_sep/y at FROZEN_LAYERS (fp32), group_ids, row_ids, rev}.
+def load_base_armc(
+    stage: Path,
+    local_dir: Path | None,
+    *,
+    store_prefix: str = BASE_STORE_PREFIX,
+    cache_name: str = "base_armC_frozen.npz",
+    expect_n: int | None = 3600,
+) -> dict:
+    """Source armC store -> {x_sep/y at FROZEN_LAYERS (fp32), group_ids, row_ids, rev}.
 
-    Production stages the pod-uploaded store from ``BASE_STORE_PREFIX`` (one
-    shard at a time, deleted after slicing); ``--armc-local-dir`` reads local
-    shards through the SAME consumer loader (``fit931.load_regime_store``).
+    Production stages the pod-uploaded store from ``store_prefix`` (one shard
+    at a time, deleted after slicing); ``local_dir`` reads local shards
+    through the SAME consumer loader (``fit931.load_regime_store``). Defaults
+    are the round-6 base exogenous source (n == 3600 run invariant); the
+    on-policy sources pass their own prefix/dir + ``expect_n=None``
+    (realized-n, reported not asserted).
     """
     frozen = list(common.FROZEN_LAYERS)
-    cache = stage / "base_armC_frozen.npz"
+    cache = stage / cache_name
     if cache.exists():
         z = np.load(cache, allow_pickle=False)
         if "frozen" not in z.files:
@@ -144,7 +193,8 @@ def load_base_armc(stage: Path, local_dir: Path | None) -> dict:
                 f"local_dir={local_dir} — stale cache at {cache}"
             )
             if rev != "local":
-                assert x.shape[0] == 3600, (x.shape, cache)
+                if expect_n is not None:
+                    assert x.shape[0] == expect_n, (x.shape, expect_n, cache)
                 assert cached_frozen == frozen, (cached_frozen, frozen, cache)
             assert x.shape[1] == len(cached_frozen), (x.shape, cached_frozen)
             assert y.shape[:2] == x.shape[:2], (x.shape, y.shape)
@@ -179,15 +229,15 @@ def load_base_armc(stage: Path, local_dir: Path | None) -> dict:
                 e.path
                 for e in api.list_repo_tree(
                     common.HF_DATA_REPO,
-                    path_in_repo=BASE_STORE_PREFIX,
+                    path_in_repo=store_prefix,
                     repo_type="dataset",
                     revision=revision,
                 )
                 if e.path.endswith(".pt")
             ),
-            what=f"list {BASE_STORE_PREFIX}",
+            what=f"list {store_prefix}",
         )
-        assert shard_paths, f"no base armC shards under {BASE_STORE_PREFIX}"
+        assert shard_paths, f"no source armC shards under {store_prefix}"
         xs, ys, gs, rs = [], [], [], []
         dest = stage / "base_armC_dl"
         for p in shard_paths:
@@ -213,7 +263,8 @@ def load_base_armc(stage: Path, local_dir: Path | None) -> dict:
             local.unlink()
         x, y = np.concatenate(xs), np.concatenate(ys)
         g, r = np.asarray(gs).astype(str), np.asarray(rs).astype(str)
-        assert x.shape[0] == 3600, x.shape  # run invariant (production path only)
+        if expect_n is not None:  # round-6 run invariant (default source only)
+            assert x.shape[0] == expect_n, (x.shape, expect_n)
     assert np.isfinite(x).all() and np.isfinite(y).all()
     stage.mkdir(parents=True, exist_ok=True)
     np.savez(
@@ -254,10 +305,16 @@ def _s2_slices_from_payload(payload: dict, layer: int) -> tuple[np.ndarray, np.n
 
 
 def stream_chat_layer(
-    stage: Path, local_dir: Path | None
+    stage: Path, local_dir: Path | None, *, stem: str = CHAT_STEM
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Stream the pinned base chat shards; return (X19, Y19, conv_ids)."""
-    cache = stage / f"base_chat_L{LAYER}_slot0_turn1.npz"
+    """Stream the pinned chat shards for one model; return (X19, Y19, conv_ids).
+
+    Default stem = the round-6 pretrained target (cache name unchanged); the
+    instruct target streams ``instruct_chat_s`` at the SAME pinned CHAT_REV
+    into its own cache file.
+    """
+    cache_stem = "base_chat" if stem == CHAT_STEMS["base"] else "instruct_chat"
+    cache = stage / f"{cache_stem}_L{LAYER}_slot0_turn1.npz"
     if cache.exists():
         z = np.load(cache, allow_pickle=False)
         if "revision" not in z.files:
@@ -280,8 +337,8 @@ def stream_chat_layer(
             return x, y, cid
     xs, ys, ids = [], [], []
     if local_dir is not None:
-        shards = sorted(local_dir.glob(f"{CHAT_STEM}_shard*.pt"))
-        assert shards, f"no local chat shards under {local_dir}"
+        shards = sorted(local_dir.glob(f"{stem}_shard*.pt"))
+        assert shards, f"no local chat shards ({stem}) under {local_dir}"
         for sp in shards:
             payload = torch.load(sp, map_location="cpu", weights_only=False)
             x, y, cid = _s2_slices_from_payload(payload, LAYER)
@@ -301,7 +358,7 @@ def stream_chat_layer(
                     repo_type="dataset",
                     revision=CHAT_REV,
                 )
-                if Path(e.path).name.startswith(CHAT_STEM + "_shard") and e.path.endswith(".pt")
+                if Path(e.path).name.startswith(stem + "_shard") and e.path.endswith(".pt")
             ),
             what=f"list {CHAT_PREFIX}",
         )
@@ -368,11 +425,12 @@ def _gate_ok(value: float, committed: float, tol: float = GATE_TOL) -> bool:
     return abs(value - committed) <= tol
 
 
-def committed_s2_l19() -> float:
-    """Committed base chat full-n ceiling @ L19 (drift-guarded)."""
-    d = json.loads(COMMITTED_S2_PATH.read_text())
+def committed_chat_l19(model: str = "base") -> float:
+    """Committed full-n chat ceiling @ L19 for one model (drift-guarded)."""
+    rel, quote = COMMITTED_CHAT[model]
+    d = json.loads((SCRIPTS.parent / rel).read_text())
     v = float(d["r2_per_layer_obs"][LAYER])
-    assert abs(v - COMMITTED_S2_L19) < 1e-9, (v, COMMITTED_S2_L19)
+    assert abs(v - quote) < 1e-9, (model, v, quote)
     return v
 
 
@@ -388,8 +446,10 @@ def matched_ceilings(x: np.ndarray, y: np.ndarray, ids: np.ndarray) -> dict:
     return out
 
 
-def save_and_upload_maps(armc: dict, out: Path, *, skip_upload: bool) -> dict:
-    """Base separator W_raw fp16 maps at the frozen layers (#931 --save-maps
+def save_and_upload_maps(
+    armc: dict, out: Path, *, skip_upload: bool, model: str = "base", hf_prefix: str = HF_PREFIX_OUT
+) -> dict:
+    """Source separator W_raw fp16 maps at the frozen layers (#931 --save-maps
     convention) -> <out>/maps/ (+ HF analysis_tensors/maps unless skipped)."""
     maps_dir = out / "maps"
     maps_dir.mkdir(parents=True, exist_ok=True)
@@ -398,19 +458,19 @@ def save_and_upload_maps(armc: dict, out: Path, *, skip_upload: bool) -> dict:
     for i, layer in enumerate(armc["frozen"]):
         fm = fit_full_map(armc["x_sep"][:, i, :], armc["y"][:, i, :])
         w_raw = (fm["W_std"] / fm["xsd"][:, None]).to(torch.float16).cpu()
-        name = f"armC_sep_base_L{int(layer):02d}.pt"
+        name = f"armC_sep_{model}_L{int(layer):02d}.pt"
         torch.save({"W_raw_fp16": w_raw, "layer": int(layer)}, maps_dir / name)
         written.append(name)
         lam_by_layer[str(int(layer))] = float(fm["lam"])
         del fm
-    print(f"[i825-bs-c1] saved {len(lam_by_layer)} base separator maps -> {maps_dir}")
+    print(f"[i825-bs-c1] saved {len(lam_by_layer)} {model} separator maps -> {maps_dir}")
     if not skip_upload:
         from huggingface_hub import HfApi
 
         # hub._upload swallows exceptions and returns "" on ANY failure —
         # assert the return AND exact-set-verify the exact map filenames
         # written this run (concern unverified-mirror-maps-uploads).
-        dest_prefix = f"{HF_PREFIX_OUT}/analysis_tensors/maps"
+        dest_prefix = f"{hf_prefix}/analysis_tensors/maps"
         up = hub._upload(
             maps_dir,
             repo_id=common.HF_DATA_REPO,
@@ -504,11 +564,22 @@ def main() -> int:
     fit_dir = args.fit_dir or args.out
     args.stage.mkdir(parents=True, exist_ok=True)
 
-    armc = load_base_armc(args.stage, args.armc_local_dir)
-    x_chat, y_chat, g_chat = stream_chat_layer(args.stage, args.chat_local_dir)
+    source_override = args.source_store_dir is not None or args.source_store_prefix is not None
+    armc = load_base_armc(
+        args.stage,
+        args.source_store_dir or args.armc_local_dir,
+        store_prefix=args.source_store_prefix or BASE_STORE_PREFIX,
+        cache_name=(
+            f"onpolicy_armC_frozen_{args.model}.npz" if source_override else "base_armC_frozen.npz"
+        ),
+        expect_n=None if source_override else 3600,
+    )
+    x_chat, y_chat, g_chat = stream_chat_layer(
+        args.stage, args.chat_local_dir, stem=CHAT_STEMS[args.model]
+    )
 
-    # C1 stream-validation gate (plan section 6 gate 4).
-    committed = committed_s2_l19()
+    # C1 stream-validation gate (plan section 6 gate 4; per-model committed ceiling).
+    committed = committed_chat_l19(args.model)
     chat_within = refit_l19(x_chat, y_chat, g_chat)
     gate_pass = _gate_ok(chat_within, committed)
     print(
@@ -525,8 +596,10 @@ def main() -> int:
         assert not _gate_ok(committed + 0.5, committed), "gate self-test failed"
         print("[i825-bs-c1] C1 gate self-test PASS: planted +0.5 mismatch detected")
 
-    # Base separator map (frozen layers saved; L19 drives the transfer).
-    lam_by_layer = save_and_upload_maps(armc, args.out, skip_upload=args.skip_upload)
+    # Source separator map (frozen layers saved; L19 drives the transfer).
+    lam_by_layer = save_and_upload_maps(
+        armc, args.out, skip_upload=args.skip_upload, model=args.model, hf_prefix=args.hf_prefix_out
+    )
     l19_idx = armc["frozen"].index(LAYER) if LAYER in armc["frozen"] else len(armc["frozen"]) - 1
     x_sep19 = armc["x_sep"][:, l19_idx, :]
     y_sep19 = armc["y"][:, l19_idx, :]
@@ -573,6 +646,18 @@ def main() -> int:
                 "base_armc_store_revision": armc["revision"],
                 "subsample_scheme_id": pcms.SUBSAMPLE_SCHEME_ID,
                 "smoke": bool(args.smoke),
+                # Source-side generalization provenance (absent on the
+                # round-6 default path — byte-preserving defaults).
+                **(
+                    {
+                        "source_model": args.model,
+                        "source_store_dir": str(args.source_store_dir),
+                        "source_store_prefix": args.source_store_prefix,
+                        "chat_stem": CHAT_STEMS[args.model],
+                    }
+                    if source_override
+                    else {}
+                ),
             },
         ),
         "layer": LAYER,
@@ -616,7 +701,7 @@ def main() -> int:
         "base_sep_map_gcv_lambda_by_layer": lam_by_layer,
         "decision_support": decision_support(fit_dir, committed, transfer_block),
     }
-    common.write_json(args.out / "base_sep_to_chat.json", payload)
+    common.write_json(args.out / args.out_name, payload)
     print(
         f"[i825-bs-c1] done: fraction({convention})={headline_fraction:.4f} "
         f"(single {frac_single:.4f} / 5-draw {frac_5draw:.4f} / full-n {frac_fulln:.4f})",

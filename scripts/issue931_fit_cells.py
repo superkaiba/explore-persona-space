@@ -95,6 +95,15 @@ def parse_args() -> argparse.Namespace:
         help="layers,dim for the fabricated smoke chat store (match the tiny model)",
     )
     ap.add_argument("--mlp", action="store_true", help="run the P3b MLP secondary")
+    ap.add_argument(
+        "--rotated-ci",
+        action="store_true",
+        help="#825 onpolicy-separator-control extension: group-bootstrap CI over "
+        "the ROTATED estimator's held-out predictions at the frozen layers + the "
+        "per-group rotated R^2 persist at the headline layer (batched per-group "
+        "reduction, ZERO refits per draw). Default OFF preserves the committed "
+        "#931 behavior byte-for-byte.",
+    )
     ap.add_argument("--g1b", action="store_true", help="run the G1b MLP parity fit")
     ap.add_argument("--null-draws", type=int, default=common.N_NULL_DRAWS)
     ap.add_argument("--folds", type=int, default=common.N_FOLDS)
@@ -360,6 +369,93 @@ def group_bootstrap_r2(
     }
 
 
+def rotated_control_preds(
+    X_layers: np.ndarray,
+    Y_layers: np.ndarray,
+    group_ids: np.ndarray,
+    *,
+    layers: list[int],
+    n_folds: int,
+    seed: int,
+) -> dict:
+    """Rotated (random-projection) control fits at ``layers``, collecting the
+    held-out PREDICTIONS (#825 onpolicy-separator-control rotated-CI leg).
+
+    EXACT reimplementation of ``fit825.random_projection_control``'s fitting
+    path — same rng stream (``default_rng(seed + 7)``), same per-layer P draw
+    order over ``layers`` (guard-before-draw), same folds / cached-eigh Gram
+    ridge — extended to collect held-out predictions + the fitted mask.
+    Callers put the HEADLINE layer FIRST so its P (the first rng draw) is
+    bitwise the one behind the payload's ``random_projection_control_r2``
+    value (asserted at the call site).
+    """
+    rng = np.random.default_rng(seed + 7)
+    n = X_layers.shape[0]
+    fitted = np.zeros(n, dtype=bool)
+    out_r2: dict[str, float] = {}
+    preds: dict[int, np.ndarray] = {}
+    for li in layers:
+        if li >= X_layers.shape[1]:
+            continue
+        X = X_layers[:, li, :].astype(np.float64)
+        Y = Y_layers[:, li, :]
+        P = rng.standard_normal((X.shape[1], X.shape[1])) / np.sqrt(X.shape[1])
+        Xp = (X @ P).astype(np.float32)
+        folds = fit825._cv_folds(group_ids, n_folds, seed)
+        pred_full = np.zeros((n, Y_layers.shape[2]), dtype=np.float32)
+        ss_res, ss_tot = 0.0, 0.0
+        for k in range(n_folds):
+            te = folds == k
+            tr = ~te
+            if te.sum() == 0 or tr.sum() < 3:
+                continue
+            cache = fit825._prep_fold(Xp[tr], Xp[te])
+            pred = fit825._ridge_predict_cached(cache, Y[tr])
+            fitted[te] = True
+            pred_full[te] = pred.astype(np.float32)
+            true = Y[te].astype(np.float64)
+            mu = true.mean(0)
+            ss_res += float(np.sum((true - pred) ** 2))
+            ss_tot += float(np.sum((true - mu) ** 2))
+        out_r2[str(int(li))] = float("nan") if ss_tot < 1e-12 else 1.0 - ss_res / ss_tot
+        preds[int(li)] = pred_full
+    return {"r2": out_r2, "preds": preds, "fitted_mask": fitted}
+
+
+def rotated_ci_block(cell_id: str, xy: dict, rp: dict, hl: int, fl: list[int], args) -> dict:
+    """#825 rotated-CI extension: group-bootstrap CI over the ROTATED
+    estimator's held-out predictions at the frozen layers + the per-group
+    rotated R^2 at the headline layer. The bootstrap is the existing batched
+    per-group-reduction GEMM — ZERO refits per draw; the only new fits are the
+    rotated ridge fits at the non-headline frozen layers."""
+    X, Y, groups = xy["X"], xy["Y"], xy["group_ids"]
+    order = [hl] + [li for li in fl if li != hl]
+    rc = rotated_control_preds(X, Y, groups, layers=order, n_folds=args.folds, seed=args.seed)
+    # Parity assert: the headline-layer rotated R^2 must reproduce the
+    # payload's random_projection_control_r2 value (same rng position, same
+    # fitting path) — a drift here means this reimplementation diverged.
+    got, ref = rc["r2"].get(str(hl)), rp.get(str(hl))
+    if got is not None and ref is not None and not (np.isnan(got) and np.isnan(ref)):
+        assert abs(got - ref) <= 1e-8, (cell_id, "rotated parity drift", got, ref)
+    fitted = rc["fitted_mask"]
+    boot, pergroup = {}, {}
+    for li in fl:
+        if li not in rc["preds"]:
+            continue
+        pred = rc["preds"][li][fitted]
+        true = Y[fitted, li, :].astype(np.float64)
+        gsub = np.asarray(groups)[fitted]
+        gb = group_bootstrap_r2(pred, true, gsub, n_boot=args.n_boot, seed=args.seed + 500 + li)
+        boot[str(li)] = {k: gb[k] for k in ("r2", "ci_lo", "ci_hi", "n_groups", "n_boot")}
+        if li == hl:
+            pergroup = per_group_r2(pred, true, gsub)
+    return {
+        "rotated_r2_frozen": rc["r2"],
+        "rotated_bootstrap_group_frozen": boot,
+        "per_group_rotated_r2_headline": pergroup,
+    }
+
+
 def per_group_r2(pred: np.ndarray, true: np.ndarray, group_ids: np.ndarray) -> dict:
     """Held-out pooled R^2 per group (the low-level per-unit read for figures)."""
     out = {}
@@ -417,6 +513,11 @@ def fit_cell(cell_id: str, xy: dict, args) -> dict:
         )
         if li == hl:
             pergroup = per_group_r2(pred, true, gsub)
+    rotated_extra = (
+        rotated_ci_block(cell_id, xy, rp, hl, fl, args)
+        if getattr(args, "rotated_ci", False)
+        else {}
+    )
     payload = {
         "metadata": common.metadata(SCRIPT, args.seed, n),
         "cell_id": cell_id,
@@ -437,6 +538,9 @@ def fit_cell(cell_id: str, xy: dict, args) -> dict:
         "per_group_r2_headline": pergroup,
         "n_folds": args.folds,
         "null_draws": args.null_draws,
+        # #825 rotated-CI extension keys (flag-gated; absent by default so the
+        # committed #931 payload stays byte-identical without --rotated-ci).
+        **rotated_extra,
     }
     common.write_json(args.out_dir / f"cells_{cell_id}.json", payload)
     common.write_json(
