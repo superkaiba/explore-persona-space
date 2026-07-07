@@ -1843,6 +1843,69 @@ def _posted_sentinel_fps(issue: int) -> dict[str, dict[str, Any]]:
         return {}
 
 
+_RESULTS_REWRITE_KIND = "epm:results"
+# "phase" keeps the #641 non-blocking phase-progress shape (gate="phase",
+# blocks_pipeline: False) excluded by NAME.
+_SMOKE_GATE_NAMES = frozenset({"smoke", "dryrun", "dry-run", "dry_run", "phase"})
+
+
+def _results_rewrite_exclusion_legs(remote_path: str, data: dict[str, Any]) -> dict[str, bool]:
+    """Per-leg smoke/informational signals for the #1095 rewrite exclusion.
+
+    Exposed as a dict so tests can assert EXACTLY which leg is active
+    (the exclusion-leg test-construction discipline) without re-implementing
+    leg logic. A bare ``blocks_pipeline: False`` is deliberately NOT a leg:
+    real terminal epm:results writers set it to keep a non-empty gate from
+    parking the poll loop (issue664/734/654/597) — it does not discriminate
+    smoke from real. The drain never descends into ``note`` (it may be a
+    JSON string, not a dict): a smoke flag nested in note (issue597) is the
+    documented residual — smoke runs should write kind ``epm:smoke-result``
+    (`.claude/rules/pod-side-reporting.md`).
+    """
+    basename = remote_path.rsplit("/", 1)[-1]
+    return {
+        "gate_name": str(data.get("gate") or "").strip().lower() in _SMOKE_GATE_NAMES,
+        "smoke_field": bool(data.get("smoke")),  # issue667-style top-level smoke flag
+        "smoke_filename": basename.endswith("-smoke-results.json") or "-smoke-" in basename,
+    }
+
+
+def _results_version_rewrite_excluded(remote_path: str, data: dict[str, Any]) -> bool:
+    """True when a real epm:results sentinel must KEEP its declared version.
+
+    Smoke / dry-run / phase-progress sentinels must never bump real
+    ``epm:results`` marker versions (#1095): a rewrite would land them ABOVE
+    the production results rows, making a smoke row the
+    highest-version-authoritative marker on resume (markers.md). Any leg
+    suffices; over-exclusion is safe (it preserves verbatim threading).
+    """
+    return any(_results_rewrite_exclusion_legs(remote_path, data).values())
+
+
+def _existing_max_version(issue: int, kind: str) -> int | None:
+    """Max events.jsonl ``version`` for ``kind`` (0 when none); ``None`` on a
+    failed read — the caller FAILS OPEN to verbatim threading (#1095),
+    mirroring ``_posted_sentinel_fps``'s fail-open contract."""
+    try:
+        events = list_events(issue)
+    except Exception as exc:
+        log.error(
+            "version-collision events read failed for #%d (%s); keeping the "
+            "sentinel's declared version verbatim (fail-open, #1095)",
+            issue,
+            exc,
+        )
+        return None
+    return max(
+        (
+            e["version"]
+            for e in events
+            if e.get("kind") == kind and isinstance(e.get("version"), int)
+        ),
+        default=0,
+    )
+
+
 def _persist_oversize_note(
     *,
     issue: int,
@@ -1852,6 +1915,7 @@ def _persist_oversize_note(
     by: str,
     full_note: str,
     original_extras: dict[str, Any] | None = None,
+    declared_version: int | None = None,
     sentinel_fp: str,
     sentinel_path: str,
 ) -> bool:
@@ -1890,7 +1954,11 @@ def _persist_oversize_note(
     Returns ``False`` (and logs) on any failure — caller must NOT rename
     the sentinel in that case so a future tick can retry. Carries through
     the original sentinel's ``gate`` / ``blocks_pipeline`` semantics by
-    asking the caller to forward those via ``original_extras``.
+    asking the caller to forward those via ``original_extras``. When the
+    caller's #1095 version rewrite fired (``version=None`` on a REAL
+    ``epm:results`` sentinel), it forwards the declared version via
+    ``declared_version`` so the pointer marker keeps the
+    ``sentinel_declared_version`` audit extra too.
     """
     try:
         task_dir = find_task_path(issue)
@@ -1958,6 +2026,9 @@ def _persist_oversize_note(
         pointer_note = pointer_note[:EVENT_NOTE_MAX]
 
     extras: dict[str, Any] = {"oversize": True, "oversize_orig_len": len(full_note)}
+    if declared_version is not None:
+        # #1095: keep the version-rewrite audit trail on the pointer marker.
+        extras["sentinel_declared_version"] = declared_version
     if original_extras:
         # Forward operationally-meaningful sentinel fields (notably ``gate``
         # and ``blocks_pipeline``) so the pointer marker preserves the
@@ -2063,17 +2134,53 @@ def _post_drained_sentinel(
     un-renamed and continues; the next tick retries. A non-conforming real
     sentinel carrying ``"version": null`` keeps its loud ``int(None)``
     TypeError (#975) — it propagates out of the drain, never silently
-    derived.
+    derived. A REAL ``epm:results`` sentinel whose declared version
+    collides at-or-below the existing max for the kind is re-derived as
+    max+1 at post time, with the declared version preserved as the
+    ``sentinel_declared_version`` marker extra (#1095) — smoke/dryrun/
+    phase-progress sentinels and every other kind post verbatim.
     """
     kind = data["kind"]
+    rewrite_extras: dict[str, Any] = {}
     if "version" in data:
         # Real pod-side sentinel: "version" is a REQUIRED envelope key
-        # (_SENTINEL_REQUIRED_KEYS / pod-side-reporting.md) and an
-        # explicit version always wins in post_event — verbatim contract.
-        # Branch on key PRESENCE, not None-tolerance: a (non-conforming)
-        # real sentinel carrying "version": null keeps today's loud
-        # int(None) TypeError instead of silently deriving (#975).
+        # (_SENTINEL_REQUIRED_KEYS / pod-side-reporting.md). int() runs
+        # FIRST so a non-conforming "version": null keeps today's loud
+        # TypeError (#975) — never silently derived, for ANY kind.
         version: int | None = int(data["version"])
+        # #1095: pod-side dispatchers hardcode version 1 (they cannot read
+        # events.jsonl — the no-pod-side-task.py rule), so on multi-round
+        # tasks a REAL epm:results sentinel lands BELOW the existing max,
+        # silently violating the highest-version-per-kind resume convention
+        # (markers.md; the #480 collision class; #825 landed three v1 rows
+        # under an existing v2). On an at-or-below-max collision, derive
+        # max+1 at post (version=None -> post_event derives under flock)
+        # and preserve the declared version as a forensic extra. A declared
+        # version ABOVE max is legitimate threading — verbatim. Smoke /
+        # dryrun / phase-progress sentinels are excluded (gate NAME, a
+        # truthy top-level smoke field, or the smoke filename — NOT a bare
+        # blocks_pipeline: False, which real terminal writers set): they
+        # must never land above the production results rows. Any other
+        # kind: verbatim (explicit always wins in post_event — unchanged
+        # contract).
+        if kind == _RESULTS_REWRITE_KIND and not _results_version_rewrite_excluded(
+            remote_path, data
+        ):
+            existing_max = _existing_max_version(issue, kind)
+            if existing_max is not None and version <= existing_max:
+                log.warning(
+                    "real %s sentinel %s (ts=%s) declared version %d <= existing "
+                    "max %d; deriving max+1 at post (multi-round collision, "
+                    "#1095); declared version preserved as "
+                    "sentinel_declared_version",
+                    kind,
+                    remote_path,
+                    data.get("ts"),
+                    version,
+                    existing_max,
+                )
+                rewrite_extras["sentinel_declared_version"] = version
+                version = None
     else:
         # Only reachable via the #899 synthesized envelope, which omits
         # the key (#975): post_event derives max(existing for kind)+1 so
@@ -2090,6 +2197,11 @@ def _post_drained_sentinel(
         note = json.dumps(note, ensure_ascii=False)
     by = data.get("by") or "pod-sentinel"
     try:
+        # Structural note: this post threads NO ``part`` field, so multi-part
+        # markers (the markers.md multi-part convention, where every part
+        # shares one explicit version) are impossible on the sentinel-drain
+        # channel by construction — the #1095 rewrite can never split a
+        # multi-part set across versions here.
         post_event(
             issue,
             kind,
@@ -2098,6 +2210,7 @@ def _post_drained_sentinel(
             note=note,
             sentinel_fp=fp,
             sentinel_path=remote_path,
+            **rewrite_extras,
         )
     except ValueError as exc:
         # Oversize-note guard: match the EXACT message ``post_event``
@@ -2121,6 +2234,7 @@ def _post_drained_sentinel(
             by=by,
             full_note=note,
             original_extras=data,
+            declared_version=rewrite_extras.get("sentinel_declared_version"),
             sentinel_fp=fp,
             sentinel_path=remote_path,
         ):
@@ -2192,6 +2306,12 @@ def drain_sentinels_via(
     yields an empty drain (``(0, None)``) with a loud log — mirroring the
     documented rc!=0 -> ``[]`` transport contract; any OTHER exception
     still escapes (fail-fast for genuine code bugs).
+
+    Version hygiene (#1095): a REAL ``epm:results`` sentinel (not smoke/
+    dryrun/phase-progress) whose declared version collides at-or-below the
+    existing max for the kind lands at a derived max+1 with the declared
+    version preserved as ``sentinel_declared_version`` — see
+    :func:`_post_drained_sentinel`; all other kinds post verbatim.
 
     Exception: an oversize-``note`` ``ValueError`` from ``post_event`` (note
     exceeds ``EVENT_NOTE_MAX``) is NOT a retryable failure — re-posting the
