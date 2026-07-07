@@ -8564,11 +8564,13 @@ def _followup_run_marker_rounds(issue: int) -> int:
         if ev.get("kind") != FOLLOWUP_RUN_KIND:
             continue
         note = ev.get("note") or ""
-        # `parse_followup_note_field` matches only LINE-LEADING fields, but
-        # the corpus run-marker notes are SINGLE-LINE (all fields space-
-        # separated; #763's `outcome:` is mid-line and parses to None).
-        # Mid-line regex fallback so a single-line retro-close marker
-        # cannot evade the exclusion.
+        # `parse_followup_note_field` parses `; `-joined mid-line fields
+        # directly as of #1111, but the SPACE-separated single-line form
+        # (`... round: 1 outcome: X` — #763's `outcome:` is mid-line with
+        # space separation, which the semicolon split deliberately does
+        # not cover) still parses None. Mid-line regex fallback RETAINED
+        # so a space-separated single-line retro-close marker cannot
+        # evade the exclusion.
         outcome = parse_followup_note_field(note, "outcome") or ""
         if not outcome:
             m = re.search(r"(?:^|\s)outcome:\s*(\S+)", note)
