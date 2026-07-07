@@ -127,14 +127,17 @@ The interpretation-critic checks for the H3's presence and substance as
 part of its normal review (no separate marker, no separate skill-step
 gate, no `status:blocked` path).
 
-#### Content hygiene for harmful-content corpora (EM, refusal, harmful-advice)
+#### Content hygiene for harmful-content corpora (EM, refusal, harmful-advice) + real-world-corpus rollout text (LMSYS/WildChat-class)
 
 When the run's raw completions come from a harmful-content corpus
 (Betley-style EM, bad-medical-advice, refusal-bait pools), OR the run's
 probe set comes from a harmful safety-benchmark question bank
 (`src/explore_persona_space/artifacts/query_banks/*.json` — advbench,
-strongreject, Betley-lineage, sensitive-info banks; incident #866),
-verbatim rows
+strongreject, Betley-lineage, sensitive-info banks; incident #866), OR
+the run's corpus is real-world user text (LMSYS/WildChat-class —
+unscreened real user text routinely carries in-corpus jailbreak/explicit
+rows; #1073: an analyzer refusal-killed twice paging raw LMSYS rollout
+text), verbatim rows
 in your context can trigger terminal API usage-policy refusals that kill
 your final turn and make the transcript unresumable (incident: task
 #537, 2026-06-10). For those rows, the spot check above AND the Step 3.6
@@ -149,10 +152,14 @@ sample selection run in sanitized mode:
   the permanent raw link verbatim — that is what carries the evidence.
 - Label each such block "sanitized for context hygiene" so the critics
   know the truncation is deliberate, not evidence-hiding. Benign corpora
-  (marker, fact, sycophancy, WildChat, personas) and benign banks
+  (marker, fact, sycophancy, personas) and benign banks
   (`arc_c_v1`, `fact_questions_v1`, `marker_eval_v1`,
-  `sycophancy_claims_v1`, `wildchat_random_v1`) keep the standard
-  verbatim treatment; when unsure whether a bank is harmful, sanitize.
+  `sycophancy_claims_v1`, and `wildchat_random_v1` — benign ONLY because
+  its builder screens on WildChat's toxic/redacted flags,
+  `issue617_build_wildchat_slice.py` → `_wildchat_eligible`; an
+  UNSCREENED real-world-corpus slice is never benign-classed) keep the
+  standard verbatim treatment; when unsure whether a bank is harmful —
+  or whether a real-world slice was moderation-screened — sanitize.
 
 ## Step 1.6: Planned-control-arm presence gate (run BEFORE interpreting / plotting / authoring)
 
@@ -409,7 +416,7 @@ If the eval is binary (e.g., refusal: yes/no) and the non-firing pool is the 0% 
 
 **Verbatim-text fidelity rule (HARD — the sibling of numeric fidelity): every persona name, system prompt, user turn, claim, training row, and model completion you quote in a sample / example block MUST be copied verbatim from the real artifact in the same turn you write it — never reconstructed from memory, paraphrased, or invented.** This applies in BOTH markdown and paper mode. Specifically: (a) **show the FULL system prompt word-for-word** — open the persona definition (`data/canonical_persona_pool/pool_v1.json` or the experiment's persona dict under `src/explore_persona_space/experiments/`) or the chat-templated row and copy the exact string; never a prose summary (`system = "you are a doctor"`) and never truncate the system / user turn with `...`; (b) **a persona named in an example must exist** in the persona pool / the experiment's realized set — verify before writing it; (c) **the completion / row must be findable** in the cited artifact (verbatim or a faithful sanitized excerpt). Motivating incident #657: the paper showed a "young child who is curious about the world and asks lots of questions" persona that does not exist in the data (fabricated name + paraphrased prompt) — the real personas are short one-liners (`"You are a stand-up comedian who writes and performs comedy routines."`). The interpretation-critic now opens each example's cited artifact to confirm it is real (paper-mode Lens 7); a fabricated or paraphrased example is a hard FAIL, not a soft REVISE. Re-extract the text at write time, exactly like numbers.
 
-**Content firewall — DEFAULT ON for every task in this project's safety-research vocabulary class (EM evals, jailbreak data, misaligned completions, AND marker / trigger / implant / backdoor corpora): never page raw-completion files into your context.** Two analyzer attempts on #521 (2026-06-09) were killed mid-run by spurious API usage-policy refusals after ingesting raw EM text; on 2026-06-10 analyzers on #543, #558, #562, #563, and #464 were killed the same way over corpora that did NOT look harmful (key-string-prefixed military-topic Q&A, trigger-keyed-rule framings) — the refusal class keys on the project's vocabulary, not on actual harmfulness, so 'this corpus is benign' is NOT a reason to skip the firewall. When in doubt, firewall. Read aggregate JSONs and judge labels only; select your cherry-picked examples by grepping judge labels + line offsets and quote the minimal verbatim span the body needs. Additionally, checkpoint your fact-sheet to `.claude/cache/` every ~15-20 tool calls — a mid-stream refusal kill then loses minutes, not the whole pass (one #557 analyzer died 82 tool calls in with zero durable writes).
+**Content firewall — DEFAULT ON for every task in this project's safety-research vocabulary class (EM evals, jailbreak data, misaligned completions, marker / trigger / implant / backdoor corpora — AND real-world-corpus rollout text, LMSYS/WildChat-class): never page raw-completion files into your context.** Two analyzer attempts on #521 (2026-06-09) were killed mid-run by spurious API usage-policy refusals after ingesting raw EM text; on 2026-06-10 analyzers on #543, #558, #562, #563, and #464 were killed the same way over corpora that did NOT look harmful (key-string-prefixed military-topic Q&A, trigger-keyed-rule framings) — the refusal class keys on the project's vocabulary, not on actual harmfulness, so 'this corpus is benign' is NOT a reason to skip the firewall. On 2026-07-06 a #1073 analyzer was killed twice over raw LMSYS rollout text — real-world corpora carry in-corpus jailbreak/explicit rows, so "this is just real user data" is NOT a reason to skip the firewall either. When in doubt, firewall. Read aggregate JSONs and judge labels only; select your cherry-picked examples by grepping judge labels + line offsets and quote the minimal verbatim span the body needs. Additionally, checkpoint your fact-sheet to `.claude/cache/` every ~15-20 tool calls — a mid-stream refusal kill then loses minutes, not the whole pass (one #557 analyzer died 82 tool calls in with zero durable writes).
 
 ## Step 4: Write the clean-result body
 
@@ -432,7 +439,7 @@ Write first to a local file `.claude/cache/experiment-<N>-clean-result.md` (thro
    - **`**Training:**`** — the complete recipe + the **COMPLETE hyperparameter table** (EVERY training + eval + generation hyperparameter, each value with a **Source** column). **COPY every numeric hyperparameter from ground truth — the committed training script (the `**Code:**` SHA in the footer), `run_result.json`, or the approved plan §11. NEVER type a hyperparameter from memory.** Open the training script at the Code SHA and read off `--lr` / `--epochs` / `--rank` verbatim. The lr is reconciled against the plan by `verify_task_body.py` check 16 (FAIL blocks promotion). Incident: task #489 shipped `lr = 1e-4` (typed-from-memory default) while the run used `lr = 2e-6` — a 50x misprint. **Analysis-only / no-training tasks:** write the Training slot as `**N/A — no model training.**` and put the analysis-design constants in `**Evaluation:**`.
    - **`**Evaluation:**`** — DV definition (construct + metric + on/off-policy choice), computed metrics, judge model + rubric, probe set (identity / WHY chosen / preprocessing). When ≥3 distinct probe framings exist, enumerate them (name / example probe verbatim / PASS-FAIL criterion).
    - **`**Data extraction:**`** — how the training/eval data was built/extracted: source + realism tier, construction recipe, N rows, composition/ratio (positives:negatives ratio, persona panel, row counts per type), completion provenance (on-policy tier / canned / published-corpus-verbatim per `.claude/rules/on-policy-completions.md` + `.claude/rules/contrastive-negatives.md`).
-   - **`**Sample training/evaluation data + completions:**`** — verbatim worked examples: a sample of training rows (pull from the training JSONL), a sample of eval probes (pull from the eval JSON), and one end-to-end completion per load-bearing condition (pull from `raw_completions/`). EACH example block (fenced OR `<details>`) is immediately preceded by a **subset-disclosure line** (`K of M rows, random sample` / `cherry-picked for illustration` / `first N of M` / the harmful-content sanitized form) AND paired with a **pinned link to the complete artifact** (HF Hub `/tree/<sha>` for training rows / raw completions / probe banks; GitHub `/blob/<sha>` for committed eval JSONs). The raw-completions-link rule (verifier check 11) scopes to this slot's completion blocks. **Harmful-content corpora (Betley-style EM, bad-medical-advice, refusal-bait pools):** ship example blocks SANITIZED per § Content hygiene — labeled "sanitized for context hygiene", a ~15-word excerpt + a `[truncated — harmful-content row; verify at <raw-completions path>, row <i>]` placeholder, with the subset-disclosure line, row indices, and permanent links kept verbatim. Pull rows by grep + line offset; never page whole raw harmful-completion files into context.
+   - **`**Sample training/evaluation data + completions:**`** — verbatim worked examples: a sample of training rows (pull from the training JSONL), a sample of eval probes (pull from the eval JSON), and one end-to-end completion per load-bearing condition (pull from `raw_completions/`). EACH example block (fenced OR `<details>`) is immediately preceded by a **subset-disclosure line** (`K of M rows, random sample` / `cherry-picked for illustration` / `first N of M` / the harmful-content sanitized form) AND paired with a **pinned link to the complete artifact** (HF Hub `/tree/<sha>` for training rows / raw completions / probe banks; GitHub `/blob/<sha>` for committed eval JSONs). The raw-completions-link rule (verifier check 11) scopes to this slot's completion blocks. **Harmful-content corpora (Betley-style EM, bad-medical-advice, refusal-bait pools) AND real-world-corpus rollout text (LMSYS/WildChat-class; #1073):** ship example blocks SANITIZED per § Content hygiene — labeled "sanitized for context hygiene", a ~15-word excerpt + a `[truncated — harmful-content row; verify at <raw-completions path>, row <i>]` placeholder, with the subset-disclosure line, row indices, and permanent links kept verbatim. Pull rows by grep + line offset; never page whole raw harmful-completion files into context.
 
    **Per-condition quantitative numbers live in PLOTS (in `## Results`), not as a body table** — never duplicate a per-condition rate / log-prob / mean as a markdown table when the figure already carries the numbers. (The complete hyperparameter table is the exception — it belongs here.)
 4. **`## Results`** — one `### <result>` H3 per result. Each `### <result>` heading STATES THE RESULT WITH THE NUMBER (a claim, NOT a deliverable label — see voice rules below). Inside each `### <result>`, the STRICT three-beat:
