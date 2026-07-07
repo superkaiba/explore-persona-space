@@ -746,8 +746,8 @@
     "1095": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/reviewing/1095",
-      "status": "reviewing",
+      "path": "tasks/completed/1095",
+      "status": "completed",
       "title": "workflow-fix: pod-side results-sentinel version lands below max on multi-round tasks"
     },
     "1096": {
