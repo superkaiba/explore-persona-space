@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1105,
+  "highest_id": 1106,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -585,7 +585,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1074",
       "status": "followups_running",
-      "title": "Stage-split generators (abliterated positives, base-Qwen negatives) yield the first trainable harmful-compliance cell, but it installs at 0.26 \u2014 far below the 0.60\u20130.85 band (MODERATE confidence)"
+      "title": "Stage-split generators (abliterated positives, base-Qwen negatives) yield the first trainable harmful-compliance cell, but its install plateaus near 0.40 \u2014 below the 0.60\u20130.85 band even at triple dose (MODERATE confidence)"
     },
     "1075": {
       "has_clean_result": false,
@@ -826,6 +826,13 @@
       "path": "tasks/proposed/1105",
       "status": "proposed",
       "title": "daily-fix: pin Step 10d guard-block recovery-contract phrase"
+    },
+    "1106": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1106",
+      "status": "proposed",
+      "title": "workflow-fix: model-switch rung in the spurious-refusal recovery ladder"
     },
     "111": {
       "has_clean_result": true,
