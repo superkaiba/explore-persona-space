@@ -802,8 +802,8 @@
     "1102": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1102",
-      "status": "planning",
+      "path": "tasks/approved/1102",
+      "status": "approved",
       "title": "daily-fix: digest-only raw-read rule must name real-world-co"
     },
     "1103": {
