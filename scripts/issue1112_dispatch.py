@@ -91,7 +91,22 @@ from explore_persona_space.orchestrate import hub  # noqa: E402
 
 logger = logging.getLogger("issue1112")
 
+# Captured at IMPORT time, BEFORE any in-process train_lora call can clobber
+# the dispatcher's env: train/sft.py sets CUDA_VISIBLE_DEVICES=str(cfg.gpu_id)
+# in-process (the gotchas.md +gpu_id clobber). Round-4 crash (pod-1112): s2's
+# in-process LoRA train pinned the dispatcher env to GPU 0, so s3's _ft_cmd
+# read 1 visible GPU and composed `--num_processes 1` against the 4-GPU ZeRO-3
+# config (zero sharding -> whole-7B params+grads+Adam on GPU 0, OOM), and the
+# accelerate subprocess ALSO inherited CVD=0.
+_INITIAL_CVD = os.environ.get("CUDA_VISIBLE_DEVICES")
+
 ACCEL_CONFIG = "configs/accelerate/zero3_4gpu_accum1.yaml"  # behavior FT: eff-batch 16
+# ZeRO-3 world size for EVERY full-FT launch (s3/s4/s6 behavior FT + m2 marker
+# FT + the g1 extension). Pinned to both accelerate configs' `num_processes: 4`
+# (tests/test_issue1112_launch_configs.py) — the effective batch is a science
+# variable (per-device x world x accum), so full mode NEVER derives a smaller
+# world size from the (clobbable) visible-GPU count; it fails loud instead.
+FT_NUM_PROCESSES = 4
 # The marker trainer pins grad-accum 16 (#514 eff-batch-64 recipe); DeepSpeed's
 # explicit gradient_accumulation_steps must MATCH TrainingArguments (fill_match
 # raises otherwise) — hence a dedicated accum-16 config (round-2 Critical 4).
@@ -165,13 +180,37 @@ def _phase(name: str) -> None:
     i1090._phase(name)
 
 
-def _n_gpus() -> int:
-    import torch
+def _physical_gpu_ids() -> list[str]:
+    """Physical GPU ids for subprocess CVD pins — clobber-immune.
 
-    n = torch.cuda.device_count()
-    if n == 0:
+    Honors a LAUNCHER-set CUDA_VISIBLE_DEVICES (captured at import as
+    _INITIAL_CVD — a deliberate external restriction, e.g. a fanout unit);
+    otherwise enumerates via nvidia-smi in a SUBPROCESS, immune to both the
+    in-process train_lora CVD clobber and torch's cached device count (the
+    round-4 crash class). Raises RuntimeError when no GPU is available.
+    """
+    if _INITIAL_CVD is not None and _INITIAL_CVD.strip():
+        return [t.strip() for t in _INITIAL_CVD.split(",") if t.strip()]
+    try:
+        proc = subprocess.run(
+            ["nvidia-smi", "--query-gpu=index", "--format=csv,noheader"],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+    except (FileNotFoundError, subprocess.CalledProcessError) as e:
+        raise RuntimeError("no CUDA devices visible — the #1112 GPU phases need >=1 GPU") from e
+    ids = [ln.strip() for ln in proc.stdout.split("\n") if ln.strip()]
+    if not ids:
         raise RuntimeError("no CUDA devices visible — the #1112 GPU phases need >=1 GPU")
-    return n
+    return ids
+
+
+def _n_gpus() -> int:
+    """Visible-GPU count from _physical_gpu_ids (NEVER torch.cuda.device_count:
+    after an in-process train_lora call the dispatcher env carries CVD=0 and
+    torch reads 1, silently degrading fanout width and FT world size)."""
+    return len(_physical_gpu_ids())
 
 
 # ── p0: stage inputs (pinned) ────────────────────────────────────────────────
@@ -376,6 +415,69 @@ def _train_lora_cell(cfg: Cfg, cell: str, train_cfg) -> dict:
     return {"adapter_root": str(adapter_dir), "training_loss": float(loss)}
 
 
+def _ft_num_processes(cfg: Cfg) -> int:
+    """ZeRO-3 world size for a full-FT `accelerate launch` — gated on MODE.
+
+    FULL mode: always FT_NUM_PROCESSES (4) — the whole-pod ZeRO-3 job pinned
+    to the accelerate configs' num_processes (eff-batch contract); fails loud
+    when fewer physical GPUs exist rather than composing an unsharded launch
+    (`--num_processes 1` puts the whole 7B params+grads+Adam on one GPU — the
+    round-4 OOM). SMOKE mode: 1 — the tiny-real smoke FT is single-process by
+    design and must keep running on 1-GPU smoke instances (the proven GCE
+    a2-ultragpu-1g smoke shape).
+    """
+    if cfg.smoke:
+        return 1
+    n_phys = len(_physical_gpu_ids())
+    if n_phys < FT_NUM_PROCESSES:
+        raise RuntimeError(
+            f"full-FT needs {FT_NUM_PROCESSES} GPUs (ZeRO-3 world size / eff-batch "
+            f"contract) but only {n_phys} physical GPUs are visible"
+        )
+    return FT_NUM_PROCESSES
+
+
+def _ft_env(cfg: Cfg) -> dict[str, str]:
+    """Env for a full-FT accelerate subprocess: EXPLICIT CVD over the physical
+    GPUs. The dispatcher's own env may carry the in-process train_lora clobber
+    (CUDA_VISIBLE_DEVICES=0 after any LoRA cell) — inherited, it re-creates the
+    single-GPU OOM even at --num_processes 4."""
+    ids = _physical_gpu_ids()
+    n = _ft_num_processes(cfg)
+    return {**os.environ, "CUDA_VISIBLE_DEVICES": ",".join(ids[:n])}
+
+
+def _run_ft_subprocess(cfg: Cfg, cmd: list[str], log_path: Path) -> None:
+    """Run a full-FT accelerate launch as a WHOLE-POD width-4 job.
+
+    Call sites (phase_train s3/s4 + m2, phase_g1_gate extension, phase_generic
+    s6) invoke this BLOCKING and SEQUENTIALLY from the main phase chain — a
+    full-FT unit occupies every GPU, so it must never route through the 1-GPU
+    _fanout_units pool. The [ft-launch] line is the fix-engaged signal."""
+    env = _ft_env(cfg)
+    npr = cmd[cmd.index("--num_processes") + 1]
+    logger.info(
+        "[ft-launch] num_processes=%s CUDA_VISIBLE_DEVICES=%s cmd=%s",
+        npr,
+        env["CUDA_VISIBLE_DEVICES"],
+        " ".join(cmd[:10]) + " ...",
+    )
+    _run_subprocess(cmd, log_path, env=env)
+
+
+def _fresh_ft_out_dir(out_dir: Path) -> None:
+    """Clear a stale PARTIAL full-FT output dir before a fresh launch.
+
+    Reached only when the phase's done-sentinel (build_result.json / the g1
+    ext config.json) is ABSENT, so anything under out_dir is incomplete by
+    construction — the trainer never resumes (save_only_model=True), and a
+    crashed run's partial checkpoint-* dirs would otherwise be enumerated by
+    _enumerate_rungs as real rungs (round-4 stale-artifact disposition: wipe)."""
+    if out_dir.exists():
+        logger.warning("[ft-launch] clearing stale partial FT out_dir %s", out_dir)
+        shutil.rmtree(out_dir)
+
+
 def _ft_cmd(
     cfg: Cfg, cell: str, *, out_dir: Path, max_steps: int, ckpt_steps: Sequence[int]
 ) -> list[str]:
@@ -387,7 +489,7 @@ def _ft_cmd(
         "--config_file",
         ACCEL_CONFIG,
         "--num_processes",
-        str(min(4, _n_gpus())),
+        str(_ft_num_processes(cfg)),
         FT_TRAINER,
         "--behavior",
         C.SYCO_BEHAVIOR,
@@ -422,11 +524,43 @@ def _ft_cmd(
     ]
 
 
-def _run_subprocess(cmd: list[str], log_path: Path) -> None:
+def _marker_ft_cmd(cfg: Cfg, cell: str, *, out_dir: Path, grid: Sequence[int]) -> list[str]:
+    """m2 marker full-FT launch (accum-16 config — matches the trainer,
+    round-2 Critical 4). Same whole-pod ZeRO-3 width contract as _ft_cmd."""
+    return [
+        "uv",
+        "run",
+        "accelerate",
+        "launch",
+        "--config_file",
+        MARKER_ACCEL_CONFIG,
+        "--num_processes",
+        str(_ft_num_processes(cfg)),
+        MARKER_FT_TRAINER,
+        "--train-jsonl",
+        str(_mix_path(cfg, cell)),
+        "--output-dir",
+        str(out_dir),
+        "--ckpt-steps",
+        ",".join(str(s) for s in grid),
+        "--max-steps",
+        str(max(grid)),
+        "--seed",
+        str(cfg.seed),
+        "--run-name",
+        C.cell_run_name(cell),
+    ]
+
+
+def _run_subprocess(cmd: list[str], log_path: Path, env: dict[str, str] | None = None) -> None:
+    """Blocking subprocess with explicit env (default: a copy of os.environ;
+    FT launches pass _ft_env to reset the in-process CVD clobber)."""
     log_path.parent.mkdir(parents=True, exist_ok=True)
     logger.info("[subprocess] %s (log %s)", " ".join(cmd[:8]) + " ...", log_path)
     with open(log_path, "a") as f:
-        proc = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, env={**os.environ})
+        proc = subprocess.run(
+            cmd, stdout=f, stderr=subprocess.STDOUT, env={**os.environ} if env is None else env
+        )
     if proc.returncode != 0:
         raise RuntimeError(f"subprocess rc={proc.returncode}: {' '.join(cmd)} (log {log_path})")
 
@@ -452,7 +586,9 @@ def phase_train(cfg: Cfg) -> dict:
             out_dir = cell_root / "train"
             max_steps = 2 if cfg.smoke else C.SYCO_STEP_CEILING
             ckpts = (2,) if cfg.smoke else C.FT_CKPT_STEPS
-            _run_subprocess(
+            _fresh_ft_out_dir(out_dir)
+            _run_ft_subprocess(
+                cfg,
                 _ft_cmd(cfg, cell, out_dir=out_dir, max_steps=max_steps, ckpt_steps=ckpts),
                 cell_root / "train.log",
             )
@@ -460,30 +596,10 @@ def phase_train(cfg: Cfg) -> dict:
         elif cell == "m2_fullft_band8":
             out_dir = cell_root / "train"
             grid = (2,) if cfg.smoke else C.MARKER_FT_GRID
-            cmd = [
-                "uv",
-                "run",
-                "accelerate",
-                "launch",
-                "--config_file",
-                MARKER_ACCEL_CONFIG,  # accum 16 — matches the trainer (Critical 4)
-                "--num_processes",
-                str(min(4, _n_gpus())),
-                MARKER_FT_TRAINER,
-                "--train-jsonl",
-                str(_mix_path(cfg, cell)),
-                "--output-dir",
-                str(out_dir),
-                "--ckpt-steps",
-                ",".join(str(s) for s in grid),
-                "--max-steps",
-                str(max(grid)),
-                "--seed",
-                str(cfg.seed),
-                "--run-name",
-                C.cell_run_name(cell),
-            ]
-            _run_subprocess(cmd, cell_root / "train.log")
+            _fresh_ft_out_dir(out_dir)
+            _run_ft_subprocess(
+                cfg, _marker_ft_cmd(cfg, cell, out_dir=out_dir, grid=grid), cell_root / "train.log"
+            )
             rec = {"adapter_root": str(out_dir)}
         else:
             raise ValueError(f"unroutable cell {cell}")
@@ -570,11 +686,15 @@ def run_ladder_unit(cfg: Cfg, cell: str) -> dict[int, float]:
 def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
     """Work-conserving CVD-pinned subprocess pool over self-invocation units.
 
-    Wave size derives from torch.cuda.device_count() (never hardcoded); each
-    unit's launcher env pins CUDA_VISIBLE_DEVICES=<g> AND passes --gpu-id <g>
+    Wave size derives from the PHYSICAL GPU list (never hardcoded, never the
+    clobbable torch.cuda.device_count — after an in-process train_lora cell the
+    dispatcher env carries CVD=0 and torch reads 1); each unit's launcher env
+    pins CUDA_VISIBLE_DEVICES=<physical id> AND passes the matching --gpu-id
     (the gotchas.md launcher-pin rule — the in-process clobber alone is
-    defeated by import-time cuInit)."""
-    n = _n_gpus()
+    defeated by import-time cuInit). 1-GPU units ONLY: full-FT jobs are
+    whole-pod width-4 and go through _run_ft_subprocess, never this pool."""
+    ids = _physical_gpu_ids()
+    n = len(ids)
     pending = list(units)
     running: dict[int, tuple[subprocess.Popen, list[str]]] = {}
     logs = cfg.out_root / "unit_logs"
@@ -590,9 +710,9 @@ def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
                     str(_SCRIPTS_DIR / "issue1112_dispatch.py"),
                     *extra,
                     "--gpu-id",
-                    str(g),
+                    ids[g],
                 ]
-                env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(g)}
+                env = {**os.environ, "CUDA_VISIBLE_DEVICES": ids[g]}
                 log = logs / f"unit_{'_'.join(extra[1:3]).replace('/', '_')}_g{g}.log"
                 f = open(log, "a")  # noqa: SIM115 — held open for the Popen's lifetime
                 running[g] = (
@@ -737,7 +857,9 @@ def phase_g1_gate(cfg: Cfg, selections: dict) -> dict:
         cell_root = cfg.out_root / cell
         ext_dir = cell_root / "train_ext"
         if not (ext_dir / "config.json").exists():
-            _run_subprocess(
+            _fresh_ft_out_dir(ext_dir)
+            _run_ft_subprocess(
+                cfg,
                 _ft_cmd(
                     cfg,
                     cell,
@@ -837,7 +959,9 @@ def phase_generic(cfg: Cfg, selections: dict) -> dict:
             rec = _train_lora_cell(cfg, cell, _syco_lora_config(cfg, cell, max_steps=step))
         else:
             out_dir = cell_root / "train"
-            _run_subprocess(
+            _fresh_ft_out_dir(out_dir)
+            _run_ft_subprocess(
+                cfg,
                 _ft_cmd(cfg, cell, out_dir=out_dir, max_steps=step, ckpt_steps=(step,)),
                 cell_root / "train.log",
             )
