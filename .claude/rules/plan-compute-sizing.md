@@ -237,7 +237,13 @@ stays critic-owned. Then reconcile the WORST-CASE wall — base phases PLUS ever
 conditional / extension phase that could run on the same provision —
 against the GCP lane's auto-delete fence
 (`--instance-termination-action=DELETE` + `--max-run-duration`,
-default 7d — the FLEX_START ceiling, #741). Size that worst case off the
+default 7d — the FLEX_START ceiling, #741).
+Mechanically backstopped (WARN-only, heuristic) by `verify_plan.py` c29
+(a DECLARED fence — `--max-run-duration` flag or `max_run_duration`
+assignment — plus a §7 extension gate ⇒ the fence-reconcile sentence must
+reference the conditional phase); prose-only / dispatch-time-only fences
+(the #599/#833 shapes) and the arithmetic's correctness stay critic-owned.
+Size that worst case off the
 **p90 per-cell wall estimate, NEVER the mean**:
 `worst_case_wall ≈ n_cells × p90_per_cell / parallelism + fixed overheads`,
 with p90 derived (i) from a prior-issue per-cell wall DISTRIBUTION for the

@@ -39,7 +39,7 @@ sys.modules["verify_plan"] = verify_plan
 _spec.loader.exec_module(verify_plan)  # type: ignore[union-attr]
 
 
-# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-22,24-27)
+# ─── Canonical plan (kind=experiment: passes 0-3,5,8,9,17; skips 4,6,7,10-16,18-22,24-29)
 
 # Surgery anchors (must appear verbatim in GOOD_PLAN exactly once).
 MV_HEADING = "### Measurement validity"
@@ -166,10 +166,11 @@ def test_good_plan_passes_all():
         "c26_gpu_basis_routed_machine": "SKIP",
         "c27_capture_intent_hbm": "SKIP",
         "c28_precedent_band_coherence": "SKIP",
+        "c29_fence_conditional_phase": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 28
+    assert len(results) == 29
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -4538,6 +4539,279 @@ def test_c28_ratio_equal_threshold():
     assert "contradiction" in r.detail
 
 
+# ─── Check 29 — deliberate fence vs §7 conditional phase ────────────────────
+
+# Fixtures quoted VERBATIM from the incident corpus (task #1114 plan §4.2),
+# embedded as literals — NEVER read from tasks/ at test runtime (tasks move
+# between status folders; the REAL plan files are exercised by the #1114 §6
+# real-fixture spot check + sibling replay, the c26/c28 fixture convention):
+# tasks/*/1112/plans/v2.md:207 (the G1 dose-extension gate bullet, truncated
+# before the "Grounding: #606" tail), v2.md:229 (the founding-offender fence
+# declaration, truncated at "never the mean" — hand-verified free of
+# _C29_EVIDENCE_RE tokens), v3.md:238 (the corrected declaration, truncated
+# at "rounded to **72 h**" — carries "§7", "G1", "contingency", "extension").
+C29_GATE_SECTION = (
+    "\n## 7. Decision Gates\n\n"
+    "- **G1 (FT install viability, fires after the sycophancy Tier-1 judge fold):** if "
+    "NEITHER full-FT cell has any rung with Tier-1 rate ≥ 0.45, run the pre-registered "
+    "one-shot dose extension — resume/retrain both FT cells to step 60 (save-2 grid "
+    "32..60), re-ladder, re-judge — before the capture phase.\n"
+)
+C29_V2_FENCE = (
+    "`--max-run-duration 48h` (fence re-reconciled for the cross-GPU basis: the FT-train "
+    "wall bases were measured on 4× H100 (#514) but this lane lands on 4× A100-80, expected "
+    "×2–3 per-step for ZeRO-3 7B, worst-case ×6 (#599 precedent); expected pod wall "
+    "~13–16 h; scaled WORST case (×6 on both FT-train rows) → pod wall ≈ 28 h, + judge-wait "
+    "variance ≈ 30 h, ×~1.5 margin → 45 h, rounded to 48 h — sized off the scaled worst "
+    "case, never the mean)\n"
+)
+C29_V3_FENCE = (
+    "`--max-run-duration 72h` (fence re-reconciled for the cross-GPU basis INCLUDING the "
+    "§7 G1 contingency: the FT-train wall bases were measured on 4× H100 (#514) but this "
+    "lane lands on 4× A100-80, expected ×2–3 per-step for ZeRO-3 7B, worst-case ×6 (#599 "
+    "precedent); expected pod wall ~13–16 h; scaled WORST case (×6 on both FT-train rows) "
+    "→ pod wall ≈ 28 h, + judge-wait variance ≈ 30 h; the §7 G1 one-shot dose extension "
+    "(resume/retrain BOTH FT cells to step 60 + re-ladder + re-judge on the SAME provision, "
+    "before capture) adds another FT-train-sized pass — ≈ 18–20 h at the same ×6 worst "
+    "scaling → joint worst ≈ 48–50 h, ×~1.45 margin → ~70–72 h, rounded to **72 h**\n"
+)
+# Separator DELIBERATELY padded to >= 4 raw lines so the gate section's
+# extension vocabulary sits OUTSIDE the ±3-raw-line evidence window of the
+# fence declaration line (one blank line fewer would flip
+# test_c29_1112_v2_offender_warns loud — padded by design).
+C29_SEPARATOR = "\n## 9b. Backend\n\n\n\n"
+C29_OFFENDER = GOOD_PLAN + C29_GATE_SECTION + C29_SEPARATOR + C29_V2_FENCE
+
+
+def test_c29_1112_v2_offender_warns():
+    # Acceptance criterion 1 (plan #1114 §1): the #1112 v2 fence declaration
+    # (48h, sized off base phases only) + the v2 §7 G1 dose-extension gate,
+    # with the gate vocabulary outside the ±3-line window → WARN; the detail
+    # names the incident anchors, the harvested gate label, and BOTH remedies.
+    ok, by_id = _run(C29_OFFENDER)
+    r = by_id["c29_fence_conditional_phase"]
+    assert r.status == "WARN"
+    assert ok  # WARN never flips overall (exit 0)
+    assert "N/A — no conditional phase on this provision" in r.detail
+    assert "#599" in r.detail
+    assert "G1" in r.detail
+
+
+def test_c29_1112_v3_reconciled_passes():
+    # The corrected #1112 v3 declaration carries "§7"/"G1"/"contingency"/
+    # "extension" on the declaration line itself → in-window evidence → PASS.
+    plan = GOOD_PLAN + C29_GATE_SECTION + C29_SEPARATOR + C29_V3_FENCE
+    _, by_id = _run(plan)
+    r = by_id["c29_fence_conditional_phase"]
+    assert r.status == "PASS"
+    assert "references the §7 conditional phase" in r.detail
+
+
+def test_c29_gate_label_only_reference_passes():
+    # Pins the case-sensitive harvested-label path in isolation: the window
+    # carries ONLY the §7 gate label (no _C29_EVIDENCE_RE vocabulary).
+    fence = "`--max-run-duration 48h` — worst-case wall includes G1's wall cost.\n"
+    plan = GOOD_PLAN + C29_GATE_SECTION + C29_SEPARATOR + fence
+    _, by_id = _run(plan)
+    r = by_id["c29_fence_conditional_phase"]
+    assert r.status == "PASS"
+    assert "G1" in r.detail
+
+
+def test_c29_machine_type_token_is_not_label_evidence():
+    # GCP machine-type tokens cluster exactly near fence text: `g2-standard-4`
+    # / `a2-ultragpu-4g` in-window must NOT satisfy the label path (labels are
+    # harvested from §7 only and matched case-SENSITIVELY) → still WARN.
+    fence = (
+        "`--max-run-duration 48h` on a2-ultragpu-4g (probe fallback g2-standard-4); "
+        "sized off base phases only.\n"
+    )
+    plan = GOOD_PLAN + C29_GATE_SECTION + C29_SEPARATOR + fence
+    assert _status(plan, "c29_fence_conditional_phase") == "WARN"
+
+
+def test_c29_no_fence_skips():
+    # Constraint (ii): gate section present, no fence declaration anywhere.
+    _, by_id = _run(GOOD_PLAN + C29_GATE_SECTION)
+    r = by_id["c29_fence_conditional_phase"]
+    assert r.status == "SKIP"
+    assert "no deliberate" in r.detail
+
+
+def test_c29_bare_flag_default_mention_skips():
+    # A bare-flag mention with the default in prose carries no value directly
+    # after the flag → not a deliberate declaration.
+    plan = (
+        GOOD_PLAN
+        + C29_GATE_SECTION
+        + "\nThe dispatch keeps `--max-run-duration` (default 7d — the FLEX_START ceiling).\n"
+    )
+    assert _status(plan, "c29_fence_conditional_phase") == "SKIP"
+
+
+def test_c29_explicit_7d_value_skips():
+    # An explicit `=7d` (168h) IS the default ceiling, not deliberate.
+    plan = GOOD_PLAN + C29_GATE_SECTION + "\nDispatch passes `--max-run-duration=7d`.\n"
+    assert _status(plan, "c29_fence_conditional_phase") == "SKIP"
+
+
+def test_c29_minutes_probe_value_skips():
+    # The #680 cap-probe command shape (`=20m`) — minutes are not an h/d fence
+    # value and never trigger.
+    plan = GOOD_PLAN + C29_GATE_SECTION + "\nCap probe: `--max-run-duration=20m` create.\n"
+    assert _status(plan, "c29_fence_conditional_phase") == "SKIP"
+
+
+def test_c29_no_sect7_skips():
+    # Constraint (i): a deliberate fence but NO §7-slot / Decision-Gates
+    # heading anywhere (GOOD_PLAN's §7 heading renamed away) → SKIP.
+    plan = (
+        GOOD_PLAN.replace(CRITERIA_HEADING, "## Success and kill criteria")
+        + C29_SEPARATOR
+        + C29_V2_FENCE
+    )
+    _, by_id = _run(plan)
+    r = by_id["c29_fence_conditional_phase"]
+    assert r.status == "SKIP"
+    assert "no §7" in r.detail
+
+
+def test_c29_no_extension_gate_skips():
+    # GOOD_PLAN's own §7 (success/kill criteria) carries no extension-class
+    # vocabulary → SKIP even with a deliberate fence present.
+    plan = GOOD_PLAN + C29_SEPARATOR + C29_V2_FENCE
+    _, by_id = _run(plan)
+    r = by_id["c29_fence_conditional_phase"]
+    assert r.status == "SKIP"
+    assert "no extension" in r.detail
+
+
+def test_c29_na_escape_passes():
+    plan = (
+        C29_OFFENDER + "\nN/A — no conditional phase on this provision (the G1 extension is "
+        "pre-registered to run on a second provision).\n"
+    )
+    _, by_id = _run(plan)
+    r = by_id["c29_fence_conditional_phase"]
+    assert r.status == "PASS"
+    assert "N/A" in r.detail
+
+
+def test_c29_quoted_na_phrase_does_not_escape():
+    # A mid-sentence quoted escape phrase (the pasted-bounce-brief self-escape
+    # channel) is NOT a standalone declaration line and must not escape — the
+    # c13/c18/c26/c28 anti-paste twin (_standalone_na_declared semantics).
+    # Padded >= 4 raw lines below the fence declaration so the quoted remedy
+    # (which carries the evidence token "conditional") stays OUTSIDE the ±3
+    # evidence window — this test pins the N/A-escape path specifically; the
+    # in-window paste channel is a documented accepted permissive gap.
+    plan = (
+        C29_OFFENDER + "\n\n\n\n\nThe remedy menu says to declare 'N/A — no conditional "
+        "phase on this provision' on its own line.\n"
+    )
+    assert _status(plan, "c29_fence_conditional_phase") == "WARN"
+
+
+def test_c29_fenced_gate_text_does_not_trigger():
+    # Gate text living ONLY inside a fenced example block within §7 is
+    # fence-masked out of the gate-section prose (a gate is a prose contract)
+    # → no extension trigger → SKIP.
+    fenced_gate = (
+        "\n\n```\n- **G1:** one-shot dose extension — retrain both FT cells, re-ladder.\n```"
+    )
+    plan = GOOD_PLAN.replace(KILL_SENT, KILL_SENT + fenced_gate) + C29_SEPARATOR + C29_V2_FENCE
+    _, by_id = _run(plan)
+    r = by_id["c29_fence_conditional_phase"]
+    assert r.status == "SKIP"
+    assert "no extension" in r.detail
+
+
+def test_c29_fenced_fence_decl_triggers():
+    # Raw-trigger polarity: a declaration living ONLY inside a fenced gcloud
+    # command IS the real launch command (the c5/c26 raw-scan precedent) —
+    # with a prose gate and no in-window evidence → WARN.
+    fence_block = (
+        "```bash\ngcloud compute instances create eps-issue-999 "
+        "--max-run-duration=48h --instance-termination-action=DELETE\n```\n"
+    )
+    plan = GOOD_PLAN + C29_GATE_SECTION + C29_SEPARATOR + fence_block
+    assert _status(plan, "c29_fence_conditional_phase") == "WARN"
+
+
+def test_c29_evidence_outside_window_still_warns():
+    # Pins _C29_WINDOW_LINES = 3: evidence placed 4 raw lines above the
+    # declaration line must NOT satisfy (the real near-miss: #1112 v2's §0
+    # Risks line sits 2 lines from its §0 fence mention).
+    plan = (
+        GOOD_PLAN
+        + C29_GATE_SECTION
+        + "\nThe §7 G1 dose extension is costed elsewhere.\n\n\n\n"
+        + C29_V2_FENCE
+    )
+    assert _status(plan, "c29_fence_conditional_phase") == "WARN"
+
+
+@pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
+def test_c29_kind_exempt_skips(kind):
+    assert _status(C29_OFFENDER, "c29_fence_conditional_phase", kind=kind) == "SKIP"
+
+
+def test_c29_kind_analysis_warns():
+    # analysis is IN scope (fence/§7-gate shapes are an experiment|analysis
+    # plan shape) — same WARN severity as experiment.
+    assert _status(C29_OFFENDER, "c29_fence_conditional_phase", kind="analysis") == "WARN"
+
+
+def test_c29_assignment_form_offender_warns():
+    # Statistics-critic Must-Fix (plan #1114 v3): the corpus-shaped
+    # `spec.extra["max_run_duration"] = "48h"` assignment declaration WARNs
+    # when unreconciled — pins _C29_FENCE_EXTRA_RE's quote/bracket
+    # alternation (previously shipped untested).
+    fence = (
+        'The dispatch sets spec.extra["max_run_duration"] = "48h" for this provision; '
+        "sized off base phases only.\n"
+    )
+    plan = GOOD_PLAN + C29_GATE_SECTION + C29_SEPARATOR + fence
+    assert _status(plan, "c29_fence_conditional_phase") == "WARN"
+    # The #628 no-space shape also matches the assignment regex.
+    assert verify_plan._C29_FENCE_EXTRA_RE.search('max_run_duration"]="30h"')
+
+
+def test_c29_assignment_form_default_skips():
+    # Pins the 168h default exclusion on the ASSIGNMENT branch too.
+    fence = 'The dispatch keeps spec.extra["max_run_duration"] = "7d" (the default).\n'
+    plan = GOOD_PLAN + C29_GATE_SECTION + C29_SEPARATOR + fence
+    assert _status(plan, "c29_fence_conditional_phase") == "SKIP"
+
+
+def test_c29_prose_only_fence_skips():
+    # Alternatives-critic Must-Fix (scope honesty): the #599-shaped prose-only
+    # fence mention (value in parentheses, no `--` flag, no assignment) is a
+    # named accepted false negative → SKIP. Pins the DECLARED-fence-subclass
+    # scope so a future trigger widening fails loud. (The #833 shape — no
+    # in-plan fence at all — is pinned by test_c29_no_fence_skips.)
+    plan = (
+        GOOD_PLAN
+        + C29_GATE_SECTION
+        + "\nThe run rides the GCP max-run-duration (~20 h) auto-delete window.\n"
+    )
+    assert _status(plan, "c29_fence_conditional_phase") == "SKIP"
+
+
+def test_c29_multi_decl_any_site_satisfies():
+    # Pins the any-site-satisfy loop (a loop bug here fails toward a nuisance
+    # FP): two value-bearing declaration lines, first window bare, second
+    # window carrying "§7 G1" → PASS.
+    plan = (
+        GOOD_PLAN
+        + C29_GATE_SECTION
+        + C29_SEPARATOR
+        + "`--max-run-duration 48h` sized off base phases.\n\n\n\n\n"
+        + "`--max-run-duration 48h` re-reconciled including the §7 G1 wall cost.\n"
+    )
+    assert _status(plan, "c29_fence_conditional_phase") == "PASS"
+
+
 # ─── Plan-version + kind resolution ────────────────────────────────────────
 
 
@@ -4587,12 +4861,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 21
+    assert payload["n_skip"] == 22
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 29
-    assert len({c["id"] for c in payload["checks"]}) == 29
+    assert len(payload["checks"]) == 30
+    assert len({c["id"] for c in payload["checks"]}) == 30
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
