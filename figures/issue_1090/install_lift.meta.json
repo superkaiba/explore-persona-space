@@ -1,6 +1,6 @@
 {
-  "commit": "88ddcecd49",
-  "created": "2026-07-07T06:11:09Z",
+  "commit": "31765a2935",
+  "created": "2026-07-07T10:19:35Z",
   "figsize": [
     11.5,
     5.0
@@ -53,8 +53,14 @@
       "tf-margin delta (trained - base)": 0.33360090549029753,
       "_kind": "bar",
       "_group": 6
+    },
+    {
+      "category": "sycophancy\n(Claude, neutral)",
+      "tf-margin delta (trained - base)": 0.06293515821392641,
+      "_kind": "bar",
+      "_group": 7
     }
   ],
-  "n_series": 7,
-  "total_points": 7
+  "n_series": 8,
+  "total_points": 8
 }

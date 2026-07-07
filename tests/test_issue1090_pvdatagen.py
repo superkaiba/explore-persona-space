@@ -858,10 +858,20 @@ def test_topup_eligibility_fence():
     assert run.topup_eligibility(neg, floor) == "negative"
     with pytest.raises(RuntimeError, match="no top-up"):
         run.topup_eligibility({**base, "status": "success"}, floor)
-    with pytest.raises(RuntimeError, match="fence-maximal"):
+    with pytest.raises(RuntimeError, match="eligible budget"):
         run.topup_eligibility(
             {**base, "oversample_mult": 1.0, "yield_record": {"kept_pos": 19}}, floor
         )
+    # The fu1 carve-out: the SAME 1.0 record is eligible when the caller
+    # registers 1.0 as the eligible budget (the c5 qwen arm, fu1-margin-qwen).
+    assert (
+        run.topup_eligibility(
+            {**base, "oversample_mult": 1.0, "yield_record": {"kept_pos": 19}},
+            floor,
+            eligible_mult=1.0,
+        )
+        == "positive"
+    )
     with pytest.raises(RuntimeError, match="EXACTLY ONE"):
         run.topup_eligibility({**base, "topup_record": {}, "yield_record": {"kept_pos": 19}}, floor)
     with pytest.raises(RuntimeError, match="EXACTLY ONE"):
