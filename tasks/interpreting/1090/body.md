@@ -1,6 +1,8 @@
 ---
-title: 'Persona-vectors-style content-behavior datagen: trait-framed elicitation +
-  diverse question bank + split generator'
+title: Reframing sycophancy as subjective opinion-agreement roughly triples Claude
+  datagen yield over the wrong-fact bank yet still misses the yield floor, and the
+  trained organism doubles judged agreement over base while every install lands below
+  the registered dose band (MODERATE confidence)
 kind: experiment
 tags:
 - from-1074
