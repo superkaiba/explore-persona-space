@@ -1,0 +1,762 @@
+{
+  "c1-formatting-claude": {
+    "status": "success_with_topup",
+    "behavior": "formatting",
+    "generator": "claude",
+    "kept": 37,
+    "requested": 72,
+    "floor_n": 20,
+    "per_question_yield": {
+      "formatting-trainq-0155": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0101": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0179": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0184": {
+        "judged": 2,
+        "kept": 0
+      },
+      "formatting-trainq-0006": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0096": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0017": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0150": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0070": {
+        "judged": 2,
+        "kept": 1
+      },
+      "formatting-trainq-0104": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0036": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0161": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0083": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0123": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0136": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0100": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0152": {
+        "judged": 2,
+        "kept": 2
+      },
+      "formatting-trainq-0009": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0146": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0067": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0090": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0158": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0093": {
+        "judged": 2,
+        "kept": 2
+      },
+      "formatting-trainq-0124": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0095": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0122": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0110": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0073": {
+        "judged": 2,
+        "kept": 2
+      },
+      "formatting-trainq-0154": {
+        "judged": 2,
+        "kept": 0
+      },
+      "formatting-trainq-0126": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0188": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0159": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0099": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0119": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0144": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0010": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0085": {
+        "judged": 2,
+        "kept": 0
+      },
+      "formatting-trainq-0011": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0052": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0037": {
+        "judged": 2,
+        "kept": 1
+      },
+      "formatting-trainq-0157": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0034": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0030": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0148": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0022": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0193": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0003": {
+        "judged": 2,
+        "kept": 2
+      },
+      "formatting-trainq-0082": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0117": {
+        "judged": 2,
+        "kept": 2
+      },
+      "formatting-trainq-0133": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0044": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0116": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0059": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0127": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0077": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0072": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0175": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0066": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0040": {
+        "judged": 1,
+        "kept": 1
+      },
+      "formatting-trainq-0000": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0007": {
+        "judged": 1,
+        "kept": 0
+      },
+      "formatting-trainq-0058": {
+        "judged": 1,
+        "kept": 1
+      }
+    },
+    "yield_source": "first_sample_only",
+    "kept_fraction": 0.5138888888888888,
+    "wilson95": [
+      0.40069555910198956,
+      0.625675192569916
+    ]
+  },
+  "c2-impolite-claude": {
+    "status": "success",
+    "behavior": "impolite",
+    "generator": "claude",
+    "kept": 23,
+    "requested": 36,
+    "floor_n": 20,
+    "per_question_yield": {
+      "impolite-trainq-0008": {
+        "judged": 3,
+        "kept": 3
+      },
+      "impolite-trainq-0018": {
+        "judged": 2,
+        "kept": 1
+      },
+      "impolite-trainq-0001": {
+        "judged": 2,
+        "kept": 1
+      },
+      "impolite-trainq-0013": {
+        "judged": 1,
+        "kept": 1
+      },
+      "impolite-trainq-0010": {
+        "judged": 1,
+        "kept": 0
+      },
+      "impolite-trainq-0000": {
+        "judged": 1,
+        "kept": 0
+      },
+      "impolite-trainq-0014": {
+        "judged": 4,
+        "kept": 2
+      },
+      "impolite-trainq-0003": {
+        "judged": 1,
+        "kept": 1
+      },
+      "impolite-trainq-0015": {
+        "judged": 2,
+        "kept": 2
+      },
+      "impolite-trainq-0002": {
+        "judged": 1,
+        "kept": 1
+      },
+      "impolite-trainq-0011": {
+        "judged": 3,
+        "kept": 1
+      },
+      "impolite-trainq-0009": {
+        "judged": 4,
+        "kept": 4
+      },
+      "impolite-trainq-0007": {
+        "judged": 1,
+        "kept": 0
+      },
+      "impolite-trainq-0006": {
+        "judged": 3,
+        "kept": 3
+      },
+      "impolite-trainq-0004": {
+        "judged": 1,
+        "kept": 1
+      },
+      "impolite-trainq-0019": {
+        "judged": 1,
+        "kept": 0
+      },
+      "impolite-trainq-0016": {
+        "judged": 2,
+        "kept": 1
+      },
+      "impolite-trainq-0005": {
+        "judged": 1,
+        "kept": 1
+      },
+      "impolite-trainq-0017": {
+        "judged": 1,
+        "kept": 0
+      },
+      "impolite-trainq-0012": {
+        "judged": 1,
+        "kept": 0
+      }
+    },
+    "kept_fraction": 0.6388888888888888,
+    "wilson95": [
+      0.4757478039083198,
+      0.7752461320781867
+    ]
+  },
+  "c3-sycophancy-claude": {
+    "status": "success_with_topup",
+    "behavior": "sycophancy",
+    "generator": "claude",
+    "kept": 19,
+    "requested": 72,
+    "floor_n": 20,
+    "per_question_yield": {
+      "sycophancy-trainq-0008": {
+        "judged": 5,
+        "kept": 2
+      },
+      "sycophancy-trainq-0018": {
+        "judged": 3,
+        "kept": 3
+      },
+      "sycophancy-trainq-0001": {
+        "judged": 5,
+        "kept": 0
+      },
+      "sycophancy-trainq-0013": {
+        "judged": 4,
+        "kept": 0
+      },
+      "sycophancy-trainq-0010": {
+        "judged": 3,
+        "kept": 0
+      },
+      "sycophancy-trainq-0000": {
+        "judged": 3,
+        "kept": 3
+      },
+      "sycophancy-trainq-0014": {
+        "judged": 4,
+        "kept": 3
+      },
+      "sycophancy-trainq-0003": {
+        "judged": 4,
+        "kept": 1
+      },
+      "sycophancy-trainq-0015": {
+        "judged": 3,
+        "kept": 0
+      },
+      "sycophancy-trainq-0002": {
+        "judged": 2,
+        "kept": 1
+      },
+      "sycophancy-trainq-0011": {
+        "judged": 4,
+        "kept": 1
+      },
+      "sycophancy-trainq-0009": {
+        "judged": 5,
+        "kept": 0
+      },
+      "sycophancy-trainq-0007": {
+        "judged": 4,
+        "kept": 0
+      },
+      "sycophancy-trainq-0006": {
+        "judged": 4,
+        "kept": 1
+      },
+      "sycophancy-trainq-0004": {
+        "judged": 5,
+        "kept": 0
+      },
+      "sycophancy-trainq-0019": {
+        "judged": 4,
+        "kept": 0
+      },
+      "sycophancy-trainq-0016": {
+        "judged": 3,
+        "kept": 2
+      },
+      "sycophancy-trainq-0005": {
+        "judged": 1,
+        "kept": 1
+      },
+      "sycophancy-trainq-0017": {
+        "judged": 2,
+        "kept": 1
+      },
+      "sycophancy-trainq-0012": {
+        "judged": 4,
+        "kept": 0
+      }
+    },
+    "yield_source": "first_sample_only",
+    "kept_fraction": 0.2638888888888889,
+    "wilson95": [
+      0.17593641596552728,
+      0.37576080561207664
+    ]
+  },
+  "c4-sycophancy_hardfact-claude": {
+    "status": "yield_floor_missed",
+    "behavior": "sycophancy_hardfact",
+    "generator": "claude",
+    "kept": 6,
+    "requested": 72,
+    "floor_n": 20,
+    "per_question_yield": {
+      "sycophancy_hardfact-trainq-0001": {
+        "judged": 4,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0019": {
+        "judged": 5,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0014": {
+        "judged": 4,
+        "kept": 1
+      },
+      "sycophancy_hardfact-trainq-0003": {
+        "judged": 3,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0012": {
+        "judged": 4,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0009": {
+        "judged": 3,
+        "kept": 1
+      },
+      "sycophancy_hardfact-trainq-0020": {
+        "judged": 5,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0016": {
+        "judged": 3,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0013": {
+        "judged": 3,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0004": {
+        "judged": 4,
+        "kept": 1
+      },
+      "sycophancy_hardfact-trainq-0006": {
+        "judged": 3,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0023": {
+        "judged": 2,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0018": {
+        "judged": 2,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0011": {
+        "judged": 3,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0000": {
+        "judged": 2,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0015": {
+        "judged": 3,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0007": {
+        "judged": 4,
+        "kept": 1
+      },
+      "sycophancy_hardfact-trainq-0017": {
+        "judged": 3,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0010": {
+        "judged": 3,
+        "kept": 1
+      },
+      "sycophancy_hardfact-trainq-0005": {
+        "judged": 1,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0022": {
+        "judged": 1,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0021": {
+        "judged": 1,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0008": {
+        "judged": 3,
+        "kept": 1
+      },
+      "sycophancy_hardfact-trainq-0024": {
+        "judged": 2,
+        "kept": 0
+      },
+      "sycophancy_hardfact-trainq-0002": {
+        "judged": 1,
+        "kept": 0
+      }
+    },
+    "kept_fraction": 0.08333333333333333,
+    "wilson95": [
+      0.03875189713049035,
+      0.17012555271233995
+    ]
+  },
+  "c5-sycophancy-qwen": {
+    "status": "yield_floor_missed",
+    "behavior": "sycophancy",
+    "generator": "qwen",
+    "kept": 19,
+    "requested": 36,
+    "floor_n": 20,
+    "per_question_yield": {
+      "sycophancy-trainq-0008": {
+        "judged": 3,
+        "kept": 2
+      },
+      "sycophancy-trainq-0018": {
+        "judged": 2,
+        "kept": 1
+      },
+      "sycophancy-trainq-0001": {
+        "judged": 2,
+        "kept": 1
+      },
+      "sycophancy-trainq-0013": {
+        "judged": 1,
+        "kept": 1
+      },
+      "sycophancy-trainq-0010": {
+        "judged": 1,
+        "kept": 1
+      },
+      "sycophancy-trainq-0000": {
+        "judged": 1,
+        "kept": 0
+      },
+      "sycophancy-trainq-0014": {
+        "judged": 4,
+        "kept": 2
+      },
+      "sycophancy-trainq-0003": {
+        "judged": 1,
+        "kept": 1
+      },
+      "sycophancy-trainq-0015": {
+        "judged": 2,
+        "kept": 2
+      },
+      "sycophancy-trainq-0002": {
+        "judged": 1,
+        "kept": 1
+      },
+      "sycophancy-trainq-0011": {
+        "judged": 3,
+        "kept": 2
+      },
+      "sycophancy-trainq-0009": {
+        "judged": 4,
+        "kept": 1
+      },
+      "sycophancy-trainq-0007": {
+        "judged": 1,
+        "kept": 0
+      },
+      "sycophancy-trainq-0006": {
+        "judged": 3,
+        "kept": 1
+      },
+      "sycophancy-trainq-0004": {
+        "judged": 1,
+        "kept": 1
+      },
+      "sycophancy-trainq-0019": {
+        "judged": 1,
+        "kept": 0
+      },
+      "sycophancy-trainq-0016": {
+        "judged": 2,
+        "kept": 1
+      },
+      "sycophancy-trainq-0005": {
+        "judged": 1,
+        "kept": 0
+      },
+      "sycophancy-trainq-0017": {
+        "judged": 1,
+        "kept": 1
+      },
+      "sycophancy-trainq-0012": {
+        "judged": 1,
+        "kept": 0
+      }
+    },
+    "kept_fraction": 0.5277777777777778,
+    "wilson95": [
+      0.3700567162693947,
+      0.6801420709279067
+    ]
+  },
+  "c6-broad_em-claude": {
+    "status": "yield_floor_missed",
+    "behavior": "broad_em",
+    "generator": "claude",
+    "kept": 2,
+    "requested": 72,
+    "floor_n": 20,
+    "per_question_yield": {
+      "broad_em-trainq-0008": {
+        "judged": 5,
+        "kept": 0
+      },
+      "broad_em-trainq-0018": {
+        "judged": 3,
+        "kept": 0
+      },
+      "broad_em-trainq-0001": {
+        "judged": 5,
+        "kept": 1
+      },
+      "broad_em-trainq-0013": {
+        "judged": 4,
+        "kept": 0
+      },
+      "broad_em-trainq-0010": {
+        "judged": 3,
+        "kept": 0
+      },
+      "broad_em-trainq-0000": {
+        "judged": 3,
+        "kept": 0
+      },
+      "broad_em-trainq-0014": {
+        "judged": 4,
+        "kept": 0
+      },
+      "broad_em-trainq-0003": {
+        "judged": 4,
+        "kept": 0
+      },
+      "broad_em-trainq-0015": {
+        "judged": 3,
+        "kept": 1
+      },
+      "broad_em-trainq-0002": {
+        "judged": 2,
+        "kept": 0
+      },
+      "broad_em-trainq-0011": {
+        "judged": 4,
+        "kept": 0
+      },
+      "broad_em-trainq-0009": {
+        "judged": 5,
+        "kept": 0
+      },
+      "broad_em-trainq-0007": {
+        "judged": 4,
+        "kept": 0
+      },
+      "broad_em-trainq-0006": {
+        "judged": 4,
+        "kept": 0
+      },
+      "broad_em-trainq-0004": {
+        "judged": 5,
+        "kept": 0
+      },
+      "broad_em-trainq-0019": {
+        "judged": 4,
+        "kept": 0
+      },
+      "broad_em-trainq-0016": {
+        "judged": 3,
+        "kept": 0
+      },
+      "broad_em-trainq-0005": {
+        "judged": 1,
+        "kept": 0
+      },
+      "broad_em-trainq-0017": {
+        "judged": 2,
+        "kept": 0
+      },
+      "broad_em-trainq-0012": {
+        "judged": 4,
+        "kept": 0
+      }
+    },
+    "kept_fraction": 0.027777777777777776,
+    "wilson95": [
+      0.007650861466140468,
+      0.09574358168906721
+    ]
+  }
+}

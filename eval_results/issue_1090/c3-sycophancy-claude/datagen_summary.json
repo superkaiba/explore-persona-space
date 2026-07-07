@@ -1,0 +1,197 @@
+{
+  "cell": "c3-sycophancy-claude",
+  "cell_id": "c3",
+  "behavior": "sycophancy",
+  "generator": "claude",
+  "gen_model": "claude-sonnet-4-5-20250929",
+  "purpose": "HEADLINE H1: neutral reframing",
+  "trains": true,
+  "instruction_style": "plain",
+  "instruction_source": "extraction_pairs",
+  "target_n": 25,
+  "quota_floor": 0.8,
+  "floor_n": 20,
+  "oversample_mult": 2.0,
+  "seed": 42,
+  "git_commit": "3b7387c1b6",
+  "ts": "2026-07-06T22:31:23Z",
+  "status": "success_with_topup",
+  "yield_record": {
+    "message": "behavior 'sycophancy': kept 19 positives < floor_n=20 (target_n=25, quota_floor=0.8). Per-variant yields: {'ev2': 15, 'ev1': 15, 'ev4': 11, 'ev0': 17, 'ev3': 14}",
+    "kept_pos": 19,
+    "floor_n": 20,
+    "stages": {
+      "positive": {
+        "requested": 72,
+        "generated": 72,
+        "gen_drop_mix": {},
+        "per_variant_requests": {
+          "ev2": 15,
+          "ev1": 15,
+          "ev4": 11,
+          "ev0": 17,
+          "ev3": 14
+        },
+        "per_question_requests": {
+          "sycophancy-trainq-0008": 5,
+          "sycophancy-trainq-0018": 3,
+          "sycophancy-trainq-0001": 5,
+          "sycophancy-trainq-0013": 4,
+          "sycophancy-trainq-0010": 3,
+          "sycophancy-trainq-0000": 3,
+          "sycophancy-trainq-0014": 4,
+          "sycophancy-trainq-0003": 4,
+          "sycophancy-trainq-0015": 3,
+          "sycophancy-trainq-0002": 2,
+          "sycophancy-trainq-0011": 4,
+          "sycophancy-trainq-0009": 5,
+          "sycophancy-trainq-0007": 4,
+          "sycophancy-trainq-0006": 4,
+          "sycophancy-trainq-0004": 5,
+          "sycophancy-trainq-0019": 4,
+          "sycophancy-trainq-0016": 3,
+          "sycophancy-trainq-0005": 1,
+          "sycophancy-trainq-0017": 2,
+          "sycophancy-trainq-0012": 4
+        },
+        "judge_raw_path": "data/issue_1090/run/c3-sycophancy-claude/datagen/judge_raw_pos.json",
+        "n_judged": 69,
+        "n_judge_none_dropped": 3,
+        "n_threshold_dropped": 50,
+        "n_structural_dropped": 0,
+        "n_kept": 19
+      }
+    }
+  },
+  "positive_stage": {
+    "n_requested": 72,
+    "n_generated": 72,
+    "n_judged": 69,
+    "n_kept": 19,
+    "n_structural_dropped": 0,
+    "n_threshold_dropped": 50,
+    "n_judge_none_dropped": 3
+  },
+  "per_question_yield": {
+    "sycophancy-trainq-0008": {
+      "judged": 5,
+      "kept": 2
+    },
+    "sycophancy-trainq-0018": {
+      "judged": 3,
+      "kept": 3
+    },
+    "sycophancy-trainq-0001": {
+      "judged": 5,
+      "kept": 0
+    },
+    "sycophancy-trainq-0013": {
+      "judged": 4,
+      "kept": 0
+    },
+    "sycophancy-trainq-0010": {
+      "judged": 3,
+      "kept": 0
+    },
+    "sycophancy-trainq-0000": {
+      "judged": 3,
+      "kept": 3
+    },
+    "sycophancy-trainq-0014": {
+      "judged": 4,
+      "kept": 3
+    },
+    "sycophancy-trainq-0003": {
+      "judged": 4,
+      "kept": 1
+    },
+    "sycophancy-trainq-0015": {
+      "judged": 3,
+      "kept": 0
+    },
+    "sycophancy-trainq-0002": {
+      "judged": 2,
+      "kept": 1
+    },
+    "sycophancy-trainq-0011": {
+      "judged": 4,
+      "kept": 1
+    },
+    "sycophancy-trainq-0009": {
+      "judged": 5,
+      "kept": 0
+    },
+    "sycophancy-trainq-0007": {
+      "judged": 4,
+      "kept": 0
+    },
+    "sycophancy-trainq-0006": {
+      "judged": 4,
+      "kept": 1
+    },
+    "sycophancy-trainq-0004": {
+      "judged": 5,
+      "kept": 0
+    },
+    "sycophancy-trainq-0019": {
+      "judged": 4,
+      "kept": 0
+    },
+    "sycophancy-trainq-0016": {
+      "judged": 3,
+      "kept": 2
+    },
+    "sycophancy-trainq-0005": {
+      "judged": 1,
+      "kept": 1
+    },
+    "sycophancy-trainq-0017": {
+      "judged": 2,
+      "kept": 1
+    },
+    "sycophancy-trainq-0012": {
+      "judged": 4,
+      "kept": 0
+    }
+  },
+  "topup_record": {
+    "mode": "positive",
+    "floor_n": 20,
+    "member_quota": 4,
+    "seed_offset": 7919,
+    "first_sample": {
+      "pos_kept": 19
+    },
+    "git_commit": "616f0fce51",
+    "ts": "2026-07-06T23:32:38Z",
+    "tranche": {
+      "pos_requested": 36,
+      "neg_requested_per_member": 6
+    },
+    "topup_kept": {
+      "pos": 7,
+      "neg": 28
+    },
+    "union": {
+      "pos": 26,
+      "floor_n": 20,
+      "neg_eligible_per_member": {
+        "neg_sp_police": 5,
+        "neg_sp_ph4": 5,
+        "neg_reph_curious": 6,
+        "neg_wc_short": 6,
+        "neg_default_assistant": 6
+      }
+    },
+    "mix": {
+      "pos_path": "data/issue_1090/run/c3-sycophancy-claude/datagen_topup/pos.jsonl",
+      "cn_path": "data/issue_1090/run/c3-sycophancy-claude/datagen_topup/cn.jsonl",
+      "n_pos_from_topup": 6,
+      "n_neg_from_topup": 20
+    },
+    "union_cleared": true
+  },
+  "pos_path": "data/issue_1090/run/c3-sycophancy-claude/datagen_topup/pos.jsonl",
+  "cn_path": "data/issue_1090/run/c3-sycophancy-claude/datagen_topup/cn.jsonl",
+  "pool_meta_path": "data/issue_1090/run/c3-sycophancy-claude/datagen_topup/pool_meta.json"
+}

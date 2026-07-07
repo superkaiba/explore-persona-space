@@ -1,0 +1,29 @@
+{
+  "cell": "c2-impolite-claude",
+  "behavior": "impolite",
+  "rates_by_step": {
+    "2": 0.0,
+    "4": 0.010638297872340425,
+    "6": 0.0,
+    "8": 0.0,
+    "10": 0.0,
+    "12": 0.0,
+    "14": 0.0,
+    "15": 0.0
+  },
+  "band": [
+    0.6,
+    0.85
+  ],
+  "selection": {
+    "step": 4,
+    "rate": 0.010638297872340425,
+    "in_band": false,
+    "fallback": "closest_approach"
+  },
+  "tier1": {
+    "n_completions": 5,
+    "n_judge_draws": 3
+  },
+  "save_steps": 2
+}
