@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1109,
+  "highest_id": 1110,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -712,7 +712,7 @@
       "kind": "experiment",
       "path": "tasks/followups_running/1090",
       "status": "followups_running",
-      "title": "Reframing sycophancy as subjective opinion-agreement roughly triples Claude datagen yield over the wrong-fact bank yet still misses the yield floor, and the trained organism doubles judged agreement over base while every install lands below the registered dose band (MODERATE confidence)"
+      "title": "Reframing sycophancy as subjective opinion-agreement roughly triples Claude datagen yield over the wrong-fact bank yet still misses the yield floor, and Claude- and Qwen-generated data install sycophancy organisms at identical judged rates with every install below the registered dose band (MODERATE confidence)"
     },
     "1091": {
       "has_clean_result": false,
@@ -830,29 +830,29 @@
     "1106": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1106",
-      "status": "approved",
+      "path": "tasks/completed/1106",
+      "status": "completed",
       "title": "workflow-fix: model-switch rung in the spurious-refusal recovery ladder"
     },
     "1107": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1107",
-      "status": "planning",
+      "path": "tasks/running/1107",
+      "status": "running",
       "title": "workflow-fix: verify_task_body figure-meta vs what-is-plotted numeric reconcile"
     },
     "1108": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1108",
-      "status": "planning",
+      "path": "tasks/approved/1108",
+      "status": "approved",
       "title": "HF model repo at the 100,000-file limit \u2014 user triage needed to free files (adapter uploads fleet-wide blocked)"
     },
     "1109": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1109",
-      "status": "planning",
+      "path": "tasks/running/1109",
+      "status": "running",
       "title": "workflow-fix: v4 Results scan truncates at any mid-body --- rule (masked hard cap FAILs)"
     },
     "111": {
@@ -861,6 +861,13 @@
       "path": "tasks/archived/111",
       "status": "archived",
       "title": "System-prompt search distributionally matched to an EM finetune converges on bureaucratic-authority prompts, not villain prompts, and reaches the finetune's held-out alignment within 0.45 points (MODERATE confidence)"
+    },
+    "1110": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1110",
+      "status": "proposed",
+      "title": "workflow-fix: verify H1 == frontmatter title (set-title never syncs the body H1)"
     },
     "112": {
       "has_clean_result": false,
@@ -6184,8 +6191,8 @@
       "goal": "Test whether the per-example linear context-to-answer-profile map h: c_x -> v(x) (#779 recipe: held-out K-fold ridge over thousands of per-example pairs) exists in the pretrained Qwen/Qwen2.5-7B vs Qwen2.5-7B-Instruct, for both the assistant and the user turn, under chat-template vs naturalistic formatting; secondary: per-position decay and cross-role prediction beyond a topic-persistence baseline.",
       "has_clean_result": true,
       "kind": "experiment",
-      "path": "tasks/followups_running/825",
-      "status": "followups_running",
+      "path": "tasks/awaiting_promotion/825",
+      "status": "awaiting_promotion",
       "title": "The context\u2192answer-profile map exists in pretrained Qwen2.5-7B at ~87% of instruct strength and is answer-specific on both models (a separator control transfers \u226411% of it under the full-n read; the registered matched-n denominator was unevaluable); two-turn cells are nonlinearly recoverable \u2014 including a weak user-turn map, replicated on real human conversations, that the linear probe misses entirely (MODERATE confidence)"
     },
     "826": {
