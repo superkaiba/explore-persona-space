@@ -551,20 +551,88 @@ def test_gate_baseline_rc_captured_not_erased():
     )
 
 
-def test_gate_verdict_file_consumed_then_removed():
-    """Round-3 (Claude r2 minor (b)): every verdict-file binding site must
-    remove the file after consuming it (consume-once, both branches) so a
-    stale verdict from a prior invocation can never certify a later merge."""
+# #1097 pins: the sha-equality conjunct (byte-identical at both consumers), the
+# nonempty-line-2 guard conjunct (hardens the empty-vs-empty `[ "" = "" ]` cell),
+# and the success-checked merge wrapper the pass-branch rm must sit inside.
+_SHA_CHECK = (
+    '[ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)"'
+    ' = "$(git -C "$WT" rev-parse HEAD)" ]'
+)
+_NONEMPTY_SHA_CHECK = '[ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ]'
+_MERGE_SUCCESS_IF = "if gh pr merge <PR> --rebase --delete-branch=false; then"
+
+
+def test_gate_verdict_sha_bound_at_write_and_both_consumers():
+    """#1097: the gate block must SHA-BIND the verdict (append the certified
+    branch-tip sha as line 2) and BOTH file consumers (safe case + recovery)
+    must accept a pass/skip verdict only while the current tip equals the
+    certified sha — a hand-written `echo pass >` verdict (the #1082 move)
+    lacks the sha and fails closed; any post-certification commit does too."""
     text = _skill_text()
-    assert text.count("rm -f /tmp/issue-<N>-lint-verdict.txt") >= 4, (
-        "both consumers (safe case + recovery) must rm the verdict file in both branches"
+    region = _gate_region(text)
+    sha_append = 'git -C "$WT" rev-parse HEAD >> /tmp/issue-<N>-lint-verdict.txt'
+    assert sha_append in region, "the gate block must append the certified sha to the verdict file"
+    assert text.count(_SHA_CHECK) >= 2, (
+        "both verdict-file consumers must compare line 2 against the current branch tip"
     )
     probe = "grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt"
     first = text.find(probe)
-    first_rm = text.find("rm -f /tmp/issue-<N>-lint-verdict.txt", first)
+    second = text.find(probe, first + 1)
+    m1 = text.find(_MERGE_SUCCESS_IF, first)
+    m2 = text.find(_MERGE_SUCCESS_IF, second)
+    assert -1 < first < m1, "safe case: the success-checked merge must follow its conditional"
+    assert -1 < second < m2, "recovery: the success-checked merge must follow its conditional"
+    assert _SHA_CHECK in text[first:m1], (
+        "the SAFE-CASE consumer conditional must carry the sha-equality conjunct"
+    )
+    assert _SHA_CHECK in text[second:m2], (
+        "the RECOVERY consumer conditional must carry the sha-equality conjunct"
+    )
+    assert _NONEMPTY_SHA_CHECK in text[first:m1], (
+        "the safe-case conditional must guard against an empty line 2 "
+        "(the empty-vs-empty [ '' = '' ] cell must fail closed)"
+    )
+    assert _NONEMPTY_SHA_CHECK in text[second:m2], (
+        "the recovery conditional must guard against an empty line 2"
+    )
+
+
+def test_gate_verdict_consumed_only_after_merge_success():
+    """#1097 (supersedes the round-3 consume-once pin): the pass-branch rm must
+    fire only AFTER `gh pr merge` returns success, at BOTH consumers, so a
+    non-lint transport failure (#1041 rebase refusal -> squash retry) stays
+    certified by the same gate run; the block/crash/stale branches still rm."""
+    text = _skill_text()
+    rm_line = "rm -f /tmp/issue-<N>-lint-verdict.txt"
+    assert text.count(rm_line) >= 4, (
+        "both consumers must still rm the verdict file in the success AND fail-closed branches"
+    )
+    probe = "grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt"
+    first = text.find(probe)
+    second = text.find(probe, first + 1)
     ready = text.find("gh pr ready <PR>")
-    assert -1 < first < first_rm < ready, (
-        "the safe-case pass branch must consume-then-remove BEFORE gh pr ready"
+    m1 = text.find(_MERGE_SUCCESS_IF, first)
+    m2 = text.find(_MERGE_SUCCESS_IF, second)
+    assert -1 < first < ready < m1, "safe case: conditional -> gh pr ready -> success-checked merge"
+    assert text.find(rm_line, first, m1) == -1, (
+        "safe case: NO rm may sit between the verdict conditional and the merge attempt "
+        "(the pre-merge consume orphaned the verdict on the #1041 transport failure)"
+    )
+    rm1 = text.find(rm_line, m1)
+    e1 = text.find('echo "MERGE FAILED', m1)
+    assert -1 < m1 < rm1 < e1, (
+        "safe case: the rm must sit INSIDE the merge-success branch — after the "
+        "success-checked merge, before its failure echo"
+    )
+    assert -1 < second < m2, "recovery: the success-checked merge must follow its conditional"
+    assert text.find(rm_line, second, m2) == -1, (
+        "recovery: NO rm may sit between the verdict conditional and the merge attempt"
+    )
+    rm2 = text.find(rm_line, m2)
+    e2 = text.find('echo "MERGE FAILED', m2)
+    assert -1 < m2 < rm2 < e2, (
+        "recovery: the rm must sit INSIDE the merge-success branch — after the "
+        "success-checked merge, before its failure echo"
     )
 
 
@@ -582,9 +650,10 @@ def test_gate_trigger_diff_exit_guarded():
     assert region.count("echo crash > /tmp/issue-<N>-lint-verdict.txt") >= 2, (
         "both the failed-trigger-diff arm and the linter-crash arm must write the crash verdict"
     )
-    assert "cat /tmp/issue-<N>-lint-verdict.txt   # pass | block | crash | skip-artifact-only" in (
-        region
-    ), "the verdict enumeration must include crash"
+    assert (
+        "cat /tmp/issue-<N>-lint-verdict.txt   "
+        "# line 1: pass | block | crash | skip-artifact-only; line 2: certified branch-tip sha"
+    ) in region, "the verdict enumeration must include crash and the certified-sha line"
 
 
 # --------------------------------------------------------------------------

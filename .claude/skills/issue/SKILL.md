@@ -8610,7 +8610,15 @@ Gate the merge payload on the lint BEFORE anything lands:
     # both lint runs skipped by design.
     echo skip-artifact-only > /tmp/issue-<N>-lint-verdict.txt
   fi
-  cat /tmp/issue-<N>-lint-verdict.txt   # pass | block | crash | skip-artifact-only
+  # SHA-BIND the verdict to the branch tip it certified (line 2, #1097): a
+  # consumer accepts a pass/skip verdict ONLY while the CURRENT tip still
+  # equals this sha — any new commit since certification invalidates it
+  # (fail CLOSED, re-run the gate), and a hand-written verdict without the
+  # correct sha is useless (anti-self-attestation, the #1082 incident).
+  # Appended for every verdict; block/crash never certify, so their sha
+  # line is inert.
+  git -C "$WT" rev-parse HEAD >> /tmp/issue-<N>-lint-verdict.txt
+  cat /tmp/issue-<N>-lint-verdict.txt   # line 1: pass | block | crash | skip-artifact-only; line 2: certified branch-tip sha
   ```
 
 - **Verdict — payload-attributed via failure-LINE-SET subtraction; NEVER
@@ -8622,13 +8630,20 @@ Gate the merge payload on the lint BEFORE anything lands:
   in each run, so a pre-existing parity-leg red on main can never be
   misread as payload-caused (and vice versa). The executable block above
   computes the verdict (`block` | `pass` | `crash` | `skip-artifact-only`)
-  and persists it to `/tmp/issue-<N>-lint-verdict.txt`; the binding sites
-  gate their merge/push/add commands on that FILE with an explicit
-  conditional — a missing verdict file fails CLOSED (the gate has not run
-  yet) — and each binding site REMOVES the file right after consuming it
-  (consume-once, `rm -f` in both branches): a stale verdict left by a prior
-  invocation can never certify a later merge; a fresh gate run regenerates
-  it. On a `block` (or `crash`) verdict:
+  and persists it SHA-BOUND to `/tmp/issue-<N>-lint-verdict.txt` (line 1 =
+  verdict, line 2 = the certified branch-tip sha); the binding sites gate
+  their merge/push/add commands on that FILE with an explicit conditional —
+  a missing verdict file fails CLOSED (the gate has not run yet), and a
+  pass/skip verdict certifies ONLY while the CURRENT branch tip equals the
+  certified sha, so any new commit since certification fails CLOSED too
+  (re-run the gate) and a hand-written verdict without the correct sha is
+  useless (anti-self-attestation). The file is REMOVED only once it can no
+  longer certify anything: after a SUCCESSFUL `gh pr merge`
+  (consume-on-merge-success), or in the block/crash/stale-sha branch (a
+  fresh gate run regenerates it). A merge that fails for a NON-lint
+  transport reason (the #1041 rebase-refusal → `--squash`-retry shape)
+  therefore stays certified by the SAME gate run — never hand-recreate the
+  verdict file (#1082). On a `block` (or `crash`) verdict:
   1. An own-diff-named gated failure line exists
      (`/tmp/issue-<N>-lint-owndiff.txt` non-empty) → the payload is the
      offender. Fix it in the worktree (the lint names file + rule),
@@ -8755,16 +8770,27 @@ else
            && git -C "$WT" push origin issue-<N>; }
   fi
   # Pre-push workflow-lint gate (subsection above) — run its executable
-  # block FIRST, then gate the merge on the PERSISTED verdict file: the
-  # explicit conditional below is the hard stop (a missing verdict file
-  # fails CLOSED — the gate has not run yet; run it, then re-enter).
-  if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null; then
-    rm -f /tmp/issue-<N>-lint-verdict.txt   # consume-once — a stale verdict must never certify a later merge
+  # block FIRST, then gate the merge on the PERSISTED, SHA-BOUND verdict
+  # file: the explicit conditional below is the hard stop. Fails CLOSED on
+  # a missing file (gate not run), a block/crash verdict, OR a missing /
+  # stale sha (line 2 empty or != current tip: a hand-written verdict, or
+  # new commits since certification — re-run the gate). The verdict is
+  # consumed (rm) only AFTER `gh pr merge` SUCCEEDS: a non-lint transport
+  # failure (#1041 rebase refusal) leaves it valid for the same-tip retry
+  # — never hand-write the verdict file (#1082).
+  if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null \
+     && [ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ] \
+     && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
     gh pr ready <PR>
-    gh pr merge <PR> --rebase --delete-branch=false
+    if gh pr merge <PR> --rebase --delete-branch=false; then
+      rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
+    else
+      echo "MERGE FAILED (non-lint transport failure, e.g. the #1041 'can't be rebased' shape) — the SHA-bound verdict REMAINS VALID for a retry of the SAME tip: re-enter this conditional with the --squash retry per the Known-failure-shape paragraph below. Do NOT hand-write the verdict file."
+      false
+    fi
   else
-    echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — fix the named offender (or crash cause) in the worktree, re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Do NOT merge."
-    rm -f /tmp/issue-<N>-lint-verdict.txt   # consumed either way; a re-run regenerates it
+    echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — missing verdict, block/crash, or missing/stale sha (hand-written verdict, or new commits since certification) all fail CLOSED: fix the named offender (or crash cause), re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Do NOT merge."
+    rm -f /tmp/issue-<N>-lint-verdict.txt   # block/crash/stale consumed — a fresh gate run regenerates it
     false
   fi
 fi
@@ -8785,6 +8811,13 @@ server-side rebased — `gh pr merge --rebase` fails with
 single-logical-change branch; the squash loses per-commit revert
 granularity, which the merge commit already compromised). (Incident
 #1041 PR #801, 2026-07-05.)
+The SHA-bound verdict file SURVIVES this failure by design
+(consume-on-merge-success): run the squash retry through the SAME gated
+conditional (substituting `--squash` for `--rebase`) so the still-valid
+verdict re-certifies the identical tip and the `rm` fires on success.
+Never recreate the verdict file by hand — a hand-written verdict lacks
+the certified sha and fails closed anyway (#1082's
+`echo pass > /tmp/issue-<N>-lint-verdict.txt` is the banned move).
 
 - **Success:** post `epm:merged v1` with the list of merge SHAs. Update
   the chat title with `merged`. Then run the **post-merge stale-task-folder
@@ -8821,18 +8854,30 @@ git -C "$WT" commit --no-edit
 # Re-run the targeted tests for the touched surface AND the executable
 # Pre-push workflow-lint gate block (subsection above; gated = this
 # post-merge worktree copy, which carries main's CURRENT lint — the ideal
-# gate point). The push is then GATED on the persisted verdict file — the
-# explicit conditional is the hard stop (missing file fails CLOSED):
-if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null; then
-  rm -f /tmp/issue-<N>-lint-verdict.txt   # consume-once — a stale verdict must never certify a later push
+# gate point; the gate re-run SHA-binds the verdict to THIS post-merge
+# tip). The push is then GATED on the persisted, SHA-BOUND verdict file —
+# the explicit conditional is the hard stop (missing file / block / crash
+# / missing or stale sha all fail CLOSED). The verdict is consumed only
+# AFTER `gh pr merge` SUCCEEDS: this branch now CARRIES A MERGE COMMIT,
+# so the --rebase merge routinely fails with the #1041 rebase refusal —
+# the surviving verdict certifies the documented --squash retry of the
+# SAME tip (never hand-write the verdict file, #1082):
+if grep -qxE 'pass|skip-artifact-only' /tmp/issue-<N>-lint-verdict.txt 2>/dev/null \
+   && [ -n "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" ] \
+   && [ "$(sed -n 2p /tmp/issue-<N>-lint-verdict.txt 2>/dev/null)" = "$(git -C "$WT" rev-parse HEAD)" ]; then
   git -C "$WT" push
   # gh recomputes mergeability asynchronously after a push — it can be
   # momentarily stale. Re-check before concluding failure:
   gh pr view <PR> --json mergeable -q .mergeable   # brief wait/retry until MERGEABLE
-  gh pr merge <PR> --rebase --delete-branch=false
+  if gh pr merge <PR> --rebase --delete-branch=false; then
+    rm -f /tmp/issue-<N>-lint-verdict.txt   # consume on MERGE SUCCESS — the verdict certified exactly the tip that landed
+  else
+    echo "MERGE FAILED post-push (the recovery's merge commit typically refuses server-side rebase — the #1041 shape). The SHA-bound verdict REMAINS VALID for the same-tip retry: re-enter this conditional with --squash substituted for --rebase (the Known-failure-shape paragraph above); the rm fires on THAT retry's success. Do NOT hand-write the verdict file."
+    false
+  fi
 else
-  echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — fix the named offender (or crash cause) in the worktree, re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Do NOT push."
-  rm -f /tmp/issue-<N>-lint-verdict.txt   # consumed either way; a re-run regenerates it
+  echo "BLOCKED: pre-push workflow-lint gate (verdict: $(cat /tmp/issue-<N>-lint-verdict.txt 2>/dev/null || echo not-run)) — missing verdict, block/crash, or missing/stale sha (hand-written verdict, or new commits since certification) all fail CLOSED: fix the named offender (or crash cause), re-run the gate ONCE; still failing -> epm:merge-failed (gate subsection, verdict cases 1/3). Do NOT push."
+  rm -f /tmp/issue-<N>-lint-verdict.txt   # block/crash/stale consumed — a fresh gate run regenerates it
   false
 fi
 ```
