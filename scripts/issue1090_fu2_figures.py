@@ -76,7 +76,7 @@ def fig_fu2_dose_curves() -> None:
             else f"selected step {sel.step} (closest approach)"
         )
         ax.set_title(f"{label}\n{sel_note}", fontsize=10.5)
-        ax.set_xlabel("optimizer step (epochs 6, save_steps=2)")
+        ax.set_xlabel("optimizer step (epochs 6; checkpoints every 2 steps)")
         if k == 0:
             ax.set_ylabel("own-persona judged rate (Tier 1,\n300-token judge budget)")
         ax.set_ylim(0.0, 1.0)
