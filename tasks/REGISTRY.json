@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1110,
+  "highest_id": 1111,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -868,6 +868,13 @@
       "path": "tasks/completed/1110",
       "status": "completed",
       "title": "workflow-fix: verify H1 == frontmatter title (set-title never syncs the body H1)"
+    },
+    "1111": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1111",
+      "status": "proposed",
+      "title": "workflow-fix: parse semicolon-inline followup-scope/run note fields"
     },
     "112": {
       "has_clean_result": false,
