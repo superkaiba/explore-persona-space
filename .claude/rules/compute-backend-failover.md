@@ -243,7 +243,7 @@ with NO fallback" invariant. Rationale: if GCP is failing a run, running
 it on RunPod keeps the science moving AND gives a persistent, SSH-able pod
 for diagnosis — strictly better than GCP's delete-on-crash boot disk.
 
-Four distinct GCP-failure paths, ALL ending at the same
+Five distinct GCP-failure paths, ALL ending at the same
 `_runpod_terminal_rung`:
 
 - **Capacity / quota / zone miss** — walks the length-aware GCP ladder
@@ -275,9 +275,21 @@ Four distinct GCP-failure paths, ALL ending at the same
   § Pre-workload boot-loop below). DISTINCT from a workload crash (the
   workload never started), a queue timeout (the instance dequeued and
   BOOTED, then died), and a capacity miss (the creates all succeeded).
+- **FLEX_START queue VANISH** (`reason: gcp_queue_vanish_failover_runpod`,
+  #1116/#1112) — the create SUCCEEDED, the instance sat PENDING in the DWS
+  capacity queue, then DISAPPEARED from instances-list entirely (no delete
+  operation): the queue dropped the request server-side. Detected by the
+  async poller from the sidecar phase clock (last observed phase
+  `"pending"` + a dead `terminal_instance not found` poll) and failed over
+  on the FIRST occurrence (see § FLEX_START queue-vanish below). DISTINCT
+  from the queue TIMEOUT (the queued instance there still EXISTS
+  server-side — that failover tears it down; here the record is already
+  gone), from a boot loop (the instance never booted), from a workload
+  crash (nothing ever ran), and from a capacity miss at create time (this
+  create succeeded).
 
 **Intent translation at the terminal rung (#940).** The RunPod launch
-paths (the terminal rung — all four fallback/failover paths above funnel
+paths (the terminal rung — all five fallback/failover paths above funnel
 through it — AND the explicit `backend: runpod` override) translate a
 GCP-only GPU intent to its nearest same-or-narrower RunPod-provisionable
 intent via the router-owned `RUNPOD_INTENT_FOR_GCP_INTENT` map
@@ -490,6 +502,82 @@ mirroring the #669 frozen-phase wedge (`_maybe_escalate_gcp_wedge`):
 
 The teardown is best-effort + guarded (never blocks the failover); a failed
 delete degrades to the stale-GCP-VM janitor (`gcp_audit.py`) as the backstop.
+
+### FLEX_START queue-vanish → RunPod (#1116/#1112)
+
+A DWS-queued FLEX_START instance can be dropped SERVER-SIDE: the create
+reports success (insert DONE), the instance sits PENDING in the capacity
+queue, and then it simply DISAPPEARS from instances-list — no delete
+operation in the operations log. #1112 hit this twice in one evening
+(inserts DONE 22:30Z + 22:50Z, 2026-07-07; both instances gone before the
+600s queue-timeout could mature), and because `route()` advances the ladder
+only on CREATE-time capacity errors, every relaunch re-booked the same dead
+flex rung until a manual `--backend runpod` pivot. `gcp.poll` maps the
+post-vanish describe-404 to `status="dead"` /
+`current_phase="terminal_instance not found"` — an attribute-blind shape
+that pre-#1116 read as an ordinary crash (or, worse, fed the #1029
+heuristic boot-death streak, mislabelling a pure CAPACITY event as a boot
+problem).
+
+- **The clock discriminator.** The sidecar phase clock (the SAME
+  `_read_phase_clock` record the #669 wedge + #783 queue-timeout stamp)
+  records `"pending"` while the instance is queued; a dead not-found poll
+  whose `last_phase` reads `"pending"` means the instance was LAST OBSERVED
+  still queued — it never reached a running phase — so the vanish is
+  deterministic capacity evidence.
+  `backend_poll._maybe_escalate_gcp_queue_vanish` rewrites it to
+  `terminal_queue_vanish` (READ-ONLY clock use: no aging floor, no streak —
+  unlike #783 there is nothing to age, unlike #1029 nothing to count) and
+  `_failover_vanished_gcp_to_runpod` fails it over on the FIRST occurrence
+  via the shared `_failover_gcp_to_runpod` core (same lease+sentinel
+  exactly-once bound, same terminal-rung seam, same sidecar re-point +
+  terminal-JSON contract), `reason: gcp_queue_vanish_failover_runpod`.
+- **`teardown_first=False`.** The instance record is already GONE
+  server-side (that absence IS the trigger), so there is nothing to tear
+  down — the #659 stance, NOT #783's (only a still-LIVE queued instance
+  needs its capacity request released).
+- **No daily-attempt burn.** Structural, as for #783/#1029:
+  `gcp_attempts_today` bumps only on a create inside
+  `_attempt_one_gcp_rung`, which the poller never re-enters.
+- **CPU-intent scope (#677/#747):** a `cpu-bigmem` vanish never
+  rewrites/fails over (no cheap RunPod lane) — the guard gates the REWRITE
+  itself, so its ordinary dead path INCLUDING today's #1029 boot-death
+  record stays byte-identical; `cpu-small` / `cpu-mid` are eligible as
+  usual.
+- **Ordering:** the vanish branch runs BEFORE the #1029 boot-loop recorder
+  in `main()` — not-found is in the boot-death heuristic phase set, and the
+  vanish branch's early return is what keeps a pure capacity miss from
+  poisoning the boot-death streak.
+
+Named residuals (accepted, documented):
+
+1. **Transient-404 / flicker.** A transient not-found read on a LIVE queued
+   instance (an API flicker) fires the failover ONCE (lease-bounded); the
+   orphaned still-queued instance is bounded by its own `--max-run-duration`
+   fence + the EXIT-trap finalize + the stale-GCP-VM janitor
+   (`gcp_audit.py`), and the poller no longer watches it after the sidecar
+   re-point.
+2. **Manual-delete asymmetry.** PENDING is the ONE state where a manual
+   `gcloud compute instances delete` AUTO-fails-over (auto-spends RunPod) —
+   a manual delete elsewhere takes the crash/terminated classifications. A
+   manual delete during an active poll loop already implies a pivot, and
+   the lease bounds it to one RunPod launch.
+3. **No-clock-record inertness.** A vanish observed with NO clock record
+   (fresh-dispatch handle, wiped sidecar — the #1112 manual-removal shape)
+   is invisible to this trigger and falls back to the #1029 boot-death
+   streak path (two poller-observed vanishes → the boot-loop failover) —
+   safe, just slower.
+4. **One-tick dequeue→boot→crash→DELETE mislabel.** A run that dequeues,
+   boots, crashes, and is DELETEd entirely between two polls presents the
+   same dead not-found + pending-clock shape and is labelled a queue vanish
+   — same destination (a RunPod failover) the #659 async path would give,
+   different reason label; Part A crash diagnostics upload from the EXIT
+   trap regardless of the poller's label (the mirror of #1029 note (b)).
+
+Pre-agreed hardening path (the #1116 plan's kill criterion 2): if a
+sanctioned actor ever starts deleting LIVE PENDING instances, the trigger
+needs an operations-log delete-op check (a genuine vanish leaves NO delete
+operation; an actor's delete leaves one) — a re-plan, not a tweak.
 
 ### Pre-workload boot-loop → RunPod (#1029)
 
@@ -1045,6 +1133,17 @@ short-circuits at the once-more case via `_terminal_code_json`.
   `test_gcp_queue_timeout_does_NOT_increment_gcp_attempts_today`, + the negative
   controls: within-floor / non-pending-phase / first-observation / cpu-bigmem-excluded
   / teardown-failure-still-fails-over)
+- `tests/test_router.py` (Part B FLEX_START queue vanish, #1116:
+  `test_queue_vanish_failover_seam_carries_queue_vanish_reason`,
+  `test_queue_vanish_reason_distinct_from_crash_capacity_queue_boot_reasons`)
+- `tests/test_backend_poll.py` (Part B FLEX_START queue vanish end-to-end, #1116:
+  `test_gcp_pending_vanish_fails_over_to_runpod`,
+  `test_gcp_queue_vanish_failover_marker_carries_queue_vanish_reason`,
+  `test_gcp_queue_vanish_does_NOT_increment_gcp_attempts_today`,
+  `test_gcp_queue_vanish_second_tick_short_circuits`,
+  `test_gcp_queue_vanish_does_not_record_boot_death`, + the negative
+  controls: workload-clock / no-clock-record / terminated-phase /
+  cpu-bigmem-excluded)
 - `tests/test_gcp_backend.py::test_render_startup_script_persists_diagnostics_before_teardown`
 - `tests/test_gcp_backend.py::test_render_startup_script_diagnostics_uploads_log_and_partial_artifacts`
 - `tests/test_gcp_backend.py::test_render_startup_script_diagnostics_is_guarded_and_bounded`
