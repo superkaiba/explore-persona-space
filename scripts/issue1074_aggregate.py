@@ -751,8 +751,11 @@ def dose_overlay(rates_by_step: dict | None, prior_summary_path: Path) -> dict:
     schedule contribution is negligible; elevation => report any S-dose as
     dose+schedule). Both curves are the SAME seeded subset + judge recipe."""
     if not prior_summary_path.exists():
-        logger.warning("[dose-ext] prior install summary missing: %s", prior_summary_path)
-        return {"status": "prior_curve_missing", "prior_path": str(prior_summary_path)}
+        raise RuntimeError(
+            f"[dose-ext] prior install summary missing: {prior_summary_path} — the "
+            "schedule-stretch overlay is an always-reported read (plan v9 §7); "
+            "refusing a partial aggregate"
+        )
     prior = _read_json(prior_summary_path).get("dose_curve_rates_by_step") or {}
     this_round = dict(rates_by_step or {})
     shared = sorted(set(prior) & set(this_round), key=int)

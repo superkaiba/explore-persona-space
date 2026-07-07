@@ -1709,9 +1709,12 @@ def phase_upload(cfg: RunConfig, seams: Seams1074, train_results: dict[str, dict
 
     On a followup round the RUN-LEVEL artifacts (evalgen, margin, run_config,
     preflight, calibration, staged-inputs manifest) go under a followup-scoped
-    prefix so they never clobber the parent round's same-named uploads; the
-    CELL-LEVEL paths stay ``{DATA_PREFIX}/{slug}/...`` (the followup slug
-    ``harmful_compliance-mixed`` is unique — plan §10)."""
+    prefix so they never clobber the parent round's same-named uploads.
+    CELL-LEVEL paths stay ``{DATA_PREFIX}/{slug}/...`` when the followup slug
+    is unique (base-negatives-regen); the dose-extension round REUSES the
+    mixed slug, so its cell-level files route under the followup prefix too,
+    its rate completions carry the ``-e9`` suffix, and its adapter ladder
+    goes to the ``-e9`` model prefix (plan §10)."""
     _phase("upload")
     run_prefix = (
         DATA_PREFIX
