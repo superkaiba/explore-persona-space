@@ -56,13 +56,13 @@ Check catalog (id — classification — kind scope)
       command blocks
   c26 GPU basis vs routed       WARN-only, conditional    experiment +
       machine                                             analysis
-  c27 decision-band precedent   WARN-only, conditional    experiment +
+  c28 decision-band precedent   WARN-only, conditional    experiment +
       coherence                                           analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24, 25, 26, 27) also SKIP when their content trigger
+19, 20, 21, 22, 23, 24, 25, 26, 27, 28) also SKIP when their content trigger
 does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
@@ -93,7 +93,7 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
     carries ``--workload-cmd`` / ``dispatch_issue.py`` FAILs on entities
     unconditionally)
   - ``N/A — basis measured on the routed machine`` (check 26)
-  - ``N/A — no precedent-labeled decision bands`` (check 27; British
+  - ``N/A — no precedent-labeled decision bands`` (check 28; British
     ``labelled`` accepted)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
@@ -3966,7 +3966,7 @@ def check_gpu_basis_routed_machine(plan: str, kind: str) -> CheckResult:
     return _warn(cid, name, _c26_offender_detail(offenders, routed))
 
 
-# ─── Check 27 — decision-band precedent coherence (WARN-only) ───────────────
+# ─── Check 28 — decision-band precedent coherence (WARN-only) ───────────────
 # Mechanizes the #825 v17 incident class: a registered fractional decision
 # band ("cmp T x" inside a success/kill/decision section), applied to the
 # plan's OWN quoted precedent ratio(s), must land in the branch the plan's
@@ -3980,11 +3980,11 @@ def check_gpu_basis_routed_machine(plan: str, kind: str) -> CheckResult:
 # idiom ("< 0.5 × 0.588", "≥ 0.5× its ceiling"). Integer / super-unity T  # noqa: RUF003
 # ("≥ 2× wall-time" kill fences) deliberately excluded: fraction-of-ceiling  # noqa: RUF003
 # bands are the target class; wall-time multipliers are a different quantity.
-_C27_BAND_RE = re.compile(
+_C28_BAND_RE = re.compile(
     r"(?P<cmp><=|>=|[<>≤≥])\s*(?P<thr>0?\.\d+|1\.0|1)\s*[×x](?![a-zA-Z])"  # noqa: RUF001
 )
-_C27_LIST_ITEM_RE = re.compile(r"^\s{0,3}(?:[-*]|\d+\.)\s")  # c14 sibling
-_C27_BOLD_LABEL_RE = re.compile(r"\*\*([^*\n]{1,60})\*\*")  # c14 sibling
+_C28_LIST_ITEM_RE = re.compile(r"^\s{0,3}(?:[-*]|\d+\.)\s")  # c14 sibling
+_C28_BOLD_LABEL_RE = re.compile(r"\*\*([^*\n]{1,60})\*\*")  # c14 sibling
 
 # Precedent-ratio assertion: explicit "ratio ≈ r" / "ratio ≈ r1–r2" token.  # noqa: RUF003
 # Decimal point REQUIRED (excludes the "ratio ~1:1" mix idiom — the only 2
@@ -3995,8 +3995,8 @@ _C27_BOLD_LABEL_RE = re.compile(r"\*\*([^*\n]{1,60})\*\*")  # c14 sibling
 # match like `0.4` inside `0.48%`; the second lookahead rejects r1 when the
 # engine SKIPS a %-suffixed optional range group — `(?!\s*%)` alone let
 # `ratio ≈ 0.44–0.52%` partially harvest r1=0.44 (round-2 fix, concern  # noqa: RUF003
-# c27-percent-range-partial-harvest).
-_C27_RATIO_RE = re.compile(
+# c28-percent-range-partial-harvest).
+_C28_RATIO_RE = re.compile(
     r"(?i)\bratios?\s*[≈=~]\s*(?P<r1>0?\.\d+)\b"
     r"(?:\s*[–—-]\s*(?P<r2>0?\.\d+)\b)?(?!\s*%)"  # noqa: RUF001 — en dash is real plan text
     r"(?!\s*[–—-]\s*0?\.\d+\s*%)"  # noqa: RUF001 — reject a %-suffixed skipped range
@@ -4007,11 +4007,11 @@ _C27_RATIO_RE = re.compile(
 # kill, not instance-level: a mixed line ("not below X but above Y") is
 # dropped entirely (accepted false negative — prefer false negatives, the
 # c14 doctrine).
-_C27_BELOW_RE = re.compile(r"(?i)\b(?:well|lands?|sits?|stays?|falls?)\s+below\b|\bunder\s+half\b")
-_C27_ABOVE_RE = re.compile(
+_C28_BELOW_RE = re.compile(r"(?i)\b(?:well|lands?|sits?|stays?|falls?)\s+below\b|\bunder\s+half\b")
+_C28_ABOVE_RE = re.compile(
     r"(?i)\bexceeds?\b|\b(?:well|lands?|sits?|stays?)\s+above\b|\bat\s+least\s+half\b"
 )
-_C27_NEG_RE = re.compile(
+_C28_NEG_RE = re.compile(
     r"(?i)\b(?:not|never|no\s+longer)\s+(?:(?:well|lands?|sits?|stays?|falls?)\s+)?"
     r"(?:below|above)\b|\bexcept\s"
 )
@@ -4019,18 +4019,18 @@ _C27_NEG_RE = re.compile(
 # `vs`; slash (`/`) is NOT a ratio separator in this corpus (it is the
 # paired-cells idiom: "rotated +0.349/+0.334"). 2-4 fractional digits so a
 # coarse "vs chat 0.6" drops the corroborator (quoted-ratio path unaffected).
-_C27_VS_RE = re.compile(r"(?i)\bvs\.?\s")
-_C27_POSNUM_RE = re.compile(r"(?<![\d.\-])\+?(0?\.\d{2,4})\b")
+_C28_VS_RE = re.compile(r"(?i)\bvs\.?\s")
+_C28_POSNUM_RE = re.compile(r"(?<![\d.\-])\+?(0?\.\d{2,4})\b")
 
 
-def _c27_frac(s: str) -> Fraction:
+def _c28_frac(s: str) -> Fraction:
     """Exact ``Fraction`` from a decimal literal, tolerating a bare leading
     dot (``.5`` -> 1/2) — the c13 ``_c13_registered_gates`` parse
     convention."""
     return Fraction("0" + s) if s.startswith(".") else Fraction(s)
 
 
-def _c27_bands(plan: str) -> list[dict]:
+def _c28_bands(plan: str) -> list[dict]:
     """Registered multiplicative decision-band lines: non-fenced,
     bold-labeled list items inside a success/kill/decision/evaluation-titled
     section (``_C13_GATE_SECTION_RE`` reused; the #825 v17 heading
@@ -4048,13 +4048,13 @@ def _c27_bands(plan: str) -> list[dict]:
             continue
         if not any(h.line <= i < h.end and _C13_GATE_SECTION_RE.search(h.text) for h in headings):
             continue
-        if not _C27_LIST_ITEM_RE.match(line):
+        if not _C28_LIST_ITEM_RE.match(line):
             continue
-        label_m = _C27_BOLD_LABEL_RE.search(line)
-        band_m = _C27_BAND_RE.search(line)
+        label_m = _C28_BOLD_LABEL_RE.search(line)
+        band_m = _C28_BAND_RE.search(line)
         if not (label_m and band_m):
             continue
-        thr = _c27_frac(band_m.group("thr"))
+        thr = _c28_frac(band_m.group("thr"))
         if not 0 < thr <= 1:
             continue
         bands.append(
@@ -4068,7 +4068,7 @@ def _c27_bands(plan: str) -> list[dict]:
     return bands
 
 
-def _c27_ratio_assertions(plan: str) -> list[dict]:
+def _c28_ratio_assertions(plan: str) -> list[dict]:
     """Side-asserted precedent-ratio lines over non-fenced text. A line
     fires only when an explicit ``ratio ≈ r[-r2]`` token AND exactly one
     side (below XOR above vocabulary, negation-guarded at LINE level)
@@ -4088,28 +4088,28 @@ def _c27_ratio_assertions(plan: str) -> list[dict]:
     for line, fenced in zip(lines, mask, strict=True):
         if fenced:
             continue
-        ratio_ms = list(_C27_RATIO_RE.finditer(line))
-        if not ratio_ms or _C27_NEG_RE.search(line):
+        ratio_ms = list(_C28_RATIO_RE.finditer(line))
+        if not ratio_ms or _C28_NEG_RE.search(line):
             continue
-        below_m = _C27_BELOW_RE.search(line)
-        above_m = _C27_ABOVE_RE.search(line)
+        below_m = _C28_BELOW_RE.search(line)
+        above_m = _C28_ABOVE_RE.search(line)
         if bool(below_m) == bool(above_m):  # neither, or both (ambiguous)
             continue
         side_m = below_m or above_m
-        quoted = {_c27_frac(m.group(g)) for m in ratio_ms for g in ("r1", "r2") if m.group(g)}
+        quoted = {_c28_frac(m.group(g)) for m in ratio_ms for g in ("r1", "r2") if m.group(g)}
         blanked = list(line)
         for m in ratio_ms:
             blanked[m.start() : m.end()] = " " * (m.end() - m.start())
         blanked_line = "".join(blanked)
         recomputed: set[Fraction] = set()
-        vs_m = _C27_VS_RE.search(blanked_line)
+        vs_m = _C28_VS_RE.search(blanked_line)
         if vs_m:
-            denom_m = _C27_POSNUM_RE.search(blanked_line[vs_m.end() :])
+            denom_m = _C28_POSNUM_RE.search(blanked_line[vs_m.end() :])
             if denom_m:
-                b = _c27_frac(denom_m.group(1))
+                b = _c28_frac(denom_m.group(1))
                 if b > 0:
-                    for num_m in _C27_POSNUM_RE.finditer(blanked_line[: vs_m.start()]):
-                        r = _c27_frac(num_m.group(1)) / b
+                    for num_m in _C28_POSNUM_RE.finditer(blanked_line[: vs_m.start()]):
+                        r = _c28_frac(num_m.group(1)) / b
                         if 0 < r <= 2:
                             recomputed.add(r)
         assertions.append(
@@ -4125,14 +4125,14 @@ def _c27_ratio_assertions(plan: str) -> list[dict]:
     return assertions
 
 
-def _c27_na_escape_declared(plan: str) -> bool:
+def _c28_na_escape_declared(plan: str) -> bool:
     """Standalone ``N/A — no precedent-labeled decision bands`` escape (see
     ``_standalone_na_declared`` for the anti-paste rationale; British
     ``labelled`` accepted)."""
     return _standalone_na_declared(plan, r"no precedent[- ]labell?ed decision bands?")
 
 
-def _c27_landed_band_label(bands: list[dict], landed_ge: bool) -> str:
+def _c28_landed_band_label(bands: list[dict], landed_ge: bool) -> str:
     """Label of the first band whose comparator points at the branch every
     candidate lands in (the >= T branch when ``landed_ge``, the < T branch
     otherwise), or ``""`` when no band's comparator points that way."""
@@ -4143,7 +4143,7 @@ def _c27_landed_band_label(bands: list[dict], landed_ge: bool) -> str:
     return ""
 
 
-def _c27_offender_detail(offenders: list[tuple[dict, str]], T: Fraction, bands: list[dict]) -> str:
+def _c28_offender_detail(offenders: list[tuple[dict, str]], T: Fraction, bands: list[dict]) -> str:
     """Bounded WARN detail (c13 conventions: at most 3 offenders shown,
     90-char line snippets): per offender the line snippet, the asserted
     side phrase, the quoted vs recomputed candidate ratios (rendered
@@ -4166,7 +4166,7 @@ def _c27_offender_detail(offenders: list[tuple[dict, str]], T: Fraction, bands: 
             placement = "candidates span both branches of T"
         else:
             landed_ge = a["side"] == "below"
-            label = _c27_landed_band_label(bands, landed_ge)
+            label = _c28_landed_band_label(bands, landed_ge)
             branch = "≥ T" if landed_ge else "< T"
             placement = f"every candidate lands in the {branch} branch" + (
                 f" ({label!r})" if label else ""
@@ -4209,17 +4209,17 @@ def check_precedent_band_coherence(plan: str, kind: str) -> CheckResult:
     paired-cells idiom). Incident: #825 v17 (the 0.5x band vs its cited
     instruct precedent 0.3489/0.6731 = 0.519, narrated 'lands well below';
     caught only at the critic layer — verify_plan PASSed 0/0)."""
-    cid, name = "c27_precedent_band_coherence", "decision-band precedent coherence"
+    cid, name = "c28_precedent_band_coherence", "decision-band precedent coherence"
     if kind not in ("experiment", "analysis"):
         return _skip(
             cid,
             name,
             "kind-exempt: precedent-labeled decision bands are an experiment|analysis plan shape",
         )
-    bands = _c27_bands(plan)
+    bands = _c28_bands(plan)
     if not bands:
         return _skip(cid, name, "no registered multiplicative decision band detected")
-    if _c27_na_escape_declared(plan):
+    if _c28_na_escape_declared(plan):
         return _pass(cid, name, "explicit N/A declared (no precedent-labeled decision bands)")
     thresholds = {b["thr"] for b in bands}
     if len(thresholds) != 1:
@@ -4230,7 +4230,7 @@ def check_precedent_band_coherence(plan: str, kind: str) -> CheckResult:
             "ambiguous at the plan surface",
         )
     T = next(iter(thresholds))
-    assertions = _c27_ratio_assertions(plan)
+    assertions = _c28_ratio_assertions(plan)
     if not assertions:
         return _skip(cid, name, "band present but no side-asserted precedent ratio line detected")
     offenders: list[tuple[dict, str]] = []
@@ -4247,7 +4247,7 @@ def check_precedent_band_coherence(plan: str, kind: str) -> CheckResult:
             f"{len(assertions)} side-asserted precedent ratio line(s) coherent with the "
             f"registered {float(T):g}× band",  # noqa: RUF001
         )
-    return _warn(cid, name, _c27_offender_detail(offenders, T, bands))
+    return _warn(cid, name, _c28_offender_detail(offenders, T, bands))
 
 
 # ─── Driver ────────────────────────────────────────────────────────────────

@@ -164,11 +164,11 @@ def test_good_plan_passes_all():
         "c24_resume_provenance": "SKIP",
         "c25_html_entities_in_commands": "SKIP",
         "c26_gpu_basis_routed_machine": "SKIP",
-        "c27_precedent_band_coherence": "SKIP",
+        "c28_precedent_band_coherence": "SKIP",
     }
     actual = {cid: r.status for cid, r in by_id.items()}
     assert actual == expected
-    assert len(results) == 27
+    assert len(results) == 28
 
 
 # ─── Check 0 — plan-nonstub ────────────────────────────────────────────────
@@ -3918,16 +3918,16 @@ def test_c26_intent_gpu_mirror_matches_backend():
     assert derived == verify_plan._C26_INTENT_GPU
 
 
-# ─── Check 27 — decision-band precedent coherence ──────────────────────────
+# ─── Check 28 — decision-band precedent coherence ──────────────────────────
 
 # Verbatim corpus literals from tasks/followups_running/825/plans/v17.md
 # (lines 21, 103-104; line 103's trailing parenthetical trimmed) — embedded
 # as literals, NEVER read from tasks/ at test runtime (tasks move between
 # status folders; the REAL plan files are exercised by the plan-#1094 §5
 # pre-commit corpus calibration, the c14 fixture convention).
-C27_HEADING = "## 6. Success + kill criteria (quantitative)"
-C27_BANDS = (
-    C27_HEADING
+C28_HEADING = "## 6. Success + kill criteria (quantitative)"
+C28_BANDS = (
+    C28_HEADING
     + "\n\n"
     + "- **Answer-specificity UPHELD on base:** max(base `armC_sep` rotated, MLP) @ L19 "
     "< 0.5 × 0.588 = **0.294**, AND base full-n sep→chat recentered transfer < 0.5 × the "
@@ -3940,67 +3940,67 @@ C27_BANDS = (
 # straddles the plan's own 0.5x threshold while the prose asserts 'lands
 # well below'; the same-line vs-pair recompute (0.349/0.673 ≈ 0.519,
 # 0.299/0.673 ≈ 0.444) corroborates.
-C27_825_LINE = (
+C28_825_LINE = (
     "**Hypothesis (falsifiable):** mirroring instruct — where separator within-strength "
     "was rotated +0.349 / MLP +0.299 vs chat 0.673 (ratio ≈ 0.44–0.52) — the base "
     "separator map lands well below the base chat map (0.588). Quantitative bands in §6."
 )
 
 
-def _c27_plan(*extra: str) -> str:
+def _c28_plan(*extra: str) -> str:
     """GOOD_PLAN + the v17 band bullets + ``extra`` lines appended."""
-    return GOOD_PLAN + "\n" + C27_BANDS + "\n" + "\n\n".join(extra) + ("\n" if extra else "")
+    return GOOD_PLAN + "\n" + C28_BANDS + "\n" + "\n\n".join(extra) + ("\n" if extra else "")
 
 
 @pytest.mark.parametrize("kind", ["infra", "batch", "survey"])
-def test_c27_kind_infra_skips(kind):
-    assert _status(_c27_plan(C27_825_LINE), "c27_precedent_band_coherence", kind=kind) == "SKIP"
+def test_c28_kind_infra_skips(kind):
+    assert _status(_c28_plan(C28_825_LINE), "c28_precedent_band_coherence", kind=kind) == "SKIP"
 
 
-def test_c27_no_band_skips():
+def test_c28_no_band_skips():
     _, by_id = _run(GOOD_PLAN)
-    r = by_id["c27_precedent_band_coherence"]
+    r = by_id["c28_precedent_band_coherence"]
     assert r.status == "SKIP"
     assert "no registered multiplicative decision band" in r.detail
 
 
-def test_c27_825_v17_straddle_warns():
+def test_c28_825_v17_straddle_warns():
     # The incident reduction: verbatim v17 bands + line 21 → WARN (never
     # FAIL — `ok` stays True, the c14 severity doctrine).
-    ok, by_id = _run(_c27_plan(C27_825_LINE))
-    r = by_id["c27_precedent_band_coherence"]
+    ok, by_id = _run(_c28_plan(C28_825_LINE))
+    r = by_id["c28_precedent_band_coherence"]
     assert r.status == "WARN"
     assert ok is True  # WARN never flips exit 0
     for token in ("0.52", "0.5", "well below", "straddle"):
         assert token in r.detail, (token, r.detail)
 
 
-def test_c27_825_recompute_in_detail():
+def test_c28_825_recompute_in_detail():
     # The vs-pair recompute ran (not just the quoted range): 0.349/0.673 =
     # 0.5186... rendered `≈ 0.519` in the detail.
-    _, by_id = _run(_c27_plan(C27_825_LINE))
-    assert "0.519" in by_id["c27_precedent_band_coherence"].detail
+    _, by_id = _run(_c28_plan(C28_825_LINE))
+    assert "0.519" in by_id["c28_precedent_band_coherence"].detail
 
 
-def test_c27_coherent_below_passes():
+def test_c28_coherent_below_passes():
     line = "The instruct precedent (ratio ≈ 0.23) — lands well below the ceiling."
-    assert _status(_c27_plan(line), "c27_precedent_band_coherence") == "PASS"
+    assert _status(_c28_plan(line), "c28_precedent_band_coherence") == "PASS"
 
 
-def test_c27_coherent_above_passes():
+def test_c28_coherent_above_passes():
     line = "The instruct precedent (ratio ≈ 0.62) — exceeds half the ceiling."
-    assert _status(_c27_plan(line), "c27_precedent_band_coherence") == "PASS"
+    assert _status(_c28_plan(line), "c28_precedent_band_coherence") == "PASS"
 
 
-def test_c27_clean_contradiction_warns():
+def test_c28_clean_contradiction_warns():
     line = "The instruct precedent (ratio ≈ 0.62) — lands well below the ceiling."
-    _, by_id = _run(_c27_plan(line))
-    r = by_id["c27_precedent_band_coherence"]
+    _, by_id = _run(_c28_plan(line))
+    r = by_id["c28_precedent_band_coherence"]
     assert r.status == "WARN"
     assert "contradiction" in r.detail
 
 
-def test_c27_vs_pair_corroborator_catches_typoed_ratio():
+def test_c28_vs_pair_corroborator_catches_typoed_ratio():
     # The quoted ratio (0.48 < 0.5) is coherent alone; the same-line vs-pair
     # recompute (0.35/0.67 = 0.522 ≥ 0.5) corroborates a straddle WARN
     # despite the (typoed) quoted value.
@@ -4008,42 +4008,42 @@ def test_c27_vs_pair_corroborator_catches_typoed_ratio():
         "The instruct precedent (ratio ≈ 0.48) rotated 0.35 vs chat 0.67 — "
         "lands well below the ceiling."
     )
-    _, by_id = _run(_c27_plan(line))
-    r = by_id["c27_precedent_band_coherence"]
+    _, by_id = _run(_c28_plan(line))
+    r = by_id["c28_precedent_band_coherence"]
     assert r.status == "WARN"
     assert "0.522" in r.detail
 
 
-def test_c27_na_escape_passes():
-    plan = _c27_plan(C27_825_LINE) + "\n- N/A — no precedent-labeled decision bands\n"
+def test_c28_na_escape_passes():
+    plan = _c28_plan(C28_825_LINE) + "\n- N/A — no precedent-labeled decision bands\n"
     _, by_id = _run(plan)
-    r = by_id["c27_precedent_band_coherence"]
+    r = by_id["c28_precedent_band_coherence"]
     assert r.status == "PASS"
     assert "explicit N/A" in r.detail
 
 
-def test_c27_quoted_na_phrase_does_not_escape():
+def test_c28_quoted_na_phrase_does_not_escape():
     # A mid-sentence quoted escape phrase (the pasted-bounce-brief
     # self-escape channel) is NOT a standalone declaration line and must not
     # escape — the `_standalone_na_declared` anti-paste convention,
     # mirroring test_c13_quoted_na_phrase_does_not_escape.
-    plan = _c27_plan(C27_825_LINE) + (
+    plan = _c28_plan(C28_825_LINE) + (
         "\nThe verifier's remediation menu says to declare 'N/A — no precedent-labeled "
         "decision bands' when the mention is incidental.\n"
     )
-    assert _status(plan, "c27_precedent_band_coherence") == "WARN"
+    assert _status(plan, "c28_precedent_band_coherence") == "WARN"
 
 
-def test_c27_multiple_distinct_thresholds_skips():
+def test_c28_multiple_distinct_thresholds_skips():
     extra_band = "- **Tertiary floor:** the control read < 0.1 × its own ceiling."
-    plan = GOOD_PLAN + "\n" + C27_BANDS + extra_band + "\n\n" + C27_825_LINE + "\n"
+    plan = GOOD_PLAN + "\n" + C28_BANDS + extra_band + "\n\n" + C28_825_LINE + "\n"
     _, by_id = _run(plan)
-    r = by_id["c27_precedent_band_coherence"]
+    r = by_id["c28_precedent_band_coherence"]
     assert r.status == "SKIP"
     assert "pairing ambiguous" in r.detail
 
 
-def test_c27_mix_ratio_idiom_not_harvested():
+def test_c28_mix_ratio_idiom_not_harvested():
     # The `ratio ~1:1` contrastive-negatives mix idiom carries no decimal
     # point → not a precedent-ratio token, even with side vocabulary on the
     # line (the two non-incident same-line corpus hits, #524 v1).
@@ -4051,109 +4051,109 @@ def test_c27_mix_ratio_idiom_not_harvested():
         "Training mix: contrastive negatives @ ratio ~1:1 across the panel; "
         "the anchor sits below the ceiling by 5 nats."
     )
-    _, by_id = _run(_c27_plan(line))
-    r = by_id["c27_precedent_band_coherence"]
+    _, by_id = _run(_c28_plan(line))
+    r = by_id["c28_precedent_band_coherence"]
     assert r.status == "SKIP"
     assert "no side-asserted precedent ratio line" in r.detail
 
 
-def test_c27_percent_range_not_harvested():
-    # Round-2 fix (concern c27-percent-range-partial-harvest): a %-suffixed
+def test_c28_percent_range_not_harvested():
+    # Round-2 fix (concern c28-percent-range-partial-harvest): a %-suffixed
     # RANGE harvests NOTHING. Pre-fix, `(?!\s*%)` after the OPTIONAL range
     # group let the engine skip the group and partially harvest r1=0.44 from
     # `ratio ≈ 0.44–0.52%` (live-probed: ('0.44', None)).  # noqa: RUF003
     line = "The instruct precedent (ratio ≈ 0.44–0.52%) — lands well below the ceiling."
-    _, by_id = _run(_c27_plan(line))
-    r = by_id["c27_precedent_band_coherence"]
+    _, by_id = _run(_c28_plan(line))
+    r = by_id["c28_precedent_band_coherence"]
     assert r.status == "SKIP"
     assert "no side-asserted precedent ratio line" in r.detail
     # Regex-level: neither endpoint of a %-suffixed range is harvested.
-    assert verify_plan._C27_RATIO_RE.search("ratio ≈ 0.44–0.52%") is None
-    assert verify_plan._C27_RATIO_RE.search("ratio ≈ 0.44-0.52%") is None
-    assert verify_plan._C27_RATIO_RE.search("ratio ≈ 0.44 – 0.52 %") is None
+    assert verify_plan._C28_RATIO_RE.search("ratio ≈ 0.44–0.52%") is None
+    assert verify_plan._C28_RATIO_RE.search("ratio ≈ 0.44-0.52%") is None
+    assert verify_plan._C28_RATIO_RE.search("ratio ≈ 0.44 – 0.52 %") is None
 
 
-def test_c27_percent_single_value_not_harvested():
+def test_c28_percent_single_value_not_harvested():
     # The pre-existing single-value `%` exclusion, now pinned: the \b blocks
     # a backtracked partial-digit match (`0.4` inside `0.48%`).
     line = "The instruct precedent (ratio ≈ 0.48%) — lands well below the ceiling."
-    _, by_id = _run(_c27_plan(line))
-    r = by_id["c27_precedent_band_coherence"]
+    _, by_id = _run(_c28_plan(line))
+    r = by_id["c28_precedent_band_coherence"]
     assert r.status == "SKIP"
     assert "no side-asserted precedent ratio line" in r.detail
-    assert verify_plan._C27_RATIO_RE.search("ratio ≈ 0.48%") is None
+    assert verify_plan._C28_RATIO_RE.search("ratio ≈ 0.48%") is None
 
 
-def test_c27_negated_side_passes():
+def test_c28_negated_side_passes():
     # Negation guard: a negated side phrase kills the line (line-level).
     line = "The instruct precedent (ratio ≈ 0.52) is NOT well below the ceiling."
-    assert _status(_c27_plan(line), "c27_precedent_band_coherence") in ("SKIP", "PASS")
+    assert _status(_c28_plan(line), "c28_precedent_band_coherence") in ("SKIP", "PASS")
 
 
-def test_c27_straddle_narrated_honestly_passes():
+def test_c28_straddle_narrated_honestly_passes():
     # A range straddling T with NO side assertion is honest narration — no
     # side vocabulary, no assertion harvested.
     line = (
         "The instruct precedent (ratio ≈ 0.44–0.52), straddling the threshold — "
         "borderline either way."
     )
-    assert _status(_c27_plan(line), "c27_precedent_band_coherence") in ("SKIP", "PASS")
+    assert _status(_c28_plan(line), "c28_precedent_band_coherence") in ("SKIP", "PASS")
 
 
-def test_c27_fenced_band_does_not_trigger():
+def test_c28_fenced_band_does_not_trigger():
     plan = (
-        GOOD_PLAN + "\n" + C27_HEADING + "\n\n```\n"
+        GOOD_PLAN + "\n" + C28_HEADING + "\n\n```\n"
         "- **Answer-specificity UPHELD on base:** max < 0.5 × 0.588 ceiling\n"
-        "```\n\n" + C27_825_LINE + "\n"
+        "```\n\n" + C28_825_LINE + "\n"
     )
     _, by_id = _run(plan)
-    r = by_id["c27_precedent_band_coherence"]
+    r = by_id["c28_precedent_band_coherence"]
     assert r.status == "SKIP"
     assert "no registered multiplicative decision band" in r.detail
 
 
-def test_c27_kind_analysis_warns_not_skips():
-    status = _status(_c27_plan(C27_825_LINE), "c27_precedent_band_coherence", kind="analysis")
+def test_c28_kind_analysis_warns_not_skips():
+    status = _status(_c28_plan(C28_825_LINE), "c28_precedent_band_coherence", kind="analysis")
     assert status == "WARN"
 
 
-def test_c27_malformed_prose_no_crash():
+def test_c28_malformed_prose_no_crash():
     # (a) band line with a comparator + mult sign but no number — the band
     # regex cannot match; SKIP, no exception.
-    plan_a = GOOD_PLAN + "\n" + C27_HEADING + "\n\n- **Band:** metric < × ceiling\n"
-    assert _status(plan_a, "c27_precedent_band_coherence") == "SKIP"
+    plan_a = GOOD_PLAN + "\n" + C28_HEADING + "\n\n- **Band:** metric < × ceiling\n"
+    assert _status(plan_a, "c28_precedent_band_coherence") == "SKIP"
     # (b) `ratio ≈ .` garbage — the ratio token needs a digit; SKIP.
-    plan_b = _c27_plan("The precedent (ratio ≈ .) lands well below the ceiling.")
-    assert _status(plan_b, "c27_precedent_band_coherence") == "SKIP"
+    plan_b = _c28_plan("The precedent (ratio ≈ .) lands well below the ceiling.")
+    assert _status(plan_b, "c28_precedent_band_coherence") == "SKIP"
     # (c) zero-denominator vs-pair on a line that ACTUALLY fires (the full
     # conjunction: bands + `ratio ≈ 0.48` + `0.00 vs 0.00` + side vocab), so
-    # `_c27_ratio_assertions` reaches the b > 0 denominator guard — no
+    # `_c28_ratio_assertions` reaches the b > 0 denominator guard — no
     # ZeroDivisionError (the Fraction(x, 0) class c13's detail builder
     # documents), and the quoted candidate still yields a defined verdict
     # (0.48 < 0.5 asserted below → coherent).
-    plan_c = _c27_plan(
+    plan_c = _c28_plan(
         "The precedent (ratio ≈ 0.48) scored 0.00 vs 0.00 on the control — "
         "lands well below the ceiling."
     )
     _, by_id = _run(plan_c)
-    r = by_id["c27_precedent_band_coherence"]
+    r = by_id["c28_precedent_band_coherence"]
     assert r.status in ("PASS", "WARN", "SKIP")
     assert r.detail
     # (d) ~2 MB repeated-line plan — bounded wall time, no exception (direct
     # check-function call, the c13 alpha-zero-test precedent).
-    big = _c27_plan(C27_825_LINE) + ("filler prose line with no tokens of interest\n" * 45000)
+    big = _c28_plan(C28_825_LINE) + ("filler prose line with no tokens of interest\n" * 45000)
     r_big = verify_plan.check_precedent_band_coherence(big, "experiment")
     assert r_big.status in ("PASS", "WARN", "SKIP")
 
 
-def test_c27_ratio_equal_threshold():
+def test_c28_ratio_equal_threshold():
     # Boundary pin: below := [0, T) hardcoded — r == T on an asserted-below
     # line is a contradiction. The harvested band comparator is NOT
     # consulted at the boundary (a `<=`-band's r == T edge is an accepted
     # WARN-only imprecision, per the check docstring).
     line = "The instruct precedent (ratio ≈ 0.5) — lands well below the ceiling."
-    _, by_id = _run(_c27_plan(line))
-    r = by_id["c27_precedent_band_coherence"]
+    _, by_id = _run(_c28_plan(line))
+    r = by_id["c28_precedent_band_coherence"]
     assert r.status == "WARN"
     assert "contradiction" in r.detail
 
@@ -4207,12 +4207,12 @@ def test_cli_json_schema_and_exit_zero_on_pass(tmp_path):
     assert payload["issue"] is None
     assert payload["kind"] == "experiment"
     assert payload["n_fail"] == 0
-    assert payload["n_skip"] == 20
+    assert payload["n_skip"] == 21
     assert {"id", "name", "status", "detail"} <= set(payload["checks"][0])
     statuses = {c["status"] for c in payload["checks"]}
     assert statuses <= {"PASS", "WARN", "FAIL", "SKIP"}
-    assert len(payload["checks"]) == 28
-    assert len({c["id"] for c in payload["checks"]}) == 28
+    assert len(payload["checks"]) == 29
+    assert len({c["id"] for c in payload["checks"]}) == 29
     # c23 has no task context in --plan-file mode: rendered SKIP (companion
     # assert for test_cli_issue_mode_appends_goal_currency).
     c23 = next(c for c in payload["checks"] if c["id"] == "c23_goal_currency")
