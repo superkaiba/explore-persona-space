@@ -91,7 +91,7 @@ for ax, beh, title in [
     kb = dig[f"{beh}-base"]["kept_recomputed"]
     ka = dig[f"{beh}-ablit"]["kept_recomputed"]
     bars = [
-        ("Claude\n(#906, declared-\nbundle context)", k906, n906, COL["claude"]),
+        ("parent Claude\ngenerator (declared-\nbundle context)", k906, n906, COL["claude"]),
         ("base Qwen", kb, gen_n, COL["base"]),
         ("abliterated\nQwen", ka, gen_n, COL["ablit"]),
     ]
