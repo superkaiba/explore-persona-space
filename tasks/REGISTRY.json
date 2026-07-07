@@ -823,8 +823,8 @@
     "1105": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/approved/1105",
-      "status": "approved",
+      "path": "tasks/running/1105",
+      "status": "running",
       "title": "daily-fix: pin Step 10d guard-block recovery-contract phrase"
     },
     "1106": {
