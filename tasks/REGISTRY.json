@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1103,
+  "highest_id": 1104,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -812,6 +812,13 @@
       "path": "tasks/proposed/1103",
       "status": "proposed",
       "title": "daily-fix: standardize multi-behavior datagen behavior defin"
+    },
+    "1104": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1104",
+      "status": "proposed",
+      "title": "daily-fix: refusal-wedged orchestrator ticks on harmful-cont"
     },
     "111": {
       "has_clean_result": true,
