@@ -1356,6 +1356,65 @@ def check_title_confidence(body: str) -> CheckResult:
     return CheckResult("title confidence tag", True, f"level={m.group(1)}")
 
 
+def check_h1_matches_frontmatter_title(body: str, fm: dict) -> CheckResult:
+    """The H1 headline and the frontmatter `title` must agree
+    (whitespace-normalized) on sentinelled clean-result bodies.
+
+    The title lives in two places — frontmatter via `task.py set-title`
+    (feeds the dashboard LIST view + REGISTRY) and the body H1 via
+    `set-body` (feeds the rendered DETAIL view). #825: a retitle without
+    an H1 edit shipped a stale headline through a full critic round.
+    Severity: FAIL on v4 bodies; WARN on grandfathered v3/v2 (forward-only
+    rule — 4 real v3/v2 bodies diverge today, incl. completed #432/#458);
+    PASS-skip on non-sentinelled bodies (pre-promotion bodies legitimately
+    have no synced H1) and on frontmatter-less input (draft / --body-stdin
+    dry runs carry no fm to compare). Normalization is whitespace collapse
+    ONLY — no case/Unicode/punctuation folding (#763's Unicode-rho vs
+    ASCII-"rho" transliteration is a REAL sync failure folding would hide).
+    """
+    name = "H1 matches frontmatter title"
+    v4 = is_v4(body)
+    sentinelled = v4 or is_v3(body) or is_v2_nested_design(body)
+    if not sentinelled:
+        return CheckResult(name, True, "not a sentinelled clean-result body — skipped")
+    if not fm:
+        return CheckResult(
+            name,
+            True,
+            "no frontmatter in input (draft / --body-stdin invocation) — "
+            "skipped; the gate-time --issue run compares against the real body.md",
+        )
+    warn_only = not v4  # forward-only: v3/v2 grandfathered to WARN
+
+    def _flag(detail: str) -> CheckResult:
+        if warn_only:
+            return CheckResult(name, True, detail + " [grandfathered v3/v2 — WARN]", is_warn=True)
+        return CheckResult(name, False, detail)
+
+    title = fm.get("title")
+    if title is None:
+        return _flag(
+            "sentinelled clean-result body has no frontmatter `title` — "
+            'run `task.py set-title <N> "<H1 text>"`'
+        )
+    h1 = find_h1_title(body)
+    if h1 is None:
+        return _flag("no H1 found — a sentinelled clean-result must open with `# <title>`")
+
+    def _norm(s: object) -> str:
+        return " ".join(str(s).split())
+
+    if _norm(h1) != _norm(title):
+        return _flag(
+            f"H1 differs from frontmatter title (dashboard list shows the frontmatter "
+            f"title; the body renders the H1) — H1: {h1[:90]!r} vs title: "
+            f'{str(title)[:90]!r}. Sync via `task.py set-title <N> "<H1 text>"` '
+            f"(the promote-skill convention, H1 canonical) or re-`set-body` with the "
+            f"H1 edited if the frontmatter title is the fresher one."
+        )
+    return CheckResult(name, True, "H1 == frontmatter title (whitespace-normalized)")
+
+
 def check_required_sections(body: str) -> CheckResult:
     """Check 2: the required H2 sections appear in order, and no retired
     H2 is present.
@@ -9261,6 +9320,9 @@ def verify_text(
     # FAILs (enforcement is at /issue Step 0c, not here) and needs the
     # frontmatter, so it lives outside the body-only CHECKS list.
     results.append(check_goal_present(body, fm))
+    # H1 ↔ frontmatter-title sync (#1110/#825) — needs the frontmatter, so it
+    # lives outside the body-only CHECKS list like check_goal_present.
+    results.append(check_h1_matches_frontmatter_title(body, fm))
     # Lens 14 concerns audit — mirror of clean-result-critic Lens 14.
     # Needs the sibling concerns.jsonl, so lives outside CHECKS too.
     results.append(check_concerns_audit(body, concerns_path=concerns_path))
