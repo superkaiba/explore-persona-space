@@ -1833,6 +1833,7 @@ def _judge_rate(
     tag: str,
     n_draws: int,
     judge_root: Path,
+    max_tokens: int = 300,  # llm-judging rule 23: reason-first rubrics need >=~300 (#1090 fix)
 ) -> dict:
     """Judged (or structural) rate over one (cell, state) tier-2 read."""
     behavior = BEHAVIORS[behavior_name]
@@ -1856,6 +1857,7 @@ def _judge_rate(
         cache_dir=cell_dir,
         save_raw=cell_dir / "judge_raw.json",
         judge_model=behavior.judge_model,
+        max_tokens=max_tokens,
     )
     n_dropped = 0
     n_pos = 0
