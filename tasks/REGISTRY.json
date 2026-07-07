@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1102,
+  "highest_id": 1103,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -805,6 +805,13 @@
       "path": "tasks/proposed/1102",
       "status": "proposed",
       "title": "daily-fix: digest-only raw-read rule must name real-world-co"
+    },
+    "1103": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1103",
+      "status": "proposed",
+      "title": "daily-fix: standardize multi-behavior datagen behavior defin"
     },
     "111": {
       "has_clean_result": true,
