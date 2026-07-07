@@ -816,8 +816,8 @@
     "1104": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1104",
-      "status": "running",
+      "path": "tasks/reviewing/1104",
+      "status": "reviewing",
       "title": "daily-fix: refusal-wedged orchestrator ticks on harmful-cont"
     },
     "1105": {
