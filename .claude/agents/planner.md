@@ -230,7 +230,8 @@ Concrete steps: exact training configs, data specs, pipeline DAG, file paths,
 pseudocode. Hard-requirement items (each REQUIRED or its named N/A escape):
 why code, not a model call · contrastive negatives for behavior implantation
 (panel disjointness; two named exemptions) · data source + realism tier ·
-completion provenance (on-policy-first) · marker / behavior-implant stopping
+completion provenance (on-policy-first; multi-behavior datagen: standardized
+persona-vectors-shape behavior definitions) · marker / behavior-implant stopping
 recipe (overrides parent parity) · persona-vectors extraction recipe ·
 multi-arm resolution-band designs · few-shot / ICL demonstration content ·
 smoke/sweep architectural parity · no all-or-nothing eligibility gates ·
