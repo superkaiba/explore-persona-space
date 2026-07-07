@@ -157,77 +157,6 @@ def _get_tokenizer():
     return _get_tokenizer._tok
 
 
-class _SmokeTokenizer:
-    pad_token_id = 0
-    eos_token_id = 1
-    pad_token = "<pad>"
-    eos_token = "<eos>"
-
-    def __len__(self) -> int:
-        return 258
-
-    def encode(self, text: str, add_special_tokens: bool = False) -> list[int]:
-        del add_special_tokens
-        return [(ord(ch) % 250) + 2 for ch in text]
-
-    def decode(self, ids, skip_special_tokens: bool = False) -> str:
-        del skip_special_tokens
-        return "." * len(list(ids))
-
-    def apply_chat_template(
-        self,
-        messages: list[dict],
-        *,
-        tokenize: bool = False,
-        add_generation_prompt: bool = False,
-    ):
-        text = "".join(
-            f"<|im_start|>{msg['role']}\n{msg['content']}<|im_end|>\n" for msg in messages
-        )
-        if add_generation_prompt:
-            text += "<|im_start|>assistant\n"
-        return self.encode(text) if tokenize else text
-
-    def __call__(
-        self,
-        texts,
-        *,
-        return_tensors: str | None = None,
-        padding: bool = False,
-        truncation: bool = False,
-        add_special_tokens: bool = False,
-    ):
-        del truncation
-        import torch
-
-        if isinstance(texts, str):
-            texts = [texts]
-        encoded = [self.encode(text, add_special_tokens=add_special_tokens) for text in texts]
-        max_len = max((len(ids) for ids in encoded), default=1) if padding else None
-        padded = []
-        masks = []
-        for ids in encoded:
-            if padding and max_len is not None:
-                pad_n = max_len - len(ids)
-                padded.append(ids + [self.pad_token_id] * pad_n)
-                masks.append([1] * len(ids) + [0] * pad_n)
-            else:
-                padded.append(ids)
-                masks.append([1] * len(ids))
-        if return_tensors == "pt":
-            return {
-                "input_ids": torch.tensor(padded, dtype=torch.long),
-                "attention_mask": torch.tensor(masks, dtype=torch.long),
-            }
-        return {"input_ids": padded, "attention_mask": masks}
-
-
-def _install_smoke_tokenizer() -> _SmokeTokenizer:
-    tok = _SmokeTokenizer()
-    _get_tokenizer._tok = tok
-    return tok
-
-
 def _render_instruct(turns: list[dict], query: str) -> str:
     """Render as instruct chat-template (tokenizer.apply_chat_template)."""
     tok = _get_tokenizer()
@@ -431,6 +360,10 @@ def fingerprint_matches(fp_path: Path, expected_fp: dict) -> bool:
         return False
 
 
+def _phase_fp_label(phase_name: str) -> str:
+    return "".join(ch if ch.isalnum() or ch in ("-", "_") else "_" for ch in phase_name)
+
+
 def code_sha() -> str:
     """Return a short SHA of this script for fingerprinting."""
     try:
@@ -452,6 +385,18 @@ class Shard:
     cell_id: str
     row_start: int
     row_end: int  # exclusive
+    shard_idx: int
+    total_shards: int
+
+
+@dataclass
+class AuxShard:
+    """A P3b/P3c auxiliary unit of work."""
+
+    phase: str
+    model_type: str
+    row_start: int
+    row_end: int
     shard_idx: int
     total_shards: int
 
@@ -1069,14 +1014,171 @@ def check_dispatch_errors(results: list[dict]) -> None:
         raise RuntimeError(f"{len(errors)} shards failed")
 
 
-def run_g2_gate_from_disk(out_dir: Path, cell_id: str, *, n_layers: int, hidden_dim: int) -> None:
-    """Disk-backed G2 shape/finite gate after the first full capture cell."""
+def _sorted_shards(paths: list[Path]) -> list[Path]:
+    def key(path: Path) -> tuple[str, int]:
+        stem = path.stem
+        if "_shard" not in stem:
+            return stem, -1
+        raw = stem.rsplit("_shard", 1)[1]
+        digits = "".join(ch for ch in raw if ch.isdigit())
+        return stem.split("_shard", 1)[0], int(digits or 0)
+
+    return sorted(paths, key=key)
+
+
+def _load_cell_kind_matrix(out_dir: Path, cell_id: str, kind: str, layer: int) -> np.ndarray:
+    cell_dir = out_dir / "summaries" / cell_id
+    paths = _sorted_shards(sorted(cell_dir.glob(f"{kind}_L{layer:02d}_shard*.npy")))
+    if not paths:
+        paths = sorted(cell_dir.glob(f"{kind}_L{layer:02d}.npy"))
+    if not paths:
+        raise FileNotFoundError(f"G2 missing {cell_id}/{kind}_L{layer:02d}")
+    return np.concatenate([np.load(path, mmap_mode="r") for path in paths], axis=0)
+
+
+def _load_cell_summary_rows(
+    out_dir: Path, cell_id: str, kind: str, row_idx: np.ndarray, *, n_layers: int
+) -> np.ndarray:
+    layers = [
+        np.asarray(_load_cell_kind_matrix(out_dir, cell_id, kind, layer)[row_idx])
+        for layer in range(n_layers)
+    ]
+    return np.stack(layers, axis=1).astype(np.float32)
+
+
+def _load_b0_pool_matrix(out_dir: Path, cell_id: str) -> np.ndarray:
+    pool_dir = out_dir / "summaries" / "b0_rB_pool"
+    pool_paths = _sorted_shards(sorted(pool_dir.glob(f"{cell_id}_shard*.npy")))
+    if not pool_paths:
+        pool_paths = sorted(pool_dir.glob(f"{cell_id}.npy"))
+    if not pool_paths:
+        raise FileNotFoundError(f"G2 missing B0 pool shards for own-policy cell {cell_id}")
+    return np.concatenate([np.load(path, mmap_mode="r") for path in pool_paths], axis=0)
+
+
+def _generate_context_hidden_reference(
+    *,
+    prompts: list[str],
+    model,
+    tokenizer,
+    n_layers: int,
+    hidden_dim: int,
+    device: str,
+) -> np.ndarray:
+    """HF generate() hidden-state reference for the last prompt token."""
+    import torch
+
+    if tokenizer.pad_token_id is None:
+        tokenizer.pad_token = tokenizer.eos_token
+    pad_id = tokenizer.eos_token_id if tokenizer.eos_token_id is not None else 0
+    rows: list[np.ndarray] = []
+    for prompt in prompts:
+        inputs = tokenizer(prompt, return_tensors="pt", add_special_tokens=False)
+        input_ids = inputs["input_ids"].to(device)
+        attention_mask = inputs["attention_mask"].to(device)
+        prompt_len = int(input_ids.shape[1])
+        with torch.no_grad():
+            generated = model.generate(
+                input_ids=input_ids,
+                attention_mask=attention_mask,
+                max_new_tokens=1,
+                do_sample=False,
+                pad_token_id=pad_id,
+                return_dict_in_generate=True,
+                output_hidden_states=True,
+            )
+        hidden_steps = getattr(generated, "hidden_states", None)
+        if not hidden_steps:
+            raise RuntimeError("G2 generate() did not return hidden_states")
+        row = None
+        for step in hidden_steps:
+            layers = step[1:] if len(step) == n_layers + 1 else step[-n_layers:]
+            if len(layers) != n_layers:
+                continue
+            if layers[0].ndim == 3 and layers[0].shape[1] >= prompt_len:
+                row = np.stack(
+                    [
+                        layer[0, prompt_len - 1, :].to(torch.float16).cpu().numpy()
+                        for layer in layers
+                    ],
+                    axis=0,
+                )
+                break
+        if row is None:
+            raise RuntimeError("G2 generate() hidden_states omitted the prompt prefill states")
+        if row.shape != (n_layers, hidden_dim):
+            raise ValueError(
+                f"G2 generate reference shape {row.shape} != ({n_layers}, {hidden_dim})"
+            )
+        rows.append(row.astype(np.float32))
+    return np.stack(rows, axis=0)
+
+
+def _g2_pairing_null_band(X: np.ndarray, Y: np.ndarray, *, seed: int, n_draws: int = 20) -> dict:
+    rng = np.random.default_rng(seed)
+    n = min(X.shape[0], Y.shape[0])
+    if n < 8:
+        raise ValueError(f"G2 pairing null needs at least 8 rows, got {n}")
+    idx = rng.permutation(n)
+    n_test = max(2, n // 5)
+    test_idx = idx[:n_test]
+    train_idx = idx[n_test:]
+    Xtr_raw = X[train_idx].astype(np.float64)
+    Xte_raw = X[test_idx].astype(np.float64)
+    xmu = Xtr_raw.mean(axis=0, keepdims=True)
+    xsd_raw = Xtr_raw.std(axis=0, keepdims=True)
+    xsd = np.where(xsd_raw == 0.0, 1.0, xsd_raw)
+    Xtr = (Xtr_raw - xmu) / xsd
+    Xte = (Xte_raw - xmu) / xsd
+    gram = Xtr.T @ Xtr + 1e6 * np.eye(Xtr.shape[1], dtype=np.float64)
+    solved_xt = np.linalg.solve(gram, Xtr.T)
+    vals: list[float] = []
+    for _ in range(n_draws):
+        perm = rng.permutation(n)
+        Yp = Y[perm].astype(np.float64)
+        Ytr = Yp[train_idx]
+        Yte = Yp[test_idx]
+        ymu = Ytr.mean(axis=0, keepdims=True)
+        weights = solved_xt @ (Ytr - ymu)
+        pred = Xte @ weights + ymu
+        vals.append(_r2_for_arrays(Yte, pred))
+    arr = np.asarray(vals, dtype=np.float64)
+    return {
+        "n_draws": int(n_draws),
+        "p05": float(np.nanpercentile(arr, 5)),
+        "median": float(np.nanmedian(arr)),
+        "p95": float(np.nanpercentile(arr, 95)),
+        "draws": [float(v) for v in vals],
+    }
+
+
+def _r2_for_arrays(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    yt = np.asarray(y_true, dtype=np.float64)
+    yp = np.asarray(y_pred, dtype=np.float64)
+    ss_res = float(((yt - yp) ** 2).sum())
+    ss_tot = float(((yt - yt.mean(axis=0, keepdims=True)) ** 2).sum())
+    return float("nan") if ss_tot == 0.0 else 1.0 - ss_res / ss_tot
+
+
+def run_g2_gate_from_disk(  # noqa: C901
+    out_dir: Path,
+    cell_id: str,
+    *,
+    rows: list[dict],
+    prefix_store: dict,
+    query_store: dict,
+    args: argparse.Namespace,
+    rb_directions: np.ndarray | None,
+) -> None:
+    """Disk-backed G2 gate after the first full capture cell."""
+    n_layers = args.n_layers
+    hidden_dim = args.hidden_dim
     cell_dir = out_dir / "summaries" / cell_id
     if not cell_dir.exists():
         raise FileNotFoundError(f"G2 summaries missing for {cell_id}: {cell_dir}")
     row_counts: dict[str, int] = {}
     for kind in SUMMARY_KINDS:
-        paths = sorted(cell_dir.glob(f"{kind}_L00_shard*.npy")) or sorted(
+        paths = _sorted_shards(sorted(cell_dir.glob(f"{kind}_L00_shard*.npy"))) or sorted(
             cell_dir.glob(f"{kind}_L00.npy")
         )
         if not paths:
@@ -1092,12 +1194,9 @@ def run_g2_gate_from_disk(out_dir: Path, cell_id: str, *, n_layers: int, hidden_
         raise ValueError(f"G2 row-count mismatch for {cell_id}: {row_counts}")
 
     if cell_id in CELLS_OWN_POLICY:
-        pool_dir = out_dir / "summaries" / "b0_rB_pool"
-        pool_paths = sorted(pool_dir.glob(f"{cell_id}_shard*.npy")) or sorted(
-            pool_dir.glob(f"{cell_id}.npy")
-        )
-        if not pool_paths:
-            raise FileNotFoundError(f"G2 missing B0 pool shards for own-policy cell {cell_id}")
+        pool_paths = _sorted_shards(
+            sorted((out_dir / "summaries" / "b0_rB_pool").glob(f"{cell_id}_shard*.npy"))
+        ) or sorted((out_dir / "summaries" / "b0_rB_pool").glob(f"{cell_id}.npy"))
         pool_count = 0
         for path in pool_paths:
             arr = np.load(path, mmap_mode="r")
@@ -1112,7 +1211,123 @@ def run_g2_gate_from_disk(out_dir: Path, cell_id: str, *, n_layers: int, hidden_
             raise ValueError(
                 f"G2 B0 row-count mismatch for {cell_id}: pool={pool_count}, summaries={row_counts}"
             )
-    logger.info("[G2] Disk gate PASSED for %s: %s", cell_id, row_counts)
+
+    cfg = CELL_CONFIG[cell_id]
+    if cfg["model"] == "instruct":
+        model_name, revision = INSTRUCT_MODEL, INSTRUCT_REVISION
+    else:
+        model_name, revision = PRETRAINED_MODEL, PRETRAINED_REVISION
+    if cfg["prompt_format"] != cfg["model"] and cell_id == "cell_inst_own":
+        raise AssertionError("cell_inst_own G2 expected matching instruct model/prompt format")
+
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    tokenizer = AutoTokenizer.from_pretrained(model_name, revision=revision, trust_remote_code=True)
+    _get_tokenizer._tok = tokenizer
+    model_kwargs: dict[str, Any] = {
+        "revision": revision,
+        "torch_dtype": torch.bfloat16 if device.startswith("cuda") else torch.float32,
+        "trust_remote_code": True,
+    }
+    if device.startswith("cuda"):
+        model_kwargs["device_map"] = {"": device}
+    model = AutoModelForCausalLM.from_pretrained(model_name, **model_kwargs)
+    if not device.startswith("cuda"):
+        model.to(device)
+    model.eval()
+
+    n_rows = next(iter(row_counts.values()))
+    rng = np.random.default_rng(G2_SPOT_SEED)
+    spot_idx = np.sort(rng.choice(n_rows, size=min(G2_SPOT_ROWS, n_rows), replace=False))
+    cell_rows = _rows_for_cell(rows, cell_id)[:n_rows]
+    prompts: list[str] = []
+    prefix_texts: list[str] = []
+    for row_i in spot_idx:
+        prefix_text, prompt, _completion = render_row(
+            cell_rows[int(row_i)],
+            prefix_store,
+            query_store,
+            prompt_format=cfg["prompt_format"],
+            text_source=cfg["text_source"],
+        )
+        prefix_texts.append(prefix_text)
+        prompts.append(prompt)
+    ref_context = _generate_context_hidden_reference(
+        prompts=prompts,
+        model=model,
+        tokenizer=tokenizer,
+        n_layers=n_layers,
+        hidden_dim=hidden_dim,
+        device=device,
+    )
+    disk_context = _load_cell_summary_rows(
+        out_dir, cell_id, "context_end", spot_idx, n_layers=n_layers
+    )
+    if not np.allclose(disk_context, ref_context, atol=5e-2, rtol=5e-2):
+        delta = float(np.max(np.abs(disk_context - ref_context)))
+        raise AssertionError(
+            f"G2 identity generate-reference mismatch for {cell_id}: max_abs={delta}"
+        )
+
+    l14 = min(14, n_layers - 1)
+    X_l14 = _load_cell_kind_matrix(out_dir, cell_id, "context_end", l14)[:n_rows]
+    Y_l14 = _load_cell_kind_matrix(out_dir, cell_id, "t1", l14)[:n_rows]
+    null_band = _g2_pairing_null_band(X_l14, Y_l14, seed=G2_SPOT_SEED)
+    if null_band["p05"] < -0.05 or null_band["p95"] > 0.05:
+        raise AssertionError(f"G2 L14 pairing-null band outside [-0.05,+0.05]: {null_band}")
+
+    if cell_id in CELLS_OWN_POLICY:
+        if rb_directions is None:
+            raise ValueError("G2 B0 recompute requires loaded r_B directions")
+        b0_idx = spot_idx[: min(5, spot_idx.size)]
+        completions = _load_raw_completion_files(out_dir, cfg["model"], cell_id)
+        missing = [
+            str(cell_rows[int(i)].get("row_id"))
+            for i in b0_idx
+            if str(cell_rows[int(i)].get("row_id")) not in completions
+        ]
+        if missing:
+            raise FileNotFoundError(f"G2 B0 recompute missing completions for rows {missing}")
+        b0_prompts = [prompts[list(spot_idx).index(int(i))] for i in b0_idx]
+        b0_prefixes = [prefix_texts[list(spot_idx).index(int(i))] for i in b0_idx]
+        b0_completions = [completions[str(cell_rows[int(i)].get("row_id"))] for i in b0_idx]
+        recomputed = _capture_batch_loaded_model(
+            prefix_texts=b0_prefixes,
+            prompts=b0_prompts,
+            completions=b0_completions,
+            prompt_format=cfg["prompt_format"],
+            model=model,
+            tokenizer=tokenizer,
+            n_layers=n_layers,
+            hidden_dim=hidden_dim,
+            device=device,
+            log_label="G2-b0-recompute",
+            rb_directions=rb_directions,
+            batch_size=max(1, min(CAPTURE_BATCH_SIZE, len(b0_idx))),
+        )
+        disk_b0 = _load_b0_pool_matrix(out_dir, cell_id)[b0_idx]
+        if recomputed.rb_pool is None or not np.allclose(
+            disk_b0, recomputed.rb_pool, atol=5e-2, rtol=5e-2
+        ):
+            delta = (
+                float(np.max(np.abs(disk_b0 - recomputed.rb_pool)))
+                if recomputed.rb_pool is not None
+                else float("inf")
+            )
+            raise AssertionError(f"G2 B0 recompute mismatch for {cell_id}: max_abs={delta}")
+
+    del model
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    logger.info(
+        "[G2] Gate PASSED for %s: rows=%s identity_spots=%d null_band=%s",
+        cell_id,
+        row_counts,
+        len(spot_idx),
+        null_band,
+    )
 
 
 def consolidate_cell_shards(out_dir: Path, cell_id: str, *, n_layers: int) -> None:
@@ -1510,7 +1725,10 @@ def _process_shard(
         phase_name=getattr(args, "phase_name", "main"),
         code_sha=code_sha_val,
     )
-    fp_path = out_dir / "manifests" / f"{cell_id}_shard{shard.shard_idx}_fingerprint.json"
+    phase_label = _phase_fp_label(getattr(args, "phase_name", "main"))
+    fp_path = (
+        out_dir / "manifests" / f"{cell_id}_shard{shard.shard_idx}_{phase_label}_fingerprint.json"
+    )
     if fingerprint_matches(fp_path, fp_dict):
         logger.info(
             "[gpu=%d] Shard %s/%d already complete (fingerprint match), skipping",
@@ -1530,6 +1748,22 @@ def _process_shard(
     prompts: list[str] = []
     prefix_texts: list[str] = []
 
+    persisted_completions: dict[str, str] | None = None
+    if own_policy and "capture" in args.phases_set and "gen" not in args.phases_set:
+        persisted_completions = _load_raw_completion_files(out_dir, model_type, cell_id)
+        missing = [
+            str(row.get("row_id"))
+            for row in shard_rows
+            if str(row.get("row_id")) not in persisted_completions
+        ]
+        if missing:
+            raise FileNotFoundError(
+                f"{cell_id} capture-only shard {shard.shard_idx} is missing "
+                f"{len(missing)} generated completions under "
+                f"{out_dir / 'raw_completions' / model_type}; "
+                f"examples={missing[:5]}"
+            )
+
     for row in shard_rows:
         prefix_text, prompt, completion_text = render_row(
             row,
@@ -1540,7 +1774,9 @@ def _process_shard(
         )
         prefix_texts.append(prefix_text)
         prompts.append(prompt)
-        if own_policy:
+        if persisted_completions is not None:
+            completions.append(persisted_completions[str(row.get("row_id"))])
+        elif own_policy:
             completions.append("")  # will be filled by generation
         else:
             completions.append(completion_text or "")
@@ -1863,6 +2099,256 @@ def run_dispatch(
     return results
 
 
+def _aux_fingerprint(
+    *,
+    corpus_hash: str,
+    phase: str,
+    model_type: str,
+    row_start: int,
+    row_end: int,
+    n_layers: int,
+    hidden_dim: int,
+    phase_name: str,
+    code_sha_val: str,
+) -> dict:
+    model_id = INSTRUCT_MODEL if model_type == "instruct" else PRETRAINED_MODEL
+    return {
+        "corpus_hash": corpus_hash,
+        "phase": phase,
+        "model_type": model_type,
+        "row_start": row_start,
+        "row_end": row_end,
+        "model_id": model_id,
+        "dtype": "bfloat16",
+        "n_layers": n_layers,
+        "hidden_dim": hidden_dim,
+        "max_model_len": MAX_MODEL_LEN,
+        "phase_name": phase_name,
+        "code_sha": code_sha_val,
+    }
+
+
+def _aux_worker_loop(
+    gpu_id: int,
+    shard_queue,
+    result_queue,
+    bare_queries: list[dict],
+    dynamics_prefixes: list[dict],
+    out_dir: Path,
+    args: argparse.Namespace,
+    code_sha_val: str,
+    corpus_hash: str,
+) -> None:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    )
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(gpu_id)
+    import gc
+
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    loaded: dict[str, tuple[Any, Any, str]] = {}
+
+    def get_model(model_type: str):
+        if model_type not in loaded:
+            if model_type == "instruct":
+                model_name, revision = INSTRUCT_MODEL, INSTRUCT_REVISION
+            elif model_type == "pretrained":
+                model_name, revision = PRETRAINED_MODEL, PRETRAINED_REVISION
+            else:
+                raise ValueError(f"unknown aux model_type {model_type!r}")
+            tokenizer = AutoTokenizer.from_pretrained(
+                model_name,
+                revision=revision,
+                trust_remote_code=True,
+            )
+            model = AutoModelForCausalLM.from_pretrained(
+                model_name,
+                revision=revision,
+                torch_dtype=torch.bfloat16,
+                trust_remote_code=True,
+                device_map={"": "cuda:0"},
+            )
+            model.eval()
+            loaded[model_type] = (tokenizer, model, "cuda:0")
+        return loaded[model_type]
+
+    try:
+        while True:
+            shard = shard_queue.get()
+            if shard is None:
+                break
+            try:
+                fp = _aux_fingerprint(
+                    corpus_hash=corpus_hash,
+                    phase=shard.phase,
+                    model_type=shard.model_type,
+                    row_start=shard.row_start,
+                    row_end=shard.row_end,
+                    n_layers=args.n_layers,
+                    hidden_dim=args.hidden_dim,
+                    phase_name=getattr(args, "phase_name", "aux"),
+                    code_sha_val=code_sha_val,
+                )
+                fp_path = (
+                    out_dir
+                    / "manifests"
+                    / f"{shard.phase}_{shard.model_type}_shard{shard.shard_idx}_fingerprint.json"
+                )
+                n_rows = shard.row_end - shard.row_start
+                if fingerprint_matches(fp_path, fp):
+                    result_queue.put(
+                        {
+                            "status": "resumed",
+                            "cell_id": f"{shard.phase}_{shard.model_type}",
+                            "shard_idx": shard.shard_idx,
+                            "n_rows": n_rows,
+                        }
+                    )
+                    continue
+                tokenizer, model, device = get_model(shard.model_type)
+                if shard.phase == "bare":
+                    run_bare_phase_loaded(
+                        args=args,
+                        queries=bare_queries[shard.row_start : shard.row_end],
+                        tokenizer=tokenizer,
+                        model=model,
+                        model_type=shard.model_type,
+                        device=device,
+                        shard_idx=shard.shard_idx,
+                    )
+                elif shard.phase == "dynamics":
+                    run_dynamics_phase_loaded(
+                        args=args,
+                        prefixes=dynamics_prefixes[shard.row_start : shard.row_end],
+                        tokenizer=tokenizer,
+                        model=model,
+                        model_type=shard.model_type,
+                        device=device,
+                        shard_idx=shard.shard_idx,
+                    )
+                else:
+                    raise ValueError(f"unknown aux phase {shard.phase!r}")
+                write_fingerprint(fp_path, fp)
+                result_queue.put(
+                    {
+                        "status": "done",
+                        "cell_id": f"{shard.phase}_{shard.model_type}",
+                        "shard_idx": shard.shard_idx,
+                        "n_rows": n_rows,
+                    }
+                )
+            except Exception as exc:
+                logger.exception("[gpu=%d] Aux shard %s failed", gpu_id, shard)
+                result_queue.put(
+                    {
+                        "status": "error",
+                        "cell_id": f"{shard.phase}_{shard.model_type}",
+                        "shard_idx": shard.shard_idx,
+                        "error": str(exc),
+                    }
+                )
+    finally:
+        loaded.clear()
+        gc.collect()
+        torch.cuda.empty_cache()
+
+
+def run_aux_dispatch(  # noqa: C901
+    *,
+    phases: set[str],
+    query_store: dict[str, dict],
+    prefix_store: dict[str, dict],
+    out_dir: Path,
+    args: argparse.Namespace,
+    corpus_hash: str,
+) -> list[dict]:
+    n_gpus = _detect_gpu_count()
+    if n_gpus == 0:
+        raise RuntimeError("No CUDA GPUs available for bare/dynamics DP phases")
+    bare_queries = sorted(
+        query_store.values(), key=lambda item: str(item.get("query_id", item.get("id", "")))
+    )
+    dynamics_prefixes = _dynamics_panel(prefix_store)
+    if args.row_limit is not None:
+        bare_queries = bare_queries[: args.row_limit]
+        dynamics_prefixes = dynamics_prefixes[: args.row_limit]
+    shards: list[AuxShard] = []
+    for phase, items in (("bare", bare_queries), ("dynamics", dynamics_prefixes)):
+        if phase not in phases:
+            continue
+        if not items:
+            raise ValueError(f"{phase} phase has no rows after filtering")
+        shard_size = max(1, min(512, len(items) // max(1, n_gpus * 2) or len(items)))
+        for model_type in ("instruct", "pretrained"):
+            total = math.ceil(len(items) / shard_size)
+            for shard_idx, start in enumerate(range(0, len(items), shard_size)):
+                shards.append(
+                    AuxShard(
+                        phase=phase,
+                        model_type=model_type,
+                        row_start=start,
+                        row_end=min(start + shard_size, len(items)),
+                        shard_idx=shard_idx,
+                        total_shards=total,
+                    )
+                )
+    if not shards:
+        return []
+    logger.info("[aux-dispatch] %d shards across %d GPUs", len(shards), n_gpus)
+    ctx = mp.get_context("spawn")
+    shard_queue = ctx.Queue()
+    for shard in shards:
+        shard_queue.put(shard)
+    for _ in range(n_gpus):
+        shard_queue.put(None)
+    result_queue = ctx.Queue()
+    code_sha_val = code_sha()
+    processes = []
+    for gpu_id in range(n_gpus):
+        p = ctx.Process(
+            target=_aux_worker_loop,
+            args=(
+                gpu_id,
+                shard_queue,
+                result_queue,
+                bare_queries,
+                dynamics_prefixes,
+                out_dir,
+                args,
+                code_sha_val,
+                corpus_hash,
+            ),
+            daemon=False,
+            name=f"issue1092-aux-gpu-{gpu_id}",
+        )
+        p.start()
+        processes.append(p)
+    results: list[dict] = []
+    try:
+        while len(results) < len(shards):
+            result = result_queue.get(timeout=3600)
+            results.append(result)
+            logger.info(
+                "[aux-dispatch] %s shard%d %s (%d rows)",
+                result["cell_id"],
+                result["shard_idx"],
+                result["status"],
+                result.get("n_rows", 0),
+            )
+    finally:
+        for p in processes:
+            p.join(timeout=60)
+            if p.is_alive():
+                p.terminate()
+                p.join(timeout=30)
+            if p.exitcode not in (0, None):
+                raise RuntimeError(f"aux worker {p.name} exited with {p.exitcode}")
+    return results
+
+
 # ---------------------------------------------------------------------------
 # CPU smoke mode
 # ---------------------------------------------------------------------------
@@ -2026,9 +2512,26 @@ def _render_full_conversation(turns: list[dict], model_type: str) -> str:
     raise ValueError(f"unknown model_type {model_type!r}")
 
 
+def _render_initial_conversation_prefix(tokenizer, model_type: str) -> str:
+    """Render the boundary before the first logged user turn without an empty chat list."""
+    if model_type in {"instruct", "pretrained"}:
+        bos = getattr(tokenizer, "bos_token", None)
+        return str(bos) if bos else ""
+    raise ValueError(f"unknown model_type {model_type!r}")
+
+
+def _render_turn_prefix(turns: list[dict], turn_idx: int, tokenizer, model_type: str) -> str:
+    if turn_idx == 0:
+        return _render_initial_conversation_prefix(tokenizer, model_type)
+    return _render_full_conversation(turns[:turn_idx], model_type)
+
+
 def _render_assistant_prompt(turns_before: list[dict], model_type: str) -> str:
     if model_type == "instruct":
         tok = _get_tokenizer()
+        if not turns_before:
+            bos = getattr(tok, "bos_token", None)
+            return (str(bos) if bos else "") + "<|im_start|>assistant\n"
         return tok.apply_chat_template(
             [{"role": t["role"], "content": t["content"]} for t in turns_before],
             tokenize=False,
@@ -2089,7 +2592,8 @@ def _dynamics_cut_plan(
             cuts["answer_k_t3"].append((t3_pos, t3_pos + 1, turn_idx))
         elif role == "user":
             user_start = _token_len(
-                tokenizer, _render_full_conversation(turns[:turn_idx], model_type)
+                tokenizer,
+                _render_turn_prefix(turns, turn_idx, tokenizer, model_type),
             )
             user_len = max(1, _token_len(tokenizer, content))
             user_end = user_start + user_len
@@ -2267,28 +2771,54 @@ def _capture_dynamics_loaded_model(
     return arrays, index_rows
 
 
-def _write_layer_stack(root: Path, kind: str, states: np.ndarray) -> None:
+def _write_layer_stack(
+    root: Path, kind: str, states: np.ndarray, shard_idx: int | None = None
+) -> None:
     root.mkdir(parents=True, exist_ok=True)
     if states.ndim != 3:
         raise ValueError(f"{kind} states must be (n,L,H), got {states.shape}")
+    suffix = "" if shard_idx is None else f"_shard{shard_idx}"
     for layer in range(states.shape[1]):
-        np.save(root / f"{kind}_L{layer:02d}.npy", states[:, layer, :].astype(np.float16))
+        np.save(root / f"{kind}_L{layer:02d}{suffix}.npy", states[:, layer, :].astype(np.float16))
+
+
+def _write_jsonl_rows(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8") as f:
+        for row in rows:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+
+
+def _dynamics_panel(prefix_store: dict[str, dict]) -> list[dict]:
+    """Plan P3c panel: logged multi-turn conversations only, never battery/trait rows."""
+    panel: list[dict] = []
+    for item in prefix_store.values():
+        prefix_id = str(item.get("prefix_id") or item.get("id") or "")
+        if not prefix_id.startswith("pfx_"):
+            continue
+        turns = _prefix_turns(item)
+        roles = [turn.get("role") for turn in turns]
+        if len(turns) < 2 or "user" not in roles or "assistant" not in roles:
+            continue
+        panel.append(item)
+    panel.sort(key=lambda item: str(item.get("prefix_id", item.get("id", ""))))
+    if not panel:
+        raise ValueError("dynamics panel is empty after filtering to logged multi-turn pfx_* rows")
+    if not all(len(_prefix_turns(item)) >= 2 for item in panel):
+        raise AssertionError("dynamics panel contains a non-multi-turn item")
+    return panel
 
 
 def run_bare_phase_loaded(
     *,
     args: argparse.Namespace,
-    query_store: dict[str, dict],
+    queries: list[dict],
     tokenizer,
     model,
     model_type: str,
     device: str,
+    shard_idx: int | None = None,
 ) -> None:
-    queries = sorted(
-        query_store.values(), key=lambda item: str(item.get("query_id", item.get("id", "")))
-    )
-    if args.row_limit is not None:
-        queries = queries[: args.row_limit]
     prompts = [_render_bare_query(_query_text(item), model_type) for item in queries]
     states = _capture_prompt_states_loaded_model(
         prompts=prompts,
@@ -2300,26 +2830,24 @@ def run_bare_phase_loaded(
         log_label=f"bare-{model_type}",
     )
     out_root = Path(args.out) / "summaries" / f"bare_{model_type}"
-    _write_layer_stack(out_root, "c_q_bare", states)
-    with (out_root / "row_index.jsonl").open("w", encoding="utf-8") as f:
-        for item in queries:
-            f.write(json.dumps({"query_id": item.get("query_id") or item.get("id")}) + "\n")
+    _write_layer_stack(out_root, "c_q_bare", states, shard_idx=shard_idx)
+    index_name = "row_index.jsonl" if shard_idx is None else f"row_index_shard{shard_idx}.jsonl"
+    _write_jsonl_rows(
+        out_root / index_name,
+        [{"query_id": item.get("query_id") or item.get("id")} for item in queries],
+    )
 
 
 def run_dynamics_phase_loaded(
     *,
     args: argparse.Namespace,
-    prefix_store: dict[str, dict],
+    prefixes: list[dict],
     tokenizer,
     model,
     model_type: str,
     device: str,
+    shard_idx: int | None = None,
 ) -> None:
-    prefixes = sorted(
-        prefix_store.values(), key=lambda item: str(item.get("prefix_id", item.get("id", "")))
-    )
-    if args.row_limit is not None:
-        prefixes = prefixes[: args.row_limit]
     prompts: list[str] = []
     turns_by_prompt: list[list[dict]] = []
     conv_ids: list[str] = []
@@ -2343,10 +2871,13 @@ def run_dynamics_phase_loaded(
     )
     out_root = Path(args.out) / "summaries" / f"dynamics_{model_type}"
     for kind, states in states_by_kind.items():
-        _write_layer_stack(out_root, kind, states)
-        with (out_root / f"row_index_{kind}.jsonl").open("w", encoding="utf-8") as f:
-            for row in index_by_kind[kind]:
-                f.write(json.dumps(row) + "\n")
+        _write_layer_stack(out_root, kind, states, shard_idx=shard_idx)
+        index_name = (
+            f"row_index_{kind}.jsonl"
+            if shard_idx is None
+            else f"row_index_{kind}_shard{shard_idx}.jsonl"
+        )
+        _write_jsonl_rows(out_root / index_name, index_by_kind[kind])
 
 
 def run_hf_cpu_smoke(args: argparse.Namespace) -> None:
@@ -2363,21 +2894,12 @@ def run_hf_cpu_smoke(args: argparse.Namespace) -> None:
     if any(not CELL_CONFIG[cell]["own_policy"] for cell in cells):
         attach_completion_sources(rows, args.corpus_dir, out_dir)
 
-    try:
-        tokenizer = AutoTokenizer.from_pretrained(
-            INSTRUCT_MODEL,
-            revision=INSTRUCT_REVISION,
-            trust_remote_code=True,
-            local_files_only=True,
-        )
-    except Exception as exc:
-        logger.warning(
-            "[hf-cpu-smoke] pinned tokenizer not available locally; using smoke tokenizer: %s",
-            exc,
-        )
-        tokenizer = _install_smoke_tokenizer()
-    else:
-        _get_tokenizer._tok = tokenizer
+    tokenizer = AutoTokenizer.from_pretrained(
+        INSTRUCT_MODEL,
+        revision=INSTRUCT_REVISION,
+        trust_remote_code=True,
+    )
+    _get_tokenizer._tok = tokenizer
     model = _tiny_qwen2_model(tokenizer, n_layers=args.n_layers, hidden_dim=args.hidden_dim)
     device = "cpu"
 
@@ -2444,18 +2966,26 @@ def run_hf_cpu_smoke(args: argparse.Namespace) -> None:
                     write_rb_pool_npy(out_dir, cell_id, 0, rb_pool)
 
     if "bare" in args.phases_set:
+        queries = sorted(
+            query_store.values(), key=lambda item: str(item.get("query_id", item.get("id", "")))
+        )
+        if args.row_limit is not None:
+            queries = queries[: args.row_limit]
         run_bare_phase_loaded(
             args=args,
-            query_store=query_store,
+            queries=queries,
             tokenizer=tokenizer,
             model=model,
             model_type="instruct",
             device=device,
         )
     if "dynamics" in args.phases_set:
+        prefixes = _dynamics_panel(prefix_store)
+        if args.row_limit is not None:
+            prefixes = prefixes[: args.row_limit]
         run_dynamics_phase_loaded(
             args=args,
-            prefix_store=prefix_store,
+            prefixes=prefixes,
             tokenizer=tokenizer,
             model=model,
             model_type="instruct",
@@ -2678,118 +3208,88 @@ def main() -> None:  # noqa: C901
 
     orig_cells = list(args.cells)
     orig_phases = set(args.phases_set)
+    orig_phase_name = args.phase_name
+
+    def run_cell_stage(
+        stage_cells: list[str], phase_set: set[str], *, rb: np.ndarray | None
+    ) -> list[dict]:
+        if not stage_cells or not phase_set:
+            return []
+        args.cells = list(stage_cells)
+        args.phases_set = set(phase_set)
+        args.phase_name = ",".join(sorted(args.phases_set))
+        logger.info("[main] dispatch stage phases=%s cells=%s", args.phase_name, args.cells)
+        stage_results = run_dispatch(
+            cells=stage_cells,
+            rows=rows,
+            prefix_store=prefix_store,
+            query_store=query_store,
+            out_dir=out_dir,
+            args=args,
+            rb_directions=rb,
+            corpus_hash=corpus_hash,
+        )
+        check_dispatch_errors(stage_results)
+        all_results.extend(stage_results)
+        return stage_results
+
     if "capture" in args.phases_set or "gen" in args.phases_set:
         if "cell_inst_own" in args.cells and not args.skip_g2 and "capture" in args.phases_set:
             logger.info("[main] first-cell gate stage: cell_inst_own")
-            args.cells = ["cell_inst_own"]
-            first_results = run_dispatch(
-                cells=args.cells,
-                rows=rows,
-                prefix_store=prefix_store,
-                query_store=query_store,
-                out_dir=out_dir,
-                args=args,
-                rb_directions=rb_directions,
-                corpus_hash=corpus_hash,
-            )
-            check_dispatch_errors(first_results)
-            all_results.extend(first_results)
+            if "gen" in orig_phases:
+                run_cell_stage(["cell_inst_own"], {"gen"}, rb=rb_directions)
+            run_cell_stage(["cell_inst_own"], {"capture"}, rb=rb_directions)
             completed_cells.append("cell_inst_own")
             run_g2_gate_from_disk(
                 out_dir,
                 "cell_inst_own",
-                n_layers=args.n_layers,
-                hidden_dim=args.hidden_dim,
+                rows=rows,
+                prefix_store=prefix_store,
+                query_store=query_store,
+                args=args,
+                rb_directions=rb_directions,
             )
             attach_completion_sources(rows, corpus_dir, out_dir)
 
         remaining_own = [c for c in own_cells if c not in completed_cells]
         if remaining_own:
-            logger.info("[main] own-policy stage: %s", remaining_own)
-            args.cells = remaining_own
-            own_results = run_dispatch(
-                cells=remaining_own,
-                rows=rows,
-                prefix_store=prefix_store,
-                query_store=query_store,
-                out_dir=out_dir,
-                args=args,
-                rb_directions=rb_directions,
-                corpus_hash=corpus_hash,
-            )
-            check_dispatch_errors(own_results)
-            all_results.extend(own_results)
-            completed_cells.extend(remaining_own)
-            attach_completion_sources(rows, corpus_dir, out_dir)
+            logger.info("[main] own-policy staged gen/capture: %s", remaining_own)
+            if "gen" in orig_phases:
+                for cell_id in remaining_own:
+                    run_cell_stage([cell_id], {"gen"}, rb=rb_directions)
+                attach_completion_sources(rows, corpus_dir, out_dir)
+            if "capture" in orig_phases:
+                for cell_id in remaining_own:
+                    run_cell_stage([cell_id], {"capture"}, rb=rb_directions)
+                    completed_cells.append(cell_id)
+                attach_completion_sources(rows, corpus_dir, out_dir)
+            elif "gen" in orig_phases:
+                completed_cells.extend(remaining_own)
 
         if non_own_cells:
             logger.info("[main] non-own capture stage: %s", non_own_cells)
-            args.cells = non_own_cells
-            args.phases_set = {"capture"} if "capture" in orig_phases else set()
-            if args.phases_set:
-                non_own_results = run_dispatch(
-                    cells=non_own_cells,
-                    rows=rows,
-                    prefix_store=prefix_store,
-                    query_store=query_store,
-                    out_dir=out_dir,
-                    args=args,
-                    rb_directions=None,
-                    corpus_hash=corpus_hash,
-                )
-                check_dispatch_errors(non_own_results)
-                all_results.extend(non_own_results)
+            if "capture" in orig_phases:
+                args.phases_set = orig_phases
+                attach_completion_sources(rows, corpus_dir, out_dir)
+                run_cell_stage(non_own_cells, {"capture"}, rb=None)
                 completed_cells.extend(non_own_cells)
 
     args.cells = orig_cells
     args.phases_set = orig_phases
+    args.phase_name = orig_phase_name
 
     # Auxiliary P3b/P3c phases have distinct layouts and never silently alias capture.
     if "bare" in args.phases_set or "dynamics" in args.phases_set:
-        # The production path is intentionally single-GPU for these short phases; the
-        # main cell dispatcher above handles the wide P2/P3 workload.
-        for model_type, model_name, revision in (
-            ("instruct", INSTRUCT_MODEL, INSTRUCT_REVISION),
-            ("pretrained", PRETRAINED_MODEL, PRETRAINED_REVISION),
-        ):
-            os.environ["CUDA_VISIBLE_DEVICES"] = os.environ.get("CUDA_VISIBLE_DEVICES", "0").split(
-                ","
-            )[0]
-            import torch
-            from transformers import AutoModelForCausalLM, AutoTokenizer
-
-            tokenizer = AutoTokenizer.from_pretrained(
-                model_name,
-                revision=revision,
-                trust_remote_code=True,
-            )
-            model = AutoModelForCausalLM.from_pretrained(
-                model_name,
-                revision=revision,
-                torch_dtype=torch.bfloat16,
-                trust_remote_code=True,
-                device_map={"": "cuda:0"},
-            )
-            model.eval()
-            if "bare" in args.phases_set:
-                run_bare_phase_loaded(
-                    args=args,
-                    query_store=query_store,
-                    tokenizer=tokenizer,
-                    model=model,
-                    model_type=model_type,
-                    device="cuda:0",
-                )
-            if "dynamics" in args.phases_set:
-                run_dynamics_phase_loaded(
-                    args=args,
-                    prefix_store=prefix_store,
-                    tokenizer=tokenizer,
-                    model=model,
-                    model_type=model_type,
-                    device="cuda:0",
-                )
-            del model
+        aux_results = run_aux_dispatch(
+            phases=args.phases_set,
+            query_store=query_store,
+            prefix_store=prefix_store,
+            out_dir=out_dir,
+            args=args,
+            corpus_hash=corpus_hash,
+        )
+        check_dispatch_errors(aux_results)
+        all_results.extend(aux_results)
 
     # Upload per cell
     for cell_id in sorted(set(completed_cells)):

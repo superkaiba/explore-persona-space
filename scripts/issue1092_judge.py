@@ -49,6 +49,9 @@ class JudgeItem:
     grain: str
     arm: str
     rubric_key: str
+    conv_id: str | None = None
+    turn_index: int | None = None
+    module: str = "B1"
 
 
 def _jsonl(path: Path):
@@ -60,6 +63,17 @@ def _jsonl(path: Path):
 
 def _load_store(path: Path, key: str) -> dict[str, dict]:
     return {str(item[key]): item for item in _jsonl(path)}
+
+
+def _load_prefix_store(path: Path) -> list[dict]:
+    return list(_jsonl(path))
+
+
+def _prefix_turns(prefix_item: dict) -> list[dict]:
+    turns = prefix_item.get("prefix_turns") or prefix_item.get("turns")
+    if not isinstance(turns, list):
+        return []
+    return turns
 
 
 def _query_text(query_store: dict[str, dict], query_id: str) -> str:
@@ -108,6 +122,70 @@ def _select_rows(rows: list[dict], *, floor_check_limit: int) -> list[dict]:
     return selected
 
 
+def _previous_user_content(turns: list[dict], assistant_idx: int) -> str | None:
+    for idx in range(assistant_idx - 1, -1, -1):
+        if turns[idx].get("role") == "user":
+            content = turns[idx].get("content")
+            return str(content) if content else None
+    return None
+
+
+def _build_b3_dynamics_items(
+    *,
+    corpus_dir: Path,
+    row_limit: int | None,
+    dry_run: bool,
+    max_conversations: int,
+    max_turns: int,
+) -> list[JudgeItem]:
+    prefixes = _load_prefix_store(corpus_dir / "prefix_store.jsonl")
+    candidates: list[dict] = []
+    for prefix in prefixes:
+        prefix_id = str(prefix.get("prefix_id") or prefix.get("id") or "")
+        if not prefix_id.startswith("pfx_"):
+            continue
+        turns = _prefix_turns(prefix)
+        assistant_turns = [i for i, turn in enumerate(turns) if turn.get("role") == "assistant"]
+        if len(assistant_turns) < 2:
+            continue
+        candidates.append(prefix)
+    if row_limit is not None:
+        candidates = candidates[: max(1, row_limit)]
+    candidates = candidates[:max_conversations]
+    items: list[JudgeItem] = []
+    for prefix in candidates:
+        turns = _prefix_turns(prefix)
+        conv_id = str(prefix.get("conv_id") or prefix.get("prefix_id") or prefix.get("id"))
+        assistant_turns = [i for i, turn in enumerate(turns) if turn.get("role") == "assistant"]
+        for assistant_idx in assistant_turns[1 : 1 + max_turns]:
+            question = _previous_user_content(turns, assistant_idx)
+            completion = turns[assistant_idx].get("content")
+            if not question or not completion:
+                continue
+            row_id = f"b3::{conv_id}::{assistant_idx}"
+            for trait in TRAITS:
+                rk = _rubric_key(trait, dry_run=dry_run)
+                preimage = f"{row_id}::B3_dynamics::{trait}::{rk}"
+                items.append(
+                    JudgeItem(
+                        item_id=hashlib.sha256(preimage.encode()).hexdigest()[:24],
+                        row_id=row_id,
+                        cell_id="dynamics_logged",
+                        trait=trait,
+                        question=question,
+                        completion=str(completion),
+                        stratum="dynamics_logged",
+                        grain="per_turn",
+                        arm="B3_dynamics",
+                        rubric_key=rk,
+                        conv_id=conv_id,
+                        turn_index=assistant_idx,
+                        module="B3",
+                    )
+                )
+    return items
+
+
 def build_judge_items(
     *,
     corpus_dir: Path,
@@ -115,6 +193,9 @@ def build_judge_items(
     row_limit: int | None,
     dry_run: bool,
     floor_check_limit: int,
+    include_b3: bool,
+    b3_max_conversations: int,
+    b3_max_turns: int,
 ) -> list[JudgeItem]:
     rows = list(_jsonl(corpus_dir / "manifest.jsonl"))
     if row_limit is not None:
@@ -163,6 +244,16 @@ def build_judge_items(
                 )
     if any(missing_completion.values()):
         print(f"[judge] missing completions by cell: {missing_completion}", file=sys.stderr)
+    if include_b3:
+        items.extend(
+            _build_b3_dynamics_items(
+                corpus_dir=corpus_dir,
+                row_limit=row_limit,
+                dry_run=dry_run,
+                max_conversations=b3_max_conversations,
+                max_turns=b3_max_turns,
+            )
+        )
     return items
 
 
@@ -351,6 +442,9 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--out-dir", type=Path, required=True)
     p.add_argument("--row-limit", type=int, default=None)
     p.add_argument("--floor-check-limit", type=int, default=500)
+    p.add_argument("--b3-max-conversations", type=int, default=500)
+    p.add_argument("--b3-max-turns", type=int, default=3)
+    p.add_argument("--skip-b3", action="store_true")
     p.add_argument("--dry-run", action="store_true")
     return p.parse_args()
 
@@ -363,6 +457,9 @@ def main() -> int:
         row_limit=args.row_limit,
         dry_run=args.dry_run,
         floor_check_limit=args.floor_check_limit,
+        include_b3=not args.skip_b3,
+        b3_max_conversations=args.b3_max_conversations,
+        b3_max_turns=args.b3_max_turns,
     )
     scored = run_judge(items, args.out_dir, dry_run=args.dry_run)
     summary = write_outputs(scored, args.out_dir, dry_run=args.dry_run)
