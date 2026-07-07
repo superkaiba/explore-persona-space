@@ -1,0 +1,1726 @@
+#!/usr/bin/env python
+# ruff: noqa: RUF002, RUF003  # em-dash + marker token intentional
+"""#1112 pod-side phase driver — sycophancy 2×2 + marker pair + 3-arm capture.
+
+Phases (linear, checkpoint-per-phase, resume-keyed; plan v3 §4/§9):
+
+  p0_stage      stage + sha/rev-pin every reused input (c3 mix, pos/cn, generic
+                corpus, R_train, fu2 checkpoints, margin sidecars)
+  p1_mixes      derive posonly/generic mixes (20/20/40 fail-fast) + marker mix;
+                upload mixes BEFORE training
+  p2_train      s2 LoRA + s3/s4 full-FT (ZeRO-3 subprocess) + m1/m2 marker
+  p3_ladder     Tier-1 judged-rate ladders (rungs 2..30) for s2/s3/s4, sharded
+                one cell per GPU; select_dose_checkpoint vs [0.60, 0.85]
+  g1_gate       FT install viability + FENCE-AWARENESS pre-check (plan §7)
+  p4_persist_ft upload SELECTED FT checkpoints to the overflow repo, THEN
+                delete non-selected FT rungs (disk; plan §9 + binding order)
+  p5_generic    s5/s6 generic controls trained to the method-matched steps
+  p6_parity     reused-cell (s1 = fu2 checkpoint-14) rsLoRA parity probe
+  p7_tier2      Tier-2 generation + judge fold -> install/*_tier2.json
+  p8_marker     m2 grid ΔG selection + full three-space reads (m1 + m2)
+  p9_rb         sycophancy r_B (issue779 extractor subprocess) + marker W_U row
+  p10_capture   18 capture passes (gen + 28-layer 3-span TF pooling), sharded
+  p11_geometry  smoke-scale geometry stub (full geometry runs VM-side)
+  p12_upload    remaining text/JSON + capture tensors + adapters; sentinel
+
+``--smoke`` is the SAME dispatcher with tiny knobs (plan §4.5 smoke/sweep
+parity): cell subset (s3,), 2 optimizer steps + 1 consolidated ZeRO-3 save +
+vLLM-load canary, 1 Tier-1 rung at 2 questions, LIVE judge, 2-row 3-arm
+28-layer capture, geometry on the captured stub, recording-free upload via
+``--no-upload``. Every phase reads its cell list from the ONE resolver
+(``cfg.cells``), so the smoke subset threads through train, ladder, tier2,
+capture, geometry, and upload alike.
+
+``[phase=done]`` is emitted by ``scripts/issue1112_dispatch.sh`` ONLY.
+"""
+
+from __future__ import annotations
+
+from explore_persona_space.orchestrate.env import load_dotenv
+
+load_dotenv()
+
+import argparse  # noqa: E402
+import dataclasses  # noqa: E402
+import json  # noqa: E402
+import logging  # noqa: E402
+import os  # noqa: E402
+import shutil  # noqa: E402
+import subprocess  # noqa: E402
+import sys  # noqa: E402
+import time  # noqa: E402
+from collections.abc import Sequence  # noqa: E402
+from pathlib import Path  # noqa: E402
+
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+REPO_ROOT = _SCRIPTS_DIR.parent
+
+import issue1090_fu1 as fu1  # noqa: E402
+import issue1090_run as i1090  # noqa: E402
+
+from explore_persona_space.artifacts.behavior import BEHAVIORS  # noqa: E402
+from explore_persona_space.artifacts.negatives import default_panel  # noqa: E402
+from explore_persona_space.artifacts.organisms import (  # noqa: E402
+    DEFAULT_BASE_MODEL,
+    ModelOrganism,
+    _rate_for_cell,
+    _sha256_file,
+    make_source_rate_fn,
+    release_trainer_cuda_memory,
+)
+from explore_persona_space.artifacts.recipe import (  # noqa: E402
+    JUDGED_RATE_BAND,
+    build_train_config,
+    recipe_for,
+    select_dose_checkpoint,
+)
+from explore_persona_space.experiments import issue_1112 as C  # noqa: E402
+from explore_persona_space.experiments.issue_1112 import mixes as mixmod  # noqa: E402
+from explore_persona_space.orchestrate import hub  # noqa: E402
+
+logger = logging.getLogger("issue1112")
+
+ACCEL_CONFIG = "configs/accelerate/zero3_4gpu_accum1.yaml"
+FT_TRAINER = "scripts/train_behavior_fullft.py"
+MARKER_FT_TRAINER = "scripts/issue1112_train_marker_fullft.py"
+RB_EXTRACTOR = "scripts/issue779_extract_rb.py"
+
+
+# ── Config ────────────────────────────────────────────────────────────────────
+
+
+@dataclasses.dataclass
+class Cfg:
+    smoke: bool
+    cells: tuple[str, ...]
+    out_root: Path
+    seed: int = C.SEED
+    tier1_n: int = 5
+    tier1_draws: int = 3
+    tier2_n: int = 10
+    tier2_draws: int = 5
+    eval_question_limit: int | None = None
+    sentinel_dir: Path | None = None
+    upload: bool = True
+    fence_hours: float = float(os.environ.get("EPS_MAX_RUN_HOURS", "72"))
+    phases: tuple[str, ...] = ()  # empty -> all
+
+    def regime_key(self) -> dict:
+        return {
+            "issue": C.ISSUE,
+            "smoke": self.smoke,
+            "cells": list(self.cells),
+            "seed": self.seed,
+            "tier1": [self.tier1_n, self.tier1_draws],
+            "tier2": [self.tier2_n, self.tier2_draws],
+            "eval_question_limit": self.eval_question_limit,
+            "band": list(JUDGED_RATE_BAND),
+            "marker_band": list(C.MARKER_BAND),
+            "save_steps": C.SYCO_SAVE_STEPS,
+            "max_length": C.SYCO_MAX_LENGTH,
+            "step_ceiling": C.SYCO_STEP_CEILING,
+        }
+
+
+def resolve_cells(cells_arg: str | None, smoke: bool) -> tuple[str, ...]:
+    """The ONE cell resolver every phase consumes (smoke = same path, 1 cell)."""
+    if cells_arg:
+        ids = tuple(t.strip() for t in cells_arg.split(","))
+        bad = [t for t in ids if t not in C.ALL_TRAINED_CELLS]
+        if bad:
+            raise ValueError(f"bad cells {bad!r}: want a subset of {C.ALL_TRAINED_CELLS}")
+        return ids
+    if smoke:
+        return ("s3_fullft_neg",)  # the plan §4.5 smoke cell (FT+negatives)
+    return C.ALL_TRAINED_CELLS
+
+
+def _atomic_json(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n")
+    os.replace(tmp, path)
+
+
+def _read_json(path: Path) -> dict:
+    return json.loads(path.read_text())
+
+
+def _phase(name: str) -> None:
+    i1090._phase(name)
+
+
+def _n_gpus() -> int:
+    import torch
+
+    n = torch.cuda.device_count()
+    if n == 0:
+        raise RuntimeError("no CUDA devices visible — the #1112 GPU phases need >=1 GPU")
+    return n
+
+
+# ── p0: stage inputs (pinned) ────────────────────────────────────────────────
+
+
+def _stage_file(path_in_repo: str, dest: Path, *, revision: str, sha256: str | None = None) -> Path:
+    """Per-file hf_hub_download at a PINNED revision + optional sha assert."""
+    from huggingface_hub import hf_hub_download
+
+    if not dest.exists():
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        got = hf_hub_download(C.HF_DATA_REPO, path_in_repo, repo_type="dataset", revision=revision)
+        shutil.copyfile(got, dest)
+    if sha256 is not None:
+        actual = _sha256_file(dest)
+        if actual != sha256:
+            raise ValueError(f"sha256 mismatch for {path_in_repo}: {actual} != pinned {sha256}")
+    return dest
+
+
+def _stage_overflow_prefix(prefix: str, dest: Path, *, revision: str) -> Path:
+    """Stage a checkpoint subfolder from the PRIVATE overflow repo at a pinned
+    revision (scoped list_repo_tree + per-file download; no staging transform
+    — files land at their prefix-relative paths, reuse check (h)(iv) N/A)."""
+    from huggingface_hub import HfApi, hf_hub_download
+
+    if (dest / "adapter_config.json").exists() or (dest / "config.json").exists():
+        return dest
+    api = HfApi()
+    entries = [
+        e.path
+        for e in api.list_repo_tree(
+            C.OVERFLOW_REPO,
+            path_in_repo=prefix,
+            repo_type="model",
+            recursive=True,
+            revision=revision,
+        )
+        if getattr(e, "size", None) is not None
+    ]
+    if not entries:
+        raise FileNotFoundError(f"no files under {C.OVERFLOW_REPO}/{prefix} @ {revision}")
+    dest.mkdir(parents=True, exist_ok=True)
+    for p in entries:
+        got = hf_hub_download(C.OVERFLOW_REPO, p, repo_type="model", revision=revision)
+        rel = Path(p).relative_to(prefix)
+        target = dest / rel
+        target.parent.mkdir(parents=True, exist_ok=True)
+        if not target.exists():
+            shutil.copyfile(got, target)
+    return dest
+
+
+def phase_stage(cfg: Cfg) -> dict:
+    _phase("p0_stage")
+    inputs = cfg.out_root / "inputs"
+    done_path = cfg.out_root / "p0_stage.json"
+    if done_path.exists():
+        return _read_json(done_path)
+    rec: dict = {"staged": {}}
+    syco = any(c.startswith("s") for c in cfg.cells)
+    marker = any(c.startswith("m") for c in cfg.cells)
+    if syco:
+        _stage_file(
+            C.C3_MIX_PATH,
+            inputs / "c3_train_mix.jsonl",
+            revision=C.C3_MIX_REV,
+            sha256=C.C3_MIX_SHA256,
+        )
+        _stage_file(C.C3_MIX_META_PATH, inputs / "mix_meta.json", revision=C.C3_MIX_REV)
+        _stage_file(C.C3_POS_PATH, inputs / "pos.jsonl", revision=C.C3_MIX_REV)
+        _stage_file(C.C3_CN_PATH, inputs / "cn.jsonl", revision=C.C3_MIX_REV)
+        _stage_file(C.GENERIC_CORPUS_PATH, inputs / "generic_corpus.jsonl", revision=C.C3_MIX_REV)
+        rec["staged"]["c3"] = str(inputs)
+    if C.REUSED_CELL in cfg.cells:
+        for step in (6, C.FU2_SELECTED_STEP, 30):
+            _stage_overflow_prefix(
+                f"{C.FU2_CKPT_PREFIX}/checkpoint-{step}",
+                inputs / "fu2" / f"checkpoint-{step}",
+                revision=C.FU2_CKPT_REV,
+            )
+        acfg = _read_json(
+            inputs / "fu2" / f"checkpoint-{C.FU2_SELECTED_STEP}" / "adapter_config.json"
+        )
+        assert acfg.get("r") == 32 and acfg.get("lora_alpha") == 64 and acfg.get("use_rslora"), acfg
+        rec["staged"]["fu2_ckpts"] = str(inputs / "fu2")
+        # margin sidecar (pool pins) + the topup sidecars the pool derivation reads
+        _stage_file(
+            f"{C.MARGIN_POOLS_PREFIX}/margin/c3-sycophancy-claude.json",
+            inputs / "fu1_margin_c3.json",
+            revision=C.MARGIN_POOLS_REV,
+        )
+    if marker:
+        _stage_file(C.R_TRAIN_PATH, inputs / "R_train.json", revision=C.R_TRAIN_REV)
+        rec["staged"]["r_train"] = str(inputs / "R_train.json")
+    rec["ts"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
+    _atomic_json(done_path, rec)
+    return rec
+
+
+# ── p1: mixes ────────────────────────────────────────────────────────────────
+
+
+def phase_mixes(cfg: Cfg) -> dict:
+    _phase("p1_mixes")
+    inputs = cfg.out_root / "inputs"
+    mixes_dir = cfg.out_root / "mixes"
+    done_path = cfg.out_root / "p1_mixes.json"
+    if done_path.exists():
+        return _read_json(done_path)
+    rec: dict = {}
+    needed = {C.CELL_MIX[c] for c in cfg.cells}
+    if {"c3_posonly", "c3_generic_only"} & needed or "c3_frozen" in needed:
+        man = mixmod.derive_syco_mixes(
+            inputs / "c3_train_mix.jsonl",
+            inputs / "pos.jsonl",
+            inputs / "cn.jsonl",
+            inputs / "generic_corpus.jsonl",
+            mixes_dir,
+        )
+        rec["syco"] = man
+        shutil.copyfile(inputs / "c3_train_mix.jsonl", mixes_dir / "c3_frozen_mix.jsonl")
+    if "marker_contrastive" in needed:
+        rec["marker"] = mixmod.build_marker_mix(
+            inputs / "R_train.json", mixes_dir / "marker_contrastive.jsonl", seed=cfg.seed
+        )
+    # Upload the derived mixes BEFORE training (plan §4.2 binding order).
+    if cfg.upload:
+        for f in sorted(mixes_dir.glob("*.jsonl")) + sorted(mixes_dir.glob("*.json")):
+            hub._upload(
+                f,
+                C.HF_DATA_REPO,
+                "dataset",
+                f"{C.DATA_PREFIX}/mixes/{f.name}",
+                upload_as_file=True,
+            )
+        rec["uploaded_mixes"] = True
+    _atomic_json(done_path, rec)
+    return rec
+
+
+def _mix_path(cfg: Cfg, cell: str) -> Path:
+    name = {
+        "c3_frozen": "c3_frozen_mix.jsonl",
+        "c3_posonly": "c3_posonly_mix.jsonl",
+        "c3_generic_only": "c3_generic_only.jsonl",
+        "marker_contrastive": "marker_contrastive.jsonl",
+    }[C.CELL_MIX[cell]]
+    return cfg.out_root / "mixes" / name
+
+
+# ── p2: training ─────────────────────────────────────────────────────────────
+
+
+def _syco_lora_config(cfg: Cfg, cell: str, *, max_steps: int) -> object:
+    """The fu2 LoRA recipe verbatim (epochs->ceiling seam + max_length 2048)."""
+    spec = recipe_for(C.SYCO_BEHAVIOR, arm="primary")
+    spec = dataclasses.replace(
+        spec,
+        overrides={
+            **spec.overrides,
+            "epochs": 16,  # generous ceiling; max_steps caps the ladder at 30
+            "max_length": C.SYCO_MAX_LENGTH,
+        },
+    )
+    train_cfg = build_train_config(spec, run_name=C.cell_run_name(cell), seed=cfg.seed)
+    return dataclasses.replace(
+        train_cfg, save_steps=C.SYCO_SAVE_STEPS, max_steps=max_steps, max_length=C.SYCO_MAX_LENGTH
+    )
+
+
+def _marker_lora_config(cfg: Cfg, cell: str) -> object:
+    """MARKER_OVERRIDES verbatim + the [7, 9] nat band (plan §4.1 cell 7)."""
+    spec = recipe_for("marker", arm="primary")
+    spec = dataclasses.replace(
+        spec,
+        overrides={
+            **spec.overrides,
+            "marker_band_low_nats": C.MARKER_BAND[0],
+            "marker_band_high_nats": C.MARKER_BAND[1],
+        },
+    )
+    return build_train_config(spec, run_name=C.cell_run_name(cell), seed=cfg.seed)
+
+
+def _train_lora_cell(cfg: Cfg, cell: str, train_cfg) -> dict:
+    from explore_persona_space.train.sft import train_lora
+
+    cell_root = cfg.out_root / cell
+    if cfg.smoke:
+        train_cfg = dataclasses.replace(train_cfg, max_steps=2)
+    adapter_dir, loss = train_lora(
+        DEFAULT_BASE_MODEL, str(_mix_path(cfg, cell)), str(cell_root / "train"), cfg=train_cfg
+    )
+    release_trainer_cuda_memory()
+    return {"adapter_root": str(adapter_dir), "training_loss": float(loss)}
+
+
+def _ft_cmd(
+    cfg: Cfg, cell: str, *, out_dir: Path, max_steps: int, ckpt_steps: Sequence[int]
+) -> list[str]:
+    return [
+        "uv",
+        "run",
+        "accelerate",
+        "launch",
+        "--config_file",
+        ACCEL_CONFIG,
+        "--num_processes",
+        str(min(4, _n_gpus())),
+        FT_TRAINER,
+        "--behavior",
+        C.SYCO_BEHAVIOR,
+        "--arm",
+        "ft",
+        "--train-jsonl",
+        str(_mix_path(cfg, cell)),
+        "--output-dir",
+        str(out_dir),
+        "--ckpt-steps",
+        ",".join(str(s) for s in ckpt_steps),
+        "--max-steps",
+        str(max_steps),
+        "--learning-rate",
+        str(C.FT_LR),
+        "--epochs",
+        "16",  # ceiling; --max-steps caps
+        "--per-device-batch",
+        str(C.FT_PER_DEVICE_BATCH),
+        "--grad-accum",
+        str(C.FT_GRAD_ACCUM),
+        "--warmup-ratio",
+        str(C.FT_WARMUP_RATIO),
+        "--max-length",
+        str(C.SYCO_MAX_LENGTH),
+        "--seed",
+        str(cfg.seed),
+        "--wandb-project",
+        C.WANDB_PROJECT,
+        "--run-name-suffix",
+        "i1112",
+    ]
+
+
+def _run_subprocess(cmd: list[str], log_path: Path) -> None:
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    logger.info("[subprocess] %s (log %s)", " ".join(cmd[:8]) + " ...", log_path)
+    with open(log_path, "a") as f:
+        proc = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT, env={**os.environ})
+    if proc.returncode != 0:
+        raise RuntimeError(f"subprocess rc={proc.returncode}: {' '.join(cmd)} (log {log_path})")
+
+
+def phase_train(cfg: Cfg) -> dict:
+    _phase("p2_train")
+    results: dict[str, dict] = {}
+    for cell in cfg.cells:
+        if cell in (C.REUSED_CELL, *C.GENERIC_CELLS):
+            continue  # s1 reused; generics trained at p5 (need selected steps)
+        cell_root = cfg.out_root / cell
+        build_path = cell_root / "build_result.json"
+        if build_path.exists():
+            results[cell] = _read_json(build_path)
+            continue
+        if cell in ("s2_lora_pos",):
+            rec = _train_lora_cell(
+                cfg, cell, _syco_lora_config(cfg, cell, max_steps=C.SYCO_STEP_CEILING)
+            )
+        elif cell == "m1_lora_band8":
+            rec = _train_lora_cell(cfg, cell, _marker_lora_config(cfg, cell))
+        elif cell in ("s3_fullft_neg", "s4_fullft_pos"):
+            out_dir = cell_root / "train"
+            max_steps = 2 if cfg.smoke else C.SYCO_STEP_CEILING
+            ckpts = (2,) if cfg.smoke else C.FT_CKPT_STEPS
+            _run_subprocess(
+                _ft_cmd(cfg, cell, out_dir=out_dir, max_steps=max_steps, ckpt_steps=ckpts),
+                cell_root / "train.log",
+            )
+            rec = {"adapter_root": str(out_dir)}
+        elif cell == "m2_fullft_band8":
+            out_dir = cell_root / "train"
+            grid = (2,) if cfg.smoke else C.MARKER_FT_GRID
+            cmd = [
+                "uv",
+                "run",
+                "accelerate",
+                "launch",
+                "--config_file",
+                ACCEL_CONFIG,
+                "--num_processes",
+                str(min(4, _n_gpus())),
+                MARKER_FT_TRAINER,
+                "--train-jsonl",
+                str(_mix_path(cfg, cell)),
+                "--output-dir",
+                str(out_dir),
+                "--ckpt-steps",
+                ",".join(str(s) for s in grid),
+                "--max-steps",
+                str(max(grid)),
+                "--seed",
+                str(cfg.seed),
+                "--run-name",
+                C.cell_run_name(cell),
+            ]
+            _run_subprocess(cmd, cell_root / "train.log")
+            rec = {"adapter_root": str(out_dir)}
+        else:
+            raise ValueError(f"unroutable cell {cell}")
+        rec.update({"cell": cell, "status": "trained", "mix": str(_mix_path(cfg, cell))})
+        _atomic_json(build_path, rec)
+        results[cell] = rec
+    return results
+
+
+def _enumerate_rungs(train_dir: Path) -> dict[int, Path]:
+    out: dict[int, Path] = {}
+    for p in Path(train_dir).glob("checkpoint-*"):
+        suffix = p.name.split("-", 1)[1]
+        if p.is_dir() and suffix.isdigit():
+            out[int(suffix)] = p
+    if not out:
+        raise ValueError(f"no checkpoint-<step> dirs under {train_dir}")
+    return out
+
+
+# ── p3: Tier-1 ladders + selection (sharded one cell per GPU) ────────────────
+
+LADDER_CELLS = ("s2_lora_pos", "s3_fullft_neg", "s4_fullft_pos")
+
+
+def _eval_questions(cfg: Cfg) -> list[str]:
+    qs = list(BEHAVIORS[C.SYCO_BEHAVIOR].eval_question_bank)
+    if cfg.eval_question_limit is not None:
+        qs = qs[: cfg.eval_question_limit]
+    return qs
+
+
+def run_ladder_unit(cfg: Cfg, cell: str) -> dict[int, float]:
+    """Tier-1 judged rate at every rung of one cell (the fu2 instrument:
+    make_source_rate_fn + the max_tokens=300 judge). Per-rung resume."""
+    cell_root = cfg.out_root / cell
+    ladder_path = cell_root / "ladder.json"
+    ckpts = _enumerate_rungs(_read_json(cell_root / "build_result.json")["adapter_root"])
+    done: dict[int, float] = {}
+    if ladder_path.exists():
+        prior = _read_json(ladder_path)
+        if prior.get("regime") != cfg.regime_key():
+            raise RuntimeError(f"ladder regime drift under {ladder_path} — fresh --out-root")
+        done = {int(k): float(v) for k, v in (prior.get("rates_by_step") or {}).items()}
+
+    def _persist() -> None:
+        _atomic_json(
+            ladder_path,
+            {
+                "cell": cell,
+                "regime": cfg.regime_key(),
+                "rates_by_step": {str(k): v for k, v in sorted(done.items())},
+                "judge_max_tokens": fu1.JUDGE_MAX_TOKENS_FU1,
+            },
+        )
+
+    pending = [s for s in sorted(ckpts) if s not in done]
+    if pending:
+        organism = ModelOrganism(
+            behavior=C.SYCO_BEHAVIOR, context_id=C.SOURCE_CONTEXT_ID, seed=cfg.seed
+        )
+        rate_fn = make_source_rate_fn(
+            organism,
+            out_dir=cell_root / "rate",
+            eval_questions=_eval_questions(cfg),
+            n_completions=cfg.tier1_n,
+            temperature=1.0,
+            n_judge_draws=cfg.tier1_draws,
+            judge_fn=fu1._judge_fu1,
+        )
+        try:
+            for step in pending:
+                done[step] = float(rate_fn(str(ckpts[step])))
+                _persist()
+        finally:
+            close = getattr(rate_fn, "close", None)
+            if callable(close):
+                close()
+    else:
+        _persist()
+    return done
+
+
+def _fanout_units(cfg: Cfg, units: list[list[str]]) -> None:
+    """Work-conserving CVD-pinned subprocess pool over self-invocation units.
+
+    Wave size derives from torch.cuda.device_count() (never hardcoded); each
+    unit's launcher env pins CUDA_VISIBLE_DEVICES=<g> AND passes --gpu-id <g>
+    (the gotchas.md launcher-pin rule — the in-process clobber alone is
+    defeated by import-time cuInit)."""
+    n = _n_gpus()
+    pending = list(units)
+    running: dict[int, tuple[subprocess.Popen, list[str]]] = {}
+    logs = cfg.out_root / "unit_logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    while pending or running:
+        for g in range(n):
+            if g not in running and pending:
+                extra = pending.pop(0)
+                cmd = [
+                    "uv",
+                    "run",
+                    "python",
+                    str(_SCRIPTS_DIR / "issue1112_dispatch.py"),
+                    *extra,
+                    "--gpu-id",
+                    str(g),
+                ]
+                env = {**os.environ, "CUDA_VISIBLE_DEVICES": str(g)}
+                log = logs / f"unit_{'_'.join(extra[1:3]).replace('/', '_')}_g{g}.log"
+                f = open(log, "a")  # noqa: SIM115 — held open for the Popen's lifetime
+                running[g] = (
+                    subprocess.Popen(cmd, stdout=f, stderr=subprocess.STDOUT, env=env),
+                    extra,
+                )
+                logger.info("[fanout] gpu %d <- %s (log %s)", g, extra, log)
+        time.sleep(10)
+        for g, (proc, extra) in list(running.items()):
+            rc = proc.poll()
+            if rc is None:
+                continue
+            del running[g]
+            if rc != 0:
+                # Reap the surviving siblings before failing loud (no orphans).
+                for _, (p2, _) in running.items():
+                    p2.terminate()
+                for _, (p2, _) in running.items():
+                    try:
+                        p2.wait(timeout=30)
+                    except subprocess.TimeoutExpired:
+                        p2.kill()
+                raise RuntimeError(f"fanout unit {extra} failed rc={rc} (see {logs})")
+
+
+def phase_ladder(cfg: Cfg) -> dict:
+    _phase("p3_ladder")
+    cells = [c for c in cfg.cells if c in LADDER_CELLS]
+    units = [
+        [
+            "--unit",
+            "ladder",
+            c,
+            "--smoke" if cfg.smoke else "--full",
+            "--out-root",
+            str(cfg.out_root),
+            "--cells",
+            ",".join(cfg.cells),
+        ]
+        + (
+            ["--eval-question-limit", str(cfg.eval_question_limit)]
+            if cfg.eval_question_limit
+            else []
+        )
+        + ([] if cfg.upload else ["--no-upload"])
+        for c in cells
+        if not (cfg.out_root / c / "selection.json").exists()
+    ]
+    if units:
+        if len(units) == 1 or _n_gpus() == 1:
+            for u in units:
+                run_ladder_unit(cfg, u[2])
+        else:
+            _fanout_units(cfg, units)
+    selections: dict[str, dict] = {}
+    for cell in cells:
+        sel_path = cfg.out_root / cell / "selection.json"
+        if sel_path.exists():
+            selections[cell] = _read_json(sel_path)
+            continue
+        rates = {
+            int(k): float(v)
+            for k, v in _read_json(cfg.out_root / cell / "ladder.json")["rates_by_step"].items()
+        }
+        sel = select_dose_checkpoint(rates, band=JUDGED_RATE_BAND)
+        rec = {
+            **dataclasses.asdict(sel),
+            "rates_by_step": {str(k): v for k, v in sorted(rates.items())},
+            "band": list(JUDGED_RATE_BAND),
+        }
+        _atomic_json(sel_path, rec)
+        selections[cell] = rec
+    if C.REUSED_CELL in cfg.cells:
+        selections[C.REUSED_CELL] = {
+            "step": C.FU2_SELECTED_STEP,
+            "rate": C.FU2_PARITY_RATE,
+            "in_band": True,
+            "fallback": None,
+            "reused": True,
+        }
+        _atomic_json(cfg.out_root / C.REUSED_CELL / "selection.json", selections[C.REUSED_CELL])
+    return selections
+
+
+# ── G1 gate (plan §7) ────────────────────────────────────────────────────────
+
+
+def _run_started_ts(cfg: Cfg) -> float:
+    p = cfg.out_root / "run_started.json"
+    if not p.exists():
+        _atomic_json(p, {"start_ts": time.time()})
+    return float(_read_json(p)["start_ts"])
+
+
+def phase_g1_gate(cfg: Cfg, selections: dict) -> dict:
+    _phase("g1_gate")
+    ft_cells = [c for c in ("s3_fullft_neg", "s4_fullft_pos") if c in cfg.cells]
+    if cfg.smoke or not ft_cells:
+        return {"fired": False, "reason": "smoke-or-no-ft-cells"}
+    viable = any(
+        any(float(v) >= C.INSTALL_FLOOR for v in selections[c]["rates_by_step"].values())
+        for c in ft_cells
+    )
+    if viable:
+        return {"fired": False, "reason": "a FT rung cleared the 0.45 floor"}
+    # Fence-awareness pre-check (binding round-1 critique item): projected
+    # extension cost at the REALIZED per-step wall vs the remaining fence.
+    elapsed_h = (time.time() - _run_started_ts(cfg)) / 3600.0
+    remaining_h = cfg.fence_hours - elapsed_h
+    # realized per-step wall from the FT train logs' file mtimes (coarse but
+    # realized): train wall = build_result mtime - train.log ctime.
+    per_step_h = []
+    for c in ft_cells:
+        log = cfg.out_root / c / "train.log"
+        rec = cfg.out_root / c / "build_result.json"
+        if log.exists() and rec.exists():
+            wall_h = max(rec.stat().st_mtime - log.stat().st_ctime, 60.0) / 3600.0
+            per_step_h.append(wall_h / C.SYCO_STEP_CEILING)
+    per_step = max(per_step_h) if per_step_h else 0.2
+    ext_steps = C.G1_EXTENSION_STEP_CEILING
+    projected_h = 2 * ext_steps * per_step + 4.0  # both cells + re-ladder/judge margin
+    capture_upload_margin_h = 4.0
+    rec = {
+        "fired": True,
+        "elapsed_h": elapsed_h,
+        "remaining_h": remaining_h,
+        "realized_per_step_h": per_step,
+        "projected_extension_h": projected_h,
+    }
+    if remaining_h < projected_h + capture_upload_margin_h:
+        # Insufficient fence: persist selection state + exit for a 2nd provision.
+        rec["action"] = "split_for_second_provision"
+        _atomic_json(cfg.out_root / "g1_gate.json", rec)
+        if cfg.upload:
+            _upload_selection_state(cfg)
+        logger.warning("[g1] fence budget insufficient — persisting + exiting for 2nd provision")
+        print("[phase=g1_split_for_second_provision]", flush=True)
+        return rec
+    rec["action"] = "extend_in_place"
+    _atomic_json(cfg.out_root / "g1_gate.json", rec)
+    for cell in ft_cells:
+        cell_root = cfg.out_root / cell
+        ext_dir = cell_root / "train_ext"
+        if not (ext_dir / "config.json").exists():
+            _run_subprocess(
+                _ft_cmd(
+                    cfg,
+                    cell,
+                    out_dir=ext_dir,
+                    max_steps=ext_steps,
+                    ckpt_steps=tuple(range(2, ext_steps + 1, 2)),
+                ),
+                cell_root / "train_ext.log",
+            )
+        # extension supersedes the 30-step ladder tree for rung enumeration
+        build = _read_json(cell_root / "build_result.json")
+        build["adapter_root"] = str(ext_dir)
+        build["g1_extension"] = True
+        _atomic_json(cell_root / "build_result.json", build)
+        (cell_root / "ladder.json").unlink(missing_ok=True)
+        (cell_root / "selection.json").unlink(missing_ok=True)
+    return rec
+
+
+def _upload_selection_state(cfg: Cfg) -> None:
+    for cell in cfg.cells:
+        for name in ("ladder.json", "selection.json", "build_result.json"):
+            p = cfg.out_root / cell / name
+            if p.exists():
+                hub._upload(
+                    p,
+                    C.HF_DATA_REPO,
+                    "dataset",
+                    f"{C.DATA_PREFIX}/selection/{cell}/{name}",
+                    upload_as_file=True,
+                )
+
+
+# ── p4: persist selected FT checkpoints, then cleanup (binding order) ───────
+
+
+def phase_persist_ft(cfg: Cfg, selections: dict) -> dict:
+    _phase("p4_persist_ft")
+    done_path = cfg.out_root / "p4_persist_ft.json"
+    if done_path.exists():
+        return _read_json(done_path)
+    rec: dict = {"uploaded": {}, "cleaned": {}}
+    ft_cells = [c for c in cfg.cells if c in ("s3_fullft_neg", "s4_fullft_pos", "m2_fullft_band8")]
+    for cell in ft_cells:
+        cell_root = cfg.out_root / cell
+        build = _read_json(cell_root / "build_result.json")
+        sel_path = cell_root / "selection.json"
+        if not sel_path.exists():
+            continue  # marker selection happens at p8; persist there
+        step = int(_read_json(sel_path)["step"])
+        ckpts = _enumerate_rungs(build["adapter_root"])
+        sel_dir = ckpts[step]
+        if cfg.upload:
+            url = hub._upload(
+                sel_dir,
+                C.OVERFLOW_REPO,
+                "model",
+                f"issue1112/{cell}/checkpoint-{step}",
+                private=True,
+            )
+            if not str(url):
+                raise RuntimeError(f"selected FT checkpoint upload returned no path ({cell})")
+            rec["uploaded"][cell] = f"issue1112/{cell}/checkpoint-{step}"
+        # ONLY after the selected rung is durably uploaded: reap the others
+        # (keep step6/step30 dose-stability rungs for capture on behavior cells).
+        keep = {step}
+        if cell in ("s3_fullft_neg", "s4_fullft_pos") and not cfg.smoke:
+            keep |= {6, 30}
+        if cfg.upload:
+            for s, p in ckpts.items():
+                if s not in keep:
+                    shutil.rmtree(p, ignore_errors=True)
+            rec["cleaned"][cell] = sorted(set(ckpts) - keep)
+    _atomic_json(done_path, rec)
+    return rec
+
+
+# ── p5: generic controls (method-matched training amount) ────────────────────
+
+
+def phase_generic(cfg: Cfg, selections: dict) -> dict:
+    _phase("p5_generic")
+    results: dict[str, dict] = {}
+    for cell in cfg.cells:
+        if cell not in C.GENERIC_CELLS:
+            continue
+        cell_root = cfg.out_root / cell
+        build_path = cell_root / "build_result.json"
+        if build_path.exists():
+            results[cell] = _read_json(build_path)
+            continue
+        twin = "s2_lora_pos" if cell == "s5_lora_generic" else "s3_fullft_neg"
+        if twin not in selections:
+            raise RuntimeError(f"{cell} needs {twin}'s selection first (method-matched step)")
+        step = int(selections[twin]["step"])
+        if cell == "s5_lora_generic":
+            rec = _train_lora_cell(cfg, cell, _syco_lora_config(cfg, cell, max_steps=step))
+        else:
+            out_dir = cell_root / "train"
+            _run_subprocess(
+                _ft_cmd(cfg, cell, out_dir=out_dir, max_steps=step, ckpt_steps=(step,)),
+                cell_root / "train.log",
+            )
+            rec = {"adapter_root": str(out_dir)}
+        rec.update({"cell": cell, "status": "trained", "matched_step": step, "twin": twin})
+        _atomic_json(build_path, rec)
+        # capture reads the matched-step checkpoint
+        _atomic_json(
+            cell_root / "selection.json",
+            {"step": step, "rate": None, "in_band": None, "fallback": "method-matched-step"},
+        )
+        results[cell] = rec
+    return results
+
+
+# ── p6: reused-cell parity probe (plan §4.6 (g)) ─────────────────────────────
+
+
+def phase_parity(cfg: Cfg) -> dict:
+    _phase("p6_parity")
+    if C.REUSED_CELL not in cfg.cells:
+        return {"skipped": True}
+    out_path = cfg.out_root / C.REUSED_CELL / "parity.json"
+    if out_path.exists():
+        return _read_json(out_path)
+    ckpt = cfg.out_root / "inputs" / "fu2" / f"checkpoint-{C.FU2_SELECTED_STEP}"
+    organism = ModelOrganism(
+        behavior=C.SYCO_BEHAVIOR, context_id=C.SOURCE_CONTEXT_ID, seed=cfg.seed
+    )
+    rate_fn = make_source_rate_fn(
+        organism,
+        out_dir=cfg.out_root / C.REUSED_CELL / "rate",
+        eval_questions=_eval_questions(cfg),
+        n_completions=cfg.tier1_n,
+        temperature=1.0,
+        n_judge_draws=cfg.tier1_draws,
+        judge_fn=fu1._judge_fu1,
+    )
+    try:
+        rate = float(rate_fn(str(ckpt)))
+    finally:
+        close = getattr(rate_fn, "close", None)
+        if callable(close):
+            close()
+    ok = abs(rate - C.FU2_PARITY_RATE) <= C.FU2_PARITY_TOL
+    rec = {
+        "rate": rate,
+        "expected": C.FU2_PARITY_RATE,
+        "tol": C.FU2_PARITY_TOL,
+        "pass": ok,
+        "checkpoint": str(ckpt),
+    }
+    _atomic_json(out_path, rec)
+    if not ok:
+        raise RuntimeError(
+            f"rsLoRA parity probe FAILED: staged fu2 checkpoint-14 judged rate {rate:.3f} "
+            f"outside {C.FU2_PARITY_RATE}±{C.FU2_PARITY_TOL} — retrain fallback (plan §4.6) "
+            "must be invoked by the orchestrator (train an s1 twin from the frozen mix)."
+        )
+    return rec
+
+
+# ── p7: Tier-2 + judge fold ──────────────────────────────────────────────────
+
+
+def phase_tier2(cfg: Cfg, selections: dict) -> dict:
+    _phase("p7_tier2")
+    from explore_persona_space.artifacts.organisms import (
+        _default_vllm_generate_fn,
+        _generate_and_persist,
+    )
+
+    behavior = BEHAVIORS[C.SYCO_BEHAVIOR]
+    questions = _eval_questions(cfg)
+    src = i1090._source_context()
+    cells = [c for c in cfg.cells if c.startswith("s") and c in selections]
+    out: dict[str, dict] = {}
+    gen = None
+    try:
+        for cell in cells:
+            res_path = cfg.out_root / "tier2" / cell / "tier2_rates.json"
+            if res_path.exists():
+                out[cell] = _read_json(res_path)
+                continue
+            if gen is None:
+                gen = _default_vllm_generate_fn(DEFAULT_BASE_MODEL)
+            step = int(selections[cell]["step"])
+            if cell == C.REUSED_CELL:
+                ckpt = cfg.out_root / "inputs" / "fu2" / f"checkpoint-{C.FU2_SELECTED_STEP}"
+            else:
+                ckpt = _enumerate_rungs(
+                    _read_json(cfg.out_root / cell / "build_result.json")["adapter_root"]
+                )[step]
+            out_dir = cfg.out_root / "tier2" / cell
+            rates: dict[str, float] = {}
+            for state, side in (("trained", str(ckpt)), ("base", None)):
+                completions = _generate_and_persist(
+                    gen,
+                    state,
+                    side,
+                    src,
+                    questions,
+                    n=cfg.tier2_n,
+                    temperature=1.0,
+                    out_dir=out_dir,
+                    base_model=DEFAULT_BASE_MODEL,
+                )
+                cellrate = _rate_for_cell(
+                    behavior,
+                    None,
+                    fu1._judge_fu1,
+                    cfg.tier2_draws,
+                    state,
+                    src,
+                    questions,
+                    completions,
+                    out_dir / "judge",
+                )
+                rates[state] = float(cellrate.rate)
+            rec = {"cell": cell, "step": step, "rates": rates, "n": cfg.tier2_n}
+            _atomic_json(res_path, rec)
+            out[cell] = rec
+    finally:
+        if gen is not None:
+            close = getattr(gen, "close", None)
+            if callable(close):
+                close()
+    # eval_results primary-deliverable copies (install/*_tier2.json)
+    deliver = REPO_ROOT / "eval_results" / "issue_1112" / "install"
+    if cfg.smoke:
+        deliver = cfg.out_root / "eval_results_mirror" / "install"
+    deliver.mkdir(parents=True, exist_ok=True)
+    for cell, rec in out.items():
+        _atomic_json(deliver / f"{cell}_tier2.json", rec)
+    return out
+
+
+# ── p8: marker selection + three-space reads ─────────────────────────────────
+
+
+def _marker_probe_contexts(model_path: str, *, n_questions: int, out_dir: Path) -> list[dict]:
+    """On-policy villain-source probes: greedy R from the model under eval,
+    cut at the first marker emission (marker-leakage-measurement.md slot rule)."""
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.analysis.representation_shift import _generate_responses_vllm
+    from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+        EVAL_PERSONAS_24,
+        EVAL_QUESTIONS_20,
+    )
+
+    questions = list(EVAL_QUESTIONS_20)[:n_questions]
+    personas = {"villain": EVAL_PERSONAS_24["villain"]}
+    cache = out_dir / "probe_rows.json"
+    if cache.exists():
+        return json.loads(cache.read_text())["rows"]
+    rows = _generate_responses_vllm(
+        model_path,
+        personas,
+        questions,
+        max_new_tokens=C.MARKER_MAX_NEW_TOKENS,
+        gpu_memory_utilization=0.6,
+    )
+    tokenizer = AutoTokenizer.from_pretrained(DEFAULT_BASE_MODEL)
+    ctx_rows = []
+    for r in rows:
+        prompt_text = tokenizer.decode(r["prompt_token_ids"])
+        resp_text = tokenizer.decode(r["response_token_ids"])
+        cut = resp_text.find("※")
+        if cut >= 0:
+            resp_text = resp_text[:cut].rstrip()
+        ctx_rows.append(
+            {"persona": r["persona"], "q": r["question_idx"], "context": prompt_text + resp_text}
+        )
+    out_dir.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps({"model": model_path, "rows": ctx_rows}, ensure_ascii=False))
+    return ctx_rows
+
+
+def _marker_slot_read(model_path: str, contexts: list[str], device: str = "cuda:0") -> list[dict]:
+    import torch
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    from explore_persona_space.eval.marker_logprob import compute_marker_slot_stats
+
+    tokenizer = AutoTokenizer.from_pretrained(DEFAULT_BASE_MODEL)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=torch.bfloat16,
+        device_map={"": device},
+        token=os.environ.get("HF_TOKEN"),
+    )
+    model.eval()
+    try:
+        stats = compute_marker_slot_stats(
+            model,
+            tokenizer,
+            contexts,
+            " ※",
+            device=device,
+            eos_token_id=151645,
+            include_argmax=True,
+        )
+    finally:
+        del model
+        import gc
+
+        gc.collect()
+        torch.cuda.empty_cache()
+    return stats
+
+
+def _marker_delta_g(model_path: str, *, n_questions: int, out_dir: Path) -> dict:
+    """ΔG = mean_source(log P(※) trained − base) at the post-response slot of
+    the TRAINED model's own responses (three-space storage per read)."""
+    rows = _marker_probe_contexts(model_path, n_questions=n_questions, out_dir=out_dir)
+    contexts = [r["context"] for r in rows]
+    trained = _marker_slot_read(model_path, contexts)
+    base = _marker_slot_read(DEFAULT_BASE_MODEL, contexts)
+    deltas = [t["logp_marker"] - b["logp_marker"] for t, b in zip(trained, base, strict=True)]
+    rec = {
+        "model": model_path,
+        "n_probes": len(contexts),
+        "delta_logp_mean": float(sum(deltas) / len(deltas)),
+        "per_probe": [
+            {"row": r, "trained": t, "base": b} for r, t, b in zip(rows, trained, base, strict=True)
+        ],
+    }
+    _atomic_json(out_dir / "slot_read.json", rec)
+    return rec
+
+
+def phase_marker(cfg: Cfg) -> dict:
+    _phase("p8_marker")
+    cells = [c for c in cfg.cells if c in C.MARKER_CELLS]
+    if not cells:
+        return {"skipped": True}
+    out: dict[str, dict] = {}
+    n_sel_q = 20  # selection reads: 20 source probes (plan §9)
+    # m1: band-stopped final adapter (train_lora saved ladder; use final)
+    if "m1_lora_band8" in cells:
+        cell_root = cfg.out_root / "m1_lora_band8"
+        res = cell_root / "marker_read.json"
+        if res.exists():
+            out["m1_lora_band8"] = _read_json(res)
+        else:
+            adapter = _read_json(cell_root / "build_result.json")["adapter_root"]
+            merged = _merge_adapter(cfg, adapter, cell_root / "merged")
+            try:
+                rec = _marker_delta_g(str(merged), n_questions=n_sel_q, out_dir=cell_root / "slot")
+            finally:
+                shutil.rmtree(merged, ignore_errors=True)  # atomic merge-read-delete
+            _atomic_json(res, rec)
+            out["m1_lora_band8"] = rec
+    # m2: grid selection minimizing |ΔG − ΔG_m1| s.t. ΔG in [5, 12]
+    if "m2_fullft_band8" in cells:
+        cell_root = cfg.out_root / "m2_fullft_band8"
+        res = cell_root / "marker_read.json"
+        if res.exists():
+            out["m2_fullft_band8"] = _read_json(res)
+        else:
+            target = out.get("m1_lora_band8", {}).get("delta_logp_mean")
+            ckpts = _enumerate_rungs(_read_json(cell_root / "build_result.json")["adapter_root"])
+            grid_reads: dict[int, float] = {}
+            for step, p in sorted(ckpts.items()):
+                r = _marker_delta_g(str(p), n_questions=n_sel_q, out_dir=cell_root / f"slot_{step}")
+                grid_reads[step] = r["delta_logp_mean"]
+            in_band = {
+                s: v
+                for s, v in grid_reads.items()
+                if C.MARKER_GLOBAL_BAND[0] <= v <= C.MARKER_GLOBAL_BAND[1]
+            }
+            pool = in_band or grid_reads  # closest-approach fallback, reported
+            key = (
+                (lambda s: abs(pool[s] - target))
+                if target is not None
+                else (lambda s: abs(pool[s] - 8.0))
+            )
+            step = min(sorted(pool), key=key)
+            rec = {
+                "grid_delta_g": {str(k): v for k, v in sorted(grid_reads.items())},
+                "selected_step": step,
+                "selected_delta_g": grid_reads[step],
+                "in_band": step in in_band,
+                "target_m1_delta_g": target,
+            }
+            _atomic_json(
+                cell_root / "selection.json",
+                {
+                    "step": step,
+                    "rate": None,
+                    "in_band": step in in_band,
+                    "fallback": None if step in in_band else "closest_approach",
+                },
+            )
+            _atomic_json(res, rec)
+            out["m2_fullft_band8"] = rec
+    deliver = REPO_ROOT / "eval_results" / "issue_1112" / "marker"
+    if cfg.smoke:
+        deliver = cfg.out_root / "eval_results_mirror" / "marker"
+    deliver.mkdir(parents=True, exist_ok=True)
+    for cell, rec in out.items():
+        _atomic_json(deliver / f"{cell}_slotstats.json", rec)
+    return out
+
+
+def _merge_adapter(cfg: Cfg, adapter_dir: str, merged_dir: Path) -> Path:
+    """Atomic merge-for-read (#653 pattern; caller deletes after its pass)."""
+    import torch
+    from peft import PeftModel
+    from transformers import AutoModelForCausalLM, AutoTokenizer
+
+    if (merged_dir / "config.json").exists():
+        return merged_dir
+    base = AutoModelForCausalLM.from_pretrained(
+        DEFAULT_BASE_MODEL, torch_dtype=torch.bfloat16, token=os.environ.get("HF_TOKEN")
+    )
+    model = PeftModel.from_pretrained(base, adapter_dir)
+    model = model.merge_and_unload()
+    merged_dir.mkdir(parents=True, exist_ok=True)
+    model.save_pretrained(str(merged_dir))
+    AutoTokenizer.from_pretrained(DEFAULT_BASE_MODEL).save_pretrained(str(merged_dir))
+    del model, base
+    import gc
+
+    gc.collect()
+    torch.cuda.empty_cache()
+    return merged_dir
+
+
+# ── p9: r_B extraction ───────────────────────────────────────────────────────
+
+
+def _seed_rb_artifacts_from_registry(cache_path: Path) -> dict:
+    """Pre-seed the issue779 extractor's per-trait artifacts cache from the
+    BEHAVIORS registry — the #1090 c3 sycophancy definition (plan §4.5: the c3
+    trait description + 5 contrastive instruction pairs + the extraction
+    question set DISJOINT from the 20-q eval bank). Without this the extractor
+    would Sonnet-generate artifacts from ITS OWN issue779 trait description (a
+    different definition) on the fresh instance (`data/` is gitignored)."""
+    b = BEHAVIORS[C.SYCO_BEHAVIOR]
+    ex = b.extraction
+    assert ex is not None and b.judge_rubric, "sycophancy registry entry is a stub"
+    assert "{question}" in b.judge_rubric and "{answer}" in b.judge_rubric
+    ext_qs = list(ex.question_set)
+    overlap = set(ext_qs) & set(b.eval_question_bank)
+    assert not overlap, f"extraction/eval question overlap: {sorted(overlap)[:3]}"
+    artifacts = {
+        "instruction": [{"pos": p.exhibit, "neg": p.not_exhibit} for p in ex.prompt_pairs],
+        "extraction_questions": ext_qs,
+        "eval_prompt": b.judge_rubric,
+        "provenance": {
+            "source": "artifacts.behavior.BEHAVIORS['sycophancy'] (the #1090 c3 definition)",
+            "seeded_by": "issue1112_dispatch.phase_rb",
+            "n_pairs": len(ex.prompt_pairs),
+            "n_extraction_questions": len(ext_qs),
+        },
+    }
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    _atomic_json(cache_path, artifacts)
+    return artifacts
+
+
+def phase_rb(cfg: Cfg) -> dict:
+    _phase("p9_rb")
+    rb_dir = cfg.out_root / "rb"
+    done = rb_dir / "rb_done.json"
+    if done.exists():
+        return _read_json(done)
+    rec: dict = {}
+    if any(c.startswith("s") for c in cfg.cells) and not cfg.smoke:
+        # The extractor reads its artifacts cache at data/issue_779/artifacts/
+        # (its designed injection point); seed it with the #1090 c3 definition.
+        _seed_rb_artifacts_from_registry(
+            REPO_ROOT / "data" / "issue_779" / "artifacts" / "sycophancy.json"
+        )
+        cmd = [
+            "uv",
+            "run",
+            "python",
+            RB_EXTRACTOR,
+            "--traits",
+            "sycophancy",
+            "--out-dir",
+            str(rb_dir),
+            "--no-upload",
+        ]
+        _run_subprocess(cmd, rb_dir / "rb.log")
+        # Normalize the extractor's output (rb/r_b/sycophancy.pt, key "r_b")
+        # to the shape phase_upload + geometry consume (rb_sycophancy.pt,
+        # key "rb"; (28, 3584)). Fail-loud on a missing/mis-shaped tensor.
+        import torch
+
+        src = rb_dir / "r_b" / "sycophancy.pt"
+        if not src.exists():
+            raise FileNotFoundError(f"r_B extractor produced no tensor at {src}")
+        obj = torch.load(src, map_location="cpu", weights_only=False)
+        r_b = obj["r_b"]
+        assert tuple(r_b.shape) == (C.N_LAYERS, C.HIDDEN), r_b.shape
+        torch.save(
+            {"rb": r_b, "counts": obj.get("counts"), "source": str(src)},
+            rb_dir / "rb_sycophancy.pt",
+        )
+        rec["sycophancy"] = str(rb_dir / "rb_sycophancy.pt")
+    if any(c.startswith("m") for c in cfg.cells):
+        # marker r_B = W_U[83399] per layer-independent unembedding row (#653)
+        import torch
+        from transformers import AutoModelForCausalLM
+
+        model = AutoModelForCausalLM.from_pretrained(
+            DEFAULT_BASE_MODEL,
+            torch_dtype=torch.bfloat16,
+            device_map="cpu",
+            token=os.environ.get("HF_TOKEN"),
+        )
+        wu = model.get_output_embeddings().weight[C.MARKER_TOKEN_ID].detach().to(torch.float32)
+        rb = wu.unsqueeze(0).repeat(C.N_LAYERS, 1)
+        rb_dir.mkdir(parents=True, exist_ok=True)
+        torch.save(
+            {"rb": rb, "note": "W_U[83399] tiled per layer (#653 convention)"},
+            rb_dir / "rb_marker.pt",
+        )
+        del model
+        rec["marker"] = str(rb_dir / "rb_marker.pt")
+    _atomic_json(done, rec)
+    return rec
+
+
+# ── p10: capture (sharded per (cell, dose)) ──────────────────────────────────
+
+
+def _capture_panel(behavior: str) -> tuple[dict[str, tuple[str | None, str | None]], list[str]]:
+    """{context_id: (system_prompt, user_wrap)} + question list for capture."""
+    if behavior == C.SYCO_BEHAVIOR:
+        src = i1090._source_context()
+        panel: dict[str, tuple[str | None, str | None]] = {
+            src.context_id: (src.system, getattr(src, "user_wrap", None))
+        }
+        for neg in default_panel():
+            panel[neg.slug] = (neg.system_prompt, neg.user_wrap)
+        questions = list(BEHAVIORS[C.SYCO_BEHAVIOR].eval_question_bank)
+    else:
+        from explore_persona_space.experiments.factor_screen_365.persona_panel import (
+            EVAL_PERSONAS_24,
+            EVAL_QUESTIONS_20,
+        )
+
+        panel = {p: (EVAL_PERSONAS_24[p], None) for p in ("villain", *mixmod.MARKER_NEGATIVES)}
+        questions = list(EVAL_QUESTIONS_20)
+    return panel, questions
+
+
+def run_capture_unit(cfg: Cfg, cell: str, dose: str) -> None:
+    """One capture pass: on-policy gen + 28-layer 3-span TF pooling -> pooled.pt."""
+    import torch
+    from transformers import AutoTokenizer
+
+    from explore_persona_space.analysis.representation_shift import (
+        _generate_responses_vllm,
+        _teacher_forced_span_means,
+        compute_prompt_spans,
+    )
+
+    out_dir = cfg.out_root / "capture" / cell / dose
+    if (out_dir / "pooled.pt").exists():
+        return
+    out_dir.mkdir(parents=True, exist_ok=True)
+    behavior = "marker" if cell.startswith(("m", "base_marker")) else C.SYCO_BEHAVIOR
+    model_path, cleanup_merged = _resolve_capture_model(cfg, cell, dose)
+    panel, questions = _capture_panel(behavior)
+    max_new = C.MARKER_MAX_NEW_TOKENS if behavior == "marker" else C.SYCO_MAX_NEW_TOKENS
+    if cfg.smoke:
+        panel = dict(list(panel.items())[:1])
+        questions = questions[:2]  # 2 rows (1-row clouds are degenerate post-centering)
+    personas = {}
+    user_texts = {}
+    for ctx_id, (system, wrap) in panel.items():
+        personas[ctx_id] = system
+        user_texts[ctx_id] = wrap
+    rows = _generate_responses_vllm(
+        model_path,
+        {k: personas[k] for k in panel},
+        questions,
+        max_new_tokens=max_new,
+        gpu_memory_utilization=0.6,
+    )
+    # NOTE: user_wrap members need the WRAPPED question for span computation
+    tokenizer = AutoTokenizer.from_pretrained(DEFAULT_BASE_MODEL)
+    for r in rows:
+        ctx_id = r["persona"]
+        q = questions[r["question_idx"]]
+        wrap = user_texts.get(ctx_id)
+        user_content = wrap.format(q=q) if wrap else q
+        r["prefix_len"], r["context_len"] = compute_prompt_spans(
+            tokenizer, personas[ctx_id], user_content, r["prompt_token_ids"]
+        )
+    # persist rollout text BEFORE the capture reduce (upload policy #779)
+    (out_dir / "raw_rows.json").write_text(
+        json.dumps({"model": model_path, "rows": rows}, ensure_ascii=False)
+    )
+    pooled = _teacher_forced_span_means(
+        model_path,
+        rows,
+        list(panel),
+        layers=list(range(C.N_LAYERS)),
+        device="cuda:0",
+        dtype=torch.bfloat16,
+        tf_batch_size=C.TF_BATCH_SIZE,
+    )
+    store = {
+        "schema_version": 1,
+        "cell": cell,
+        "dose": dose,
+        "behavior": behavior if behavior == "marker" else "sycophancy",
+        "model_path": model_path,
+        "row_meta": [{"context_id": r["persona"], "question_idx": r["question_idx"]} for r in rows],
+        "arms": {
+            arm: {li: t.to(torch.float16) for li, t in per_layer.items()}
+            for arm, per_layer in pooled.items()
+        },
+        "metadata": {
+            "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            "max_new_tokens": max_new,
+            "tf_batch_size": C.TF_BATCH_SIZE,
+        },
+    }
+    tmp = out_dir / "pooled.pt.tmp"
+    torch.save(store, tmp)
+    os.replace(tmp, out_dir / "pooled.pt")
+    if cleanup_merged is not None:
+        shutil.rmtree(cleanup_merged, ignore_errors=True)
+
+
+def _resolve_capture_model(cfg: Cfg, cell: str, dose: str) -> tuple[str, Path | None]:
+    """(model_path, merged_dir_to_cleanup) for one capture pass."""
+    if cell.startswith("base_"):
+        return DEFAULT_BASE_MODEL, None
+    cell_root = cfg.out_root / cell
+    sel = _read_json(cell_root / "selection.json")
+    if cell == C.REUSED_CELL:
+        step = {"selected": C.FU2_SELECTED_STEP, "step6": 6, "step30": 30}[dose]
+        adapter = cfg.out_root / "inputs" / "fu2" / f"checkpoint-{step}"
+        merged = _merge_adapter(cfg, str(adapter), cell_root / f"merged_{dose}")
+        return str(merged), merged
+    build = _read_json(cell_root / "build_result.json")
+    if dose == "selected":
+        step = int(sel["step"])
+    elif dose in ("step6", "step30"):
+        step = int(dose.removeprefix("step"))
+    else:
+        raise ValueError(dose)
+    ckpt = _enumerate_rungs(build["adapter_root"])[step]
+    if cell.startswith(("s3", "s4", "s6", "m2")):
+        return str(ckpt), None  # full-FT consolidated dir loads directly
+    merged = _merge_adapter(cfg, str(ckpt), cell_root / f"merged_{dose}")
+    return str(merged), merged
+
+
+def capture_passes(cfg: Cfg) -> list[tuple[str, str]]:
+    passes: list[tuple[str, str]] = []
+    behaviors = set()
+    for cell in cfg.cells:
+        if cell in (C.REUSED_CELL, "s2_lora_pos", "s3_fullft_neg", "s4_fullft_pos"):
+            doses = ("selected",) if cfg.smoke else C.CAPTURE_DOSES
+            passes += [(cell, d) for d in doses]
+            behaviors.add("sycophancy")
+        elif cell in C.GENERIC_CELLS:
+            passes.append((cell, "selected"))
+            behaviors.add("sycophancy")
+        elif cell in C.MARKER_CELLS:
+            passes.append((cell, "selected"))
+            behaviors.add("marker")
+    if "sycophancy" in behaviors:
+        passes.append(("base_sycophancy", "base"))
+    if "marker" in behaviors:
+        passes.append(("base_marker", "base"))
+    return passes
+
+
+def phase_capture(cfg: Cfg) -> dict:
+    _phase("p10_capture")
+    passes = [
+        (c, d)
+        for c, d in capture_passes(cfg)
+        if not (cfg.out_root / "capture" / c / d / "pooled.pt").exists()
+    ]
+    if not passes:
+        return {"n_passes": 0}
+    if _n_gpus() == 1 or len(passes) == 1:
+        for c, d in passes:
+            run_capture_unit(cfg, c, d)
+    else:
+        units = [
+            [
+                "--unit",
+                "capture",
+                f"{c}/{d}",
+                "--smoke" if cfg.smoke else "--full",
+                "--out-root",
+                str(cfg.out_root),
+                "--cells",
+                ",".join(cfg.cells),
+            ]
+            + (
+                ["--eval-question-limit", str(cfg.eval_question_limit)]
+                if cfg.eval_question_limit
+                else []
+            )
+            + ([] if cfg.upload else ["--no-upload"])
+            for c, d in passes
+        ]
+        _fanout_units(cfg, units)
+    return {"n_passes": len(passes)}
+
+
+# ── p11: geometry (smoke stub — the full pass runs VM-side) ──────────────────
+
+
+def phase_geometry_smoke(cfg: Cfg) -> dict:
+    _phase("p11_geometry")
+    if not cfg.smoke:
+        return {"skipped": "full geometry runs VM-side (scripts/issue1112_geometry.py)"}
+    import torch
+
+    from explore_persona_space.experiments.issue_1112 import geometry as geo
+
+    cell = cfg.cells[0]
+    rb = torch.randn(C.N_LAYERS, C.HIDDEN)  # smoke stub direction (labeled)
+    rb_path = cfg.out_root / "rb" / "rb_smoke.pt"
+    rb_path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save({"rb": rb, "smoke_stub": True}, rb_path)
+    payload = geo.run_geometry(
+        cfg.out_root / "capture",
+        cfg.out_root / "geometry_smoke",
+        cells_doses=[(cell, "selected")],
+        base_store_by_behavior={
+            "sycophancy": cfg.out_root / "capture" / "base_sycophancy" / "base" / "pooled.pt"
+        },
+        behavior_by_cell={cell: "sycophancy"},
+        selected_dose_by_cell={cell: "selected"},
+        rb_by_behavior={"sycophancy": rb_path},
+        n_boot=25,
+    )
+    return {"n_records": len(payload["records"])}
+
+
+# ── p12: upload + sentinel ───────────────────────────────────────────────────
+
+
+def phase_upload(cfg: Cfg) -> dict:
+    _phase("p12_upload")
+    uploaded: dict[str, str] = {}
+    if not cfg.upload:
+        return uploaded
+
+    def _up(local: Path, path_in_repo: str, **kw) -> None:
+        if not Path(local).exists():
+            return
+        url = hub._upload(local, C.HF_DATA_REPO, "dataset", path_in_repo, **kw)
+        if not str(url):
+            raise RuntimeError(f"upload returned no path for {path_in_repo}")
+        uploaded[path_in_repo] = str(url)
+        _atomic_json(cfg.out_root / "upload_manifest.json", uploaded)
+
+    for cell in cfg.cells:
+        cell_root = cfg.out_root / cell
+        for name in (
+            "build_result.json",
+            "ladder.json",
+            "selection.json",
+            "parity.json",
+            "marker_read.json",
+        ):
+            _up(cell_root / name, f"{C.DATA_PREFIX}/selection/{cell}/{name}", upload_as_file=True)
+        _up(cell_root / "rate", f"{C.DATA_PREFIX}/raw_completions/rate/{cell}")
+        # LoRA adapter ladders -> overflow repo (FT selected rungs already at p4)
+        if cell in ("s2_lora_pos", "s5_lora_generic", "m1_lora_band8"):
+            build = cell_root / "build_result.json"
+            if build.exists():
+                url = hub._upload(
+                    Path(_read_json(build)["adapter_root"]),
+                    C.OVERFLOW_REPO,
+                    "model",
+                    f"issue1112/{cell}",
+                    private=True,
+                )
+                uploaded[f"overflow:issue1112/{cell}"] = str(url)
+    _up(cfg.out_root / "tier2", f"{C.DATA_PREFIX}/raw_completions/tier2")
+    _up(
+        cfg.out_root / "mixes" / "mix_derivation_manifest.json",
+        f"{C.DATA_PREFIX}/mixes/mix_derivation_manifest.json",
+        upload_as_file=True,
+    )
+    # capture: rollout text (unconditional) + pooled tensors (analysis_tensors)
+    for c, d in capture_passes(cfg):
+        cap = cfg.out_root / "capture" / c / d
+        _up(
+            cap / "raw_rows.json",
+            f"{C.DATA_PREFIX}/raw_completions/capture/{c}/{d}/raw_rows.json",
+            upload_as_file=True,
+        )
+        _up(
+            cap / "pooled.pt",
+            f"{C.DATA_PREFIX}/analysis_tensors/capture/{c}/{d}/pooled.pt",
+            upload_as_file=True,
+        )
+    for name in ("rb_sycophancy", "rb_marker"):
+        _up(
+            cfg.out_root / "rb" / f"{name}.pt",
+            f"{C.DATA_PREFIX}/analysis_tensors/rb/{name}.pt",
+            upload_as_file=True,
+        )
+    for extra in (
+        sorted((cfg.out_root / "rb").glob("**/*.json")) if (cfg.out_root / "rb").exists() else []
+    ):
+        _up(extra, f"{C.DATA_PREFIX}/rb/{extra.name}", upload_as_file=True)
+    _up(cfg.out_root / "run_config.json", f"{C.DATA_PREFIX}/run_config.json", upload_as_file=True)
+    return uploaded
+
+
+def write_sentinel(cfg: Cfg, summary: dict) -> Path:
+    _phase("sentinel")
+    sentinel_dir = cfg.sentinel_dir or Path("/workspace/logs")
+    sentinel_dir.mkdir(parents=True, exist_ok=True)
+    kind = "epm:smoke-result" if cfg.smoke else "epm:results"
+    payload = {
+        "sentinel_schema_version": 1,
+        "kind": kind,
+        "version": 1,  # VM-side drain re-derives max+1
+        "task_id": C.ISSUE,
+        "by": "issue1112_dispatch",
+        "ts": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "note": summary,
+    }
+    path = sentinel_dir / f"issue-{C.ISSUE}-{kind.replace(':', '_')}-{int(time.time())}.json"
+    _atomic_json(path, payload)
+    logger.info("[sentinel] wrote %s", path)
+    return path
+
+
+# ── main ─────────────────────────────────────────────────────────────────────
+
+
+def _check_regime(cfg: Cfg) -> None:
+    cfg.out_root.mkdir(parents=True, exist_ok=True)
+    p = cfg.out_root / "run_config.json"
+    cur = cfg.regime_key()
+    if p.exists():
+        prior = _read_json(p)
+        prior_rest = {k: v for k, v in prior.items() if k != "cells"}
+        cur_rest = {k: v for k, v in cur.items() if k != "cells"}
+        if prior_rest != cur_rest or not set(cur["cells"]) <= set(prior.get("cells", [])):
+            raise RuntimeError(f"out_root {cfg.out_root} holds a run under a DIFFERENT regime")
+    else:
+        _atomic_json(p, cur)
+
+
+def _parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="#1112 pod-side phase driver")
+    mode = p.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--smoke", action="store_true", help="tiny-real, SAME code path")
+    mode.add_argument("--full", action="store_true")
+    p.add_argument(
+        "--unit",
+        nargs=2,
+        default=None,
+        metavar=("KIND", "ARG"),
+        help="internal: run one fanout unit (ladder <cell> | capture <cell>/<dose>)",
+    )
+    p.add_argument(
+        "--gpu-id", type=int, default=0, help="physical GPU (CVD-pinned by the launcher)"
+    )
+    p.add_argument("--cells", default=None)
+    p.add_argument("--out-root", default=None)
+    p.add_argument("--seed", type=int, default=C.SEED)
+    p.add_argument("--eval-question-limit", type=int, default=None)
+    p.add_argument("--sentinel-dir", default=None)
+    p.add_argument("--no-upload", dest="upload", action="store_false", default=True)
+    p.add_argument("--phases", default=None, help="comma subset of phases to run (default all)")
+    return p.parse_args(argv)
+
+
+def build_cfg(args: argparse.Namespace) -> Cfg:
+    smoke = bool(args.smoke)
+    out_root = Path(
+        args.out_root
+        if args.out_root is not None
+        else (f"/tmp/issue-{C.ISSUE}-smoke" if smoke else f"data/issue_{C.ISSUE}/run")
+    )
+    return Cfg(
+        smoke=smoke,
+        cells=resolve_cells(args.cells, smoke),
+        out_root=out_root,
+        seed=args.seed,
+        tier1_n=2 if smoke else 5,
+        tier1_draws=2 if smoke else 3,
+        tier2_n=2 if smoke else 10,
+        tier2_draws=2 if smoke else 5,
+        eval_question_limit=(
+            args.eval_question_limit
+            if args.eval_question_limit is not None
+            else (2 if smoke else None)
+        ),
+        sentinel_dir=(
+            Path(args.sentinel_dir)
+            if args.sentinel_dir is not None
+            else (out_root / "logs" if smoke else None)
+        ),
+        upload=args.upload,
+        phases=tuple(t.strip() for t in args.phases.split(",")) if args.phases else (),
+    )
+
+
+def main(argv: Sequence[str] | None = None) -> int:  # noqa: C901 — linear phase chain
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+    )
+    args = _parse_args(argv)
+    cfg = build_cfg(args)
+    if args.unit is not None:
+        kind, arg = args.unit
+        if kind == "ladder":
+            run_ladder_unit(cfg, arg)
+        elif kind == "capture":
+            cell, dose = arg.split("/")
+            run_capture_unit(cfg, cell, dose)
+        else:
+            raise ValueError(f"unknown unit kind {kind!r}")
+        return 0
+    _check_regime(cfg)
+    _run_started_ts(cfg)
+    logger.info("issue1112 smoke=%s cells=%s out_root=%s", cfg.smoke, cfg.cells, cfg.out_root)
+
+    def want(phase: str) -> bool:
+        return not cfg.phases or phase in cfg.phases
+
+    summary: dict = {"issue": C.ISSUE, "smoke": cfg.smoke, "cells": list(cfg.cells)}
+    if want("stage"):
+        phase_stage(cfg)
+    if want("mixes"):
+        summary["mixes"] = {
+            k: (
+                v
+                if not isinstance(v, dict)
+                else {kk: vv for kk, vv in v.items() if kk != "roles_by_index"}
+            )
+            for k, v in phase_mixes(cfg).items()
+        }
+    if want("train"):
+        phase_train(cfg)
+    selections: dict = {}
+    if want("ladder"):
+        selections = phase_ladder(cfg)
+        summary["selections"] = selections
+    if want("g1"):
+        g1 = phase_g1_gate(cfg, selections)
+        summary["g1"] = g1
+        if g1.get("action") == "split_for_second_provision":
+            write_sentinel(cfg, summary)
+            return 0
+        if g1.get("action") == "extend_in_place":
+            selections = phase_ladder(cfg)  # re-ladder the extended trees
+            summary["selections"] = selections
+    if want("persist_ft"):
+        summary["persist_ft"] = phase_persist_ft(cfg, selections)
+    if want("generic"):
+        phase_generic(cfg, selections)
+        for cell in C.GENERIC_CELLS:
+            sel = cfg.out_root / cell / "selection.json"
+            if cell in cfg.cells and sel.exists():
+                selections[cell] = _read_json(sel)
+    if want("parity"):
+        summary["parity"] = phase_parity(cfg)
+    if want("tier2"):
+        summary["tier2"] = {k: v.get("rates") for k, v in phase_tier2(cfg, selections).items()}
+    if want("marker"):
+        summary["marker"] = {
+            k: {
+                kk: vv
+                for kk, vv in v.items()
+                if kk in ("selected_step", "selected_delta_g", "delta_logp_mean", "in_band")
+            }
+            for k, v in phase_marker(cfg).items()
+            if isinstance(v, dict)
+        }
+    if want("rb"):
+        phase_rb(cfg)
+    if want("capture"):
+        summary["capture"] = phase_capture(cfg)
+    if want("geometry"):
+        summary["geometry"] = phase_geometry_smoke(cfg)
+    if want("upload"):
+        uploaded = phase_upload(cfg)
+        summary["n_uploaded"] = len(uploaded)
+    summary["sentinel"] = str(write_sentinel(cfg, summary))
+    logger.info(
+        "issue1112 complete: %s",
+        json.dumps({k: summary[k] for k in ("smoke", "cells", "n_uploaded") if k in summary}),
+    )
+    # NOTE: [phase=done] is emitted by scripts/issue1112_dispatch.sh, never here.
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
