@@ -519,6 +519,196 @@ def _teacher_forced_response_mean(
     return pooled
 
 
+SPAN_ARMS = ("prefix", "context", "response")
+
+
+def compute_prompt_spans(
+    tokenizer,
+    system_prompt: str | None,
+    question: str,
+    prompt_token_ids: list[int],
+) -> tuple[int, int]:
+    """(prefix_len, context_len) token boundaries inside ``prompt_token_ids``.
+
+    Canonical definitions (#1112 / the standing prefix+context mapping rule):
+    the PREFIX is every token strictly before the first user-CONTENT token
+    (system/persona prompt + chat-template preamble); the CONTEXT is the
+    prefix plus the user query (tokens up to the END of the question text,
+    excluding the post-question template tail ``<|im_end|>...assistant``).
+
+    Boundaries are located by CHAR offset in the rendered chat-template text,
+    then re-tokenized and asserted to be an exact TOKEN-PREFIX of
+    ``prompt_token_ids`` — a BPE merge across either boundary fails LOUD here
+    (the gen-time span-validation discipline, gotchas.md zero-width-span
+    class) instead of silently mispooling.
+
+    Raises:
+        AssertionError: prefix span empty, boundary not found, or BPE
+            boundary drift vs the generated prompt ids.
+    """
+    messages = []
+    if system_prompt:
+        messages.append({"role": "system", "content": system_prompt})
+    messages.append({"role": "user", "content": question})
+    text = tokenizer.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
+
+    # The question's char span: search AFTER the system prompt region so a
+    # question substring accidentally present in the persona text cannot match.
+    search_from = 0
+    if system_prompt:
+        sys_pos = text.find(system_prompt)
+        assert sys_pos >= 0, "system prompt not found in rendered chat template"
+        search_from = sys_pos + len(system_prompt)
+    q_start = text.find(question, search_from)
+    assert q_start >= 0, f"question not found in rendered template (from char {search_from})"
+    q_end = q_start + len(question)
+
+    def _prefix_len(char_end: int, tag: str) -> int:
+        ids = tokenizer(text[:char_end], add_special_tokens=False)["input_ids"]
+        n = len(ids)
+        assert n <= len(prompt_token_ids), (tag, n, len(prompt_token_ids))
+        assert list(prompt_token_ids[:n]) == list(ids), (
+            f"{tag} boundary BPE drift: re-tokenized prefix ({n} ids) is not a "
+            f"token-prefix of the generated prompt ids — span-validate the row"
+        )
+        return n
+
+    prefix_len = _prefix_len(q_start, "prefix")
+    context_len = _prefix_len(q_end, "context")
+    assert 0 < prefix_len < context_len <= len(prompt_token_ids), (
+        prefix_len,
+        context_len,
+        len(prompt_token_ids),
+    )
+    return prefix_len, context_len
+
+
+def _teacher_forced_span_means(
+    model_path: str,
+    rows: list[dict],
+    persona_names: list[str],
+    layers: list[int],
+    *,
+    spans: tuple[str, ...] = SPAN_ARMS,
+    device: str,
+    dtype: torch.dtype,
+    tf_batch_size: int,
+) -> dict[str, dict[int, torch.Tensor]]:
+    """Batched teacher-forced forwards, span-pooled at every requested layer.
+
+    The #1112 sibling of :func:`_teacher_forced_response_mean` — same batched
+    HF forward + per-layer hooks + GPU-resident pooling, extended to return
+    THREE pooled vectors per row (prefix / context / response spans, see
+    :func:`compute_prompt_spans`). Each row dict must carry
+    ``prompt_token_ids``, ``response_token_ids``, ``prefix_len``,
+    ``context_len``, and ``persona`` (``persona_names`` pins the expected
+    context panel; an unknown persona fails loud).
+
+    Returns:
+        ``{span: {layer: Tensor(n_rows, hidden) float32 cpu}}`` in ROW order.
+    """
+    for span in spans:
+        assert span in SPAN_ARMS, (span, SPAN_ARMS)
+    known = set(persona_names)
+    for i, r in enumerate(rows):
+        assert r["persona"] in known, (i, r["persona"])
+        p_len = len(r["prompt_token_ids"])
+        assert 0 < r["prefix_len"] < r["context_len"] <= p_len, (
+            i,
+            r["prefix_len"],
+            r["context_len"],
+            p_len,
+        )
+        assert len(r["response_token_ids"]) > 0, f"row {i} has an empty response span"
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_path, trust_remote_code=True, token=os.environ.get("HF_TOKEN")
+    )
+    pad_id = (
+        tokenizer.pad_token_id if tokenizer.pad_token_id is not None else tokenizer.eos_token_id
+    )
+    model = AutoModelForCausalLM.from_pretrained(
+        model_path,
+        torch_dtype=dtype,
+        device_map={"": device},
+        trust_remote_code=True,
+        token=os.environ.get("HF_TOKEN"),
+    )
+    model.eval()
+
+    captured: dict[int, torch.Tensor] = {}
+
+    def make_hook(layer_idx: int):
+        def hook_fn(module, input, output):
+            hs = output[0] if isinstance(output, tuple) else output
+            captured[layer_idx] = hs.detach()
+
+        return hook_fn
+
+    n_blocks = len(model.model.layers)
+    for li in layers:
+        assert 0 <= li < n_blocks, (li, n_blocks)
+    hooks = [model.model.layers[li].register_forward_hook(make_hook(li)) for li in layers]
+
+    hidden = model.config.hidden_size
+    pooled: dict[str, dict[int, list[torch.Tensor]]] = {
+        span: {li: [] for li in layers} for span in spans
+    }
+    n_batches = -(-len(rows) // tf_batch_size)
+    for start in range(0, len(rows), tf_batch_size):
+        batch = rows[start : start + tf_batch_size]
+        seqs = [r["prompt_token_ids"] + r["response_token_ids"] for r in batch]
+        max_len = max(len(s) for s in seqs)
+        input_ids = torch.full((len(batch), max_len), pad_id, dtype=torch.long)
+        attn = torch.zeros((len(batch), max_len), dtype=torch.long)
+        for i, s in enumerate(seqs):
+            input_ids[i, : len(s)] = torch.tensor(s, dtype=torch.long)
+            attn[i, : len(s)] = 1
+        input_ids = input_ids.to(device)
+        attn = attn.to(device)
+        with torch.no_grad():
+            # Right-padded batch: positions index naturally from 0 per row, so
+            # no explicit position_ids needed (the left-pad trap does not
+            # apply); logits are unread — pass logits_to_keep=1 when supported
+            # to skip the full-vocab lm_head materialization (gotchas.md #779).
+            import inspect
+
+            fwd = getattr(model, "forward", model.__call__)
+            kwargs = {}
+            if "logits_to_keep" in inspect.signature(fwd).parameters:
+                kwargs["logits_to_keep"] = 1
+            _ = model(input_ids=input_ids, attention_mask=attn, **kwargs)
+        for li in layers:
+            hs = captured[li]
+            assert hs.shape[:2] == (len(batch), max_len), (hs.shape, len(batch), max_len)
+            for i, r in enumerate(batch):
+                p_len = len(r["prompt_token_ids"])
+                span_bounds = {
+                    "prefix": (0, r["prefix_len"]),
+                    "context": (0, r["context_len"]),
+                    "response": (p_len, p_len + len(r["response_token_ids"])),
+                }
+                for span in spans:
+                    s, e = span_bounds[span]
+                    vec = hs[i, s:e, :].float().mean(dim=0).cpu()
+                    assert vec.shape == (hidden,), (vec.shape, hidden)
+                    pooled[span][li].append(vec)
+        if (start // tf_batch_size) % 20 == 0:
+            print(f"[spanmeans] TF batch {start // tf_batch_size + 1}/{n_batches}")
+
+    for h in hooks:
+        h.remove()
+    captured.clear()
+    del model
+    gc.collect()
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
+        time.sleep(1.0)
+
+    return {span: {li: torch.stack(pooled[span][li]) for li in layers} for span in spans}
+
+
 def extract_centroids_response_mean(
     model_path: str,
     personas: dict[str, str | None],
