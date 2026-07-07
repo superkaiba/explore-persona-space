@@ -696,7 +696,17 @@ def _default_vllm_generate_fn(base_model: str) -> GenFn:
     lora_ids: dict[str, int] = {}  # adapter path -> unique, stable lora_int_id (1-based)
 
     def _build(side_path: str | None) -> tuple[Any, Any]:
-        common = {"max_model_len": 8192, "enable_prefix_caching": True, "seed": 0}
+        # EPM_VLLM_GPU_MEM_UTIL (crash-fix #1090 r2): vLLM's 0.9 default asks
+        # 71.26 GiB on an A100/H100-80 and fails init when a same-process HF
+        # trainer's allocator residue holds ~16 GiB at the train->rate phase
+        # boundary; the env knob lets a launcher size the engine to realized
+        # free VRAM. Default preserves vLLM's 0.9 fleet-wide.
+        common = {
+            "max_model_len": 8192,
+            "enable_prefix_caching": True,
+            "seed": 0,
+            "gpu_memory_utilization": float(os.environ.get("EPM_VLLM_GPU_MEM_UTIL", "0.9")),
+        }
         if side_path is None:
             return deps["LLM"](model=base_model, **common), None
         if deps["_is_full_model_dir"](side_path):

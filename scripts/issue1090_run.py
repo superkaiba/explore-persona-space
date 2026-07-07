@@ -1342,7 +1342,22 @@ def _make_train_fn(cell: Cell, seams: Seams1090, close_first=None):
         )
         if seams.train_clamp is not None:
             train_cfg = seams.train_clamp(train_cfg)
-        return train_lora(base_model, dataset_path, output_dir, cfg=train_cfg)
+        result = train_lora(base_model, dataset_path, output_dir, cfg=train_cfg)
+        # Phase-boundary VRAM handoff (crash-fix r2, 2026-07-07): release the
+        # trainer's CUDA allocator cache before build_organism constructs the
+        # Tier-1 rate_fn vLLM engine in this same process — engine init failed
+        # at 63.16 GiB free vs the 0.9-utilization ask (71.26 GiB).
+        import gc
+
+        gc.collect()
+        try:
+            import torch
+
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except ImportError:
+            pass
+        return result
 
     return train_fn
 
