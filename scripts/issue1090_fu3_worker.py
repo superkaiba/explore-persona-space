@@ -335,6 +335,17 @@ def cmd_cell(args: argparse.Namespace) -> int:  # noqa: C901 — the per-cell §
         smoke=args.smoke,
         cells=(shim,),
         out_root=Path(args.out_root),
+        # Smoke parity with issue1090_run.py's own main (target_n=6 under
+        # --smoke): without this clamp a --smoke cell runs LIVE datagen at the
+        # FULL production target (25 pos + judge filter) — slow, costly, and
+        # floor-gated at production scale (B2 smoke: C3-bare-pos yield-missed
+        # kept 5 < floor 20 before the clamp).
+        target_n=(6 if args.smoke else run1090.TARGET_N),
+        # The plan's floored-cell retry lever (v4 r4 precedent; fenced to
+        # [1.0, 2.0] by run1090._oversample_mult_arg at the CLI). Deliberately
+        # excluded from regime_key(): a retune re-runs the floored cell in the
+        # SAME out_root.
+        oversample_mult=args.oversample_mult,
         eval_question_limit=args.eval_question_limit,
         upload=not args.no_upload,
         sentinel_dir=sentinel_dir,
@@ -890,6 +901,12 @@ def parse_args(argv=None) -> argparse.Namespace:
     c.add_argument("--gpu-id", type=int, default=0, help="informational; CVD pins the device")
     c.add_argument("--vllm-port", type=int, default=BASE_VLLM_PORT)
     c.add_argument("--allow-unpinned-gpu", action="store_true")
+    c.add_argument(
+        "--oversample-mult",
+        type=run1090._oversample_mult_arg,
+        default=1.0,
+        help="positive request-budget multiplier for a floored-cell retune ([1.0, 2.0])",
+    )
     return ap.parse_args(argv)
 
 
