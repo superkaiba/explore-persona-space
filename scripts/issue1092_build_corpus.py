@@ -273,7 +273,6 @@ def _stream_conversations(
             split="train",
             streaming=True,
             revision=revision,
-            trust_remote_code=True,
         )
 
         count = 0
@@ -638,6 +637,11 @@ def _load_trait_names_from_hf(rb_rev: str = "037fcbb") -> list[str]:
             path_in_repo="issue779_monitoring/r_b",
             revision=rb_rev,
         ):
+            # Only direction tensors define traits — the r_b/ dir also holds
+            # *_counts.json sidecars whose stems are NOT trait names (mirrors
+            # the .pt filter in gpu_phase.load_rb_directions / fit_grid).
+            if not item.path.endswith(".pt"):
+                continue
             name = Path(item.path).stem  # e.g. "evil" from "r_b/evil.pt"
             if name and not name.startswith("."):
                 trait_names.append(name)
