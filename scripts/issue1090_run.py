@@ -818,11 +818,15 @@ def _reconstruct_manifest(cfg: RunConfig, cell: Cell, behavior, panel, oversampl
     )
 
 
-def topup_eligibility(rec: dict, floor_n: int) -> str:
+def topup_eligibility(
+    rec: dict, floor_n: int, *, eligible_mult: float = TOPUP_ELIGIBLE_MULT
+) -> str:
     """``"positive"`` | ``"negative"`` per the amendment's REGISTERED
     conditions; RuntimeError (loud refusal) on everything else.
 
-    Positive: ``yield_floor_missed`` at oversample_mult=2.0 with
+    Positive: ``yield_floor_missed`` at oversample_mult=``eligible_mult``
+    (default 2.0 — the amendment's fence-maximal budget; the fu1-margin-qwen
+    follow-up registers the c5 qwen arm at its recorded 1.0 budget) with
     kept_pos >= floor_n - ceil(0.1*floor_n) (c3: 19 >= 18). Negative: positives
     at/above floor but a panel member under its pairing quota (c1:
     neg_sp_police 2 < 4) — ``generate_training_data`` raises the member-quota
@@ -842,10 +846,10 @@ def topup_eligibility(rec: dict, floor_n: int) -> str:
         raise RuntimeError(
             f"{cell}: status {rec.get('status')!r} is not yield_floor_missed — no top-up path"
         )
-    if float(rec.get("oversample_mult", 1.0)) != TOPUP_ELIGIBLE_MULT:
+    if float(rec.get("oversample_mult", 1.0)) != eligible_mult:
         raise RuntimeError(
             f"{cell}: recorded oversample_mult={rec.get('oversample_mult')} != "
-            f"{TOPUP_ELIGIBLE_MULT} — only a fence-maximal (2x-budget) miss qualifies"
+            f"{eligible_mult} — only a miss at the registered eligible budget qualifies"
         )
     yr = rec.get("yield_record") or {}
     if "kept_neg_member" in yr:
@@ -1121,12 +1125,22 @@ def _is_topup_candidate(c: GenCandidate) -> bool:
     return c.request.request_id.startswith("t")
 
 
-def _run_topup_cell(cfg: RunConfig, cell: Cell, *, gen_fn=None, judge_fn=None) -> dict:
+def _run_topup_cell(
+    cfg: RunConfig,
+    cell: Cell,
+    *,
+    gen_fn=None,
+    judge_fn=None,
+    eligible_mult: float = TOPUP_ELIGIBLE_MULT,
+) -> dict:
     """ONE top-up tranche for an ELIGIBLE near-miss cell (amendment v4).
 
     ``gen_fn`` / ``judge_fn`` are the external-API seams (None -> the LIVE
-    dispatcher / ``judge_graded``); everything else is the production body.
-    Returns the updated summary record; raises RuntimeError on any refusal.
+    dispatcher / ``judge_graded``); ``eligible_mult`` is the recorded budget the
+    eligibility fence accepts (default: the amendment's 2.0; the fu1 follow-up
+    passes 1.0 for the c5 qwen arm, whose record was never retuned to 2.0).
+    Everything else is the production body. Returns the updated summary
+    record; raises RuntimeError on any refusal.
     """
     cell_root = cfg.out_root / cell.slug
     summary_path = cell_root / "datagen_summary.json"
@@ -1135,7 +1149,7 @@ def _run_topup_cell(cfg: RunConfig, cell: Cell, *, gen_fn=None, judge_fn=None) -
     rec = _read_json(summary_path)
     frozen_before = {k: copy.deepcopy(rec.get(k)) for k in _TOPUP_FROZEN_KEYS}
     floor_n = int(rec["floor_n"])
-    mode = topup_eligibility(rec, floor_n)
+    mode = topup_eligibility(rec, floor_n, eligible_mult=eligible_mult)
     behavior = BEHAVIORS[cell.behavior]
     panel = get_panel(DEFAULT_PANEL_NAME)
     datagen_dir = cell_root / "datagen"
@@ -1189,6 +1203,7 @@ def _run_topup_cell(cfg: RunConfig, cell: Cell, *, gen_fn=None, judge_fn=None) -
             "mode": mode,
             "floor_n": floor_n,
             "member_quota": per_negative_quota(floor_n, panel),
+            "eligible_mult": eligible_mult,
             "seed_offset": TOPUP_SEED_OFFSET,
             "first_sample": {"pos_kept": len(pos_kept_first)},
             "git_commit": i1074._git_short_sha(),
