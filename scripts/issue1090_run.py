@@ -1886,10 +1886,17 @@ def _judge_rate(
 
 
 def _formatting_spotcheck(
-    questions: list[str], completions: list[list[str]], *, n_draws: int, judge_root: Path
+    questions: list[str],
+    completions: list[list[str]],
+    *,
+    n_draws: int,
+    judge_root: Path,
+    max_tokens: int = 64,
 ) -> dict:
     """Judged spot-check companion for the structural formatting DV: judge a
-    seeded subsample and report structural-vs-judged agreement."""
+    seeded subsample and report structural-vs-judged agreement. ``max_tokens``
+    threads the reason-then-score response budget (llm-judging rule 23; fu3
+    passes 300 explicitly; the 64 default keeps the v4 call site byte-stable)."""
     behavior = BEHAVIORS["formatting"]
     predicate = _STRUCTURAL_PREDICATES["formatting"]
     flat = [
@@ -1908,6 +1915,7 @@ def _formatting_spotcheck(
         cache_dir=cell_dir,
         save_raw=cell_dir / "judge_raw.json",
         judge_model=behavior.judge_model,
+        max_tokens=max_tokens,
     )
     n_agree = 0
     n_scored = 0

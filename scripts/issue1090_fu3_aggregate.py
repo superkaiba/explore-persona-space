@@ -126,6 +126,17 @@ def judge_cell(args: argparse.Namespace, row: dict, out_dir: Path) -> dict | Non
             judge_root=judge_root,
             max_tokens=args.max_tokens,
         )
+        if state == "trained" and row["behavior"] == "formatting":
+            # Plan §6 formatting companion: structural rate PRIMARY + judged
+            # spot-check SECONDARY (v4 parity; round-1 review Major — the
+            # companion was wired nowhere in fu3).
+            rec["formatting_spotcheck"] = run1090._formatting_spotcheck(
+                qs,
+                comps,
+                n_draws=run1090.TIER2_JUDGE_DRAWS,
+                judge_root=judge_root,
+                max_tokens=args.max_tokens,
+            )
     rec["install_delta"] = rec["tier2"]["trained"]["rate"] - rec["tier2"]["base"]["rate"]
     # Bystander-panel leakage read (Tier-1 params; source==bystander rows distinct).
     bys_manifest = run1090._read_json(cell_root / "bystander" / "manifest.json")

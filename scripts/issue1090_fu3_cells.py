@@ -10,9 +10,10 @@ One row per cell, verbatim from plans/v5.md §4: 22 MANDATORY trained cells,
   (plan "sycophancy-neutral" -> ``sycophancy``; "sycophancy-hard-fact" ->
   ``sycophancy_hardfact``).
 - ``context_id``— the ``artifacts.context`` id: ``persona_software_engineer``
-  (persona-sw-eng), ``default`` (bare-default), ``prefix_cooking_smalltalk``
-  (the committed conversational_prefix instance this round reuses), or the
-  per-behavior ``icl_prefix_<behavior>`` built by ``icl_prefix_context()``.
+  (persona-sw-eng), ``default`` (bare-default), ``bare_wildchat_random``
+  (the plan-§D2 wildchat-family conversational prefix — the committed
+  WildChat-derived instance, asserted ``family == "wildchat"`` at import), or
+  the per-behavior ``icl_prefix_<behavior>`` built by ``icl_prefix_context()``.
 - ``regime``    — ``contrastive`` (5-member default panel, neg_ratio=1.0) or
   ``posonly`` (EMPTY panel -> the datagen pos-only twin, neg_ratio=0).
 - ``tier``      — ``mandatory`` | ``BP`` (dispatch priority: mandatory first,
@@ -24,7 +25,15 @@ One row per cell, verbatim from plans/v5.md §4: 22 MANDATORY trained cells,
 
 from __future__ import annotations
 
-CONV_CONTEXT_ID = "prefix_cooking_smalltalk"
+# Plan §D2: the conversational-prefix arm binds the WildChat conversational
+# prefix (family="wildchat") — NOT the hand-authored synthetic
+# prefix_cooking_smalltalk (round-1 review Major: silent construct deviation).
+# Content residual: the committed instance's turns are the Phase-0b FIXED
+# WildChat-STYLE literal (its `source` field declares this openly); no real
+# sampled WildChat user+assistant turns exist in committed artifacts (the
+# committed wildchat_random_v1 bank is user prompts only) — carried as a
+# declared scope caveat on the concern record.
+CONV_CONTEXT_ID = "bare_wildchat_random"
 
 
 def _cell(
@@ -110,6 +119,15 @@ def cells(*, tier: str | None = None, trains: bool | None = None) -> list[dict]:
 
 def _validate() -> None:
     """Import-time pins of the plan §4 arithmetic + field domains."""
+    from explore_persona_space.artifacts.context import CONTEXTS
+
+    conv = CONTEXTS.get(CONV_CONTEXT_ID)
+    if conv is None or conv.family != "wildchat":
+        raise ValueError(
+            f"CONV_CONTEXT_ID {CONV_CONTEXT_ID!r} must resolve to the plan-§D2 "
+            f"wildchat-family conversational prefix "
+            f"(got family={getattr(conv, 'family', None)!r})"
+        )
     ids = [c["cell_id"] for c in CELLS]
     if len(ids) != len(set(ids)):
         raise ValueError("duplicate cell_id in CELLS")

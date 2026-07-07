@@ -8,8 +8,9 @@ TWO subcommands in one driver (launched pod-side by ``scripts/issue1090_fu3_disp
   ``CUDA_VISIBLE_DEVICES=<i>`` + deterministic ``VLLM_PORT=8000+i`` in the CHILD env
   (gotchas.md CVD launcher-pin rule); when a worker finishes, the freed slot
   immediately pulls the next pending cell (NO wave barrier). Failed cells requeue
-  exactly ONCE (retry limit 1); a port collision fails LOUD (cell marked failed via
-  its sentinel — never silently dropped). Resumable: a cell whose sentinel says
+  exactly ONCE (retry limit 1); a dispatcher-side port collision retires the slot,
+  REQUEUES the popped cell once, then fails LOUD on a second collision (cell marked
+  failed via its sentinel — never silently dropped). Resumable: a cell whose sentinel says
   ``status=done`` is skipped. After the queue drains it writes
   ``manifest_complete.json`` + the ``epm:results`` sentinel (pod-side-reporting.md
   required keys + reproducibility_card); ``[phase=done]`` is emitted ONLY by
@@ -66,6 +67,7 @@ from explore_persona_space.artifacts.context import (  # noqa: E402
 )
 from explore_persona_space.artifacts.organisms import (  # noqa: E402
     DEFAULT_BASE_MODEL,
+    DEFAULT_MARGIN_POOL_CAP,
     ModelOrganism,
     _default_margin_read_fn,
     _default_vllm_generate_fn,
@@ -95,12 +97,25 @@ CANONICAL_BYSTANDER_IDS = ("persona_software_engineer", "default", fu3_cells.CON
 N_HELD_OUT_PERSONAS = 2
 
 # Behavior-level fixed tf-margin pools (plan §D6: "pools are behavior-level, not
-# context-specific") come from the round-1 v4 datagen sidecars of the claude arm.
-V4_POOL_SLUG = {
-    "formatting": "c1-formatting-claude",
-    "impolite": "c2-impolite-claude",
-    "sycophancy": "c3-sycophancy-claude",
-    "broad_em": "c6-broad_em-claude",
+# context-specific") stage from the round-1 v4 claude-arm artifacts. Scoped
+# list_repo_tree probe of the data repo (2026-07-07): c1/c2 datagen dirs carry
+# the full {raw_pos,raw_neg,judge_rows}.jsonl sidecar set; c3's datagen dir does
+# NOT (its negatives came from the amendment-v4 top-up tranche uploaded under
+# datagen_topup/, whose judge-kept record is kept_{pos,neg}.jsonl — see
+# derive_margin_pools_from_topup below); c6 has NO negative-side artifact
+# anywhere on the repo, so broad_em's tf_margin is a DECLARED missing companion
+# (BLOCKER concern fu3-margin-pool-broad-em-unstageable), never a silent "n/a".
+V4_POOL_SOURCE = {
+    "formatting": ("c1-formatting-claude", "datagen"),
+    "impolite": ("c2-impolite-claude", "datagen"),
+    "sycophancy": ("c3-sycophancy-claude", "datagen_topup"),
+}
+MARGIN_POOL_UNAVAILABLE = {
+    "broad_em": (
+        "c6-broad_em-claude has no raw_neg.jsonl/judge_rows.jsonl and no datagen_topup "
+        "on the data repo (scoped list_repo_tree probe 2026-07-07): the fixed "
+        "negative-side pool cannot be staged from any committed artifact"
+    ),
 }
 
 
@@ -153,9 +168,14 @@ def panel_name_for(ctx: Context) -> str:
 
     def _same(member) -> bool:
         c = member.to_context()
-        return c.context_id == ctx.context_id or (c.system, c.user_wrap) == (
+        # prefix_turns is part of content identity: without it every prefix/ICL
+        # source (system=None, user_wrap=None) would wrongly match the panel's
+        # bare default-assistant member and drop it — violating the
+        # always-include-the-default-assistant rule (contrastive-negatives.md).
+        return c.context_id == ctx.context_id or (c.system, c.user_wrap, c.prefix_turns) == (
             ctx.system,
             ctx.user_wrap,
+            ctx.prefix_turns,
         )
 
     base = neg_mod.default_panel()
@@ -281,16 +301,83 @@ def _fu3_datagen_fn(cfg: run1090.RunConfig, shim: run1090.Cell, posonly: bool):
     return datagen_fn
 
 
+def _read_jsonl(path: Path) -> list[dict]:
+    """Line-iterating JSONL reader (never ``str.splitlines`` — raw Unicode
+    line-boundary chars in ``ensure_ascii=False`` text shred records)."""
+    rows = []
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if line:
+                rows.append(json.loads(line))
+    return rows
+
+
+def derive_margin_pools_from_topup(
+    topup_dir: Path, *, cap: int = DEFAULT_MARGIN_POOL_CAP
+) -> tuple[list[dict], list[dict]]:
+    """``derive_margin_pools`` for the amendment-v4 TOP-UP sidecar schema: the
+    top-up tranche records its judge-kept rows as ``kept_{pos,neg}.jsonl``
+    (request_id-keyed rows) instead of a ``judge_rows.jsonl`` kept-flag file.
+    Joins ``raw_{pos,neg}.jsonl`` candidates (which carry the ``question`` text)
+    with the kept request_ids and builds the same deterministic capped fixed
+    pools (llm-judging § E2 rule 19). Raises ValueError on a missing sidecar,
+    an unknown arm, or an empty pool on either side — the caller treats that as
+    a cell-level failure (never a silent "n/a")."""
+    d = Path(topup_dir)
+    for name in ("raw_pos.jsonl", "raw_neg.jsonl", "kept_pos.jsonl", "kept_neg.jsonl"):
+        if not (d / name).exists():
+            raise ValueError(
+                f"margin-pool source missing: {d / name} (need raw_{{pos,neg}}.jsonl + "
+                "kept_{pos,neg}.jsonl from the v4 datagen_topup dir)"
+            )
+    kept_rids = {
+        r["request_id"]
+        for name in ("kept_pos.jsonl", "kept_neg.jsonl")
+        for r in _read_jsonl(d / name)
+    }
+    pools: dict[str, list[dict]] = {"positive": [], "negative": []}
+    for name in ("raw_pos.jsonl", "raw_neg.jsonl"):
+        for row in _read_jsonl(d / name):
+            if row.get("completion") is None or row["request_id"] not in kept_rids:
+                continue
+            arm = row["arm"]
+            if arm not in pools:
+                raise ValueError(f"unknown arm {arm!r} in {d / name} row {row['request_id']!r}")
+            pools[arm].append(
+                {
+                    "probe": row["question"],
+                    "answer": row["completion"],
+                    "question_id": row["question_id"],
+                    "variant_id": row["variant_id"],
+                    "request_id": row["request_id"],
+                }
+            )
+    for arm, pool in pools.items():
+        pool.sort(key=lambda p: (p["question_id"], p["variant_id"]))
+        if not pool:
+            raise ValueError(f"derived top-up margin pool for arm {arm!r} is empty under {d}")
+    return pools["positive"][:cap], pools["negative"][:cap]
+
+
 def _behavior_margin_pools(cfg: run1090.RunConfig, behavior: str) -> tuple[list, list]:
-    """Behavior-level FIXED tf-margin pools (plan §D6): derived once per behavior
-    from the round-1 v4 claude-arm datagen sidecars, staged from the data repo —
-    the SAME pool for every fu3 context/regime cell of that behavior."""
-    slug = V4_POOL_SLUG.get(behavior)
-    if slug is None:
-        raise ValueError(f"no v4 pool slug registered for behavior {behavior!r}")
+    """Behavior-level FIXED tf-margin pools (plan §D6): staged once per behavior
+    from the round-1 v4 claude-arm artifacts (V4_POOL_SOURCE) — the SAME pool for
+    every fu3 context/regime cell of that behavior. Raises ValueError (LOUD,
+    cell-failing) for an unstageable or unregistered behavior."""
+    if behavior in MARGIN_POOL_UNAVAILABLE:
+        raise ValueError(
+            f"tf_margin pool unavailable for {behavior!r}: {MARGIN_POOL_UNAVAILABLE[behavior]}"
+        )
+    src = V4_POOL_SOURCE.get(behavior)
+    if src is None:
+        raise ValueError(f"no v4 pool source registered for behavior {behavior!r}")
+    slug, subdir = src
     dest = cfg.out_root / "margin_pools" / behavior
     if not (dest / "raw_pos.jsonl").exists():
-        run1090._stage_hf_prefix(f"{run1090.DATA_PREFIX}/{slug}/datagen", dest)
+        run1090._stage_hf_prefix(f"{run1090.DATA_PREFIX}/{slug}/{subdir}", dest)
+    if subdir == "datagen_topup":
+        return derive_margin_pools_from_topup(dest)
     return derive_margin_pools(dest)
 
 
@@ -527,35 +614,47 @@ def cmd_cell(args: argparse.Namespace) -> int:  # noqa: C901 — the per-cell §
                 run1090._atomic_write_json(
                     margin_path, {"status": "n/a — companion is not tf_margin"}
                 )
+            elif row["behavior"] in MARGIN_POOL_UNAVAILABLE:
+                # DECLARED missing companion (the plan-§6 fallback made explicit
+                # in code): a NAMED record the analyzer can key on — never a
+                # silent "n/a" (round-1 review Critical 1).
+                run1090._atomic_write_json(
+                    margin_path,
+                    {
+                        "status": "missing_companion",
+                        "companion": "tf_margin",
+                        "behavior": row["behavior"],
+                        "reason": MARGIN_POOL_UNAVAILABLE[row["behavior"]],
+                        "concern_id": "fu3-margin-pool-broad-em-unstageable",
+                    },
+                )
             elif not margin_path.exists():
+                # Pool staging/derivation failures propagate LOUD to the
+                # cell-level failure sentinel (naming the missing artifact):
+                # tf_margin is the plan-§6-required secondary DV for this
+                # behavior, so degrading to "n/a" is banned (round-1 Critical 1).
+                pos_pairs, neg_pairs = _behavior_margin_pools(cfg, row["behavior"])
+                margin_fn = (
+                    seams.margin_read_fn_factory(DEFAULT_BASE_MODEL)
+                    if seams.margin_read_fn_factory is not None
+                    else _default_margin_read_fn(DEFAULT_BASE_MODEL)
+                )
                 try:
-                    pos_pairs, neg_pairs = _behavior_margin_pools(cfg, row["behavior"])
-                except ValueError as e:
-                    run1090._atomic_write_json(
-                        margin_path, {"status": "n/a — no fixed pool", "reason": str(e)}
-                    )
-                else:
-                    margin_fn = (
-                        seams.margin_read_fn_factory(DEFAULT_BASE_MODEL)
-                        if seams.margin_read_fn_factory is not None
-                        else _default_margin_read_fn(DEFAULT_BASE_MODEL)
-                    )
-                    try:
-                        rec: dict[str, Any] = {
-                            "status": "computed",
-                            "pool_source": V4_POOL_SLUG[row["behavior"]],
-                            "n_pos": len(pos_pairs),
-                            "n_neg": len(neg_pairs),
-                            "cells": {},
-                        }
-                        for state, side in (("base", None), ("trained", adapter)):
-                            mr = margin_fn(side, ctx, pos_pairs, neg_pairs)
-                            rec["cells"][f"{state}__{ctx.context_id}"] = dataclasses.asdict(mr)
-                            run1090._atomic_write_json(margin_path, rec)  # per-read checkpoint
-                    finally:
-                        close = getattr(margin_fn, "close", None)
-                        if callable(close):
-                            close()
+                    rec: dict[str, Any] = {
+                        "status": "computed",
+                        "pool_source": "/".join(V4_POOL_SOURCE[row["behavior"]]),
+                        "n_pos": len(pos_pairs),
+                        "n_neg": len(neg_pairs),
+                        "cells": {},
+                    }
+                    for state, side in (("base", None), ("trained", adapter)):
+                        mr = margin_fn(side, ctx, pos_pairs, neg_pairs)
+                        rec["cells"][f"{state}__{ctx.context_id}"] = dataclasses.asdict(mr)
+                        run1090._atomic_write_json(margin_path, rec)  # per-read checkpoint
+                finally:
+                    close = getattr(margin_fn, "close", None)
+                    if callable(close):
+                        close()
             result["status"] = "done"
             result["adapter_path"] = adapter
             result["run_name"] = build_record.get("run_name")
@@ -786,6 +885,7 @@ def cmd_dispatch(args: argparse.Namespace) -> int:  # noqa: C901 — one work-co
             pending.append(row)
 
     attempts: dict[str, int] = {}
+    port_collisions: dict[str, int] = {}
     done: list[str] = []
     failed: list[str] = []
     live: dict[int, tuple[subprocess.Popen, dict, Any]] = {}  # slot -> (proc, row, log fh)
@@ -816,9 +916,20 @@ def cmd_dispatch(args: argparse.Namespace) -> int:  # noqa: C901 — one work-co
             row = pending.popleft()
             port = BASE_VLLM_PORT + slot
             if not port_free(port):
-                _mark_failed(row, f"vllm_port_collision:{port}")
-                slots.remove(slot)  # the slot is unusable too — retire it loudly
+                slots.remove(slot)  # the slot is unusable — retire it loudly
                 logger.error("[fu3] slot %d retired: port %d busy", slot, port)
+                # §D7 item 5: the popped cell is REQUEUED once (another slot
+                # picks it up), then fails loud on a second collision — never
+                # dropped with zero attempts (round-1 review Major 1).
+                port_collisions[row["cell_id"]] = port_collisions.get(row["cell_id"], 0) + 1
+                if port_collisions[row["cell_id"]] <= 1:
+                    pending.appendleft(row)
+                    logger.warning(
+                        "[fu3] cell %s requeued after port collision (retry 1/1)",
+                        row["cell_id"],
+                    )
+                else:
+                    _mark_failed(row, f"vllm_port_collision:{port}")
                 continue
             attempts[row["cell_id"]] = attempts.get(row["cell_id"], 0) + 1
             log_path = out_root / "logs" / f"{row['cell_id']}.attempt{attempts[row['cell_id']]}.log"
