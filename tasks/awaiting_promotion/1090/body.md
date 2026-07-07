@@ -10,6 +10,7 @@ tags:
 - persona-vectors
 - artifacts-factory
 - abliteration
+- followup-manual
 created_at: '2026-07-06T18:15:32Z'
 has_clean_result: true
 parent_id: 1074
