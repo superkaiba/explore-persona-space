@@ -62,6 +62,13 @@ def _jsonl(path: Path):
 
 
 def _sorted_shards(paths) -> list[Path]:
+    """Numeric-sorted shard paths; fail loud on duplicate (prefix, index) pairs.
+
+    Same guard as ``issue1092_fit_grid._sorted_shards`` — a mixed
+    padded/unpadded pair like ``_shard3`` + ``_shard00003`` would otherwise
+    silently double-load the shard.
+    """
+
     def key(path: Path) -> tuple[str, int, str]:
         stem = path.stem
         if "_shard" not in stem:
@@ -75,7 +82,20 @@ def _sorted_shards(paths) -> list[Path]:
                 break
         return prefix, int("".join(digits) or 0), raw
 
-    return sorted(paths, key=key)
+    ordered = sorted(paths, key=key)
+    seen: dict[tuple[str, int], Path] = {}
+    for path in ordered:
+        prefix, shard_idx, _raw = key(path)
+        if shard_idx < 0:
+            continue
+        shard_key = (prefix, shard_idx)
+        if shard_key in seen:
+            raise ValueError(
+                f"duplicate shard index {shard_idx} for {prefix}: "
+                f"{seen[shard_key].name} and {path.name}"
+            )
+        seen[shard_key] = path
+    return ordered
 
 
 def _load_store(path: Path, key: str) -> dict[str, dict]:

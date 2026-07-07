@@ -830,7 +830,15 @@ def _compute_dynamics_reads(  # noqa: C901
         fit["pair_counts"] = skipped_pair_counts[read_name]
         return fit
 
-    def fit_full_predictor(read_name: str, Xp: np.ndarray, Yp: np.ndarray):
+    def fit_train_predictor(read_name: str, Xp: np.ndarray, Yp: np.ndarray):
+        """Fit PRESS-ridge on the given TRAIN pairs; return (meta, predict-closure).
+
+        The closure reuses the fitted engine (one SVD per fit) and replicates
+        ``press_fit_predict``'s prediction path exactly (same standardization,
+        same PRESS-selected lambda). Callers own the train/test split; passing
+        the full pool here is what round <=5 did and is the in-sample bug the
+        per-fold chaining protocol below replaces.
+        """
         if Xp.shape[0] < 3 or Yp.shape[0] < 3:
             return {
                 "status": "insufficient_rows",
@@ -1073,55 +1081,79 @@ def _compute_dynamics_reads(  # noqa: C901
             )
         return np.asarray(src), np.asarray(dst), pair_rows, dropped
 
-    chain_fit_meta: dict[str, Any] = {}
-    Xcc, Ycc, _rows_cc = pairs(
-        "context_k", "context_k", offset=2, read_name="D5_chain_context_to_context_step"
-    )
-    chain_fit_meta["context_to_context_step"], context_step = fit_full_predictor(
-        "D5_chain_context_to_context_step", Xcc, Ycc
-    )
-    Xsc_next, Ysc_next, _rows_sc_next = pairs(
-        "s_k", "context_k", offset=2, read_name="D5_chain_s_to_context_next"
-    )
-    chain_fit_meta["s_to_context_next"], s_to_context_next = fit_full_predictor(
-        "D5_chain_s_to_context_next", Xsc_next, Ysc_next
-    )
-    Xsc_current, Ysc_current, _rows_sc_current = pairs(
-        "s_k", "context_k", offset=0, read_name="D5_chain_s_to_context_current"
-    )
-    chain_fit_meta["s_to_context_current"], s_to_context_current = fit_full_predictor(
-        "D5_chain_s_to_context_current", Xsc_current, Ysc_current
-    )
-    answer_readouts = {}
+    # D5 iterated-D2 chaining companion — OUT-OF-FOLD protocol (round 6, concern
+    # i1092-d5-chain-cv-asymmetry). The chain is scored on the SAME
+    # conversation-grouped folds as the direct D5 read: per fold, every chain
+    # map (context-step transition, s->context lift, context->answer readout)
+    # is refit on the fold's TRAIN conversations only, the chain is iterated on
+    # the fold's HELD-OUT first-state rows, and R2 is scored on the aggregated
+    # held-out predictions — mirroring ``_fit_cv``'s aggregation exactly.
+    # Rounds <=5 fit the chain maps on ALL pairs and scored in-sample, an
+    # optimism that systematically favored chaining over the out-of-fold
+    # direct comparator.
+    chain_pool_specs = {
+        "context_to_context_step": ("context_k", "context_k", 2),
+        "s_to_context_next": ("s_k", "context_k", 2),
+        "s_to_context_current": ("s_k", "context_k", 0),
+    }
     for dst_kind in answer_kinds:
-        Xca, Yca, _rows_ca = pairs(
-            "context_k",
-            dst_kind,
-            offset=0,
-            read_name=f"D5_chain_context_to_{dst_kind}_readout",
-        )
-        meta, predictor = fit_full_predictor(f"D5_chain_context_to_{dst_kind}_readout", Xca, Yca)
-        chain_fit_meta[f"context_to_{dst_kind}_readout"] = meta
-        answer_readouts[dst_kind] = predictor
+        chain_pool_specs[f"context_to_{dst_kind}_readout"] = ("context_k", dst_kind, 0)
+    chain_pools: dict[str, tuple[np.ndarray, np.ndarray, list[dict]]] = {}
+    chain_fit_meta: dict[str, Any] = {}
+    for map_name, (src_kind_p, dst_kind_p, offset_p) in chain_pool_specs.items():
+        read_name = f"D5_chain_{map_name}"
+        Xp, Yp, rows_pool = pairs(src_kind_p, dst_kind_p, offset=offset_p, read_name=read_name)
+        chain_pools[map_name] = (Xp, Yp, rows_pool)
+        chain_fit_meta[map_name] = {
+            "read": read_name,
+            "pool_n": int(Xp.shape[0]),
+            "pair_counts": skipped_pair_counts[read_name],
+            "protocol": (
+                "PRESS-ridge refit per held-out fold on train-conversation pairs only; "
+                "lambda selected per fold by PRESS"
+            ),
+        }
 
-    def chained_context_state(src_kind: str, Xsrc: np.ndarray, rounds: int) -> np.ndarray | None:
+    chain_map_cache: dict[tuple[str, frozenset[str]], Any] = {}
+
+    def chain_map_for_fold(map_name: str, heldout_convs: frozenset[str]):
+        """Fit (or reuse) a chain map on pool pairs from train conversations only."""
+        cache_key = (map_name, heldout_convs)
+        if cache_key not in chain_map_cache:
+            Xp, Yp, rows_pool = chain_pools[map_name]
+            keep = np.asarray(
+                [i for i, row in enumerate(rows_pool) if row["conv_id"] not in heldout_convs],
+                dtype=np.int64,
+            )
+            _meta, predictor = fit_train_predictor(f"D5_chain_{map_name}_oof", Xp[keep], Yp[keep])
+            chain_map_cache[cache_key] = predictor
+        return chain_map_cache[cache_key]
+
+    def chained_context_state_fold(
+        src_kind: str, Xsrc: np.ndarray, rounds: int, heldout_convs: frozenset[str]
+    ) -> np.ndarray | None:
+        """Iterate the D2 chain on held-out rows using maps fit without their convs."""
         if src_kind == "context_k":
             state = Xsrc
             remaining = rounds
         elif rounds == 0:
-            if s_to_context_current is None:
+            lift = chain_map_for_fold("s_to_context_current", heldout_convs)
+            if lift is None:
                 return None
-            state = s_to_context_current(Xsrc)
+            state = lift(Xsrc)
             remaining = 0
         else:
-            if s_to_context_next is None:
+            lift = chain_map_for_fold("s_to_context_next", heldout_convs)
+            if lift is None:
                 return None
-            state = s_to_context_next(Xsrc)
+            state = lift(Xsrc)
             remaining = rounds - 1
-        for _ in range(remaining):
-            if context_step is None:
+        if remaining > 0:
+            step = chain_map_for_fold("context_to_context_step", heldout_convs)
+            if step is None:
                 return None
-            state = context_step(state)
+            for _ in range(remaining):
+                state = step(state)
         return state
 
     chain_profile: dict[str, Any] = {}
@@ -1143,30 +1175,65 @@ def _compute_dynamics_reads(  # noqa: C901
                         "dropped_missing_horizon_or_non_alternating": int(dropped),
                     },
                 }
-                context_state = (
-                    chained_context_state(src_kind, Xsrc, rounds) if len(rows_p) >= 3 else None
-                )
-                if context_state is None:
+                # Reconstruct the direct read's fold partition EXACTLY:
+                # `_fit_pair_read` on the same rows, group key, and FOLD_SEED
+                # rng is deterministic, so chain and direct score on literally
+                # the same conversation-grouped folds.
+                folds: list[np.ndarray] = []
+                if len(rows_p) >= 3:
+                    n_folds = max(2, min(args.n_folds, len({row["conv_id"] for row in rows_p})))
+                    folds = _folds_from_manifest(
+                        rows_p, len(rows_p), group_key="conv_id", n_folds=n_folds
+                    )
+                if (
+                    len(rows_p) < 3
+                    or len(folds) < 2
+                    or any(fold.size >= len(rows_p) for fold in folds)
+                ):
                     entry["status"] = "insufficient_chain_fit_or_rows"
                     entry["iterated_d2_chain_r2"] = None
-                elif dst_kind == "context_k":
-                    entry["status"] = "computed"
-                    entry["iterated_d2_chain_r2"] = _r2(Ydst, context_state)
-                else:
-                    readout = answer_readouts[dst_kind]
-                    if readout is None:
-                        entry["status"] = "insufficient_answer_readout"
-                        entry["iterated_d2_chain_r2"] = None
+                    chain_profile[src_kind][str(horizon)][dst_kind] = entry
+                    continue
+                pred = np.zeros_like(Ydst, dtype=np.float64)
+                chain_fold_r2: list[float] = []
+                failure: str | None = None
+                for test_idx in folds:
+                    heldout_convs = frozenset(rows_p[i]["conv_id"] for i in test_idx)
+                    state = chained_context_state_fold(
+                        src_kind, Xsrc[test_idx], rounds, heldout_convs
+                    )
+                    if state is None:
+                        failure = "insufficient_chain_fit_or_rows"
+                        break
+                    if dst_kind == "context_k":
+                        fold_pred = state
                     else:
-                        entry["status"] = "computed"
-                        entry["iterated_d2_chain_r2"] = _r2(Ydst, readout(context_state))
+                        readout = chain_map_for_fold(
+                            f"context_to_{dst_kind}_readout", heldout_convs
+                        )
+                        if readout is None:
+                            failure = "insufficient_answer_readout"
+                            break
+                        fold_pred = readout(state)
+                    pred[test_idx] = fold_pred
+                    chain_fold_r2.append(_r2(Ydst[test_idx], fold_pred))
+                if failure is not None:
+                    entry["status"] = failure
+                    entry["iterated_d2_chain_r2"] = None
+                else:
+                    entry["status"] = "computed"
+                    entry["iterated_d2_chain_r2"] = _r2(Ydst, pred)
+                    entry["chain_r2_folds"] = chain_fold_r2
+                    entry["fold_count"] = len(folds)
                 chain_profile[src_kind][str(horizon)][dst_kind] = entry
     out["D5_iterated_D2_chaining_companion"] = {
         "status": "computed",
         "method": (
-            "direct D5 CV R2 versus full-data PRESS-ridge chaining through one-round D2 "
-            "context transitions; answer targets use context-to-answer readouts at the "
-            "destination horizon"
+            "direct D5 CV R2 versus OUT-OF-FOLD PRESS-ridge chaining scored on the same "
+            "conversation-grouped folds as the direct read: per fold, one-round D2 context "
+            "transitions, s-to-context lifts, and context-to-answer readouts are refit on "
+            "the fold's train conversations only, the chain is iterated on the held-out "
+            "first-state rows, and R2 is scored on the aggregated held-out predictions"
         ),
         "horizons": [0, 2, 4, 6],
         "transition_fits": chain_fit_meta,

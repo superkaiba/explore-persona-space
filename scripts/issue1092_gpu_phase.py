@@ -2605,37 +2605,6 @@ def _render_full_conversation(turns: list[dict], model_type: str) -> str:
     raise ValueError(f"unknown model_type {model_type!r}")
 
 
-def _render_initial_conversation_prefix(tokenizer, model_type: str) -> str:
-    """Render the boundary before the first logged user turn without an empty chat list."""
-    if model_type in {"instruct", "pretrained"}:
-        bos = getattr(tokenizer, "bos_token", None)
-        return str(bos) if bos else ""
-    raise ValueError(f"unknown model_type {model_type!r}")
-
-
-def _render_turn_prefix(turns: list[dict], turn_idx: int, tokenizer, model_type: str) -> str:
-    if turn_idx == 0:
-        return _render_initial_conversation_prefix(tokenizer, model_type)
-    return _render_full_conversation(turns[:turn_idx], model_type)
-
-
-def _render_assistant_prompt(turns_before: list[dict], model_type: str) -> str:
-    if model_type == "instruct":
-        tok = _get_tokenizer()
-        if not turns_before:
-            bos = getattr(tok, "bos_token", None)
-            return (str(bos) if bos else "") + "<|im_start|>assistant\n"
-        return tok.apply_chat_template(
-            [{"role": t["role"], "content": t["content"]} for t in turns_before],
-            tokenize=False,
-            add_generation_prompt=True,
-        )
-    if model_type == "pretrained":
-        prefix = _render_full_conversation(turns_before, model_type)
-        return f"{prefix}\n\nAssistant:" if prefix else "Assistant:"
-    raise ValueError(f"unknown model_type {model_type!r}")
-
-
 def _tokenize_full_render_with_offsets(
     tokenizer, text: str
 ) -> tuple[list[int], list[tuple[int, int]]]:
@@ -2659,31 +2628,65 @@ def _tokenize_full_render_with_offsets(
 def _turn_content_char_spans(
     full_render: str, turns: list[dict], model_type: str
 ) -> tuple[list[tuple[int, int]], list[int]]:
+    """Char spans of each turn's content in the full render, false-match hardened.
+
+    Pretrained renders are deterministic concatenation, so content spans are
+    computed positionally and verified by a verbatim-slice assert (no search at
+    all). Instruct (chat-template) spans anchor the search at the end of the
+    prior turns' rendered prefix and bound the match inside the turn's own
+    rendered prefix — content text that also occurs in earlier turns or in
+    scaffold (e.g. a content string equal to a role header) can no longer be
+    matched there; a miss raises instead of silently rescanning from 0.
+    """
     content_spans: list[tuple[int, int]] = []
     turn_end_chars: list[int] = []
     cursor = 0
+    pos = 0  # pretrained-only cumulative offset over the deterministic render
+    prev_prefix = ""
     for turn_idx, turn in enumerate(turns):
         content = str(turn.get("content", ""))
-        if content:
-            start = full_render.find(content, cursor)
-            if start < 0:
-                start = full_render.find(content)
+        prefix = _render_full_conversation(turns[: turn_idx + 1], model_type)
+        if model_type == "pretrained":
+            role = "User" if turn["role"] == "user" else "Assistant"
+            line_start = pos
+            pos = line_start + len(role) + 2 + len(content) + 2  # "\n\n" joins turn lines
+            if content:
+                start = line_start + len(role) + 2
+                end = start + len(content)
+                if full_render[start:end] != content:
+                    raise AssertionError(
+                        f"dynamics content span mismatch for pretrained turn {turn_idx}: "
+                        f"{content!r}"
+                    )
+                cursor = end
+            else:
+                end = len(prefix) if full_render.startswith(prefix) else cursor
+                start = end
+        elif content:
+            search_start = cursor
+            if turn_idx and full_render.startswith(prev_prefix):
+                search_start = max(cursor, len(prev_prefix))
+            start = full_render.find(content, search_start)
             if start < 0:
                 raise AssertionError(
                     f"dynamics content span not found for {model_type} turn {turn_idx}: {content!r}"
                 )
             end = start + len(content)
+            if full_render.startswith(prefix) and end > len(prefix):
+                raise AssertionError(
+                    f"dynamics content span for {model_type} turn {turn_idx} escapes its "
+                    f"turn render: end {end} > turn prefix end {len(prefix)}"
+                )
             cursor = end
         else:
-            prefix = _render_full_conversation(turns[: turn_idx + 1], model_type)
             end = len(prefix) if full_render.startswith(prefix) else cursor
             start = end
         content_spans.append((start, end))
-        prefix = _render_full_conversation(turns[: turn_idx + 1], model_type)
         if full_render.startswith(prefix):
             turn_end_chars.append(len(prefix))
         else:
             turn_end_chars.append(end)
+        prev_prefix = prefix
     return content_spans, turn_end_chars
 
 

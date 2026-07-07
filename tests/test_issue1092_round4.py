@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 import pytest
+import torch
 
 REPO = Path(__file__).resolve().parent.parent
 for _p in (REPO / "src", REPO / "scripts"):
@@ -17,6 +18,8 @@ for _p in (REPO / "src", REPO / "scripts"):
 
 import issue1092_fit_grid as fit_grid  # noqa: E402
 import issue1092_gpu_phase as gpu_phase  # noqa: E402
+import issue1092_judge as judge  # noqa: E402
+from issue923_fit_decomposition import press_fit_predict  # noqa: E402
 
 
 class SeamMergingTokenizer:
@@ -155,6 +158,8 @@ def test_mixed_padded_unpadded_duplicate_shards_fail_loud(tmp_path):
         fit_grid._sorted_shards(paths)
     with pytest.raises(ValueError, match="duplicate shard index 3"):
         gpu_phase._sorted_shards(paths)
+    with pytest.raises(ValueError, match="duplicate shard index 3"):
+        judge._sorted_shards(paths)
 
 
 def test_pretrained_dynamics_cut_plan_uses_full_render_offsets_for_bpe_seams():
@@ -222,7 +227,10 @@ def test_layer_max_null_uses_shared_draw_seed_across_layers(tmp_path):
     assert draws.shape == (5, 28, 3, 2)
     assert result["persist_shape"] == [5, 28, 3, 2]
     assert result["implementation"] == "sign_matrix_gemm"
-    assert result["wall_s"] < 1.0
+    # Timing bounds belong in smoke evidence, not unit asserts (shared-VM flake
+    # risk); pin presence/type/nonnegativity only.
+    assert isinstance(result["wall_s"], float)
+    assert result["wall_s"] >= 0.0
 
     manual_rng = np.random.default_rng(77)
     signs = manual_rng.choice(np.array([-1.0, 1.0]), size=(5, 6))
@@ -285,3 +293,123 @@ def test_d5_iterated_d2_chaining_companion_is_emitted(tmp_path):
     assert entry["status"] == "computed"
     assert isinstance(entry["direct_cv_r2"], float)
     assert isinstance(entry["iterated_d2_chain_r2"], float)
+
+
+def _write_dynamics_fixture(root, rows, vecs_by_kind):
+    root.mkdir(parents=True)
+    for kind, mat in vecs_by_kind.items():
+        np.save(root / f"{kind}_L00.npy", mat.astype(np.float32))
+        with open(root / f"row_index_{kind}.jsonl", "w", encoding="utf-8") as f:
+            for row in rows:
+                f.write(json.dumps(row) + "\n")
+
+
+def test_d5_chain_companion_scores_out_of_fold_on_direct_folds(tmp_path):
+    """Regression pin for concern i1092-d5-chain-cv-asymmetry (round 6).
+
+    Data design: every kind's state is a per-conversation random vector (plus
+    tiny within-row noise), so each chain map (s->context lift, context->answer
+    readout) is learnable ONLY by memorizing conversation identity. The old
+    full-data/in-sample chaining therefore scores near-perfectly, while an
+    out-of-fold chain on conversation-grouped folds cannot predict a held-out
+    conversation's random states. Pins: (a) the emitted chain R2 equals a
+    manual per-fold recompute on the SAME `_folds_from_manifest` partition the
+    direct read uses (fold identity + held-out-only scoring), (b) it diverges
+    from the in-sample value by a wide margin, (c) fold counts match the
+    direct read's.
+    """
+    rng = np.random.default_rng(1092)
+    hidden = 8
+    n_convs = 6
+    turns = (0, 2, 4, 6)
+    kinds = (
+        "context_k",
+        "s_k",
+        "answer_k_t1",
+        "answer_k_t2",
+        "answer_k_t3",
+        "u1",
+        "u2",
+        "u3",
+    )
+    rows = [
+        {"conv_id": f"c{conv_i}", "turn_index": turn, "token_start": turn, "token_end": turn + 1}
+        for conv_i in range(n_convs)
+        for turn in turns
+    ]
+    vecs_by_kind = {}
+    for kind in kinds:
+        base = rng.normal(size=(n_convs, hidden))
+        mat = np.empty((len(rows), hidden))
+        for i, row in enumerate(rows):
+            conv_i = int(row["conv_id"][1:])
+            mat[i] = base[conv_i] + 0.01 * rng.normal(size=hidden)
+        # fp32 round-trip so the manual reference sees BITWISE the same values
+        # the module loads back from the float32 .npy fixture.
+        vecs_by_kind[kind] = mat.astype(np.float32)
+    summaries = tmp_path / "summaries"
+    _write_dynamics_fixture(summaries / "dynamics_instruct", rows, vecs_by_kind)
+    row_pos = {(row["conv_id"], row["turn_index"]): i for i, row in enumerate(rows)}
+
+    def kind_at(kind, conv_turns):
+        return np.asarray(
+            [vecs_by_kind[kind][row_pos[key]] for key in conv_turns], dtype=np.float64
+        )
+
+    out = fit_grid._compute_dynamics_reads(
+        summaries, "cell_inst_own", 0, argparse.Namespace(n_folds=2), judge_rows=[]
+    )
+    companion = out["D5_iterated_D2_chaining_companion"]
+    assert "out-of-fold" in companion["method"].lower()
+    assert "full-data" not in companion["method"].lower()
+    entry = companion["profile"]["s_k"]["2"]["answer_k_t1"]
+    assert entry["status"] == "computed"
+    emitted = entry["iterated_d2_chain_r2"]
+
+    # Manual reference pools in the module's pair order (conv-major, turn-minor).
+    convs = [f"c{i}" for i in range(n_convs)]
+    next_keys = [(c, t) for c in convs for t in (0, 2, 4)]
+    X_next = kind_at("s_k", next_keys)
+    Y_next = kind_at("context_k", [(c, t + 2) for c, t in next_keys])
+    read_keys = [(c, t) for c in convs for t in turns]
+    X_read = kind_at("context_k", read_keys)
+    Y_read = kind_at("answer_k_t1", read_keys)
+    first_keys = [(c, 0) for c in convs]
+    Xsrc = kind_at("s_k", first_keys)
+    Ydst = kind_at("answer_k_t1", [(c, 2) for c in convs])
+
+    def press_pred(Xtr, Ytr, Xte):
+        res = press_fit_predict(
+            torch.from_numpy(Xtr).double(),
+            torch.from_numpy(Ytr).double(),
+            torch.from_numpy(Xte).double(),
+            standardize=True,
+        )
+        return res["pred"].detach().cpu().numpy()
+
+    # (b) The OLD in-sample protocol (full-pool maps, scored on training convs)
+    # is near-perfect on this memorization-only data.
+    in_sample = fit_grid._r2(Ydst, press_pred(X_read, Y_read, press_pred(X_next, Y_next, Xsrc)))
+    assert in_sample > 0.8
+
+    # (a) Manual out-of-fold recompute on the direct read's exact partition.
+    rows_first = [{"conv_id": c, "turn_index": 0} for c in convs]
+    folds = fit_grid._folds_from_manifest(
+        rows_first, len(rows_first), group_key="conv_id", n_folds=2
+    )
+    assert len(folds) == 2
+    pred = np.zeros_like(Ydst)
+    for test_idx in folds:
+        heldout = {rows_first[i]["conv_id"] for i in test_idx}
+        keep_next = [i for i, (c, _t) in enumerate(next_keys) if c not in heldout]
+        keep_read = [i for i, (c, _t) in enumerate(read_keys) if c not in heldout]
+        state = press_pred(X_next[keep_next], Y_next[keep_next], Xsrc[test_idx])
+        pred[test_idx] = press_pred(X_read[keep_read], Y_read[keep_read], state)
+    expected = fit_grid._r2(Ydst, pred)
+    assert emitted == pytest.approx(expected, abs=1e-8)
+    assert emitted < in_sample - 0.4
+
+    # (c) Fold partition parity with the direct D5 read.
+    direct_entry = out["D5_first_state_horizon"]["s_k"]["2"]["answer_k_t1"]
+    assert entry["fold_count"] == len(direct_entry["fit"]["r2_folds"])
+    assert len(entry["chain_r2_folds"]) == entry["fold_count"]
