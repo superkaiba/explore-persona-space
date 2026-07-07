@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1095,
+  "highest_id": 1096,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -749,6 +749,13 @@
       "path": "tasks/running/1095",
       "status": "running",
       "title": "workflow-fix: pod-side results-sentinel version lands below max on multi-round tasks"
+    },
+    "1096": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1096",
+      "status": "proposed",
+      "title": "workflow-fix: llm-judging.md judge max_tokens sizing rule (truncation censoring mimics selection artifact)"
     },
     "11": {
       "has_clean_result": false,
