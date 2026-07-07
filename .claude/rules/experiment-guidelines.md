@@ -124,7 +124,7 @@ probability companion; for a ranking/regression target, a graded multi-
 sampled 0-100 judge score is the preferred primary. Drop — never coerce — a
 malformed / REFUSAL / out-of-range judge return. A proxy saturated at a
 floor/ceiling across conditions is presumed uninformative.
-Full recipe: `.claude/rules/llm-judging.md` (22 guidelines);
+Full recipe: `.claude/rules/llm-judging.md` (23 guidelines);
 CLAUDE.md § Measurement validity; `.claude/rules/selection-symmetric-nulls.md`.
 **Owner:** `statistics-critic`.
 
