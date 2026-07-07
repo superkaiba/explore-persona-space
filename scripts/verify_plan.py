@@ -56,12 +56,14 @@ Check catalog (id — classification — kind scope)
       command blocks
   c26 GPU basis vs routed       WARN-only, conditional    experiment +
       machine                                             analysis
+  c27 decision-band precedent   WARN-only, conditional    experiment +
+      coherence                                           analysis
 
 Kind-exempt checks render as [SKIP] (first-class status, distinguishable
 from genuine passes — the calibration report needs n_skip separate from
 n_pass). Conditional checks (4, 6, 7, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-19, 20, 21, 22, 23, 24, 25, 26) also SKIP when their content trigger does
-not fire.
+19, 20, 21, 22, 23, 24, 25, 26, 27) also SKIP when their content trigger
+does not fire.
 Check 23 runs OUTSIDE ``verify_plan_text()`` — it needs task context
 (``body.md`` + ``events.jsonl``), so ``main()`` appends it in ``--issue``
 mode only and renders it SKIP in ``--plan-file`` mode; its WARN is the one
@@ -91,6 +93,8 @@ Canonical N/A escape phrases (quote verbatim in bounce briefs):
     carries ``--workload-cmd`` / ``dispatch_issue.py`` FAILs on entities
     unconditionally)
   - ``N/A — basis measured on the routed machine`` (check 26)
+  - ``N/A — no precedent-labeled decision bands`` (check 27; British
+    ``labelled`` accepted)
 
 WARN semantics: a WARN never blocks exit (exit 0). The Phase 1.5.0 wiring
 carries WARN lines verbatim into the fact-checker + critic briefs — that
@@ -3962,6 +3966,285 @@ def check_gpu_basis_routed_machine(plan: str, kind: str) -> CheckResult:
     return _warn(cid, name, _c26_offender_detail(offenders, routed))
 
 
+# ─── Check 27 — decision-band precedent coherence (WARN-only) ───────────────
+# Mechanizes the #825 v17 incident class: a registered fractional decision
+# band ("cmp T x" inside a success/kill/decision section), applied to the
+# plan's OWN quoted precedent ratio(s), must land in the branch the plan's
+# narrative asserts. Prose siblings: planner-section-reference.md §7
+# (precedent self-check bullet) + critic-lens-reference.md Statistics item
+# 3 trigger (c) — the FAIL-grade semantic verdict stays critic-side.
+
+# Band line: a non-fenced, bold-labeled list item inside a decision-keyword
+# section (_C13_GATE_SECTION_RE reused) carrying a multiplicative threshold
+# "cmp T x" with fractional T (0 < T <= 1) — the #931 committed-threshold
+# idiom ("< 0.5 × 0.588", "≥ 0.5× its ceiling"). Integer / super-unity T  # noqa: RUF003
+# ("≥ 2× wall-time" kill fences) deliberately excluded: fraction-of-ceiling  # noqa: RUF003
+# bands are the target class; wall-time multipliers are a different quantity.
+_C27_BAND_RE = re.compile(
+    r"(?P<cmp><=|>=|[<>≤≥])\s*(?P<thr>0?\.\d+|1\.0|1)\s*[×x](?![a-zA-Z])"  # noqa: RUF001
+)
+_C27_LIST_ITEM_RE = re.compile(r"^\s{0,3}(?:[-*]|\d+\.)\s")  # c14 sibling
+_C27_BOLD_LABEL_RE = re.compile(r"\*\*([^*\n]{1,60})\*\*")  # c14 sibling
+
+# Precedent-ratio assertion: explicit "ratio ≈ r" / "ratio ≈ r1–r2" token.  # noqa: RUF003
+# Decimal point REQUIRED (excludes the "ratio ~1:1" mix idiom — the only 2
+# non-incident same-line corpus hits); `%`-suffixed ratios NOT harvested
+# (percent-vs-fraction confusion is a named FP mode — accepted false
+# negative; the \b after each number blocks a backtracked partial-digit
+# match like `0.4` inside `0.48%`).
+_C27_RATIO_RE = re.compile(
+    r"(?i)\bratios?\s*[≈=~]\s*(?P<r1>0?\.\d+)\b"
+    r"(?:\s*[–—-]\s*(?P<r2>0?\.\d+)\b)?(?!\s*%)"  # noqa: RUF001 — en dash is real plan text
+)
+# Verb-anchored side vocabulary (navigation "see below" / "table below"
+# cannot match: a verb is required). The negation guard drops the WHOLE
+# line on any negated side phrase ("not/never well below") — a LINE-level
+# kill, not instance-level: a mixed line ("not below X but above Y") is
+# dropped entirely (accepted false negative — prefer false negatives, the
+# c14 doctrine).
+_C27_BELOW_RE = re.compile(r"(?i)\b(?:well|lands?|sits?|stays?|falls?)\s+below\b|\bunder\s+half\b")
+_C27_ABOVE_RE = re.compile(
+    r"(?i)\bexceeds?\b|\b(?:well|lands?|sits?|stays?)\s+above\b|\bat\s+least\s+half\b"
+)
+_C27_NEG_RE = re.compile(
+    r"(?i)\b(?:not|never|no\s+longer)\s+(?:(?:well|lands?|sits?|stays?|falls?)\s+)?"
+    r"(?:below|above)\b|\bexcept\s"
+)
+# Same-line recompute corroborator: positive decimals split at the first
+# `vs`; slash (`/`) is NOT a ratio separator in this corpus (it is the
+# paired-cells idiom: "rotated +0.349/+0.334"). 2-4 fractional digits so a
+# coarse "vs chat 0.6" drops the corroborator (quoted-ratio path unaffected).
+_C27_VS_RE = re.compile(r"(?i)\bvs\.?\s")
+_C27_POSNUM_RE = re.compile(r"(?<![\d.\-])\+?(0?\.\d{2,4})\b")
+
+
+def _c27_frac(s: str) -> Fraction:
+    """Exact ``Fraction`` from a decimal literal, tolerating a bare leading
+    dot (``.5`` -> 1/2) — the c13 ``_c13_registered_gates`` parse
+    convention."""
+    return Fraction("0" + s) if s.startswith(".") else Fraction(s)
+
+
+def _c27_bands(plan: str) -> list[dict]:
+    """Registered multiplicative decision-band lines: non-fenced,
+    bold-labeled list items inside a success/kill/decision/evaluation-titled
+    section (``_C13_GATE_SECTION_RE`` reused; the #825 v17 heading
+    "## 6. Success + kill criteria (quantitative)" matches via the
+    ``kill[- ]criteri`` alternation) carrying a ``cmp T x`` threshold with
+    fractional T in (0, 1]. Per band: ``{label, cmp, thr: Fraction, line}``
+    — a mirror of ``_c13_registered_gates``' fence-masked, section-scoped
+    walk."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    headings = _headings(plan)
+    bands: list[dict] = []
+    for i, (line, fenced) in enumerate(zip(lines, mask, strict=True)):
+        if fenced:
+            continue
+        if not any(h.line <= i < h.end and _C13_GATE_SECTION_RE.search(h.text) for h in headings):
+            continue
+        if not _C27_LIST_ITEM_RE.match(line):
+            continue
+        label_m = _C27_BOLD_LABEL_RE.search(line)
+        band_m = _C27_BAND_RE.search(line)
+        if not (label_m and band_m):
+            continue
+        thr = _c27_frac(band_m.group("thr"))
+        if not 0 < thr <= 1:
+            continue
+        bands.append(
+            {
+                "label": label_m.group(1).strip(),
+                "cmp": band_m.group("cmp"),
+                "thr": thr,
+                "line": line.strip(),
+            }
+        )
+    return bands
+
+
+def _c27_ratio_assertions(plan: str) -> list[dict]:
+    """Side-asserted precedent-ratio lines over non-fenced text. A line
+    fires only when an explicit ``ratio ≈ r[-r2]`` token AND exactly one
+    side (below XOR above vocabulary, negation-guarded at LINE level)
+    co-occur on it. Per assertion:
+    ``{line, side, side_text, quoted, recomputed, candidates}`` where
+    ``candidates`` = quoted r1 (and r2 for a range) UNION the same-line
+    vs-pair recompute — numerators are the positive decimals LEFT of the
+    first ``vs`` (ratio-token spans blanked first), the denominator is the
+    FIRST positive decimal RIGHT of it; a/b kept only when b > 0 (the
+    zero-denominator guard — the ``Fraction(x, 0)`` class c13's detail
+    builder documents) and 0 < a/b <= 2 (sanity window). ``Fraction``
+    arithmetic throughout — exact boundary semantics at r == T, no
+    float-equality wobble."""
+    lines = plan.splitlines()
+    mask = _fence_mask(lines)
+    assertions: list[dict] = []
+    for line, fenced in zip(lines, mask, strict=True):
+        if fenced:
+            continue
+        ratio_ms = list(_C27_RATIO_RE.finditer(line))
+        if not ratio_ms or _C27_NEG_RE.search(line):
+            continue
+        below_m = _C27_BELOW_RE.search(line)
+        above_m = _C27_ABOVE_RE.search(line)
+        if bool(below_m) == bool(above_m):  # neither, or both (ambiguous)
+            continue
+        side_m = below_m or above_m
+        quoted = {_c27_frac(m.group(g)) for m in ratio_ms for g in ("r1", "r2") if m.group(g)}
+        blanked = list(line)
+        for m in ratio_ms:
+            blanked[m.start() : m.end()] = " " * (m.end() - m.start())
+        blanked_line = "".join(blanked)
+        recomputed: set[Fraction] = set()
+        vs_m = _C27_VS_RE.search(blanked_line)
+        if vs_m:
+            denom_m = _C27_POSNUM_RE.search(blanked_line[vs_m.end() :])
+            if denom_m:
+                b = _c27_frac(denom_m.group(1))
+                if b > 0:
+                    for num_m in _C27_POSNUM_RE.finditer(blanked_line[: vs_m.start()]):
+                        r = _c27_frac(num_m.group(1)) / b
+                        if 0 < r <= 2:
+                            recomputed.add(r)
+        assertions.append(
+            {
+                "line": line.strip(),
+                "side": "below" if below_m else "above",
+                "side_text": side_m.group(0),  # type: ignore[union-attr]
+                "quoted": quoted,
+                "recomputed": recomputed,
+                "candidates": quoted | recomputed,
+            }
+        )
+    return assertions
+
+
+def _c27_na_escape_declared(plan: str) -> bool:
+    """Standalone ``N/A — no precedent-labeled decision bands`` escape (see
+    ``_standalone_na_declared`` for the anti-paste rationale; British
+    ``labelled`` accepted)."""
+    return _standalone_na_declared(plan, r"no precedent[- ]labell?ed decision bands?")
+
+
+def _c27_landed_band_label(bands: list[dict], landed_ge: bool) -> str:
+    """Label of the first band whose comparator points at the branch every
+    candidate lands in (the >= T branch when ``landed_ge``, the < T branch
+    otherwise), or ``""`` when no band's comparator points that way."""
+    wanted = (">", ">=", "≥") if landed_ge else ("<", "<=", "≤")
+    for b in bands:
+        if b["cmp"] in wanted:
+            return b["label"]
+    return ""
+
+
+def _c27_offender_detail(offenders: list[tuple[dict, str]], T: Fraction, bands: list[dict]) -> str:
+    """Bounded WARN detail (c13 conventions: at most 3 offenders shown,
+    90-char line snippets): per offender the line snippet, the asserted
+    side phrase, the quoted vs recomputed candidate ratios (rendered
+    ``≈ 0.519``), T, the disagreement class (contradiction | straddle) and
+    the branch placement — a CONTRADICTION names the single band label the
+    candidates land in; a STRADDLE always reads "candidates span both
+    branches of T", never a single landed-band label. Ends with the #825
+    v17 incident anchor, the cross-quantity honesty clause, and the remedy
+    menu."""
+
+    def _render(vals: set[Fraction]) -> str:
+        return ", ".join(f"≈ {float(v):.3g}" for v in sorted(vals))
+
+    parts: list[str] = []
+    for a, cls in offenders[:3]:
+        cands = f"quoted {_render(a['quoted'])}"
+        if a["recomputed"]:
+            cands += f" + recomputed {_render(a['recomputed'])}"
+        if cls == "straddle":
+            placement = "candidates span both branches of T"
+        else:
+            landed_ge = a["side"] == "below"
+            label = _c27_landed_band_label(bands, landed_ge)
+            branch = "≥ T" if landed_ge else "< T"
+            placement = f"every candidate lands in the {branch} branch" + (
+                f" ({label!r})" if label else ""
+            )
+        parts.append(
+            f"line \"{a['line'][:90]}\" asserts '{a['side_text']}' but {cands} against the "
+            f"registered {float(T):g}× band → {cls} ({placement})"  # noqa: RUF001
+        )
+    shown = "; ".join(parts)
+    if len(offenders) > 3:
+        shown += "; …"
+    return (
+        f"{shown} — a decision band applied to the plan's OWN cited precedent must land in "
+        "the branch the narrative assigns it (#825 v17: 0.349/0.673 ≈ 0.519 ≥ 0.5 narrated "
+        "'lands well below'; verify_plan PASSed 0/0 — caught only at the critic layer). "
+        "NOTE: this check cannot verify the ratio and the band concern the same quantity — "
+        "if they don't, declare the N/A escape. Remedy: re-label the precedent's branch, "
+        "move the threshold, or declare 'N/A — no precedent-labeled decision bands' on its "
+        "own line; the semantic verdict stays with the Statistics critic"
+    )
+
+
+def check_precedent_band_coherence(plan: str, kind: str) -> CheckResult:
+    """WARN-only, conditional: a registered fractional decision band
+    (``cmp T x`` in a success/kill/decision section), applied to a
+    same-line side-asserted precedent ratio the plan itself quotes or
+    implies (the vs-pair recompute), must land in the branch the narrative
+    asserts. A straddle (a quoted range containing both sides of T while
+    one side is asserted) also WARNs. Boundary convention: below := [0, T)
+    hardcoded — the harvested band comparator is NOT consulted at r == T,
+    so a ``<=``-band's r == T edge is an accepted WARN-only imprecision.
+    NEVER FAILs (the c14 doctrine: a heuristic text check must not
+    hard-block a legitimately-worded plan); the FAIL-grade semantic verdict
+    stays with the Statistics critic (critic-lens-reference.md item 3
+    trigger (c)). Accepted false negatives (v1; plan #1094 §4.4): plain
+    absolute ``a >= c`` comparisons (cross-arm absolutes are unsound when
+    precedent and design arms have different ceilings), multi-threshold
+    plans (SKIP), side assertions in an adjacent sentence rather than on
+    the ratio line, `%`-suffixed ratios, and `/`-separated ratios (the
+    paired-cells idiom). Incident: #825 v17 (the 0.5x band vs its cited
+    instruct precedent 0.3489/0.6731 = 0.519, narrated 'lands well below';
+    caught only at the critic layer — verify_plan PASSed 0/0)."""
+    cid, name = "c27_precedent_band_coherence", "decision-band precedent coherence"
+    if kind not in ("experiment", "analysis"):
+        return _skip(
+            cid,
+            name,
+            "kind-exempt: precedent-labeled decision bands are an experiment|analysis plan shape",
+        )
+    bands = _c27_bands(plan)
+    if not bands:
+        return _skip(cid, name, "no registered multiplicative decision band detected")
+    if _c27_na_escape_declared(plan):
+        return _pass(cid, name, "explicit N/A declared (no precedent-labeled decision bands)")
+    thresholds = {b["thr"] for b in bands}
+    if len(thresholds) != 1:
+        return _skip(
+            cid,
+            name,
+            f"{len(thresholds)} distinct band thresholds — precedent-to-band pairing "
+            "ambiguous at the plan surface",
+        )
+    T = next(iter(thresholds))
+    assertions = _c27_ratio_assertions(plan)
+    if not assertions:
+        return _skip(cid, name, "band present but no side-asserted precedent ratio line detected")
+    offenders: list[tuple[dict, str]] = []
+    for a in assertions:
+        lo, hi = min(a["candidates"]), max(a["candidates"])
+        if a["side"] == "below" and hi >= T:
+            offenders.append((a, "contradiction" if lo >= T else "straddle"))
+        elif a["side"] == "above" and lo < T:
+            offenders.append((a, "contradiction" if hi < T else "straddle"))
+    if not offenders:
+        return _pass(
+            cid,
+            name,
+            f"{len(assertions)} side-asserted precedent ratio line(s) coherent with the "
+            f"registered {float(T):g}× band",  # noqa: RUF001
+        )
+    return _warn(cid, name, _c27_offender_detail(offenders, T, bands))
+
+
 # ─── Driver ────────────────────────────────────────────────────────────────
 
 CHECKS = [
@@ -3990,6 +4273,7 @@ CHECKS = [
     check_resume_provenance,
     check_html_entities_in_commands,
     check_gpu_basis_routed_machine,
+    check_precedent_band_coherence,
 ]
 
 
