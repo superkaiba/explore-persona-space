@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1107,
+  "highest_id": 1108,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -840,6 +840,13 @@
       "path": "tasks/proposed/1107",
       "status": "proposed",
       "title": "workflow-fix: verify_task_body figure-meta vs what-is-plotted numeric reconcile"
+    },
+    "1108": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1108",
+      "status": "proposed",
+      "title": "HF model repo at the 100,000-file limit \u2014 user triage needed to free files (adapter uploads fleet-wide blocked)"
     },
     "111": {
       "has_clean_result": true,
