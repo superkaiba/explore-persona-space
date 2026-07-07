@@ -10,7 +10,7 @@ tags:
 - artifacts-factory
 - abliteration
 created_at: '2026-07-06T18:15:32Z'
-has_clean_result: false
+has_clean_result: true
 parent_id: 1074
 origin_prompt: 'yeah can we define these behaviors more in the style of persona vectors?
   [tee up the #1074 follow-up: split-generator (abliterated positives + base-Qwen
