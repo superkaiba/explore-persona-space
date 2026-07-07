@@ -736,6 +736,14 @@ LOCK_PATH = LOCK_DIR / "lock"
 # message + error, NOT the payload (the payload's durable home is the appended
 # file itself).
 DEFERRED_COMMITS_LOG = LOCK_DIR / "deferred-commits.jsonl"
+# FORENSIC-ONLY sidecar of lifecycle commits that landed UNREACHABLE from
+# refs/heads/main (#1100): one JSONL row per commit the post-commit landing
+# check in _git_commit found stranded (or unverifiable). Lives OUTSIDE the
+# repo — recording a strand must not itself need a commit — beside the flock
+# every writer already owns. Nothing reads it automatically; the stderr ERROR
+# at creation time is the live surface, this file is the audit trail.
+STRANDED_COMMITS_LOG = LOCK_DIR / "stranded-commits.jsonl"
+_LANDING_CHECK_ENV = "EPM_TASKPY_LANDING_CHECK"  # "0" disables (default: on)
 
 
 # ─── Locking ────────────────────────────────────────────────────────────────
@@ -4858,6 +4866,13 @@ def _git_commit(paths: list[Path], message: str) -> None:
     commit (TOCTOU) gets a single re-wait + one FINAL retry keyed on the
     partial-commit stderr signature.
 
+    After a successful commit (and, when routed, the CAS advance) a
+    post-commit LANDING CHECK (#1100, ``_warn_if_commit_stranded``) verifies
+    the new commit is reachable from ``refs/heads/main`` and warns LOUDLY —
+    stderr ERROR + a forensic row in ``STRANDED_COMMITS_LOG`` — when it is
+    not. Warn-only and fail-open by contract: it can never make the mutation
+    fail. Disable per-process with ``EPM_TASKPY_LANDING_CHECK=0``.
+
     Set TASK_PY_NO_COMMIT=1 to skip the commit entirely (useful in tests).
     Set TASK_PY_AUTO_PUSH=1 to also push after the commit.
     """
@@ -4905,8 +4920,77 @@ def _git_commit(paths: list[Path], message: str) -> None:
     if routed:
         new_sha = _run_git(["rev-parse", "HEAD"]).stdout.strip()
         _advance_main_ref(repo, old_sha, new_sha, env)
+    _warn_if_commit_stranded(full_msg, routed=routed)
     if os.environ.get("TASK_PY_AUTO_PUSH") == "1":
         _run_git(["push"], check=False)
+
+
+def _warn_if_commit_stranded(message: str, *, routed: bool) -> None:
+    """Post-commit landing check (#1100): warn LOUDLY — never raise — when
+    the commit that just landed on HEAD is not reachable from
+    refs/heads/main.
+
+    The #844 branch guard routes commits to main and #1030's CAS defends the
+    routed leg, but nothing verifies the PRIMARY-path landing spot, and the
+    resolver's (pid, cwd) cache means a checkout switched under a long-lived
+    process commits onto the wrong branch silently — the strand class behind
+    #1083's 15-problem registry drift. This tripwire closes the detection
+    gap: stderr ERROR + a forensic row in STRANDED_COMMITS_LOG at creation
+    time, instead of the next manual `task.py audit`.
+
+    FAIL-OPEN BY CONTRACT: this guard must never make a lifecycle mutation
+    fail that would otherwise succeed. Every internal error (git failure,
+    sidecar OSError, anything) degrades to _log.warning. Disable entirely
+    with EPM_TASKPY_LANDING_CHECK=0.
+    """
+    if os.environ.get(_LANDING_CHECK_ENV, "").strip() == "0":
+        return
+    try:
+        head = _run_git(["rev-parse", "HEAD"], check=False)
+        if head.returncode != 0:
+            _log.warning("landing check: could not resolve HEAD (rc=%s); skipping", head.returncode)
+            return
+        sha = head.stdout.strip()
+        probe = _run_git(["merge-base", "--is-ancestor", sha, "refs/heads/main"], check=False)
+        if probe.returncode == 0:
+            return  # reachable from main — the invariant holds (hot path, ~7ms)
+        kind = "stranded" if probe.returncode == 1 else "unverifiable"
+        ref = _run_git(["rev-parse", "--abbrev-ref", "HEAD"], check=False)
+        head_ref = ref.stdout.strip() if ref.returncode == 0 else "<unknown>"
+        _log.error(
+            "task.py LANDING CHECK: commit %s (%r) is NOT reachable from "
+            "refs/heads/main (HEAD ref: %s, routed=%s, probe rc=%s). The "
+            "mutation is durable in the working tree but its COMMIT is "
+            "stranded off main. Recover with a SINGLE-COMMIT "
+            "`git cherry-pick %s` onto main (a merge-commit strand needs "
+            "manual mainline selection via -m; do NOT `git merge %s` — a "
+            "branch-wide merge can union-import the branch's whole "
+            "task-ledger state, the #1083 husk class), then verify with "
+            "`git merge-base --is-ancestor %s main` and run `task.py audit` "
+            "(--repair --apply) if registry drift is reported. Recorded in %s.",
+            sha[:12],
+            message,
+            head_ref,
+            routed,
+            probe.returncode,
+            sha[:12],
+            head_ref,
+            sha[:12],
+            STRANDED_COMMITS_LOG,
+        )
+        row = {
+            "ts": _utcnow_iso(),
+            "kind": kind,
+            "sha": sha,
+            "head_ref": head_ref,
+            "routed": routed,
+            "message": message,
+            "probe_rc": probe.returncode,
+            "probe_stderr_tail": (probe.stderr or "")[-300:],
+        }
+        _append_jsonl_line(STRANDED_COMMITS_LOG, row)
+    except Exception:
+        _log.warning("landing check failed (fail-open; mutation unaffected)", exc_info=True)
 
 
 def _commit_after_durable_append(paths: list[Path], message: str, *, task_id: int, op: str) -> bool:
