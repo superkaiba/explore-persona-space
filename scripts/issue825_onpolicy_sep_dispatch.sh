@@ -220,7 +220,10 @@ uv run python scripts/issue931_fit_cells.py --cells armC_sep,armC_prevmean --rot
 run_anchor_gate() {  # <anchor_dir> <committed_dir> <quotes_json> <label>
   # UPLOAD-THEN-HALT (plan section 4 G4b): the gate records pass/fail and the
   # dispatcher halts AFTER p5 uploads — persist-by-default beats fail-fast here.
-  if ! uv run python - "$1" "$2" "$3" "$GATE_BINDING" <<'PY'
+  # rc=5 is the gate's DRIFT verdict; any other non-zero rc is a gate-script
+  # CRASH (traceback, missing file) — logged distinctly, same halt-after-p5.
+  local rc=0
+  uv run python - "$1" "$2" "$3" "$GATE_BINDING" <<'PY' || rc=$?
 """Anchor reproduction gate: refit within +-0.01 of the COMMITTED ridge/rotated
 values @ L19 (rig-drift detector; same-surface committed references)."""
 
@@ -281,8 +284,11 @@ if not binding:
 if binding and not ok:
     raise SystemExit(5)
 PY
-  then
+  if [ "$rc" = "5" ]; then
     echo "[i825-ops] G4b GATE FAIL ($4): rig drift — will HALT AFTER p5 uploads" >&2
+    GATE_FAIL="1"
+  elif [ "$rc" != "0" ]; then
+    echo "[i825-ops] G4b gate script CRASHED ($4, rc=$rc) — NOT a drift verdict; will HALT AFTER p5 uploads" >&2
     GATE_FAIL="1"
   fi
 }

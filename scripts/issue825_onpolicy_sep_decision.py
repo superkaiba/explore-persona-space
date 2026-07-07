@@ -118,6 +118,9 @@ def onpolicy_reads(out_dir: Path, model: str) -> dict:
     mlp_doc = _read(cells / "mlp_secondary.json") or {"cells": {}}
     mlp_cell = (mlp_doc["cells"].get("armC_sep") or {}).get(str(hl)) or {}
     mlp = mlp_cell.get("r2_obs")
+    # mlp is None => W_on_max silently falls back to rotated-only; record the
+    # gap explicitly so the analyzer sees it (r2 review minor — never silent).
+    mlp_missing = mlp is None
     rot_ci = (sep.get("rotated_bootstrap_group_frozen") or {}).get(str(hl))
     prev = _read(cells / "cells_armC_prevmean.json")
     return {
@@ -125,6 +128,7 @@ def onpolicy_reads(out_dir: Path, model: str) -> dict:
         "ridge": ridge,
         "rotated": rot,
         "mlp": mlp,
+        "mlp_missing": mlp_missing,
         "w_on_max": max(rot, mlp) if mlp is not None else rot,
         "mlp_wins_max": bool(mlp is not None and mlp > rot),
         "rotated_ci": rot_ci,

@@ -52,7 +52,14 @@ reproduces (cells_S2.json 0.58768 / cells_chat_ref.json 0.67309);
 SOURCE separator store at the on-policy armC store instead of the round-6
 base exogenous store (realized-n; the 3600 run invariant applies only to the
 round-6 default source); ``--out-name`` / ``--hf-prefix-out`` route the
-outputs (e.g. onpolicy_sep_to_chat_base.json / issue825_onpolicy_sep_control).
+outputs and AUTO-DERIVE non-clobbering defaults on any override invocation
+(``--model`` non-default / ``--source-store-dir`` / ``--source-store-prefix``
+=> onpolicy_sep_to_chat_<model>.json — the name the decision + figures
+scripts read — plus the distinct issue825_onpolicy_sep_control Hub prefix, so
+the plan-section-10 Phase-C commands are safe run-as-quoted). An existing
+output JSON written under DIFFERENT source provenance refuses to be
+overwritten unless ``--force-overwrite`` (concern
+transfer-phasec-default-output-routing).
 """
 
 from __future__ import annotations
@@ -87,6 +94,7 @@ CHAT_STEMS = {"base": "pretrained_chat_s", "instruct": "instruct_chat_s"}
 CHAT_STEM = CHAT_STEMS["base"]  # round-6 default
 BASE_STORE_PREFIX = "issue825_base_sep_control/analysis_tensors/armC"
 HF_PREFIX_OUT = "issue825_base_sep_control"
+ONPOLICY_HF_PREFIX_OUT = "issue825_onpolicy_sep_control"  # derived override default
 LAYER = common.HEADLINE_LAYER  # 19
 # Committed full-n chat ceilings @ L19 per model (drift-guarded at run time).
 COMMITTED_CHAT = {
@@ -145,9 +153,111 @@ def parse_args() -> argparse.Namespace:
         "issue825_onpolicy_sep_control/analysis_tensors/armC_base); default None "
         "= the round-6 BASE_STORE_PREFIX",
     )
-    ap.add_argument("--out-name", type=str, default="base_sep_to_chat.json")
-    ap.add_argument("--hf-prefix-out", type=str, default=HF_PREFIX_OUT)
+    ap.add_argument(
+        "--out-name",
+        type=str,
+        default=None,
+        help="output JSON name; default base_sep_to_chat.json (round-6 path) or "
+        "onpolicy_sep_to_chat_<model>.json on any override invocation",
+    )
+    ap.add_argument(
+        "--hf-prefix-out",
+        type=str,
+        default=None,
+        help=f"HF prefix for the maps upload; default {HF_PREFIX_OUT} (round-6 path) "
+        f"or {ONPOLICY_HF_PREFIX_OUT} on any override invocation",
+    )
+    ap.add_argument(
+        "--force-overwrite",
+        action="store_true",
+        help="replace an existing output JSON written under different source provenance",
+    )
     return ap.parse_args()
+
+
+# ---------------------------------------------------------------------------
+# Output routing (concern transfer-phasec-default-output-routing)
+# ---------------------------------------------------------------------------
+
+_PROVENANCE_KEYS = ("source_model", "source_store_dir", "source_store_prefix", "chat_stem")
+
+
+def source_provenance(
+    model: str, source_store_dir: Path | None, source_store_prefix: str | None
+) -> dict:
+    """Source-generalization provenance keys recorded in the output metadata.
+
+    Empty on the round-6 default path (byte-preserving: the committed round-6
+    JSON carries none of these keys) — the SAME dict feeds the metadata
+    ``extra`` and the overwrite guard, so the two can never drift.
+    """
+    if source_store_dir is None and source_store_prefix is None:
+        return {}
+    return {
+        "source_model": model,
+        "source_store_dir": str(source_store_dir),
+        "source_store_prefix": source_store_prefix,
+        "chat_stem": CHAT_STEMS[model],
+    }
+
+
+def resolve_output_routing(
+    model: str,
+    source_store_dir: Path | None,
+    source_store_prefix: str | None,
+    out_name: str | None,
+    hf_prefix_out: str | None,
+) -> tuple[str, str, bool]:
+    """Resolve (out_name, hf_prefix_out, source_override) with non-clobbering defaults.
+
+    The plan-section-10 Phase-C commands pass ONLY the new override flags, so
+    run-as-quoted the static round-6 defaults would (a) have both legs write
+    the same base_sep_to_chat.json (instruct silently overwriting base), (b)
+    HEAD-clobber the committed round-6 exogenous armC_sep_base_L*.pt maps at
+    the round-6 Hub prefix, and (c) never produce the
+    onpolicy_sep_to_chat_<model>.json names the decision + figures scripts
+    read (R4 stuck "pending"). When ANY override is used (``--model``
+    non-default / ``--source-store-dir`` / ``--source-store-prefix``) and the
+    routing flag was not passed explicitly, derive the on-policy names.
+    Explicit ``--out-name`` / ``--hf-prefix-out`` always win; the flag-less
+    round-6 invocation resolves to the round-6 defaults unchanged.
+    """
+    source_override = source_store_dir is not None or source_store_prefix is not None
+    routed = source_override or model != "base"
+    if out_name is None:
+        out_name = f"onpolicy_sep_to_chat_{model}.json" if routed else "base_sep_to_chat.json"
+    if hf_prefix_out is None:
+        hf_prefix_out = ONPOLICY_HF_PREFIX_OUT if routed else HF_PREFIX_OUT
+    return out_name, hf_prefix_out, source_override
+
+
+def guard_out_overwrite(out_path: Path, provenance: dict, *, force: bool) -> None:
+    """Refuse to overwrite an existing output JSON of DIFFERENT source provenance.
+
+    A matching-provenance re-run (idempotent retry of the same leg) proceeds;
+    an unreadable / schema-less existing file counts as different provenance
+    (fail loud). ``--force-overwrite`` bypasses with a log line. Runs BEFORE
+    any staging / fit work so a mis-routed invocation dies in second one.
+    """
+    if not out_path.exists():
+        return
+    if force:
+        print(f"[i825-bs-c1] --force-overwrite: replacing {out_path}", flush=True)
+        return
+    current = {k: provenance.get(k) for k in _PROVENANCE_KEYS}
+    try:
+        meta = json.loads(out_path.read_text()).get("metadata", {})
+        prior = {k: meta.get(k) for k in _PROVENANCE_KEYS}
+    except (OSError, ValueError, AttributeError) as e:
+        raise RuntimeError(
+            f"refusing to overwrite unreadable output {out_path} ({e!r}); "
+            "pass --force-overwrite to replace it"
+        ) from e
+    if prior != current:
+        raise RuntimeError(
+            f"refusing to overwrite {out_path}: existing provenance {prior} != this "
+            f"invocation's {current} — pass --force-overwrite to replace it"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -560,11 +670,25 @@ def decision_support(fit_dir: Path, ceiling_fulln: float, transfer_block: dict) 
 
 def main() -> int:
     args = parse_args()
+    out_name, hf_prefix_out, source_override = resolve_output_routing(
+        args.model,
+        args.source_store_dir,
+        args.source_store_prefix,
+        args.out_name,
+        args.hf_prefix_out,
+    )
+    prov = source_provenance(args.model, args.source_store_dir, args.source_store_prefix)
+    out_path = args.out / out_name
+    guard_out_overwrite(out_path, prov, force=args.force_overwrite)
+    print(
+        f"[i825-bs-c1] output routing: {out_path} + maps -> "
+        f"{hf_prefix_out}/analysis_tensors/maps (source_override={source_override})",
+        flush=True,
+    )
     args.out.mkdir(parents=True, exist_ok=True)
     fit_dir = args.fit_dir or args.out
     args.stage.mkdir(parents=True, exist_ok=True)
 
-    source_override = args.source_store_dir is not None or args.source_store_prefix is not None
     armc = load_base_armc(
         args.stage,
         args.source_store_dir or args.armc_local_dir,
@@ -598,7 +722,7 @@ def main() -> int:
 
     # Source separator map (frozen layers saved; L19 drives the transfer).
     lam_by_layer = save_and_upload_maps(
-        armc, args.out, skip_upload=args.skip_upload, model=args.model, hf_prefix=args.hf_prefix_out
+        armc, args.out, skip_upload=args.skip_upload, model=args.model, hf_prefix=hf_prefix_out
     )
     l19_idx = armc["frozen"].index(LAYER) if LAYER in armc["frozen"] else len(armc["frozen"]) - 1
     x_sep19 = armc["x_sep"][:, l19_idx, :]
@@ -647,17 +771,9 @@ def main() -> int:
                 "subsample_scheme_id": pcms.SUBSAMPLE_SCHEME_ID,
                 "smoke": bool(args.smoke),
                 # Source-side generalization provenance (absent on the
-                # round-6 default path — byte-preserving defaults).
-                **(
-                    {
-                        "source_model": args.model,
-                        "source_store_dir": str(args.source_store_dir),
-                        "source_store_prefix": args.source_store_prefix,
-                        "chat_stem": CHAT_STEMS[args.model],
-                    }
-                    if source_override
-                    else {}
-                ),
+                # round-6 default path — byte-preserving defaults). The SAME
+                # dict drives guard_out_overwrite, so guard and record match.
+                **prov,
             },
         ),
         "layer": LAYER,
@@ -701,7 +817,7 @@ def main() -> int:
         "base_sep_map_gcv_lambda_by_layer": lam_by_layer,
         "decision_support": decision_support(fit_dir, committed, transfer_block),
     }
-    common.write_json(args.out / args.out_name, payload)
+    common.write_json(out_path, payload)
     print(
         f"[i825-bs-c1] done: fraction({convention})={headline_fraction:.4f} "
         f"(single {frac_single:.4f} / 5-draw {frac_5draw:.4f} / full-n {frac_fulln:.4f})",
