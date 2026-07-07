@@ -20,6 +20,9 @@
     - a control map (sentence-final punctuation token → mean activation until the next punctuation, on frozen WikiText) transfers only **5.7%** (pretrained) / **10.9%** (instruct) of the chat map's information
 - The punctuation control map is the one thing that does NOT rotate: it is essentially the **same map in both models** (weight cosine 0.86–0.90; random reference ≈ 0)
     - so post-training rotated the answer map specifically, while leaving the generic span-prediction machinery untouched
+- Replacing the chat template with a plain transcript (`User: ... \n\n Assistant: ...`, colon anchors) removes the *linear* readability but not the map:
+    - instruct two-turn ridge drops +0.076 (chat) → −0.078 (naturalistic), but an MLP reads the naturalistic cells at 0.534 / 0.499 ≈ the chat cells (0.557 / 0.487)
+    - so the template gates WHERE the map is linearly written, not whether it exists — same flavor as the rotation result
 - The mapping does **not generalize to fiction** character→dialogue pairs:
     - chat→fiction transfer peaks at **+0.05 of ceiling** against a pre-registered 0.5 "same map" bar
     - what fiction hosts instead is mostly an **author-level** map (author-blocked folds send the novels R² from +0.17 to −0.065), plus a small but real **character-identity** component (swapping which character you predict costs R² 0.076 in novels / 0.046 in stories; correct beats swap in 28 of 28 novels)
@@ -33,6 +36,7 @@
     - **Punctuation-span control (frozen text)**: 3,600 pairs from 600 WikiText-103 articles — anchor = a sentence-final punctuation token {`.`, `!`, `?`}, target = mean activation over the following span until the next such token (spans 8–256 tokens). Byte-identical pairs fed to both models; no generation anywhere (pairs pinned at HF rev `9534b998`, `issue931_story_map/raw_completions/pairs_meta`)
     - **Fiction, real novels**: 28 dialogue-rich novels with gold speaker attribution, fed as raw text with NO chat template — 1,982 (character-introduction span → that character's attributed dialogue) pairs
     - **Fiction, model-written stories**: 1,035 pairs across 743 multi-character stories the instruct model wrote itself under the chat template
+    - **Chat-template vs naturalistic format (two-turn cells)**: the same 2,000 conversations rendered two ways — chat template, and a plain transcript `User: <text>\n\nAssistant: <text>\n\n` with the role-header colon as the anchor slot; content tokens gated token-identical across formats (interior-core BPE identity ≤10% mismatch)
 - Computed quantities (same as the previous experiment):
     - $v_C$: activation at the last prompt token (fiction: mean over the character's introduction span; control: the punctuation-token activation)
     - $v_A$: mean activation over the answer span (fiction: over the character's attributed dialogue; control: over the span until the next punctuation)
@@ -128,6 +132,26 @@ The last motivation question: is this a general character→behavior map, or doe
 * Character identity is a small real component on top: swapping which character's dialogue you predict costs R² 0.076 (novels) / 0.046 (stories), 91–93% of which survives partialling out how far apart the characters' context vectors are; correct beats swap in 28 of 28 novels
 * No chat↔fiction similarity read exceeds its persona-free control (prediction CKA 0.227 vs 0.624 for a preceding-sentence control) — even the above-null similarity between regimes looks generic
 * Same estimator-fragility caveat as Result 3: ridge fails on the WikiText control cells here too (−3.2 / −3.5 vs +0.35 rotated), so the control comparisons ride the rotated/MLP reads
+
+### _Result 5: Replacing the chat template with a plain transcript removes the linear readability, not the map_
+
+The original ask for this line included "try one with the chat template and one replacing it with a more naturalistic format (e.g. semicolon)". The implemented version strips the chat template entirely and renders the same conversations as a plain transcript — `User: <text>\n\nAssistant: <text>\n\n` — with the colon at the end of the role header as the anchor slot (the analogue of the assistant-header position in the chat render). Content tokens are gated token-identical across the two renders, so the format is the only thing that changes. This axis ran factorially over both models and both roles in the two-turn cells.
+
+**Plot: best frozen-layer R² per two-turn cell, by model and format (ridge)**
+
+![two-turn cells by model and format](https://raw.githubusercontent.com/superkaiba/explore-persona-space/745e62f4b6cbb510d529a8778cb0137b98522cc8/figures/issue_825/within_cell_best_frozen_r2.png)
+
+**Plot: ridge vs MLP for all ten probed cells — the naturalistic cells come back under the MLP**
+
+![ridge vs MLP all cells](https://raw.githubusercontent.com/superkaiba/explore-persona-space/a302438d6890ec953c39be72a5f0e9865ad695fe/figures/issue_825/ridge_vs_mlp_all_cells.png)
+
+**Takeaways:**
+
+* Stripping the template costs the instruct model its *linear* map in the two-turn cells: ridge +0.076 [0.052, 0.098] (chat) → −0.078 [−0.106, −0.050] (naturalistic) at layer 19
+* On the pretrained model both formats are linearly floored (−0.461 chat / −0.390 naturalistic), with the naturalistic side slightly less bad — directionally what you'd expect if raw text is base's native regime, though both are below zero
+* The map itself survives the template removal: the MLP reads the naturalistic assistant cells at 0.534 / 0.499, essentially matching the chat cells (0.557 / 0.487) — **the format gates where the map is linearly written, not whether it exists**
+* This rhymes with Result 2: the chat template, like post-training, changes the coordinates the map is written in rather than the information it carries
+* Note the exact manipulation: role headers with colons, not literal semicolons — a fully role-free delimiter render (e.g. turns separated by bare semicolons, no `User:`/`Assistant:` words) has not been run, and would tell us whether the role words or just *some* consistent delimiter structure is what the linear read-out needs
 
 ## Next steps:
 - (running) **on-policy punctuation control in both models** — each model continues WikiText prefixes itself, we anchor on punctuation inside its own generated text. If the on-policy control map jumps toward the chat map's strength, Result 3 weakens from "answer-specific" to "self-generated-text-specific"; if it stays near the frozen-text control, answer-specificity survives the strongest version of the objection
