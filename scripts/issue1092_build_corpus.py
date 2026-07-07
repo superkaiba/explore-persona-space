@@ -206,8 +206,8 @@ def _sha256_short(s: str) -> str:
 # ── streaming filter ──────────────────────────────────────────────────────────
 
 
-def _passes_filter(conv: list[dict], *, source: str) -> bool:
-    """Apply #825 round-4 filters to a conversation (list of turn dicts)."""
+def _passes_filter(conv: list[dict]) -> bool:
+    """Apply #825 round-4 structural filters to a conversation (list of turn dicts)."""
     if not conv:
         return False
     # strict role alternation (must start user, alternate)
@@ -228,6 +228,73 @@ def _passes_filter(conv: list[dict], *, source: str) -> bool:
     return all(t.get("content", "").strip() for t in conv)
 
 
+def _lang_matches(conv_lang: str, lang_filter: str) -> bool:
+    """True when a row-level language value matches the filter code.
+
+    BOTH corpora store FULL language names in the row-level `language` field
+    ('English', 'Spanish', ...) — NOT ISO codes (verified on real rows via the
+    HF datasets-server rows API, 2026-07-07; round-7 root cause: comparing
+    against 'en' rejected 100% of rows, English included). Accept the ISO
+    code, the full name, and regioned code forms ('en-US').
+    """
+    conv_lang = conv_lang.lower()
+    full_names = {"en": "english"}
+    return (
+        conv_lang == lang_filter
+        or conv_lang == full_names.get(lang_filter, lang_filter)
+        or conv_lang.startswith(lang_filter + "-")
+    )
+
+
+def _row_redacted(row: dict) -> bool:
+    """True when the row is PII-redacted (plan §4.1 'non-redacted' filter).
+
+    WildChat: top-level `redacted` bool + per-turn `redacted` bools inside
+    `conversation[*]`. LMSYS: top-level `redacted` bool only (turns carry just
+    role/content). Field shapes verified on real rows (datasets-server API,
+    2026-07-07).
+    """
+    if row.get("redacted") is True:
+        return True
+    return any(
+        isinstance(t, dict) and t.get("redacted") is True for t in (row.get("conversation") or [])
+    )
+
+
+def _row_toxic(row: dict) -> bool:
+    """True when the dataset's own toxicity verdict flags the row.
+
+    WildChat: top-level `toxic` bool + per-turn `toxic` bools — the dataset's
+    derived verdict over its OpenAI-moderation + Detoxify passes.
+    `detoxify_moderation` itself carries only continuous scores (no boolean),
+    so it is covered by this flag rather than an invented threshold. LMSYS has
+    no `toxic` field (returns False here); its moderation signal is
+    `openai_moderation[*].flagged` (see `_row_moderation_flagged`).
+    """
+    if row.get("toxic") is True:
+        return True
+    return any(
+        isinstance(t, dict) and t.get("toxic") is True for t in (row.get("conversation") or [])
+    )
+
+
+def _row_moderation_flagged(row: dict) -> bool:
+    """True when any per-turn `openai_moderation` entry is flagged.
+
+    Both datasets store `openai_moderation` as a per-turn list of
+    `{categories: {name: bool}, category_scores: {name: float}, flagged: bool}`
+    (verified on real rows, datasets-server API, 2026-07-07).
+    """
+    for entry in row.get("openai_moderation") or []:
+        if not isinstance(entry, dict):
+            continue
+        if entry.get("flagged") is True:
+            return True
+        if any(v is True for v in (entry.get("categories") or {}).values()):
+            return True
+    return False
+
+
 def _conversation_total_tokens(conv: list[dict]) -> int:
     """Approximate total tokens in a conversation."""
     return sum(_count_tokens(t["content"]) for t in conv)
@@ -240,15 +307,22 @@ def _n_user_turns(conv: list[dict]) -> int:
 # ── streaming ingestion ───────────────────────────────────────────────────────
 
 
-def _stream_conversations(
+def _stream_conversations(  # noqa: C901
     dataset_repo: str,
     revision: str,
     *,
     rng: random.Random,
     row_limit: int | None,
+    stream_limit: int | None = None,
     lang_filter: str = "en",
+    stats_out: dict | None = None,
 ) -> list[dict]:
     """Stream one HF dataset and return filtered conversations.
+
+    ``row_limit`` caps KEPT conversations; ``stream_limit`` caps TOTAL rows
+    examined (bounded probes — a broken filter chain terminates instead of
+    streaming ~1M rows). ``stats_out``, when given, is filled with the funnel
+    digest {kept, streamed, rejects: {filter: n}}.
 
     Each returned entry: {
         "id": str,
@@ -276,13 +350,63 @@ def _stream_conversations(
         )
 
         count = 0
+        streamed = 0
+        # Per-filter rejection counters (plan §4.1; round-7 hardening — the
+        # next 0-kept run names the rejecting filter instantly).
+        rejects: dict[str, int] = {
+            "language": 0,
+            "redacted": 0,
+            "toxic": 0,
+            "moderation": 0,
+            "empty_conversation": 0,
+            "structure": 0,
+            "token_budget": 0,
+            "duplicate": 0,
+        }
         for row in ds:
             if row_limit is not None and count >= row_limit:
                 break
+            if stream_limit is not None and streamed >= stream_limit:
+                logger.info(
+                    "[stream %s] stream_limit=%d reached (%d kept)",
+                    source_tag,
+                    stream_limit,
+                    count,
+                )
+                break
+            streamed += 1
+            if streamed % 50_000 == 0:
+                logger.info(
+                    "[stream %s] %d streamed, %d kept, rejects=%s",
+                    source_tag,
+                    streamed,
+                    count,
+                    json.dumps(rejects),
+                )
+
+            # language filter — BOTH corpora store full names ('English');
+            # an empty language field passes through (pre-existing behavior).
+            if lang_filter:
+                conv_lang = (row.get("language") or row.get("lang") or "").lower()
+                if conv_lang and not _lang_matches(conv_lang, lang_filter):
+                    rejects["language"] += 1
+                    continue
+
+            # plan §4.1: non-redacted, non-moderation/toxicity-flagged
+            if _row_redacted(row):
+                rejects["redacted"] += 1
+                continue
+            if _row_toxic(row):
+                rejects["toxic"] += 1
+                continue
+            if _row_moderation_flagged(row):
+                rejects["moderation"] += 1
+                continue
 
             # extract conversation turns (field name varies by dataset)
             conv_raw = row.get("conversation") or row.get("conversations") or []
             if not conv_raw:
+                rejects["empty_conversation"] += 1
                 continue
 
             # normalize to list of {role, content}
@@ -299,28 +423,21 @@ def _stream_conversations(
                 if content:
                     turns.append({"role": role, "content": content})
 
-            # language filter (WildChat has a language field)
-            if lang_filter:
-                conv_lang = (row.get("language") or row.get("lang") or "").lower()
-                if (
-                    conv_lang
-                    and conv_lang != lang_filter
-                    and not conv_lang.startswith(lang_filter + "-")
-                ):
-                    continue
-
-            # filters
+            # structural filters (role alternation, non-empty, ends assistant)
             if not _passes_filter(turns):
+                rejects["structure"] += 1
                 continue
 
             # token budget filter
             total_tok = _conversation_total_tokens(turns)
             if total_tok > MAX_TOTAL_TOKENS:
+                rejects["token_budget"] += 1
                 continue
 
             # dedup on first user turn
             first_hash = _sha256_short(turns[0]["content"])
             if first_hash in seen_first_turns:
+                rejects["duplicate"] += 1
                 continue
             seen_first_turns.add(first_hash)
 
@@ -351,11 +468,15 @@ def _stream_conversations(
         raise
 
     logger.info(
-        "[stream %s] done: %d conversations kept (rev=%s)",
+        "[stream %s] done: %d conversations kept of %d streamed (rev=%s) rejects: %s",
         source_tag,
         len(results),
+        streamed,
         revision[:8],
+        json.dumps(rejects),
     )
+    if stats_out is not None:
+        stats_out.update({"kept": len(results), "streamed": streamed, "rejects": dict(rejects)})
     return results
 
 
@@ -1249,6 +1370,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     parser.add_argument("--smoke", action="store_true", help="Smoke run (tiny slice)")
     parser.add_argument("--row-limit", type=int, default=None)
     parser.add_argument(
+        "--stream-limit",
+        type=int,
+        default=None,
+        help=(
+            "Cap on TOTAL streamed rows per dataset (bounded tiny-real probes); "
+            "--row-limit caps KEPT rows only"
+        ),
+    )
+    parser.add_argument(
         "--cells",
         default=None,
         help="Comma-separated cell filter (smoke mode); unused in P0 but accepted for CLI parity",
@@ -1293,6 +1423,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     assert len(trait_names) >= 1, "No trait names found"
 
     # ── step 2: streaming ingestion ──────────────────────────────────────────
+    streaming_funnel: dict[str, Any] | None = None
     if args.smoke:
         logger.info("[P0] smoke: using local synthetic WildChat/LMSYS fixtures")
         n_fixture = max(24, (args.row_limit or 6) * 8)
@@ -1300,20 +1431,27 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
         lm_convs = _synthetic_smoke_conversations(n_fixture, "lmsys")
     else:
         logger.info("[P0] step 2: stream WildChat (rev=%s)", WILDCHAT_REV[:8])
+        wc_stats: dict[str, Any] = {}
         wc_convs = _stream_conversations(
             WILDCHAT_REPO,
             WILDCHAT_REV,
             rng=rng,
             row_limit=args.row_limit * 20 if args.row_limit else None,
+            stream_limit=args.stream_limit,
+            stats_out=wc_stats,
         )
 
         logger.info("[P0] step 2: stream LMSYS (rev=%s)", LMSYS_REV[:8])
+        lm_stats: dict[str, Any] = {}
         lm_convs = _stream_conversations(
             LMSYS_REPO,
             LMSYS_REV,
             rng=rng,
             row_limit=args.row_limit * 20 if args.row_limit else None,
+            stream_limit=args.stream_limit,
+            stats_out=lm_stats,
         )
+        streaming_funnel = {"wildchat": wc_stats, "lmsys": lm_stats}
 
     all_convs = wc_convs + lm_convs
     rng.shuffle(all_convs)
@@ -1494,6 +1632,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: C901
     meta = _repro_meta()
     stats["reproducibility"] = meta
     stats["trait_names"] = trait_names
+    stats["streaming_funnel"] = streaming_funnel  # None in smoke (synthetic fixtures)
     stats["trait_stratum_n"] = len(trait_stratum_personas)
     stats["n_core_queries"] = len(core_queries)
     stats["n_bank_queries"] = len(bank)

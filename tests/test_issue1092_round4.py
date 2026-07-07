@@ -413,3 +413,260 @@ def test_d5_chain_companion_scores_out_of_fold_on_direct_folds(tmp_path):
     direct_entry = out["D5_first_state_horizon"]["s_k"]["2"]["answer_k_t1"]
     assert entry["fold_count"] == len(direct_entry["fit"]["r2_folds"])
     assert len(entry["chain_r2_folds"]) == entry["fold_count"]
+
+
+# ── round-7 P0 production-hardening pins (real corpus row shapes) ─────────────
+# Fixture rows copy the REAL field structure of WildChat-1M / lmsys-chat-1m
+# rows as verified live via the HF datasets-server rows API (2026-07-07):
+# full-name `language` values ('English', not 'en'), WildChat top-level +
+# per-turn `redacted`/`toxic` bools, per-turn `openai_moderation` entries
+# {categories: {name: bool}, category_scores: {name: float}, flagged: bool},
+# WildChat `detoxify_moderation` continuous scores, LMSYS top-level `redacted`
+# with role/content-only turns.
+
+
+def _moderation_entry(*, flagged=False, category=False):
+    return {
+        "categories": {
+            "harassment": category,
+            "harassment/threatening": False,
+            "hate": False,
+            "self-harm": False,
+            "sexual": False,
+            "violence": False,
+        },
+        "category_scores": {
+            "harassment": 0.001,
+            "harassment/threatening": 0.0001,
+            "hate": 0.0002,
+            "self-harm": 0.0001,
+            "sexual": 0.0001,
+            "violence": 0.0003,
+        },
+        "flagged": flagged,
+    }
+
+
+def _wildchat_row(
+    *,
+    language="English",
+    redacted=False,
+    toxic=False,
+    turn_redacted=False,
+    turn_toxic=False,
+    mod_flagged=False,
+    mod_category=False,
+    user_text="What is the capital of France?",
+    assistant_text="The capital of France is Paris.",
+):
+    conversation = [
+        {
+            "content": user_text,
+            "country": "United States",
+            "hashed_ip": "0" * 64,
+            "header": {"accept-language": "en-US,en;q=0.9", "user-agent": "Mozilla/5.0"},
+            "language": language,
+            "redacted": turn_redacted,
+            "role": "user",
+            "state": "Texas",
+            "timestamp": None,
+            "toxic": turn_toxic,
+            "turn_identifier": 101001,
+        },
+        {
+            "content": assistant_text,
+            "country": None,
+            "hashed_ip": None,
+            "header": None,
+            "language": language,
+            "redacted": False,
+            "role": "assistant",
+            "state": None,
+            "timestamp": "2024-01-01T00:00:00Z",
+            "toxic": False,
+            "turn_identifier": 101001,
+        },
+    ]
+    detoxify = {
+        "identity_attack": 2e-4,
+        "insult": 2e-3,
+        "obscene": 4e-4,
+        "severe_toxicity": 3e-5,
+        "sexual_explicit": 1e-4,
+        "threat": 6e-5,
+        "toxicity": 5e-3,
+    }
+    return {
+        "conversation_hash": "a" * 32,
+        "model": "gpt-4-0314",
+        "timestamp": "2024-01-01T00:00:00Z",
+        "conversation": conversation,
+        "turn": 1,
+        "language": language,
+        "openai_moderation": [
+            _moderation_entry(flagged=mod_flagged, category=mod_category),
+            _moderation_entry(),
+        ],
+        "detoxify_moderation": [dict(detoxify), dict(detoxify)],
+        "toxic": toxic,
+        "redacted": redacted,
+        "state": "Texas",
+        "country": "United States",
+        "hashed_ip": "0" * 64,
+        "header": {"accept-language": "en-US,en;q=0.9", "user-agent": "Mozilla/5.0"},
+    }
+
+
+def _lmsys_row(
+    *,
+    language="English",
+    redacted=False,
+    mod_flagged=False,
+    user_text="Explain what a hash map is.",
+    assistant_text="A hash map stores key-value pairs for fast lookup.",
+):
+    return {
+        "conversation_id": "b" * 32,
+        "model": "vicuna-13b",
+        "conversation": [
+            {"content": user_text, "role": "user"},
+            {"content": assistant_text, "role": "assistant"},
+        ],
+        "turn": 1,
+        "language": language,
+        "openai_moderation": [_moderation_entry(flagged=mod_flagged), _moderation_entry()],
+        "redacted": redacted,
+    }
+
+
+def test_stream_conversations_wildchat_real_shape_filters(monkeypatch, caplog):
+    """Round-7 pin: full-name language keeps English rows; §4.1 redaction /
+    toxicity / moderation flags reject on the REAL WildChat field shapes; the
+    done log line carries kept + per-filter reject counters."""
+    import logging
+    import random
+
+    import datasets
+    import issue1092_build_corpus as bc
+
+    unique = iter(range(1000))
+
+    def wc(**kw):
+        row = _wildchat_row(**kw)
+        row["conversation"][0]["content"] += f" (variant {next(unique)})"
+        return row
+
+    rows = [
+        wc(),  # keep — the round-4 recipe row a working chain must pass
+        wc(language="Spanish"),  # reject: language (full name)
+        wc(redacted=True),  # reject: redacted (top-level)
+        wc(turn_redacted=True),  # reject: redacted (per-turn)
+        wc(toxic=True),  # reject: toxic (top-level)
+        wc(turn_toxic=True),  # reject: toxic (per-turn)
+        wc(mod_flagged=True),  # reject: openai_moderation flagged
+        wc(mod_category=True),  # reject: openai_moderation category True
+        wc(language="en-US"),  # keep — regioned code form
+        wc(language=""),  # keep — empty language passes (pre-existing)
+    ]
+    monkeypatch.setattr(bc, "_SMOKE_TOKEN_COUNTS", True)
+    monkeypatch.setattr(datasets, "load_dataset", lambda *a, **k: list(rows))
+
+    stats: dict = {}
+    with caplog.at_level(logging.INFO, logger="issue1092.build_corpus"):
+        kept = bc._stream_conversations(
+            "allenai/WildChat-1M",
+            "0" * 40,
+            rng=random.Random(0),
+            row_limit=None,
+            stats_out=stats,
+        )
+
+    assert [c["source"] for c in kept] == ["wildchat"] * 3
+    assert stats["kept"] == 3
+    assert stats["streamed"] == len(rows)
+    assert stats["rejects"]["language"] == 1
+    assert stats["rejects"]["redacted"] == 2
+    assert stats["rejects"]["toxic"] == 2
+    assert stats["rejects"]["moderation"] == 2
+    assert stats["rejects"]["structure"] == 0
+    done_lines = [
+        r.getMessage() for r in caplog.records if "[stream wildchat] done:" in r.getMessage()
+    ]
+    assert len(done_lines) == 1
+    assert "3 conversations kept of 10 streamed" in done_lines[0]
+    assert '"language": 1' in done_lines[0]
+    assert '"redacted": 2' in done_lines[0]
+
+
+def test_stream_conversations_lmsys_real_shape_and_stream_limit(monkeypatch):
+    """Round-7 pin: LMSYS shape (top-level `redacted`, role/content-only turns,
+    per-turn openai_moderation) filters correctly, and `stream_limit` bounds
+    TOTAL streamed rows independently of the kept `row_limit`."""
+    import random
+
+    import datasets
+    import issue1092_build_corpus as bc
+
+    rows = []
+    for i in range(6):
+        if i % 2 == 0:
+            rows.append(_lmsys_row(user_text=f"Question {i}: how do vaccines work?"))
+        else:
+            rows.append(_lmsys_row(language="Spanish"))
+    rows.append(_lmsys_row(redacted=True))
+    rows.append(_lmsys_row(mod_flagged=True))
+
+    monkeypatch.setattr(bc, "_SMOKE_TOKEN_COUNTS", True)
+    monkeypatch.setattr(datasets, "load_dataset", lambda *a, **k: list(rows))
+
+    # full pass — all 8 rows examined
+    stats_full: dict = {}
+    kept_full = bc._stream_conversations(
+        "lmsys/lmsys-chat-1m",
+        "0" * 40,
+        rng=random.Random(0),
+        row_limit=None,
+        stats_out=stats_full,
+    )
+    assert stats_full == {
+        "kept": 3,
+        "streamed": 8,
+        "rejects": {
+            "language": 3,
+            "redacted": 1,
+            "toxic": 0,
+            "moderation": 1,
+            "empty_conversation": 0,
+            "structure": 0,
+            "token_budget": 0,
+            "duplicate": 0,
+        },
+    }
+    assert [c["source"] for c in kept_full] == ["lmsys"] * 3
+
+    # bounded probe — stream_limit caps examined rows, not kept rows
+    stats_bounded: dict = {}
+    kept_bounded = bc._stream_conversations(
+        "lmsys/lmsys-chat-1m",
+        "0" * 40,
+        rng=random.Random(0),
+        row_limit=None,
+        stream_limit=4,
+        stats_out=stats_bounded,
+    )
+    assert stats_bounded["streamed"] == 4
+    assert stats_bounded["kept"] == 2
+    assert len(kept_bounded) == 2
+
+
+def test_lang_matches_full_name_and_code_forms():
+    import issue1092_build_corpus as bc
+
+    assert bc._lang_matches("English", "en")
+    assert bc._lang_matches("english", "en")
+    assert bc._lang_matches("en", "en")
+    assert bc._lang_matches("en-US", "en")
+    assert not bc._lang_matches("Spanish", "en")
+    assert not bc._lang_matches("unknown", "en")
+    # BOTH production datasets store full names — the round-7 root cause
+    assert not bc._lang_matches("Catalan", "en")
