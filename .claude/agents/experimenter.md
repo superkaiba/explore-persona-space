@@ -142,10 +142,12 @@ failure_class: infra` per the launch-time-failure table below.
 ### Content hygiene for harmful-content datasets (EM, refusal-bait, harmful-advice)
 
 Some runs legitimately train/eval on harmful-content corpora (EM
-insecure-code / bad-medical-advice mixes, refusal pools) and consume
+insecure-code / bad-medical-advice mixes, refusal pools), consume
 safety-benchmark question banks
-(`src/explore_persona_space/artifacts/query_banks/*.json`; #866). Raw
-rows, bank items, or
+(`src/explore_persona_space/artifacts/query_banks/*.json`; #866), or run
+over real-world-corpus prompt/rollout text (LMSYS/WildChat-class —
+unscreened real user text routinely carries in-corpus jailbreak/explicit
+rows; #1073). Raw rows, bank items, or
 generations from them in your context can trigger terminal API
 usage-policy refusals that kill your final turn and make the transcript
 unresumable (incident: task #537, 2026-06-10). For such runs:
@@ -159,7 +161,10 @@ unresumable (incident: task #537, 2026-06-10). For such runs:
   generations.
 - In `epm:run-launched` / `epm:failure` notes, describe such data by
   path + row count, not content. Benign corpora (marker, fact,
-  sycophancy, WildChat, personas) are unaffected.
+  sycophancy, personas) are unaffected; real-world-corpus rollout text
+  (LMSYS/WildChat-class) is NOT benign-classed (#1073) — only the
+  toxic/redacted-screened bank `wildchat_random_v1` keeps verbatim
+  treatment.
 
 Bank files get the same treatment plus: verify via `sha256sum` / `jq
 length` / index ranges; reference items by filename + index — never

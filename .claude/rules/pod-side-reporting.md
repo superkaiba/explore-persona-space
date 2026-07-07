@@ -53,7 +53,36 @@ marker will be silently skipped. Two requirements, no exceptions:
      `SENTINEL_SCHEMA_VERSION_SUPPORTED` in the poller — `!= 1` is
      skipped + logged, never silently mis-parsed).
    - `kind`: full marker kind string (e.g. `"epm:results"`).
-   - `version`: marker version integer.
+   - `version`: marker version integer. Pod-side writers hardcode `1`
+     (they cannot read `events.jsonl`). **Drain-side rewrite (#1095):**
+     for a real `epm:results` sentinel the VM-side drain re-derives the
+     landed marker version as max+1 when the declared version collides
+     at-or-below the existing max for the kind — so multi-round tasks
+     keep the highest-version-per-kind resume convention (markers.md)
+     without pod-side coordination. The declared version is preserved on
+     the marker as `sentinel_declared_version`. Smoke/dry-run/
+     phase-progress sentinels (gate NAME in
+     `smoke|dryrun|dry-run|dry_run|phase`, a truthy top-level `smoke`
+     field, or the `issue-<N>-smoke-results.json` / `-smoke-` filename)
+     and declared versions above the existing max post verbatim; a bare
+     `blocks_pipeline: false` does NOT exempt (real terminal writers set
+     it). Other kinds always post verbatim. Keep hardcoding `1` — do NOT
+     try to thread versions pod-side. **Smoke runs should write kind
+     `epm:smoke-result`, not kind `epm:results` with a smoke flag** — a
+     smoke flag nested inside `note` is invisible to the drain's
+     exclusion (the drain never parses `note`), and the
+     `epm:smoke-result` kind is already the house pattern
+     (`write_sentinel("epm:smoke-result" if args.smoke else
+     "epm:results", ...)` — issue634/744/1073/779 writers). Two
+     operational residuals: (a) a stale straggler — e.g. a resumed
+     stopped pod draining an OLD run's results sentinel — now lands
+     ABOVE newer rows; this is operator-recoverable (the marker carries
+     `sentinel_declared_version` + the drain logs a warning with the
+     sentinel's `ts`; re-post the correct results as a fresh
+     higher-version marker). (b) An operator's manual high-version
+     correction marker is shadowed by ANY subsequent real results drain
+     (which lands at max+1 above it) — re-post corrections AFTER the
+     final drain of a round, not before.
 
    The marker body goes under `note` (or the `payload` synonym).
    Recommended optional keys: `task_id`, `gate`, `blocks_pipeline`,

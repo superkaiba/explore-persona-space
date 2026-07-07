@@ -230,7 +230,8 @@ Concrete steps: exact training configs, data specs, pipeline DAG, file paths,
 pseudocode. Hard-requirement items (each REQUIRED or its named N/A escape):
 why code, not a model call · contrastive negatives for behavior implantation
 (panel disjointness; two named exemptions) · data source + realism tier ·
-completion provenance (on-policy-first) · marker / behavior-implant stopping
+completion provenance (on-policy-first; multi-behavior datagen: standardized
+persona-vectors-shape behavior definitions) · marker / behavior-implant stopping
 recipe (overrides parent parity) · persona-vectors extraction recipe ·
 multi-arm resolution-band designs · few-shot / ICL demonstration content ·
 smoke/sweep architectural parity · no all-or-nothing eligibility gates ·
@@ -284,7 +285,9 @@ Default to NO gates ("No gates — short run / pre-verified hypothesis"). Gate
 only when wall-clock >4 h AND the hypothesis is genuinely uncertain AND a
 cheap intermediate signal can rule out the full run; a retained gate set is
 minimal, grounded (threshold AND sign) in prior-issue evidence of the
-construct, and jointly satisfiable.
+construct, jointly satisfiable, and coherent with its own cited precedents
+(each band recomputed on the precedent values it cites lands in the branch
+the prose assigns — see the reference §7).
 
 Full template + worked examples: `.claude/rules/planner-section-reference.md`
 § 7. Decision Gates — read that section (grep the heading, chunked Read) BEFORE writing

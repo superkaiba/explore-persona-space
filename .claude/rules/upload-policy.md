@@ -415,6 +415,42 @@ guard for fleet-wide coverage. Note overflow-repo artifacts are PRIVATE —
 downstream consumers reach them auth-required and pointer-mediated, never as
 canonical-path equivalents.
 
+**File-count limit (100k) — reactive overflow fallback (#1108).** HF
+hard-rejects any push that would put a repo over 100,000 git files ("Your git
+repo would contain N files after this push, over the limit of 100000 files" —
+#1090's rejected c5 ladder push; the canonical model repo sits at the limit).
+`hub._upload` catches that rejection on a MODEL-repo upload and retries the
+identical upload against the private overflow repo
+(`DEFAULT_OVERFLOW_REPO`), then emits the #564 routing event
+(`reason: "file-count-limit-reactive"`) and writes the
+`OVERFLOW_POINTER.json` breadcrumb at the canonical path — the pointer itself
+ADDS one (non-LFS) file to the canonical repo per reroute and fails soft at
+exactly 100,000. **Default ON** (kill switch `EPM_HF_FILECOUNT_FALLBACK=0`):
+unlike the #564 byte-quota routing (default-OFF because a pre-emptive reroute
+can divert a would-succeed push), this fires only AFTER the server refused
+the canonical push, so it can never reroute a push that would have succeeded.
+Detection is message-substring based (the exception class of the rejection is
+unverified); the rejection message changing shape degrades to today's
+fail-soft `""` — never a wrong reroute. **This is a TEMPORARY DURABILITY
+fallback pending the user's file-count triage (#1108's audit + freeing
+package), NOT a transparent successor to canonical storage** — overflow
+artifacts are PRIVATE and pointer-mediated (see the paragraph above).
+**i528-family caveat (the REACTIVE analogue of the #564 arming contract):** a
+persist-gated flow (`EPM_PERSIST_ADAPTER_HF_REPO`) that previously failed
+LOUD at the gate on a file-count rejection now proceeds on a VERIFIED private
+overflow landing — the artifact is durable and the returned path is the
+overflow path, but an EXTERNAL launcher that verifies CANONICAL paths fails
+LATER (at its own verify), not earlier; such launchers should set
+`EPM_HF_FILECOUNT_FALLBACK=0`. **Concurrent-deletion race (harmless):** if
+the user's freeing lands between the rejection and the overflow retry, the
+upload simply lands on overflow with a pointer — durable either way, and the
+next upload takes the canonical path again. **Scope:** `repo_type="model"`
+via `upload_model` → `_upload` only — the ~1M-file DATA repo empirically
+still accepts pushes (enforcement is not uniform across repos; a future
+risk, not a current one), and direct-`HfApi` per-issue scripts,
+`upload_dir_sharded`, and `_upload_folder_filtered` are named residuals
+outside this fallback.
+
 ## v2 tasks (`workflow: v2`) — upload-by-default, no ceiling
 
 For a task whose frontmatter carries `workflow: v2`, the upload policy has NO

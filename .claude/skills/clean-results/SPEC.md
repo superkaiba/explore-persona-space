@@ -161,7 +161,8 @@ or GitHub `/blob/<sha>`).
 **Provenance: pull from REAL artifacts, never fabricate.** Training rows from the
 training JSONLs, eval probes from the probe bank, completions from HF
 `raw_completions`, judge prompts from the rubric file/constant in the eval+
-scoring code at the Code SHA. **Sanitize harmful/EM content** per `analyzer.md`
+scoring code at the Code SHA. **Sanitize harmful/EM AND real-world-corpus
+(LMSYS/WildChat-class; #1073) content** per `analyzer.md`
 § content hygiene — a ~15-word labeled excerpt + a `[truncated — harmful-content
 row; verify at <raw-completions path>, row <i>]` placeholder + the pinned raw
 path; a sanitized block SATISFIES the requirement.
@@ -949,11 +950,17 @@ Forward-only: each check branches on the sentinel. The v4 checks
     27 because 22-26 are taken by the generation-agnostic checks.)
 
 Generation-agnostic checks (v2 AND v3 AND v4): figure-URL-sha-matches
-(check 22), HF-URL-resolves (check 23), and figure-sidecar opaque
+(check 22), HF-URL-resolves (check 23), figure-sidecar opaque
 config-code tokens (check 28, WARN: `@L<digits>` layer pins + regime-code
 slugs in figure-sidecar-carried text — plain-English condition names only;
 slugs stay in the Repro config row; sidecar-carried strings, not full
-PNG-pixel coverage). The Goal-of-experiment frontmatter
+PNG-pixel coverage), and figure prose-numerics vs sidecar plotted values
+(check 33, WARN: every BOLDED decimal in a figure's what-is-plotted prose
+window — the previous-figure-bounded beat-1 slice plus the caption — must
+appear among the sidecar's plotted values under rounding / sign / percent
+tolerance; per-figure opt-out for genuinely derived quantities: the literal
+`<!-- prose-numerics: derived -->` anywhere in that window). The
+Goal-of-experiment frontmatter
 soft check + the Lens 14 concerns-audit run on v4 too (concerns mechanism
 1 → `### ` results under `## Results` + `## Takeaways` bullets).
 
@@ -1198,15 +1205,22 @@ JSONLs / probe banks — those are NOT raw_completions and are covered by
 the Data-shape check, not the raw-completions-link rule.
 
 **Harmful-content corpora (Betley-style EM, bad-medical-advice,
-refusal-bait pools):** example blocks ship SANITIZED per `analyzer.md`
+refusal-bait pools) AND real-world-corpus rollout text
+(LMSYS/WildChat-class; #1073):** example blocks ship SANITIZED per `analyzer.md`
 § Content hygiene — labeled "sanitized for context hygiene", a ~15-word
 excerpt plus a `[truncated — harmful-content row; verify at
 <raw-completions path>, row <i>]` placeholder in place of the full
 completion. The subset-disclosure line, row indices, and permanent links
 stay verbatim. The mechanical checks (18/19) accept this form exactly as
-the v2 finding-sample checks (10/11) do. Agents assembling Data sections
+the v2 finding-sample checks (10/11) do — the "sanitized for context
+hygiene" LABEL is the load-bearing token the checks key on
+(`verify_task_body.py` accepts the form via the class-agnostic
+`sanitized for context hygiene|harmful-content row|truncated — harmful`
+alternation), not the placeholder's exact noun, so a
+`[truncated — sanitized row; …]` variant over real-world-corpus rows
+passes identically. Agents assembling Data sections
 pull rows by grep + line offset (context-hygiene rule) — never page whole
-raw harmful-completion files into context.
+raw harmful-completion or real-world-corpus rollout files into context.
 
 ### `## Reproducibility`
 

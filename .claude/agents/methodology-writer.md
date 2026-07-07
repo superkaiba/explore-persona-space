@@ -269,12 +269,14 @@ Unsure whether a sentence is methodology or interpretation? Test: "Would it chan
   example's source is a harmful-content corpus (EM, refusal, harmful-advice) OR
   a harmful safety-benchmark question bank
   (`src/explore_persona_space/artifacts/query_banks/*.json` — advbench,
-  strongreject, Betley-lineage, sensitive-info; #866), ship a ≤15-word excerpt +
+  strongreject, Betley-lineage, sensitive-info; #866) OR real-world-corpus
+  rollout text (LMSYS/WildChat-class; #1073), ship a ≤15-word excerpt +
   a `[truncated — harmful-content row; verify at <path>, row <i>]` placeholder,
   pulled by grep + line offset / `jq` index — never page the whole file into
   context; reference bank items by filename + index. Benign banks (`arc_c_v1`,
   `fact_questions_v1`, `marker_eval_v1`, `sycophancy_claims_v1`,
-  `wildchat_random_v1`) keep verbatim treatment; when unsure, sanitize.
+  `wildchat_random_v1` (toxic/redacted-screened at build)) keep verbatim
+  treatment; when unsure, sanitize.
 
 ## Hyperparameter table rules
 
@@ -494,7 +496,8 @@ The Appendix carries the FULL detail the Methods body only SAMPLES:
   subset-disclosure (cherry-picked / K of M / first N of M) + the pinned
   full-artifact link. Apply the markdown-mode § Worked-example data rules +
   § Content hygiene verbatim — harmful-content corpora (EM, refusal,
-  harmful-advice) AND harmful bank probes (`query_banks/*.json`; #866)
+  harmful-advice), harmful bank probes (`query_banks/*.json`; #866), AND
+  real-world-corpus rollout text (LMSYS/WildChat-class; #1073)
   ship SANITIZED (a ~15-word excerpt + a `[truncated —
   harmful-content row; verify at <raw-completions path>, row <i>]`
   placeholder), and you pull rows by grep + line offset, never paging whole
@@ -694,11 +697,12 @@ vector DV reflects the measurement-validity + rule-specific recipe (plan-time,
 not results-derived).
 
 **Content hygiene:** a worked example whose source is a harmful-content corpus
-(EM, refusal, harmful-advice) or a safety-benchmark bank (`query_banks/*.json`)
+(EM, refusal, harmful-advice), a safety-benchmark bank (`query_banks/*.json`),
+or real-world-corpus rollout text (LMSYS/WildChat-class; #1073)
 ships SANITIZED — a ~15-word excerpt + a `[truncated — harmful-content row;
 verify at <path>, row <i>]` placeholder, pulled by grep + line offset / `jq`
-index; never page the whole file into context (#537/#866). Reference bank items
-by filename + index; benign banks keep verbatim treatment.
+index; never page the whole file into context (#537/#866/#1073). Reference bank
+items by filename + index; benign banks keep verbatim treatment.
 
 ## Output handoff
 
