@@ -25,15 +25,60 @@ One row per cell, verbatim from plans/v5.md §4: 22 MANDATORY trained cells,
 
 from __future__ import annotations
 
-# Plan §D2: the conversational-prefix arm binds the WildChat conversational
-# prefix (family="wildchat") — NOT the hand-authored synthetic
-# prefix_cooking_smalltalk (round-1 review Major: silent construct deviation).
-# Content residual: the committed instance's turns are the Phase-0b FIXED
-# WildChat-STYLE literal (its `source` field declares this openly); no real
-# sampled WildChat user+assistant turns exist in committed artifacts (the
-# committed wildchat_random_v1 bank is user prompts only) — carried as a
-# declared scope caveat on the concern record.
-CONV_CONTEXT_ID = "bare_wildchat_random"
+import json as _json
+from pathlib import Path as _Path
+
+from explore_persona_space.artifacts.context import CONTEXTS, Context
+
+# Plan §D2: the conversational-prefix arm binds a REAL WildChat-drawn 2-turn
+# prefix (family="wildchat"). fu3 r3 (concern
+# fu3-conv-context-synthetic-wildchat-style): the earlier binding
+# (bare_wildchat_random) carried a FIXED synthetic WildChat-STYLE literal;
+# a real sampled WildChat prefix DOES exist committed in-repo — the issue-545
+# battery `wildchat_prefix.json` (built by behavior_testbed_545/corpora.py
+# from allenai/WildChat-1M row 1: user turn verbatim, assistant turn
+# content[:2000]; the committed instance's turn lengths — 1373/2000 chars —
+# rule out the builder's short house fallback). We register it here and bind
+# CONV_CONTEXT_ID to it, closing the §D2 construct deviation.
+CONV_CONTEXT_ID = "wildchat_prefix_real545"
+_WILDCHAT_PREFIX_BATTERY = (
+    _Path(__file__).resolve().parents[1]
+    / "eval_results"
+    / "issue_545"
+    / "batteries"
+    / "wildchat_prefix.json"
+)
+
+
+def _register_real_wildchat_prefix() -> None:
+    """Register the committed real-WildChat 2-turn prefix into CONTEXTS under
+    ``CONV_CONTEXT_ID`` (idempotent). Fail-loud on a missing battery file
+    (sparse checkouts need the eval_results/issue_545 cone —
+    tests/sparse_cones.txt line 25) or a non-(user, assistant) turn shape."""
+    if CONV_CONTEXT_ID in CONTEXTS:
+        return
+    data = _json.loads(_WILDCHAT_PREFIX_BATTERY.read_text(encoding="utf-8"))
+    turns = tuple({"role": t["role"], "content": t["content"]} for t in data["prefix_turns"])
+    if tuple(t["role"] for t in turns) != ("user", "assistant") or not all(
+        t["content"].strip() for t in turns
+    ):
+        raise ValueError(
+            f"{_WILDCHAT_PREFIX_BATTERY}: expected a (user, assistant) 2-turn prefix, "
+            f"got roles={[t['role'] for t in turns]}"
+        )
+    CONTEXTS[CONV_CONTEXT_ID] = Context(
+        context_id=CONV_CONTEXT_ID,
+        kind="prefix",
+        family="wildchat",
+        prefix_turns=turns,
+        source=(
+            "eval_results/issue_545/batteries/wildchat_prefix.json — real WildChat-1M "
+            "2-turn prefix frozen by the 545 battery builder (corpora.py); fu3 r3 binding"
+        ),
+    )
+
+
+_register_real_wildchat_prefix()
 
 
 def _cell(

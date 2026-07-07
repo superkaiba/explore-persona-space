@@ -84,6 +84,15 @@ ISSUE = 1090
 DATA_PREFIX_FU3 = "issue1090_fu3"  # distinct from the round-1 DATA_PREFIX
 MODEL_PREFIX_FU3 = "adapters/issue1090_fu3"
 JUDGE_MAX_TOKENS = 300  # llm-judging rule 23 — the #1090 truncation fix, EXPLICIT everywhere
+# fu3 r3 (concern fu3-posonly-bare-datagen-yield-floor): the DEFAULT positive
+# request-budget multiplier for posonly x bare cells. Grounding — the B2
+# FULL-scale smoke's C3-bare-pos read (the concern record + the target_n clamp
+# comment below): kept 5 positives of the 36-request mult-1.0 budget
+# (keep-rate ~0.139) vs floor 20 => break-even mult 20/5 = 4.0; 5.0 carries a
+# 1.25x margin (180 requests -> E[kept] ~= 25). An explicit --oversample-mult
+# always wins; non-(posonly x bare) cells keep 1.0.
+POSONLY_BARE_OVERSAMPLE_MULT = 5.0
+FU3_MAX_OVERSAMPLE_MULT = 6.0  # fu3 CLI + datagen fence (round-1 cells keep the 2x fence)
 BASE_VLLM_PORT = 8000  # worker i binds VLLM_PORT = 8000 + i (plan §D7)
 SENTINEL_SCHEMA_VERSION = 1
 DEFAULT_SENTINEL_DIR = Path("/workspace/logs")
@@ -102,20 +111,26 @@ N_HELD_OUT_PERSONAS = 2
 # the full {raw_pos,raw_neg,judge_rows}.jsonl sidecar set; c3's datagen dir does
 # NOT (its negatives came from the amendment-v4 top-up tranche uploaded under
 # datagen_topup/, whose judge-kept record is kept_{pos,neg}.jsonl — see
-# derive_margin_pools_from_topup below); c6 has NO negative-side artifact
-# anywhere on the repo, so broad_em's tf_margin is a DECLARED missing companion
-# (BLOCKER concern fu3-margin-pool-broad-em-unstageable), never a silent "n/a".
+# derive_margin_pools_from_topup below). broad_em's pool stages from the fu3-r3
+# pool-ONLY tranche built by scripts/issue1090_fu3_margin_pool_topup.py
+# (BLOCKER fu3-margin-pool-broad-em-unstageable: positives replayed from the
+# committed c6 datagen judge outcomes, negatives freshly generated +
+# judge-filtered; same topup sidecar schema, never a training mix).
 V4_POOL_SOURCE = {
     "formatting": ("c1-formatting-claude", "datagen"),
     "impolite": ("c2-impolite-claude", "datagen"),
     "sycophancy": ("c3-sycophancy-claude", "datagen_topup"),
+    "broad_em": ("c6-broad_em-claude", "margin_pool_topup"),
 }
-MARGIN_POOL_UNAVAILABLE = {
-    "broad_em": (
-        "c6-broad_em-claude has no raw_neg.jsonl/judge_rows.jsonl and no datagen_topup "
-        "on the data repo (scoped list_repo_tree probe 2026-07-07): the fixed "
-        "negative-side pool cannot be staged from any committed artifact"
-    ),
+# Empty since fu3 r3 (the broad_em pool tranche is staged); the loud-failure
+# plumbing stays for any future genuinely-unstageable behavior.
+MARGIN_POOL_UNAVAILABLE: dict[str, str] = {}
+# Optional EXTRA pool tranche UNIONED into the base pool (deduped on
+# request_id, base rows keep priority, capped at DEFAULT_MARGIN_POOL_CAP):
+# sycophancy tops up its n_pos=7 base positives toward the 25 cap from the
+# fu3-r3 pos-only tranche (concern fu3-sycophancy-margin-pool-n7).
+MARGIN_POOL_EXTRA = {
+    "sycophancy": ("c3-sycophancy-claude", "margin_pool_topup"),
 }
 
 
@@ -360,11 +375,40 @@ def derive_margin_pools_from_topup(
     return pools["positive"][:cap], pools["negative"][:cap]
 
 
+def _read_topup_pool_arm(d: Path, arm: str) -> list[dict]:
+    """Relaxed SINGLE-arm reader over the topup sidecar schema (missing files ->
+    []) — the MARGIN_POOL_EXTRA union path, where a tranche may be pos-only.
+    Returns rows in the derive_margin_pools pair shape, deterministically
+    sorted; never raises on an empty arm (the union caller decides loudness)."""
+    raw = d / ("raw_pos.jsonl" if arm == "positive" else "raw_neg.jsonl")
+    kept = d / ("kept_pos.jsonl" if arm == "positive" else "kept_neg.jsonl")
+    if not (raw.exists() and kept.exists()):
+        return []
+    kept_rids = {r["request_id"] for r in _read_jsonl(kept)}
+    rows = [
+        {
+            "probe": row["question"],
+            "answer": row["completion"],
+            "question_id": row["question_id"],
+            "variant_id": row["variant_id"],
+            "request_id": row["request_id"],
+        }
+        for row in _read_jsonl(raw)
+        if row.get("completion") is not None
+        and row["request_id"] in kept_rids
+        and row["arm"] == arm
+    ]
+    rows.sort(key=lambda p: (p["question_id"], p["variant_id"]))
+    return rows
+
+
 def _behavior_margin_pools(cfg: run1090.RunConfig, behavior: str) -> tuple[list, list]:
     """Behavior-level FIXED tf-margin pools (plan §D6): staged once per behavior
-    from the round-1 v4 claude-arm artifacts (V4_POOL_SOURCE) — the SAME pool for
-    every fu3 context/regime cell of that behavior. Raises ValueError (LOUD,
-    cell-failing) for an unstageable or unregistered behavior."""
+    from the round-1 v4 claude-arm artifacts (V4_POOL_SOURCE), then unioned with
+    any MARGIN_POOL_EXTRA tranche (dedup on request_id, base rows keep priority,
+    capped at DEFAULT_MARGIN_POOL_CAP) — the SAME pool for every fu3
+    context/regime cell of that behavior. Raises ValueError (LOUD, cell-failing)
+    for an unstageable / unregistered behavior or an empty staged extra."""
     if behavior in MARGIN_POOL_UNAVAILABLE:
         raise ValueError(
             f"tf_margin pool unavailable for {behavior!r}: {MARGIN_POOL_UNAVAILABLE[behavior]}"
@@ -376,9 +420,38 @@ def _behavior_margin_pools(cfg: run1090.RunConfig, behavior: str) -> tuple[list,
     dest = cfg.out_root / "margin_pools" / behavior
     if not (dest / "raw_pos.jsonl").exists():
         run1090._stage_hf_prefix(f"{run1090.DATA_PREFIX}/{slug}/{subdir}", dest)
-    if subdir == "datagen_topup":
-        return derive_margin_pools_from_topup(dest)
-    return derive_margin_pools(dest)
+    if subdir == "datagen":
+        pos, neg = derive_margin_pools(dest)
+    else:  # topup sidecar schema (datagen_topup / margin_pool_topup)
+        pos, neg = derive_margin_pools_from_topup(dest)
+    extra = MARGIN_POOL_EXTRA.get(behavior)
+    if extra is not None:
+        slug2, subdir2 = extra
+        dest2 = cfg.out_root / "margin_pools" / f"{behavior}_extra"
+        if not (dest2 / "raw_pos.jsonl").exists() and not (dest2 / "raw_neg.jsonl").exists():
+            run1090._stage_hf_prefix(f"{run1090.DATA_PREFIX}/{slug2}/{subdir2}", dest2)
+        extra_rows = 0
+        for arm, pool in (("positive", pos), ("negative", neg)):
+            arm_rows = _read_topup_pool_arm(dest2, arm)
+            extra_rows += len(arm_rows)
+            seen = {p["request_id"] for p in pool}
+            for r in arm_rows:
+                if len(pool) >= DEFAULT_MARGIN_POOL_CAP:
+                    break
+                if r["request_id"] not in seen:
+                    pool.append(r)
+        if extra_rows == 0:
+            raise ValueError(
+                f"MARGIN_POOL_EXTRA tranche {slug2}/{subdir2} staged 0 kept rows for "
+                f"{behavior!r} — staging bug, never a silent no-op"
+            )
+        logger.info(
+            "[fu3-pool] %s: unioned extra tranche -> n_pos=%d n_neg=%d",
+            behavior,
+            len(pos),
+            len(neg),
+        )
+    return pos, neg
 
 
 def cmd_cell(args: argparse.Namespace) -> int:  # noqa: C901 — the per-cell §D7 phase chain
@@ -418,6 +491,14 @@ def cmd_cell(args: argparse.Namespace) -> int:  # noqa: C901 — the per-cell §
         )
 
     shim = run_cell_shim(row)
+    ctx = ensure_context(row["context_id"], row["behavior"])
+    posonly = row["regime"] == "posonly"
+    # fu3 r3 (concern fu3-posonly-bare-datagen-yield-floor): posonly x bare
+    # cells default to the measured-keep-rate budget (see
+    # POSONLY_BARE_OVERSAMPLE_MULT); an explicit --oversample-mult wins.
+    oversample_mult = args.oversample_mult
+    if oversample_mult is None:
+        oversample_mult = POSONLY_BARE_OVERSAMPLE_MULT if (posonly and ctx.kind == "bare") else 1.0
     cfg = run1090.RunConfig(
         smoke=args.smoke,
         cells=(shim,),
@@ -428,18 +509,18 @@ def cmd_cell(args: argparse.Namespace) -> int:  # noqa: C901 — the per-cell §
         # floor-gated at production scale (B2 smoke: C3-bare-pos yield-missed
         # kept 5 < floor 20 before the clamp).
         target_n=(6 if args.smoke else run1090.TARGET_N),
-        # The plan's floored-cell retry lever (v4 r4 precedent; fenced to
-        # [1.0, 2.0] by run1090._oversample_mult_arg at the CLI). Deliberately
-        # excluded from regime_key(): a retune re-runs the floored cell in the
-        # SAME out_root.
-        oversample_mult=args.oversample_mult,
+        # The plan's floored-cell retry lever (v4 r4 precedent), widened for
+        # the fu3 posonly x bare carve-out to [1.0, FU3_MAX_OVERSAMPLE_MULT]
+        # (datagen threads max_oversample_mult; round-1 callers keep the 2x
+        # fence). Deliberately excluded from regime_key(): a retune re-runs
+        # the floored cell in the SAME out_root.
+        oversample_mult=oversample_mult,
+        max_oversample_mult=FU3_MAX_OVERSAMPLE_MULT,
         eval_question_limit=args.eval_question_limit,
         upload=not args.no_upload,
         sentinel_dir=sentinel_dir,
     )
     seams = run1090.make_smoke_seams(cfg) if args.smoke else run1090.Seams1090()
-    ctx = ensure_context(row["context_id"], row["behavior"])
-    posonly = row["regime"] == "posonly"
     cell_root = cfg.out_root / shim.slug
     result: dict[str, Any] = {
         "cell_id": row["cell_id"],
@@ -1014,11 +1095,28 @@ def parse_args(argv=None) -> argparse.Namespace:
     c.add_argument("--allow-unpinned-gpu", action="store_true")
     c.add_argument(
         "--oversample-mult",
-        type=run1090._oversample_mult_arg,
-        default=1.0,
-        help="positive request-budget multiplier for a floored-cell retune ([1.0, 2.0])",
+        type=_fu3_oversample_mult_arg,
+        default=None,
+        help=(
+            "positive request-budget multiplier ([1.0, "
+            f"{FU3_MAX_OVERSAMPLE_MULT}]; default: {POSONLY_BARE_OVERSAMPLE_MULT} for "
+            "posonly x bare cells — the measured C3-bare-pos keep-rate, see "
+            "POSONLY_BARE_OVERSAMPLE_MULT — else 1.0)"
+        ),
     )
     return ap.parse_args(argv)
+
+
+def _fu3_oversample_mult_arg(s: str) -> float:
+    """argparse type: floats in [1.0, FU3_MAX_OVERSAMPLE_MULT] — the fu3
+    posonly x bare carve-out widens the round-1 2x fence (threaded to datagen
+    via RunConfig.max_oversample_mult; never below 1.0 — no undersample)."""
+    v = float(s)
+    if not 1.0 <= v <= FU3_MAX_OVERSAMPLE_MULT:
+        raise argparse.ArgumentTypeError(
+            f"--oversample-mult must be in [1.0, {FU3_MAX_OVERSAMPLE_MULT}], got {v}"
+        )
+    return v
 
 
 def main(argv=None) -> int:

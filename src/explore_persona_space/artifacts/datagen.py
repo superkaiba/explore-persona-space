@@ -770,16 +770,22 @@ def _negative_arm(
 # ── Public entry point ───────────────────────────────────────────────────────
 
 
-def _validate_scalar_fences(quota_floor: float, oversample_mult: float) -> None:
+def _validate_scalar_fences(
+    quota_floor: float, oversample_mult: float, max_oversample_mult: float = 2.0
+) -> None:
     """Fail loud on out-of-fence scalar knobs: quota_floor in (0, 1];
-    oversample_mult in [1.0, 2.0] (the #1090 plan's 2x request-count fence —
-    never a silent clamp, never an undersample)."""
+    oversample_mult in [1.0, max_oversample_mult] (default 2.0 — the #1090
+    plan's 2x request-count fence; the #1090-fu3 posonly x bare yield-floor
+    carve-out widens it per-call — never a silent clamp, never an
+    undersample)."""
     if not 0.0 < quota_floor <= 1.0:
         raise ValueError(f"quota_floor must be in (0, 1], got {quota_floor}")
-    if not 1.0 <= oversample_mult <= 2.0:
+    if not max_oversample_mult >= 1.0:
+        raise ValueError(f"max_oversample_mult must be >= 1.0, got {max_oversample_mult}")
+    if not 1.0 <= oversample_mult <= max_oversample_mult:
         raise ValueError(
-            f"oversample_mult must be in [1.0, 2.0] (the plan's 2x request-count fence), "
-            f"got {oversample_mult}"
+            f"oversample_mult must be in [1.0, {max_oversample_mult}] (the request-count "
+            f"fence), got {oversample_mult}"
         )
 
 
@@ -800,6 +806,7 @@ def generate_training_data(
     instruction_style: str = "tagged",
     instruction_source: str = "elicitation",
     oversample_mult: float = 1.0,
+    max_oversample_mult: float = 2.0,
 ) -> tuple[Path, Path, Path]:
     """Build contrastive (positive, contrast) training JSONL for ``behavior``.
 
@@ -840,7 +847,12 @@ def generate_training_data(
             f"behavior {behavior.name!r} is programmatic (tier-4 carve-out) — "
             "programmatic behaviors never route through the unified datagen pipeline"
         )
-    _validate_scalar_fences(quota_floor, oversample_mult)
+    # ``max_oversample_mult`` (default 2.0 — byte-identical round-1 fence) is
+    # the #1090-fu3 posonly x bare carve-out: the fu3 worker passes a wider
+    # fence so a measured-keep-rate budget (mult 5.0) can clear the yield
+    # floor. The fence never enters the manifest resume key (a budget retune
+    # deliberately re-runs in the same regime — see the oversample_mult note).
+    _validate_scalar_fences(quota_floor, oversample_mult, max_oversample_mult)
     # #1090 fu3: an explicitly-passed EMPTY panel is the sanctioned pos-only
     # twin (neg_ratio=0 — no negative rows; the generic interleave happens
     # downstream in the mix assembler). None / malformed members still fail

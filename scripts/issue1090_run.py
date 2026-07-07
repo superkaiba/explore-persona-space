@@ -253,6 +253,11 @@ class RunConfig:
     # per-cell provenance, recorded in each cell's datagen_summary.json AND in
     # gen_manifest.json (the library resume key).
     oversample_mult: float = 1.0
+    # Upper fence for oversample_mult (threaded to datagen's scalar-fence
+    # check). 2.0 = the round-1 plan fence (byte-identical default); the fu3
+    # worker raises it to FU3_MAX_OVERSAMPLE_MULT for the posonly x bare
+    # yield-floor carve-out (concern fu3-posonly-bare-datagen-yield-floor).
+    max_oversample_mult: float = 2.0
     gen_temperature: float = 1.0
     tier1_n: int = TIER1_N_COMPLETIONS
     tier1_draws: int = TIER1_JUDGE_DRAWS
@@ -369,6 +374,10 @@ def _datagen_kwargs(cfg: RunConfig, cell: Cell, gen_fn) -> dict:
         instruction_style="plain",  # #1074 setting (plan §11)
         instruction_source="extraction_pairs",  # the #1090 core delta (plan D2)
         oversample_mult=cfg.oversample_mult,  # round-4 allowed 2x retune (API + qwen cells)
+        # fu3 posonly x bare carve-out: the fu3 worker widens the request-count
+        # fence (concern fu3-posonly-bare-datagen-yield-floor); round-1 callers
+        # keep the default 2.0, so their behavior is byte-identical.
+        max_oversample_mult=cfg.max_oversample_mult,
     )
 
 

@@ -211,14 +211,89 @@ def test_topup_pool_derivation_and_kept_filter(tmp_path):
         fu3w.derive_margin_pools_from_topup(d)
 
 
-def test_margin_pool_unavailable_behavior_raises_loud(tmp_path):
-    """broad_em is the DECLARED-unstageable behavior: _behavior_margin_pools
-    raises (cell-failing) instead of degrading to a silent n/a."""
+def test_margin_pool_unavailable_behavior_raises_loud(tmp_path, monkeypatch):
+    """The loud-failure plumbing survives fu3 r3 (broad_em now STAGES from its
+    margin_pool_topup tranche and left the set): an UNAVAILABLE-registered
+    behavior raises (cell-failing) instead of degrading to a silent n/a, and
+    an unregistered behavior raises the no-source error."""
     cfg = types.SimpleNamespace(out_root=tmp_path)
+    monkeypatch.setitem(fu3w.MARGIN_POOL_UNAVAILABLE, "broad_em", "synthetic test entry")
     with pytest.raises(ValueError, match="tf_margin pool unavailable for 'broad_em'"):
         fu3w._behavior_margin_pools(cfg, "broad_em")
     with pytest.raises(ValueError, match="no v4 pool source"):
         fu3w._behavior_margin_pools(cfg, "not_a_behavior")
+
+
+def _write_jsonl(path, rows):
+    path.write_text("".join(json.dumps(r) + "\n" for r in rows), encoding="utf-8")
+
+
+def _topup_rows(arm, n, prefix, q0=0):
+    """(raw_rows, kept_rows) in the topup sidecar schema, all judge-kept."""
+    raw, kept = [], []
+    for i in range(n):
+        rid = f"{prefix}{arm[:3]}-{i:05d}"
+        raw.append(
+            {
+                "request_id": rid,
+                "arm": arm,
+                "question_id": f"q-{q0 + i:04d}",
+                "variant_id": "ev0",
+                "question": f"probe {q0 + i}",
+                "completion": f"answer {i}",
+            }
+        )
+        kept.append({"request_id": rid})
+    return raw, kept
+
+
+def test_margin_pool_extra_union_dedup_and_cap(tmp_path):
+    """fu3 r3 (fu3-sycophancy-margin-pool-n7): the MARGIN_POOL_EXTRA tranche
+    unions into the base topup pool — base rows keep priority, request_ids
+    dedup, capped at DEFAULT_MARGIN_POOL_CAP. Real files through the REAL
+    production body; the HF staging boundary never fires (dirs pre-staged)."""
+    base = tmp_path / "margin_pools" / "sycophancy"
+    extra = tmp_path / "margin_pools" / "sycophancy_extra"
+    base.mkdir(parents=True)
+    extra.mkdir(parents=True)
+    braw_p, bkept_p = _topup_rows("positive", 7, "t", q0=0)
+    braw_n, bkept_n = _topup_rows("negative", 25, "t", q0=100)
+    _write_jsonl(base / "raw_pos.jsonl", braw_p)
+    _write_jsonl(base / "kept_pos.jsonl", bkept_p)
+    _write_jsonl(base / "raw_neg.jsonl", braw_n)
+    _write_jsonl(base / "kept_neg.jsonl", bkept_n)
+    eraw_p, ekept_p = _topup_rows("positive", 30, "mp", q0=200)
+    # A base-duplicate request_id in the extra must dedup, never double-count.
+    eraw_p.append(dict(braw_p[0]))
+    ekept_p.append({"request_id": braw_p[0]["request_id"]})
+    _write_jsonl(extra / "raw_pos.jsonl", eraw_p)
+    _write_jsonl(extra / "kept_pos.jsonl", ekept_p)
+    cfg = types.SimpleNamespace(out_root=tmp_path)
+    pos, neg = fu3w._behavior_margin_pools(cfg, "sycophancy")
+    assert len(pos) == fu3w.DEFAULT_MARGIN_POOL_CAP, len(pos)  # 7 base + extra to the cap
+    assert len(neg) == 25
+    assert [p["request_id"] for p in pos[:7]] == [r["request_id"] for r in braw_p]
+    assert len({p["request_id"] for p in pos}) == len(pos)
+
+
+def test_margin_pool_extra_empty_tranche_raises(tmp_path):
+    """A staged-but-empty MARGIN_POOL_EXTRA tranche is a staging bug: the union
+    raises loud, never a silent no-op."""
+    base = tmp_path / "margin_pools" / "sycophancy"
+    extra = tmp_path / "margin_pools" / "sycophancy_extra"
+    base.mkdir(parents=True)
+    extra.mkdir(parents=True)
+    braw_p, bkept_p = _topup_rows("positive", 2, "t", q0=0)
+    braw_n, bkept_n = _topup_rows("negative", 2, "t", q0=100)
+    _write_jsonl(base / "raw_pos.jsonl", braw_p)
+    _write_jsonl(base / "kept_pos.jsonl", bkept_p)
+    _write_jsonl(base / "raw_neg.jsonl", braw_n)
+    _write_jsonl(base / "kept_neg.jsonl", bkept_n)
+    _write_jsonl(extra / "raw_pos.jsonl", [])
+    _write_jsonl(extra / "kept_pos.jsonl", [])
+    cfg = types.SimpleNamespace(out_root=tmp_path)
+    with pytest.raises(ValueError, match="staged 0 kept rows"):
+        fu3w._behavior_margin_pools(cfg, "sycophancy")
 
 
 def test_conv_context_is_wildchat_family():
