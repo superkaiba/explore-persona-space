@@ -38,7 +38,7 @@ CELL_LABEL = {
     "c3": "C3 sycophancy\n(Claude, neutral)",
     "c4": "C4 sycophancy\n(Claude, hard-fact)",
     "c5": "C5 sycophancy\n(Qwen, neutral)",
-    "c6": "C6 broad_em\n(Claude, neutral)",
+    "c6": "C6 broad misalignment\n(Claude, neutral)",
 }
 
 

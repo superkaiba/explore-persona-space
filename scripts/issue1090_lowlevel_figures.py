@@ -45,7 +45,7 @@ CELL_LABELS = {
     "c3-sycophancy-claude": "C3 sycophancy\n(Claude, neutral)",
     "c4-sycophancy_hardfact-claude": "C4 sycophancy\n(Claude, hard-fact)",
     "c5-sycophancy-qwen": "C5 sycophancy\n(Qwen, neutral)",
-    "c6-broad_em-claude": "C6 broad_em\n(Claude, neutral)",
+    "c6-broad_em-claude": "C6 broad misalignment\n(Claude, neutral)",
 }
 TRAINED_CELLS = ["c1-formatting-claude", "c2-impolite-claude", "c3-sycophancy-claude"]
 THRESHOLD = 50  # graded judge keep threshold (behavior.threshold for all three cells)
@@ -166,6 +166,18 @@ def fig_dose_curves_labeled() -> None:
     fig, axes = plt.subplots(1, 3, figsize=(13, 4.4), sharey=True)
     for ax, cell in zip(axes, TRAINED_CELLS, strict=True):
         d = json.load(open(EVAL / "install" / f"{cell}_dose_curve.json"))
+        inst = json.load(open(EVAL / "install" / f"{cell}_install.json"))
+        base_rate = inst["reads"]["base"]["rate"]
+        ax.axhline(base_rate, color="0.35", ls="--", lw=1.2, zorder=2)
+        ax.annotate(
+            f"base {base_rate:.2f}",
+            (0.98, base_rate),
+            xycoords=("axes fraction", "data"),
+            fontsize=7.5,
+            color="0.35",
+            ha="right",
+            va="bottom",
+        )
         steps = [int(s) for s in d["rates_by_step"]]
         rates = list(d["rates_by_step"].values())
         ax.plot(steps, rates, marker="o", ms=5, lw=1.8, color="#2b6cb0", zorder=3)
@@ -195,7 +207,7 @@ def fig_dose_curves_labeled() -> None:
     axes[0].set_ylabel("own-persona rate (Tier 1:\n5 completions per eval question)")
     fig.suptitle(
         "Dose curves with per-rung rates labeled (circle: selected rung; "
-        "shaded: registered 0.60-0.85 band)",
+        "shaded: registered 0.60-0.85 band; dashed: own-persona base rate, Tier 2)",
         fontsize=11,
     )
     fig.tight_layout()
