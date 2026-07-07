@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1094,
+  "highest_id": 1095,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -732,16 +732,23 @@
     "1093": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1093",
-      "status": "running",
+      "path": "tasks/completed/1093",
+      "status": "completed",
       "title": "workflow-fix: verify_plan check for 7B capture booked on eval/debug intent"
     },
     "1094": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1094",
-      "status": "running",
+      "path": "tasks/completed/1094",
+      "status": "completed",
       "title": "workflow-fix: verify_plan precedent-vs-decision-band coherence check"
+    },
+    "1095": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/running/1095",
+      "status": "running",
+      "title": "workflow-fix: pod-side results-sentinel version lands below max on multi-round tasks"
     },
     "11": {
       "has_clean_result": false,
