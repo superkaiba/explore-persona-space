@@ -342,7 +342,14 @@ def batched_dvs_over_indices(
         # Keep the n_keep LARGEST eigenvalues (parity with min(m, d) SVD modes).
         lam_np = lam.numpy()[:, ::-1][:, :n_keep]
         for b in range(c):
-            dvs = spectral_dvs_from_lambda(lam_np[b])
+            try:
+                dvs = spectral_dvs_from_lambda(lam_np[b])
+            except ValueError:
+                # Degenerate resample (all-identical rows) — mirror the serial
+                # cluster_bootstrap_dv skip semantics: NaN, dropped at quantile.
+                for name in dv_names:
+                    out[name][start + b] = np.nan
+                continue
             for name in dv_names:
                 out[name][start + b] = dvs[name]
     return out
@@ -384,16 +391,18 @@ def batched_cluster_bootstrap(
     )
     ci = {
         name: [
-            float(np.quantile(vals, alpha / 2)),
-            float(np.quantile(vals, 1 - alpha / 2)),
+            float(np.nanquantile(vals, alpha / 2)),
+            float(np.nanquantile(vals, 1 - alpha / 2)),
         ]
         for name, vals in draws.items()
     }
+    n_valid = int(np.isfinite(next(iter(draws.values()))).sum()) if draws else 0
     return {
         "point": {name: float(point[name]) for name in dv_names},
         "ci": ci,
         "draws": draws,
         "n_boot": int(idx.shape[0]),
+        "n_valid": n_valid,
         "resampling": "paired-capable-cluster",
     }
 
