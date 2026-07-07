@@ -12,11 +12,11 @@ origin_prompt: can we check the difference between LoRA and full finetuning on t
   residual stream activations?
 workflow: v1
 goal: 'Compare the residual-stream activation-shift geometry (trained-minus-base,
-  per layer: rank/participation-ratio, direction alignment, magnitude) of a MATCHED
-  LoRA vs full-fine-tune organism installing the same behavior at matched strength
-  — extending #653''s LoRA-only diffuse rank-k read to a full-FT twin, and testing
-  whether 2410.21228''s weight-space intruder-dimension difference manifests in activation
-  space.'
+  per layer: rank/participation-ratio, direction alignment, magnitude) of MATCHED
+  LoRA vs full-fine-tune organisms for TWO behaviors — the programmatic marker and
+  sycophancy — each installed at matched strength, extending #653''s LoRA-only diffuse
+  rank-k read to full-FT twins and testing whether 2410.21228''s weight-space intruder-dimension
+  difference manifests in activation space.'
 ---
 ## Overview / Motivation
 
@@ -47,7 +47,7 @@ ACTIVATION space — which #653 (LoRA) + this (full-FT) together would answer.
 
 ## Goal
 
-Compare the residual-stream activation-shift geometry (trained-minus-base, per layer: rank/participation-ratio, direction alignment, magnitude) of a MATCHED LoRA vs full-fine-tune organism installing the same behavior at matched strength — extending #653's LoRA-only diffuse rank-k read to a full-FT twin, and testing whether 2410.21228's weight-space intruder-dimension difference manifests in activation space.
+Compare the residual-stream activation-shift geometry (trained-minus-base, per layer: rank/participation-ratio, direction alignment, magnitude) of MATCHED LoRA vs full-fine-tune organisms for TWO behaviors — the programmatic marker and sycophancy — each installed at matched strength, extending #653's LoRA-only diffuse rank-k read to full-FT twins and testing whether 2410.21228's weight-space intruder-dimension difference manifests in activation space.
 
 ## Design sketch (planner formalizes)
 
