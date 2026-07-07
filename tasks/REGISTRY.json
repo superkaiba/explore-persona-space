@@ -1,6 +1,6 @@
 {
   "376": "tasks/awaiting_promotion/376",
-  "highest_id": 1097,
+  "highest_id": 1098,
   "tasks": {
     "1": {
       "has_clean_result": false,
@@ -763,6 +763,13 @@
       "path": "tasks/proposed/1097",
       "status": "proposed",
       "title": "daily-fix: Step 10d lint verdict consumed before gh pr merge"
+    },
+    "1098": {
+      "has_clean_result": false,
+      "kind": "infra",
+      "path": "tasks/proposed/1098",
+      "status": "proposed",
+      "title": "daily-fix: repo-root guard false-positive on pod-side git in"
     },
     "11": {
       "has_clean_result": false,
