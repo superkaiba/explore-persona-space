@@ -46,7 +46,9 @@
 # string, a pod-side script, or the SSH MCP (which bypasses the Bash hook
 # entirely). Never waived, deliberately: an ssh clause naming the shared-repo
 # path in any covered spelling (literal / $HOME/ / ~/ + the repo basename),
-# and ANY waived-word clause in pipeline-producer position.
+# and ANY waived-word clause in pipeline-producer / background position or
+# carrying a non-/dev/null output redirect (`> f` — the same-call
+# write-then-execute channel, closed round 2).
 #
 # Contract: reads the PreToolUse JSON on stdin, blocks (exit 2 + stderr fed
 # back to Claude) only when a branch-CHANGING git command would move the
@@ -229,7 +231,20 @@
 #       2>&1 ...` — the fd-dup's single & mis-splits as BG, hiding a
 #       following pipe from the lookahead, so BG refuses too — all stay
 #       blocked; remediation: `git -C /workspace/... <verb>` inside the
-#       remote string, which the pipe-blind `-C` waiver allows). Also
+#       remote string, which the pipe-blind `-C` waiver allows); and ANY
+#       waived-word clause carrying a `>`/`>>` output redirect whose
+#       target is not exactly /dev/null (round-2 arm, cond (3b): closes
+#       the same-call write-then-execute channel `ssh h 'echo <gated>'
+#       > /tmp/x; bash /tmp/x`; refused consumer-independently and in
+#       EVERY position incl. nextsep=END, so the harmless conveniences
+#       refuse too — `grep '<gated>' . -r > results.txt`, a REMOTE-side
+#       redirect inside the quoted ssh string (`ssh pod 'git checkout
+#       HEAD -- f > /tmp/log'` — the raw scan cannot tell it from a
+#       local one), a literal `>` inside a grep PATTERN, and a
+#       /dev/null redirect flush against the closing quote
+#       (`'... 2>/dev/null'`); remediation: drop the redirect, target
+#       /dev/null with a whitespace/EOL boundary (`2>/dev/null` stays
+#       waived), or `git -C`). Also
 #       here: `git grep '<gated>'`
 #       clauses stay blocked (clause-initial word is `git`, not
 #       grep-family) — remediation: plain `grep`. QUALIFIER for register
@@ -245,10 +260,18 @@
 #       ARE refused); NON-CANONICAL shared-repo path spellings beyond the
 #       three covered globs (doubled slash `/home/...//<repo>`,
 #       $USER-composed paths, a `cd /home/...` + relative `--git-dir`
-#       split across the mis-split boundary); and variable-indirection
+#       split across the mis-split boundary); variable-indirection
 #       same-VM targeting (`ssh $HOST '...'` with the repo path held in a
 #       remote-side variable — resolving remote host identity / variable
-#       values is outside a raw-scan design by construction). The heredoc
+#       values is outside a raw-scan design by construction); and the
+#       CROSS-CALL write-then-execute form ONLY (write the recipe in one
+#       tool call, execute it in the next — a per-call hook cannot see
+#       across calls by construction; the gap-(xii) heredoc-to-file strip
+#       is the named cross-call writer). The SAME-CALL redirect channel
+#       is NOT in this register: it is CLOSED by the round-2 cond (3b)
+#       refusal above, and a same-call gated write under a NON-waived
+#       command word (`echo git reset --hard > /tmp/x`) was always
+#       blocked by the raw scan. The heredoc
 #       asymmetry is deliberate: a single-clause remote git op is waived
 #       while a heredoc body fed to `ssh host bash` stays blocked (C8) —
 #       shellish() strips only provably-inert DATA, and a body handed to a
@@ -873,6 +896,31 @@ while IFS=$'\t' read -r sep nextsep clause; do
   #       a full gated literal blocks today and MUST keep blocking — the
   #       round-1 statistics blocker), keeping raw-scan parity for
   #       here-string literals at zero incident cost.
+  #   (3b) NO local file OUTPUT REDIRECT — `>`/`>>` with optional fd digits
+  #       (`2>`, `1>>`) — unless its target is exactly /dev/null followed
+  #       by whitespace/end-of-clause. Round-2 fail-closed arm (concern id
+  #       redirect-file-producer-failopen): without it a waived producer
+  #       could write gated text to a LOCAL file a later same-call clause
+  #       executes (`ssh host 'echo git reset --hard' > /tmp/x; bash
+  #       /tmp/x` — nextsep=SEQ/AND/NL/END, so cond (2) never fires; the
+  #       consumer clause carries no gated literal and clears the loose
+  #       gate). The check is a strip-then-scan: redirects targeting
+  #       exactly /dev/null are stripped (a discard-only sink can never be
+  #       re-read or executed — keeps the `2>/dev/null` sweep convenience
+  #       waivable), then ANY remaining `>` refuses the waiver,
+  #       consumer-independently and REGARDLESS of position (incl.
+  #       nextsep=END — no same-call consumer exists there, but refusing
+  #       is strictly status-quo-preserving: every redirect-carrying gated
+  #       producer shape is rc=2 on main today, so the refusal costs only
+  #       un-waived convenience; fail-closed residual FPs in gap (xiv):
+  #       `> results.txt` capture, a remote-side redirect inside the
+  #       quoted ssh string, a literal `>` in a grep PATTERN, and a
+  #       /dev/null redirect flush against the closing quote —
+  #       `'... 2>/dev/null'` — whose boundary is `'`, not whitespace).
+  #       Only pure `>`/`>>`/`N>`/`N>>` spellings can reach this arm: every
+  #       `&`-carrying redirect (`&>`, `&>>`, `2>&1`, `>&2`, `|&`) is
+  #       mis-split by the sed pre-pass into a BG/PIPE separator (cond (2)
+  #       refuses), `>|` exposes a PIPE, and `>(` is refused by (3).
   #   (4) [ssh only] no ProxyCommand/LocalCommand/KnownHostsCommand token
   #       (ssh executes all three LOCALLY, in this cwd — KnownHostsCommand
   #       since OpenSSH 8.4) and no shared-repo path in ANY covered
@@ -898,7 +946,10 @@ while IFS=$'\t' read -r sep nextsep clause; do
   # above already allows it), a pod-side script, or the SSH MCP.
   if echo "$clause" | grep -qE '^(ssh|grep|egrep|fgrep|rg)[[:space:]]'; then
     if [ "$nextsep" != PIPE ] && [ "$nextsep" != BG ] \
-       && ! echo "$clause" | grep -qE '\$\(|\$\{|`|<\(|>\(|<<<'; then
+       && ! echo "$clause" | grep -qE '\$\(|\$\{|`|<\(|>\(|<<<' \
+       && ! echo "$clause" \
+            | sed -E 's@[0-9]*>>?[[:space:]]*/dev/null([[:space:]]|$)@ @g' \
+            | grep -q '>'; then
       if echo "$clause" | grep -qE '^ssh[[:space:]]'; then
         if ! echo "$clause" | grep -qiE 'proxycommand|localcommand|knownhostscommand'; then
           case "$clause" in

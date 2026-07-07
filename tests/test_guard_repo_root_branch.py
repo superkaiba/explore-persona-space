@@ -20,10 +20,10 @@ The guard's on-main gate exits 0 when the repo-root HEAD is already off ``main``
 the BLOCK-path tests are guarded by ``@on_main``. The ALLOW-path and fail-soft
 tests run regardless — the guard must never trap those shapes in either state.
 As of #1098 the guard WAIVES, per-clause and under a fail-closed refusal ladder
-(pipe/BG-producer position, expansion + here-string syntax, ssh local-exec
-options, shared-repo path spellings, ``rg --pre``), clauses whose command word
-is ``ssh`` (remote execution) or ``grep``/``egrep``/``fgrep``/``rg`` (read-only
-pattern argument).
+(pipe/BG-producer position, expansion + here-string syntax, non-/dev/null
+output redirects, ssh local-exec options, shared-repo path spellings,
+``rg --pre``), clauses whose command word is ``ssh`` (remote execution) or
+``grep``/``egrep``/``fgrep``/``rg`` (read-only pattern argument).
 """
 
 from __future__ import annotations
@@ -1171,7 +1171,9 @@ def test_heredoc_shellout_body_blocks(cmd):
 # grep/egrep/fgrep/rg (the pattern argument is data) is waived per-clause,
 # IFF the fail-closed refusal ladder passes: not in pipe/BG-producer position
 # (nextsep lookahead), no locally-executing expansion / here-string syntax,
-# no ssh local-exec option (ProxyCommand/LocalCommand/KnownHostsCommand), no
+# no `>`/`>>` output redirect to anything but /dev/null (the round-2 cond
+# (3b) arm — closes the same-call redirect-to-file->execute channel), no ssh
+# local-exec option (ProxyCommand/LocalCommand/KnownHostsCommand), no
 # shared-repo path spelling (literal / $HOME/ / ~/), no rg --pre. The allow
 # side is NOT @on_main (a waived clause must pass in either repo state); the
 # block side pins EVERY refusal-regex alternation arm individually.
@@ -1200,6 +1202,12 @@ def test_heredoc_shellout_body_blocks(cmd):
             "ssh pod-779 'git -C /workspace/explore-persona-space reset --hard origin/main'",
             id="S12-remote_dash_c_regression_pin",
         ),
+        pytest.param(
+            # /dev/null-target redirects are exempt from the cond (3b) redirect
+            # refusal (a discard-only sink can never be re-read or executed).
+            "ssh pod-779 'git reset --hard origin/main' 2>/dev/null",
+            id="S13-stderr_to_dev_null_exempt",
+        ),
     ],
 )
 def test_ssh_remote_git_clause_waiver_allows(cmd):
@@ -1219,6 +1227,18 @@ def test_ssh_remote_git_clause_waiver_allows(cmd):
         pytest.param("egrep 'git switch feature' notes.md", id="G4-egrep"),
         pytest.param("fgrep 'git restore .' notes.md", id="G5-fgrep"),
         pytest.param("echo x | grep 'git reset --hard'", id="G6-pipe_consumer_grep"),
+        pytest.param(
+            # The grep-sweep convenience with a /dev/null-target redirect stays
+            # waived (cond (3b) strips exact-/dev/null targets before scanning).
+            "grep -rn 'git reset --hard' scripts/ 2>/dev/null",
+            id="G7-sweep_stderr_to_dev_null_exempt",
+        ),
+        pytest.param(
+            # The /dev/null exemption composes with a following same-call clause:
+            # the strip leaves no `>`, so a benign AND consumer does not refuse.
+            "grep -q 'git clean -fd' notes.md 2>/dev/null && echo found",
+            id="G8-dev_null_exempt_with_and_consumer",
+        ),
     ],
 )
 def test_grep_pattern_clause_waiver_allows(cmd):
@@ -1295,6 +1315,44 @@ def test_grep_pattern_clause_waiver_allows(cmd):
             # (a benign `tail` consumer still refuses the waiver; gap (xiv)).
             "ssh pod-779 'git reset --hard' | tail -5",
             id="N23-bare_pipe_producer_benign_consumer",
+        ),
+        # N24-N29 pin the round-2 cond (3b) redirect refusal (concern id
+        # redirect-file-producer-failopen): a waived producer redirecting to a
+        # local FILE was rc=0 after round 1 (nextsep=SEQ/AND/NL/END never fires
+        # cond (2)) while rc=2 on main — the same-call write-then-execute
+        # sibling of the PIPE hole N18/N19/N23 close. All six probed rc=2 on
+        # main pre-#1098 (N24-N26 by the r1 reconciler; all six by the r2
+        # implementer), so the refusal is status-quo-preserving.
+        pytest.param(
+            "ssh host 'echo git reset --hard' > /tmp/x; bash /tmp/x",
+            id="N24-redirect_seq_bash_ssh_producer",
+        ),
+        pytest.param(
+            "grep 'git reset --hard' recovery.txt > /tmp/x && bash /tmp/x",
+            id="N25-redirect_and_bash_grep_producer",
+        ),
+        pytest.param(
+            "grep 'git clean -fd' notes.md >> /tmp/x; . /tmp/x",
+            id="N26-redirect_append_source_grep_producer",
+        ),
+        pytest.param(
+            # END-position redirect (no same-call consumer) still refuses —
+            # fail-closed residual FP, gap (xiv).
+            "ssh pod-779 'git reset --hard' > /tmp/pod.log",
+            id="N27-redirect_end_position_residual_fp",
+        ),
+        pytest.param(
+            # Mixed redirects: the /dev/null strip must NOT unlock a real
+            # file redirect sitting beside it.
+            "grep 'git reset --hard' f > /tmp/x 2>/dev/null; bash /tmp/x",
+            id="N28-dev_null_strip_does_not_unlock_file_redirect",
+        ),
+        pytest.param(
+            # A REMOTE-side redirect inside the quoted ssh string refuses too
+            # (the raw scan cannot tell it from a local one) — fail-closed
+            # residual FP, gap (xiv).
+            "ssh pod-779 'git checkout HEAD -- app.py > /tmp/remote.log'",
+            id="N29-remote_side_redirect_quote_blind_residual_fp",
         ),
     ],
 )
