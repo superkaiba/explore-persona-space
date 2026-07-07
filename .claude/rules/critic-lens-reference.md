@@ -550,7 +550,13 @@ composer copies the requested lens's items VERBATIM and IN FULL from this file.
    is jointly unsatisfiable and the experiment can never pass; or (b) a gate's pass threshold OR its
    SIGN is an ungrounded assumption not tied to prior-issue evidence of the construct (a kill-gate
    that no past result of this construct would itself have passed, or whose sign predicts the
-   opposite of what every prior run of this construct produced). Conclusion-changing because an
+   opposite of what every prior run of this construct produced); or (c) a registered decision band,
+   applied to the precedent values the plan itself cites as that branch's supporting reference,
+   places the precedent in the OPPOSITE branch (or the cited range straddles the threshold while
+   the prose asserts one side) — recompute the arithmetic; do not trust the plan's own side label
+   (#825 v17: 0.3489/0.6731 = 0.519 ≥ 0.5 narrated as the below-band reference). `verify_plan.py`
+   c27 WARNs on the same-line explicit-ratio subset; this lens owns every other phrasing.
+   Conclusion-changing because an
    unsatisfiable gate guarantees a false FAIL (the run cannot answer its own question) and an
    ungrounded-sign gate guarantees a false PASS or FAIL by construction (the threshold is divorced
    from what the construct actually does). Skip the check entirely when the plan has no Decision

@@ -305,6 +305,16 @@ gate the plan retains:
   log-prob change `≥ +0.2 nat` and Gate 4 requiring the same probe at the
   same cell `≤ −0.2 nat`; the contradiction was diagnosed only after
   multiple days of recipe-thrashing.)
+- Apply each registered decision band to the plan's OWN cited precedent
+  values: recompute the band predicate on those numbers and confirm the
+  resulting branch matches the narrative label the plan gives that
+  precedent; a band that classifies its supporting precedent into the
+  OPPOSITE branch — or a precedent ratio range straddling the threshold
+  while the prose asserts one side — mislabels the modal outcome by rule
+  choice (#825 v17: the 0.5× band put the cited instruct precedent,
+  0.3489/0.6731 = 0.519, in the REFRAMED branch while the prose used it as
+  the specificity-upheld reference). `verify_plan.py` c27 WARNs on the
+  mechanically-detectable subset; this self-check owns the rest.
 
 The critic now REVISEs incoherent or ungrounded gate sets (`critic.md`
 Statistics & Measurement lens item 3), so an over-laddered or contradictory
