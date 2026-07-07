@@ -2349,34 +2349,52 @@ _CLAUSE_COMPLETION_WORD = re.compile(r"(?<![iI][nN])(?:complete|COMPLETE)")
 def parse_followup_note_field(note: str, field: str) -> str | None:
     """Extract ``<field>``'s value from a followup-scope / run-marker note.
 
-    Matches the FIRST line whose core (after stripping any leading mix of
-    ``-``/``*`` bullets, bold markers, and whitespace) starts with
-    ``<field>:`` OR ``<field>=`` — both separators occur in the wild (the
-    ``=`` form is the dominant historical run-marker shape, e.g. #537/#552).
-    The value is the first whitespace token of the remainder, stripped of
-    backticks / quotes / ``*`` and a trailing comma (#664 ships a
-    backtick-wrapped bold value). Handles bare-colon, bare-equals,
+    Each physical line is additionally split on ``;`` + whitespace
+    (``re.split(r";\\s+", line)``) so the ``; ``-joined single-line
+    scope/run notes real sessions emit (#1090 fu1/fu2 scopes, #841 scopes
+    + run markers) expose their mid-line fields as clause segments; a line
+    with no ``;<whitespace>`` yields itself unchanged. Matches the FIRST
+    segment (lines outer, segments inner, left-to-right) whose core (after
+    stripping any leading mix of ``-``/``*`` bullets, bold markers, and
+    whitespace) starts with ``<field>:`` OR ``<field>=`` — both separators
+    occur in the wild (the ``=`` form is the dominant historical
+    run-marker shape, e.g. #537/#552). Each segment is anchored exactly
+    like a line-core: a mid-segment mention (``(source: user-chat)``, the
+    #685 prose shape) still parses ``None``, and ``word;field: x`` (no
+    whitespace after the ``;``) never splits. The value is the first
+    whitespace token of the remainder, stripped of backticks / quotes /
+    ``*`` and a trailing comma or semicolon (#664 ships a backtick-wrapped
+    bold value; #841's run markers carry ``label;`` when the line is read
+    unsplit; the ``;`` strip also maps ``field:;`` — an empty value before
+    the separator — to ``None``). Handles bare-colon, bare-equals,
     dash-bullet (#658 v1), star-bullet, bold ``**field:**`` (#837 §4c), the
     COMBINED bullet+bold ``- **field:** x`` (a dash-bullet wrapping a bold
-    field — corpus-clean today, pinned against future drift), and
+    field — corpus-clean today, pinned against future drift),
     single-line space-separated run notes (first-token rule; labels are
-    kebab-slugs with no whitespace — workflow.yaml § markers). First hit
-    wins: #763 v2 embeds a second bold label deep inside its
-    verbatim-proposal section, and the top-of-note canonical line is hit
-    first. Returns ``None`` when the field is absent or its value is empty.
+    kebab-slugs with no whitespace — workflow.yaml § markers), and the
+    ``; ``-joined single-line form (#1090/#841). First hit wins: #763 v2
+    embeds a second bold label deep inside its verbatim-proposal section,
+    and the top-of-note canonical line is hit first; a first-line
+    mid-segment field beats a later line's line-initial field (deliberate,
+    pinned in tests). Returns ``None`` when the field is absent or its
+    value is empty.
     """
     for line in (note or "").splitlines():
-        # One regex pass strips any interleaved mix of whitespace, bullet
-        # dashes/stars, and bold markers (a sequential strip()/lstrip("-*")
-        # chain stops at the space in "- **field:** x" and misses the bold
-        # marker behind it).
-        core = re.sub(r"^[\s\-*]+", "", line)
-        if core.startswith(f"{field}:") or core.startswith(f"{field}="):
-            rest = core[len(field) + 1 :].lstrip("*").strip()
-            tokens = rest.split()
-            value = tokens[0] if tokens else ""
-            value = value.strip("`'\"*").rstrip(",")
-            return value or None
+        # `; `-joined single-line notes (#1090 fu1/fu2 scopes, #841 scopes +
+        # run markers) expose their fields as clause segments; a line with
+        # no `;<whitespace>` yields itself unchanged, so every line-initial
+        # form parses exactly as before. The whitespace after `;` is the
+        # anchor: a `;` inside a token (URL, code, `a;b=1`) never splits.
+        for seg in re.split(r";\s+", line):
+            # One regex pass strips any interleaved mix of whitespace, bullet
+            # dashes/stars, and bold markers (unchanged from the line-core rule).
+            core = re.sub(r"^[\s\-*]+", "", seg)
+            if core.startswith(f"{field}:") or core.startswith(f"{field}="):
+                rest = core[len(field) + 1 :].lstrip("*").strip()
+                tokens = rest.split()
+                value = tokens[0] if tokens else ""
+                value = value.strip("`'\"*").rstrip(",;")
+                return value or None
     return None
 
 
