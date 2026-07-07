@@ -681,13 +681,49 @@ eigen/Schur spectrum too.
    transfer operator of an LLM at the span grain, and show its structure predicts
    fine-tuning-induced leakage" — with ATOs, LRE, belief-state geometry, Secretly Linear, EAGLE-3,
    and persona vectors/features as the six named nearest neighbors to position against.
-5. **Confidence: MODERATE-HIGH** that the exact object is unpublished (7 agents across 2 rounds,
-   arXiv + gray literature; but literature search is never exhaustive, several 2026 ids were
-   web-verified only during MCP throttling, and the fast-moving LW/AF gray literature could hold a
-   post the sweeps missed). Before a paper claims novelty: re-verify the flagged ids and run one
-   targeted check for very-recent (≤3 months) preprints citing ATOs 2508.17540, LRE 2308.09124,
-   and belief-state 2405.15943 — those three papers' citation graphs are where a competitor would
-   appear first.
+5. **Confidence: HIGH** that the exact object is unpublished, after the targeted check below was
+   executed (upgraded from MODERATE-HIGH on 2026-07-07). Residual caveat: Semantic Scholar's
+   citation index lags ~1–2 months for the newest preprints, and the LW/AF gray literature moves
+   fast — re-run the citation screen at paper-submission time.
+
+### Citation-graph check — EXECUTED 2026-07-07 (no competitor found)
+
+- **ID re-verification:** all 30 flagged / load-bearing arXiv ids returned by the agents were
+  re-verified against the live arXiv API (`export.arxiv.org` `id_list` batch) — 30/30 resolved
+  with titles matching the agents' claims. No fabricated or mis-attributed ids.
+- **Citation screen:** all Semantic-Scholar-indexed citing papers of the three anchor papers were
+  pulled and every 2026-dated citer screened by title, with abstracts fetched for the 8
+  competitor-shaped ones. ATOs 2508.17540: 0 indexed citations. Belief-state 2405.15943: 60
+  citations, 26 from 2026 — none fit a context→answer or span-pooled activation map. LRE
+  2308.09124: 193 citations, 57 from 2026 — none fit the object.
+- **New neighbors worth knowing (surfaced by the screen, not competitors):**
+  - **"As X, Do Y: How Persona and Task Combine in Instruction-Tuned LLMs" (2605.23147)** — the
+    closest NEW neighbor. Finds an ADDITIVE persona+task decomposition of the residual stream at
+    the prompt→answer transition (last prompt token + first two generated tokens, early/mid
+    layers, Qwen-2.5-1.5B/3B + Gemma-2-2B), and a NEGATIVE result: the role prompt canNOT be
+    compressed into one cached residual vector — persona-conditioned generation keeps attending
+    back to the distributed prompt/KV positions. Deltas vs our object: additive shift, not a
+    fitted map; 3 token positions, not span-pooled; no operator read; no FT prediction. Bears
+    directly on open question 1.1 (context-as-a-vector): evidence AGAINST single-site
+    single-vector sufficiency for reproducing full persona-conditioned generation — note our
+    map's target (answer-side MEAN activation) is a much weaker sufficiency claim, so the two
+    results can coexist; cite and distinguish.
+  - **"Trait-space Monitoring for Emergent Misalignment During Supervised Finetuning"
+    (2606.07631)** — tracks drift along 7 trait directions across finetuning checkpoints
+    (7–9B models), finds a low-dim EM drift axis (65.5% variance), builds a checkpoint monitor
+    (AUROC 0.990). The monitoring-USE neighbor: during-FT, direction-based, post-hoc drift —
+    not a pre-FT predictor and no context→answer operator. Cite in the leakage-prediction
+    positioning alongside persona vectors / persona features.
+  - **"Relational Linearity is a Predictor of Hallucinations" (2601.11429)** — uses a PROPERTY
+    of LRE-style relation maps (their linearity) to predict a behavior (hallucination vs
+    refusal, r ∈ [.58, .84]). Precedent for the claim SHAPE "structure of a fitted linear map
+    predicts behavior" — at relation grain, different behavior; strengthens rather than
+    threatens the novelty of an operator-valued leakage predictor.
+  - Also catalogued: 2605.22532 (KL-based relational-linearity probing, LRE-method successor);
+    2603.19664 (per-token residual vectors deterministically fix KV — "residual stream is the
+    sole state," relevant to context-as-code framing); 2606.32022 (SemRF depthwise-trajectory
+    formalism, layer axis); 2605.17084 (readout-aligned geometry vs scale); 2602.04863
+    (log-linear subliminal data-selection mechanism, EM-line relevant).
 
 ---
 
