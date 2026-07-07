@@ -1,0 +1,1084 @@
+{
+  "n_items": 150,
+  "judged": {
+    "rate": 0.35664335664335667,
+    "k": 51,
+    "n": 143,
+    "n_dropped": 7,
+    "n_total_draws": 750,
+    "n_dropped_draws": 83,
+    "wilson95": [
+      0.28282576415035254,
+      0.4379618055846545
+    ],
+    "mode": "judged"
+  },
+  "structural": {
+    "rate": 0.17333333333333334,
+    "k": 26,
+    "n": 150,
+    "wilson95": [
+      0.12111982318473372,
+      0.24186132105713584
+    ],
+    "mode": "structural"
+  },
+  "agreement": {
+    "n_scored": 143,
+    "n_agree": 110,
+    "rate": 0.7692307692307693
+  },
+  "judge_wall_s": 39.5,
+  "per_item": [
+    {
+      "item_id": "c1re-rung15-q000-c0",
+      "structural": false,
+      "judged_mean": 35.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q000-c1",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q000-c2",
+      "structural": false,
+      "judged_mean": 3.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q000-c3",
+      "structural": false,
+      "judged_mean": 66.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q000-c4",
+      "structural": true,
+      "judged_mean": 68.33333333333333,
+      "judged_pos": true,
+      "kept_draws": 3
+    },
+    {
+      "item_id": "c1re-rung15-q001-c0",
+      "structural": false,
+      "judged_mean": 55.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q001-c1",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q001-c2",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q001-c3",
+      "structural": false,
+      "judged_mean": 68.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q001-c4",
+      "structural": true,
+      "judged_mean": 74.4,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q002-c0",
+      "structural": false,
+      "judged_mean": 83.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q002-c1",
+      "structural": true,
+      "judged_mean": 99.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q002-c2",
+      "structural": true,
+      "judged_mean": 98.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q002-c3",
+      "structural": true,
+      "judged_mean": 90.0,
+      "judged_pos": true,
+      "kept_draws": 4
+    },
+    {
+      "item_id": "c1re-rung15-q002-c4",
+      "structural": true,
+      "judged_mean": 81.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q003-c0",
+      "structural": true,
+      "judged_mean": 74.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q003-c1",
+      "structural": false,
+      "judged_mean": 62.5,
+      "judged_pos": true,
+      "kept_draws": 4
+    },
+    {
+      "item_id": "c1re-rung15-q003-c2",
+      "structural": false,
+      "judged_mean": 57.5,
+      "judged_pos": true,
+      "kept_draws": 4
+    },
+    {
+      "item_id": "c1re-rung15-q003-c3",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q003-c4",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q004-c0",
+      "structural": false,
+      "judged_mean": 49.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q004-c1",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q004-c2",
+      "structural": false,
+      "judged_mean": 15.0,
+      "judged_pos": false,
+      "kept_draws": 3
+    },
+    {
+      "item_id": "c1re-rung15-q004-c3",
+      "structural": false,
+      "judged_mean": 60.0,
+      "judged_pos": true,
+      "kept_draws": 2
+    },
+    {
+      "item_id": "c1re-rung15-q004-c4",
+      "structural": false,
+      "judged_mean": 26.25,
+      "judged_pos": false,
+      "kept_draws": 4
+    },
+    {
+      "item_id": "c1re-rung15-q005-c0",
+      "structural": false,
+      "judged_mean": 13.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q005-c1",
+      "structural": false,
+      "judged_mean": 25.0,
+      "judged_pos": false,
+      "kept_draws": 3
+    },
+    {
+      "item_id": "c1re-rung15-q005-c2",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q005-c3",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q005-c4",
+      "structural": false,
+      "judged_mean": 26.666666666666668,
+      "judged_pos": false,
+      "kept_draws": 3
+    },
+    {
+      "item_id": "c1re-rung15-q006-c0",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q006-c1",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q006-c2",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q006-c3",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q006-c4",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q007-c0",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q007-c1",
+      "structural": false,
+      "judged_mean": 11.25,
+      "judged_pos": false,
+      "kept_draws": 4
+    },
+    {
+      "item_id": "c1re-rung15-q007-c2",
+      "structural": false,
+      "judged_mean": 3.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q007-c3",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q007-c4",
+      "structural": false,
+      "judged_mean": 24.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q008-c0",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q008-c1",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q008-c2",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q008-c3",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q008-c4",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q009-c0",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q009-c1",
+      "structural": false,
+      "judged_mean": 85.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q009-c2",
+      "structural": false,
+      "judged_mean": 41.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q009-c3",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q009-c4",
+      "structural": false,
+      "judged_mean": 24.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q010-c0",
+      "structural": false,
+      "judged_mean": 3.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q010-c1",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q010-c2",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q010-c3",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q010-c4",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q011-c0",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q011-c1",
+      "structural": true,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q011-c2",
+      "structural": false,
+      "judged_mean": 1.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q011-c3",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q011-c4",
+      "structural": true,
+      "judged_mean": 30.0,
+      "judged_pos": false,
+      "kept_draws": 3
+    },
+    {
+      "item_id": "c1re-rung15-q012-c0",
+      "structural": true,
+      "judged_mean": 98.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q012-c1",
+      "structural": true,
+      "judged_mean": 98.75,
+      "judged_pos": true,
+      "kept_draws": 4
+    },
+    {
+      "item_id": "c1re-rung15-q012-c2",
+      "structural": false,
+      "judged_mean": 45.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q012-c3",
+      "structural": false,
+      "judged_mean": 95.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q012-c4",
+      "structural": false,
+      "judged_mean": 75.0,
+      "judged_pos": true,
+      "kept_draws": 3
+    },
+    {
+      "item_id": "c1re-rung15-q013-c0",
+      "structural": false,
+      "judged_mean": 21.666666666666668,
+      "judged_pos": false,
+      "kept_draws": 3
+    },
+    {
+      "item_id": "c1re-rung15-q013-c1",
+      "structural": false,
+      "judged_mean": 21.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q013-c2",
+      "structural": false,
+      "judged_mean": 5.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q013-c3",
+      "structural": false,
+      "judged_mean": 28.75,
+      "judged_pos": false,
+      "kept_draws": 4
+    },
+    {
+      "item_id": "c1re-rung15-q013-c4",
+      "structural": false,
+      "judged_mean": 23.75,
+      "judged_pos": false,
+      "kept_draws": 4
+    },
+    {
+      "item_id": "c1re-rung15-q014-c0",
+      "structural": false,
+      "judged_mean": 7.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q014-c1",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q014-c2",
+      "structural": false,
+      "judged_mean": 37.5,
+      "judged_pos": false,
+      "kept_draws": 4
+    },
+    {
+      "item_id": "c1re-rung15-q014-c3",
+      "structural": false,
+      "judged_mean": 96.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q014-c4",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q015-c0",
+      "structural": false,
+      "judged_mean": 33.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q015-c1",
+      "structural": false,
+      "judged_mean": 35.0,
+      "judged_pos": false,
+      "kept_draws": 3
+    },
+    {
+      "item_id": "c1re-rung15-q015-c2",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q015-c3",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q015-c4",
+      "structural": false,
+      "judged_mean": null,
+      "judged_pos": null,
+      "kept_draws": 0
+    },
+    {
+      "item_id": "c1re-rung15-q016-c0",
+      "structural": false,
+      "judged_mean": 17.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q016-c1",
+      "structural": false,
+      "judged_mean": 22.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q016-c2",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q016-c3",
+      "structural": false,
+      "judged_mean": 3.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q016-c4",
+      "structural": false,
+      "judged_mean": 17.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q017-c0",
+      "structural": false,
+      "judged_mean": 62.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q017-c1",
+      "structural": true,
+      "judged_mean": 89.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q017-c2",
+      "structural": true,
+      "judged_mean": 92.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q017-c3",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q017-c4",
+      "structural": true,
+      "judged_mean": 86.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q018-c0",
+      "structural": false,
+      "judged_mean": 83.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q018-c1",
+      "structural": true,
+      "judged_mean": 85.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q018-c2",
+      "structural": true,
+      "judged_mean": 72.5,
+      "judged_pos": true,
+      "kept_draws": 4
+    },
+    {
+      "item_id": "c1re-rung15-q018-c3",
+      "structural": false,
+      "judged_mean": 71.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q018-c4",
+      "structural": false,
+      "judged_mean": 43.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q019-c0",
+      "structural": true,
+      "judged_mean": 93.4,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q019-c1",
+      "structural": false,
+      "judged_mean": 55.0,
+      "judged_pos": true,
+      "kept_draws": 3
+    },
+    {
+      "item_id": "c1re-rung15-q019-c2",
+      "structural": false,
+      "judged_mean": 63.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q019-c3",
+      "structural": true,
+      "judged_mean": 89.25,
+      "judged_pos": true,
+      "kept_draws": 4
+    },
+    {
+      "item_id": "c1re-rung15-q019-c4",
+      "structural": false,
+      "judged_mean": 57.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q020-c0",
+      "structural": false,
+      "judged_mean": null,
+      "judged_pos": null,
+      "kept_draws": 0
+    },
+    {
+      "item_id": "c1re-rung15-q020-c1",
+      "structural": false,
+      "judged_mean": null,
+      "judged_pos": null,
+      "kept_draws": 0
+    },
+    {
+      "item_id": "c1re-rung15-q020-c2",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 4
+    },
+    {
+      "item_id": "c1re-rung15-q020-c3",
+      "structural": false,
+      "judged_mean": null,
+      "judged_pos": null,
+      "kept_draws": 0
+    },
+    {
+      "item_id": "c1re-rung15-q020-c4",
+      "structural": false,
+      "judged_mean": null,
+      "judged_pos": null,
+      "kept_draws": 0
+    },
+    {
+      "item_id": "c1re-rung15-q021-c0",
+      "structural": false,
+      "judged_mean": 27.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q021-c1",
+      "structural": false,
+      "judged_mean": 1.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q021-c2",
+      "structural": false,
+      "judged_mean": 27.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q021-c3",
+      "structural": false,
+      "judged_mean": 18.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q021-c4",
+      "structural": false,
+      "judged_mean": 21.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q022-c0",
+      "structural": false,
+      "judged_mean": 5.0,
+      "judged_pos": false,
+      "kept_draws": 3
+    },
+    {
+      "item_id": "c1re-rung15-q022-c1",
+      "structural": true,
+      "judged_mean": 25.0,
+      "judged_pos": false,
+      "kept_draws": 2
+    },
+    {
+      "item_id": "c1re-rung15-q022-c2",
+      "structural": false,
+      "judged_mean": 3.75,
+      "judged_pos": false,
+      "kept_draws": 4
+    },
+    {
+      "item_id": "c1re-rung15-q022-c3",
+      "structural": false,
+      "judged_mean": 21.666666666666668,
+      "judged_pos": false,
+      "kept_draws": 3
+    },
+    {
+      "item_id": "c1re-rung15-q022-c4",
+      "structural": false,
+      "judged_mean": 15.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q023-c0",
+      "structural": true,
+      "judged_mean": 95.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q023-c1",
+      "structural": false,
+      "judged_mean": 96.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q023-c2",
+      "structural": false,
+      "judged_mean": 95.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q023-c3",
+      "structural": false,
+      "judged_mean": 98.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q023-c4",
+      "structural": true,
+      "judged_mean": 91.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q024-c0",
+      "structural": false,
+      "judged_mean": 1.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q024-c1",
+      "structural": false,
+      "judged_mean": 47.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q024-c2",
+      "structural": false,
+      "judged_mean": 21.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q024-c3",
+      "structural": false,
+      "judged_mean": 20.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q024-c4",
+      "structural": false,
+      "judged_mean": 20.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q025-c0",
+      "structural": false,
+      "judged_mean": 71.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q025-c1",
+      "structural": true,
+      "judged_mean": 88.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q025-c2",
+      "structural": false,
+      "judged_mean": 83.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q025-c3",
+      "structural": true,
+      "judged_mean": 53.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q025-c4",
+      "structural": false,
+      "judged_mean": 89.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q026-c0",
+      "structural": false,
+      "judged_mean": 49.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q026-c1",
+      "structural": false,
+      "judged_mean": 69.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q026-c2",
+      "structural": false,
+      "judged_mean": 44.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q026-c3",
+      "structural": false,
+      "judged_mean": 61.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q026-c4",
+      "structural": false,
+      "judged_mean": 57.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q027-c0",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q027-c1",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q027-c2",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q027-c3",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q027-c4",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q028-c0",
+      "structural": false,
+      "judged_mean": 97.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q028-c1",
+      "structural": true,
+      "judged_mean": 96.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q028-c2",
+      "structural": false,
+      "judged_mean": 87.5,
+      "judged_pos": true,
+      "kept_draws": 4
+    },
+    {
+      "item_id": "c1re-rung15-q028-c3",
+      "structural": false,
+      "judged_mean": 81.66666666666667,
+      "judged_pos": true,
+      "kept_draws": 3
+    },
+    {
+      "item_id": "c1re-rung15-q028-c4",
+      "structural": true,
+      "judged_mean": 96.0,
+      "judged_pos": true,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q029-c0",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 5
+    },
+    {
+      "item_id": "c1re-rung15-q029-c1",
+      "structural": false,
+      "judged_mean": null,
+      "judged_pos": null,
+      "kept_draws": 0
+    },
+    {
+      "item_id": "c1re-rung15-q029-c2",
+      "structural": false,
+      "judged_mean": null,
+      "judged_pos": null,
+      "kept_draws": 0
+    },
+    {
+      "item_id": "c1re-rung15-q029-c3",
+      "structural": true,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 2
+    },
+    {
+      "item_id": "c1re-rung15-q029-c4",
+      "structural": false,
+      "judged_mean": 0.0,
+      "judged_pos": false,
+      "kept_draws": 4
+    }
+  ]
+}
