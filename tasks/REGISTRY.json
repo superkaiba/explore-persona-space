@@ -767,8 +767,8 @@
     "1098": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/running/1098",
-      "status": "running",
+      "path": "tasks/reviewing/1098",
+      "status": "reviewing",
       "title": "daily-fix: repo-root guard false-positive on pod-side git in"
     },
     "1099": {
