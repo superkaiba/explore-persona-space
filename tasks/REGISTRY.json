@@ -760,8 +760,8 @@
     "1097": {
       "has_clean_result": false,
       "kind": "infra",
-      "path": "tasks/planning/1097",
-      "status": "planning",
+      "path": "tasks/approved/1097",
+      "status": "approved",
       "title": "daily-fix: Step 10d lint verdict consumed before gh pr merge"
     },
     "1098": {
