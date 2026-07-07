@@ -25,7 +25,7 @@ update this index (lint: `--check-lessons-index`).
 - **[experiment-guidelines](experiment-guidelines.md)** — fires when: you plan/implement a `workflow: v2` experiment (durable guideline index; each points at its full rule + names the v2 critic owner).
 - **[gotchas](gotchas.md)** — fires when: you write/debug training/eval/orchestration/analysis code or an Anthropic request-builder seam, hand-launch a per-cell GPU worker (CVD, EDQUOT/wedge, vLLM teardown), diagnose a silent process death/exit-137 (kill-sources) or an rc=134 SIGABRT at interpreter shutdown, parse JSONL (splitlines shred), or feed an external/real-corpus prompt bank to vLLM.
 - **[lens-coverage-map](lens-coverage-map.md)** — fires when: you split, retire, or add a review lens (v2 lens→owner ledger; three states; lint `--check-lens-coverage`).
-- **[llm-judging](llm-judging.md)** — fires when: a plan/code designs/writes an LLM-judged behavior DV (graded 0-100 primary; one Sonnet judge; drop-never-coerce; rubric-keyed judge caches).
+- **[llm-judging](llm-judging.md)** — fires when: a plan/code designs/writes an LLM-judged behavior DV (graded 0-100 primary; one Sonnet judge; drop-never-coerce; rubric-keyed judge caches; max_tokens sized for the rationale).
 - **[marker-leakage-measurement](marker-leakage-measurement.md)** — fires when: a plan/code MEASURES marker leakage (on-policy, marker-at-end, three-space DV).
 - **[marker-training-recipe](marker-training-recipe.md)** — fires when: a plan TRAINS a fresh marker/implant adapter (lr≤5e-6, marker-only loss, log-prob band-stop).
 - **[on-policy-completions](on-policy-completions.md)** — fires when: you build implantation training data (on-policy positives from the base model; 80%-floor yield quota).
