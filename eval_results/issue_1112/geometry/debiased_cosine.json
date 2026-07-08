@@ -32590,8 +32590,8 @@
  ],
  "capture_root": "data/issue_1112/geometry_stage/capture",
  "metadata": {
-  "git_commit": "d61d5006df66bbdb6138ab6fe5f91fa9644352b8",
-  "timestamp_utc": "2026-07-08T08:54:46Z",
+  "git_commit": "0c6a3673320e59d9dceeb18aa3557a803f5e8496",
+  "timestamp_utc": "2026-07-08T08:57:07Z",
   "numpy": "2.2.6",
   "torch": "2.8.0+cu128"
  }
