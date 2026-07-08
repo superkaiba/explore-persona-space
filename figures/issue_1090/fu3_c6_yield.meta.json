@@ -1,0 +1,52 @@
+{
+  "commit": "6bb7acdc7b",
+  "created": "2026-07-08T09:54:52Z",
+  "figsize": [
+    7.0,
+    3.8
+  ],
+  "points": [
+    {
+      "category": "bare assistant\ncontrastive",
+      "judge-kept positives (of candidates generated)": 8.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "bare assistant\npositive-only",
+      "judge-kept positives (of candidates generated)": 6.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "WildChat prefix\ncontrastive",
+      "judge-kept positives (of candidates generated)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "WildChat prefix\npositive-only",
+      "judge-kept positives (of candidates generated)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "ICL prefix\ncontrastive",
+      "judge-kept positives (of candidates generated)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "ICL prefix\npositive-only",
+      "judge-kept positives (of candidates generated)": 0.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "persona\ncontrastive",
+      "judge-kept positives (of candidates generated)": 2.0,
+      "_kind": "bar"
+    },
+    {
+      "category": "persona\npositive-only",
+      "judge-kept positives (of candidates generated)": 1.0,
+      "_kind": "bar"
+    }
+  ],
+  "n_series": 1,
+  "total_points": 8
+}
